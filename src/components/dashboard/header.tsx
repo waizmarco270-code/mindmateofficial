@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Medal, Menu, Shield } from 'lucide-react';
@@ -76,7 +75,7 @@ export default function Header() {
                 )}
 
                 <ThemeToggle />
-                <UserButton afterSignOutUrl="/" />
+                {/* <UserButton afterSignOutUrl="/" /> */}
             </>
             )}
         </SignedIn>
