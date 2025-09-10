@@ -9,10 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Lock, Unlock, Download, KeyRound, CreditCard, AlertTriangle } from 'lucide-react';
 import { useResources, useUsers } from '@/hooks/use-admin';
-import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { useAuth } from '@/hooks/use-auth';
+import { useAuthModal } from '@/hooks/use-auth-modal';
 
 const UNLOCK_PASSWORD = "waizextrajee";
 const UNLOCK_CREDITS = 30;
@@ -20,17 +20,19 @@ const UNLOCK_CREDITS = 30;
 export function JeeResources() {
     const { jeeResources, loading } = useResources();
     const { user } = useAuth();
-    const { currentUserData, addCreditsToUser } = useUsers();
-    const [isPremiumUnlocked, setIsPremiumUnlocked] = useLocalStorage('jeeUnlocked', false);
+    const { setOpen: openAuthModal } = useAuthModal();
+    const { currentUserData, unlockResourceSection } = useUsers();
     const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
     const [password, setPassword] = useState('');
     const { toast } = useToast();
 
+    const isPremiumUnlocked = currentUserData?.jeeUnlocked ?? false;
     const currentCredits = currentUserData?.credits ?? 0;
 
-    const handleUnlockWithPassword = () => {
+    const handleUnlockWithPassword = async () => {
+        if (!user) return;
         if (password === UNLOCK_PASSWORD) {
-            setIsPremiumUnlocked(true);
+            await unlockResourceSection(user.uid, 'jee');
             setIsUnlockDialogOpen(false);
             toast({ title: 'Success!', description: 'JEE content unlocked.' });
         } else {
@@ -39,21 +41,28 @@ export function JeeResources() {
         setPassword('');
     };
 
-    const handleUnlockWithCredits = () => {
+    const handleUnlockWithCredits = async () => {
         if (user && currentCredits >= UNLOCK_CREDITS) {
-            addCreditsToUser(user.uid, -UNLOCK_CREDITS);
-            setIsPremiumUnlocked(true);
+            await unlockResourceSection(user.uid, 'jee', UNLOCK_CREDITS);
             setIsUnlockDialogOpen(false);
             toast({ title: `Unlocked!`, description: `${UNLOCK_CREDITS} credits have been used.` });
         } else {
             toast({ variant: 'destructive', title: 'Insufficient Credits', description: `You need at least ${UNLOCK_CREDITS} credits to unlock.` });
         }
     };
+    
+     const handleOpenDialog = () => {
+        if (!user) {
+            openAuthModal(true);
+            return;
+        }
+        setIsUnlockDialogOpen(true);
+    }
 
     if (!isPremiumUnlocked) {
         return (
             <>
-                <Card className="border-primary/20 bg-primary/5 cursor-pointer hover:border-primary/40 transition-all" onClick={() => setIsUnlockDialogOpen(true)}>
+                <Card className="border-primary/20 bg-primary/5 cursor-pointer hover:border-primary/40 transition-all" onClick={handleOpenDialog}>
                     <CardHeader className="flex flex-row items-center gap-4">
                         <Lock className="h-8 w-8 text-primary" />
                         <div>

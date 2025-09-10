@@ -4,9 +4,9 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { UserPlus } from 'lucide-react';
+import { UserPlus, MailCheck } from 'lucide-react';
 import { useState } from 'react';
-import { getAuth, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { firebaseApp, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,7 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const auth = getAuth(firebaseApp);
   const { toast } = useToast();
   const { setOpen } = useAuthModal();
@@ -45,6 +46,9 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
       const fullName = `${firstName} ${lastName}`.trim();
       
       await updateProfile(newUser, { displayName: fullName });
+      
+      // Send verification email
+      await sendEmailVerification(newUser);
 
       const userDocRef = doc(db, "users", newUser.uid);
       await setDoc(userDocRef, {
@@ -54,14 +58,14 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
         isBlocked: false,
         credits: 100,
         socialUnlocked: false,
-        isAdmin: ADMIN_UIDS.includes(newUser.uid)
+        isAdmin: ADMIN_UIDS.includes(newUser.uid),
+        class10Unlocked: false,
+        jeeUnlocked: false,
+        class12Unlocked: false,
       });
 
-      toast({
-        title: 'Account Created!',
-        description: "You've been successfully signed up.",
-      });
-      setOpen(false); // Close modal on success
+      setEmailSent(true);
+
     } catch (error: any) {
        toast({
         variant: 'destructive',
@@ -72,6 +76,22 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
       setLoading(false);
     }
   };
+  
+  if (emailSent) {
+      return (
+          <div className="w-full text-center">
+              <div className="flex items-center justify-center gap-3 mb-4">
+                <Logo className="h-12 w-12" />
+              </div>
+              <MailCheck className="w-16 h-16 mx-auto text-green-500 mb-4" />
+              <h1 className="text-2xl font-bold tracking-tight">Verify Your Email</h1>
+              <p className="text-balance text-muted-foreground mt-2">
+                  We've sent a verification link to <span className="font-semibold text-primary">{email}</span>. Please check your inbox and click the link to finish setting up your account.
+              </p>
+               <Button onClick={() => setOpen(false)} className="mt-6 w-full">Got It</Button>
+          </div>
+      )
+  }
 
   return (
     <div className="w-full">

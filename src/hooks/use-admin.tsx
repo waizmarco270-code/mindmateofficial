@@ -26,6 +26,9 @@ export interface User {
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
+  class10Unlocked?: boolean;
+  jeeUnlocked?: boolean;
+  class12Unlocked?: boolean;
 }
 
 export interface Announcement {
@@ -56,6 +59,7 @@ export interface Poll {
 // ============================================================================
 //  CONTEXT DEFINITIONS
 // ============================================================================
+type ResourceSection = 'class10' | 'jee' | 'class12';
 
 interface AppDataContextType {
     isAdmin: boolean;
@@ -66,6 +70,7 @@ interface AppDataContextType {
     giftCreditsToUser: (uid: string, amount: number) => Promise<void>;
     resetUserCredits: (uid: string) => Promise<void>;
     unlockSocialFeature: (uid: string) => Promise<void>;
+    unlockResourceSection: (uid: string, section: ResourceSection, cost?: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     makeUserAdmin: (uid: string) => Promise<void>;
@@ -250,6 +255,22 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { socialUnlocked: true, credits: increment(-20) });
     };
 
+    const unlockResourceSection = async (uid: string, section: ResourceSection, cost: number = 0) => {
+        if (!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        const updateData: any = {};
+        
+        if (section === 'class10') updateData.class10Unlocked = true;
+        if (section === 'jee') updateData.jeeUnlocked = true;
+        if (section === 'class12') updateData.class12Unlocked = true;
+        
+        if (cost > 0) {
+            updateData.credits = increment(-cost);
+        }
+
+        await updateDoc(userDocRef, updateData);
+    };
+
     const addPerfectedQuiz = async (uid: string, quizId: string) => {
         if(!uid || !quizId) return;
         const userDocRef = doc(db, 'users', uid);
@@ -342,6 +363,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         giftCreditsToUser,
         resetUserCredits,
         unlockSocialFeature,
+        unlockResourceSection,
         addPerfectedQuiz,
         incrementQuizAttempt,
         makeUserAdmin,

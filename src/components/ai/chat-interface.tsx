@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Square, BrainCircuit, AlertTriangle } from 'lucide-react';
+import { Send, Mic, Square, BrainCircuit, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { AiAvatar } from './ai-avatar';
 import { useUsers } from '@/hooks/use-admin';
+import { useAuthModal } from '@/hooks/use-auth-modal';
 
 const CHAT_COST = 1;
 
@@ -23,6 +24,7 @@ export function ChatInterface() {
   const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { setOpen: openAuthModal } = useAuthModal();
   const { currentUserData, addCreditsToUser } = useUsers();
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -70,6 +72,10 @@ export function ChatInterface() {
   }, [toast]);
   
   const handleMicClick = () => {
+     if (!user) {
+      openAuthModal(true);
+      return;
+    }
     if (!recognitionRef.current) {
       toast({
           variant: 'destructive',
@@ -146,8 +152,12 @@ export function ChatInterface() {
 
   const handleSubmit = async (e: React.FormEvent | Event, voiceInput?: string) => {
     e.preventDefault();
+    if (!user) {
+      openAuthModal(true);
+      return;
+    }
     const currentInput = voiceInput || input;
-    if (!currentInput.trim() || !user) return;
+    if (!currentInput.trim()) return;
     
     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: currentInput, user };
     setMessages((prev) => [...prev, userMessage]);
@@ -167,6 +177,10 @@ export function ChatInterface() {
   };
   
   const handleExplainSimply = async (messageToSimplify: Message) => {
+      if (!user) {
+        openAuthModal(true);
+        return;
+      }
       const originalQuestion = messages.slice().reverse().find(m => m.role === 'user')?.content || "the previous topic";
 
       const userMessage: Message = { id: Date.now().toString(), role: 'user', content: "Can you explain that more simply?", user, isHidden: true };
@@ -181,6 +195,21 @@ export function ChatInterface() {
         CHAT_COST,
         (response) => response.simpleExplanation
       );
+  }
+  
+  if (!user) {
+      return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 rounded-xl bg-muted/40 border-2 border-dashed">
+                <div className="p-5 rounded-full bg-primary/10 mb-4">
+                    <ShieldAlert className="h-12 w-12 text-primary" />
+                </div>
+                <h1 className="text-4xl font-bold tracking-tight">Access Marco AI</h1>
+                <p className="text-muted-foreground mt-2 max-w-lg">Please sign in or create an account to start a conversation with your personal AI tutor.</p>
+                <Button size="lg" className="mt-6 text-lg py-7" onClick={() => openAuthModal(true)}>
+                    Sign In to Continue
+                </Button>
+            </div>
+        );
   }
   
   return (

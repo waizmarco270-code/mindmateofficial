@@ -2,15 +2,34 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Download } from 'lucide-react';
+import { Download, Info, ShieldAlert } from 'lucide-react';
 import { useResources } from '@/hooks/use-admin';
 import { PremiumResources } from '@/components/resources/premium-resources';
 import { Separator } from '@/components/ui/separator';
 import { JeeResources } from '@/components/resources/jee-resources';
 import { Class12Resources } from '@/components/resources/class12-resources';
+import { useAuth } from '@/hooks/use-auth';
+import { useAuthModal } from '@/hooks/use-auth-modal';
 
 export default function ResourcesPage() {
     const { resources, loading } = useResources();
+    const { user } = useAuth();
+    const { setOpen: openAuthModal } = useAuthModal();
+
+    if (!user) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 rounded-xl bg-muted/40 border-2 border-dashed">
+                <div className="p-5 rounded-full bg-primary/10 mb-4">
+                    <ShieldAlert className="h-12 w-12 text-primary" />
+                </div>
+                <h1 className="text-4xl font-bold tracking-tight">Access Restricted</h1>
+                <p className="text-muted-foreground mt-2 max-w-lg">Please sign in or create an account to view and download study resources.</p>
+                <Button size="lg" className="mt-6 text-lg py-7" onClick={() => openAuthModal(true)}>
+                    Sign In to Continue
+                </Button>
+            </div>
+        );
+    }
 
     if(loading) {
         return (

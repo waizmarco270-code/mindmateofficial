@@ -4,7 +4,7 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogIn } from 'lucide-react';
+import { LogIn, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase';
@@ -28,17 +28,31 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
     e.preventDefault();
     setLoading(true);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: 'Login Successful',
-        description: 'Welcome back!',
-      });
-      setOpen(false); // Close the modal on success
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      if (!userCredential.user.emailVerified) {
+        toast({
+            variant: 'destructive',
+            title: 'Email Not Verified',
+            description: "Please check your inbox and verify your email address before signing in.",
+            duration: 5000,
+        });
+        await auth.signOut(); // Log out the user if email is not verified
+      } else {
+        toast({
+            title: 'Login Successful',
+            description: 'Welcome back!',
+        });
+        setOpen(false); // Close the modal on success
+      }
+
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: error.message,
+        description: error.code === 'auth/invalid-credential' 
+            ? 'Incorrect email or password. Please try again.'
+            : error.message,
       });
     } finally {
       setLoading(false);
