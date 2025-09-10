@@ -31,38 +31,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = async () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
-  };
-
-  useEffect(() => {
-    const handleAuth = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          toast({
-            title: 'Signed in successfully!',
-            description: 'Welcome to MindMate.',
-          });
-          // The onAuthStateChanged listener below will handle setting the user state
-          // and creating the user document if it doesn't exist.
-        }
-      } catch (error: any) {
-        console.error("Google sign-in error:", error);
+    try {
+        await signInWithRedirect(auth, provider);
+    } catch(error: any) {
+        console.error("Google sign-in error on redirect:", error);
         toast({
           variant: 'destructive',
           title: 'Google Sign-In Failed',
           description: error.message,
         });
-      }
+        setLoading(false);
+    }
+  };
 
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-          if (!firebaseUser.emailVerified && firebaseUser.providerData[0].providerId === 'password') {
-            setUser(null);
-          } else {
+  useEffect(() => {
+    const handleRedirectResult = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+            toast({
+                title: 'Signed in successfully!',
+                description: 'Welcome to MindMate.',
+            });
+            const firebaseUser = result.user;
             const userDocRef = doc(db, 'users', firebaseUser.uid);
             const userDoc = await getDoc(userDocRef);
+
             if (!userDoc.exists()) {
+              // This is a new user, create their document
               const { displayName, email, photoURL, uid } = firebaseUser;
               await setDoc(userDocRef, {
                   uid: uid,
@@ -80,8 +76,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   quizAttempts: {},
               });
             }
+        }
+      } catch (error: any) {
+        console.error("Google sign-in error:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Google Sign-In Failed',
+          description: error.message,
+        });
+      }
+    }
+    
+    handleRedirectResult();
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+        if (firebaseUser) {
+          if (!firebaseUser.emailVerified && firebaseUser.providerData[0].providerId === 'password') {
+            setUser(null);
+          } else {
             setUser(firebaseUser);
-            if (isAuthModalOpen) {
+             if (isAuthModalOpen) {
               setAuthModalOpen(false);
             }
           }
@@ -91,16 +105,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false);
       });
 
-      return () => unsubscribe();
-    };
-    
-    handleAuth();
-
+    return () => unsubscribe();
   }, [auth, isAuthModalOpen, setAuthModalOpen, toast]);
   
   const logout = async () => {
     await signOut(auth);
-    setUser(null);
   };
 
   return (

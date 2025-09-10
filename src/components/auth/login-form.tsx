@@ -38,7 +38,7 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
   const auth = getAuth(firebaseApp);
   const { toast } = useToast();
   const { setOpen } = useAuthModal();
-  const { signInWithGoogle } = useAuth();
+  const { signInWithGoogle, loading: authLoading } = useAuth();
 
 
   const handleResendVerification = async () => {
@@ -71,20 +71,8 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
     setShowResend(false);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      if (!userCredential.user.emailVerified) {
-          setShowResend(true);
-          // Don't close modal or show success, just show the resend option
-          return;
-      }
-      
-      toast({
-          title: 'Login Successful',
-          description: 'Welcome back!',
-      });
-      setOpen(false);
-
+      await signInWithEmailAndPassword(auth, email, password);
+      // onAuthStateChanged will handle modal closing and success toast
     } catch (error: any) {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           toast({
@@ -92,6 +80,8 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
               title: 'Login Failed',
               description: 'Incorrect email or password. Please try again.',
           });
+      } else if (error.code === 'auth/email-not-verified') {
+           setShowResend(true);
       } else {
         toast({
           variant: 'destructive',
@@ -115,8 +105,8 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
             <p className="text-balance text-muted-foreground">Sign in to access your dashboard.</p>
         </div>
          <div className="grid gap-4 mt-8">
-            <Button variant="outline" className="w-full py-6 text-lg" onClick={signInWithGoogle} disabled={loading}>
-                <GoogleIcon /> Sign In with Google
+            <Button variant="outline" className="w-full py-6 text-lg" onClick={signInWithGoogle} disabled={loading || authLoading}>
+                {authLoading ? <div className="h-6 w-6 animate-spin rounded-full border-4 border-dashed border-primary"></div> : <><GoogleIcon /> Sign In with Google</>}
             </Button>
             <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -145,13 +135,13 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
                 )}
                 <div className="grid gap-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={loading} />
+                    <Input id="email" type="email" placeholder="m@example.com" required value={email} onChange={e => setEmail(e.target.value)} disabled={loading || authLoading} />
                 </div>
                 <div className="grid gap-2">
                     <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} disabled={loading}/>
+                    <Input id="password" type="password" required value={password} onChange={e => setPassword(e.target.value)} disabled={loading || authLoading}/>
                 </div>
-                <Button type="submit" className="w-full py-6 text-lg" disabled={loading}>
+                <Button type="submit" className="w-full py-6 text-lg" disabled={loading || authLoading}>
                    {loading ? <div className="h-6 w-6 animate-spin rounded-full border-4 border-dashed border-primary-foreground"></div> : <><LogIn className="mr-2 h-5 w-5" /> Sign In</>}
                 </Button>
             </form>
