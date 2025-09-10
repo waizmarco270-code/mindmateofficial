@@ -29,20 +29,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const auth = getAuth(firebaseApp);
 
   const signInWithGoogle = async () => {
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     await signInWithRedirect(auth, provider);
   };
 
   useEffect(() => {
-     const checkRedirect = async () => {
+    const handleAuth = async () => {
       try {
         const result = await getRedirectResult(auth);
         if (result) {
-           toast({
+          toast({
             title: 'Signed in successfully!',
             description: 'Welcome to MindMate.',
           });
-          // The onAuthStateChanged listener below will handle setting user data
+          // The onAuthStateChanged listener below will handle setting the user state
+          // and creating the user document if it doesn't exist.
         }
       } catch (error: any) {
         console.error("Google sign-in error:", error);
@@ -51,55 +53,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           title: 'Google Sign-In Failed',
           description: error.message,
         });
-      } finally {
-        setLoading(false);
       }
+
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+        if (firebaseUser) {
+          if (!firebaseUser.emailVerified && firebaseUser.providerData[0].providerId === 'password') {
+            setUser(null);
+          } else {
+            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (!userDoc.exists()) {
+              const { displayName, email, photoURL, uid } = firebaseUser;
+              await setDoc(userDocRef, {
+                  uid: uid,
+                  displayName: displayName || 'New User',
+                  email: email,
+                  photoURL: photoURL || `https://avatar.vercel.sh/${uid}.png`,
+                  isBlocked: false,
+                  credits: 100,
+                  socialUnlocked: false,
+                  isAdmin: ADMIN_UIDS.includes(uid),
+                  class10Unlocked: false,
+                  jeeUnlocked: false,
+                  class12Unlocked: false,
+                  perfectedQuizzes: [],
+                  quizAttempts: {},
+              });
+            }
+            setUser(firebaseUser);
+            if (isAuthModalOpen) {
+              setAuthModalOpen(false);
+            }
+          }
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      });
+
+      return () => unsubscribe();
     };
     
-    checkRedirect();
+    handleAuth();
 
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        if (!firebaseUser.emailVerified) {
-          setUser(null);
-          setLoading(false);
-          // This case is for new email/password signups who haven't verified.
-          // It prevents them from being logged in.
-          // Google sign-in users are always verified.
-          return;
-        }
-
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
-           if (!userDoc.exists()) {
-             const { displayName, email, photoURL, uid } = firebaseUser;
-             await setDoc(userDocRef, {
-                uid: uid,
-                displayName: displayName || 'New User',
-                email: email,
-                photoURL: photoURL || `https://avatar.vercel.sh/${uid}.png`,
-                isBlocked: false,
-                credits: 100,
-                socialUnlocked: false,
-                isAdmin: ADMIN_UIDS.includes(uid),
-                class10Unlocked: false,
-                jeeUnlocked: false,
-                class12Unlocked: false,
-                perfectedQuizzes: [],
-                quizAttempts: {},
-             });
-           }
-          setUser(firebaseUser);
-          if (isAuthModalOpen) {
-            setAuthModalOpen(false);
-          }
-      } else {
-        setUser(null);
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
   }, [auth, isAuthModalOpen, setAuthModalOpen, toast]);
   
   const logout = async () => {
