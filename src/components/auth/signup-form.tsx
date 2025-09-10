@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { UserPlus, MailCheck } from 'lucide-react';
 import { useState } from 'react';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { firebaseApp, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/hooks/use-auth-modal';
@@ -65,6 +65,7 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
         class12Unlocked: false,
         perfectedQuizzes: [],
         quizAttempts: {},
+        accountCreatedAt: serverTimestamp(), // Add creation timestamp
       });
 
       setEmailSent(true);
@@ -93,7 +94,7 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
               <p className="text-balance text-muted-foreground mt-2">
                   We've sent a verification link to <span className="font-semibold text-primary">{email}</span>. Please check your inbox and spam folder, then click the link to finish setting up your account.
               </p>
-               <Button onClick={() => setOpen(false)} className="mt-6 w-full">Got It</Button>
+               <Button onClick={onToggleView} className="mt-6 w-full">Got It, Let Me Sign In</Button>
           </div>
       )
   }
