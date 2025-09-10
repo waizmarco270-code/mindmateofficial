@@ -23,6 +23,13 @@ export function AuthModal() {
   const { isOpen, setOpen } = useAuthModal();
   const { signInWithGoogle, loading } = useAuth();
 
+  const handleSignIn = () => {
+    // Ensure signInWithGoogle is not called if it's already in progress
+    if (!loading) {
+      signInWithGoogle();
+    }
+  }
+
   return (
     <Dialog open={isOpen} onOpenChange={setOpen}>
         <DialogContent className="p-0 max-w-4xl grid grid-cols-1 md:grid-cols-2">
@@ -36,7 +43,7 @@ export function AuthModal() {
                     <div className="mt-8">
                         <Button 
                             className="w-full h-14 text-lg" 
-                            onClick={signInWithGoogle}
+                            onClick={handleSignIn}
                             disabled={loading}
                         >
                             {loading ? (

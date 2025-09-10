@@ -4,10 +4,10 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { getAuth, onAuthStateChanged, User, signOut, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import { firebaseApp, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { useAuthModal } from './use-auth-modal';
 import { useToast } from './use-toast';
-import { ADMIN_UIDS } from './use-admin';
+import { ADMIN_UIDS } from '@/hooks/use-admin';
 
 interface AuthContextType {
   user: User | null;
@@ -21,16 +21,20 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const auth = getAuth(firebaseApp);
   const { setOpen } = useAuthModal();
   const { toast } = useToast();
+  
+  // Safely get the auth instance only on the client
+  const auth = getAuth(firebaseApp);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       setLoading(false);
       // Close auth modal if user state changes (login/logout)
-      setOpen(false);
+      if(user) {
+        setOpen(false);
+      }
     });
 
     return () => unsubscribe();
@@ -38,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const logout = async () => {
     await signOut(auth);
+    setUser(null);
   };
 
   const signInWithGoogle = async () => {
@@ -50,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           // Check if this is a new user
           if (additionalInfo?.isNewUser) {
-              // Create a new document in Firestore for the new user
               const userDocRef = doc(db, 'users', user.uid);
               await setDoc(userDocRef, {
                   uid: user.uid,
@@ -58,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                   email: user.email,
                   photoURL: user.photoURL,
                   isBlocked: false,
-                  credits: 100, // Assign 100 credits on signup
+                  credits: 100,
                   socialUnlocked: false,
                   isAdmin: ADMIN_UIDS.includes(user.uid),
                   class10Unlocked: false,
@@ -72,9 +76,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           } else {
               toast({ title: "Welcome back!", description: "You've successfully signed in." });
           }
-          setOpen(false); // Close modal on success
+          setOpen(false);
       } catch (error: any) {
-          toast({ variant: 'destructive', title: "Sign-in Failed", description: error.message });
+          console.error("Google Sign-in Error:", error);
+          toast({ 
+              variant: 'destructive', 
+              title: "Sign-in Failed", 
+              description: error.code === 'auth/unauthorized-domain' 
+                ? "This domain is not authorized. Please contact the administrator." 
+                : error.message
+          });
       } finally {
           setLoading(false);
       }
