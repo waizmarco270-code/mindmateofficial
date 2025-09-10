@@ -75,7 +75,7 @@ export default function Header() {
                 )}
 
                 <ThemeToggle />
-                {/* <UserButton afterSignOutUrl="/" /> */}
+                <UserButton afterSignOutUrl="/" />
             </>
             )}
         </SignedIn>

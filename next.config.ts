@@ -25,7 +25,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  serverComponentsExternalPackages: ['@clerk/clerk-sdk-node'],
 };
 
 export default nextConfig;
