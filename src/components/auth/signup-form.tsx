@@ -63,6 +63,8 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
         class10Unlocked: false,
         jeeUnlocked: false,
         class12Unlocked: false,
+        perfectedQuizzes: [],
+        quizAttempts: {},
       });
 
       setEmailSent(true);
@@ -89,7 +91,7 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
               <MailCheck className="w-16 h-16 mx-auto text-green-500 mb-4" />
               <h1 className="text-2xl font-bold tracking-tight">Verify Your Email</h1>
               <p className="text-balance text-muted-foreground mt-2">
-                  We've sent a verification link to <span className="font-semibold text-primary">{email}</span>. Please check your inbox and click the link to finish setting up your account.
+                  We've sent a verification link to <span className="font-semibold text-primary">{email}</span>. Please check your inbox and spam folder, then click the link to finish setting up your account.
               </p>
                <Button onClick={() => setOpen(false)} className="mt-6 w-full">Got It</Button>
           </div>

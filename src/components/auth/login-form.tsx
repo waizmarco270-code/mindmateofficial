@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { LogIn, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, sendEmailVerification } from 'firebase/auth';
 import { firebaseApp } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/hooks/use-auth-modal';
@@ -20,35 +20,59 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showResend, setShowResend] = useState(false);
   const auth = getAuth(firebaseApp);
   const { toast } = useToast();
   const { setOpen } = useAuthModal();
 
+  const handleResendVerification = async () => {
+    setLoading(true);
+    try {
+      if (auth.currentUser) {
+        await sendEmailVerification(auth.currentUser);
+        toast({
+          title: 'Verification Email Sent',
+          description: "A new verification link has been sent to your email address.",
+        });
+      }
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Resend',
+        description: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setShowResend(false); // Reset on new login attempt
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // The onAuthStateChanged listener in useAuth will now handle the redirect
-      // and email verification check. We just need to check here if the user object
-      // exists but is not verified, to show a toast message.
       if (!userCredential.user.emailVerified) {
-        toast({
-            variant: 'destructive',
-            title: 'Email Not Verified',
-            description: "Please check your inbox and verify your email address before signing in.",
-            duration: 7000,
-        });
-        await auth.signOut(); // Log out the user to ensure they can't proceed
+          setShowResend(true); // Show the resend button
+          toast({
+              variant: 'destructive',
+              title: 'Email Not Verified',
+              description: "Please check your inbox (and spam folder) and verify your email address before signing in.",
+              duration: 8000,
+          });
+          // NOTE: We no longer sign out here. We keep the user logged in but unverified
+          // so they can use the resend verification button.
       } else {
         // If login is successful and email is verified, the modal will be closed
-        // by the AuthProvider. We can optionally show a welcome message.
+        // by the AuthProvider's effect. We can optionally show a welcome message.
         toast({
             title: 'Login Successful',
             description: 'Welcome back!',
         });
-        // The modal will be closed by the AuthProvider's effect
+        setOpen(false); // Explicitly close modal on success
       }
 
     } catch (error: any) {
@@ -104,8 +128,13 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
             />
             </div>
             <Button type="submit" className="w-full py-6 text-lg" disabled={loading}>
-            {loading ? <div className="h-6 w-6 animate-spin rounded-full border-4 border-dashed border-primary-foreground"></div> : <><LogIn className="mr-2 h-5 w-5" /> Sign In</>}
+              {loading ? <div className="h-6 w-6 animate-spin rounded-full border-4 border-dashed border-primary-foreground"></div> : <><LogIn className="mr-2 h-5 w-5" /> Sign In</>}
             </Button>
+            {showResend && (
+              <Button type="button" variant="secondary" onClick={handleResendVerification} disabled={loading}>
+                Resend Verification Email
+              </Button>
+            )}
         </div>
         </form>
         <div className="mt-6 text-center text-sm">
