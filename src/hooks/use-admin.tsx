@@ -130,12 +130,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     // EFFECT: Determine if the logged-in user is an admin
     useEffect(() => {
-        if(authUser && currentUserData) {
+        if (isClerkLoaded && authUser && currentUserData) {
             setIsAdmin(currentUserData.isAdmin ?? ADMIN_UIDS.includes(authUser.id));
         } else {
             setIsAdmin(false);
         }
-    }, [authUser, currentUserData]);
+    }, [isClerkLoaded, authUser, currentUserData]);
 
     // EFFECT: Listen for real-time updates to the ALL users collection (for Admin Panel)
     useEffect(() => {
