@@ -15,8 +15,8 @@ import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// This is your unique "Super Admin" UID from Clerk
-const SUPER_ADMIN_UID = 'PASTE_YOUR_CLERK_USER_ID_HERE';
+// This now uses your email to identify you as the Super Admin
+const SUPER_ADMIN_EMAIL = 'waizmonazzum270@gmail.com';
 const CREDIT_UNLOCK_PASSWORD = "waizcredit";
 
 
@@ -48,14 +48,10 @@ function SuperAdminControl() {
   }
 
    const handleRemoveAdmin = async (uid: string) => {
-    if (uid === SUPER_ADMIN_UID) {
-        toast({ variant: 'destructive', title: 'Action Denied', description: 'The Super Admin cannot be removed.' });
-        return;
-    }
     try {
         await removeUserAdmin(uid);
         toast({ title: 'Success', description: 'Admin privileges have been revoked.' });
-    } catch (error: any) {
+    } catch (error: any) => {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   }
@@ -126,7 +122,7 @@ function SuperAdminControl() {
                            
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                     <Button variant="destructive" size="sm" disabled={admin.uid === SUPER_ADMIN_UID}>
+                                     <Button variant="destructive" size="sm" disabled={admin.email === SUPER_ADMIN_EMAIL}>
                                         <ShieldX className="mr-2 h-4 w-4"/> Revoke
                                     </Button>
                                 </AlertDialogTrigger>
@@ -222,7 +218,7 @@ export default function ProfilePage() {
 
   if (!isLoaded || !user) return null;
 
-  const isSuperAdmin = user.id === SUPER_ADMIN_UID;
+  const isSuperAdmin = user.primaryEmailAddress?.emailAddress === SUPER_ADMIN_EMAIL;
   
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
