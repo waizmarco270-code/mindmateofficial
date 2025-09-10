@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, User, signOut, sendEmailVerification } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { firebaseApp, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { useAuthModal } from './use-auth-modal';
@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // A cutoff date. Any account created before this date will bypass email verification.
 // Set this to the day you are implementing this feature.
-const VERIFICATION_CUTOFF_DATE = new Date('2024-05-21T00:00:00Z');
+const VERIFICATION_CUTOFF_DATE = new Date('2024-05-22T00:00:00Z');
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -42,20 +42,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         let accountCreatedAt: Date | null = null;
         if(userDoc.exists()) {
             const data = userDoc.data();
-            if(data.accountCreatedAt instanceof Timestamp) {
+            // Firestore timestamps can be null or undefined before being set
+            if(data.accountCreatedAt && data.accountCreatedAt instanceof Timestamp) {
                 accountCreatedAt = data.accountCreatedAt.toDate();
             }
         }
         
-        const isExistingUser = accountCreatedAt && accountCreatedAt < VERIFICATION_CUTOFF_DATE;
+        // If the account was created before the cutoff, they are a trusted "existing" user.
+        // If accountCreatedAt doesn't exist, we treat them as a new user for safety.
+        const isGrandfatheredUser = accountCreatedAt && accountCreatedAt < VERIFICATION_CUTOFF_DATE;
 
-        if (firebaseUser.emailVerified || isExistingUser) {
+        if (firebaseUser.emailVerified || isGrandfatheredUser) {
           setUser(firebaseUser);
           if (isAuthModalOpen) {
             setAuthModalOpen(false);
           }
         } else {
-            // This case handles a user who is technically logged in to Firebase
+            // This case handles a new user who is technically logged in to Firebase
             // but hasn't verified their email. We treat them as logged out from the app's perspective.
             setUser(null);
         }
