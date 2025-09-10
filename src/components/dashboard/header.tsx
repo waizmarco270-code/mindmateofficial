@@ -1,22 +1,20 @@
 
 'use client';
 
-import { LogIn, LogOut, Medal, Menu, Shield } from 'lucide-react';
+import { Medal, Menu, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { UserNav } from './user-nav';
 import { ThemeToggle } from '../theme-toggle';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAuth } from '@/hooks/use-auth';
 import { useUsers, useAdmin } from '@/hooks/use-admin';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import Link from 'next/link';
-import { useAuthModal } from '@/hooks/use-auth-modal';
-import { cn } from '@/lib/utils';
+import { UserButton, useUser } from '@clerk/nextjs';
 
 
 export default function Header() {
   const { setOpenMobile } = useSidebar();
-  const { user, loading, logout } = useAuth();
+  const { user, isLoaded } = useUser();
   const { currentUserData } = useUsers();
   const { isAdmin } = useAdmin();
   
@@ -35,7 +33,7 @@ export default function Header() {
       </Button>
       <div className="flex-1" />
       <div className="flex items-center gap-2 md:gap-4">
-        {user && !loading && (
+        {isLoaded && user && (
           <>
             <TooltipProvider>
                 <Tooltip>
@@ -70,11 +68,7 @@ export default function Header() {
             )}
 
             <ThemeToggle />
-            <UserNav />
-            <Button variant="ghost" size="icon" onClick={logout}>
-                <LogOut className="h-5 w-5" />
-                <span className="sr-only">Log out</span>
-            </Button>
+            <UserButton afterSignOutUrl="/" />
           </>
         )}
       </div>
