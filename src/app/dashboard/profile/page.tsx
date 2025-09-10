@@ -15,7 +15,7 @@ import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const SUPER_ADMIN_UID = 'user_32WgV1OikpqTXO9pFApoPRLLarF';
+const SUPER_ADMIN_EMAIL = 'waizmonazzum270@gmail.com';
 const CREDIT_UNLOCK_PASSWORD = "waizcredit";
 
 
@@ -121,7 +121,7 @@ function SuperAdminControl() {
                            
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                     <Button variant="destructive" size="sm" disabled={admin.uid === SUPER_ADMIN_UID}>
+                                     <Button variant="destructive" size="sm" disabled={admin.email === SUPER_ADMIN_EMAIL}>
                                         <ShieldX className="mr-2 h-4 w-4"/> Revoke
                                     </Button>
                                 </AlertDialogTrigger>
@@ -217,7 +217,7 @@ export default function ProfilePage() {
 
   if (!isLoaded || !user) return null;
 
-  const isSuperAdmin = user.id === SUPER_ADMIN_UID;
+  const isSuperAdmin = user.primaryEmailAddress?.emailAddress === SUPER_ADMIN_EMAIL;
   
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
