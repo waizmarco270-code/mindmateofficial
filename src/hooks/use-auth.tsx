@@ -2,13 +2,12 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, User, signOut, GoogleAuthProvider, signInWithRedirect, getRedirectResult, getAdditionalUserInfo } from 'firebase/auth';
-import { firebaseApp } from '@/lib/firebase';
+import { getAuth, onAuthStateChanged, User, signOut, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { firebaseApp, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuthModal } from './use-auth-modal';
 import { useToast } from './use-toast';
 import { ADMIN_UIDS } from '@/hooks/use-admin';
-import { db } from '@/lib/firebase';
 
 
 interface AuthContextType {
@@ -48,7 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               const result = await getRedirectResult(auth);
               if (result) {
                   const user = result.user;
-                  const additionalInfo = getAdditionalUserInfo(result);
 
                   // Check if the user document already exists
                   const userDocRef = doc(db, 'users', user.uid);
