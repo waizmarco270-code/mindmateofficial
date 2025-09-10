@@ -23,36 +23,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { setOpen: setAuthModalOpen } = useAuthModal();
   const { toast } = useToast();
   
   const auth = getAuth(firebaseApp);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = () => {
     const provider = new GoogleAuthProvider();
-    try {
-        await signInWithRedirect(auth, provider);
-    } catch(error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Google Sign-In Failed',
-          description: error.message,
-        });
-    }
+    signInWithRedirect(auth, provider);
   };
 
-  useEffect(() => {
-    const handleAuth = async () => {
-      try {
-        // First, check if there's a redirect result.
-        const result = await getRedirectResult(auth);
-        if (result) {
-          // This is a fresh login via redirect.
-          const firebaseUser = result.user;
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-          const userDoc = await getDoc(userDocRef);
+  const handleUser = async (firebaseUser: User | null) => {
+    if (firebaseUser) {
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
 
-          if (!userDoc.exists()) {
+        if (!userDoc.exists()) {
             // New user, create their document.
             const { displayName, email, photoURL, uid } = firebaseUser;
             await setDoc(userDocRef, {
@@ -74,45 +59,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               title: 'Welcome to MindMate!',
               description: 'Your account has been created.',
             });
-          } else {
-             toast({
-              title: 'Signed in successfully!',
-              description: 'Welcome back.',
-          });
-          }
-           // The onAuthStateChanged listener below will handle setting the user state.
         }
+        setUser(firebaseUser);
+    } else {
+        setUser(null);
+    }
+    setLoading(false);
+  }
 
-      } catch (error: any) {
-          if (error.code !== 'auth/no-redirect-result') {
-              console.error("Google sign-in error after redirect:", error);
-              toast({
-                  variant: 'destructive',
-                  title: 'Google Sign-In Failed',
-                  description: error.message,
-              });
-          }
-      }
-
-      // Set up the permanent listener for auth state changes.
-      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-          if (firebaseUser) {
-              // User is signed in.
-              setUser(firebaseUser);
-          } else {
-              // User is signed out.
-              setUser(null);
-          }
-          // In all cases, authentication check is complete.
-          setLoading(false);
-      });
-
-      return unsubscribe;
-    };
-    
-    handleAuth();
-
-  }, [auth, toast]);
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, handleUser);
+    return () => unsubscribe();
+  }, [auth]);
   
   const logout = async () => {
     await signOut(auth);
