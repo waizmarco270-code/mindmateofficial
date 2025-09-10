@@ -2,9 +2,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, signOut, sendEmailVerification, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
 import { firebaseApp, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthModal } from './use-auth-modal';
 import { useToast } from './use-toast';
 import { ADMIN_UIDS } from '@/hooks/use-admin';
@@ -14,6 +14,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => void;
+  signInWithGoogle: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -27,12 +28,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   
   const auth = getAuth(firebaseApp);
 
+  const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithRedirect(auth, provider);
+  };
+
   useEffect(() => {
+     const checkRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+           toast({
+            title: 'Signed in successfully!',
+            description: 'Welcome to MindMate.',
+          });
+          // The onAuthStateChanged listener below will handle setting user data
+        }
+      } catch (error: any) {
+        console.error("Google sign-in error:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Google Sign-In Failed',
+          description: error.message,
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkRedirect();
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setLoading(true);
       if (firebaseUser) {
-        
-        if (firebaseUser.emailVerified) {
           const userDocRef = doc(db, 'users', firebaseUser.uid);
           const userDoc = await getDoc(userDocRef);
            if (!userDoc.exists()) {
@@ -57,10 +84,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (isAuthModalOpen) {
             setAuthModalOpen(false);
           }
-        } else {
-            setUser(null);
-            // Don't automatically log them out, the login form will handle the prompt to verify.
-        }
       } else {
         setUser(null);
       }
@@ -76,7 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, logout }}>
+    <AuthContext.Provider value={{ user, loading, logout, signInWithGoogle }}>
       {children}
     </AuthContext.Provider>
   );
