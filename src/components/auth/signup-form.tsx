@@ -55,6 +55,7 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
         uid: newUser.uid,
         displayName: fullName,
         email: email,
+        photoURL: `https://avatar.vercel.sh/${newUser.uid}.png`, // Default avatar
         isBlocked: false,
         credits: 100,
         socialUnlocked: false,
@@ -70,7 +71,9 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
        toast({
         variant: 'destructive',
         title: 'Signup Failed',
-        description: error.message,
+        description: error.code === 'auth/email-already-in-use' 
+            ? 'This email is already registered. Please sign in instead.'
+            : error.message,
       });
     } finally {
       setLoading(false);

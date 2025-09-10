@@ -30,20 +30,25 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
+      // The onAuthStateChanged listener in useAuth will now handle the redirect
+      // and email verification check. We just need to check here if the user object
+      // exists but is not verified, to show a toast message.
       if (!userCredential.user.emailVerified) {
         toast({
             variant: 'destructive',
             title: 'Email Not Verified',
             description: "Please check your inbox and verify your email address before signing in.",
-            duration: 5000,
+            duration: 7000,
         });
-        await auth.signOut(); // Log out the user if email is not verified
+        await auth.signOut(); // Log out the user to ensure they can't proceed
       } else {
+        // If login is successful and email is verified, the modal will be closed
+        // by the AuthProvider. We can optionally show a welcome message.
         toast({
             title: 'Login Successful',
             description: 'Welcome back!',
         });
-        setOpen(false); // Close the modal on success
+        // The modal will be closed by the AuthProvider's effect
       }
 
     } catch (error: any) {
