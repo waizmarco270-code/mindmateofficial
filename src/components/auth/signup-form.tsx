@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { UserPlus, MailCheck } from 'lucide-react';
 import { useState } from 'react';
 import { getAuth, createUserWithEmailAndPassword, updateProfile, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc } from 'firebase/firestore';
 import { firebaseApp, db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthModal } from '@/hooks/use-auth-modal';
@@ -27,7 +27,6 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
   const [emailSent, setEmailSent] = useState(false);
   const auth = getAuth(firebaseApp);
   const { toast } = useToast();
-  const { setOpen } = useAuthModal();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();

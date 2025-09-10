@@ -2,9 +2,9 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, User, signOut, sendEmailVerification } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { firebaseApp, db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuthModal } from './use-auth-modal';
 import { useToast } from './use-toast';
 import { ADMIN_UIDS } from '@/hooks/use-admin';
@@ -58,17 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setAuthModalOpen(false);
           }
         } else {
-            // This case handles a new user who has signed up but has not yet clicked
-            // the verification link. We treat them as logged out from the app's perspective
-            // and their login attempt will be blocked by the login form, prompting them to verify.
             setUser(null);
-            // We can also trigger a toast here if we want to be more explicit
-             toast({
-                variant: 'destructive',
-                title: 'Verification Required',
-                description: "Please check your email and click the verification link to log in.",
-            });
-            await signOut(auth);
+            // Don't automatically log them out, the login form will handle the prompt to verify.
         }
       } else {
         setUser(null);

@@ -63,15 +63,17 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      // The useAuth hook will handle redirecting a verified user.
-      // If we get here, the password was correct. The hook will now decide if they are verified.
-      // We don't need to check for verification here anymore.
+      if (!userCredential.user.emailVerified) {
+          setShowResend(true);
+          // Don't log the user out here, so they can click "Resend"
+          return;
+      }
       
       toast({
           title: 'Login Successful',
           description: 'Welcome back!',
       });
-      setOpen(false); // Explicitly close modal on success
+      setOpen(false);
 
     } catch (error: any) {
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -80,8 +82,6 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
               title: 'Login Failed',
               description: 'Incorrect email or password. Please try again.',
           });
-      } else if (error.code === 'auth/email-not-verified') {
-          setShowResend(true);
       } else {
         toast({
           variant: 'destructive',
@@ -111,8 +111,8 @@ export function LoginForm({ onToggleView }: LoginFormProps) {
                         <Info className="h-4 w-4"/>
                         <AlertTitle className="font-bold">Already Registered? Please Verify Your Email</AlertTitle>
                         <AlertDescription className="text-xs space-y-2 mt-2">
-                           <p>Please verify your email by clicking the "Resend Verification Email" button. After that, open your email inbox and go to the spam folder to find and click the verification link.</p>
-                           <p><span className="font-bold">Note:</span> If the verification link is not in your inbox, it will be in your spam folder.</p>
+                           <p>Please verify your email by clicking the "Resend Verification Email" button. After that, open your registered email and go to the spam folder to find and click the verification link.</p>
+                           <p><span className="font-bold">Note:</span> If the verification link is not in your inbox, it will be in your spam folder 100%.</p>
                            <p><span className="font-bold">Note:</span> This change was made to prevent fake users from accessing the application.</p>
                            <Button onClick={handleResendVerification} className="mt-2 w-full" variant="secondary" size="sm" disabled={loading}>
                                 {loading ? 'Sending...' : 'Resend Verification Email'}
