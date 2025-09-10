@@ -62,6 +62,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // the verification link. We treat them as logged out from the app's perspective
             // and their login attempt will be blocked by the login form, prompting them to verify.
             setUser(null);
+            // We can also trigger a toast here if we want to be more explicit
+             toast({
+                variant: 'destructive',
+                title: 'Verification Required',
+                description: "Please check your email and click the verification link to log in.",
+            });
+            await signOut(auth);
         }
       } else {
         setUser(null);
@@ -70,7 +77,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth, isAuthModalOpen, setAuthModalOpen]);
+  }, [auth, isAuthModalOpen, setAuthModalOpen, toast]);
   
   const logout = async () => {
     await signOut(auth);
