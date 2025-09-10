@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -115,7 +114,7 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 // ============================================================================
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
-    const { user: authUser, isLoaded } = useUser();
+    const { user: authUser, isLoaded: isClerkLoaded } = useUser();
 
     // STATE MANAGEMENT
     const [isAdmin, setIsAdmin] = useState(false);
@@ -151,11 +150,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     // EFFECT: Listen for real-time updates for the CURRENTLY LOGGED-IN user's data (for credits, etc.)
     useEffect(() => {
-        if (!isLoaded) {
+        // Wait until Clerk has finished loading its user state
+        if (!isClerkLoaded) {
             setLoading(true);
             return;
         }
 
+        // If no user is logged in after Clerk loads, reset state and finish loading
         if (!authUser) {
             setCurrentUserData(null);
             setLoading(false);
@@ -168,6 +169,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 setCurrentUserData({ id: doc.id, ...doc.data() } as User);
             } else {
                 // If user document doesn't exist, create it.
+                // This happens on first login for a new user.
                 const newUser: User = {
                     id: authUser.id,
                     uid: authUser.id,
@@ -178,9 +180,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     credits: 100, // Starting credits
                     isAdmin: ADMIN_UIDS.includes(authUser.id) // check if user is an admin on creation
                 };
-                setDoc(userDocRef, newUser);
-                setCurrentUserData(newUser);
+                setDoc(userDocRef, newUser).then(() => {
+                  setCurrentUserData(newUser);
+                });
             }
+            // We set loading to false here, ensuring we have user data (or have created it)
             setLoading(false);
         }, (error) => {
             console.error("Error fetching user data:", error);
@@ -188,7 +192,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
         return () => unsubscribe();
         
-    }, [authUser, isLoaded]);
+    }, [authUser, isClerkLoaded]);
     
     // EFFECT: Listen for global data (announcements, resources, polls)
     useEffect(() => {
@@ -446,5 +450,3 @@ export const usePolls = () => {
     if(!context) throw new Error('usePolls must be used within an AppDataProvider');
     return context;
 }
-
-    

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
@@ -15,7 +14,6 @@ import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// This now uses your email to identify you as the Super Admin
 const SUPER_ADMIN_UID = 'user_2jF4xG0A2e3r4t5Y6z7a8b9c0d1e2f3';
 const CREDIT_UNLOCK_PASSWORD = "waizcredit";
 
@@ -347,5 +345,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
