@@ -10,202 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { KeyRound, Trash2, Camera, Crown, ShieldPlus, ShieldX, ShieldCheck, Gift, RefreshCcw, Unlock } from 'lucide-react';
-import { useAdmin, useUsers } from '@/hooks/use-admin';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
-const SUPER_ADMIN_EMAIL = 'waizmonazzum270@gmail.com';
-const CREDIT_UNLOCK_PASSWORD = "waizcredit";
-
-
-function SuperAdminControl() {
-  const { users, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits } = useAdmin();
-  const { toast } = useToast();
-  const [targetUid, setTargetUid] = useState('');
-  
-  // State for credit control
-  const [isCreditControlUnlocked, setIsCreditControlUnlocked] = useState(false);
-  const [creditPassword, setCreditPassword] = useState('');
-  const [selectedCreditUser, setSelectedCreditUser] = useState('');
-  const [giftAmount, setGiftAmount] = useState(10);
-
-  const admins = users.filter(u => u.isAdmin);
-
-  const handleMakeAdmin = async () => {
-    if (!targetUid.trim()) {
-        toast({ variant: 'destructive', title: 'UID Required', description: 'Please enter a user UID.' });
-        return;
-    }
-    try {
-        await makeUserAdmin(targetUid);
-        toast({ title: 'Success', description: 'User has been granted admin privileges.' });
-        setTargetUid('');
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
-    }
-  }
-
-   const handleRemoveAdmin = async (uid: string) => {
-    try {
-        await removeUserAdmin(uid);
-        toast({ title: 'Success', description: 'Admin privileges have been revoked.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
-    }
-  }
-  
-   const handleCreditUnlock = () => {
-    if(creditPassword === CREDIT_UNLOCK_PASSWORD) {
-        setIsCreditControlUnlocked(true);
-        toast({ title: "Access Granted", description: "Credit control panel unlocked."});
-    } else {
-        toast({ variant: 'destructive', title: "Access Denied", description: "The password you entered is incorrect."});
-    }
-    setCreditPassword('');
-  }
-
-  const handleGiftCredits = async () => {
-    if(!selectedCreditUser) {
-        toast({ variant: 'destructive', title: "No User Selected", description: "Please select a user to gift credits to."});
-        return;
-    }
-    await giftCreditsToUser(selectedCreditUser, giftAmount);
-    toast({ title: "Credits Gifted!", description: `Successfully sent ${giftAmount} credits.`});
-  }
-  
-  const handleResetCredits = async () => {
-    if(!selectedCreditUser) {
-        toast({ variant: 'destructive', title: "No User Selected", description: "Please select a user to reset credits for."});
-        return;
-    }
-    await resetUserCredits(selectedCreditUser);
-    toast({ title: "Credits Reset!", description: `User's credits have been reset to 100.`});
-  }
-
-
-  return (
-    <Card className="lg:col-span-3 border-amber-500/50 bg-amber-500/5">
-        <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-amber-600"><ShieldCheck className="h-5 w-5"/> Super Admin Control</CardTitle>
-            <CardDescription>Manage application administrators and user credits. This panel is only visible to you.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            <div className="space-y-4">
-                <h4 className="font-semibold">Grant Admin Rights</h4>
-                <div className="flex items-center gap-2">
-                    <Input 
-                        placeholder="Enter user UID to make admin"
-                        value={targetUid}
-                        onChange={(e) => setTargetUid(e.target.value)}
-                    />
-                    <Button onClick={handleMakeAdmin}><ShieldPlus className="mr-2 h-4 w-4"/> Grant Admin</Button>
-                </div>
-            </div>
-             <Separator/>
-            <div className="space-y-4">
-                 <h4 className="font-semibold">Current Administrators</h4>
-                 <div className="space-y-2 rounded-lg border p-2">
-                    {admins.map(admin => (
-                        <div key={admin.uid} className="flex items-center justify-between p-2 rounded-md hover:bg-background/50">
-                           <div className="flex items-center gap-3">
-                             <Avatar className="h-8 w-8">
-                                <AvatarImage src={admin.photoURL ?? undefined} />
-                                <AvatarFallback>{admin.displayName.charAt(0)}</AvatarFallback>
-                             </Avatar>
-                             <div>
-                                <p className="font-medium">{admin.displayName}</p>
-                                <p className="text-xs text-muted-foreground font-mono">{admin.uid}</p>
-                             </div>
-                           </div>
-                           
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                     <Button variant="destructive" size="sm" disabled={admin.email === SUPER_ADMIN_EMAIL}>
-                                        <ShieldX className="mr-2 h-4 w-4"/> Revoke
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will revoke all admin privileges for <span className="font-bold">{admin.displayName}</span>. They will lose access to the admin panel.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleRemoveAdmin(admin.uid)}>
-                                            Yes, Revoke
-                                        </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    ))}
-                 </div>
-            </div>
-            <Separator />
-            <div className="space-y-4">
-                <h4 className="font-semibold">Credit Control</h4>
-                 {!isCreditControlUnlocked ? (
-                    <div className="flex items-center gap-2 max-w-sm mx-auto">
-                    <Input 
-                        type="password"
-                        placeholder="Enter credit access password"
-                        value={creditPassword}
-                        onChange={e => setCreditPassword(e.target.value)}
-                    />
-                    <Button onClick={handleCreditUnlock}><Unlock className="mr-2 h-4 w-4" /> Unlock</Button>
-                    </div>
-                ) : (
-                    <div className="grid md:grid-cols-2 gap-8">
-                        {/* Gift Credits */}
-                        <div className="space-y-4 p-4 border rounded-lg">
-                            <h3 className="font-semibold flex items-center gap-2"><Gift className="h-5 w-5 text-green-500"/> Gift Credits</h3>
-                            <div className="space-y-2">
-                                <Label>Select User</Label>
-                                <Select onValueChange={setSelectedCreditUser} value={selectedCreditUser}>
-                                    <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
-                                    <SelectContent>{users.map(u => <SelectItem key={u.uid} value={u.uid}>{u.displayName} ({u.email})</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Amount</Label>
-                                <Input type="number" value={giftAmount} onChange={e => setGiftAmount(Number(e.target.value))} />
-                            </div>
-                            <Button onClick={handleGiftCredits} className="bg-green-600 hover:bg-green-700">Gift Credits</Button>
-                        </div>
-                        {/* Reset Credits */}
-                        <div className="space-y-4 p-4 border rounded-lg">
-                            <h3 className="font-semibold flex items-center gap-2"><RefreshCcw className="h-5 w-5 text-destructive"/> Reset Credits</h3>
-                            <p className="text-sm text-muted-foreground">This will reset the selected user's credit balance to the default 100.</p>
-                            <div className="space-y-2">
-                                <Label>Select User</Label>
-                                <Select onValueChange={setSelectedCreditUser} value={selectedCreditUser}>
-                                    <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
-                                    <SelectContent>{users.map(u => <SelectItem key={u.uid} value={u.uid}>{u.displayName} ({u.email})</SelectItem>)}</SelectContent>
-                                </Select>
-                            </div>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive">Reset Credits to 100</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently set the selected user's credits to 100. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleResetCredits}>Yes, Reset</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    </div>
-                )}
-            </div>
-        </CardContent>
-    </Card>
-  )
-}
+import { KeyRound, Trash2, Camera, Crown } from 'lucide-react';
+import { useAdmin } from '@/hooks/use-admin';
 
 export default function ProfilePage() {
   const { user, isLoaded } = useUser();
@@ -217,8 +23,6 @@ export default function ProfilePage() {
 
   if (!isLoaded || !user) return null;
 
-  const isSuperAdmin = user.primaryEmailAddress?.emailAddress === SUPER_ADMIN_EMAIL;
-  
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -340,9 +144,9 @@ export default function ProfilePage() {
           </div>
         </form>
 
-        {isSuperAdmin && <SuperAdminControl />}
-
       </div>
     </div>
   );
 }
+
+    
