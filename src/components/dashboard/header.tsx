@@ -19,10 +19,8 @@ export default function Header() {
   const { user, loading, logout } = useAuth();
   const { currentUserData } = useUsers();
   const { isAdmin } = useAdmin();
-  const { setOpen: openAuthModal } = useAuthModal();
   
-  const isGuest = !user && !loading;
-  const credits = isGuest ? 0 : currentUserData?.credits ?? 0;
+  const credits = currentUserData?.credits ?? 0;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -37,21 +35,7 @@ export default function Header() {
       </Button>
       <div className="flex-1" />
       <div className="flex items-center gap-2 md:gap-4">
-        {isGuest ? (
-           <Button 
-                onClick={() => openAuthModal(true)} 
-                className={cn(
-                    "font-bold group relative inline-flex h-10 items-center justify-center overflow-hidden rounded-md px-6",
-                    "bg-primary text-primary-foreground transition-all duration-300",
-                    "hover:bg-primary/90 hover:ring-2 hover:ring-primary hover:ring-offset-2 hover:ring-offset-background"
-                )}
-           >
-                <div className="absolute inset-0 flex h-full w-full justify-center [transform:skew(-12deg)_translateX(-100%)] group-hover:[transform:skew(-12deg)_translateX(100%)]">
-                    <div className="relative h-full w-8 bg-white/20"></div>
-                </div>
-                <span className="relative flex items-center gap-2"> <LogIn className="h-4 w-4" /> Login / Sign Up</span>
-           </Button>
-        ) : (
+        {user && !loading && (
           <>
             <TooltipProvider>
                 <Tooltip>

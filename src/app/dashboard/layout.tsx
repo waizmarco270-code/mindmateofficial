@@ -13,47 +13,8 @@ import { Logo } from '@/components/ui/logo';
 import { cn } from '@/lib/utils';
 import { FOCUS_PENALTY_SESSION_KEY } from './tracker/page';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthModal } from '@/hooks/use-auth-modal';
-import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogContent, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { LogIn, Sparkles } from 'lucide-react';
-
-
-function GuestWelcomeDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (open: boolean) => void }) {
-  const { setOpen: openAuthModal } = useAuthModal();
-
-  const handleLoginClick = () => {
-    onOpenChange(false);
-    openAuthModal(true);
-  }
-
-  return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <div className="flex justify-center mb-4">
-            <div className="p-4 rounded-full bg-primary/10">
-              <Sparkles className="h-10 w-10 text-primary" />
-            </div>
-          </div>
-          <DialogTitle className="text-center text-2xl font-bold">Welcome to MindMate!</DialogTitle>
-          <DialogDescription className="text-center">
-            You're currently exploring as a guest. Sign in to unlock your personal dashboard, track your progress, and access all features.
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="sm:justify-center pt-4 gap-2 sm:gap-4">
-          <DialogClose asChild>
-            <Button variant="outline">Continue as Guest</Button>
-          </DialogClose>
-          <Button onClick={handleLoginClick}>
-            <LogIn className="mr-2 h-4 w-4" /> Login / Sign Up
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  )
-}
-
+import { LoginForm } from '@/components/auth/login-form';
+import { SignupForm } from '@/components/auth/signup-form';
 
 export default function DashboardLayout({
   children,
@@ -65,27 +26,9 @@ export default function DashboardLayout({
   const { user, loading } = useAuth();
   const { toast } = useToast();
   const pathname = usePathname();
-  const isGuest = !user && !loading;
 
-  const [isGuestDialogOpen, setIsGuestDialogOpen] = React.useState(false);
-
-  React.useEffect(() => {
-    // Show the guest welcome dialog only once per session
-    if (isGuest && !sessionStorage.getItem('guestWelcomeDismissed')) {
-      // Small delay to allow the page to render first
-      const timer = setTimeout(() => setIsGuestDialogOpen(true), 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [isGuest]);
-
-
-  const handleGuestDialogChange = (open: boolean) => {
-    setIsGuestDialogOpen(open);
-    if (!open) {
-      sessionStorage.setItem('guestWelcomeDismissed', 'true');
-    }
-  }
-
+  const [isLoginView, setIsLoginView] = React.useState(true);
+  const toggleView = () => setIsLoginView(!isLoginView);
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -127,9 +70,22 @@ export default function DashboardLayout({
     );
   }
 
+  if (!user) {
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-background p-4">
+            <div className="w-full max-w-md">
+                 {isLoginView ? (
+                    <LoginForm onToggleView={toggleView} />
+                ) : (
+                    <SignupForm onToggleView={toggleView} />
+                )}
+            </div>
+        </div>
+    )
+  }
+
   return (
     <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-      <GuestWelcomeDialog isOpen={isGuestDialogOpen} onOpenChange={handleGuestDialogChange} />
       <Sidebar className="hidden md:flex md:flex-shrink-0">
         <SidebarContent />
       </Sidebar>

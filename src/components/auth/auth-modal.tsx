@@ -13,12 +13,13 @@ export function AuthModal() {
 
   const toggleView = () => setIsLoginView(!isLoginView);
 
-  // When the modal is closed, reset it to the login view
+  // This modal is now only for cases where a guest user manually clicks a "login" button
+  // from inside the app, not for the initial auth guard.
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setTimeout(() => {
         setIsLoginView(true);
-      }, 200); // Delay to allow animation to finish
+      }, 200);
     }
     setOpen(open);
   };
