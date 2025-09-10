@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, signOut, sendEmailVerification } from 'firebase/auth';
 import { firebaseApp, db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { useAuthModal } from './use-auth-modal';
@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // A cutoff date. Any account created before this date will bypass email verification.
 // Set this to the day you are implementing this feature.
-const VERIFICATION_CUTOFF_DATE = new Date('2024-05-20T00:00:00Z');
+const VERIFICATION_CUTOFF_DATE = new Date('2024-05-21T00:00:00Z');
 
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
@@ -46,24 +47,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             }
         }
         
-        // Grandfather existing users: if account was created before the cutoff, skip verification check.
         const isExistingUser = accountCreatedAt && accountCreatedAt < VERIFICATION_CUTOFF_DATE;
 
         if (firebaseUser.emailVerified || isExistingUser) {
           setUser(firebaseUser);
           if (isAuthModalOpen) {
-            setAuthModalOpen(false); // Close modal on successful, verified login
+            setAuthModalOpen(false);
           }
         } else {
-            // This is a new user who has not verified their email.
-            // We log them out to force them to verify before accessing the app.
-            toast({
-                variant: 'destructive',
-                title: 'Verification Required',
-                description: 'Please check your email and click the verification link to continue.',
-                duration: 8000,
-            });
-            await signOut(auth);
+            // This case handles a user who is technically logged in to Firebase
+            // but hasn't verified their email. We treat them as logged out from the app's perspective.
             setUser(null);
         }
       } else {
@@ -73,7 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, [auth, isAuthModalOpen, setAuthModalOpen, toast]);
+  }, [auth, isAuthModalOpen, setAuthModalOpen]);
   
   const signInWithGoogle = async () => {
       // This function can be kept for future use if needed, but is not currently used.
@@ -82,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await signOut(auth);
     setUser(null);
+    // No need for a toast here, it's a normal action
   };
 
   return (
