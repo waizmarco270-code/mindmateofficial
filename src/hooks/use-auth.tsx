@@ -60,6 +60,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
+        if (!firebaseUser.emailVerified) {
+          setUser(null);
+          setLoading(false);
+          // This case is for new email/password signups who haven't verified.
+          // It prevents them from being logged in.
+          // Google sign-in users are always verified.
+          return;
+        }
+
           const userDocRef = doc(db, 'users', firebaseUser.uid);
           const userDoc = await getDoc(userDocRef);
            if (!userDoc.exists()) {
