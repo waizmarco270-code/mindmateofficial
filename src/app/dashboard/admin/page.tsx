@@ -247,7 +247,7 @@ export default function AdminPanelPage() {
     );
   }
 
-  const renderResourceTable = (title: string, description: string, data: Resource[], deleteFn: (id: string) => Promise<void>) => (
+  const renderResourceTable = (title: string, description: string, data: Resource[], deleteFn: (id: string) => Promise<void>, type: 'general' | 'premium' | 'jee' | 'class12') => (
     <Card>
         <CardHeader>
             <CardTitle>{title}</CardTitle>
@@ -384,7 +384,7 @@ export default function AdminPanelPage() {
                           <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Add Resource</Button>
                         </form></CardContent>
                     </Card>
-                    {renderResourceTable("General Resources", "Manage free resources available to all students.", resources, deleteResource)}
+                    {renderResourceTable("General Resources", "Manage free resources available to all students.", resources, deleteResource, 'general')}
                   </div>
                    <div className="grid gap-8 lg:grid-cols-2">
                      <Card>
@@ -396,7 +396,7 @@ export default function AdminPanelPage() {
                             <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Add Premium Resource</Button>
                           </form></CardContent>
                       </Card>
-                      {renderResourceTable("Class 10 Resources", "Manage locked 'Class 10' resources.", premiumResources, deletePremiumResource)}
+                      {renderResourceTable("Class 10 Resources", "Manage locked 'Class 10' resources.", premiumResources, deletePremiumResource, 'premium')}
                    </div>
                     <div className="grid gap-8 lg:grid-cols-2">
                       <Card>
@@ -408,7 +408,7 @@ export default function AdminPanelPage() {
                             <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Add JEE Resource</Button>
                           </form></CardContent>
                       </Card>
-                      {renderResourceTable("JEE Resources", "Manage locked 'JEE' resources.", jeeResources, deleteJeeResource)}
+                      {renderResourceTable("JEE Resources", "Manage locked 'JEE' resources.", jeeResources, deleteJeeResource, 'jee')}
                    </div>
                    <div className="grid gap-8 lg:grid-cols-2">
                        <Card>
@@ -420,7 +420,7 @@ export default function AdminPanelPage() {
                             <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Add Class 12 Resource</Button>
                           </form></CardContent>
                       </Card>
-                      {renderResourceTable("Class 12 Resources", "Manage locked 'Class 12' resources.", class12Resources, deleteClass12Resource)}
+                      {renderResourceTable("Class 12 Resources", "Manage locked 'Class 12' resources.", class12Resources, deleteClass12Resource, 'class12')}
                    </div>
               </AccordionContent>
             </Card>
@@ -473,10 +473,11 @@ export default function AdminPanelPage() {
         <DialogContent>
             <DialogHeader><DialogTitle>Edit Resource</DialogTitle></DialogHeader>
             <form onSubmit={(e) => {
+                if (!editingResource) return;
                 const resourceType = 
-                    resources.some(r => r.id === editingResource?.id) ? 'general' :
-                    premiumResources.some(r => r.id === editingResource?.id) ? 'premium' :
-                    jeeResources.some(r => r.id === editingResource?.id) ? 'jee' :
+                    resources.some(r => r.id === editingResource.id) ? 'general' :
+                    premiumResources.some(r => r.id === editingResource.id) ? 'premium' :
+                    jeeResources.some(r => r.id === editingResource.id) ? 'jee' :
                     'class12';
                 handleResourceFormSubmit(e, resourceType);
             }} className="space-y-4">
@@ -490,5 +491,3 @@ export default function AdminPanelPage() {
     </div>
   );
 }
-
-    

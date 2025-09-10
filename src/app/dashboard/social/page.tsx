@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useUsers } from '@/hooks/use-admin';
 import { useFriends } from '@/hooks/use-friends';
-import { useUser, useAuth } from '@clerk/nextjs';
+import { useUser, SignInButton } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
-import { Users, Sparkles, MessageSquare, ArrowLeft } from 'lucide-react';
+import { Users, Sparkles, MessageSquare, ArrowLeft, ShieldAlert } from 'lucide-react';
 import { UserCard } from '@/components/social/user-card';
 import { ChatBox } from '@/components/social/chat-box';
 import { type User } from '@/hooks/use-admin';
@@ -48,6 +48,23 @@ function SocialPageContent() {
             });
         }
     };
+    
+    if (!user) {
+       return (
+            <div className="flex flex-col items-center justify-center h-full text-center p-8 rounded-xl bg-muted/40 border-2 border-dashed">
+                <div className="p-5 rounded-full bg-primary/10 mb-4">
+                    <ShieldAlert className="h-12 w-12 text-primary" />
+                </div>
+                <h1 className="text-4xl font-bold tracking-tight">Connect & Collaborate</h1>
+                <p className="text-muted-foreground mt-2 max-w-lg">Please sign in or create an account to unlock the Social Hub.</p>
+                <SignInButton>
+                    <Button size="lg" className="mt-6 text-lg py-7">
+                        Sign In to Continue
+                    </Button>
+                </SignInButton>
+            </div>
+        );
+    }
     
     if (!isSocialUnlocked) {
         return (
@@ -163,5 +180,3 @@ export default function SocialPage() {
         <SocialPageContent />
     )
 }
-
-    

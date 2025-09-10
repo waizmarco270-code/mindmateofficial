@@ -1,8 +1,8 @@
 
 import { cn } from '@/lib/utils';
-import { User, Sparkles } from 'lucide-react';
+import { User as ClerkUserIcon, Sparkles } from 'lucide-react';
 import { AiAvatar } from './ai-avatar';
-import type { User as ClerkUser } from '@clerk/nextjs/server';
+import { useUser } from '@clerk/nextjs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
 
@@ -12,7 +12,6 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   isError?: boolean;
-  user?: ClerkUser | null;
   isHidden?: boolean;
 }
 
@@ -23,6 +22,7 @@ interface ChatMessageProps {
 }
 
 export function ChatMessage({ message, isThinking, onSimplify }: ChatMessageProps) {
+  const { user } = useUser();
   const isUser = message.role === 'user';
 
   return (
@@ -56,14 +56,12 @@ export function ChatMessage({ message, isThinking, onSimplify }: ChatMessageProp
             </div>
         )}
       </div>
-      {isUser && message.user && (
+      {isUser && user && (
         <Avatar className="h-10 w-10 border-2 border-primary/20">
-            <AvatarImage src={message.user.imageUrl ?? undefined} alt={message.user.fullName ?? 'User'} />
-            <AvatarFallback>{message.user.fullName?.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={user.imageUrl ?? undefined} alt={user.fullName ?? 'User'} />
+            <AvatarFallback>{user.fullName?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
     </div>
   );
 }
-
-    

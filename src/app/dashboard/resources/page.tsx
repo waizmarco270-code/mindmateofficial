@@ -8,18 +8,13 @@ import { PremiumResources } from '@/components/resources/premium-resources';
 import { Separator } from '@/components/ui/separator';
 import { JeeResources } from '@/components/resources/jee-resources';
 import { Class12Resources } from '@/components/resources/class12-resources';
-import { useUser, useAuth } from '@clerk/nextjs';
+import { useAuth, SignInButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 
 export default function ResourcesPage() {
     const { resources, loading } = useResources();
-    const { user } = useUser();
     const { isSignedIn } = useAuth();
     const router = useRouter();
-
-    const handleSignIn = () => {
-        router.push('/sign-in');
-    }
 
     if (!isSignedIn && !loading) {
         return (
@@ -29,9 +24,11 @@ export default function ResourcesPage() {
                 </div>
                 <h1 className="text-4xl font-bold tracking-tight">Access Restricted</h1>
                 <p className="text-muted-foreground mt-2 max-w-lg">Please sign in or create an account to view and download study resources.</p>
-                <Button size="lg" className="mt-6 text-lg py-7" onClick={handleSignIn}>
-                    Sign In to Continue
-                </Button>
+                <SignInButton>
+                    <Button size="lg" className="mt-6 text-lg py-7">
+                        Sign In to Continue
+                    </Button>
+                </SignInButton>
             </div>
         );
     }
@@ -110,5 +107,3 @@ export default function ResourcesPage() {
         </div>
     );
 }
-
-    

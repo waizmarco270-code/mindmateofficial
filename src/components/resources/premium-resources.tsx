@@ -12,7 +12,7 @@ import { useResources, useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
 import { useUser } from '@clerk/nextjs';
-import { useAuthModal } from '@/hooks/use-auth-modal';
+import { SignInButton } from '@clerk/nextjs';
 
 const UNLOCK_PASSWORD = "waizextra123";
 const UNLOCK_CREDITS = 30;
@@ -20,7 +20,6 @@ const UNLOCK_CREDITS = 30;
 export function PremiumResources() {
     const { premiumResources, loading } = useResources();
     const { user } = useUser();
-    const { setOpen: openAuthModal } = useAuthModal();
     const { currentUserData, unlockResourceSection } = useUsers();
     const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
     const [password, setPassword] = useState('');
@@ -53,11 +52,27 @@ export function PremiumResources() {
     
     const handleOpenDialog = () => {
         if (!user) {
-            openAuthModal(true);
             return;
         }
         setIsUnlockDialogOpen(true);
     }
+
+    if (!user) {
+         return (
+            <SignInButton>
+                <Card className="border-primary/20 bg-primary/5 cursor-pointer hover:border-primary/40 transition-all">
+                    <CardHeader className="flex flex-row items-center gap-4">
+                        <Lock className="h-8 w-8 text-primary" />
+                        <div>
+                            <CardTitle>CLASS 10 PREMIUM MATERIAL</CardTitle>
+                            <CardDescription>This content is locked. Sign in to unlock with a password or credits.</CardDescription>
+                        </div>
+                    </CardHeader>
+                </Card>
+            </SignInButton>
+        );
+    }
+
 
     if (!isPremiumUnlocked) {
         return (
@@ -171,5 +186,3 @@ export function PremiumResources() {
         </div>
     );
 }
-
-    

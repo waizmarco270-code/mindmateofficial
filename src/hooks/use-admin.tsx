@@ -10,12 +10,12 @@ import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, g
 //  TYPES & INITIAL DATA
 // ============================================================================
 
-export const ADMIN_UIDS = ['23j2N4p0ZgUnCqTBrrppkYtD2fI3', 'ZOMxxdfjCTR3Be1K8YV8a5AWRQP2', 'oY64QlJ6v5ZOJC7eoYQ3L6wXLhW2' , 'Lkyn95mVyVNTiNnn1YsGeiHWlib2', 'ddm7iHhw9WeXNSqSMz10gSmJCYd2'];
-export const DEV_UID = 'QPC9IBcXh7Ycq9Ds99D1QA9JUj32';
+export const ADMIN_UIDS = ['user_2jF4xG0A2e3r4t5Y6z7a8b9c0d1e2f3', 'user_2jE5yH1B3f4g5h6i7j8k9l0m1n2o3p4', 'oY64QlJ6v5ZOJC7eoYQ3L6wXLhW2', 'user_2jD6zI2C4g5h6j7k8l9m0n1o2p3q4r5s', 'user_2jC7aJ3D5h6j7k8l9m0n1o2p3q4r5s6t'];
+export const DEV_UID = 'user_2jB8bK4E6j7k8l9m0n1o2p3q4r5s6t7u';
 
 export interface User {
-  id: string; // Document ID from Firestore
-  uid: string;
+  id: string; // Document ID from Firestore (should be same as Clerk UID)
+  uid: string; // Clerk User ID
   displayName: string;
   email: string;
   photoURL?: string;
@@ -446,5 +446,3 @@ export const usePolls = () => {
     if(!context) throw new Error('usePolls must be used within an AppDataProvider');
     return context;
 }
-
-    

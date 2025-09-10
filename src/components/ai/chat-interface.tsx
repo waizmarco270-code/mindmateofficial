@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@clerk/nextjs';
 import { AiAvatar } from './ai-avatar';
 import { useUsers } from '@/hooks/use-admin';
-import { useAuthModal } from '@/hooks/use-auth-modal';
+import { SignInButton } from '@clerk/nextjs';
 
 const CHAT_COST = 1;
 
@@ -24,7 +24,6 @@ export function ChatInterface() {
   const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
-  const { setOpen: openAuthModal } = useAuthModal();
   const { currentUserData, addCreditsToUser } = useUsers();
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -73,7 +72,6 @@ export function ChatInterface() {
   
   const handleMicClick = () => {
      if (!user) {
-      openAuthModal(true);
       return;
     }
     if (!recognitionRef.current) {
@@ -153,13 +151,12 @@ export function ChatInterface() {
   const handleSubmit = async (e: React.FormEvent | Event, voiceInput?: string) => {
     e.preventDefault();
     if (!user) {
-      openAuthModal(true);
       return;
     }
     const currentInput = voiceInput || input;
     if (!currentInput.trim()) return;
     
-    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: currentInput, user };
+    const userMessage: Message = { id: Date.now().toString(), role: 'user', content: currentInput };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     
@@ -178,12 +175,11 @@ export function ChatInterface() {
   
   const handleExplainSimply = async (messageToSimplify: Message) => {
       if (!user) {
-        openAuthModal(true);
         return;
       }
       const originalQuestion = messages.slice().reverse().find(m => m.role === 'user')?.content || "the previous topic";
 
-      const userMessage: Message = { id: Date.now().toString(), role: 'user', content: "Can you explain that more simply?", user, isHidden: true };
+      const userMessage: Message = { id: Date.now().toString(), role: 'user', content: "Can you explain that more simply?", isHidden: true };
       setMessages((prev) => [...prev, userMessage]);
 
       await callAiAndHandleResponse(
@@ -205,9 +201,11 @@ export function ChatInterface() {
                 </div>
                 <h1 className="text-4xl font-bold tracking-tight">Access Marco AI</h1>
                 <p className="text-muted-foreground mt-2 max-w-lg">Please sign in or create an account to start a conversation with your personal AI tutor.</p>
-                <Button size="lg" className="mt-6 text-lg py-7" onClick={() => openAuthModal(true)}>
-                    Sign In to Continue
-                </Button>
+                <SignInButton>
+                  <Button size="lg" className="mt-6 text-lg py-7">
+                      Sign In to Continue
+                  </Button>
+                </SignInButton>
             </div>
         );
   }
@@ -238,7 +236,7 @@ export function ChatInterface() {
           {messages.filter(m => !m.isHidden).map((message) => (
             <ChatMessage 
                 key={message.id} 
-                message={message} 
+                message={message}
                 isThinking={false}
                 onSimplify={handleExplainSimply}
              />
@@ -273,5 +271,3 @@ export function ChatInterface() {
     </div>
   );
 }
-
-    

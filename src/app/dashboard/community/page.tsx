@@ -120,7 +120,7 @@ interface ChatMessageProps {
 function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
     const { user } = useUser();
     const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
-    const isVip = sender ? ADMIN_UIDS.includes(sender.uid) : false;
+    const isVip = sender ? ADMIN_UIDS.includes(sender.uid) || sender.isAdmin : false;
     const isDev = sender ? sender.uid === DEV_UID : false;
 
     return (
@@ -171,5 +171,3 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
         </div>
     );
 }
-
-    

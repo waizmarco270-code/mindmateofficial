@@ -15,8 +15,8 @@ import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-// This is your unique "Super Admin" UID
-const SUPER_ADMIN_UID = 'oY64QlJ6v5ZOJC7eoYQ3L6wXLhW2';
+// This is your unique "Super Admin" UID from Clerk
+const SUPER_ADMIN_UID = 'user_2jD6zI2C4g5h6j7k8l9m0n1o2p3q4r5s';
 const CREDIT_UNLOCK_PASSWORD = "waizcredit";
 
 
@@ -169,7 +169,7 @@ function SuperAdminControl() {
                             <h3 className="font-semibold flex items-center gap-2"><Gift className="h-5 w-5 text-green-500"/> Gift Credits</h3>
                             <div className="space-y-2">
                                 <Label>Select User</Label>
-                                <Select onValueChange={setSelectedCreditUser}>
+                                <Select onValueChange={setSelectedCreditUser} value={selectedCreditUser}>
                                     <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
                                     <SelectContent>{users.map(u => <SelectItem key={u.uid} value={u.uid}>{u.displayName} ({u.email})</SelectItem>)}</SelectContent>
                                 </Select>
@@ -186,7 +186,7 @@ function SuperAdminControl() {
                             <p className="text-sm text-muted-foreground">This will reset the selected user's credit balance to the default 100.</p>
                             <div className="space-y-2">
                                 <Label>Select User</Label>
-                                <Select onValueChange={setSelectedCreditUser}>
+                                <Select onValueChange={setSelectedCreditUser} value={selectedCreditUser}>
                                     <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
                                     <SelectContent>{users.map(u => <SelectItem key={u.uid} value={u.uid}>{u.displayName} ({u.email})</SelectItem>)}</SelectContent>
                                 </Select>
@@ -220,8 +220,7 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState(user?.fullName || '');
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!isLoaded) return null;
-  if (!user) return null;
+  if (!isLoaded || !user) return null;
 
   const isSuperAdmin = user.id === SUPER_ADMIN_UID;
   
@@ -276,9 +275,9 @@ export default function ProfilePage() {
                           <AvatarImage src={user.imageUrl ?? `https://picsum.photos/150/150?u=${user.id}`} alt={user.fullName ?? 'User'} />
                           <AvatarFallback>{user.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <p className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs text-center">
-                            Update in your Google Account
-                        </p>
+                         <a href={user.publicMetadata.externalProfileUrl as string | undefined ?? '/dashboard/profile'} target="_blank" rel="noopener noreferrer" className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs text-center cursor-pointer">
+                            Update on Clerk
+                        </a>
                       </div>
                       
                       <div className="space-y-2">
@@ -325,6 +324,11 @@ export default function ProfilePage() {
                       <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5"/> Account Security</CardTitle>
                       <CardDescription>Your account is managed by Clerk.</CardDescription>
                   </CardHeader>
+                   <CardContent>
+                     <a href={user.publicMetadata.externalProfileUrl as string | undefined ?? '/dashboard/profile'} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" className="w-full">Manage Account on Clerk</Button>
+                     </a>
+                  </CardContent>
               </Card>
 
               <Card className="border-destructive/50">
@@ -333,7 +337,9 @@ export default function ProfilePage() {
                       <CardDescription>Permanently delete your account and all associated data. This action cannot be undone.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                      <Button variant="destructive" className="w-full">Delete My Account</Button>
+                       <a href={user.publicMetadata.externalProfileUrl as string | undefined ?? '/dashboard/profile'} target="_blank" rel="noopener noreferrer">
+                            <Button variant="destructive" className="w-full">Delete My Account</Button>
+                       </a>
                   </CardContent>
               </Card>
           </div>
@@ -345,5 +351,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

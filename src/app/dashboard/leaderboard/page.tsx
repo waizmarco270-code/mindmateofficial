@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUsers, ADMIN_UIDS, DEV_UID } from '@/hooks/use-admin';
+import { useUsers, ADMIN_UIDS, DEV_UID, User } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -10,7 +10,7 @@ import { Trophy, Award, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {Crown} from 'lucide-react';
 
-const LEADERBOARD_EXCLUDED_UIDS = ['23j2N4p0ZgUnCqTBrrppkYtD2fI3'];
+const LEADERBOARD_EXCLUDED_UIDS = ['user_2jF4xG0A2e3r4t5Y6z7a8b9c0d1e2f3'];
 
 export default function LeaderboardPage() {
     const { user: currentUser } = useUser();
@@ -32,7 +32,7 @@ export default function LeaderboardPage() {
         return 'text-muted-foreground';
     };
 
-    const renderUserBadges = (user: (typeof users)[0]) => {
+    const renderUserBadges = (user: User) => {
         const isVip = user.isAdmin || ADMIN_UIDS.includes(user.uid);
         const isDev = user.uid === DEV_UID;
 
@@ -52,7 +52,7 @@ export default function LeaderboardPage() {
         )
     }
 
-    const renderPodiumCard = (user: (typeof users)[0] | undefined, rank: number) => {
+    const renderPodiumCard = (user: User | undefined, rank: number) => {
         if (!user) return <div />;
 
         const placeDetails = {
@@ -210,5 +210,3 @@ export default function LeaderboardPage() {
         </div>
     );
 }
-
-    

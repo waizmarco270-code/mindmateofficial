@@ -11,8 +11,7 @@ import { Lock, Unlock, Download, KeyRound, CreditCard, AlertTriangle } from 'luc
 import { useResources, useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
-import { useUser } from '@clerk/nextjs';
-import { useAuthModal } from '@/hooks/use-auth-modal';
+import { useUser, SignInButton } from '@clerk/nextjs';
 
 const UNLOCK_PASSWORD = "waizextraclass12";
 const UNLOCK_CREDITS = 30;
@@ -20,7 +19,6 @@ const UNLOCK_CREDITS = 30;
 export function Class12Resources() {
     const { class12Resources, loading } = useResources();
     const { user } = useUser();
-    const { setOpen: openAuthModal } = useAuthModal();
     const { currentUserData, unlockResourceSection } = useUsers();
     const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
     const [password, setPassword] = useState('');
@@ -53,10 +51,25 @@ export function Class12Resources() {
     
     const handleOpenDialog = () => {
         if (!user) {
-            openAuthModal(true);
             return;
         }
         setIsUnlockDialogOpen(true);
+    }
+    
+     if (!user) {
+        return (
+            <SignInButton>
+                <Card className="border-primary/20 bg-primary/5 cursor-pointer hover:border-primary/40 transition-all">
+                    <CardHeader className="flex flex-row items-center gap-4">
+                        <Lock className="h-8 w-8 text-primary" />
+                        <div>
+                            <CardTitle>CLASS 12 BOARDS PREMIUM</CardTitle>
+                            <CardDescription>This content is locked. Sign in to unlock with a password or credits.</CardDescription>
+                        </div>
+                    </CardHeader>
+                </Card>
+            </SignInButton>
+        );
     }
 
     if (!isPremiumUnlocked) {
@@ -171,5 +184,3 @@ export function Class12Resources() {
         </div>
     );
 }
-
-    
