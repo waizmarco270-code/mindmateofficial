@@ -5,11 +5,10 @@ import { Medal, Menu, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '../theme-toggle';
 import { useSidebar } from '@/components/ui/sidebar';
-import { useAuth } from '@/hooks/use-auth';
 import { useUsers, useAdmin } from '@/hooks/use-admin';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import Link from 'next/link';
-import { UserButton, useUser } from '@clerk/nextjs';
+import { UserButton, useUser, SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
 
 
 export default function Header() {
@@ -33,44 +32,52 @@ export default function Header() {
       </Button>
       <div className="flex-1" />
       <div className="flex items-center gap-2 md:gap-4">
-        {isLoaded && user && (
-          <>
-            <TooltipProvider>
-                <Tooltip>
+        <SignedOut>
+            <SignInButton />
+            <SignUpButton>
+              <Button>Sign Up</Button>
+            </SignUpButton>
+        </SignedOut>
+        <SignedIn>
+            {isLoaded && user && (
+            <>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
+                                <Medal className="h-5 w-5 text-yellow-500" />
+                                <span>{credits} Credits</span>
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Credits can be used to unlock premium content.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+
+                {isAdmin && (
+                <TooltipProvider>
+                    <Tooltip>
                     <TooltipTrigger asChild>
-                        <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-                            <Medal className="h-5 w-5 text-yellow-500" />
-                            <span>{credits} Credits</span>
-                        </div>
+                        <Button asChild variant="ghost" size="icon">
+                        <Link href="/dashboard/admin">
+                            <Shield className="h-5 w-5 text-primary" />
+                            <span className="sr-only">Admin Panel</span>
+                        </Link>
+                        </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                        <p>Credits can be used to unlock premium content.</p>
+                        <p>Admin Panel</p>
                     </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+                    </Tooltip>
+                </TooltipProvider>
+                )}
 
-            {isAdmin && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button asChild variant="ghost" size="icon">
-                      <Link href="/dashboard/admin">
-                        <Shield className="h-5 w-5 text-primary" />
-                        <span className="sr-only">Admin Panel</span>
-                      </Link>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Admin Panel</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                <ThemeToggle />
+                <UserButton afterSignOutUrl="/" />
+            </>
             )}
-
-            <ThemeToggle />
-            <UserButton afterSignOutUrl="/" />
-          </>
-        )}
+        </SignedIn>
       </div>
     </header>
   );
