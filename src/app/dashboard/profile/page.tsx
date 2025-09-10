@@ -376,12 +376,9 @@ export default function ProfilePage() {
           <div className="space-y-8 lg:col-span-1">
               <Card>
                   <CardHeader>
-                      <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5"/> Password</CardTitle>
-                      <CardDescription>To change your password, please use the "Forgot Password" link on the sign-in page for security.</CardDescription>
+                      <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5"/> Account Security</CardTitle>
+                      <CardDescription>Your account is secured by your Google account.</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                      <Button variant="outline" className="w-full">Request Password Reset</Button>
-                  </CardContent>
               </Card>
 
               <Card className="border-destructive/50">
@@ -402,6 +399,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-
-    
