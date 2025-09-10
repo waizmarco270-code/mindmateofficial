@@ -65,7 +65,6 @@ export function SignupForm({ onToggleView }: SignupFormProps) {
         class12Unlocked: false,
         perfectedQuizzes: [],
         quizAttempts: {},
-        accountCreatedAt: serverTimestamp(), // Add creation timestamp
       });
 
       setEmailSent(true);
