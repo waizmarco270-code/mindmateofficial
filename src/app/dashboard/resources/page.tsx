@@ -8,15 +8,20 @@ import { PremiumResources } from '@/components/resources/premium-resources';
 import { Separator } from '@/components/ui/separator';
 import { JeeResources } from '@/components/resources/jee-resources';
 import { Class12Resources } from '@/components/resources/class12-resources';
-import { useUser } from '@clerk/nextjs';
-import { useAuthModal } from '@/hooks/use-auth-modal';
+import { useUser, useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 export default function ResourcesPage() {
     const { resources, loading } = useResources();
     const { user } = useUser();
-    const { setOpen: openAuthModal } = useAuthModal();
+    const { isSignedIn } = useAuth();
+    const router = useRouter();
 
-    if (!user) {
+    const handleSignIn = () => {
+        router.push('/sign-in');
+    }
+
+    if (!isSignedIn && !loading) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-8 rounded-xl bg-muted/40 border-2 border-dashed">
                 <div className="p-5 rounded-full bg-primary/10 mb-4">
@@ -24,7 +29,7 @@ export default function ResourcesPage() {
                 </div>
                 <h1 className="text-4xl font-bold tracking-tight">Access Restricted</h1>
                 <p className="text-muted-foreground mt-2 max-w-lg">Please sign in or create an account to view and download study resources.</p>
-                <Button size="lg" className="mt-6 text-lg py-7" onClick={() => openAuthModal(true)}>
+                <Button size="lg" className="mt-6 text-lg py-7" onClick={handleSignIn}>
                     Sign In to Continue
                 </Button>
             </div>

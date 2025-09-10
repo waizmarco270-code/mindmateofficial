@@ -115,7 +115,7 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 // ============================================================================
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
-    const { user: authUser } = useUser();
+    const { user: authUser, isLoaded } = useUser();
 
     // STATE MANAGEMENT
     const [isAdmin, setIsAdmin] = useState(false);
@@ -151,34 +151,47 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     // EFFECT: Listen for real-time updates for the CURRENTLY LOGGED-IN user's data (for credits, etc.)
     useEffect(() => {
-        if (authUser?.id) {
-            const userDocRef = doc(db, 'users', authUser.id);
-            const unsubscribe = onSnapshot(userDocRef, (doc) => {
-                if (doc.exists()) {
-                    setCurrentUserData({ id: doc.id, ...doc.data() } as User);
-                } else {
-                    // If user document doesn't exist, create it.
-                    const newUser: User = {
-                        id: authUser.id,
-                        uid: authUser.id,
-                        displayName: authUser.fullName || 'New User',
-                        email: authUser.primaryEmailAddress?.emailAddress || '',
-                        photoURL: authUser.imageUrl,
-                        isBlocked: false,
-                        credits: 100, // Starting credits
-                    };
-                    setDoc(userDocRef, newUser);
-                }
-            });
-            return () => unsubscribe();
-        } else {
-            setCurrentUserData(null);
+        if (!isLoaded) {
+            setLoading(true);
+            return;
         }
-    }, [authUser]);
+
+        if (!authUser) {
+            setCurrentUserData(null);
+            setLoading(false);
+            return;
+        }
+
+        const userDocRef = doc(db, 'users', authUser.id);
+        const unsubscribe = onSnapshot(userDocRef, (doc) => {
+            if (doc.exists()) {
+                setCurrentUserData({ id: doc.id, ...doc.data() } as User);
+            } else {
+                // If user document doesn't exist, create it.
+                const newUser: User = {
+                    id: authUser.id,
+                    uid: authUser.id,
+                    displayName: authUser.fullName || 'New User',
+                    email: authUser.primaryEmailAddress?.emailAddress || '',
+                    photoURL: authUser.imageUrl,
+                    isBlocked: false,
+                    credits: 100, // Starting credits
+                    isAdmin: ADMIN_UIDS.includes(authUser.id) // check if user is an admin on creation
+                };
+                setDoc(userDocRef, newUser);
+                setCurrentUserData(newUser);
+            }
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching user data:", error);
+            setLoading(false);
+        });
+        return () => unsubscribe();
+        
+    }, [authUser, isLoaded]);
     
     // EFFECT: Listen for global data (announcements, resources, polls)
     useEffect(() => {
-        setLoading(true);
         const announcementsQuery = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
         const resourcesQuery = query(collection(db, 'generalResources'), orderBy('createdAt', 'desc'));
         const premiumResourcesQuery = query(collection(db, 'premiumResources'), orderBy('createdAt', 'desc'));
@@ -209,10 +222,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 setActivePoll(null);
             }
         });
-        
-        Promise.all([getDocs(announcementsQuery), getDocs(resourcesQuery), getDocs(premiumResourcesQuery), getDocs(pollsQuery), getDocs(jeeResourcesQuery), getDocs(class12ResourcesQuery)])
-          .finally(() => setLoading(false));
-
 
         return () => {
             unsubAnnouncements();
@@ -340,13 +349,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
         const batch = writeBatch(db);
         batch.update(pollDocRef, { ...data, results: newResults });
-        
-        // This part is tricky: we should also clear `votedPolls` for all users for this pollId.
-        // For simplicity, we'll leave this out as it requires iterating all users,
-        // but in a real app, a backend function would handle this.
-        // The current implementation means users who voted on the old poll can't vote on the edited one.
-        // A better approach would be to create a new poll and deactivate the old one.
-        // But for this request, we will just update the current poll.
         
         await batch.commit();
     };

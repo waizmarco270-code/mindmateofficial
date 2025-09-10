@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useUsers } from '@/hooks/use-admin';
 import { useFriends } from '@/hooks/use-friends';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useAuth } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Sparkles, MessageSquare, ArrowLeft } from 'lucide-react';
 import { UserCard } from '@/components/social/user-card';

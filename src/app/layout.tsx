@@ -4,9 +4,6 @@ import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
-import { AppDataProvider } from '@/hooks/use-admin';
-import { FriendProvider } from '@/hooks/use-friends';
-import { UnreadMessagesProvider } from '@/hooks/use-unread';
 import { ClerkProvider } from '@clerk/nextjs';
 
 export const metadata: Metadata = {
@@ -37,14 +34,8 @@ export default function RootLayout({
             defaultTheme="light"
             disableTransitionOnChange
           >
-            <AppDataProvider>
-              <FriendProvider>
-                <UnreadMessagesProvider>
-                  {children}
-                  <Toaster />
-                </UnreadMessagesProvider>
-              </FriendProvider>
-            </AppDataProvider>
+            {children}
+            <Toaster />
           </ThemeProvider>
         </body>
       </html>
