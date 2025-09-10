@@ -5,7 +5,7 @@ import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit,
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { useAnnouncements, useUsers } from '@/hooks/use-admin';
 import { CommunityPoll } from '@/components/dashboard/community-poll';
 import { cn } from '@/lib/utils';
@@ -62,7 +62,7 @@ const features = [
 ];
 
 export default function DashboardPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const { announcements } = useAnnouncements();
     const { currentUserData } = useUsers();
 
@@ -76,7 +76,7 @@ export default function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome Back, {user?.displayName?.split(' ')[0] || 'Student'}!</h1>
+        <h1 className="text-3xl font-bold tracking-tight">Welcome Back, {user?.firstName || 'Student'}!</h1>
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
       </div>
 
@@ -153,3 +153,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
