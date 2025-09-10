@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Medal, Menu, Shield } from 'lucide-react';
