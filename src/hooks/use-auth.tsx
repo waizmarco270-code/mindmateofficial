@@ -42,69 +42,77 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-        if (firebaseUser) {
-           const userDocRef = doc(db, 'users', firebaseUser.uid);
-           const userDoc = await getDoc(userDocRef);
-           if (!userDoc.exists()) {
-               const { displayName, email, photoURL, uid } = firebaseUser;
-               try {
-                  await setDoc(userDocRef, {
-                      uid: uid,
-                      displayName: displayName || 'New User',
-                      email: email,
-                      photoURL: photoURL || `https://avatar.vercel.sh/${uid}.png`,
-                      isBlocked: false,
-                      credits: 100,
-                      socialUnlocked: false,
-                      isAdmin: ADMIN_UIDS.includes(uid),
-                      class10Unlocked: false,
-                      jeeUnlocked: false,
-                      class12Unlocked: false,
-                      perfectedQuizzes: [],
-                      quizAttempts: {},
-                  });
-               } catch (error) {
-                   console.error("Error creating user document:", error);
-               }
-           }
-          setUser(firebaseUser);
-          setAuthModalOpen(false);
-        } else {
-          setUser(null);
+    const handleAuth = async () => {
+      try {
+        // First, check if there's a redirect result.
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // This is a fresh login via redirect.
+          const firebaseUser = result.user;
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          if (!userDoc.exists()) {
+            // New user, create their document.
+            const { displayName, email, photoURL, uid } = firebaseUser;
+            await setDoc(userDocRef, {
+              uid: uid,
+              displayName: displayName || 'New User',
+              email: email,
+              photoURL: photoURL || `https://avatar.vercel.sh/${uid}.png`,
+              isBlocked: false,
+              credits: 100,
+              socialUnlocked: false,
+              isAdmin: ADMIN_UIDS.includes(uid),
+              class10Unlocked: false,
+              jeeUnlocked: false,
+              class12Unlocked: false,
+              perfectedQuizzes: [],
+              quizAttempts: {},
+            });
+            toast({
+              title: 'Welcome to MindMate!',
+              description: 'Your account has been created.',
+            });
+          } else {
+             toast({
+              title: 'Signed in successfully!',
+              description: 'Welcome back.',
+          });
+          }
+           // The onAuthStateChanged listener below will handle setting the user state.
         }
-        setLoading(false);
+
+      } catch (error: any) {
+          if (error.code !== 'auth/no-redirect-result') {
+              console.error("Google sign-in error after redirect:", error);
+              toast({
+                  variant: 'destructive',
+                  title: 'Google Sign-In Failed',
+                  description: error.message,
+              });
+          }
+      }
+
+      // Set up the permanent listener for auth state changes.
+      const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+          if (firebaseUser) {
+              // User is signed in.
+              setUser(firebaseUser);
+          } else {
+              // User is signed out.
+              setUser(null);
+          }
+          // In all cases, authentication check is complete.
+          setLoading(false);
       });
 
-    // Handle the redirect result
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          toast({
-              title: 'Signed in successfully!',
-              description: 'Welcome to MindMate.',
-          });
-          // onAuthStateChanged will handle the user creation
-        }
-      })
-      .catch((error) => {
-        if (error.code !== 'auth/no-redirect-result') {
-            console.error("Google sign-in error:", error);
-            toast({
-              variant: 'destructive',
-              title: 'Google Sign-In Failed',
-              description: error.message,
-            });
-        }
-    }).finally(() => {
-        // Even if there's no redirect, the auth state check can complete.
-        // This is mainly to ensure loading is false if onAuthStateChanged hasn't fired yet
-        // for a non-redirect scenario (e.g., initial page load with no user).
-        setLoading(false);
-    });
+      return unsubscribe;
+    };
+    
+    handleAuth();
 
-    return () => unsubscribe();
-  }, [auth, setAuthModalOpen, toast]);
+  }, [auth, toast]);
   
   const logout = async () => {
     await signOut(auth);
