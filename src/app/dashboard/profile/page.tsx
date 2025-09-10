@@ -15,7 +15,7 @@ import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const SUPER_ADMIN_UID = 'user_2jF4xG0A2e3r4t5Y6z7a8b9c0d1e2f3';
+const SUPER_ADMIN_UID = 'user_32WgV1OikpqTXO9pFApoPRLLarF';
 const CREDIT_UNLOCK_PASSWORD = "waizcredit";
 
 
