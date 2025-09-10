@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // This is your unique "Super Admin" UID from Clerk
-const SUPER_ADMIN_UID = 'user_2jD6zI2C4g5h6j7k8l9m0n1o2p3q4r5s';
+const SUPER_ADMIN_UID = 'PASTE_YOUR_CLERK_USER_ID_HERE';
 const CREDIT_UNLOCK_PASSWORD = "waizcredit";
 
 
