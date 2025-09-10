@@ -2,19 +2,19 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getAuth, onAuthStateChanged, User, signOut, GoogleAuthProvider, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, signOut, createUserWithEmailAndPassword, sendEmailVerification, updateProfile, signInWithEmailAndPassword } from 'firebase/auth';
 import { firebaseApp, db } from '@/lib/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { useAuthModal } from './use-auth-modal';
 import { useToast } from './use-toast';
-import { ADMIN_UIDS } from '@/hooks/use-admin';
+import { ADMIN_UIDS } from './use-admin';
 
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   logout: () => void;
-  signInWithGoogle: () => void;
+  // We no longer need the Google sign-in function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -29,8 +29,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
+      // Only set the user if their email is verified
+      if (user && user.emailVerified) {
+        setUser(user);
+      } else {
+        setUser(null);
+      }
       setLoading(false);
+      
+      // If a user is returned (even unverified), close the modal
       if(user) {
         setOpen(false);
       }
@@ -39,72 +46,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, [auth, setOpen]);
   
-  // Handle the redirect result from Google Sign-In
-  useEffect(() => {
-      const processRedirectResult = async () => {
-          try {
-              setLoading(true);
-              const result = await getRedirectResult(auth);
-              if (result) {
-                  const user = result.user;
-
-                  // Check if the user document already exists
-                  const userDocRef = doc(db, 'users', user.uid);
-                  const userDoc = await getDoc(userDocRef);
-
-                  if (!userDoc.exists()) {
-                      // New user, create document
-                      await setDoc(userDocRef, {
-                          uid: user.uid,
-                          displayName: user.displayName,
-                          email: user.email,
-                          photoURL: user.photoURL,
-                          isBlocked: false,
-                          credits: 100,
-                          socialUnlocked: false,
-                          isAdmin: ADMIN_UIDS.includes(user.uid),
-                          class10Unlocked: false,
-                          jeeUnlocked: false,
-                          class12Unlocked: false,
-                          perfectedQuizzes: [],
-                          quizAttempts: {},
-                          votedPolls: {}
-                      });
-                      toast({ title: "Welcome!", description: "Your account has been created." });
-                  } else {
-                       toast({ title: "Welcome back!", description: "You've successfully signed in." });
-                  }
-                  setOpen(false);
-              }
-          } catch (error: any) {
-              console.error("Google Sign-in Error:", error);
-              toast({ 
-                  variant: 'destructive', 
-                  title: "Sign-in Failed", 
-                  description: error.message
-              });
-          } finally {
-              setLoading(false);
-          }
-      }
-      processRedirectResult();
-  }, [auth, toast, setOpen]);
-
 
   const logout = async () => {
     await signOut(auth);
     setUser(null);
   };
 
-  const signInWithGoogle = async () => {
-      setLoading(true);
-      const provider = new GoogleAuthProvider();
-      // Use signInWithRedirect instead of signInWithPopup
-      await signInWithRedirect(auth, provider);
-  }
-
+  // The context value no longer exposes a sign-in method directly.
+  // The login/signup forms will handle their own logic.
   return (
-    <AuthContext.Provider value={{ user, loading, logout, signInWithGoogle }}>
+    <AuthContext.Provider value={{ user, loading, logout }}>
       {children}
     </AuthContext.Provider>
   );
