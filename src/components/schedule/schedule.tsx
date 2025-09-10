@@ -12,7 +12,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, getDay, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query } from 'firebase/firestore';
 
@@ -29,7 +29,7 @@ const colors = ['bg-blue-500', 'bg-green-500', 'bg-red-500', 'bg-yellow-500', 'b
 
 
 export function Schedule() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export function Schedule() {
         return;
       }
       setLoading(true);
-      const eventsColRef = collection(db, 'users', user.uid, 'scheduleEvents');
+      const eventsColRef = collection(db, 'users', user.id, 'scheduleEvents');
       const q = query(eventsColRef);
 
       const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -103,12 +103,12 @@ export function Schedule() {
 
     if(selectedEvent) {
         // Update existing event
-        const eventDocRef = doc(db, 'users', user.uid, 'scheduleEvents', selectedEvent.id);
+        const eventDocRef = doc(db, 'users', user.id, 'scheduleEvents', selectedEvent.id);
         await setDoc(eventDocRef, eventData);
     } else {
         // Add new event
         const newEventId = `evt_${Date.now()}`;
-        const eventDocRef = doc(db, 'users', user.uid, 'scheduleEvents', newEventId);
+        const eventDocRef = doc(db, 'users', user.id, 'scheduleEvents', newEventId);
         await setDoc(eventDocRef, eventData);
     }
 
@@ -118,7 +118,7 @@ export function Schedule() {
   
   const handleDeleteEvent = async () => {
       if(!selectedEvent || !user) return;
-      const eventDocRef = doc(db, 'users', user.uid, 'scheduleEvents', selectedEvent.id);
+      const eventDocRef = doc(db, 'users', user.id, 'scheduleEvents', selectedEvent.id);
       await deleteDoc(eventDocRef);
       setIsAddDialogOpen(false);
       setSelectedEvent(null);
@@ -260,3 +260,5 @@ export function Schedule() {
     </div>
   );
 }
+
+    

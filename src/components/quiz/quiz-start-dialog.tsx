@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { useUsers } from '@/hooks/use-admin';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { type Quiz } from '@/hooks/use-quizzes';
 import { useToast } from '@/hooks/use-toast';
 import { CreditCard, Award, AlertTriangle, ArrowRight, BrainCircuit, CheckCircle } from 'lucide-react';
@@ -19,7 +19,7 @@ interface QuizStartDialogProps {
 }
 
 export function QuizStartDialog({ quiz, isOpen, onOpenChange }: QuizStartDialogProps) {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentUserData } = useUsers();
   const [quizStarted, setQuizStarted] = useState(false);
   
@@ -100,3 +100,5 @@ export function QuizStartDialog({ quiz, isOpen, onOpenChange }: QuizStartDialogP
     </Dialog>
   );
 }
+
+    

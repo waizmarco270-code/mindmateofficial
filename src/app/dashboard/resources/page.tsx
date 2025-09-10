@@ -8,12 +8,12 @@ import { PremiumResources } from '@/components/resources/premium-resources';
 import { Separator } from '@/components/ui/separator';
 import { JeeResources } from '@/components/resources/jee-resources';
 import { Class12Resources } from '@/components/resources/class12-resources';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { useAuthModal } from '@/hooks/use-auth-modal';
 
 export default function ResourcesPage() {
     const { resources, loading } = useResources();
-    const { user } = useAuth();
+    const { user } = useUser();
     const { setOpen: openAuthModal } = useAuthModal();
 
     if (!user) {
@@ -43,7 +43,7 @@ export default function ResourcesPage() {
                  <div className="h-24 bg-muted rounded-lg animate-pulse mt-4" />
                  <Separator/>
                  <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                     {Array.from({ length: 3 }).map((_, i) => (
+                     {Array.from({length: 3}).map((_, i) => (
                          <Card key={i}>
                              <CardHeader>
                                  <CardTitle className="h-6 bg-muted rounded-md animate-pulse"></CardTitle>

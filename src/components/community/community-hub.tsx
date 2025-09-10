@@ -28,7 +28,7 @@ export default function CommunityHubPage() {
        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
       }
-    }, [markGlobalAsRead]);
+    }, []);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -118,7 +118,6 @@ interface ChatMessageProps {
 }
 
 function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
-    const { user } = useUser();
     const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
     const isVip = sender ? ADMIN_UIDS.includes(sender.uid) : false;
     const isDev = sender ? sender.uid === DEV_UID : false;
@@ -164,8 +163,8 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
             </div>
              {isCurrentUser && (
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.imageUrl ?? undefined} alt={user?.fullName ?? ''} />
-                    <AvatarFallback>{user?.fullName?.charAt(0) ?? '?'}</AvatarFallback>
+                    <AvatarImage src={sender?.photoURL ?? undefined} alt={sender?.displayName} />
+                    <AvatarFallback>{sender?.displayName.charAt(0) ?? '?'}</AvatarFallback>
                 </Avatar>
             )}
         </div>

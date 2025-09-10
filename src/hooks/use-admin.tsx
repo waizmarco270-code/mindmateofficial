@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { useAuth } from './use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit } from 'firebase/firestore';
 
@@ -115,7 +115,7 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 // ============================================================================
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
-    const { user: authUser } = useAuth();
+    const { user: authUser } = useUser();
 
     // STATE MANAGEMENT
     const [isAdmin, setIsAdmin] = useState(false);
@@ -132,7 +132,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     // EFFECT: Determine if the logged-in user is an admin
     useEffect(() => {
         if(authUser && currentUserData) {
-            setIsAdmin(currentUserData.isAdmin ?? ADMIN_UIDS.includes(authUser.uid));
+            setIsAdmin(currentUserData.isAdmin ?? ADMIN_UIDS.includes(authUser.id));
         } else {
             setIsAdmin(false);
         }
@@ -151,13 +151,23 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     // EFFECT: Listen for real-time updates for the CURRENTLY LOGGED-IN user's data (for credits, etc.)
     useEffect(() => {
-        if (authUser?.uid) {
-            const userDocRef = doc(db, 'users', authUser.uid);
+        if (authUser?.id) {
+            const userDocRef = doc(db, 'users', authUser.id);
             const unsubscribe = onSnapshot(userDocRef, (doc) => {
                 if (doc.exists()) {
                     setCurrentUserData({ id: doc.id, ...doc.data() } as User);
                 } else {
-                    setCurrentUserData(null);
+                    // If user document doesn't exist, create it.
+                    const newUser: User = {
+                        id: authUser.id,
+                        uid: authUser.id,
+                        displayName: authUser.fullName || 'New User',
+                        email: authUser.primaryEmailAddress?.emailAddress || '',
+                        photoURL: authUser.imageUrl,
+                        isBlocked: false,
+                        credits: 100, // Starting credits
+                    };
+                    setDoc(userDocRef, newUser);
                 }
             });
             return () => unsubscribe();
@@ -345,7 +355,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (!authUser) return;
 
         const pollRef = doc(db, 'polls', pollId);
-        const userRef = doc(db, 'users', authUser.uid);
+        const userRef = doc(db, 'users', authUser.id);
 
         const batch = writeBatch(db);
         batch.update(pollRef, { [`results.${option}`]: increment(1) });
@@ -434,6 +444,5 @@ export const usePolls = () => {
     if(!context) throw new Error('usePolls must be used within an AppDataProvider');
     return context;
 }
-
 
     

@@ -1,7 +1,8 @@
+
 import { cn } from '@/lib/utils';
 import { User, Sparkles } from 'lucide-react';
 import { AiAvatar } from './ai-avatar';
-import type { User as FirebaseUser } from 'firebase/auth';
+import type { User as ClerkUser } from '@clerk/nextjs/server';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '../ui/button';
 
@@ -11,7 +12,7 @@ export interface Message {
   role: 'user' | 'assistant';
   content: string;
   isError?: boolean;
-  user?: FirebaseUser | null;
+  user?: ClerkUser | null;
   isHidden?: boolean;
 }
 
@@ -57,10 +58,12 @@ export function ChatMessage({ message, isThinking, onSimplify }: ChatMessageProp
       </div>
       {isUser && message.user && (
         <Avatar className="h-10 w-10 border-2 border-primary/20">
-            <AvatarImage src={message.user.photoURL ?? undefined} alt={message.user.displayName ?? 'User'} />
-            <AvatarFallback>{message.user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+            <AvatarImage src={message.user.imageUrl ?? undefined} alt={message.user.fullName ?? 'User'} />
+            <AvatarFallback>{message.user.fullName?.charAt(0).toUpperCase()}</AvatarFallback>
         </Avatar>
       )}
     </div>
   );
 }
+
+    

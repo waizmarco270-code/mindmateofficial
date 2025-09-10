@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Plus, Percent, Sparkles, AlertTriangle, Medal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { Separator } from '@/components/ui/separator';
 
@@ -23,7 +23,7 @@ interface Subject {
 const CALCULATION_COST = 2;
 
 export default function PercentageCalculatorPage() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { currentUserData, addCreditsToUser } = useUsers();
   const { toast } = useToast();
 
@@ -92,7 +92,7 @@ export default function PercentageCalculatorPage() {
     const percentage = (totalMarks / (5 * 100)) * 100;
     
     setResult({ percentage, bestSubjects });
-    addCreditsToUser(user.uid, -CALCULATION_COST);
+    addCreditsToUser(user.id, -CALCULATION_COST);
     toast({ title: 'Calculation Successful!', description: `${CALCULATION_COST} credits have been deducted.` });
     
     setIsCalculating(false);
@@ -218,3 +218,5 @@ export default function PercentageCalculatorPage() {
     </div>
   );
 }
+
+    

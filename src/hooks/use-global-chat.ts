@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useAuth } from './use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp, limit } from 'firebase/firestore';
 import { useUsers } from './use-admin';
@@ -18,7 +18,7 @@ export interface GlobalMessage {
 const GLOBAL_CHAT_COLLECTION = 'global_chat';
 
 export const useGlobalChat = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { users: allUsers } = useUsers();
   const [messages, setMessages] = useState<GlobalMessage[]>([]);
   const [loading, setLoading] = useState(true);
@@ -56,7 +56,7 @@ export const useGlobalChat = () => {
 
       // Check for new incoming messages to show notification
       if (document.visibilityState === 'hidden' && newMessages.length > 0) {
-         const incomingMessage = newMessages.find(m => m.senderId !== user?.uid);
+         const incomingMessage = newMessages.find(m => m.senderId !== user?.id);
          if(incomingMessage){
             showNotification(incomingMessage);
          }
@@ -86,10 +86,12 @@ export const useGlobalChat = () => {
     const messagesRef = collection(db, GLOBAL_CHAT_COLLECTION);
     await addDoc(messagesRef, {
       text,
-      senderId: user.uid,
+      senderId: user.id,
       timestamp: serverTimestamp(),
     });
   }, [user]);
 
   return { messages, sendMessage, loading };
 };
+
+    

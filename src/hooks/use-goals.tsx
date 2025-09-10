@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
-import { useAuth } from './use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { format, getWeek, getYear } from 'date-fns';
@@ -21,7 +21,7 @@ interface GoalsContextType {
 const GoalsContext = createContext<GoalsContextType | undefined>(undefined);
 
 export const GoalsProvider = ({ children }: { children: ReactNode }) => {
-    const { user } = useAuth();
+    const { user } = useUser();
     const [weeklyGoal, setWeeklyGoal] = useState<Goal | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -35,7 +35,7 @@ export const GoalsProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
         setLoading(true);
-        const docRef = doc(db, 'users', user.uid, 'weeklyGoals', weekId);
+        const docRef = doc(db, 'users', user.id, 'weeklyGoals', weekId);
         const unsubscribe = onSnapshot(docRef, (doc) => {
             if (doc.exists()) {
                  const data = doc.data();
@@ -50,7 +50,7 @@ export const GoalsProvider = ({ children }: { children: ReactNode }) => {
 
     const updateWeeklyGoal = useCallback(async (text: string) => {
         if (!user) return;
-        const docRef = doc(db, 'users', user.uid, 'weeklyGoals', weekId);
+        const docRef = doc(db, 'users', user.id, 'weeklyGoals', weekId);
         await setDoc(docRef, {
             id: weekId,
             text,
@@ -78,3 +78,5 @@ export const useGoals = () => {
     }
     return context;
 };
+
+    

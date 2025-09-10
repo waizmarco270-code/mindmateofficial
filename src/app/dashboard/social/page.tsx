@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { useUsers } from '@/hooks/use-admin';
 import { useFriends } from '@/hooks/use-friends';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { Users, Sparkles, MessageSquare, ArrowLeft } from 'lucide-react';
 import { UserCard } from '@/components/social/user-card';
@@ -20,7 +20,7 @@ import { UnreadMessagesProvider } from '@/hooks/use-unread';
 const UNLOCK_CREDITS = 20;
 
 function SocialPageContent() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const { currentUserData, unlockSocialFeature } = useUsers();
     const { users } = useFriends();
     const { toast } = useToast();
@@ -34,7 +34,7 @@ function SocialPageContent() {
 
     const handleUnlockWithCredits = () => {
         if (user && currentCredits >= UNLOCK_CREDITS) {
-            unlockSocialFeature(user.uid);
+            unlockSocialFeature(user.id);
             setIsUnlockDialogOpen(false);
             toast({
                 title: `Social Feature Unlocked!`,
@@ -163,3 +163,5 @@ export default function SocialPage() {
         <SocialPageContent />
     )
 }
+
+    

@@ -10,7 +10,7 @@ import { ChatMessage, type Message } from './chat-message';
 import { answerStudyQuestion } from '@/ai/flows/answer-study-questions';
 import { explainSimply } from '@/ai/flows/explain-simply';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { AiAvatar } from './ai-avatar';
 import { useUsers } from '@/hooks/use-admin';
 import { useAuthModal } from '@/hooks/use-auth-modal';
@@ -23,7 +23,7 @@ export function ChatInterface() {
   const [isThinking, setIsThinking] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { setOpen: openAuthModal } = useAuthModal();
   const { currentUserData, addCreditsToUser } = useUsers();
 
@@ -112,7 +112,7 @@ export function ChatInterface() {
         setIsThinking(true);
         try {
             if (creditCost > 0) {
-              addCreditsToUser(user.uid, -creditCost);
+              addCreditsToUser(user.id, -creditCost);
               toast({ title: "Credit Used", description: `You have been charged ${creditCost} credit.`});
             }
 
@@ -137,7 +137,7 @@ export function ChatInterface() {
             setMessages((prev) => [...prev, errorMessage]);
             // Refund credits if there was an error
             if (creditCost > 0) {
-              addCreditsToUser(user.uid, creditCost);
+              addCreditsToUser(user.id, creditCost);
               toast({
                   variant: 'destructive',
                   title: 'AI Error - Credits Refunded',
@@ -273,3 +273,5 @@ export function ChatInterface() {
     </div>
   );
 }
+
+    

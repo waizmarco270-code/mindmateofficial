@@ -11,7 +11,7 @@ import { Lock, Unlock, Download, KeyRound, CreditCard, AlertTriangle } from 'luc
 import { useResources, useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '../ui/separator';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { useAuthModal } from '@/hooks/use-auth-modal';
 
 const UNLOCK_PASSWORD = "waizextra123";
@@ -19,7 +19,7 @@ const UNLOCK_CREDITS = 30;
 
 export function PremiumResources() {
     const { premiumResources, loading } = useResources();
-    const { user } = useAuth();
+    const { user } = useUser();
     const { setOpen: openAuthModal } = useAuthModal();
     const { currentUserData, unlockResourceSection } = useUsers();
     const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
@@ -32,7 +32,7 @@ export function PremiumResources() {
     const handleUnlockWithPassword = async () => {
         if (!user) return;
         if (password === UNLOCK_PASSWORD) {
-            await unlockResourceSection(user.uid, 'class10');
+            await unlockResourceSection(user.id, 'class10');
             setIsUnlockDialogOpen(false);
             toast({ title: 'Success!', description: 'Premium content unlocked.' });
         } else {
@@ -43,7 +43,7 @@ export function PremiumResources() {
 
     const handleUnlockWithCredits = async () => {
         if (user && currentCredits >= UNLOCK_CREDITS) {
-            await unlockResourceSection(user.uid, 'class10', UNLOCK_CREDITS);
+            await unlockResourceSection(user.id, 'class10', UNLOCK_CREDITS);
             setIsUnlockDialogOpen(false);
             toast({ title: `Unlocked!`, description: `${UNLOCK_CREDITS} credits have been used.` });
         } else {
@@ -171,3 +171,5 @@ export function PremiumResources() {
         </div>
     );
 }
+
+    

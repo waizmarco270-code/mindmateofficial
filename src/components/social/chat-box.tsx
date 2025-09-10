@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { type User } from '@/hooks/use-admin';
 import { useChat, type Message } from '@/hooks/use-chat';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -21,7 +21,7 @@ interface ChatBoxProps {
 }
 
 export function ChatBox({ friend, onBack }: ChatBoxProps) {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { messages, sendMessage } = useChat(friend.uid);
   const [newMessage, setNewMessage] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
@@ -69,7 +69,7 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
       <ScrollArea className="flex-1 p-4 bg-muted/20" ref={scrollAreaRef}>
         <div className="space-y-6">
           {messages.map((msg) => (
-            <ChatMessage key={msg.id} message={msg} friend={friend} isCurrentUser={msg.senderId === user?.uid} />
+            <ChatMessage key={msg.id} message={msg} friend={friend} isCurrentUser={msg.senderId === user?.id} />
           ))}
            {messages.length === 0 && (
                 <div className="text-center text-muted-foreground pt-16">
@@ -100,7 +100,7 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
 
 
 function ChatMessage({ message, friend, isCurrentUser }: { message: Message, friend: User, isCurrentUser: boolean }) {
-  const { user } = useAuth();
+  const { user } = useUser();
   
   // A Fallback for timestamp if it's not ready from the server yet
   const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
@@ -127,10 +127,12 @@ function ChatMessage({ message, friend, isCurrentUser }: { message: Message, fri
       </div>
        {isCurrentUser && (
          <Avatar className="h-8 w-8 self-start">
-            <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || "Me"} />
-            <AvatarFallback>{user?.displayName?.charAt(0)}</AvatarFallback>
+            <AvatarImage src={user?.imageUrl || undefined} alt={user?.fullName || "Me"} />
+            <AvatarFallback>{user?.fullName?.charAt(0)}</AvatarFallback>
         </Avatar>
       )}
     </div>
   )
 }
+
+    

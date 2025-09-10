@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { useAuth } from './use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp, where, limit, doc, setDoc, writeBatch } from 'firebase/firestore';
 import { useUsers } from './use-admin';
@@ -19,7 +19,7 @@ const getChatId = (uid1: string, uid2: string) => {
 };
 
 export const useChat = (friendId: string) => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const { users } = useUsers();
   const [messages, setMessages] = useState<Message[]>([]);
   const lastMessageRef = useRef<Message | null>(null);
@@ -28,7 +28,7 @@ export const useChat = (friendId: string) => {
 
   const chatId = useMemo(() => {
     if (!user) return null;
-    return getChatId(user.uid, friendId);
+    return getChatId(user.id, friendId);
   }, [user, friendId]);
 
   const showNotification = useCallback((message: Message) => {
@@ -93,10 +93,10 @@ export const useChat = (friendId: string) => {
 
     // Set/update the main chat document
     batch.set(chatDocRef, {
-        users: [user.uid, friendId],
+        users: [user.id, friendId],
         lastMessage: {
             text,
-            senderId: user.uid,
+            senderId: user.id,
             timestamp: serverTimestamp()
         }
     }, { merge: true });
@@ -104,7 +104,7 @@ export const useChat = (friendId: string) => {
     // Add the new message to the subcollection
     batch.set(messageDocRef, {
       text,
-      senderId: user.uid,
+      senderId: user.id,
       receiverId: friendId,
       timestamp: serverTimestamp(),
     });
@@ -115,3 +115,5 @@ export const useChat = (friendId: string) => {
 
   return { messages, sendMessage };
 };
+
+    

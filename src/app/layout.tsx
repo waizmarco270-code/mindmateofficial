@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { AppDataProvider } from '@/hooks/use-admin';
 import { FriendProvider } from '@/hooks/use-friends';
 import { UnreadMessagesProvider } from '@/hooks/use-unread';
-import { AuthModalProvider } from '@/hooks/use-auth-modal';
 import { ClerkProvider } from '@clerk/nextjs';
 
 export const metadata: Metadata = {
@@ -38,16 +37,14 @@ export default function RootLayout({
             defaultTheme="light"
             disableTransitionOnChange
           >
-            <AuthModalProvider>
-                <AppDataProvider>
-                  <FriendProvider>
-                    <UnreadMessagesProvider>
-                      {children}
-                      <Toaster />
-                    </UnreadMessagesProvider>
-                  </FriendProvider>
-                </AppDataProvider>
-            </AuthModalProvider>
+            <AppDataProvider>
+              <FriendProvider>
+                <UnreadMessagesProvider>
+                  {children}
+                  <Toaster />
+                </UnreadMessagesProvider>
+              </FriendProvider>
+            </AppDataProvider>
           </ThemeProvider>
         </body>
       </html>

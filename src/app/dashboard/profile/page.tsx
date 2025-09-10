@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth, updateProfile } from 'firebase/auth';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db, storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { KeyRound, Trash2, Camera, Crown, ShieldPlus, ShieldX, ShieldCheck, Gift, RefreshCcw, Unlock } from 'lucide-react';
 import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -217,57 +213,29 @@ function SuperAdminControl() {
 }
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, isLoaded } = useUser();
   const { isAdmin } = useAdmin();
   const { toast } = useToast();
   
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [displayName, setDisplayName] = useState(user?.fullName || '');
   const [isSaving, setIsSaving] = useState(false);
-  const [newAvatarFile, setNewAvatarFile] = useState<File | null>(null);
-  const [newAvatarPreview, setNewAvatarPreview] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
+  if (!isLoaded) return null;
   if (!user) return null;
 
-  const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+  const isSuperAdmin = user.id === SUPER_ADMIN_UID;
   
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
     
     setIsSaving(true);
-    const auth = getAuth();
-    let photoURLToUpdate = user.photoURL;
-
+    
     try {
-      // Step 1: If a new avatar is selected, upload it and get the new URL.
-      if (newAvatarFile) {
-        const storageRef = ref(storage, `avatars/${user.uid}/${newAvatarFile.name}`);
-        const uploadResult = await uploadBytes(storageRef, newAvatarFile);
-        photoURLToUpdate = await getDownloadURL(uploadResult.ref);
-      }
-      
-      const newDisplayName = displayName.trim();
-      const profileUpdates: { displayName: string, photoURL?: string | null } = {
-          displayName: newDisplayName,
-          photoURL: photoURLToUpdate
-      };
-
-      // Step 2: Update Firebase Auth profile
-      if (auth.currentUser) {
-        await updateProfile(auth.currentUser, profileUpdates);
-      }
-      
-      // Step 3: Update Firestore user document
-      const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, profileUpdates);
-
-      toast({ title: "Profile Updated!", description: "Your changes have been saved successfully."});
-      
-      // Reset the local state for the avatar preview
-      setNewAvatarFile(null);
-      setNewAvatarPreview(null);
-
+        await user.update({
+            fullName: displayName
+        });
+        toast({ title: "Profile Updated!", description: "Your changes have been saved successfully."});
     } catch (error: any) {
         console.error("Error updating profile:", error);
         toast({ variant: 'destructive', title: "Update Failed", description: error.message });
@@ -276,22 +244,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      // Check file size (1MB limit)
-      if (file.size > 1 * 1024 * 1024) {
-        toast({
-          variant: 'destructive',
-          title: 'Image Too Large',
-          description: 'Please select an image smaller than 1MB.',
-        });
-        return;
-      }
-      setNewAvatarFile(file);
-      setNewAvatarPreview(URL.createObjectURL(file));
-    }
-  };
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -301,7 +253,7 @@ export default function ProfilePage() {
     });
   }
   
-  const isSaveDisabled = isSaving || (displayName === user.displayName && !newAvatarFile);
+  const isSaveDisabled = isSaving || displayName === user.fullName;
 
   return (
     <div className="space-y-8">
@@ -321,18 +273,12 @@ export default function ProfilePage() {
                   <div className="flex items-center gap-6">
                       <div className="relative group">
                         <Avatar className="h-24 w-24 border-2 border-primary/20">
-                          <AvatarImage src={newAvatarPreview ?? user.photoURL ?? `https://picsum.photos/150/150?u=${user.uid}`} alt={user.displayName ?? 'User'} />
-                          <AvatarFallback>{user.email?.charAt(0).toUpperCase()}</AvatarFallback>
+                          <AvatarImage src={user.imageUrl ?? `https://picsum.photos/150/150?u=${user.id}`} alt={user.fullName ?? 'User'} />
+                          <AvatarFallback>{user.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase()}</AvatarFallback>
                         </Avatar>
-                        <button
-                          type="button"
-                          onClick={() => fileInputRef.current?.click()}
-                          className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                          aria-label="Change profile picture"
-                          >
-                            <Camera className="h-8 w-8 text-white" />
-                        </button>
-                        <input type="file" ref={fileInputRef} onChange={handleAvatarChange} accept="image/png, image/jpeg" className="hidden" />
+                        <p className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs text-center">
+                            Update in your Google Account
+                        </p>
                       </div>
                       
                       <div className="space-y-2">
@@ -344,7 +290,7 @@ export default function ProfilePage() {
                                   </span>
                               )}
                           </h2>
-                          <p className="text-muted-foreground">{user.email}</p>
+                          <p className="text-muted-foreground">{user.primaryEmailAddress?.emailAddress}</p>
                       </div>
                   </div>
                   <Separator />
@@ -355,14 +301,14 @@ export default function ProfilePage() {
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="email">Email Address</Label>
-                          <Input id="email" type="email" defaultValue={user.email || ''} disabled />
+                          <Input id="email" type="email" defaultValue={user.primaryEmailAddress?.emailAddress || ''} disabled />
                       </div>
                   </div>
                   <div className="space-y-2 pt-2">
                       <Label htmlFor="uid">Your User ID (UID)</Label>
                       <div className="flex items-center gap-2">
-                        <Input id="uid" type="text" value={user.uid} readOnly className="font-mono bg-muted" />
-                        <Button type="button" variant="outline" onClick={() => copyToClipboard(user.uid)}>Copy UID</Button>
+                        <Input id="uid" type="text" value={user.id} readOnly className="font-mono bg-muted" />
+                        <Button type="button" variant="outline" onClick={() => copyToClipboard(user.id)}>Copy UID</Button>
                       </div>
                   </div>
                   <div className="flex justify-end pt-4">
@@ -377,7 +323,7 @@ export default function ProfilePage() {
               <Card>
                   <CardHeader>
                       <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5"/> Account Security</CardTitle>
-                      <CardDescription>Your account is secured by your Google account.</CardDescription>
+                      <CardDescription>Your account is managed by Clerk.</CardDescription>
                   </CardHeader>
               </Card>
 
@@ -399,3 +345,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

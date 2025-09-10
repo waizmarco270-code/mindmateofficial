@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlarmClock, AlertTriangle, Award, Zap, X, Play, Pause, RotateCcw } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -27,7 +27,7 @@ const PENALTY = 10;
 export const FOCUS_PENALTY_SESSION_KEY = 'focusPenaltyApplied';
 
 export default function FocusModePage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     const { currentUserData, addCreditsToUser } = useUsers();
     const { toast } = useToast();
 
@@ -55,7 +55,7 @@ export default function FocusModePage() {
         } else if (isActive && timeLeft === 0) {
             // Session completed successfully
             if (user && activeSlot) {
-                addCreditsToUser(user.uid, activeSlot.reward);
+                addCreditsToUser(user.id, activeSlot.reward);
                 toast({
                     title: `Session Complete! +${activeSlot.reward} Credits!`,
                     description: 'Great job on your focused study session!',
@@ -76,7 +76,7 @@ export default function FocusModePage() {
         // Define the penalty logic inside the effect to capture the current state
         penaltyApplicator.current = () => {
             if (user && isActive && activeSlot) {
-                addCreditsToUser(user.uid, -PENALTY);
+                addCreditsToUser(user.id, -PENALTY);
                 // Set a flag in session storage so the layout can show the toast.
                  if (typeof window !== 'undefined') {
                     sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, `You have been penalized ${PENALTY} credits for leaving an active focus session.`);
@@ -109,7 +109,7 @@ export default function FocusModePage() {
 
     const handleStopSession = () => {
         if (user) {
-            addCreditsToUser(user.uid, -PENALTY);
+            addCreditsToUser(user.id, -PENALTY);
             toast({
                 variant: 'destructive',
                 title: 'Session Stopped Early',
@@ -218,3 +218,5 @@ export default function FocusModePage() {
         </div>
     );
 }
+
+    

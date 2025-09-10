@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from './use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db, rtdb } from '@/lib/firebase';
 import { ref, onValue, set, onDisconnect, serverTimestamp } from 'firebase/database';
 import { doc, getDoc, onSnapshot, collection } from 'firebase/firestore';
@@ -11,7 +11,7 @@ import { User } from './use-admin';
 export type OnlineUser = Pick<User, 'uid' | 'displayName' | 'photoURL'>;
 
 export const usePresence = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -22,10 +22,10 @@ export const usePresence = () => {
     };
 
     // Reference to the user's status in Realtime Database
-    const myStatusRef = ref(rtdb, 'status/' + user.uid);
+    const myStatusRef = ref(rtdb, 'status/' + user.id);
 
     // Firestore document reference for the current user to get their profile info
-    const userDocRef = doc(db, 'users', user.uid);
+    const userDocRef = doc(db, 'users', user.id);
 
     const setupPresence = async () => {
         const userDoc = await getDoc(userDocRef);
@@ -88,3 +88,5 @@ export const usePresence = () => {
 
   return { onlineUsers, loading };
 };
+
+    

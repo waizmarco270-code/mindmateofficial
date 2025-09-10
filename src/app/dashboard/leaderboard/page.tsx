@@ -2,7 +2,7 @@
 'use client';
 
 import { useUsers, ADMIN_UIDS, DEV_UID } from '@/hooks/use-admin';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,7 +13,7 @@ import {Crown} from 'lucide-react';
 const LEADERBOARD_EXCLUDED_UIDS = ['23j2N4p0ZgUnCqTBrrppkYtD2fI3'];
 
 export default function LeaderboardPage() {
-    const { user: currentUser } = useAuth();
+    const { user: currentUser } = useUser();
     const { users } = useUsers();
 
     const sortedUsers = [...users]
@@ -23,7 +23,7 @@ export default function LeaderboardPage() {
     const topThree = sortedUsers.slice(0, 3);
     const restOfUsers = sortedUsers.slice(3);
 
-    const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.uid);
+    const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
 
     const getTrophyColor = (rank: number) => {
         if (rank === 0) return 'text-yellow-500';
@@ -150,7 +150,7 @@ export default function LeaderboardPage() {
                                 const isVip = user.isAdmin || ADMIN_UIDS.includes(user.uid);
                                 const isDev = user.uid === DEV_UID;
                                 return (
-                                    <TableRow key={user.uid} className={cn(currentUser?.uid === user.uid && 'bg-primary/10')}>
+                                    <TableRow key={user.uid} className={cn(currentUser?.id === user.uid && 'bg-primary/10')}>
                                         <TableCell className="font-bold text-lg text-muted-foreground">{rank}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-3">

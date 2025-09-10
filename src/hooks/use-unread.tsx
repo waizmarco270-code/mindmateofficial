@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { useAuth } from './use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { useLocalStorage } from './use-local-storage';
@@ -47,7 +47,7 @@ const getChatId = (uid1: string, uid2: string) => {
 };
 
 export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user } = useUser();
   const [chats, setChats] = useState<Chat[]>([]);
   const [globalChat, setGlobalChat] = useState<GlobalChat>({ lastMessage: null });
   const [lastReadTimestamps, setLastReadTimestamps] = useLocalStorage<LastReadTimestamps>('lastReadTimestamps', {});
@@ -59,7 +59,7 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
       return;
     }
     const chatsRef = collection(db, 'chats');
-    const q = query(chatsRef, where('users', 'array-contains', user.uid));
+    const q = query(chatsRef, where('users', 'array-contains', user.id));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
        const userChats: Chat[] = [];
@@ -104,7 +104,7 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
       if (!user) return unread;
 
       chats.forEach(chat => {
-          if(chat.lastMessage && chat.lastMessage.senderId !== user.uid) {
+          if(chat.lastMessage && chat.lastMessage.senderId !== user.id) {
               const lastReadTime = lastReadTimestamps[chat.id] || 0;
               if(chat.lastMessage.timestamp.getTime() > lastReadTime) {
                   unread.add(chat.id);
@@ -117,7 +117,7 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   const hasGlobalUnread = useMemo(() => {
     if (!user || !globalChat.lastMessage) return false;
     // Don't show unread for your own messages
-    if (globalChat.lastMessage.senderId === user.uid) return false;
+    if (globalChat.lastMessage.senderId === user.id) return false;
 
     const lastReadTime = lastReadTimestamps['global_chat'] || 0;
     return globalChat.lastMessage.timestamp.getTime() > lastReadTime;
@@ -127,7 +127,7 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
 
   const markAsRead = useCallback((friendId: string) => {
     if (!user) return;
-    const chatId = getChatId(user.uid, friendId);
+    const chatId = getChatId(user.id, friendId);
     setLastReadTimestamps(prev => ({
         ...prev,
         [chatId]: Date.now()
@@ -143,7 +143,7 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
 
   const hasUnreadFrom = useCallback((friendId: string) => {
        if (!user) return false;
-       const chatId = getChatId(user.uid, friendId);
+       const chatId = getChatId(user.id, friendId);
        return unreadChats.has(chatId);
   }, [user, unreadChats]);
 
@@ -172,3 +172,5 @@ export const useUnreadMessages = () => {
   }
   return context;
 };
+
+    

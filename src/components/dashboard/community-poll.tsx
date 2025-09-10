@@ -7,11 +7,11 @@ import { Progress } from '@/components/ui/progress';
 import { usePolls } from '@/hooks/use-admin';
 import { Vote, CheckCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 
 export function CommunityPoll() {
   const { activePoll, submitPollVote, currentUserData } = usePolls();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const userVote = useMemo(() => {
@@ -104,3 +104,5 @@ export function CommunityPoll() {
     </Card>
   );
 }
+
+    

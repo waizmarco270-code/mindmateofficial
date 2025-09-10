@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { useUsers } from '@/hooks/use-admin';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
@@ -28,7 +28,7 @@ interface DailyTasks {
 
 export function TodoList() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const { addCreditsToUser } = useUsers();
   const todayString = format(new Date(), 'yyyy-MM-dd');
   
@@ -39,7 +39,7 @@ export function TodoList() {
   // Firestore document reference for today's tasks
   const dailyDocRef = useMemo(() => {
     if (!user) return null;
-    return doc(db, 'users', user.uid, 'dailyTasks', todayString);
+    return doc(db, 'users', user.id, 'dailyTasks', todayString);
   }, [user, todayString]);
 
   // Listen for real-time updates from Firestore
@@ -92,7 +92,7 @@ export function TodoList() {
 
   const handleClaimCredit = async () => {
     if (user && !todaysData.creditClaimed) {
-      await addCreditsToUser(user.uid, 1);
+      await addCreditsToUser(user.id, 1);
       await updateFirestore({ ...todaysData, creditClaimed: true });
       toast({
           title: "Credit Claimed!",
@@ -176,3 +176,5 @@ export function TodoList() {
     </div>
   );
 }
+
+    

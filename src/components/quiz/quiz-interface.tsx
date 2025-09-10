@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Progress } from '@/components/ui/progress';
 import { Clock, CheckCircle, XCircle, Award, BrainCircuit, Check, Trophy, RefreshCw, X } from 'lucide-react';
 import { useUsers } from '@/hooks/use-admin';
-import { useAuth } from '@/hooks/use-auth';
+import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { DialogClose } from '../ui/dialog';
@@ -19,7 +19,7 @@ interface QuizInterfaceProps {
 }
 
 export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
-    const { user } = useAuth();
+    const { user } = useUser();
     const { currentUserData, addCreditsToUser, addPerfectedQuiz, incrementQuizAttempt } = useUsers();
     const { toast } = useToast();
 
@@ -73,7 +73,7 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
         if(!user) return;
         
         // Always increment attempt count on finish
-        await incrementQuizAttempt(user.uid, quiz.id);
+        await incrementQuizAttempt(user.id, quiz.id);
 
         const currentAttempts = (currentUserData?.quizAttempts?.[quiz.id] || 0) + 1;
         const isPerfect = score === quiz.questions.length && score > 0;
@@ -82,8 +82,8 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
         // Award logic: perfect score, within 2 attempts, and not already perfected
         if (isPerfect && currentAttempts <= 2 && !alreadyPerfected && !creditAwardedRef.current) {
             creditAwardedRef.current = true;
-            await addCreditsToUser(user.uid, 5);
-            await addPerfectedQuiz(user.uid, quiz.id);
+            await addCreditsToUser(user.id, 5);
+            await addPerfectedQuiz(user.id, quiz.id);
             toast({
                 title: "Perfect Score! +5 Credits!",
                 description: "Congratulations! You've earned a reward for your excellent knowledge.",
@@ -247,3 +247,5 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
         </div>
     );
 }
+
+    

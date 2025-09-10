@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
-import { useAuth } from './use-auth';
+import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, query, where, arrayUnion, arrayRemove, writeBatch } from 'firebase/firestore';
 import { User } from './use-admin';
@@ -15,7 +15,7 @@ const FriendContext = createContext<FriendContextType | undefined>(undefined);
 
 
 export const FriendProvider = ({ children }: { children: ReactNode }) => {
-    const { user: authUser } = useAuth();
+    const { user: authUser } = useUser();
     const { toast } = useToast();
     const [users, setUsers] = useState<User[]>([]);
 
@@ -26,7 +26,7 @@ export const FriendProvider = ({ children }: { children: ReactNode }) => {
         }
         // Query for all users EXCEPT the current one
         const usersCol = collection(db, 'users');
-        const q = query(usersCol, where('uid', '!=', authUser.uid));
+        const q = query(usersCol, where('uid', '!=', authUser.id));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
             setUsers(usersList);
@@ -53,3 +53,5 @@ export const useFriends = () => {
     }
     return context;
 };
+
+    
