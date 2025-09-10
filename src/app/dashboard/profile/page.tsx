@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 // This now uses your email to identify you as the Super Admin
-const SUPER_ADMIN_EMAIL = 'waizmonazzum270@gmail.com';
+const SUPER_ADMIN_UID = 'user_2jF4xG0A2e3r4t5Y6z7a8b9c0d1e2f3';
 const CREDIT_UNLOCK_PASSWORD = "waizcredit";
 
 
@@ -51,7 +51,7 @@ function SuperAdminControl() {
     try {
         await removeUserAdmin(uid);
         toast({ title: 'Success', description: 'Admin privileges have been revoked.' });
-    } catch (error: any) => {
+    } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
   }
@@ -122,7 +122,7 @@ function SuperAdminControl() {
                            
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                     <Button variant="destructive" size="sm" disabled={admin.email === SUPER_ADMIN_EMAIL}>
+                                     <Button variant="destructive" size="sm" disabled={admin.uid === SUPER_ADMIN_UID}>
                                         <ShieldX className="mr-2 h-4 w-4"/> Revoke
                                     </Button>
                                 </AlertDialogTrigger>
@@ -218,7 +218,7 @@ export default function ProfilePage() {
 
   if (!isLoaded || !user) return null;
 
-  const isSuperAdmin = user.primaryEmailAddress?.emailAddress === SUPER_ADMIN_EMAIL;
+  const isSuperAdmin = user.id === SUPER_ADMIN_UID;
   
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
