@@ -155,33 +155,40 @@ export default function LeaderboardPage() {
                     <CardTitle>Full Rankings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-2">
+                    <div className="space-y-4">
                         {restOfUsers.map((user, index) => {
                             const rank = index + 4;
                             const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
                             return (
-                                <div key={user.uid} className={cn("flex items-center gap-3 p-2 rounded-lg", currentUser?.id === user.uid && 'bg-primary/10')}>
-                                    <p className="font-bold text-lg text-muted-foreground w-8 text-center">{rank}</p>
-                                    <Avatar className="w-10 h-10 border">
-                                        <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-medium truncate">{user.displayName}</span>
-                                            {isSuperAdmin ? (
-                                                <span className="dev-badge flex-shrink-0">
-                                                    <Code className="h-3 w-3" /> DEV
-                                                </span>
-                                            ) : user.isAdmin && (
-                                                <span className="vip-badge flex-shrink-0">
-                                                    <Crown className="h-3 w-3" /> VIP
-                                                </span>
-                                            )}
+                                <Card key={user.uid} className={cn("overflow-hidden", currentUser?.id === user.uid && 'border-primary')}>
+                                    <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                                        <div className="flex items-center gap-4 flex-1">
+                                            <p className="font-bold text-lg text-muted-foreground w-8 text-center">{rank}</p>
+                                            <Avatar className="w-12 h-12 border">
+                                                <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-medium truncate">{user.displayName}</span>
+                                                    {isSuperAdmin ? (
+                                                        <span className="dev-badge flex-shrink-0">
+                                                            <Code className="h-3 w-3" /> DEV
+                                                        </span>
+                                                    ) : user.isAdmin && (
+                                                        <span className="vip-badge flex-shrink-0">
+                                                            <Crown className="h-3 w-3" /> VIP
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                 <p className="text-muted-foreground text-sm">Total Score: <span className="font-bold text-primary">{user.totalScore}</span></p>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <p className="font-bold text-lg">{user.totalScore}</p>
-                                </div>
+                                        <div className="sm:border-l sm:pl-4 mt-4 sm:mt-0">
+                                            {renderUserStats(user)}
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             )
                         })}
                         {sortedUsers.length === 0 && (
@@ -211,5 +218,3 @@ export default function LeaderboardPage() {
         </div>
     );
 }
-
-    
