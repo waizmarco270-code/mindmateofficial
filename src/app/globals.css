@@ -119,4 +119,16 @@
     border: 1px solid #dc2626; /* red-600 */
     box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
   }
+
+  .bg-grid-slate-800 {
+    background-image: linear-gradient(white 1px, transparent 1px),
+      linear-gradient(to right, white 1px, transparent 1px);
+    background-size: 4rem 4rem;
+    background-color: transparent;
+    opacity: 0.1;
+  }
+
+  .animate-fade-in-up {
+      animation-fill-mode: forwards;
+  }
 }

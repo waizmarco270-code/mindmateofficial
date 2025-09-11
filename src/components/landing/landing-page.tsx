@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -5,6 +6,7 @@ import { ArrowRight, Bot, BrainCircuit, Users, Zap, Youtube, Twitter, Send } fro
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
 import { SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
+import { cn } from '@/lib/utils';
 
 const features = [
   {
@@ -87,17 +89,17 @@ export function LandingPage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden py-24 sm:py-32">
-            <div className="absolute inset-0 bg-grid-slate-800 [mask-image:linear-gradient(to_bottom,white_20%,transparent_100%)]"></div>
+            <div className="absolute inset-0 bg-grid-slate-800 [mask-image:linear-gradient(to_bottom,white_20%,transparent_100%)] animate-pulse-slow"></div>
             <div className="container mx-auto px-4 text-center relative">
-                <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
+                <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up" style={{animationDelay: '0.2s'}}>
                     Unlock Your <span className="bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent">Full Potential</span>
                 </h1>
-                <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">
+                <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
                     MindMate is your all-in-one AI-powered study companion, designed to help you learn smarter, stay focused, and achieve your academic goals.
                 </p>
-                <div className="mt-10">
+                <div className="mt-10 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
                     <SignUpButton mode="modal">
-                        <Button size="lg" className="text-lg h-14 px-10 bg-primary/90 hover:bg-primary shadow-lg shadow-primary/20">
+                        <Button size="lg" className="text-lg h-14 px-10 bg-primary/90 hover:bg-primary shadow-lg shadow-primary/20 transition-transform duration-300 hover:scale-105">
                             Start Learning for Free
                         </Button>
                     </SignUpButton>
@@ -113,10 +115,14 @@ export function LandingPage() {
               <p className="mt-4 text-lg text-slate-400">Everything you need to succeed, all in one place.</p>
             </div>
             <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-4">
-              {features.map((feature) => (
-                <div key={feature.name} className="flex flex-col rounded-2xl border border-white/10 bg-slate-900/50 p-8 shadow-2xl shadow-slate-950/50">
-                  <div className={`flex h-12 w-12 items-center justify-center rounded-lg ${feature.bgColor}`}>
-                    <feature.icon className={`h-6 w-6 ${feature.color}`} aria-hidden="true" />
+              {features.map((feature, i) => (
+                <div 
+                  key={feature.name} 
+                  className="flex flex-col rounded-2xl border border-white/10 bg-slate-900/50 p-8 shadow-2xl shadow-slate-950/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/20 animate-fade-in-up"
+                  style={{animationDelay: `${0.8 + i * 0.2}s`}}
+                >
+                  <div className={cn("flex h-12 w-12 items-center justify-center rounded-lg", feature.bgColor)}>
+                    <feature.icon className={cn("h-6 w-6", feature.color)} aria-hidden="true" />
                   </div>
                   <h3 className="mt-6 text-lg font-semibold text-white">{feature.name}</h3>
                   <p className="mt-2 text-base text-slate-400">{feature.description}</p>
@@ -151,3 +157,4 @@ export function LandingPage() {
     </div>
   );
 }
+
