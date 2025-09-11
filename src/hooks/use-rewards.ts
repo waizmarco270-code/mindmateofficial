@@ -46,19 +46,18 @@ export const useRewards = () => {
             return { finalRotation: 0, prizeIndex: 0 };
         }
         
-        // Weighted prizes
         const weightedPrizes = [
-            // { value: 'better luck', weight: 40 },
+            { value: 'better luck', weight: 40 },
             { value: 2, weight: 30 },
             { value: 5, weight: 20 },
             { value: 10, weight: 9 },
-            { value: 100, weight: 1 } // 1% chance for 100 credits
+            { value: 100, weight: 1 }
         ];
         
         const totalWeight = weightedPrizes.reduce((sum, p) => sum + p.weight, 0);
         let random = Math.random() * totalWeight;
         
-        let chosenPrize: { value: number | string; weight: number };
+        let chosenPrize: { value: number | string; weight: number } | undefined;
         for (const prize of weightedPrizes) {
             if (random < prize.weight) {
                 chosenPrize = prize;
@@ -66,18 +65,16 @@ export const useRewards = () => {
             }
             random -= prize.weight;
         }
-        chosenPrize ??= weightedPrizes[0]; // Fallback
+        chosenPrize ??= weightedPrizes[0];
 
-        // Find a segment on the wheel that matches the prize value
         const possibleIndexes = prizes
-            .map((p, i) => (p.value === chosenPrize.value ? i : -1))
+            .map((p, i) => (p.value === chosenPrize!.value ? i : -1))
             .filter(i => i !== -1);
         const prizeIndex = possibleIndexes[Math.floor(Math.random() * possibleIndexes.length)];
         
         const segmentAngle = 360 / prizes.length;
-        // Add a random offset within the segment for variability
         const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.8);
-        const finalRotation = (prizeIndex * -segmentAngle) - (segmentAngle / 2) + randomOffset;
+        const finalRotation = 360 - (prizeIndex * segmentAngle) - (segmentAngle / 2) - randomOffset;
         
         const userDocRef = doc(db, 'users', user.id);
         const newRecord: SpinRecord = { reward: chosenPrize.value, date: new Date() };
@@ -90,7 +87,7 @@ export const useRewards = () => {
 
         if (typeof chosenPrize.value === 'number') {
             await addCreditsToUser(user.id, chosenPrize.value);
-            toast({ title: "You Won!", description: `Congratulations! ${chosenPrize.value} credits have been added to your account.` });
+            toast({ title: "You Won!", description: `Congratulations! ${chosenPrize.value} credits have been added to your account.`, className: "bg-green-500/10 border-green-500/50" });
         } else {
              toast({ title: "Better Luck Next Time!", description: "Keep trying, your lucky day is coming!" });
         }

@@ -25,23 +25,23 @@ export function SpinWheel() {
     const [rotation, setRotation] = useState(0);
 
     const handleSpin = async () => {
-        if (!canSpin) return;
+        if (!canSpin || isSpinning) return;
         setIsSpinning(true);
         const { finalRotation, prizeIndex } = await spin();
         
-        // Add multiple full rotations for visual effect
         const fullSpins = 5;
         const totalRotation = (fullSpins * 360) + finalRotation;
         
         setRotation(totalRotation);
 
-        // Wait for animation to finish
         setTimeout(() => {
             setIsSpinning(false);
-            // Optionally reset visual rotation to its simplest form
-            setRotation(finalRotation); 
-        }, 5000); // This duration should match the CSS transition duration
+            const simplifiedRotation = finalRotation % 360;
+            setRotation(simplifiedRotation);
+        }, 5000); 
     };
+
+    const segmentAngle = 360 / prizes.length;
 
     return (
         <div className="relative flex flex-col items-center justify-center p-4 sm:p-8 rounded-2xl bg-gradient-to-br from-slate-900 via-purple-900/50 to-slate-900 border border-purple-800 shadow-2xl shadow-purple-500/10">
@@ -59,33 +59,42 @@ export function SpinWheel() {
 
                 {/* Wheel */}
                 <div
-                    className="absolute w-full h-full rounded-full border-8 border-purple-500/50 shadow-inner transition-transform duration-[5000ms] ease-in-out"
+                    className="absolute w-full h-full rounded-full border-8 border-purple-500/50 shadow-inner transition-transform duration-[5000ms] ease-out"
                     style={{ transform: `rotate(${rotation}deg)` }}
                 >
                     <ul className="w-full h-full relative rounded-full overflow-hidden">
-                        {prizes.map((prize, i) => (
-                            <li
-                                key={i}
-                                className="absolute w-1/2 h-1/2 origin-bottom-right"
-                                style={{
-                                    transform: `rotate(${i * (360 / prizes.length)}deg)`,
-                                    clipPath: 'polygon(0 0, 100% 0, 100% 100%)',
-                                }}
-                            >
-                                <div
-                                    className="absolute w-full h-full flex items-center justify-center text-white font-bold text-xl sm:text-2xl"
+                        {prizes.map((prize, i) => {
+                            const rotation = segmentAngle * i;
+                            return (
+                                <li
+                                    key={i}
+                                    className="absolute w-full h-full"
                                     style={{
-                                        backgroundColor: prizeColors[i % prizeColors.length],
-                                        transform: 'rotate(22.5deg) translateX(-50%) translateY(-50%) scale(1.2)',
-                                        transformOrigin: 'center'
+                                        transform: `rotate(${rotation}deg)`,
+                                        clipPath: `polygon(50% 50%, 100% 50%, 100% 0%, 50% 0)`,
                                     }}
                                 >
-                                    <span style={{ transform: `rotate(${-90 + (360 / prizes.length) / 2}deg) translate(0, -10px)` }}>
-                                        {prize.label}
-                                    </span>
-                                </div>
-                            </li>
-                        ))}
+                                    <div
+                                        className="absolute w-full h-full flex items-start justify-center"
+                                        style={{
+                                            backgroundColor: prizeColors[i % prizeColors.length],
+                                            transform: `rotate(${segmentAngle / 2}deg)`,
+                                            transformOrigin: '50% 50%',
+                                        }}
+                                    >
+                                        <span 
+                                            className="text-white font-bold text-xl sm:text-2xl mt-4"
+                                            style={{
+                                                transform: `rotate(${-90 - segmentAngle/2 - rotation}deg)`,
+                                                display: 'inline-block'
+                                            }}
+                                        >
+                                            {prize.label}
+                                        </span>
+                                    </div>
+                                </li>
+                             )
+                         })}
                     </ul>
                 </div>
                  {/* Center Button */}
