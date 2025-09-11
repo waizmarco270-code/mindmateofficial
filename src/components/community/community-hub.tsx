@@ -12,7 +12,7 @@ import { Send, Globe, MessageSquare, Crown, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatRelative } from 'date-fns';
 import { useGlobalChat, type GlobalMessage } from '@/hooks/use-global-chat';
-import { useUsers, User } from '@/hooks/use-admin';
+import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUnreadMessages } from '@/hooks/use-unread';
 
@@ -111,6 +111,7 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
     const { user } = useUser();
     const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
     const isVip = sender?.isAdmin ?? false;
+    const isSuperAdmin = sender?.uid === SUPER_ADMIN_UID;
 
     return (
         <div className={cn("flex items-start gap-3", isCurrentUser && "justify-end")}>
@@ -124,7 +125,11 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
                  {!isCurrentUser && (
                     <p className="text-xs text-muted-foreground font-semibold px-1 flex items-center gap-1.5">
                         {sender?.displayName ?? 'Unknown User'}
-                        {isVip && (
+                        {isSuperAdmin ? (
+                            <span className="dev-badge">
+                                <Code className="h-3 w-3" /> DEV
+                            </span>
+                        ) : isVip && (
                             <span className="vip-badge">
                                 <Crown className="h-3 w-3" /> VIP
                             </span>

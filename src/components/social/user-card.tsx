@@ -1,9 +1,9 @@
 
 'use client';
 
-import { User } from '@/hooks/use-admin';
+import { User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Crown } from 'lucide-react';
+import { Crown, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUnreadMessages } from '@/hooks/use-unread';
 
@@ -19,6 +19,7 @@ export function UserCard({
     isSelected 
 }: UserCardProps) {
     const isVip = user.isAdmin;
+    const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
     const { hasUnreadFrom } = useUnreadMessages();
     const hasUnread = hasUnreadFrom(user.uid);
 
@@ -43,7 +44,11 @@ export function UserCard({
             <div className="truncate flex-1">
                 <h3 className="font-semibold text-sm flex items-center gap-2 truncate">
                     <span className="truncate">{user.displayName}</span>
-                    {isVip && (
+                    {isSuperAdmin ? (
+                        <span className="dev-badge flex-shrink-0">
+                            <Code className="h-3 w-3" /> DEV
+                        </span>
+                    ) : isVip && (
                         <span className="vip-badge flex-shrink-0">
                             <Crown className="h-3 w-3" /> VIP
                         </span>
