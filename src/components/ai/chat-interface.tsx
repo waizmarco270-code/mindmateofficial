@@ -2,11 +2,11 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Square, BrainCircuit, AlertTriangle, ShieldAlert, Sparkles } from 'lucide-react';
+import { Send, Mic, Square, BrainCircuit, AlertTriangle, ShieldAlert, Sparkles, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ChatMessage, type Message } from './chat-message';
+import { ChatMessage, type Message, type QuizQuestion } from './chat-message';
 import { answerStudyQuestion } from '@/ai/flows/answer-study-questions';
 import { explainSimply } from '@/ai/flows/explain-simply';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,8 @@ import { AiAvatar } from './ai-avatar';
 import { useUsers } from '@/hooks/use-admin';
 import { SignInButton } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { Card, CardContent } from '../ui/card';
 
 const CHAT_COST = 1;
 
@@ -87,18 +89,16 @@ export function ChatInterface() {
         });
       return;
     }
+    
     if (isListening) {
       recognitionRef.current.stop();
+      setIsListening(false);
     } else {
        try {
         recognitionRef.current.start();
       } catch (error: any) {
-        // This can happen if the recognition is still cleaning up.
-        console.error("Error starting speech recognition:", error);
-        if (error.name === 'InvalidStateError') {
-          // You might want to ignore this specific error or just log it.
-        } else {
-            toast({
+        if (error.name !== 'InvalidStateError') {
+             toast({
               variant: 'destructive',
               title: 'Could not start voice recognition',
               description: error.message
@@ -145,6 +145,18 @@ export function ChatInterface() {
                 setTimeout(() => {
                     router.push(response.navigation.route);
                 }, 1000);
+                return;
+            }
+            
+            // Handle quiz generation
+            if (response.quiz) {
+                const quizMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: "Here's a quick quiz for you!",
+                    quiz: response.quiz,
+                };
+                setMessages((prev) => [...prev, quizMessage]);
                 return;
             }
 
@@ -224,6 +236,22 @@ export function ChatInterface() {
       );
   }
   
+  const handleGenerateQuiz = async (topic: string) => {
+    if (!user) return;
+     const userMessage: Message = { id: Date.now().toString(), role: 'user', content: `Test me on ${topic}`, isHidden: true };
+     setMessages((prev) => [...prev, userMessage]);
+     await callAiAndHandleResponse(
+        answerStudyQuestion,
+        {
+            question: `Generate a quiz on ${topic}`,
+            studyMaterial: topic,
+            generateQuiz: true
+        },
+        CHAT_COST
+     );
+  }
+
+  
   if (!user) {
       return (
             <div className="flex flex-col items-center justify-center h-full text-center p-8 rounded-xl bg-muted/40 border-2 border-dashed">
@@ -270,6 +298,7 @@ export function ChatInterface() {
                 message={message}
                 isThinking={false}
                 onSimplify={handleExplainSimply}
+                onGenerateQuiz={handleGenerateQuiz}
              />
           ))}
           {isThinking && <ChatMessage message={{ id: 'thinking', role: 'assistant', content: '' }} isThinking={true} />}
