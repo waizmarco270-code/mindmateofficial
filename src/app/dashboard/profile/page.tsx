@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -39,7 +40,7 @@ export default function ProfilePage() {
         toast({ title: "Profile Updated!", description: "Your changes have been saved successfully."});
     } catch (error: any) {
         console.error("Error updating profile:", error);
-        toast({ variant: 'destructive', title: "Update Failed", description: error.message });
+        toast({ variant: 'destructive', title: "Update Failed", description: error.message || 'An unknown error occurred.' });
     } finally {
         setIsSaving(false);
     }

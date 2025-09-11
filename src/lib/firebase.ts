@@ -6,13 +6,12 @@ import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "mindmate-255b5.firebaseapp.com",
-  projectId: "mindmate-255b5",
-  storageBucket: "mindmate-255b5.appspot.com",
-  messagingSenderId: "34938363632",
-  appId: "1:34938363632:web:65d386189912759929213c",
-  databaseURL: "https://mindmate-255b5-default-rtdb.firebaseio.com"
+  apiKey: "AIzaSyATUcEV5XGgj5oMkAv1a5Xh-6jZApOXVBw",
+  authDomain: "mindmate-80e5c.firebaseapp.com",
+  projectId: "mindmate-80e5c",
+  storageBucket: "mindmate-80e5c.appspot.com",
+  messagingSenderId: "1040365164281",
+  appId: "1:1040365164281:web:3cf995fb97fe775c33b428"
 };
 
 // Initialize Firebase App (Singleton Pattern)
