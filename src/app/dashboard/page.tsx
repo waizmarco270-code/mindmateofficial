@@ -110,23 +110,26 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
-           <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20 shadow-lg">
-                <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
-                    <div className="bg-primary/80 text-primary-foreground p-3 rounded-full">
-                        <Bell className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <CardTitle className="text-primary text-xl">Latest Announcement</CardTitle>
-                        <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6 pt-0">
-                    <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                    <p className="text-muted-foreground mt-2">
-                    {latestAnnouncement.description}
-                    </p>
-                </CardContent>
-            </Card>
+            <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                <Card className="relative">
+                    <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
+                        <div className="p-3 rounded-full bg-primary/20 animate-pulse">
+                            <Bell className="h-8 w-8 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-primary text-xl">Latest Announcement</CardTitle>
+                            <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-4 md:p-6 pt-0">
+                        <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
+                        <p className="text-muted-foreground mt-2">
+                        {latestAnnouncement.description}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
             <CommunityPoll />
             
