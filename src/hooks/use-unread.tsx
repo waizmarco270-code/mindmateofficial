@@ -65,13 +65,15 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
        const userChats: Chat[] = [];
        snapshot.forEach(doc => {
            const data = doc.data();
-           userChats.push({
-               id: doc.id,
-               lastMessage: data.lastMessage ? {
-                   ...data.lastMessage,
-                   timestamp: (data.lastMessage.timestamp as Timestamp)?.toDate()
-               } : null
-           });
+           if (data.lastMessage && data.lastMessage.timestamp) {
+             userChats.push({
+                 id: doc.id,
+                 lastMessage: {
+                     ...data.lastMessage,
+                     timestamp: (data.lastMessage.timestamp as Timestamp)?.toDate()
+                 }
+             });
+           }
        });
        setChats(userChats);
     });
@@ -88,12 +90,14 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
           if(!snapshot.empty) {
               const lastMessageDoc = snapshot.docs[0];
               const data = lastMessageDoc.data();
-              setGlobalChat({
-                  lastMessage: {
-                      ...data,
-                      timestamp: (data.timestamp as Timestamp).toDate(),
-                  } as any,
-              });
+               if (data && data.timestamp) {
+                    setGlobalChat({
+                        lastMessage: {
+                            ...data,
+                            timestamp: (data.timestamp as Timestamp).toDate(),
+                        } as any,
+                    });
+               }
           }
       });
       return () => unsubscribe();
