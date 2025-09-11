@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trophy, Award, Crown, Zap, CheckCircle, Clock, Shield, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
+import { Separator } from '@/components/ui/separator';
 
 const LEADERBOARD_EXCLUDED_UIDS: string[] = [];
 
@@ -119,17 +120,21 @@ export default function LeaderboardPage() {
 
         return (
             <Card className="w-full">
-                <CardContent className="p-4 flex items-center gap-4">
-                    <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
-                    <Avatar className="w-12 h-12 border-2">
-                        <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                        <p className="font-semibold">{user.displayName}</p>
-                        <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
+                <CardContent className="p-4 flex flex-col gap-2">
+                    <div className="flex items-center gap-4">
+                        <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
+                        <Avatar className="w-12 h-12 border-2">
+                            <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                            <p className="font-semibold">{user.displayName}</p>
+                            <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
+                        </div>
+                        <p className={cn("text-2xl font-bold", placeDetails.trophyColor)}>{user.totalScore}</p>
                     </div>
-                    <p className={cn("text-2xl font-bold", placeDetails.trophyColor)}>{user.totalScore}</p>
+                    <Separator />
+                    {renderUserStats(user)}
                 </CardContent>
             </Card>
         )
