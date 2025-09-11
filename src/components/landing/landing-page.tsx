@@ -43,11 +43,9 @@ const features = [
 ];
 
 const socialLinks = [
-    { name: 'Instagram', href: 'https://www.instagram.com/mindmate100?igsh=MWd6dXJjbjVva2dlYg==', icon: null },
-    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H', icon: null },
-    { name: 'YouTube', href: '#', icon: Youtube },
-    { name: 'Twitter', href: '#', icon: Twitter },
-    { name: 'Telegram', href: '#', icon: Send },
+    { name: 'Instagram', href: 'https://www.instagram.com/mindmate100?utm_source=ig_web_button_share_sheet&igsh=emJwcTZxdmZnaGF1', icon: 'instagram' },
+    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H', icon: 'whatsapp' },
+    { name: 'Telegram', href: 'https://t.me/EmityGate', icon: Send },
 ];
 
 
@@ -176,9 +174,11 @@ export function LandingPage() {
                 <p className="text-sm text-slate-400">&copy; {new Date().getFullYear()} MindMate. All rights reserved.</p>
                 <div className="flex items-center gap-4">
                     {socialLinks.map(link => {
-                        let Icon = link.icon;
-                        if(link.name === 'Instagram') Icon = InstagramIcon;
-                        if(link.name === 'WhatsApp') Icon = WhatsAppIcon;
+                        let Icon;
+                        if(link.icon === 'instagram') Icon = InstagramIcon;
+                        else if(link.icon === 'whatsapp') Icon = WhatsAppIcon;
+                        else Icon = link.icon;
+                        
                         return (
                              <a key={link.name} href={link.href} className="text-slate-400 hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
                                 {Icon ? <Icon /> : link.name}
