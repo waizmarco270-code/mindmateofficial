@@ -1,14 +1,14 @@
-
 'use client';
 
 import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useAnnouncements, useUsers } from '@/hooks/use-admin';
 import { CommunityPoll } from '@/components/dashboard/community-poll';
 import { cn } from '@/lib/utils';
+import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
 
 const features = [
   {
@@ -75,6 +75,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <SignedOut>
+        <WelcomeDialog />
+      </SignedOut>
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Welcome Back, {user?.firstName || 'Student'}!</h1>
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
@@ -132,6 +135,7 @@ export default function DashboardPage() {
 
         {/* Side Column */}
         <div className="lg:col-span-1 space-y-8">
+          <SignedIn>
             <Card className="border-amber-500/20 bg-amber-500/5">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600">
@@ -146,6 +150,7 @@ export default function DashboardPage() {
                     </p>
                 </CardContent>
             </Card>
+          </SignedIn>
         </div>
 
       </div>
