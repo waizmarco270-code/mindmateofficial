@@ -7,7 +7,10 @@ import Link from 'next/link';
 import { Logo } from '../ui/logo';
 import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
-import { HeroBackground } from './hero-background';
+import dynamic from 'next/dynamic';
+
+const HeroBackground = dynamic(() => import('./hero-background').then(mod => mod.HeroBackground), { ssr: false });
+
 
 const features = [
   {
