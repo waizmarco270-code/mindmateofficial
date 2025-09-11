@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Bot, BrainCircuit, Users, Zap, Youtube, Twitter, Send, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
-import { SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
+import { HeroBackground } from './hero-background';
 
 const features = [
   {
@@ -99,13 +100,7 @@ export function LandingPage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden py-24 sm:py-32">
-            <div aria-hidden="true" className="absolute inset-0 -z-10">
-                <div className="absolute inset-0 bg-[radial-gradient(40%_120%_at_50%_100%,hsl(0_0%_100%/0.05)_0,transparent_100%)]"></div>
-                <div className="absolute inset-0 bg-slate-950 [mask-image:radial-gradient(farthest-side_at_top_left,transparent,white)]">
-                    <div className="absolute inset-0 bg-[radial-gradient(farthest-side_at_top_left,hsl(var(--primary)/0.25),transparent)]"></div>
-                </div>
-                <div className="absolute inset-0 bg-[radial-gradient(circle_500px_at_50%_200px,#3e3e3e,transparent)] bg-no-repeat [background-size:100%_100%,_] [mask-image:radial-gradient(circle_at_center,white,transparent)]"></div>
-            </div>
+            <HeroBackground />
             <div className="container mx-auto px-4 text-center relative">
                 <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up" style={{animationDelay: '0.2s'}}>
                     Unlock Your <span className="bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent">Full Potential</span>
@@ -184,4 +179,3 @@ export function LandingPage() {
     </div>
   );
 }
-
