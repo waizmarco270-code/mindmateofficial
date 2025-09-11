@@ -171,9 +171,20 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
                 const data = doc.data();
+                const updates: Partial<User> = {};
+                let hasUpdates = false;
+
                 if (data.displayName !== authUser.username && authUser.username) {
-                    // Sync username from Clerk to Firestore if it's different
-                    updateDoc(userDocRef, { displayName: authUser.username });
+                    updates.displayName = authUser.username;
+                    hasUpdates = true;
+                }
+                if (data.photoURL !== authUser.imageUrl) {
+                    updates.photoURL = authUser.imageUrl;
+                    hasUpdates = true;
+                }
+
+                if (hasUpdates) {
+                    updateDoc(userDocRef, updates);
                 } else {
                     setCurrentUserData({ id: doc.id, ...data } as User);
                 }

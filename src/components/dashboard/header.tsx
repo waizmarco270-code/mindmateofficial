@@ -75,7 +75,14 @@ export default function Header() {
                 )}
 
                 <ThemeToggle />
-                <UserButton afterSignOutUrl="/" />
+                <UserButton afterSignOutUrl="/" appearance={{
+                    elements: {
+                        avatarBox: {
+                            width: "2.5rem",
+                            height: "2.5rem"
+                        }
+                    }
+                }} />
             </>
             )}
         </SignedIn>
