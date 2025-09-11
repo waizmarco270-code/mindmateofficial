@@ -154,13 +154,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     // EFFECT: Listen for real-time updates for the CURRENTLY LOGGED-IN user's data (for credits, etc.)
     useEffect(() => {
-        // Wait until Clerk has finished loading its user state
         if (!isClerkLoaded) {
             setLoading(true);
             return;
         }
 
-        // If no user is logged in after Clerk loads, reset state and finish loading
         if (!authUser) {
             setCurrentUserData(null);
             setLoading(false);
@@ -174,10 +172,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 const updates: Partial<User> = {};
                 let hasUpdates = false;
 
-                if (data.displayName !== authUser.username && authUser.username) {
-                    updates.displayName = authUser.username;
+                const clerkFullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ');
+                const clerkDisplayName = clerkFullName || authUser.username;
+
+                if (clerkDisplayName && data.displayName !== clerkDisplayName) {
+                    updates.displayName = clerkDisplayName;
                     hasUpdates = true;
                 }
+                
                 if (data.photoURL !== authUser.imageUrl) {
                     updates.photoURL = authUser.imageUrl;
                     hasUpdates = true;
@@ -185,27 +187,26 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
                 if (hasUpdates) {
                     updateDoc(userDocRef, updates);
-                } else {
-                    setCurrentUserData({ id: doc.id, ...data } as User);
                 }
+                
+                setCurrentUserData({ id: doc.id, ...data, ...updates } as User);
+
             } else {
-                // If user document doesn't exist, create it.
-                // This happens on first login for a new user.
+                const clerkFullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ');
                 const newUser: User = {
                     id: authUser.id,
                     uid: authUser.id,
-                    displayName: authUser.username || 'New User',
+                    displayName: clerkFullName || authUser.username || 'New User',
                     email: authUser.primaryEmailAddress?.emailAddress || '',
                     photoURL: authUser.imageUrl,
                     isBlocked: false,
-                    credits: 100, // Starting credits
-                    isAdmin: false // Default to not admin
+                    credits: 100,
+                    isAdmin: false
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
                 });
             }
-            // We set loading to false here, ensuring we have user data (or have created it)
             setLoading(false);
         }, (error) => {
             console.error("Error fetching user data:", error);

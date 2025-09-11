@@ -79,7 +79,7 @@ export default function DashboardPage() {
         <WelcomeDialog />
       </SignedOut>
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {user?.username || 'Student'}!</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
       </div>
 
@@ -124,7 +124,7 @@ export default function DashboardPage() {
                             <CardFooter className="mt-auto bg-black/10 p-3">
                                  <p className={cn("text-sm font-semibold flex items-center w-full justify-end", feature.textColor, "opacity-90")}>
                                      Explore Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                </p>
+                                 </p>
                             </CardFooter>
                         </Card>
                         </Link>
