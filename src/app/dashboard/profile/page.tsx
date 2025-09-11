@@ -60,9 +60,9 @@ export default function ProfilePage() {
         <p className="text-muted-foreground">Manage your account settings and preferences.</p>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <form onSubmit={handleUpdateProfile} className="lg:col-span-3 grid lg:grid-cols-3 gap-8 items-start">
+      <div className="grid lg:grid-cols-3 gap-8 items-start">
           <Card className="lg:col-span-2">
+            <form onSubmit={handleUpdateProfile}>
               <CardHeader>
                   <CardTitle>Personal Information</CardTitle>
                   <CardDescription>Update your photo, display name, and view your account details.</CardDescription>
@@ -81,7 +81,7 @@ export default function ProfilePage() {
                       
                       <div className="space-y-2">
                           <h2 className="text-2xl font-bold flex items-center gap-3">
-                              {displayName || 'Anonymous User'}
+                              {user.fullName || 'Anonymous User'}
                               {isAdmin && (
                                   <span className="vip-badge">
                                       <Crown className="h-3 w-3" /> VIP
@@ -115,6 +115,7 @@ export default function ProfilePage() {
                       </Button>
                   </div>
               </CardContent>
+              </form>
           </Card>
 
           <div className="space-y-8 lg:col-span-1">
@@ -142,8 +143,6 @@ export default function ProfilePage() {
                   </CardContent>
               </Card>
           </div>
-        </form>
-
       </div>
     </div>
   );

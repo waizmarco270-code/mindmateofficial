@@ -182,7 +182,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     photoURL: authUser.imageUrl,
                     isBlocked: false,
                     credits: 100, // Starting credits
-                    isAdmin: authUser.id === SUPER_ADMIN_UID // Automatically make the super admin an admin
+                    isAdmin: false // Default to not admin
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -457,5 +457,3 @@ export const usePolls = () => {
     if(!context) throw new Error('usePolls must be used within an AppDataProvider');
     return context;
 }
-
-    

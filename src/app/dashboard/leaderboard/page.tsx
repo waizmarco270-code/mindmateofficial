@@ -6,11 +6,11 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Code } from 'lucide-react';
+import { Trophy, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {Crown} from 'lucide-react';
+import { Crown } from 'lucide-react';
 
-const LEADERBOARD_EXCLUDED_UIDS = ['user_2jF4xG0A2e3r4t5Y6z7a8b9c0d1e2f3'];
+const LEADERBOARD_EXCLUDED_UIDS: string[] = [];
 
 export default function LeaderboardPage() {
     const { user: currentUser } = useUser();
