@@ -49,11 +49,14 @@ export function ChatInterface() {
       recognitionRef.current.interimResults = false;
       recognitionRef.current.maxAlternatives = 1;
 
+      recognitionRef.current.onstart = () => {
+        setIsListening(true);
+      };
+
       recognitionRef.current.onresult = (event: any) => {
         const transcript = event.results[0][0].transcript;
         setInput(transcript);
         handleSubmit(new Event('submit'), transcript);
-        setIsListening(false);
       };
 
       recognitionRef.current.onerror = (event: any) => {
@@ -62,7 +65,6 @@ export function ChatInterface() {
           title: 'Voice Recognition Error',
           description: event.error,
         });
-        setIsListening(false);
       };
       
       recognitionRef.current.onend = () => {
@@ -87,9 +89,13 @@ export function ChatInterface() {
     if (isListening) {
       recognitionRef.current.stop();
     } else {
-      recognitionRef.current.start();
+      try {
+        recognitionRef.current.start();
+      } catch (error) {
+        // This can happen if the recognition is still cleaning up.
+        console.error("Error starting speech recognition:", error);
+      }
     }
-    setIsListening(!isListening);
   };
   
   const callAiAndHandleResponse = async (
