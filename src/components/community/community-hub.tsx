@@ -12,11 +12,11 @@ import { Send, Globe, MessageSquare, Crown, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatRelative } from 'date-fns';
 import { useGlobalChat, type GlobalMessage } from '@/hooks/use-global-chat';
-import { useUsers, ADMIN_UIDS, DEV_UID, User } from '@/hooks/use-admin';
+import { useUsers, User } from '@/hooks/use-admin';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUnreadMessages } from '@/hooks/use-unread';
 
-export default function CommunityHubPage() {
+export default function CommunityHub() {
     const { messages, sendMessage, loading: chatLoading } = useGlobalChat();
     const [newMessage, setNewMessage] = useState('');
     const { user: currentUser } = useUser();
@@ -28,7 +28,7 @@ export default function CommunityHubPage() {
        if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
       }
-    }, []);
+    }, [markGlobalAsRead]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -43,18 +43,8 @@ export default function CommunityHubPage() {
     }
 
     return (
-        <div className="h-full pb-16 md:pb-0">
-            <Card className="h-full flex flex-col">
-                <CardHeader className="flex flex-row items-center gap-3 p-4 border-b">
-                    <Globe className="h-6 w-6 text-primary" />
-                    <div>
-                        <h2 className="text-xl font-bold">Global Chat</h2>
-                        <p className="text-sm text-muted-foreground">
-                            Public chat for all members.
-                        </p>
-                    </div>
-                </CardHeader>
-
+        <div className="h-full">
+            <Card className="h-full flex flex-col border-0">
                 <ScrollArea className="flex-1 bg-muted/20">
                     <div className="p-4 space-y-6">
                          {chatLoading && Array.from({length: 5}).map((_, i) => (
@@ -118,9 +108,9 @@ interface ChatMessageProps {
 }
 
 function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
+    const { user } = useUser();
     const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
-    const isVip = sender ? ADMIN_UIDS.includes(sender.uid) : false;
-    const isDev = sender ? sender.uid === DEV_UID : false;
+    const isVip = sender?.isAdmin;
 
     return (
         <div className={cn("flex items-start gap-3", isCurrentUser && "justify-end")}>
@@ -134,12 +124,7 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
                  {!isCurrentUser && (
                     <p className="text-xs text-muted-foreground font-semibold px-1 flex items-center gap-1.5">
                         {sender?.displayName ?? 'Unknown User'}
-                        {isDev && (
-                            <span className="dev-badge" data-text="DEV">
-                                <Code className="h-3 w-3" /> DEV
-                            </span>
-                        )}
-                        {isVip && !isDev && (
+                        {isVip && (
                             <span className="vip-badge">
                                 <Crown className="h-3 w-3" /> VIP
                             </span>
@@ -163,12 +148,10 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
             </div>
              {isCurrentUser && (
                 <Avatar className="h-10 w-10">
-                    <AvatarImage src={sender?.photoURL ?? undefined} alt={sender?.displayName} />
-                    <AvatarFallback>{sender?.displayName.charAt(0) ?? '?'}</AvatarFallback>
+                    <AvatarImage src={user?.imageUrl ?? undefined} alt={user?.fullName ?? ''} />
+                    <AvatarFallback>{user?.fullName?.charAt(0) ?? '?'}</AvatarFallback>
                 </Avatar>
             )}
         </div>
     );
 }
-
-    
