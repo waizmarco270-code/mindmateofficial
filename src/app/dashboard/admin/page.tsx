@@ -40,7 +40,7 @@ export default function AdminPanelPage() {
     isAdmin, 
     announcements, updateAnnouncement, 
     activePoll, updatePoll,
-    resources: generalResources, addResource, updateResource, deleteResource,
+    resources: allResources, addResource, updateResource, deleteResource,
     resourceSections, addResourceSection, updateResourceSection, deleteResourceSection,
     dailySurprises, addDailySurprise, deleteDailySurprise,
   } = useAdmin();
@@ -326,6 +326,8 @@ export default function AdminPanelPage() {
           toast({ variant: 'destructive', title: "Error Deleting Quiz", description: error.message });
       }
   }
+  
+  const generalResources = allResources.filter(r => r.sectionId === 'general');
 
   if (!isAdmin) {
     return (
@@ -586,7 +588,7 @@ export default function AdminPanelPage() {
                                    </TableRow>
                                </TableHeader>
                                <TableBody>
-                                   {generalResources.filter(r => r.sectionId === 'general').map((resource) => (
+                                   {generalResources.map((resource) => (
                                        <TableRow key={resource.id}>
                                            <TableCell className="font-medium">{resource.title}</TableCell>
                                            <TableCell className="text-right space-x-2">
@@ -604,7 +606,7 @@ export default function AdminPanelPage() {
                                            </TableCell>
                                        </TableRow>
                                    ))}
-                                   {generalResources.filter(r => r.sectionId === 'general').length === 0 && <TableRow><TableCell colSpan={2} className="h-24 text-center">No general resources found.</TableCell></TableRow>}
+                                   {generalResources.length === 0 && <TableRow><TableCell colSpan={2} className="h-24 text-center">No general resources found.</TableCell></TableRow>}
                                </TableBody>
                            </Table>
                         </CardContent>
@@ -681,3 +683,5 @@ export default function AdminPanelPage() {
     </div>
   );
 }
+
+    

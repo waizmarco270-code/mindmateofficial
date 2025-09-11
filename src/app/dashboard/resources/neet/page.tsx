@@ -1,10 +1,9 @@
 'use client';
 
+import ResourceCategoryPage from '@/components/resources/resource-category-page';
+
 export default function NeetResourcesPage() {
-    return (
-        <div>
-            <h1 className="text-3xl font-bold">NEET Resources</h1>
-            <p className="text-muted-foreground">Coming Soon...</p>
-        </div>
-    );
+    return <ResourceCategoryPage categoryId="neet" title="NEET Resources" />;
 }
+
+    

@@ -1,10 +1,9 @@
 'use client';
 
+import ResourceCategoryPage from '@/components/resources/resource-category-page';
+
 export default function GeneralResourcesPage() {
-    return (
-        <div>
-            <h1 className="text-3xl font-bold">General Resources</h1>
-            <p className="text-muted-foreground">Coming Soon...</p>
-        </div>
-    );
+    return <ResourceCategoryPage categoryId="general" title="General Resources" />;
 }
+
+    

@@ -44,6 +44,7 @@ export interface ResourceSection {
     name: string;
     description: string;
     unlockCost: number;
+    parentCategory: 'class-10' | 'class-12' | 'jee' | 'neet' | 'class-6-9' | 'general';
     createdAt: Timestamp;
 }
 
@@ -52,7 +53,7 @@ export interface Resource {
     title: string;
     description: string;
     url: string;
-    sectionId: string; // 'general' or an ID from ResourceSection
+    sectionId: string; // ID from ResourceSection
     createdAt: string;
 }
 
@@ -522,14 +523,10 @@ export const useAnnouncements = () => {
 export const useResources = () => {
     const context = useContext(AppDataContext);
     if (!context) throw new Error('useResources must be used within an AppDataProvider');
-    const generalResources = context.resources.filter(r => r.sectionId === 'general');
-    const dynamicSections = context.resourceSections;
-    const dynamicResources = context.resources.filter(r => r.sectionId !== 'general');
     return { 
         ...context,
-        generalResources,
-        dynamicSections,
-        dynamicResources,
+        allResources: context.resources,
+        allSections: context.resourceSections
     };
 };
 
@@ -551,3 +548,5 @@ export const useDailySurprises = () => {
 }
 
       
+
+    
