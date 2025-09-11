@@ -29,7 +29,7 @@ interface DailyTasks {
 export function TodoList() {
   const { toast } = useToast();
   const { user } = useUser();
-  const { addCreditsToUser } = useUsers();
+  const { addCreditsToUser, incrementDailyTasksCompleted } = useUsers();
   const todayString = format(new Date(), 'yyyy-MM-dd');
   
   const [todaysData, setTodaysData] = useState<DailyTasks>({ date: todayString, tasks: [], creditClaimed: false });
@@ -93,6 +93,7 @@ export function TodoList() {
   const handleClaimCredit = async () => {
     if (user && !todaysData.creditClaimed) {
       await addCreditsToUser(user.id, 1);
+      await incrementDailyTasksCompleted(user.id);
       await updateFirestore({ ...todaysData, creditClaimed: true });
       toast({
           title: "Credit Claimed!",
@@ -176,5 +177,3 @@ export function TodoList() {
     </div>
   );
 }
-
-    

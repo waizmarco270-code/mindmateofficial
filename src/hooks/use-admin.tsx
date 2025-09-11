@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -27,6 +28,9 @@ export interface User {
   class10Unlocked?: boolean;
   jeeUnlocked?: boolean;
   class12Unlocked?: boolean;
+  focusSessionsCompleted?: number;
+  dailyTasksCompleted?: number;
+  totalStudyTime?: number; // in seconds
 }
 
 export interface Announcement {
@@ -72,6 +76,9 @@ interface AppDataContextType {
     unlockResourceSection: (uid: string, section: ResourceSection, cost?: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
+    incrementFocusSessions: (uid: string) => Promise<void>;
+    incrementDailyTasksCompleted: (uid: string) => Promise<void>;
+    updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     clearGlobalChat: () => Promise<void>;
@@ -201,7 +208,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     photoURL: authUser.imageUrl,
                     isBlocked: false,
                     credits: 100,
-                    isAdmin: false
+                    isAdmin: false,
+                    focusSessionsCompleted: 0,
+                    dailyTasksCompleted: 0,
+                    totalStudyTime: 0,
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -333,6 +343,24 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             [`quizAttempts.${quizId}`]: increment(1)
         });
     };
+    
+    const incrementFocusSessions = async (uid: string) => {
+        if(!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { focusSessionsCompleted: increment(1) });
+    }
+
+    const incrementDailyTasksCompleted = async (uid: string) => {
+        if(!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { dailyTasksCompleted: increment(1) });
+    }
+    
+    const updateStudyTime = async (uid: string, totalSeconds: number) => {
+        if(!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { totalStudyTime: totalSeconds });
+    }
 
     const addAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
         await addDoc(collection(db, 'announcements'), {
@@ -419,6 +447,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         unlockResourceSection,
         addPerfectedQuiz,
         incrementQuizAttempt,
+        incrementFocusSessions,
+        incrementDailyTasksCompleted,
+        updateStudyTime,
         makeUserAdmin,
         removeUserAdmin,
         clearGlobalChat,

@@ -28,17 +28,15 @@ export const FOCUS_PENALTY_SESSION_KEY = 'focusPenaltyApplied';
 
 export default function FocusModePage() {
     const { user } = useUser();
-    const { currentUserData, addCreditsToUser } = useUsers();
+    const { currentUserData, addCreditsToUser, incrementFocusSessions } = useUsers();
     const { toast } = useToast();
 
     const [activeSlot, setActiveSlot] = useState<FocusSlot | null>(null);
     const [timeLeft, setTimeLeft] = useState(0);
     const [isActive, setIsActive] = useState(false);
     
-    // Using a ref to hold the penalty function so it has access to the latest state in the cleanup effect.
     const penaltyApplicator = useRef<() => void>();
 
-    // Prompt user if they try to leave the page with an active session
     useBeforeunload(event => {
         if (isActive && activeSlot) {
             event.preventDefault();
@@ -53,9 +51,9 @@ export default function FocusModePage() {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
         } else if (isActive && timeLeft === 0) {
-            // Session completed successfully
             if (user && activeSlot) {
                 addCreditsToUser(user.id, activeSlot.reward);
+                incrementFocusSessions(user.id);
                 toast({
                     title: `Session Complete! +${activeSlot.reward} Credits!`,
                     description: 'Great job on your focused study session!',
@@ -69,15 +67,12 @@ export default function FocusModePage() {
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isActive, timeLeft, user, activeSlot, addCreditsToUser, toast]);
+    }, [isActive, timeLeft, user, activeSlot, addCreditsToUser, incrementFocusSessions, toast]);
     
-    // This effect handles the penalty logic when the component unmounts (user navigates away)
     useEffect(() => {
-        // Define the penalty logic inside the effect to capture the current state
         penaltyApplicator.current = () => {
             if (user && isActive && activeSlot) {
                 addCreditsToUser(user.id, -PENALTY);
-                // Set a flag in session storage so the layout can show the toast.
                  if (typeof window !== 'undefined') {
                     sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, `You have been penalized ${PENALTY} credits for leaving an active focus session.`);
                  }
@@ -86,12 +81,10 @@ export default function FocusModePage() {
     });
 
     useEffect(() => {
-        // This is the key: Return a function from useEffect to act as a cleanup function.
-        // This function will be called when the component unmounts.
         return () => {
             penaltyApplicator.current?.();
         };
-    }, []); // Empty dependency array means this cleanup runs only on unmount.
+    }, []);
 
     const handleSelectSlot = (slot: FocusSlot) => {
         if (currentUserData && currentUserData.credits < PENALTY) {
@@ -218,5 +211,3 @@ export default function FocusModePage() {
         </div>
     );
 }
-
-    

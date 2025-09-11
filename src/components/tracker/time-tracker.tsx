@@ -9,9 +9,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
-import { Play, Pause, MoreVertical, Trash2, Edit, Plus, Palette } from 'lucide-react';
+import { Play, Pause, MoreVertical, Trash2, Edit, Plus, Palette, Save } from 'lucide-react';
 import { format, formatISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useUsers } from '@/hooks/use-admin';
+import { useUser } from '@clerk/nextjs';
 
 
 const subjectColors = [
@@ -42,6 +44,9 @@ interface TimeTrackerState {
 }
 
 export function TimeTracker() {
+    const { user } = useUser();
+    const { currentUserData, updateStudyTime } = useUsers();
+    
     const [state, setState] = useLocalStorage<TimeTrackerState>('timeTrackerState', {
         subjects: [
             { id: '1', name: 'English', color: subjectColors[0], timeTracked: 0 },
@@ -56,12 +61,28 @@ export function TimeTracker() {
     const [subjectToEdit, setSubjectToEdit] = useState<Subject | null>(null);
     const [editText, setEditText] = useState('');
     const [editColor, setEditColor] = useState(subjectColors[0]);
+    const [totalTime, setTotalTime] = useState(0);
 
     const activeTime = useMemo(() => {
         if (!state.activeSubjectId) return 0;
         const subject = state.subjects.find(s => s.id === state.activeSubjectId);
         return subject?.timeTracked ?? 0;
     }, [state.activeSubjectId, state.subjects]);
+    
+     // Sync total time to Firestore periodically
+    useEffect(() => {
+        const total = state.subjects.reduce((acc, s) => acc + s.timeTracked, 0);
+        setTotalTime(total);
+
+        const syncTimer = setInterval(() => {
+            if (user && total > (currentUserData?.totalStudyTime || 0)) {
+                updateStudyTime(user.id, total);
+            }
+        }, 30000); // Sync every 30 seconds
+
+        return () => clearInterval(syncTimer);
+    }, [state.subjects, user, updateStudyTime, currentUserData?.totalStudyTime]);
+
 
     useEffect(() => {
         let interval: NodeJS.Timeout;
@@ -87,9 +108,17 @@ export function TimeTracker() {
         setState(prevState => {
             if (prevState.activeSubjectId === subjectId) {
                 // Pausing the current subject
+                 if(user) {
+                    const total = prevState.subjects.reduce((acc, s) => acc + s.timeTracked, 0);
+                    updateStudyTime(user.id, total);
+                }
                 return { ...prevState, activeSubjectId: null, lastTick: null };
             } else {
                 // Starting a new subject (or switching)
+                if (prevState.activeSubjectId && user) {
+                    const total = prevState.subjects.reduce((acc, s) => acc + s.timeTracked, 0);
+                    updateStudyTime(user.id, total);
+                }
                 return { ...prevState, activeSubjectId: subjectId, lastTick: Date.now() };
             }
         });
@@ -155,14 +184,13 @@ export function TimeTracker() {
             <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-2xl shadow-primary/20">
                 <CardContent className="p-6 text-center">
                     <div className="flex justify-between items-center text-primary-foreground/80 mb-4">
-                        <p className="font-semibold">{format(new Date(), 'eeee, MM/dd')}</p>
-                        <p className="font-semibold">D-Day</p>
+                        <p className="font-semibold text-lg">{state.subjects.find(s => s.id === state.activeSubjectId)?.name || 'Paused'}</p>
                     </div>
                     <p className="font-mono text-7xl font-bold tracking-tighter">
                         {formatTime(activeTime)}
                     </p>
                     <p className="text-sm text-primary-foreground/80 mt-2">
-                        Break 00m 00s
+                        Total Today: {formatTime(totalTime)}
                     </p>
                 </CardContent>
             </Card>
@@ -199,8 +227,9 @@ export function TimeTracker() {
                         ))}
                     </div>
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex justify-between">
                      <Button variant="outline" onClick={handleAddNewClick}><Plus className="mr-2 h-4 w-4"/> Add Subject</Button>
+                     <Button variant="secondary" onClick={() => user && updateStudyTime(user.id, totalTime)}><Save className="mr-2 h-4 w-4" /> Sync Total Time</Button>
                 </CardFooter>
             </Card>
 
