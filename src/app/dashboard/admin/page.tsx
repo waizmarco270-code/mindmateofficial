@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useAdmin, type Resource, type DailySurprise } from '@/hooks/use-admin';
+import { useAdmin, type Resource, type DailySurprise, type ResourceSection } from '@/hooks/use-admin';
 import {
   Table,
   TableHeader,
@@ -16,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -33,15 +32,16 @@ interface QuizQuestion {
     correctAnswer: string;
 }
 
+type EditableResource = Resource & { type: 'general' | 'premium' };
+type EditableSection = ResourceSection;
+
 export default function AdminPanelPage() {
   const { 
     isAdmin, 
     announcements, updateAnnouncement, 
     activePoll, updatePoll,
-    resources, addResource, updateResource, deleteResource,
-    premiumResources, addPremiumResource, updatePremiumResource, deletePremiumResource,
-    jeeResources, addJeeResource, updateJeeResource, deleteJeeResource,
-    class12Resources, addClass12Resource, updateClass12Resource, deleteClass12Resource,
+    resources: generalResources, addResource, updateResource, deleteResource,
+    resourceSections, addResourceSection, updateResourceSection, deleteResourceSection,
     dailySurprises, addDailySurprise, deleteDailySurprise,
   } = useAdmin();
   const { quizzes, deleteQuiz } = useQuizzes();
@@ -64,6 +64,22 @@ export default function AdminPanelPage() {
   const [surpriseImageUrl, setSurpriseImageUrl] = useState('');
   const [surpriseQuiz, setSurpriseQuiz] = useState({ question: '', options: ['', ''], correctAnswer: '' });
   
+  // State for new sections
+  const [sectionName, setSectionName] = useState('');
+  const [sectionDescription, setSectionDescription] = useState('');
+  const [sectionUnlockCost, setSectionUnlockCost] = useState(30);
+
+  // State for new resources
+  const [resourceTitle, setResourceTitle] = useState('');
+  const [resourceDescription, setResourceDescription] = useState('');
+  const [resourceUrl, setResourceUrl] = useState('');
+  const [resourceSectionId, setResourceSectionId] = useState('general');
+  
+  // State for editing
+  const [editingItem, setEditingItem] = useState<EditableResource | EditableSection | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+
   useEffect(() => {
       if(latestAnnouncement) {
           setAnnouncementTitle(latestAnnouncement.title);
@@ -86,10 +102,6 @@ export default function AdminPanelPage() {
     { text: '', options: ['', '', '', ''], correctAnswer: '' }
   ]);
   const [isSavingQuiz, setIsSavingQuiz] = useState(false);
-
-  // State for editing resources
-  const [editingResource, setEditingResource] = useState<Resource | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
   const handleSubmitAnnouncement = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -116,46 +128,82 @@ export default function AdminPanelPage() {
       }
   };
 
-  const handleResourceFormSubmit = async (e: React.FormEvent<HTMLFormElement>, type: 'general' | 'premium' | 'jee' | 'class12') => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const url = formData.get('url') as string;
-
-    if (!title || !description || !url) {
-        toast({ variant: 'destructive', title: "Validation Error", description: "All fields are required." });
-        return;
-    }
-
-    const resourceData = { title, description, url };
-    
-    try {
-        if (editingResource) {
-            const updateFunction = {
-                'general': updateResource,
-                'premium': updatePremiumResource,
-                'jee': updateJeeResource,
-                'class12': updateClass12Resource
-            }[type];
-            await updateFunction(editingResource.id, resourceData);
-            toast({ title: "Resource Updated", description: "The resource has been successfully updated." });
-        } else {
-            const addFunction = {
-                'general': addResource,
-                'premium': addPremiumResource,
-                'jee': addJeeResource,
-                'class12': addClass12Resource
-            }[type];
-            await addFunction(resourceData);
-            toast({ title: "Resource Added", description: "The new resource has been added." });
+    const handleResourceFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        if (!resourceTitle || !resourceDescription || !resourceUrl || !resourceSectionId) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'All resource fields are required.' });
+            return;
         }
-        (e.target as HTMLFormElement).reset();
-        closeEditDialog();
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: "Operation Failed", description: error.message });
+
+        const resourceData = { 
+            title: resourceTitle, 
+            description: resourceDescription, 
+            url: resourceUrl, 
+            sectionId: resourceSectionId 
+        };
+
+        try {
+            await addResource(resourceData);
+            toast({ title: 'Resource Added', description: 'The new resource has been added.' });
+            // Reset form
+            setResourceTitle('');
+            setResourceDescription('');
+            setResourceUrl('');
+            setResourceSectionId('general');
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Operation Failed', description: error.message });
+        }
+    };
+    
+    const handleSectionFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+         if (!sectionName || !sectionDescription) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'Section name and description are required.' });
+            return;
+        }
+        const sectionData = {
+            name: sectionName,
+            description: sectionDescription,
+            unlockCost: sectionUnlockCost
+        };
+        try {
+            await addResourceSection(sectionData);
+            toast({ title: 'Section Created', description: `New section "${sectionName}" has been added.`});
+            setSectionName('');
+            setSectionDescription('');
+            setSectionUnlockCost(30);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Operation Failed', description: error.message });
+        }
     }
-  };
+  
+  const handleEditFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!editingItem) return;
+      const formData = new FormData(e.currentTarget);
+
+      try {
+          if ('sectionId' in editingItem) { // It's a Resource
+            const title = formData.get('title') as string;
+            const description = formData.get('description') as string;
+            const url = formData.get('url') as string;
+            if (!title || !description || !url) return toast({ variant: 'destructive', title: 'All fields required.'});
+            await updateResource(editingItem.id, { title, description, url });
+            toast({ title: 'Resource Updated' });
+          } else { // It's a ResourceSection
+            const name = formData.get('name') as string;
+            const description = formData.get('description') as string;
+            const unlockCost = Number(formData.get('unlockCost'));
+             if (!name || !description) return toast({ variant: 'destructive', title: 'All fields required.'});
+            await updateResourceSection(editingItem.id, { name, description, unlockCost });
+            toast({ title: 'Section Updated' });
+          }
+          closeEditDialog();
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      }
+  }
+
 
   const handleAddSurprise = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -193,13 +241,13 @@ export default function AdminPanelPage() {
     }
 };
 
-  const openEditDialog = (resource: Resource) => {
-    setEditingResource(resource);
+  const openEditDialog = (item: EditableResource | EditableSection) => {
+    setEditingItem(item);
     setIsEditDialogOpen(true);
   };
 
   const closeEditDialog = () => {
-    setEditingResource(null);
+    setEditingItem(null);
     setIsEditDialogOpen(false);
   };
   
@@ -298,48 +346,6 @@ export default function AdminPanelPage() {
       </div>
     );
   }
-
-  const renderResourceTable = (title: string, description: string, data: Resource[], deleteFn: (id: string) => Promise<void>, type: 'general' | 'premium' | 'jee' | 'class12') => (
-    <Card>
-        <CardHeader>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.map((resource) => (
-                        <TableRow key={resource.id}>
-                            <TableCell className="font-medium">{resource.title}</TableCell>
-                            <TableCell className="text-right space-x-2">
-                                <Button variant="outline" size="sm" onClick={() => openEditDialog(resource)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the resource. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => deleteFn(resource.id)}>Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                    {data.length === 0 && <TableRow><TableCell colSpan={2} className="h-24 text-center">No resources found.</TableCell></TableRow>}
-                </TableBody>
-            </Table>
-        </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-8">
@@ -478,59 +484,132 @@ export default function AdminPanelPage() {
                   <BookOpen className="h-6 w-6 text-primary" />
                   <div>
                     <h3 className="text-lg font-semibold">Resource Management</h3>
-                    <p className="text-sm text-muted-foreground text-left">Add and manage general, Class 10, JEE, and Class 12 resources.</p>
+                    <p className="text-sm text-muted-foreground text-left">Manage resource sections and individual resources.</p>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="p-6 pt-0 space-y-8">
+                <div className="grid gap-8 lg:grid-cols-2">
+                    {/* Add/Edit Resource Section */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><FolderPlus /> Create New Resource Section</CardTitle>
+                        <CardDescription>Create a new category for premium resources that users can unlock.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleSectionFormSubmit} className="space-y-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="section-name">Section Name</Label>
+                            <Input id="section-name" value={sectionName} onChange={e => setSectionName(e.target.value)} placeholder="e.g., JEE Advanced Prep" required />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="section-description">Description</Label>
+                            <Textarea id="section-description" value={sectionDescription} onChange={e => setSectionDescription(e.target.value)} placeholder="A short description of this section." required />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="section-unlock-cost">Unlock Cost (Credits)</Label>
+                            <Input id="section-unlock-cost" type="number" value={sectionUnlockCost} onChange={e => setSectionUnlockCost(Number(e.target.value))} required />
+                          </div>
+                          <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Create Section</Button>
+                        </form>
+                      </CardContent>
+                    </Card>
+                     {/* Manage Existing Sections */}
+                    <Card>
+                       <CardHeader><CardTitle>Manage Sections</CardTitle></CardHeader>
+                       <CardContent>
+                           <Table>
+                               <TableHeader>
+                                   <TableRow>
+                                       <TableHead>Name</TableHead>
+                                       <TableHead>Cost</TableHead>
+                                       <TableHead className="text-right">Actions</TableHead>
+                                   </TableRow>
+                               </TableHeader>
+                               <TableBody>
+                                   {resourceSections.map(section => (
+                                       <TableRow key={section.id}>
+                                           <TableCell className="font-medium">{section.name}</TableCell>
+                                           <TableCell>{section.unlockCost} credits</TableCell>
+                                           <TableCell className="text-right space-x-2">
+                                                <Button variant="outline" size="sm" onClick={() => openEditDialog(section)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the section and all resources inside it. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => deleteResourceSection(section.id)}>Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                           </TableCell>
+                                       </TableRow>
+                                   ))}
+                                   {resourceSections.length === 0 && <TableRow><TableCell colSpan={3} className="h-24 text-center">No premium sections created yet.</TableCell></TableRow>}
+                               </TableBody>
+                           </Table>
+                       </CardContent>
+                    </Card>
+                </div>
                  <div className="grid gap-8 lg:grid-cols-2">
                     <Card>
-                      <CardHeader><CardTitle>Add General Resource</CardTitle></CardHeader>
-                      <CardContent><form onSubmit={(e) => handleResourceFormSubmit(e, 'general')} className="space-y-4">
-                          <div className="space-y-2"><Label htmlFor="resource-title">Title</Label><Input id="resource-title" name="title" placeholder="e.g. Physics Formula Sheet" required /></div>
-                          <div className="space-y-2"><Label htmlFor="resource-description">Description</Label><Textarea id="resource-description" name="description" placeholder="A short description of the resource." required /></div>
-                          <div className="space-y-2"><Label htmlFor="resource-url">URL</Label><Input id="resource-url" name="url" type="url" placeholder="https://example.com/file.pdf" required /></div>
+                      <CardHeader><CardTitle>Add New Resource</CardTitle></CardHeader>
+                      <CardContent>
+                        <form onSubmit={handleResourceFormSubmit} className="space-y-4">
+                          <div className="space-y-2"><Label htmlFor="resource-title">Title</Label><Input id="resource-title" value={resourceTitle} onChange={e => setResourceTitle(e.target.value)} placeholder="e.g. Physics Formula Sheet" required /></div>
+                          <div className="space-y-2"><Label htmlFor="resource-description">Description</Label><Textarea id="resource-description" value={resourceDescription} onChange={e => setResourceDescription(e.target.value)} placeholder="A short description of the resource." required /></div>
+                          <div className="space-y-2"><Label htmlFor="resource-url">URL</Label><Input id="resource-url" name="url" type="url" value={resourceUrl} onChange={e => setResourceUrl(e.target.value)} placeholder="https://example.com/file.pdf" required /></div>
+                          <div className="space-y-2"><Label htmlFor="resource-section">Section</Label>
+                            <Select value={resourceSectionId} onValueChange={setResourceSectionId}>
+                                <SelectTrigger id="resource-section"><SelectValue placeholder="Select a section..." /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="general">General (Free)</SelectItem>
+                                    {resourceSections.map(section => (
+                                        <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                          </div>
                           <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Add Resource</Button>
-                        </form></CardContent>
+                        </form>
+                      </CardContent>
                     </Card>
-                    {renderResourceTable("General Resources", "Manage free resources available to all students.", resources, deleteResource, 'general')}
+                    <Card>
+                        <CardHeader><CardTitle>General Resources</CardTitle><CardDescription>Manage free resources available to all students.</CardDescription></CardHeader>
+                        <CardContent>
+                           <Table>
+                               <TableHeader>
+                                   <TableRow>
+                                       <TableHead>Title</TableHead>
+                                       <TableHead className="text-right">Actions</TableHead>
+                                   </TableRow>
+                               </TableHeader>
+                               <TableBody>
+                                   {generalResources.filter(r => r.sectionId === 'general').map((resource) => (
+                                       <TableRow key={resource.id}>
+                                           <TableCell className="font-medium">{resource.title}</TableCell>
+                                           <TableCell className="text-right space-x-2">
+                                               <Button variant="outline" size="sm" onClick={() => openEditDialog({...resource, type: 'general'})}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                                               <AlertDialog>
+                                                   <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button></AlertDialogTrigger>
+                                                   <AlertDialogContent>
+                                                       <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the resource.</AlertDialogDescription></AlertDialogHeader>
+                                                       <AlertDialogFooter>
+                                                           <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                           <AlertDialogAction onClick={() => deleteResource(resource.id)}>Delete</AlertDialogAction>
+                                                       </AlertDialogFooter>
+                                                   </AlertDialogContent>
+                                               </AlertDialog>
+                                           </TableCell>
+                                       </TableRow>
+                                   ))}
+                                   {generalResources.filter(r => r.sectionId === 'general').length === 0 && <TableRow><TableCell colSpan={2} className="h-24 text-center">No general resources found.</TableCell></TableRow>}
+                               </TableBody>
+                           </Table>
+                        </CardContent>
+                    </Card>
                   </div>
-                   <div className="grid gap-8 lg:grid-cols-2">
-                     <Card>
-                        <CardHeader><CardTitle>Add Premium Resource (Class 10)</CardTitle></CardHeader>
-                        <CardContent><form onSubmit={(e) => handleResourceFormSubmit(e, 'premium')} className="space-y-4">
-                            <div className="space-y-2"><Label htmlFor="premium-resource-title-10">Title</Label><Input id="premium-resource-title-10" name="title" placeholder="e.g. Advanced Mathematics PDF" required /></div>
-                            <div className="space-y-2"><Label htmlFor="premium-resource-description-10">Description</Label><Textarea id="premium-resource-description-10" name="description" placeholder="A short description of the premium PDF." required /></div>
-                            <div className="space-y-2"><Label htmlFor="premium-resource-url-10">PDF URL</Label><Input id="premium-resource-url-10" name="url" type="url" placeholder="https://example.com/premium.pdf" required /></div>
-                            <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Add Premium Resource</Button>
-                          </form></CardContent>
-                      </Card>
-                      {renderResourceTable("Class 10 Resources", "Manage locked 'Class 10' resources.", premiumResources, deletePremiumResource, 'premium')}
-                   </div>
-                    <div className="grid gap-8 lg:grid-cols-2">
-                      <Card>
-                        <CardHeader><CardTitle>Add JEE Premium Resource</CardTitle></CardHeader>
-                        <CardContent><form onSubmit={(e) => handleResourceFormSubmit(e, 'jee')} className="space-y-4">
-                            <div className="space-y-2"><Label htmlFor="jee-resource-title">Title</Label><Input id="jee-resource-title" name="title" placeholder="e.g. JEE Advanced Physics" required /></div>
-                            <div className="space-y-2"><Label htmlFor="jee-resource-description">Description</Label><Textarea id="jee-resource-description" name="description" placeholder="A short description of the resource." required /></div>
-                            <div className="space-y-2"><Label htmlFor="jee-resource-url">URL</Label><Input id="jee-resource-url" name="url" type="url" placeholder="https://example.com/file.pdf" required /></div>
-                            <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Add JEE Resource</Button>
-                          </form></CardContent>
-                      </Card>
-                      {renderResourceTable("JEE Resources", "Manage locked 'JEE' resources.", jeeResources, deleteJeeResource, 'jee')}
-                   </div>
-                   <div className="grid gap-8 lg:grid-cols-2">
-                       <Card>
-                        <CardHeader><CardTitle>Add Class 12 Premium Resource</CardTitle></CardHeader>
-                        <CardContent><form onSubmit={(e) => handleResourceFormSubmit(e, 'class12')} className="space-y-4">
-                            <div className="space-y-2"><Label htmlFor="class12-resource-title">Title</Label><Input id="class12-resource-title" name="title" placeholder="e.g. Class 12 Chemistry Notes" required /></div>
-                            <div className="space-y-2"><Label htmlFor="class12-resource-description">Description</Label><Textarea id="class12-resource-description" name="description" placeholder="A short description of the premium PDF." required /></div>
-                            <div className="space-y-2"><Label htmlFor="class12-resource-url">PDF URL</Label><Input id="class12-resource-url" name="url" type="url" placeholder="https://example.com/premium.pdf" required /></div>
-                            <Button type="submit"><PlusCircle className="mr-2 h-4 w-4" /> Add Class 12 Resource</Button>
-                          </form></CardContent>
-                      </Card>
-                      {renderResourceTable("Class 12 Resources", "Manage locked 'Class 12' resources.", class12Resources, deleteClass12Resource, 'class12')}
-                   </div>
               </AccordionContent>
             </Card>
         </AccordionItem>
@@ -578,25 +657,27 @@ export default function AdminPanelPage() {
 
       </Accordion>
 
-      <Dialog open={isEditDialogOpen} onOpenChange={closeEditDialog}>
-        <DialogContent>
-            <DialogHeader><DialogTitle>Edit Resource</DialogTitle></DialogHeader>
-            <form onSubmit={(e) => {
-                if (!editingResource) return;
-                const resourceType = 
-                    resources.some(r => r.id === editingResource.id) ? 'general' :
-                    premiumResources.some(r => r.id === editingResource.id) ? 'premium' :
-                    jeeResources.some(r => r.id === editingResource.id) ? 'jee' :
-                    'class12';
-                handleResourceFormSubmit(e, resourceType);
-            }} className="space-y-4">
-                <div className="space-y-2"><Label htmlFor="edit-title">Title</Label><Input id="edit-title" name="title" defaultValue={editingResource?.title} required /></div>
-                <div className="space-y-2"><Label htmlFor="edit-description">Description</Label><Textarea id="edit-description" name="description" defaultValue={editingResource?.description} required /></div>
-                <div className="space-y-2"><Label htmlFor="edit-url">URL</Label><Input id="edit-url" name="url" type="url" defaultValue={editingResource?.url} required /></div>
-                <DialogFooter><DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose><Button type="submit">Save Changes</Button></DialogFooter>
-            </form>
-        </DialogContent>
-      </Dialog>
+        <Dialog open={isEditDialogOpen} onOpenChange={closeEditDialog}>
+            <DialogContent>
+                <DialogHeader><DialogTitle>Edit {editingItem && 'sectionId' in editingItem ? 'Resource' : 'Section'}</DialogTitle></DialogHeader>
+                <form onSubmit={handleEditFormSubmit} className="space-y-4">
+                    {editingItem && 'sectionId' in editingItem ? (
+                        <>
+                            <div className="space-y-2"><Label htmlFor="edit-title">Title</Label><Input id="edit-title" name="title" defaultValue={editingItem?.title} required /></div>
+                            <div className="space-y-2"><Label htmlFor="edit-description">Description</Label><Textarea id="edit-description" name="description" defaultValue={editingItem?.description} required /></div>
+                            <div className="space-y-2"><Label htmlFor="edit-url">URL</Label><Input id="edit-url" name="url" type="url" defaultValue={editingItem?.url} required /></div>
+                        </>
+                    ) : (
+                         <>
+                            <div className="space-y-2"><Label htmlFor="edit-name">Section Name</Label><Input id="edit-name" name="name" defaultValue={editingItem?.name} required /></div>
+                            <div className="space-y-2"><Label htmlFor="edit-sec-description">Description</Label><Textarea id="edit-sec-description" name="description" defaultValue={editingItem?.description} required /></div>
+                            <div className="space-y-2"><Label htmlFor="edit-unlockCost">Unlock Cost</Label><Input id="edit-unlockCost" name="unlockCost" type="number" defaultValue={editingItem?.unlockCost} required /></div>
+                        </>
+                    )}
+                    <DialogFooter><DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose><Button type="submit">Save Changes</Button></DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
