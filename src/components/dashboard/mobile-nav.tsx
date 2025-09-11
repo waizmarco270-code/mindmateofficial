@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bot, ListTodo, Home, Trophy, BookOpen } from 'lucide-react';
+import { Bot, ListTodo, Home, Trophy, BookOpen, BrainCircuit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -12,7 +12,7 @@ const navItems = [
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI' },
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
-  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Ranks' },
+  { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz' },
 ];
 
 export default function MobileNav() {
