@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -22,7 +23,8 @@ import {
   LayoutGrid,
   ClipboardCheck,
   BarChart3,
-  GraduationCap
+  GraduationCap,
+  UserCog,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -58,6 +60,9 @@ const progressNav = [
   { href: '/dashboard/calculator', icon: Percent, label: 'Percentage Calc' },
 ];
 
+const accountNav = [
+    { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
+];
 
 const adminNav = [
     { href: '/dashboard/admin', icon: Shield, label: 'Admin Panel' },
@@ -148,6 +153,17 @@ export default function SidebarContent() {
             </AccordionTrigger>
             <AccordionContent className="pb-2">
               {renderNavLinks(progressNav)}
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="account" className="border-b-0">
+            <AccordionTrigger className="py-3 text-sm font-medium text-muted-foreground hover:no-underline">
+              <div className="flex items-center gap-3">
+                  <UserCog className="h-5 w-5" /> Account
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="pb-2">
+              {renderNavLinks(accountNav)}
             </AccordionContent>
           </AccordionItem>
           
