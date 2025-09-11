@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -171,14 +170,20 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, 'users', authUser.id);
         const unsubscribe = onSnapshot(userDocRef, (doc) => {
             if (doc.exists()) {
-                setCurrentUserData({ id: doc.id, ...doc.data() } as User);
+                const data = doc.data();
+                if (data.displayName !== authUser.username && authUser.username) {
+                    // Sync username from Clerk to Firestore if it's different
+                    updateDoc(userDocRef, { displayName: authUser.username });
+                } else {
+                    setCurrentUserData({ id: doc.id, ...data } as User);
+                }
             } else {
                 // If user document doesn't exist, create it.
                 // This happens on first login for a new user.
                 const newUser: User = {
                     id: authUser.id,
                     uid: authUser.id,
-                    displayName: authUser.fullName || 'New User',
+                    displayName: authUser.username || 'New User',
                     email: authUser.primaryEmailAddress?.emailAddress || '',
                     photoURL: authUser.imageUrl,
                     isBlocked: false,
@@ -471,5 +476,3 @@ export const usePolls = () => {
     if(!context) throw new Error('usePolls must be used within an AppDataProvider');
     return context;
 }
-
-    

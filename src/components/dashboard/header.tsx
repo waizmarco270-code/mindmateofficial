@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Medal, Menu, Shield } from 'lucide-react';
@@ -33,10 +32,10 @@ export default function Header() {
       <div className="flex-1" />
       <div className="flex items-center gap-2 md:gap-4">
         <SignedOut>
-            <SignInButton>
+            <SignInButton mode="modal">
               <Button variant="ghost">Sign In</Button>
             </SignInButton>
-            <SignUpButton>
+            <SignUpButton mode="modal">
               <Button>Sign Up</Button>
             </SignUpButton>
         </SignedOut>

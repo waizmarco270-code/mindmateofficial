@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -11,12 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 export default function SettingsPage() {
     const { isLoaded, isSignedIn, user } = useUser();
     const { toast } = useToast();
-    const [fullName, setFullName] = useState('');
+    const [username, setUsername] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
         if (isLoaded && user) {
-            setFullName(user.fullName ?? '');
+            setUsername(user.username ?? '');
         }
     }, [isLoaded, user]);
 
@@ -26,7 +25,7 @@ export default function SettingsPage() {
 
         setIsSubmitting(true);
         try {
-            await user.update({ fullName });
+            await user.update({ username });
             toast({
                 title: 'Success!',
                 description: 'Your profile has been updated.',
@@ -70,12 +69,12 @@ export default function SettingsPage() {
                             <Input id="email" type="email" value={user.primaryEmailAddress?.emailAddress} disabled />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="fullName">Full Name</Label>
+                            <Label htmlFor="username">Username</Label>
                             <Input
-                                id="fullName"
-                                value={fullName}
-                                onChange={(e) => setFullName(e.target.value)}
-                                placeholder="Your full name"
+                                id="username"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                placeholder="Your username"
                             />
                         </div>
                         <Button type="submit" disabled={isSubmitting}>

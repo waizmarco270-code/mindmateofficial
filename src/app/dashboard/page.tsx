@@ -74,20 +74,20 @@ export default function DashboardPage() {
     };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <SignedOut>
         <WelcomeDialog />
       </SignedOut>
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome Back, {user?.firstName || 'Student'}!</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {user?.username || 'Student'}!</h1>
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2 space-y-6">
            <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20 shadow-lg">
-                <CardHeader className="flex flex-row items-start gap-4">
+                <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
                     <div className="bg-primary/80 text-primary-foreground p-3 rounded-full">
                         <Bell className="h-6 w-6" />
                     </div>
@@ -96,8 +96,8 @@ export default function DashboardPage() {
                         <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    <h3 className="text-2xl font-bold">{latestAnnouncement.title}</h3>
+                <CardContent className="p-4 md:p-6 pt-0">
+                    <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
                     <p className="text-muted-foreground mt-2">
                     {latestAnnouncement.description}
                     </p>
@@ -108,17 +108,17 @@ export default function DashboardPage() {
             
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold tracking-tight">Explore Your Toolkit</h2>
-                 <div className="grid gap-6 sm:grid-cols-2">
+                 <div className="grid gap-4 sm:grid-cols-2">
                     {features.map((feature) => (
                         <Link href={feature.href} key={feature.title} prefetch={true}>
                         <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col", feature.color)}>
-                             <CardHeader className="flex-row items-center gap-4">
-                                <div className={cn("p-4 rounded-full bg-white/10", feature.textColor)}>
-                                    <feature.icon className="h-8 w-8" />
+                             <CardHeader className="flex-row items-center gap-4 p-4">
+                                <div className={cn("p-3 rounded-full bg-white/10", feature.textColor)}>
+                                    <feature.icon className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <CardTitle className={cn("text-2xl font-extrabold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
-                                    <CardDescription className={cn("mt-1", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
+                                    <CardTitle className={cn("text-xl font-bold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
+                                    <CardDescription className={cn("mt-1 text-sm", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
                                 </div>
                              </CardHeader>
                             <CardFooter className="mt-auto bg-black/10 p-3">
@@ -134,7 +134,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Side Column */}
-        <div className="lg:col-span-1 space-y-8">
+        <div className="lg:col-span-1 space-y-6">
           <SignedIn>
             <Card className="border-amber-500/20 bg-amber-500/5">
                 <CardHeader className="pb-2">
@@ -144,7 +144,7 @@ export default function DashboardPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-6xl font-bold text-amber-500">{credits}</div>
+                    <div className="text-5xl font-bold text-amber-500">{credits}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                     +1 for daily tasks, +5 for perfecting quizzes!
                     </p>

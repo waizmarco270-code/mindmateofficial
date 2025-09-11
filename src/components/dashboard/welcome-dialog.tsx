@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
@@ -44,7 +43,7 @@ export function WelcomeDialog() {
             </p>
         </div>
         <DialogFooter>
-          <SignUpButton>
+          <SignUpButton mode="modal">
             <Button className="w-full text-lg h-12">Create Your Free Account</Button>
           </SignUpButton>
         </DialogFooter>
