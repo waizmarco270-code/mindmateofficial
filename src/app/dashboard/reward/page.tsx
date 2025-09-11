@@ -4,11 +4,11 @@
 import { SpinWheel } from '@/components/reward/spin-wheel';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useRewards } from '@/hooks/use-rewards';
-import { Gift, History } from 'lucide-react';
+import { Gift, History, VenetianMask } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function RewardPage() {
-    const { spinHistory } = useRewards();
+    const { spinHistory, availableSpins } = useRewards();
 
     return (
         <div className="space-y-8">
@@ -22,6 +22,20 @@ export default function RewardPage() {
                     <SpinWheel />
                 </div>
                 <div className="lg:col-span-1 space-y-8">
+                     <Card>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-medium flex items-center justify-between">
+                                <span>Spins Left Today</span>
+                                <VenetianMask className="h-4 w-4 text-muted-foreground" />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold">{availableSpins}</div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                1 free daily spin + gifted spins.
+                            </p>
+                        </CardContent>
+                    </Card>
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><History /> Spin History</CardTitle>
