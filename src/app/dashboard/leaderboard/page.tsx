@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUsers, ADMIN_UIDS, DEV_UID, User } from '@/hooks/use-admin';
+import { useUsers, User } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';

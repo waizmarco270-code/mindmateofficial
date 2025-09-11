@@ -12,7 +12,7 @@ import { Send, Globe, MessageSquare, Crown, Code } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatRelative } from 'date-fns';
 import { useGlobalChat, type GlobalMessage } from '@/hooks/use-global-chat';
-import { useUsers, ADMIN_UIDS, DEV_UID, User } from '@/hooks/use-admin';
+import { useUsers, User } from '@/hooks/use-admin';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUnreadMessages } from '@/hooks/use-unread';
 
