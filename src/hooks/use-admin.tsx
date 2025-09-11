@@ -10,6 +10,8 @@ import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, g
 //  TYPES & INITIAL DATA
 // ============================================================================
 
+export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
+
 export interface User {
   id: string; // Document ID from Firestore (should be same as Clerk UID)
   uid: string; // Clerk User ID
@@ -60,6 +62,7 @@ type ResourceSection = 'class10' | 'jee' | 'class12';
 
 interface AppDataContextType {
     isAdmin: boolean;
+    isSuperAdmin: boolean;
     users: User[];
     currentUserData: User | null;
     toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
@@ -116,6 +119,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     // STATE MANAGEMENT
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [currentUserData, setCurrentUserData] = useState<User | null>(null);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -126,12 +130,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
     const [loading, setLoading] = useState(true);
 
-    // EFFECT: Determine if the logged-in user is an admin
+    // EFFECT: Determine if the logged-in user is an admin or super admin
     useEffect(() => {
         if (isClerkLoaded && authUser && currentUserData) {
             setIsAdmin(currentUserData.isAdmin ?? false);
+            setIsSuperAdmin(currentUserData.uid === SUPER_ADMIN_UID);
         } else {
             setIsAdmin(false);
+            setIsSuperAdmin(false);
         }
     }, [isClerkLoaded, authUser, currentUserData]);
 
@@ -176,7 +182,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     photoURL: authUser.imageUrl,
                     isBlocked: false,
                     credits: 100, // Starting credits
-                    isAdmin: false // Default to not admin
+                    isAdmin: authUser.id === SUPER_ADMIN_UID // Automatically make the super admin an admin
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -372,6 +378,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     // CONTEXT VALUE
     const value: AppDataContextType = {
         isAdmin,
+        isSuperAdmin,
         users,
         currentUserData,
         toggleUserBlock,
@@ -450,5 +457,3 @@ export const usePolls = () => {
     if(!context) throw new Error('usePolls must be used within an AppDataProvider');
     return context;
 }
-
-    
