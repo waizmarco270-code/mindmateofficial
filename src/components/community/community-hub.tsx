@@ -133,11 +133,11 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
                             <span className="dev-badge">
                                 <Code className="h-3 w-3" /> DEV
                             </span>
-                        ) : isVip && (
+                        ) : isVip ? (
                             <span className="vip-badge">
                                 <Crown className="h-3 w-3" /> VIP
                             </span>
-                        )}
+                        ) : null}
                     </p>
                  )}
                 <div className={cn(
