@@ -1,16 +1,15 @@
-
 'use client';
 
 import { useState, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
-import { KeyRound, Trash2, Camera, Crown } from 'lucide-react';
+import { KeyRound, Trash2, Camera, Crown, ExternalLink } from 'lucide-react';
 import { useAdmin } from '@/hooks/use-admin';
 
 export default function ProfilePage() {
@@ -22,6 +21,10 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false);
 
   if (!isLoaded || !user) return null;
+
+  // Derive the Clerk-hosted profile URL
+  const clerkProfileUrl = `https://${user.primaryEmailAddress?.verification.strategy.replace('email_link_flow_', '')}.clerk.accounts.dev/user`;
+
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,27 +60,22 @@ export default function ProfilePage() {
     <div className="space-y-8">
        <div>
         <h1 className="text-3xl font-bold tracking-tight">My Profile</h1>
-        <p className="text-muted-foreground">Manage your account settings and preferences.</p>
+        <p className="text-muted-foreground">Manage your app-specific display name and view account details.</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8 items-start">
-          <Card className="lg:col-span-2">
-            <form onSubmit={handleUpdateProfile}>
+          <form onSubmit={handleUpdateProfile} className="lg:col-span-2">
+            <Card>
               <CardHeader>
                   <CardTitle>Personal Information</CardTitle>
-                  <CardDescription>Update your photo, display name, and view your account details.</CardDescription>
+                  <CardDescription>Update your display name and view your account details.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                   <div className="flex items-center gap-6">
-                      <div className="relative group">
-                        <Avatar className="h-24 w-24 border-2 border-primary/20">
-                          <AvatarImage src={user.imageUrl ?? `https://picsum.photos/150/150?u=${user.id}`} alt={user.fullName ?? 'User'} />
-                          <AvatarFallback>{user.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                         <a href={user.publicMetadata.externalProfileUrl as string | undefined ?? '/dashboard/profile'} target="_blank" rel="noopener noreferrer" className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-white text-xs text-center cursor-pointer">
-                            Update on Clerk
-                        </a>
-                      </div>
+                      <Avatar className="h-24 w-24 border-2 border-primary/20">
+                        <AvatarImage src={user.imageUrl ?? `https://picsum.photos/150/150?u=${user.id}`} alt={user.fullName ?? 'User'} />
+                        <AvatarFallback>{user.primaryEmailAddress?.emailAddress?.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
                       
                       <div className="space-y-2">
                           <h2 className="text-2xl font-bold flex items-center gap-3">
@@ -115,18 +113,20 @@ export default function ProfilePage() {
                     {isSaving ? 'Saving...' : 'Save Changes'}
                 </Button>
               </CardFooter>
-              </form>
-          </Card>
+            </Card>
+          </form>
 
           <div className="space-y-8 lg:col-span-1">
               <Card>
                   <CardHeader>
-                      <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5"/> Account Security</CardTitle>
-                      <CardDescription>Your account is managed by Clerk.</CardDescription>
+                      <CardTitle className="flex items-center gap-2"><KeyRound className="h-5 w-5"/> Clerk Account</CardTitle>
+                      <CardDescription>Manage password, profile picture, and other security settings on Clerk's secure page.</CardDescription>
                   </CardHeader>
                    <CardContent>
-                     <a href={user.publicMetadata.externalProfileUrl as string | undefined ?? '/dashboard/profile'} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" className="w-full">Manage Account on Clerk</Button>
+                     <a href={clerkProfileUrl} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" className="w-full">
+                          Manage Account on Clerk <ExternalLink className="ml-2 h-4 w-4"/>
+                        </Button>
                      </a>
                   </CardContent>
               </Card>
@@ -134,11 +134,13 @@ export default function ProfilePage() {
               <Card className="border-destructive/50">
                   <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-destructive"><Trash2 className="h-5 w-5"/> Delete Account</CardTitle>
-                      <CardDescription>Permanently delete your account and all associated data. This action cannot be undone.</CardDescription>
+                      <CardDescription>Permanently delete your account and all associated data via Clerk.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                       <a href={user.publicMetadata.externalProfileUrl as string | undefined ?? '/dashboard/profile'} target="_blank" rel="noopener noreferrer">
-                            <Button variant="destructive" className="w-full">Delete My Account</Button>
+                       <a href={clerkProfileUrl} target="_blank" rel="noopener noreferrer">
+                            <Button variant="destructive" className="w-full">
+                              Delete Account on Clerk <ExternalLink className="ml-2 h-4 w-4"/>
+                            </Button>
                        </a>
                   </CardContent>
               </Card>

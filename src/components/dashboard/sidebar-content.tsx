@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -118,7 +117,7 @@ export default function SidebarContent() {
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto">
-        <Accordion type="multiple" defaultValue={['main', 'study', 'progress']} className="w-full px-4">
+        <Accordion type="multiple" defaultValue={['main']} className="w-full px-4">
           <AccordionItem value="main" className="border-b-0">
             <AccordionTrigger className="py-3 text-sm font-medium text-muted-foreground hover:no-underline">
               <div className="flex items-center gap-3">
