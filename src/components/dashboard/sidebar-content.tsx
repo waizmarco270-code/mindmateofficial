@@ -79,15 +79,15 @@ export default function SidebarContent() {
           href={item.href}
           prefetch={true}
           className={cn(
-            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 hover:text-primary text-sm font-medium',
+            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 hover:text-primary text-sm font-medium relative',
             isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold',
             item.highlight && !isActive(item.href) && 'text-yellow-400 hover:text-yellow-500',
             item.highlight && isActive(item.href) && 'text-yellow-400 bg-yellow-500/10 hover:text-yellow-500'
           )}
         >
           <div className={cn(
-            "absolute left-0 h-6 w-1 rounded-r-lg bg-primary transition-transform scale-y-0",
-            isActive(item.href) ? "scale-y-100" : "",
+            "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
+            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
             item.highlight && isActive(item.href) && 'bg-yellow-500'
           )}></div>
           <item.icon className="h-5 w-5" />
@@ -109,18 +109,6 @@ export default function SidebarContent() {
     </div>
   );
 
-  const renderCollapsibleNav = (navItems: typeof mainNav, title: string) => (
-    <AccordionItem value={title.toLowerCase()} className="border-b-0">
-        <AccordionTrigger className="rounded-lg px-3 text-sm font-semibold text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:no-underline [&[data-state=open]>svg]:text-primary">
-            {title}
-        </AccordionTrigger>
-        <AccordionContent className="pt-1">
-           {renderNavLinks(navItems)}
-        </AccordionContent>
-    </AccordionItem>
-  );
-
-
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex h-20 items-center border-b border-sidebar-border px-6">
@@ -135,20 +123,16 @@ export default function SidebarContent() {
             <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Main</h2>
             {renderNavLinks(mainNav)}
         </div>
-
-        <Accordion type="multiple" defaultValue={['study', 'progress']} className="w-full space-y-2 px-4">
-          
-          <div className="space-y-2">
+        
+        <div className="px-4 space-y-2">
             <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Study</h2>
-            {renderCollapsibleNav(studyNav, 'Study Tools')}
-          </div>
-          
-          <div className="space-y-2">
-             <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Progress</h2>
-            {renderCollapsibleNav(progressNav, 'Track Progress')}
-          </div>
+            {renderNavLinks(studyNav)}
+        </div>
 
-        </Accordion>
+        <div className="px-4 space-y-2">
+            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Progress</h2>
+            {renderNavLinks(progressNav)}
+        </div>
         
         {isAdmin && (
             <div className="px-4 space-y-2">
