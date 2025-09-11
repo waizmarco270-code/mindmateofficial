@@ -24,13 +24,30 @@ const UNLOCK_CREDITS = 20;
 
 function SocialPageContent() {
     const { user } = useUser();
-    const { currentUserData } = useUsers();
+    const { currentUserData, loading: userLoading } = useUsers();
     const { users: allUsers, friends, nonFriends, friendRequests, sentRequests } = useFriends();
     const { onlineUsers, loading: presenceLoading } = usePresence();
     
     const [selectedChatUser, setSelectedChatUser] = useState<User | null>(null);
 
     const isSocialUnlocked = currentUserData?.socialUnlocked ?? false;
+
+    if (userLoading) {
+        return (
+             <div className="h-full grid grid-cols-1 md:grid-cols-[350px_1fr] lg:grid-cols-[400px_1fr] gap-4">
+                <div className="h-full flex-col col-span-1 border rounded-lg p-2 space-y-2">
+                     <Skeleton className="h-10 w-full" />
+                     <Skeleton className="h-14 w-full" />
+                     <Skeleton className="h-14 w-full" />
+                     <Skeleton className="h-14 w-full" />
+                     <Skeleton className="h-14 w-full" />
+                </div>
+                 <div className="h-full flex-col col-span-1 border rounded-lg hidden md:flex">
+                     <Skeleton className="h-full w-full" />
+                 </div>
+            </div>
+        );
+    }
 
     if (!user) {
        return (

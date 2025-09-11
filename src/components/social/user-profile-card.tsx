@@ -24,9 +24,9 @@ export function UserProfileCard({ user, isOpen, onOpenChange }: UserProfileCardP
         friendRequests, 
         sendFriendRequest, 
         acceptFriendRequest, 
-        cancelFriendRequest, 
         rejectFriendRequest, 
-        removeFriend 
+        removeFriend,
+        cancelFriendRequest 
     } = useFriends();
 
     const isFriend = friends.some(f => f.uid === user.uid);

@@ -58,27 +58,28 @@ export const FriendProvider = ({ children }: { children: ReactNode }) => {
     }, [authUser]);
 
     const friends = useMemo(() => {
-        if (!currentUserData) return [];
+        if (!currentUserData?.friends) return [];
         return allUsers.filter(u => currentUserData.friends?.includes(u.uid))
     }, [allUsers, currentUserData]);
 
     const friendRequests = useMemo(() => {
-        if (!currentUserData) return [];
+        if (!currentUserData?.friendRequests) return [];
         return allUsers.filter(u => currentUserData.friendRequests?.includes(u.uid))
     }, [allUsers, currentUserData]);
 
     const sentRequests = useMemo(() => {
-        if (!currentUserData) return [];
+        if (!currentUserData?.sentRequests) return [];
         return allUsers.filter(u => currentUserData.sentRequests?.includes(u.uid))
     }, [allUsers, currentUserData]);
     
     const nonFriends = useMemo(() => {
-        if (!currentUserData) return [];
-        return allUsers.filter(u => 
-            !currentUserData.friends?.includes(u.uid) &&
-            !currentUserData.friendRequests?.includes(u.uid) &&
-            !currentUserData.sentRequests?.includes(u.uid)
-        )
+        if (!currentUserData) return allUsers;
+        const friendIds = new Set([
+            ...(currentUserData.friends || []),
+            ...(currentUserData.friendRequests || []),
+            ...(currentUserData.sentRequests || []),
+        ]);
+        return allUsers.filter(u => !friendIds.has(u.uid));
     }, [allUsers, currentUserData]);
 
 

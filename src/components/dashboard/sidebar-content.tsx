@@ -43,6 +43,7 @@ const mainNav = [
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', highlight: true },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', highlight: true },
+  { href: '/dashboard/community', icon: Globe, label: 'Community Hub' },
 ];
 
 const studyNav = [
@@ -94,7 +95,10 @@ export default function SidebarContent() {
               )}></div>
               <item.icon className="h-5 w-5" />
               <span className="flex-1">{item.label}</span>
-               {item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread) && (
+               {item.href === '/dashboard/social' && hasUnread && (
+                 <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+              )}
+               {item.href === '/dashboard/community' && hasGlobalUnread && (
                  <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
               )}
                {item.href === '/dashboard/quiz' && hasNewQuiz && (

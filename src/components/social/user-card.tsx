@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '../ui/button';
 import { useUnreadMessages } from '@/hooks/use-unread';
 import { UserProfileCard } from './user-profile-card';
+import { useFriends } from '@/hooks/use-friends';
 
 interface UserCardProps {
     user: User;
@@ -23,16 +24,23 @@ export function UserCard({
 }: UserCardProps) {
     const isVip = user.isAdmin;
     const { hasUnreadFrom } = useUnreadMessages();
+    const { friends } = useFriends();
     const hasUnread = hasUnreadFrom(user.uid);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    
+    const isFriend = friends.some(f => f.uid === user.uid);
 
     const handleCardClick = (e: React.MouseEvent) => {
         // Prevent chat selection when clicking on the avatar
         if ((e.target as HTMLElement).closest('.avatar-trigger')) {
             return;
         }
-        if (onSelectChat) {
+        // Only select chat if they are a friend
+        if (onSelectChat && isFriend) {
             onSelectChat(user);
+        } else if (!isFriend) {
+             // If not a friend, open profile instead
+             setIsProfileOpen(true);
         }
     }
 
@@ -40,12 +48,13 @@ export function UserCard({
         <>
             <div
                 className={cn(
-                    "w-full h-auto justify-start p-2 relative flex items-center gap-3 rounded-lg transition-colors cursor-pointer",
-                    isSelected ? "bg-primary/10 text-primary" : "hover:bg-muted"
+                    "w-full h-auto justify-start p-2 relative flex items-center gap-3 rounded-lg transition-colors",
+                    isFriend ? "cursor-pointer" : "cursor-default",
+                    isSelected ? "bg-primary/10 text-primary" : (isFriend ? "hover:bg-muted" : "")
                 )}
                 onClick={handleCardClick}
             >
-                <div className="avatar-trigger" onClick={() => setIsProfileOpen(true)}>
+                <div className="avatar-trigger cursor-pointer" onClick={() => setIsProfileOpen(true)}>
                     <Avatar className="h-10 w-10 border-2 border-muted flex-shrink-0">
                         <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} alt={user.displayName} />
                         <AvatarFallback>{user.displayName?.charAt(0).toUpperCase()}</AvatarFallback>
