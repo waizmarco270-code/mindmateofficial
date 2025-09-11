@@ -68,12 +68,14 @@ export default function AdminPanelPage() {
   const [sectionName, setSectionName] = useState('');
   const [sectionDescription, setSectionDescription] = useState('');
   const [sectionUnlockCost, setSectionUnlockCost] = useState(30);
+  const [sectionParentCategory, setSectionParentCategory] = useState<'class-10' | 'class-12' | 'jee' | 'neet' | 'class-6-9' | 'general'>('jee');
+
 
   // State for new resources
   const [resourceTitle, setResourceTitle] = useState('');
   const [resourceDescription, setResourceDescription] = useState('');
   const [resourceUrl, setResourceUrl] = useState('');
-  const [resourceSectionId, setResourceSectionId] = useState('general');
+  const [resourceSectionId, setResourceSectionId] = useState('');
   
   // State for editing
   const [editingItem, setEditingItem] = useState<EditableResource | EditableSection | null>(null);
@@ -149,7 +151,7 @@ export default function AdminPanelPage() {
             setResourceTitle('');
             setResourceDescription('');
             setResourceUrl('');
-            setResourceSectionId('general');
+            setResourceSectionId('');
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Operation Failed', description: error.message });
         }
@@ -157,14 +159,15 @@ export default function AdminPanelPage() {
     
     const handleSectionFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-         if (!sectionName || !sectionDescription) {
-            toast({ variant: 'destructive', title: 'Validation Error', description: 'Section name and description are required.' });
+         if (!sectionName || !sectionDescription || !sectionParentCategory) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: 'All fields are required.' });
             return;
         }
         const sectionData = {
             name: sectionName,
             description: sectionDescription,
-            unlockCost: sectionUnlockCost
+            unlockCost: sectionUnlockCost,
+            parentCategory: sectionParentCategory,
         };
         try {
             await addResourceSection(sectionData);
@@ -194,8 +197,9 @@ export default function AdminPanelPage() {
             const name = formData.get('name') as string;
             const description = formData.get('description') as string;
             const unlockCost = Number(formData.get('unlockCost'));
+            const parentCategory = formData.get('parentCategory') as ResourceSection['parentCategory'];
              if (!name || !description) return toast({ variant: 'destructive', title: 'All fields required.'});
-            await updateResourceSection(editingItem.id, { name, description, unlockCost });
+            await updateResourceSection(editingItem.id, { name, description, unlockCost, parentCategory });
             toast({ title: 'Section Updated' });
           }
           closeEditDialog();
@@ -500,6 +504,19 @@ export default function AdminPanelPage() {
                       </CardHeader>
                       <CardContent>
                         <form onSubmit={handleSectionFormSubmit} className="space-y-4">
+                           <div className="space-y-2"><Label htmlFor="section-parent">Parent Category</Label>
+                                <Select value={sectionParentCategory} onValueChange={(v: any) => setSectionParentCategory(v)}>
+                                    <SelectTrigger id="section-parent"><SelectValue placeholder="Select a parent category..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="class-10">Class 10</SelectItem>
+                                        <SelectItem value="class-12">Class 12</SelectItem>
+                                        <SelectItem value="jee">JEE</SelectItem>
+                                        <SelectItem value="neet">NEET</SelectItem>
+                                        <SelectItem value="class-6-9">Class 6-9</SelectItem>
+                                        <SelectItem value="general">General</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                           <div className="space-y-2">
                             <Label htmlFor="section-name">Section Name</Label>
                             <Input id="section-name" value={sectionName} onChange={e => setSectionName(e.target.value)} placeholder="e.g., JEE Advanced Prep" required />
@@ -524,6 +541,7 @@ export default function AdminPanelPage() {
                                <TableHeader>
                                    <TableRow>
                                        <TableHead>Name</TableHead>
+                                       <TableHead>Parent</TableHead>
                                        <TableHead>Cost</TableHead>
                                        <TableHead className="text-right">Actions</TableHead>
                                    </TableRow>
@@ -532,6 +550,7 @@ export default function AdminPanelPage() {
                                    {resourceSections.map(section => (
                                        <TableRow key={section.id}>
                                            <TableCell className="font-medium">{section.name}</TableCell>
+                                           <TableCell><Badge variant="secondary" className="capitalize">{section.parentCategory}</Badge></TableCell>
                                            <TableCell>{section.unlockCost} credits</TableCell>
                                            <TableCell className="text-right space-x-2">
                                                 <Button variant="outline" size="sm" onClick={() => openEditDialog(section)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
@@ -548,7 +567,7 @@ export default function AdminPanelPage() {
                                            </TableCell>
                                        </TableRow>
                                    ))}
-                                   {resourceSections.length === 0 && <TableRow><TableCell colSpan={3} className="h-24 text-center">No premium sections created yet.</TableCell></TableRow>}
+                                   {resourceSections.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center">No premium sections created yet.</TableCell></TableRow>}
                                </TableBody>
                            </Table>
                        </CardContent>
@@ -566,9 +585,8 @@ export default function AdminPanelPage() {
                             <Select value={resourceSectionId} onValueChange={setResourceSectionId}>
                                 <SelectTrigger id="resource-section"><SelectValue placeholder="Select a section..." /></SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="general">General (Free)</SelectItem>
                                     {resourceSections.map(section => (
-                                        <SelectItem key={section.id} value={section.id}>{section.name}</SelectItem>
+                                        <SelectItem key={section.id} value={section.id}>{section.name} ({section.parentCategory})</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -578,7 +596,7 @@ export default function AdminPanelPage() {
                       </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><CardTitle>General Resources</CardTitle><CardDescription>Manage free resources available to all students.</CardDescription></CardHeader>
+                        <CardHeader><CardTitle>All Resources</CardTitle><CardDescription>Manage all available resources.</CardDescription></CardHeader>
                         <CardContent>
                            <Table>
                                <TableHeader>
@@ -588,7 +606,7 @@ export default function AdminPanelPage() {
                                    </TableRow>
                                </TableHeader>
                                <TableBody>
-                                   {generalResources.map((resource) => (
+                                   {allResources.map((resource) => (
                                        <TableRow key={resource.id}>
                                            <TableCell className="font-medium">{resource.title}</TableCell>
                                            <TableCell className="text-right space-x-2">
@@ -606,7 +624,7 @@ export default function AdminPanelPage() {
                                            </TableCell>
                                        </TableRow>
                                    ))}
-                                   {generalResources.length === 0 && <TableRow><TableCell colSpan={2} className="h-24 text-center">No general resources found.</TableCell></TableRow>}
+                                   {allResources.length === 0 && <TableRow><TableCell colSpan={2} className="h-24 text-center">No resources found.</TableCell></TableRow>}
                                </TableBody>
                            </Table>
                         </CardContent>
@@ -663,19 +681,32 @@ export default function AdminPanelPage() {
             <DialogContent>
                 <DialogHeader><DialogTitle>Edit {editingItem && 'sectionId' in editingItem ? 'Resource' : 'Section'}</DialogTitle></DialogHeader>
                 <form onSubmit={handleEditFormSubmit} className="space-y-4">
-                    {editingItem && 'sectionId' in editingItem ? (
+                    {editingItem && 'sectionId' in editingItem && editingItem.type === 'general' ? (
                         <>
                             <div className="space-y-2"><Label htmlFor="edit-title">Title</Label><Input id="edit-title" name="title" defaultValue={editingItem?.title} required /></div>
                             <div className="space-y-2"><Label htmlFor="edit-description">Description</Label><Textarea id="edit-description" name="description" defaultValue={editingItem?.description} required /></div>
                             <div className="space-y-2"><Label htmlFor="edit-url">URL</Label><Input id="edit-url" name="url" type="url" defaultValue={editingItem?.url} required /></div>
                         </>
-                    ) : (
+                    ) : editingItem && 'name' in editingItem ? (
                          <>
                             <div className="space-y-2"><Label htmlFor="edit-name">Section Name</Label><Input id="edit-name" name="name" defaultValue={editingItem?.name} required /></div>
                             <div className="space-y-2"><Label htmlFor="edit-sec-description">Description</Label><Textarea id="edit-sec-description" name="description" defaultValue={editingItem?.description} required /></div>
                             <div className="space-y-2"><Label htmlFor="edit-unlockCost">Unlock Cost</Label><Input id="edit-unlockCost" name="unlockCost" type="number" defaultValue={editingItem?.unlockCost} required /></div>
+                             <div className="space-y-2"><Label htmlFor="edit-section-parent">Parent Category</Label>
+                                <Select name="parentCategory" defaultValue={editingItem?.parentCategory}>
+                                    <SelectTrigger id="edit-section-parent"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="class-10">Class 10</SelectItem>
+                                        <SelectItem value="class-12">Class 12</SelectItem>
+                                        <SelectItem value="jee">JEE</SelectItem>
+                                        <SelectItem value="neet">NEET</SelectItem>
+                                        <SelectItem value="class-6-9">Class 6-9</SelectItem>
+                                        <SelectItem value="general">General</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </>
-                    )}
+                    ) : null}
                     <DialogFooter><DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose><Button type="submit">Save Changes</Button></DialogFooter>
                 </form>
             </DialogContent>
