@@ -33,17 +33,11 @@ export default function LeaderboardPage() {
     };
 
     const renderUserBadges = (user: User) => {
-        const isVip = user.isAdmin || ADMIN_UIDS.includes(user.uid);
-        const isDev = user.uid === DEV_UID;
+        const isVip = user.isAdmin;
 
         return (
             <div className="flex items-center justify-center gap-2 mt-2">
-                {isDev && (
-                    <span className="dev-badge" data-text="DEV">
-                        <Code className="h-3 w-3" /> DEV
-                    </span>
-                )}
-                {isVip && !isDev && (
+                {isVip && (
                     <span className="vip-badge">
                         <Crown className="h-3 w-3" /> VIP
                     </span>
@@ -147,8 +141,7 @@ export default function LeaderboardPage() {
                         <TableBody>
                             {restOfUsers.map((user, index) => {
                                 const rank = index + 4;
-                                const isVip = user.isAdmin || ADMIN_UIDS.includes(user.uid);
-                                const isDev = user.uid === DEV_UID;
+                                const isVip = user.isAdmin;
                                 return (
                                     <TableRow key={user.uid} className={cn(currentUser?.id === user.uid && 'bg-primary/10')}>
                                         <TableCell className="font-bold text-lg text-muted-foreground">{rank}</TableCell>
@@ -160,12 +153,7 @@ export default function LeaderboardPage() {
                                                 </Avatar>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-medium">{user.displayName}</span>
-                                                    {isDev && (
-                                                        <span className="dev-badge" data-text="DEV">
-                                                            <Code className="h-3 w-3" /> DEV
-                                                        </span>
-                                                    )}
-                                                    {isVip && !isDev && (
+                                                    {isVip && (
                                                         <span className="vip-badge">
                                                             <Crown className="h-3 w-3" /> VIP
                                                         </span>

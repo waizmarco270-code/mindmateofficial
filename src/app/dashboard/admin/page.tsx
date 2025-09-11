@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -39,7 +39,7 @@ interface QuizQuestion {
 
 export default function AdminPanelPage() {
   const { 
-    isAdmin, users, toggleUserBlock, 
+    isAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin,
     announcements, updateAnnouncement, 
     activePoll, updatePoll,
     resources, addResource, updateResource, deleteResource,
@@ -348,8 +348,68 @@ export default function AdminPanelPage() {
         <p className="text-muted-foreground">Manage users, content, and application settings.</p>
       </div>
 
-      <Accordion type="multiple" defaultValue={['content-management']} className="w-full space-y-4">
+      <Accordion type="multiple" defaultValue={['user-management']} className="w-full space-y-4">
         
+        {/* User Management */}
+        <AccordionItem value="user-management" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Users className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">User Management</h3>
+                  <p className="text-sm text-muted-foreground text-left">View and manage all registered users and their roles.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <Card>
+                  <CardContent className="pt-6">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>User</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Role</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map(user => (
+                          <TableRow key={user.id}>
+                            <TableCell className="font-medium">{user.displayName}</TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell><Badge variant={user.isBlocked ? 'destructive' : 'secondary'}>{user.isBlocked ? 'Blocked' : 'Active'}</Badge></TableCell>
+                            <TableCell>
+                                <Badge variant={user.isAdmin ? 'default' : 'outline'}>
+                                    {user.isAdmin ? 'Admin' : 'User'}
+                                </Badge>
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                                {user.isAdmin ? (
+                                    <Button variant="secondary" size="sm" onClick={() => removeUserAdmin(user.uid)}>
+                                        <UserCog className="mr-2 h-4 w-4"/>Remove Admin
+                                    </Button>
+                                ) : (
+                                    <Button variant="outline" size="sm" onClick={() => makeUserAdmin(user.uid)}>
+                                        <ShieldCheck className="mr-2 h-4 w-4"/>Make Admin
+                                    </Button>
+                                )}
+                                <Button variant={user.isBlocked ? 'outline' : 'destructive'} size="sm" onClick={() => toggleUserBlock(user.uid, user.isBlocked)}>
+                                    {user.isBlocked ? 'Unblock' : 'Block'} User
+                                </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
         {/* Content Management */}
         <AccordionItem value="content-management" className="border-b-0">
           <Card>
@@ -389,30 +449,6 @@ export default function AdminPanelPage() {
           </Card>
         </AccordionItem>
         
-        {/* User Management */}
-        <AccordionItem value="user-management" className="border-b-0">
-          <Card>
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <Users className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold">User Management</h3>
-                  <p className="text-sm text-muted-foreground text-left">View and manage all registered users.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0">
-                <Card>
-                  <CardContent className="pt-6">
-                    <Table><TableHeader><TableRow><TableHead>User</TableHead><TableHead>Email</TableHead><TableHead>Status</TableHead><TableHead>Credits</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                      <TableBody>{users.map(user => (<TableRow key={user.id}><TableCell className="font-medium">{user.displayName}</TableCell><TableCell>{user.email}</TableCell><TableCell><Badge variant={user.isBlocked ? 'destructive' : 'secondary'}>{user.isBlocked ? 'Blocked' : 'Active'}</Badge></TableCell><TableCell className="font-medium">{user.credits}</TableCell><TableCell className="text-right"><Button variant={user.isBlocked ? 'outline' : 'destructive'} size="sm" onClick={() => toggleUserBlock(user.uid, user.isBlocked)}>{user.isBlocked ? 'Unblock' : 'Block'} User</Button></TableCell></TableRow>))}</TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
         {/* Resource Management */}
          <AccordionItem value="resource-management" className="border-b-0">
             <Card>
@@ -543,5 +579,3 @@ export default function AdminPanelPage() {
     </div>
   );
 }
-
-    

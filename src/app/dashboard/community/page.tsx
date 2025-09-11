@@ -120,8 +120,7 @@ interface ChatMessageProps {
 function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
     const { user } = useUser();
     const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
-    const isVip = sender ? ADMIN_UIDS.includes(sender.uid) || sender.isAdmin : false;
-    const isDev = sender ? sender.uid === DEV_UID : false;
+    const isVip = sender?.isAdmin;
 
     return (
         <div className={cn("flex items-start gap-3", isCurrentUser && "justify-end")}>
@@ -135,12 +134,7 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
                  {!isCurrentUser && (
                     <p className="text-xs text-muted-foreground font-semibold px-1 flex items-center gap-1.5">
                         {sender?.displayName ?? 'Unknown User'}
-                        {isDev && (
-                            <span className="dev-badge" data-text="DEV">
-                                <Code className="h-3 w-3" /> DEV
-                            </span>
-                        )}
-                        {isVip && !isDev && (
+                        {isVip && (
                             <span className="vip-badge">
                                 <Crown className="h-3 w-3" /> VIP
                             </span>
