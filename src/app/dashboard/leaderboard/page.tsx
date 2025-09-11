@@ -120,7 +120,7 @@ export default function LeaderboardPage() {
 
         return (
             <Card className="w-full">
-                <CardContent className="p-4 flex flex-col gap-2">
+                 <CardContent className="p-4 flex flex-col gap-2">
                     <div className="flex items-center gap-4">
                         <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
                         <Avatar className="w-12 h-12 border-2">
@@ -128,7 +128,18 @@ export default function LeaderboardPage() {
                             <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                            <p className="font-semibold">{user.displayName}</p>
+                             <div className="flex items-center gap-2">
+                                <p className="font-semibold">{user.displayName}</p>
+                                {isSuperAdmin ? (
+                                    <span className="dev-badge flex-shrink-0">
+                                        <Code className="h-3 w-3" /> DEV
+                                    </span>
+                                ) : user.isAdmin && (
+                                    <span className="vip-badge flex-shrink-0">
+                                        <Crown className="h-3 w-3" /> VIP
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
                         </div>
                         <p className={cn("text-2xl font-bold", placeDetails.trophyColor)}>{user.totalScore}</p>
