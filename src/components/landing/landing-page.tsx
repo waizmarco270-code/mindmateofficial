@@ -9,9 +9,6 @@ import { SignedIn, SignedOut, SignUpButton } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 
-const HeroBackground = dynamic(() => import('./hero-background').then(mod => mod.HeroBackground), { ssr: false });
-
-
 const features = [
   {
     name: 'AI Tutor',
@@ -103,7 +100,10 @@ export function LandingPage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden py-24 sm:py-32">
-            <HeroBackground />
+            <div className="absolute inset-0 -z-10 bg-slate-950">
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_100%_40%_at_50%_60%,rgba(168,85,247,0.1),rgba(255,255,255,0))]"></div>
+              <div className="absolute inset-0 bg-[repeating-radial-gradient(circle_farthest-side_at_50%_50%,rgba(255,255,255,0.05)_0%,rgba(255,255,255,0.05)_1px,transparent_1px,transparent_100%)] [background-size:2rem_2rem]"></div>
+            </div>
             <div className="container mx-auto px-4 text-center relative">
                 <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up" style={{animationDelay: '0.2s'}}>
                     Unlock Your <span className="bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent">Full Potential</span>
