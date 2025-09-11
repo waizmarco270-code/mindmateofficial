@@ -40,7 +40,7 @@ const mainNav = [
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', highlight: true },
-  { href: '/dashboard/social', icon: Users, label: 'Social Hub', highlight: true },
+  { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
   { href: '/dashboard/community', icon: Globe, label: 'Community Hub' },
 ];
 
@@ -55,10 +55,6 @@ const progressNav = [
   { href: '/dashboard/insights', icon: LineChart, label: 'Insights', highlight: true },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { href: '/dashboard/calculator', icon: Percent, label: 'Percentage Calc' },
-];
-
-const accountNav = [
-    { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
 ];
 
 const adminNav = [
@@ -76,17 +72,17 @@ export default function SidebarContent() {
   };
   
   const renderNavLinks = (navItems: typeof mainNav) => (
-    <div className="space-y-1 px-2">
+    <div className="space-y-1">
       {navItems.map((item) => (
         <Link
           key={item.label}
           href={item.href}
           prefetch={true}
           className={cn(
-            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary text-base font-medium',
-            isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10',
-            item.highlight && !isActive(item.href) && 'text-yellow-500 hover:text-yellow-600',
-            item.highlight && isActive(item.href) && 'text-yellow-500 bg-yellow-500/10 hover:text-yellow-600'
+            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 hover:text-primary text-sm font-medium',
+            isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold',
+            item.highlight && !isActive(item.href) && 'text-yellow-400 hover:text-yellow-500',
+            item.highlight && isActive(item.href) && 'text-yellow-400 bg-yellow-500/10 hover:text-yellow-500'
           )}
         >
           <div className={cn(
@@ -113,15 +109,12 @@ export default function SidebarContent() {
     </div>
   );
 
-  const renderCollapsibleNav = (navItems: typeof mainNav, title: string, icon: React.ElementType, defaultOpen = false) => (
+  const renderCollapsibleNav = (navItems: typeof mainNav, title: string) => (
     <AccordionItem value={title.toLowerCase()} className="border-b-0">
-        <AccordionTrigger className="px-4 text-base font-semibold text-muted-foreground hover:text-primary hover:no-underline [&[data-state=open]>svg]:text-primary">
-             <div className="flex items-center gap-3">
-                <icon className="h-5 w-5" />
-                <span>{title}</span>
-            </div>
+        <AccordionTrigger className="rounded-lg px-3 text-sm font-semibold text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:no-underline [&[data-state=open]>svg]:text-primary">
+            {title}
         </AccordionTrigger>
-        <AccordionContent className="pb-1">
+        <AccordionContent className="pt-1">
            {renderNavLinks(navItems)}
         </AccordionContent>
     </AccordionItem>
@@ -137,17 +130,32 @@ export default function SidebarContent() {
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto py-4 space-y-4">
-        <div className="px-2">
-            <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">Main</h2>
+        
+        <div className="px-4 space-y-2">
+            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Main</h2>
             {renderNavLinks(mainNav)}
         </div>
-        
-        <Accordion type="multiple" className="w-full space-y-1 px-2">
-          {renderCollapsibleNav(studyNav, 'Study', Activity)}
-          {renderCollapsibleNav(progressNav, 'Progress', LineChart)}
-          {renderCollapsibleNav(accountNav, 'Account', User)}
-          {isAdmin && renderCollapsibleNav(adminNav, 'Admin', Shield)}
+
+        <Accordion type="multiple" defaultValue={['study', 'progress']} className="w-full space-y-2 px-4">
+          
+          <div className="space-y-2">
+            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Study</h2>
+            {renderCollapsibleNav(studyNav, 'Study Tools')}
+          </div>
+          
+          <div className="space-y-2">
+             <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Progress</h2>
+            {renderCollapsibleNav(progressNav, 'Track Progress')}
+          </div>
+
         </Accordion>
+        
+        {isAdmin && (
+            <div className="px-4 space-y-2">
+                <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Admin</h2>
+                {renderNavLinks(adminNav)}
+            </div>
+        )}
       </div>
     </div>
   );
