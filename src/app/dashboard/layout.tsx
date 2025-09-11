@@ -49,7 +49,7 @@ export default function DashboardLayout({
         <Sidebar className="hidden md:flex md:flex-shrink-0">
           <SidebarContent />
         </Sidebar>
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col bg-transparent">
           <Header />
           <main className="relative flex-1 overflow-y-auto focus:outline-none">
             <SidebarInset className={cn(
