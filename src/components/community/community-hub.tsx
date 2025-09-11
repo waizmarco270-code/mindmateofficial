@@ -110,7 +110,7 @@ interface ChatMessageProps {
 function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
     const { user } = useUser();
     const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
-    const isVip = sender?.isAdmin;
+    const isVip = sender?.isAdmin ?? false;
 
     return (
         <div className={cn("flex items-start gap-3", isCurrentUser && "justify-end")}>
