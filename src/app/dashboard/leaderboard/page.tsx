@@ -50,7 +50,7 @@ export default function LeaderboardPage() {
     const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
     
     const renderUserStats = (user: User & { totalScore: number }) => (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+        <div className="hidden md:grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
             <div className="flex items-center gap-1.5">
                 <Award className="h-3 w-3 text-amber-500" />
                 <span className="font-semibold">{user.credits || 0}</span>
@@ -75,21 +75,18 @@ export default function LeaderboardPage() {
     );
 
     const renderPodiumCard = (user: (User & { totalScore: number }) | undefined, rank: number) => {
-        if (!user) return <div className={cn(rank === 1 ? 'md:order-1' : (rank === 0 ? 'md:order-2' : 'md:order-3'))} />;
+        if (!user) return <div className={cn(rank === 0 ? 'order-1 md:order-2' : (rank === 1 ? 'order-2 md:order-1' : 'order-3'))} />;
 
         const placeDetails = {
-            0: { title: '1st Place', borderColor: 'border-yellow-400', textColor: 'text-yellow-400', shadow: 'shadow-2xl shadow-yellow-500/20', avatarSize: 'w-24 h-24 md:w-32 md:h-32', isTop: true, trophySize: 'h-10 w-10', order: 'md:order-2', marginTop: '' },
-            1: { title: '2nd Place', borderColor: 'border-slate-400', textColor: 'text-slate-400', shadow: 'shadow-lg shadow-slate-500/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'md:order-1', marginTop: 'md:mt-8' },
-            2: { title: '3rd Place', borderColor: 'border-amber-700', textColor: 'text-amber-700', shadow: 'shadow-lg shadow-amber-800/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'md:order-3', marginTop: 'md:mt-8' }
+            0: { title: '1st Place', borderColor: 'border-yellow-400', textColor: 'text-yellow-400', shadow: 'shadow-2xl shadow-yellow-500/20', avatarSize: 'w-24 h-24 md:w-32 md:h-32', isTop: true, trophySize: 'h-10 w-10', order: 'order-1 md:order-2', marginTop: '' },
+            1: { title: '2nd Place', borderColor: 'border-slate-400', textColor: 'text-slate-400', shadow: 'shadow-lg shadow-slate-500/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'order-2 md:order-1', marginTop: 'md:mt-8' },
+            2: { title: '3rd Place', borderColor: 'border-amber-700', textColor: 'text-amber-700', shadow: 'shadow-lg shadow-amber-800/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'order-3 md:order-3', marginTop: 'md:mt-8' }
         }[rank];
 
         if (!placeDetails) return null;
         
-        const rankToPodiumOrder = { 0: 'order-1', 1: 'order-2', 2: 'order-3' };
-
-
         return (
-            <div className={cn("w-full", placeDetails.order, placeDetails.isTop ? 'md:-translate-y-8' : '', placeDetails.marginTop, rankToPodiumOrder[rank as keyof typeof rankToPodiumOrder])}>
+            <div className={cn("w-full", placeDetails.order, placeDetails.isTop ? 'md:-translate-y-8' : '', placeDetails.marginTop)}>
                 <Card className={cn("relative text-center border-2 w-full", placeDetails.borderColor, placeDetails.shadow)}>
                     <CardHeader className="p-4 md:p-6">
                          <Trophy className={cn("mx-auto mb-2", placeDetails.trophySize, getTrophyColor(rank))} />
@@ -130,7 +127,7 @@ export default function LeaderboardPage() {
                 <p className="text-muted-foreground">See who's leading the board with the highest total score!</p>
             </div>
 
-            <div className="flex flex-col md:grid md:grid-cols-3 gap-4 md:gap-8 md:items-end">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 md:items-end">
                 {renderPodiumCard(topThree[0], 0)}
                 {renderPodiumCard(topThree[1], 1)}
                 {renderPodiumCard(topThree[2], 2)}
