@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -44,40 +43,45 @@ export default function CommunityHub() {
 
     return (
         <div className="h-full">
-            <Card className="h-full flex flex-col border-0">
-                <ScrollArea className="flex-1 bg-muted/20">
-                    <div className="p-4 space-y-6">
-                         {chatLoading && Array.from({length: 5}).map((_, i) => (
-                             <div key={i} className="flex items-start gap-3">
-                                 <Skeleton className="h-10 w-10 rounded-full" />
-                                 <div className="space-y-1">
-                                     <Skeleton className="h-4 w-24" />
-                                     <Skeleton className="h-8 w-48" />
-                                 </div>
-                             </div>
-                         ))}
-                        {!chatLoading && messages.map((msg) => {
-                            const sender = allUsers.find(u => u.uid === msg.senderId);
-                            const isCurrentUser = msg.senderId === currentUser?.id;
-                            return (
-                                <ChatMessage
-                                    key={msg.id}
-                                    message={msg}
-                                    sender={sender}
-                                    isCurrentUser={isCurrentUser}
-                                />
-                            );
-                        })}
-                        {!chatLoading && messages.length === 0 && (
-                            <div className="text-center text-muted-foreground pt-16 flex flex-col items-center">
-                                <MessageSquare className="h-12 w-12 text-muted-foreground/50 mb-4"/>
-                                <h3 className="font-semibold">Welcome to the Global Chat!</h3>
-                                <p>Be the first to say something.</p>
-                            </div>
-                        )}
-                    </div>
-                </ScrollArea>
-
+            <Card className="h-full flex flex-col">
+                <CardHeader className="border-b">
+                    <CardTitle className="flex items-center gap-2"><Globe/> Global Chat</CardTitle>
+                    <CardDescription>Talk with the entire MindMate community.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex-1 p-0 overflow-hidden">
+                    <ScrollArea className="h-full">
+                        <div className="p-4 space-y-6">
+                            {chatLoading && Array.from({length: 5}).map((_, i) => (
+                                <div key={i} className="flex items-start gap-3">
+                                    <Skeleton className="h-10 w-10 rounded-full" />
+                                    <div className="space-y-1">
+                                        <Skeleton className="h-4 w-24" />
+                                        <Skeleton className="h-8 w-48" />
+                                    </div>
+                                </div>
+                            ))}
+                            {!chatLoading && messages.map((msg) => {
+                                const sender = allUsers.find(u => u.uid === msg.senderId);
+                                const isCurrentUser = msg.senderId === currentUser?.id;
+                                return (
+                                    <ChatMessage
+                                        key={msg.id}
+                                        message={msg}
+                                        sender={sender}
+                                        isCurrentUser={isCurrentUser}
+                                    />
+                                );
+                            })}
+                            {!chatLoading && messages.length === 0 && (
+                                <div className="text-center text-muted-foreground pt-16 flex flex-col items-center">
+                                    <MessageSquare className="h-12 w-12 text-muted-foreground/50 mb-4"/>
+                                    <h3 className="font-semibold">Welcome to the Global Chat!</h3>
+                                    <p>Be the first to say something.</p>
+                                </div>
+                            )}
+                        </div>
+                    </ScrollArea>
+                </CardContent>
                 <CardFooter className="p-2 border-t bg-background">
                     <form onSubmit={handleSendMessage} className="flex w-full items-center space-x-2">
                         <Avatar className="h-9 w-9">
