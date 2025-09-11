@@ -29,11 +29,13 @@ export function SpinWheel() {
         setIsSpinning(true);
         const { finalRotation, prizeIndex } = await spin();
         
+        // Add multiple full spins for a better visual effect
         const fullSpins = 5;
         const totalRotation = (fullSpins * 360) + finalRotation;
         
         setRotation(totalRotation);
 
+        // After the animation finishes, reset rotation to the final position to avoid weird jumps on respin
         setTimeout(() => {
             setIsSpinning(false);
             const simplifiedRotation = finalRotation % 360;
@@ -52,7 +54,7 @@ export function SpinWheel() {
             
             <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 my-16 flex items-center justify-center">
                 {/* Pointer */}
-                <div className="absolute -top-4 z-20 h-10 w-10 drop-shadow-lg">
+                <div className="absolute -top-4 z-20 h-10 w-10 drop-shadow-lg" style={{ transform: 'translateY(-50%)' }}>
                     <div className="h-0 w-0 border-x-8 border-x-transparent border-t-[16px] border-t-yellow-400 -translate-y-1/2 left-1/2 -translate-x-1/2 absolute"></div>
                      <div className="absolute top-0 left-1/2 -translate-x-1/2 h-5 w-5 bg-yellow-400 rounded-full border-2 border-yellow-200"></div>
                 </div>
@@ -64,13 +66,13 @@ export function SpinWheel() {
                 >
                     <ul className="w-full h-full relative rounded-full overflow-hidden">
                         {prizes.map((prize, i) => {
-                            const rotation = segmentAngle * i;
+                            const segmentRotation = segmentAngle * i;
                             return (
                                 <li
                                     key={i}
                                     className="absolute w-full h-full"
                                     style={{
-                                        transform: `rotate(${rotation}deg)`,
+                                        transform: `rotate(${segmentRotation}deg)`,
                                         clipPath: `polygon(50% 50%, 100% 50%, 100% 0%, 50% 0)`,
                                     }}
                                 >
@@ -85,7 +87,7 @@ export function SpinWheel() {
                                         <span 
                                             className="text-white font-bold text-xl sm:text-2xl mt-4"
                                             style={{
-                                                transform: `rotate(${-90 - segmentAngle/2 - rotation}deg)`,
+                                                transform: `rotate(${-90 - segmentAngle/2}deg)`,
                                                 display: 'inline-block'
                                             }}
                                         >
@@ -101,7 +103,7 @@ export function SpinWheel() {
                 <button 
                     onClick={handleSpin} 
                     disabled={!canSpin || isSpinning}
-                    className="absolute z-10 h-20 w-20 sm:h-24 sm:h-24 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border-4 border-purple-500/50 text-white font-bold text-lg uppercase transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
+                    className="absolute z-10 h-20 w-20 sm:h-24 sm:w-24 rounded-full bg-gradient-to-br from-slate-700 to-slate-900 border-4 border-purple-500/50 text-white font-bold text-lg uppercase transition-transform hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:scale-100"
                 >
                     Spin
                 </button>
