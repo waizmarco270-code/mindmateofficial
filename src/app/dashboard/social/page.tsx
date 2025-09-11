@@ -4,33 +4,24 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { useUsers, User } from '@/hooks/use-admin';
-import { useFriends } from '@/hooks/use-friends';
 import { useUser, SignInButton } from '@clerk/nextjs';
-import { useToast } from '@/hooks/use-toast';
-import { Users, Sparkles, MessageSquare, ArrowLeft, ShieldAlert, Globe, Wifi } from 'lucide-react';
+import { Users, MessageSquare, ArrowLeft, ShieldAlert, Globe, Wifi } from 'lucide-react';
 import { UserCard } from '@/components/social/user-card';
 import { ChatBox } from '@/components/social/chat-box';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { UnreadMessagesProvider } from '@/hooks/use-unread';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import CommunityHub from '@/components/community/community-hub';
 import { usePresence } from '@/hooks/use-presence';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UnlockSocialDialog } from '@/components/social/unlock-social-dialog';
 
-
-const UNLOCK_CREDITS = 20;
 
 function SocialPageContent() {
     const { user } = useUser();
-    const { currentUserData, loading: userLoading } = useUsers();
-    const { users: allUsers, friends, nonFriends, friendRequests, sentRequests } = useFriends();
+    const { users: allUsers, loading: userLoading } = useUsers();
     const { onlineUsers, loading: presenceLoading } = usePresence();
     
     const [selectedChatUser, setSelectedChatUser] = useState<User | null>(null);
 
-    const isSocialUnlocked = currentUserData?.socialUnlocked ?? false;
 
     if (userLoading) {
         return (
@@ -64,10 +55,6 @@ function SocialPageContent() {
                 </SignInButton>
             </div>
         );
-    }
-    
-    if (!isSocialUnlocked) {
-        return <UnlockSocialDialog />;
     }
     
     const renderUserList = (userList: User[], emptyMessage: string) => (
@@ -111,8 +98,9 @@ function SocialPageContent() {
             </div>
         </ScrollArea>
     )
+
+    const otherUsers = allUsers.filter(u => u.uid !== user.id);
     
-    // UI for when the feature is unlocked
     return (
        <div className={cn(
          "h-full grid grid-cols-1 md:grid-cols-[350px_1fr] lg:grid-cols-[400px_1fr] gap-4 md:pb-0",
@@ -124,17 +112,13 @@ function SocialPageContent() {
                 "md:flex", // Always visible on desktop
                 selectedChatUser ? "hidden" : "flex" // Hide on mobile when chat is open
             )}>
-                 <Tabs defaultValue="friends" className="h-full flex flex-col">
-                    <TabsList className="grid w-full grid-cols-3 m-2">
-                        <TabsTrigger value="friends"><Users className="h-4 w-4 mr-1"/> Friends</TabsTrigger>
+                 <Tabs defaultValue="global" className="h-full flex flex-col">
+                    <TabsList className="grid w-full grid-cols-2 m-2">
                         <TabsTrigger value="global"><Globe className="h-4 w-4 mr-1"/> Global</TabsTrigger>
                         <TabsTrigger value="online"><Wifi className="h-4 w-4 mr-1"/> Online</TabsTrigger>
                     </TabsList>
-                    <TabsContent value="friends" className="flex-1 overflow-hidden">
-                       {renderUserList(friends, "You haven't added any friends yet.")}
-                    </TabsContent>
                     <TabsContent value="global" className="flex-1 overflow-hidden">
-                        {renderUserList(nonFriends, "No new users to discover.")}
+                        {renderUserList(otherUsers, "No other users found.")}
                     </TabsContent>
                      <TabsContent value="online" className="flex-1 overflow-hidden">
                         {renderOnlineUserList()}
