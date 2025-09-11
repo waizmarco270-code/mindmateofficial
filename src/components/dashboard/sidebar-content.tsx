@@ -23,6 +23,7 @@ import {
   Activity,
   ChevronsUpDown,
   Gift,
+  KeyRound,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -63,11 +64,15 @@ const adminNav = [
     { href: '/dashboard/admin', icon: Shield, label: 'Admin Panel' },
 ]
 
+const superAdminNav = [
+    { href: '/dashboard/super-admin', icon: KeyRound, label: 'Super Admin' },
+]
+
 export default function SidebarContent() {
   const pathname = usePathname();
   const { hasUnread, hasGlobalUnread } = useUnreadMessages();
   const { hasNewQuiz } = useNewQuiz();
-  const { isAdmin } = useAdmin();
+  const { isAdmin, isSuperAdmin } = useAdmin();
 
   const isActive = (href: string) => {
     return (href === '/dashboard' && pathname === href) || (href !== '/dashboard' && pathname.startsWith(href));
@@ -122,24 +127,31 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 space-y-4">
         
         <div className="px-4 space-y-2">
-            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Main</h2>
+            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Main</h2>
             {renderNavLinks(mainNav)}
         </div>
         
         <div className="px-4 space-y-2">
-            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Study</h2>
+            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Study</h2>
             {renderNavLinks(studyNav)}
         </div>
 
         <div className="px-4 space-y-2">
-            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Progress</h2>
+            <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Progress</h2>
             {renderNavLinks(progressNav)}
         </div>
         
         {isAdmin && (
             <div className="px-4 space-y-2">
-                <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60 border rounded-lg p-2 bg-sidebar-accent/30">Admin</h2>
+                <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Admin</h2>
                 {renderNavLinks(adminNav)}
+            </div>
+        )}
+        
+        {isSuperAdmin && (
+             <div className="px-4 space-y-2">
+                <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-destructive/80">Super Admin</h2>
+                {renderNavLinks(superAdminNav)}
             </div>
         )}
       </div>
