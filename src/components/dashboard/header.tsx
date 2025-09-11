@@ -1,6 +1,7 @@
+
 'use client';
 
-import { Medal, Menu, Shield } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '../theme-toggle';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -50,8 +51,25 @@ export default function Header() {
                                 <span>{credits} Credits</span>
                             </div>
                         </TooltipTrigger>
-                        <TooltipContent>
-                            <p>Credits can be used to unlock premium content.</p>
+                        <TooltipContent className="max-w-xs p-4">
+                            <div className="space-y-3">
+                                <div>
+                                    <h4 className="font-bold text-base mb-1">How to Use Credits</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        Use your credits to unlock premium study resources (Class 10, JEE, Class 12) and other special features in the app.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-base mb-1">How to Earn Credits</h4>
+                                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                                        <li><span className="font-semibold text-foreground">+1 Credit</span> for completing all daily tasks.</li>
+                                        <li><span className="font-semibold text-foreground">+5 Credits</span> for a perfect quiz score.</li>
+                                        <li><span className="font-semibold text-foreground">Up to +10 Credits</span> for completing focus sessions.</li>
+                                        <li><span className="font-semibold text-foreground">Spin the Wheel</span> for a chance to win big!</li>
+                                    </ul>
+                                </div>
+                                <p className="text-xs text-amber-500 font-semibold text-center pt-2">Use them wisely!</p>
+                            </div>
                         </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
