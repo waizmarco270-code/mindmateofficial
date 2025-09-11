@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import {
   Table,
   TableHeader,
@@ -135,7 +135,7 @@ export default function SuperAdminPanelPage() {
                                 </Badge>
                             </TableCell>
                             <TableCell className="text-right space-x-2">
-                                {user.uid !== 'user_32WgV1OikpqTXO9pFApoPRLLarF' && ( // Prevent super admin from losing their own status
+                                {user.uid !== SUPER_ADMIN_UID && ( // Prevent super admin from losing their own status
                                     <>
                                         {user.isAdmin ? (
                                             <Button variant="secondary" size="sm" onClick={() => removeUserAdmin(user.uid)}>
@@ -235,3 +235,5 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
+
+    
