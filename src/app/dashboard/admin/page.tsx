@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -27,8 +27,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
-const ADMIN_PASSWORD = "marcowaiz@admin";
-const AUTH_SESSION_KEY = "admin_authenticated";
 const CREDIT_PASSWORD = "waizcredit";
 
 
@@ -51,9 +49,6 @@ export default function AdminPanelPage() {
   const { quizzes, deleteQuiz } = useQuizzes();
   const { toast } = useToast();
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  
   // State for Announcement
   const latestAnnouncement = announcements.length > 0 ? announcements[0] : null;
   const [announcementTitle, setAnnouncementTitle] = useState('');
@@ -70,11 +65,6 @@ export default function AdminPanelPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [creditAmount, setCreditAmount] = useState(10);
   
-  useEffect(() => {
-    if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
-      setIsAuthenticated(true);
-    }
-  }, []);
 
   useEffect(() => {
       if(latestAnnouncement) {
@@ -103,18 +93,6 @@ export default function AdminPanelPage() {
   const [editingResource, setEditingResource] = useState<Resource | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   
-  const handlePasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
-      setIsAuthenticated(true);
-      toast({ title: "Access Granted", description: "Welcome to the Admin Panel." });
-    } else {
-      toast({ variant: 'destructive', title: "Access Denied", description: "The password you entered is incorrect." });
-      setPassword('');
-    }
-  };
-
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if(creditPassword === CREDIT_PASSWORD){
@@ -304,35 +282,20 @@ export default function AdminPanelPage() {
       }
   }
 
-  if (!isAuthenticated) {
+  if (!isAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
-        <Card className="w-full max-w-sm">
+        <Card className="w-full max-w-md border-destructive/50">
           <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2">
-                <KeyRound className="h-6 w-6 text-primary"/> Admin Access Required
+            <CardTitle className="flex items-center justify-center gap-2 text-destructive">
+                <ShieldX className="h-8 w-8"/> Access Denied
             </CardTitle>
             <CardDescription>
-                Please enter the password to access the admin panel.
+                You do not have the necessary permissions to view this page.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handlePasswordSubmit} className="space-y-4">
-                <div className="space-y-2">
-                    <Label htmlFor="admin-password" className="sr-only">Password</Label>
-                    <Input 
-                        id="admin-password"
-                        type="password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        placeholder="••••••••"
-                        autoFocus
-                    />
-                </div>
-                <Button type="submit" className="w-full">
-                    <Unlock className="mr-2 h-4 w-4" /> Unlock
-                </Button>
-            </form>
+            <p>Please contact the site administrator if you believe this is an error.</p>
           </CardContent>
         </Card>
       </div>
@@ -689,6 +652,5 @@ export default function AdminPanelPage() {
     </div>
   );
 }
-
 
     
