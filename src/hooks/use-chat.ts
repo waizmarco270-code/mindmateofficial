@@ -32,10 +32,14 @@ export const useChat = (friendId: string) => {
 
   const showNotification = useCallback((message: Message) => {
     if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && friend) {
-      new Notification(`New message from ${friend.displayName}`, {
-        body: message.text,
-        icon: friend.photoURL || '/logo.svg',
-      });
+      if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready.then(registration => {
+          registration.showNotification(`New message from ${friend.displayName}`, {
+            body: message.text,
+            icon: friend.photoURL || '/logo.svg',
+          });
+        });
+      }
     }
   }, [friend]);
 

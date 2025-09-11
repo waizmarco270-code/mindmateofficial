@@ -27,10 +27,14 @@ export const useGlobalChat = () => {
   const showNotification = useCallback((message: GlobalMessage) => {
       const sender = allUsers.find(u => u.uid === message.senderId);
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && sender) {
-        new Notification(`New message in Global Chat`, {
-          body: `${sender.displayName}: ${message.text}`,
-          icon: sender.photoURL || '/logo.svg',
-        });
+        if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then(registration => {
+                registration.showNotification('New message in Global Chat', {
+                    body: `${sender.displayName}: ${message.text}`,
+                    icon: sender.photoURL || '/logo.svg',
+                });
+            });
+        }
       }
     }, [allUsers]);
 
