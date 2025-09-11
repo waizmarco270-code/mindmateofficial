@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -115,5 +114,3 @@ export const useChat = (friendId: string) => {
 
   return { messages, sendMessage };
 };
-
-    

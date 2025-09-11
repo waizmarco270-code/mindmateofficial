@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -134,5 +133,3 @@ function ChatMessage({ message, friend, isCurrentUser }: { message: Message, fri
     </div>
   )
 }
-
-    
