@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useAdmin, type Resource } from '@/hooks/use-admin';
+import { useAdmin, type Resource, type DailySurprise } from '@/hooks/use-admin';
 import {
   Table,
   TableHeader,
@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -41,7 +41,8 @@ export default function AdminPanelPage() {
     resources, addResource, updateResource, deleteResource,
     premiumResources, addPremiumResource, updatePremiumResource, deletePremiumResource,
     jeeResources, addJeeResource, updateJeeResource, deleteJeeResource,
-    class12Resources, addClass12Resource, updateClass12Resource, deleteClass12Resource
+    class12Resources, addClass12Resource, updateClass12Resource, deleteClass12Resource,
+    dailySurprises, addDailySurprise, deleteDailySurprise,
   } = useAdmin();
   const { quizzes, deleteQuiz } = useQuizzes();
   const { toast } = useToast();
@@ -55,6 +56,13 @@ export default function AdminPanelPage() {
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [isSavingPoll, setIsSavingPoll] = useState(false);
+
+  // State for Daily Surprise
+  const [surpriseType, setSurpriseType] = useState<'quote' | 'fact' | 'meme' | 'quiz'>('fact');
+  const [surpriseText, setSurpriseText] = useState('');
+  const [surpriseAuthor, setSurpriseAuthor] = useState('');
+  const [surpriseImageUrl, setSurpriseImageUrl] = useState('');
+  const [surpriseQuiz, setSurpriseQuiz] = useState({ question: '', options: ['', ''], correctAnswer: '' });
   
   useEffect(() => {
       if(latestAnnouncement) {
@@ -148,6 +156,42 @@ export default function AdminPanelPage() {
         toast({ variant: 'destructive', title: "Operation Failed", description: error.message });
     }
   };
+
+  const handleAddSurprise = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    let surpriseData: Omit<DailySurprise, 'id' | 'createdAt'>;
+
+    switch (surpriseType) {
+        case 'fact':
+            if (!surpriseText) return toast({ variant: 'destructive', title: 'Fact is empty' });
+            surpriseData = { type: 'fact', text: surpriseText };
+            break;
+        case 'quote':
+            if (!surpriseText) return toast({ variant: 'destructive', title: 'Quote is empty' });
+            surpriseData = { type: 'quote', text: surpriseText, author: surpriseAuthor };
+            break;
+        case 'meme':
+            if (!surpriseImageUrl) return toast({ variant: 'destructive', title: 'Image URL is empty' });
+            surpriseData = { type: 'meme', imageUrl: surpriseImageUrl };
+            break;
+        case 'quiz':
+            if (!surpriseQuiz.question || surpriseQuiz.options.some(o => !o) || !surpriseQuiz.correctAnswer) return toast({ variant: 'destructive', title: 'Quiz is incomplete' });
+            surpriseData = { type: 'quiz', quizQuestion: surpriseQuiz.question, quizOptions: surpriseQuiz.options, quizCorrectAnswer: surpriseQuiz.correctAnswer };
+            break;
+    }
+
+    try {
+        await addDailySurprise(surpriseData);
+        toast({ title: 'Surprise Added!', description: 'The new daily surprise is now in the rotation.' });
+        // Reset forms
+        setSurpriseText('');
+        setSurpriseAuthor('');
+        setSurpriseImageUrl('');
+        setSurpriseQuiz({ question: '', options: ['', ''], correctAnswer: '' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message });
+    }
+};
 
   const openEditDialog = (resource: Resource) => {
     setEditingResource(resource);
@@ -314,11 +358,11 @@ export default function AdminPanelPage() {
                 <Megaphone className="h-6 w-6 text-primary" />
                 <div>
                   <h3 className="text-lg font-semibold">Content Management</h3>
-                  <p className="text-sm text-muted-foreground text-left">Edit announcements and community polls.</p>
+                  <p className="text-sm text-muted-foreground text-left">Edit announcements, polls, and daily surprises.</p>
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0">
+            <AccordionContent className="p-6 pt-0 space-y-8">
               <div className="grid gap-8 lg:grid-cols-2">
                   <Card>
                     <CardHeader><CardTitle>Edit Latest Announcement</CardTitle><CardDescription>Update the announcement that appears on the dashboard.</CardDescription></CardHeader>
@@ -341,6 +385,87 @@ export default function AdminPanelPage() {
                     </CardContent>
                   </Card>
                 </div>
+                 <div className="grid gap-8 lg:grid-cols-2">
+                    <Card>
+                      <CardHeader><CardTitle>Add Daily Surprise</CardTitle></CardHeader>
+                      <CardContent>
+                          <form onSubmit={handleAddSurprise} className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Type</Label>
+                                <Select value={surpriseType} onValueChange={(v: any) => setSurpriseType(v)}>
+                                    <SelectTrigger><SelectValue placeholder="Select surprise type..." /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fact"><Lightbulb className="mr-2 h-4 w-4" /> Fun Fact</SelectItem>
+                                        <SelectItem value="quote"><MessageSquare className="mr-2 h-4 w-4" /> Quote</SelectItem>
+                                        <SelectItem value="meme"><Image className="mr-2 h-4 w-4" /> Meme</SelectItem>
+                                        <SelectItem value="quiz"><Mic className="mr-2 h-4 w-4" /> Micro Quiz</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            
+                            {surpriseType === 'fact' && (<div className="space-y-2"><Label>Fact</Label><Textarea value={surpriseText} onChange={e => setSurpriseText(e.target.value)} placeholder="Enter a fun fact..."/></div>)}
+                            
+                            {surpriseType === 'quote' && (
+                                <div className="space-y-4">
+                                    <div className="space-y-2"><Label>Quote</Label><Textarea value={surpriseText} onChange={e => setSurpriseText(e.target.value)} placeholder="The only way to do great work is to love what you do."/></div>
+                                    <div className="space-y-2"><Label>Author</Label><Input value={surpriseAuthor} onChange={e => setSurpriseAuthor(e.target.value)} placeholder="e.g. Steve Jobs"/></div>
+                                </div>
+                            )}
+
+                             {surpriseType === 'meme' && (<div className="space-y-2"><Label>Image URL</Label><Input value={surpriseImageUrl} type="url" onChange={e => setSurpriseImageUrl(e.target.value)} placeholder="https://example.com/meme.jpg"/></div>)}
+
+                             {surpriseType === 'quiz' && (
+                                 <div className="space-y-4 p-4 border rounded-lg">
+                                    <div className="space-y-2"><Label>Question</Label><Input value={surpriseQuiz.question} onChange={e => setSurpriseQuiz(p => ({...p, question: e.target.value}))} placeholder="What is the capital of France?"/></div>
+                                    <div className="space-y-2"><Label>Options</Label>
+                                       {surpriseQuiz.options.map((opt, i) => (<Input key={i} value={opt} onChange={e => setSurpriseQuiz(p => { const newOpts = [...p.options]; newOpts[i] = e.target.value; return {...p, options: newOpts}})} placeholder={`Option ${i + 1}`}/>))}
+                                    </div>
+                                    <div className="space-y-2"><Label>Correct Answer</Label>
+                                      <Select value={surpriseQuiz.correctAnswer} onValueChange={val => setSurpriseQuiz(p => ({...p, correctAnswer: val}))}>
+                                        <SelectTrigger><SelectValue placeholder="Select correct answer" /></SelectTrigger>
+                                        <SelectContent>{surpriseQuiz.options.map((opt, i) => opt && <SelectItem key={i} value={opt}>{opt}</SelectItem>)}</SelectContent>
+                                      </Select>
+                                    </div>
+                                 </div>
+                             )}
+
+                             <Button type="submit"><PlusCircle className="mr-2 h-4 w-4"/> Add Surprise</Button>
+                          </form>
+                      </CardContent>
+                    </Card>
+                     <Card>
+                        <CardHeader><CardTitle>Existing Surprises</CardTitle></CardHeader>
+                        <CardContent>
+                             <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead>Content</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {dailySurprises.map(s => (
+                                        <TableRow key={s.id}>
+                                            <TableCell><Badge variant="secondary" className="capitalize">{s.type}</Badge></TableCell>
+                                            <TableCell className="max-w-xs truncate">{s.text || s.quizQuestion || s.imageUrl}</TableCell>
+                                            <TableCell className="text-right">
+                                                 <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Delete this surprise?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteDailySurprise(s.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {dailySurprises.length === 0 && <TableRow><TableCell colSpan={3} className="h-24 text-center">No surprises yet.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                 </div>
             </AccordionContent>
           </Card>
         </AccordionItem>

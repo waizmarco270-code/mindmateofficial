@@ -57,6 +57,18 @@ export interface Poll {
     createdAt: string;
 }
 
+export interface DailySurprise {
+    id: string;
+    type: 'quote' | 'fact' | 'meme' | 'quiz';
+    text?: string; // For quote/fact
+    author?: string; // For quote
+    imageUrl?: string; // For meme
+    quizQuestion?: string;
+    quizOptions?: string[];
+    quizCorrectAnswer?: string;
+    createdAt: string;
+}
+
 
 // ============================================================================
 //  CONTEXT DEFINITIONS
@@ -108,6 +120,10 @@ interface AppDataContextType {
     updateClass12Resource: (id: string, data: Partial<Resource>) => Promise<void>;
     deleteClass12Resource: (id: string) => Promise<void>;
 
+    dailySurprises: DailySurprise[];
+    addDailySurprise: (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => Promise<void>;
+    deleteDailySurprise: (id: string) => Promise<void>;
+
     loading: boolean;
     
     activePoll: Poll | null;
@@ -134,6 +150,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [premiumResources, setPremiumResources] = useState<Resource[]>([]);
     const [jeeResources, setJeeResources] = useState<Resource[]>([]);
     const [class12Resources, setClass12Resources] = useState<Resource[]>([]);
+    const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -244,6 +261,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const premiumResourcesQuery = query(collection(db, 'premiumResources'), orderBy('createdAt', 'desc'));
         const jeeResourcesQuery = query(collection(db, 'jeeResources'), orderBy('createdAt', 'desc'));
         const class12ResourcesQuery = query(collection(db, 'class12Resources'), orderBy('createdAt', 'desc'));
+        const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'desc'));
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
@@ -251,6 +269,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubPremium = onSnapshot(premiumResourcesQuery, (snapshot) => setPremiumResources(processSnapshot<Resource>(snapshot)));
         const unsubJee = onSnapshot(jeeResourcesQuery, (snapshot) => setJeeResources(processSnapshot<Resource>(snapshot)));
         const unsubClass12 = onSnapshot(class12ResourcesQuery, (snapshot) => setClass12Resources(processSnapshot<Resource>(snapshot)));
+        const unsubDailySurprises = onSnapshot(dailySurprisesQuery, (snapshot) => setDailySurprises(processSnapshot<DailySurprise>(snapshot)));
 
         const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
             if (!snapshot.empty) {
@@ -268,6 +287,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubPolls();
             unsubJee();
             unsubClass12();
+            unsubDailySurprises();
         };
     }, []);
 
@@ -395,6 +415,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const updateClass12Resource = async (id: string, data: Partial<Resource>) => await updateDoc(doc(db, 'class12Resources', id), data);
     const deleteClass12Resource = async (id: string) => await deleteDoc(doc(db, 'class12Resources', id));
 
+    const addDailySurprise = async (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => {
+        await addDoc(collection(db, 'dailySurprises'), { ...surprise, createdAt: serverTimestamp() });
+    }
+    const deleteDailySurprise = async (id: string) => await deleteDoc(doc(db, 'dailySurprises', id));
+
     const updatePoll = async (id: string, data: Partial<Poll>) => {
         const pollDocRef = doc(db, 'polls', id);
         // When updating the poll, we also need to reset the votes
@@ -473,6 +498,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addClass12Resource,
         updateClass12Resource,
         deleteClass12Resource,
+        dailySurprises,
+        addDailySurprise,
+        deleteDailySurprise,
         loading,
         activePoll,
         updatePoll,
@@ -518,4 +546,15 @@ export const usePolls = () => {
     const context = useContext(AppDataContext);
     if(!context) throw new Error('usePolls must be used within an AppDataProvider');
     return context;
+}
+
+export const useDailySurprises = () => {
+    const context = useContext(AppDataContext);
+    if(!context) throw new Error('useDailySurprises must be used within an AppDataProvider');
+    return {
+        dailySurprises: context.dailySurprises,
+        addDailySurprise: context.addDailySurprise,
+        deleteDailySurprise: context.deleteDailySurprise,
+        loading: context.loading
+    };
 }

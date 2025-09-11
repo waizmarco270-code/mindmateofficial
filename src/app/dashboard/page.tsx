@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare } from 'lucide-react';
@@ -9,6 +10,7 @@ import { useAnnouncements, useUsers } from '@/hooks/use-admin';
 import { CommunityPoll } from '@/components/dashboard/community-poll';
 import { cn } from '@/lib/utils';
 import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
+import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 
 const features = [
   {
@@ -82,6 +84,8 @@ export default function DashboardPage() {
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
       </div>
+
+      <DailySurpriseCard />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content Column */}
