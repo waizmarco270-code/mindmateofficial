@@ -14,6 +14,7 @@ import { useUser } from '@clerk/nextjs';
 import { AiAvatar } from './ai-avatar';
 import { useUsers } from '@/hooks/use-admin';
 import { SignInButton } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
 
 const CHAT_COST = 1;
 
@@ -25,6 +26,7 @@ export function ChatInterface() {
   const { toast } = useToast();
   const { user } = useUser();
   const { currentUserData, addCreditsToUser } = useUsers();
+  const router = useRouter();
 
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
@@ -94,7 +96,6 @@ export function ChatInterface() {
       aiFunction: (input: any) => Promise<any>, 
       input: any, 
       creditCost: number, 
-      responseHandler: (response: any) => string
     ) => {
         if (!user) return;
 
@@ -115,14 +116,32 @@ export function ChatInterface() {
             }
 
             const response = await aiFunction(input);
-            const responseText = responseHandler(response);
             
-            const aiMessage: Message = {
-                id: (Date.now() + 1).toString(),
-                role: 'assistant',
-                content: responseText,
-            };
-            setMessages((prev) => [...prev, aiMessage]);
+            // Handle navigation command
+            if (response.navigation) {
+                const navMessage: Message = {
+                    id: (Date.now() + 1).toString(),
+                    role: 'assistant',
+                    content: response.navigation.confirmationMessage,
+                };
+                setMessages((prev) => [...prev, navMessage]);
+                // Navigate after a short delay
+                setTimeout(() => {
+                    router.push(response.navigation.route);
+                }, 1000);
+                return;
+            }
+
+            // Handle standard text explanation
+            if(response.explanation) {
+              const aiMessage: Message = {
+                  id: (Date.now() + 1).toString(),
+                  role: 'assistant',
+                  content: response.explanation,
+              };
+              setMessages((prev) => [...prev, aiMessage]);
+            }
+
 
         } catch (error) {
             console.error(error);
@@ -168,8 +187,7 @@ export function ChatInterface() {
         question: currentInput,
         studyMaterial: studyMaterial || 'General knowledge',
       },
-      CHAT_COST,
-      (response) => response.explanation
+      CHAT_COST
     );
   };
   
@@ -182,15 +200,41 @@ export function ChatInterface() {
       const userMessage: Message = { id: Date.now().toString(), role: 'user', content: "Can you explain that more simply?", isHidden: true };
       setMessages((prev) => [...prev, userMessage]);
 
-      await callAiAndHandleResponse(
-        explainSimply,
-        {
-          textToSimplify: messageToSimplify.content,
-          originalQuestion: originalQuestion
-        },
-        CHAT_COST,
-        (response) => response.simpleExplanation
-      );
+      setIsThinking(true);
+      try {
+        addCreditsToUser(user.id, -CHAT_COST);
+        toast({ title: "Credit Used", description: `You have been charged ${CHAT_COST} credit.`});
+
+        const response = await explainSimply({
+            textToSimplify: messageToSimplify.content,
+            originalQuestion: originalQuestion
+        });
+
+        const aiMessage: Message = {
+            id: (Date.now() + 1).toString(),
+            role: 'assistant',
+            content: response.simpleExplanation,
+        };
+        setMessages((prev) => [...prev, aiMessage]);
+
+      } catch (error) {
+         console.error(error);
+          const errorMessage: Message = {
+              id: (Date.now() + 1).toString(),
+              role: 'assistant',
+              content: "Sorry, I couldn't process your request. The AI model may be temporarily unavailable.",
+              isError: true,
+          };
+          setMessages((prev) => [...prev, errorMessage]);
+          addCreditsToUser(user.id, CHAT_COST);
+          toast({
+              variant: 'destructive',
+              title: 'AI Error - Credits Refunded',
+              description: `We failed to get a response from the AI. Your credit has been returned.`
+          });
+      } finally {
+          setIsThinking(false);
+      }
   }
   
   if (!user) {
@@ -222,13 +266,13 @@ export function ChatInterface() {
                     Ask me anything from complex science concepts to simple definitions.
                 </p>
                 <div className="grid grid-cols-2 gap-3 mt-8 text-left text-sm">
-                    <button className="p-4 border rounded-lg hover:bg-muted transition-colors">
+                    <button className="p-4 border rounded-lg hover:bg-muted transition-colors" onClick={() => setInput('Explain photosynthesis')}>
                         <h4 className="font-semibold">Explain photosynthesis</h4>
                         <p className="text-muted-foreground text-xs">in a way a 10th grader can understand.</p>
                     </button>
-                     <button className="p-4 border rounded-lg hover:bg-muted transition-colors">
-                        <h4 className="font-semibold">Summarize the plot of Hamlet</h4>
-                        <p className="text-muted-foreground text-xs">focusing on the main characters.</p>
+                     <button className="p-4 border rounded-lg hover:bg-muted transition-colors" onClick={() => setInput('Open the leaderboard')}>
+                        <h4 className="font-semibold">Open the Leaderboard</h4>
+                        <p className="text-muted-foreground text-xs">to see the top students.</p>
                     </button>
                 </div>
             </div>
