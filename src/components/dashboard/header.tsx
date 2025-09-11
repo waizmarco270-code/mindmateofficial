@@ -1,6 +1,6 @@
 'use client';
 
-import { Medal, Menu, Shield, User, Settings } from 'lucide-react';
+import { Medal, Menu, Shield, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '../theme-toggle';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -53,22 +53,6 @@ export default function Header() {
                         <TooltipContent>
                             <p>Credits can be used to unlock premium content.</p>
                         </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-
-                 <TooltipProvider>
-                    <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button asChild variant="ghost" size="icon">
-                        <Link href="/dashboard/profile">
-                            <User className="h-5 w-5" />
-                            <span className="sr-only">Profile</span>
-                        </Link>
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>My Profile</p>
-                    </TooltipContent>
                     </Tooltip>
                 </TooltipProvider>
 
