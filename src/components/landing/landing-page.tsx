@@ -78,10 +78,12 @@ export function LandingPage() {
           <div className="flex items-center gap-2">
              <SignedOut>
                 <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
-                    <Button variant="default" className="bg-white text-slate-900 hover:bg-slate-200">
-                        <GoogleIcon />
-                        Continue with Google
-                    </Button>
+                    <div>
+                        <Button variant="default" className="bg-white text-slate-900 hover:bg-slate-200">
+                            <GoogleIcon />
+                            Continue with Google
+                        </Button>
+                    </div>
                 </SignUpButton>
              </SignedOut>
              <SignedIn>
