@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardHeader, CardContent, CardFooter, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,6 +21,7 @@ export default function CommunityHub() {
     const { user: currentUser } = useUser();
     const { users: allUsers } = useUsers();
     const { markGlobalAsRead } = useUnreadMessages();
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
    
     useEffect(() => {
       markGlobalAsRead();
@@ -28,6 +29,15 @@ export default function CommunityHub() {
         Notification.requestPermission();
       }
     }, [markGlobalAsRead]);
+
+    useEffect(() => {
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollTo({
+            top: scrollAreaRef.current.scrollHeight,
+            behavior: 'smooth',
+          });
+        }
+    }, [messages]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -49,7 +59,7 @@ export default function CommunityHub() {
                     <CardDescription>Talk with the entire MindMate community.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 overflow-hidden">
-                    <ScrollArea className="h-full">
+                    <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
                         <div className="p-4 space-y-6">
                             {chatLoading && Array.from({length: 5}).map((_, i) => (
                                 <div key={i} className="flex items-start gap-3">
