@@ -12,7 +12,8 @@ import {
   query,
   updateDoc,
   increment,
-  writeBatch
+  writeBatch,
+  addDoc
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { useUsers } from './use-admin';
@@ -40,7 +41,7 @@ interface TimeTrackerState {
 
 export function useTimeTracker() {
   const { user } = useUser();
-  const { updateStudyTime } = useUsers();
+  const { currentUserData, updateStudyTime } = useUsers(); // Using from useUsers hook now
   const todayString = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const [state, setState] = useState<TimeTrackerState>({
@@ -55,11 +56,6 @@ export function useTimeTracker() {
     if (!user) return null;
     return doc(db, 'users', user.id, 'timeTracker', 'subjects');
   }, [user]);
-
-  const todaySessionsColRef = useMemo(() => {
-    if (!user) return null;
-    return collection(db, 'users', user.id, 'dailyTrackerSessions', todayString, 'sessions');
-  }, [user, todayString]);
   
   const allSessionsColRef = useMemo(() => {
     if (!user) return null;
@@ -77,7 +73,6 @@ export function useTimeTracker() {
         const data = doc.data();
         setState(prev => ({ ...prev, subjects: data.subjects || [] }));
       } else {
-        // Initialize with default subjects
          const defaultSubjects: Subject[] = [
             { id: '1', name: 'English', color: '#3b82f6', timeTracked: 0 },
             { id: '2', name: 'Mathematics', color: '#ef4444', timeTracked: 0 },
@@ -92,20 +87,24 @@ export function useTimeTracker() {
   
   // Subscribe to all time sessions for the insights page
   useEffect(() => {
-    if (!user) return;
-    const q = query(collection(db, 'users', user.id, 'timeTrackerSessions'));
+    if (!allSessionsColRef) return;
+    const q = query(allSessionsColRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedSessions = snapshot.docs.map(doc => ({...doc.data(), id: doc.id } as TimeSession));
         setSessions(fetchedSessions);
+    }, (error) => {
+      console.error("Error fetching all sessions: ", error);
     });
     return () => unsubscribe();
-  }, [user]);
+  }, [allSessionsColRef]);
   
    // Subscribe to today's sessions to calculate totalTimeToday
   useEffect(() => {
-    if (!todaySessionsColRef) return;
-    const unsubscribe = onSnapshot(todaySessionsColRef, (snapshot) => {
-      const todaySessions = snapshot.docs.map(doc => doc.data() as TimeSession);
+    if (!allSessionsColRef) return;
+    const q = query(allSessionsColRef);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const allSessions = snapshot.docs.map(doc => doc.data() as TimeSession);
+      const todaySessions = allSessions.filter(s => s.startTime.startsWith(todayString));
       
       setState(prev => {
         const newSubjects = prev.subjects.map(s => {
@@ -116,9 +115,11 @@ export function useTimeTracker() {
         });
         return {...prev, subjects: newSubjects};
       });
+    }, (error) => {
+        console.error("Error fetching today's sessions: ", error);
     });
     return () => unsubscribe();
-  }, [todaySessionsColRef]);
+  }, [allSessionsColRef, todayString]);
   
 
   const [activeSubjectTime, setActiveSubjectTime] = useState(0);
@@ -130,12 +131,17 @@ export function useTimeTracker() {
       const startTime = new Date(state.currentSessionStart).getTime();
       const initialTrackedTime = state.subjects.find(s => s.id === state.activeSubjectId)?.timeTracked || 0;
       
-      interval = setInterval(() => {
+      const updateTimer = () => {
         const now = Date.now();
         const elapsed = (now - startTime) / 1000;
         setActiveSubjectTime(initialTrackedTime + elapsed);
-      }, 1000);
+      };
+
+      updateTimer(); // Initial update
+      interval = setInterval(updateTimer, 1000);
+
     } else {
+      // When no subject is active, just show its total tracked time
       const activeSub = state.subjects.find(s => s.id === state.activeSubjectId);
       setActiveSubjectTime(activeSub?.timeTracked || 0);
     }
@@ -143,19 +149,17 @@ export function useTimeTracker() {
   }, [state.activeSubjectId, state.currentSessionStart, state.subjects]);
   
 
-  const finishSession = useCallback(async (subjectId: string, startTime: string) => {
-    if (!user || !todaySessionsColRef || !allSessionsColRef) return;
+  const finishSession = useCallback(async (subjectId: string, startTime: string): Promise<number> => {
+    if (!user || !allSessionsColRef) return 0;
 
     const subject = state.subjects.find(s => s.id === subjectId);
-    if (!subject) return;
+    if (!subject) return 0;
 
     const endTime = new Date();
     const duration = (endTime.getTime() - new Date(startTime).getTime()) / 1000;
 
-    if (duration < 1) return; // Ignore very short sessions
+    if (duration < 1) return subject.timeTracked; // Ignore very short sessions, return existing time
     
-    const batch = writeBatch(db);
-
     const newSession: Omit<TimeSession, 'id'> = {
         subjectId: subject.id,
         subjectName: subject.name,
@@ -164,37 +168,37 @@ export function useTimeTracker() {
     };
     
     // Add to all sessions collection
-    const allSessionsDocRef = doc(allSessionsColRef);
-    batch.set(allSessionsDocRef, newSession);
-
-    // Update total study time on user profile
-    const userDocRef = doc(db, 'users', user.id);
-    batch.update(userDocRef, { totalStudyTime: increment(duration) });
-
-    await batch.commit();
-
-  }, [user, todaySessionsColRef, allSessionsColRef, state.subjects, updateStudyTime]);
-
-  const handlePlayPause = useCallback((subjectId: string) => {
-    const nowISO = new Date().toISOString();
+    await addDoc(allSessionsColRef, newSession);
     
-    setState(prevState => {
-      // Pausing the current subject
-      if (prevState.activeSubjectId === subjectId) {
-        if(prevState.currentSessionStart) {
-            finishSession(subjectId, prevState.currentSessionStart);
-        }
-        return { ...prevState, activeSubjectId: null, currentSessionStart: null };
-      } else {
-        // Pausing previous and starting new
-        if (prevState.activeSubjectId && prevState.currentSessionStart) {
-          finishSession(prevState.activeSubjectId, prevState.currentSessionStart);
-        }
-        // Starting a new subject
-        return { ...prevState, activeSubjectId: subjectId, currentSessionStart: nowISO };
+    // Update total study time on user profile
+    const newTotalStudyTime = (currentUserData?.totalStudyTime || 0) + duration;
+    await updateStudyTime(user.id, newTotalStudyTime);
+
+    return subject.timeTracked + duration;
+
+  }, [user, allSessionsColRef, state.subjects, currentUserData, updateStudyTime]);
+
+  const handlePlayPause = useCallback(async (subjectId: string) => {
+    const nowISO = new Date().toISOString();
+    let newSubjects = [...state.subjects];
+    
+    // Pausing the current subject
+    if (state.activeSubjectId === subjectId) {
+      if(state.currentSessionStart) {
+        const newTotalTime = await finishSession(subjectId, state.currentSessionStart);
+        newSubjects = newSubjects.map(s => s.id === subjectId ? { ...s, timeTracked: newTotalTime } : s);
       }
-    });
-  }, [finishSession]);
+      setState({ subjects: newSubjects, activeSubjectId: null, currentSessionStart: null });
+    } else {
+      // Pausing previous and starting new
+      if (state.activeSubjectId && state.currentSessionStart) {
+        const newTotalTime = await finishSession(state.activeSubjectId, state.currentSessionStart);
+        newSubjects = newSubjects.map(s => s.id === state.activeSubjectId ? { ...s, timeTracked: newTotalTime } : s);
+      }
+      // Starting a new subject
+      setState({ subjects: newSubjects, activeSubjectId: subjectId, currentSessionStart: nowISO });
+    }
+  }, [state, finishSession]);
   
   const addSubject = useCallback(async ({ name, color }: { name: string; color: string }) => {
     if (!subjectsDocRef) return;
