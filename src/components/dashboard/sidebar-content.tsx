@@ -20,12 +20,20 @@ import {
   Zap,
   Clock,
   LineChart,
+  Activity,
+  ChevronsUpDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
 import { useUnreadMessages } from '@/hooks/use-unread';
 import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 const mainNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
@@ -67,61 +75,79 @@ export default function SidebarContent() {
     return (href === '/dashboard' && pathname === href) || (href !== '/dashboard' && pathname.startsWith(href));
   };
   
-  const renderNavLinks = (navItems: typeof mainNav, title: string) => (
-    <div className="px-4 py-2">
-        <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight text-foreground/80">{title}</h2>
-        <div className="space-y-1">
-            {navItems.map((item) => (
-                <Link
-                key={item.label}
-                href={item.href}
-                prefetch={true}
-                className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary hover:bg-muted text-base font-medium',
-                    isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10',
-                    item.highlight && !isActive(item.href) && 'text-yellow-500 hover:text-yellow-600',
-                    item.highlight && isActive(item.href) && 'text-yellow-500 bg-yellow-500/10 hover:text-yellow-600'
-                )}
-                >
-                <div className={cn(
-                    "absolute left-0 h-6 w-1 rounded-r-lg bg-primary transition-transform scale-y-0",
-                    isActive(item.href) ? "scale-y-100" : "",
-                    item.highlight && isActive(item.href) && 'bg-yellow-500'
-                )}></div>
-                <item.icon className="h-5 w-5" />
-                <span className="flex-1">{item.label}</span>
-                {item.href === '/dashboard/social' && hasUnread && (
-                    <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-                )}
-                {item.href === '/dashboard/community' && hasGlobalUnread && (
-                    <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-                )}
-                {item.href === '/dashboard/quiz' && hasNewQuiz && (
-                    <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-                )}
-                {item.highlight && (
-                    <span className="h-2 w-2 rounded-full bg-yellow-500" />
-                )}
-                </Link>
-            ))}
-        </div>
+  const renderNavLinks = (navItems: typeof mainNav) => (
+    <div className="space-y-1 px-2">
+      {navItems.map((item) => (
+        <Link
+          key={item.label}
+          href={item.href}
+          prefetch={true}
+          className={cn(
+            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary text-base font-medium',
+            isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10',
+            item.highlight && !isActive(item.href) && 'text-yellow-500 hover:text-yellow-600',
+            item.highlight && isActive(item.href) && 'text-yellow-500 bg-yellow-500/10 hover:text-yellow-600'
+          )}
+        >
+          <div className={cn(
+            "absolute left-0 h-6 w-1 rounded-r-lg bg-primary transition-transform scale-y-0",
+            isActive(item.href) ? "scale-y-100" : "",
+            item.highlight && isActive(item.href) && 'bg-yellow-500'
+          )}></div>
+          <item.icon className="h-5 w-5" />
+          <span className="flex-1">{item.label}</span>
+          {item.href === '/dashboard/social' && hasUnread && (
+            <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+          )}
+          {item.href === '/dashboard/community' && hasGlobalUnread && (
+            <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+          )}
+          {item.href === '/dashboard/quiz' && hasNewQuiz && (
+            <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+          )}
+          {item.highlight && (
+            <span className="h-2 w-2 rounded-full bg-yellow-500" />
+          )}
+        </Link>
+      ))}
     </div>
   );
 
+  const renderCollapsibleNav = (navItems: typeof mainNav, title: string, icon: React.ElementType, defaultOpen = false) => (
+    <AccordionItem value={title.toLowerCase()} className="border-b-0">
+        <AccordionTrigger className="px-4 text-base font-semibold text-muted-foreground hover:text-primary hover:no-underline [&[data-state=open]>svg]:text-primary">
+             <div className="flex items-center gap-3">
+                <icon className="h-5 w-5" />
+                <span>{title}</span>
+            </div>
+        </AccordionTrigger>
+        <AccordionContent className="pb-1">
+           {renderNavLinks(navItems)}
+        </AccordionContent>
+    </AccordionItem>
+  );
+
+
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex h-20 items-center border-b px-6">
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+      <div className="flex h-20 items-center border-b border-sidebar-border px-6">
         <Link href="/dashboard" className="flex items-center gap-3 font-semibold" prefetch={true}>
           <Logo className="h-8 w-8 text-primary" />
           <span className="text-xl">MindMate</span>
         </Link>
       </div>
       <div className="flex-1 overflow-y-auto py-4 space-y-4">
-        {renderNavLinks(mainNav, 'Main')}
-        {renderNavLinks(studyNav, 'Study')}
-        {renderNavLinks(progressNav, 'Progress')}
-        {renderNavLinks(accountNav, 'Account')}
-        {isAdmin && renderNavLinks(adminNav, 'Admin')}
+        <div className="px-2">
+            <h2 className="mb-2 px-2 text-lg font-semibold tracking-tight">Main</h2>
+            {renderNavLinks(mainNav)}
+        </div>
+        
+        <Accordion type="multiple" className="w-full space-y-1 px-2">
+          {renderCollapsibleNav(studyNav, 'Study', Activity)}
+          {renderCollapsibleNav(progressNav, 'Progress', LineChart)}
+          {renderCollapsibleNav(accountNav, 'Account', User)}
+          {isAdmin && renderCollapsibleNav(adminNav, 'Admin', Shield)}
+        </Accordion>
       </div>
     </div>
   );
