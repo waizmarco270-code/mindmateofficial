@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare, Gift, Trophy, Globe } from 'lucide-react';
+import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare, Gift, Trophy, Globe, Clock, LineChart } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -62,6 +62,25 @@ const features = [
     textColor: 'text-slate-100',
   },
 ];
+
+const studyTools = [
+    {
+        title: 'Time Tracker',
+        description: 'Log and manage the time you spend on each subject.',
+        icon: Clock,
+        href: '/dashboard/time-tracker',
+        color: 'bg-gradient-to-br from-cyan-500 to-blue-600',
+        textColor: 'text-cyan-100',
+    },
+    {
+        title: 'Study Insights',
+        description: 'Visualize your study patterns and progress over time.',
+        icon: LineChart,
+        href: '/dashboard/insights',
+        color: 'bg-gradient-to-br from-pink-500 to-rose-600',
+        textColor: 'text-pink-100',
+    }
+]
 
 export default function DashboardPage() {
     const { user } = useUser();
@@ -129,9 +148,33 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
-
-            <CommunityPoll />
             
+            <div className="space-y-4">
+                <h2 className="text-2xl font-bold tracking-tight">Your Study Tools</h2>
+                 <div className="grid gap-4 sm:grid-cols-2">
+                    {studyTools.map((tool) => (
+                        <Link href={tool.href} key={tool.title} prefetch={true}>
+                        <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col", tool.color)}>
+                             <CardHeader className="flex-row items-center gap-4 p-4">
+                                <div className={cn("p-3 rounded-full bg-white/10", tool.textColor)}>
+                                    <tool.icon className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <CardTitle className={cn("text-xl font-bold tracking-tight", tool.textColor)}>{tool.title}</CardTitle>
+                                    <CardDescription className={cn("mt-1 text-sm", tool.textColor, "opacity-80")}>{tool.description}</CardDescription>
+                                </div>
+                             </CardHeader>
+                            <CardFooter className="mt-auto bg-black/10 p-3">
+                                 <p className={cn("text-sm font-semibold flex items-center w-full justify-end", tool.textColor, "opacity-90")}>
+                                     Go to {tool.title} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                 </p>
+                            </CardFooter>
+                        </Card>
+                        </Link>
+                    ))}
+                </div>
+            </div>
+
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold tracking-tight">Explore Your Toolkit</h2>
                  <div className="grid gap-4 sm:grid-cols-2">
@@ -157,6 +200,8 @@ export default function DashboardPage() {
                     ))}
                 </div>
             </div>
+            
+            <CommunityPoll />
         </div>
 
         {/* Side Column */}
