@@ -50,7 +50,7 @@ export default function LeaderboardPage() {
     const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
     
     const renderUserStats = (user: User & { totalScore: number }) => (
-        <div className="hidden md:grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
             <div className="flex items-center gap-1.5">
                 <Award className="h-3 w-3 text-amber-500" />
                 <span className="font-semibold">{user.credits || 0}</span>
@@ -73,52 +73,6 @@ export default function LeaderboardPage() {
             </div>
         </div>
     );
-
-    const renderPodiumCard = (user: (User & { totalScore: number }) | undefined, rank: number) => {
-        if (!user) return <div className={cn(rank === 0 ? 'order-1 md:order-2' : (rank === 1 ? 'order-2 md:order-1' : 'order-3'))} />;
-
-        const placeDetails = {
-            0: { title: '1st Place', borderColor: 'border-yellow-400', textColor: 'text-yellow-400', shadow: 'shadow-2xl shadow-yellow-500/20', avatarSize: 'w-24 h-24 md:w-32 md:h-32', isTop: true, trophySize: 'h-10 w-10', order: 'order-1 md:order-2', marginTop: '' },
-            1: { title: '2nd Place', borderColor: 'border-slate-400', textColor: 'text-slate-400', shadow: 'shadow-lg shadow-slate-500/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'order-2 md:order-1', marginTop: 'md:mt-8' },
-            2: { title: '3rd Place', borderColor: 'border-amber-700', textColor: 'text-amber-700', shadow: 'shadow-lg shadow-amber-800/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'order-3 md:order-3', marginTop: 'md:mt-8' }
-        }[rank];
-
-        if (!placeDetails) return null;
-        
-        const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
-
-        return (
-            <div className={cn("w-full", placeDetails.order, placeDetails.isTop ? 'md:-translate-y-8' : '', placeDetails.marginTop)}>
-                <Card className={cn("relative text-center border-2 w-full", placeDetails.borderColor, placeDetails.shadow)}>
-                    <CardHeader className="p-4 md:p-6">
-                         <Trophy className={cn("mx-auto mb-2", placeDetails.trophySize, getTrophyColor(rank))} />
-                        <Avatar className={cn("mx-auto border-4", placeDetails.avatarSize, placeDetails.borderColor)}>
-                            <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <CardTitle className={cn("mt-4 text-xl md:text-2xl", placeDetails.isTop && 'text-2xl')}>{user.displayName}</CardTitle>
-                        
-                        {isSuperAdmin ? (
-                             <span className="dev-badge mx-auto mt-1">
-                                <Code className="h-3 w-3" /> DEV
-                            </span>
-                        ) : user.isAdmin && (
-                            <span className="vip-badge mx-auto mt-1">
-                                <Crown className="h-3 w-3" /> VIP
-                            </span>
-                        )}
-
-                        <CardDescription>{placeDetails.title}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="p-4 md:p-6 pt-0">
-                        <div className={cn("font-bold text-3xl md:text-4xl", placeDetails.textColor)}>{user.totalScore}</div>
-                        <p className="text-xs text-muted-foreground">Total Score</p>
-                        {renderUserStats(user)}
-                    </CardContent>
-                </Card>
-            </div>
-        )
-    }
     
     const getTrophyColor = (rank: number) => {
         if (rank === 0) return 'text-yellow-400';
@@ -127,6 +81,59 @@ export default function LeaderboardPage() {
         return 'text-muted-foreground';
     };
 
+    const renderPodiumCard = (user: (User & { totalScore: number }), rank: number) => {
+        if (!user) return null;
+        
+        const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+        
+        if (rank === 0) { // First Place
+            return (
+                <Card className="w-full border-2 border-yellow-400 bg-yellow-500/5 shadow-2xl shadow-yellow-500/20">
+                     <CardHeader className="text-center p-6">
+                        <div className="relative w-24 h-24 mx-auto">
+                            <Trophy className="absolute -top-2 -left-2 h-8 w-8 text-yellow-400 -rotate-12" />
+                            <Avatar className="w-24 h-24 border-4 border-yellow-400">
+                                <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                        <CardTitle className="mt-4 text-2xl">{user.displayName}</CardTitle>
+                        <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
+                     </CardHeader>
+                     <CardContent className="text-center p-6 pt-0">
+                        <p className="text-5xl font-bold text-yellow-400">{user.totalScore}</p>
+                        <p className="text-xs text-muted-foreground">Total Score</p>
+                        {renderUserStats(user)}
+                     </CardContent>
+                </Card>
+            )
+        }
+        
+        // Second and Third Place
+        const placeDetails = {
+            1: { title: '2nd Place', color: 'slate-400', trophyColor: 'text-slate-400'},
+            2: { title: '3rd Place', color: 'amber-700', trophyColor: 'text-amber-700' }
+        }[rank];
+
+        if (!placeDetails) return null;
+
+        return (
+            <Card className="w-full">
+                <CardContent className="p-4 flex items-center gap-4">
+                    <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
+                    <Avatar className="w-12 h-12 border-2">
+                        <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1">
+                        <p className="font-semibold">{user.displayName}</p>
+                        <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
+                    </div>
+                    <p className={cn("text-2xl font-bold", placeDetails.trophyColor)}>{user.totalScore}</p>
+                </CardContent>
+            </Card>
+        )
+    }
 
     return (
         <div className="space-y-8">
@@ -135,10 +142,12 @@ export default function LeaderboardPage() {
                 <p className="text-muted-foreground">See who's leading the board with the highest total score!</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 md:items-end">
-                {renderPodiumCard(topThree[0], 0)}
-                {renderPodiumCard(topThree[1], 1)}
-                {renderPodiumCard(topThree[2], 2)}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 items-center">
+                {topThree[0] && renderPodiumCard(topThree[0], 0)}
+                 <div className="space-y-4">
+                    {topThree[1] && renderPodiumCard(topThree[1], 1)}
+                    {topThree[2] && renderPodiumCard(topThree[2], 2)}
+                </div>
             </div>
 
             <Card>
@@ -146,57 +155,38 @@ export default function LeaderboardPage() {
                     <CardTitle>Full Rankings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="overflow-x-auto">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className="w-[60px]">Rank</TableHead>
-                                    <TableHead>User</TableHead>
-                                    <TableHead className="text-right">Score</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {restOfUsers.map((user, index) => {
-                                    const rank = index + 4;
-                                    const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
-                                    return (
-                                        <TableRow key={user.uid} className={cn(currentUser?.id === user.uid && 'bg-primary/10')}>
-                                            <TableCell className="font-bold text-lg text-muted-foreground">{rank}</TableCell>
-                                            <TableCell>
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className="w-10 h-10 border">
-                                                        <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                                                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex flex-col">
-                                                        <div className="flex items-center gap-2">
-                                                            <span className="font-medium">{user.displayName}</span>
-                                                            {isSuperAdmin ? (
-                                                                <span className="dev-badge">
-                                                                    <Code className="h-3 w-3" /> DEV
-                                                                </span>
-                                                            ) : user.isAdmin && (
-                                                                <span className="vip-badge">
-                                                                    <Crown className="h-3 w-3" /> VIP
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </TableCell>
-                                            <TableCell className="text-right font-bold text-lg">{user.totalScore}</TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                                {sortedUsers.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={3} className="h-24 text-center">
-                                            No users to rank yet.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                    <div className="space-y-2">
+                        {restOfUsers.map((user, index) => {
+                            const rank = index + 4;
+                            const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+                            return (
+                                <div key={user.uid} className={cn("flex items-center gap-3 p-2 rounded-lg", currentUser?.id === user.uid && 'bg-primary/10')}>
+                                    <p className="font-bold text-lg text-muted-foreground w-8 text-center">{rank}</p>
+                                    <Avatar className="w-10 h-10 border">
+                                        <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-medium truncate">{user.displayName}</span>
+                                            {isSuperAdmin ? (
+                                                <span className="dev-badge flex-shrink-0">
+                                                    <Code className="h-3 w-3" /> DEV
+                                                </span>
+                                            ) : user.isAdmin && (
+                                                <span className="vip-badge flex-shrink-0">
+                                                    <Crown className="h-3 w-3" /> VIP
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <p className="font-bold text-lg">{user.totalScore}</p>
+                                </div>
+                            )
+                        })}
+                        {sortedUsers.length === 0 && (
+                             <p className="text-center text-muted-foreground py-10">No users to rank yet.</p>
+                        )}
                     </div>
                 </CardContent>
             </Card>
@@ -221,3 +211,5 @@ export default function LeaderboardPage() {
         </div>
     );
 }
+
+    
