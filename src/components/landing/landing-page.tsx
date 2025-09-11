@@ -99,7 +99,13 @@ export function LandingPage() {
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden py-24 sm:py-32">
-            <div className="absolute inset-0 bg-grid-slate-800 [mask-image:linear-gradient(to_bottom,white_20%,transparent_100%)] animate-pulse-slow"></div>
+            <div aria-hidden="true" className="absolute inset-0 -z-10 animate-aurora-bg">
+                <div className="absolute inset-0 mx-auto max-w-7xl">
+                    <div className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-400/50 opacity-50 blur-3xl" style={{ left: '10%', top: '20%', width: '40rem', height: '40rem' }}></div>
+                    <div className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-sky-400/50 opacity-50 blur-3xl" style={{ left: '90%', top: '40%', width: '40rem', height: '40rem' }}></div>
+                    <div className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-pink-400/50 opacity-50 blur-3xl" style={{ left: '50%', top: '90%', width: '40rem', height: '40rem' }}></div>
+                </div>
+            </div>
             <div className="container mx-auto px-4 text-center relative">
                 <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up" style={{animationDelay: '0.2s'}}>
                     Unlock Your <span className="bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent">Full Potential</span>
@@ -178,3 +184,5 @@ export function LandingPage() {
     </div>
   );
 }
+
+    
