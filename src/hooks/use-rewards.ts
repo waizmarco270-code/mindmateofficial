@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, increment, arrayUnion } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp } from 'firebase/firestore';
 import { isToday, parseISO } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
@@ -38,6 +38,11 @@ export const useRewards = () => {
         if (freeSpins > 0) return true;
         if (!lastSpinDate) return true; // Never spun before
         return !isToday(lastSpinDate);
+    }, [lastSpinDate, freeSpins]);
+
+     const availableSpins = useMemo(() => {
+        const dailySpin = lastSpinDate && isToday(lastSpinDate) ? 0 : 1;
+        return dailySpin + freeSpins;
     }, [lastSpinDate, freeSpins]);
     
     const spin = useCallback(async () => {
@@ -77,7 +82,7 @@ export const useRewards = () => {
         const finalRotation = 360 - (prizeIndex * segmentAngle) - (segmentAngle / 2) - randomOffset;
         
         const userDocRef = doc(db, 'users', user.id);
-        const newRecord: SpinRecord = { reward: chosenPrize.value, date: new Date() };
+        const newRecord = { reward: chosenPrize.value, date: new Date() };
 
         if(freeSpins > 0) {
             await updateDoc(userDocRef, { freeSpins: increment(-1), spinHistory: arrayUnion({ ...newRecord }) });
@@ -99,7 +104,7 @@ export const useRewards = () => {
     return { 
         canSpin, 
         spin, 
-        availableSpins: (lastSpinDate && isToday(lastSpinDate) ? 0 : 1) + freeSpins,
+        availableSpins,
         spinHistory 
     };
 };
