@@ -118,7 +118,8 @@ function ResourceSection({ section, resources }: ResourceSectionProps) {
     const currentCredits = currentUserData?.credits ?? 0;
     
     const handleUnlockWithCredits = async () => {
-        if (user && currentCredits >= section.unlockCost) {
+        if (!user) return;
+        if (currentCredits >= section.unlockCost) {
             try {
                 await unlockResourceSection(user.id, section.id, section.unlockCost);
                 setIsUnlockDialogOpen(false);
@@ -154,7 +155,7 @@ function ResourceSection({ section, resources }: ResourceSectionProps) {
                             <h3 className="font-semibold flex items-center gap-2"><CreditCard className="h-4 w-4"/> Unlock with Credits</h3>
                             <p className="text-sm text-muted-foreground">Use <span className="font-bold text-primary">{section.unlockCost} credits</span> for permanent access. You currently have <span className="font-bold text-primary">{currentCredits}</span> credits.</p>
                             <Button onClick={handleUnlockWithCredits} disabled={currentCredits < section.unlockCost} className="w-full">
-                                Use {section.unlockCost} Credits
+                                {currentCredits < section.unlockCost ? "Insufficient Credits" : `Use ${section.unlockCost} Credits`}
                             </Button>
                         </div>
                         <DialogFooter>
