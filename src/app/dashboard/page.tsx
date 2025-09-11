@@ -1,7 +1,8 @@
 
 'use client';
 
-import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare, Gift } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -67,6 +68,7 @@ export default function DashboardPage() {
     const { user } = useUser();
     const { announcements } = useAnnouncements();
     const { currentUserData } = useUsers();
+    const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
 
     const credits = currentUserData?.credits ?? 0;
 
@@ -85,7 +87,25 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
       </div>
 
-      <DailySurpriseCard />
+      {isSurpriseRevealed ? (
+        <DailySurpriseCard />
+      ) : (
+        <Card 
+          className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-yellow-400/20 via-pink-500/20 to-purple-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
+          onClick={() => setIsSurpriseRevealed(true)}
+        >
+          <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000"></div>
+          <CardContent className="relative p-6 text-center">
+              <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
+              <div className="relative flex flex-col items-center">
+                <Gift className="h-10 w-10 text-primary animate-bounce"/>
+                <h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3>
+                <p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p>
+              </div>
+          </CardContent>
+        </Card>
+      )}
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content Column */}
