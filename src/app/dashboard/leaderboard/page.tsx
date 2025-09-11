@@ -79,15 +79,15 @@ export default function LeaderboardPage() {
 
         const placeDetails = {
             0: { title: '1st Place', borderColor: 'border-yellow-400', textColor: 'text-yellow-400', shadow: 'shadow-2xl shadow-yellow-500/20', avatarSize: 'w-24 h-24 md:w-32 md:h-32', isTop: true, trophySize: 'h-10 w-10', order: 'order-1 md:order-2', marginTop: '' },
-            1: { title: '2nd Place', borderColor: 'border-slate-400', textColor: 'text-slate-400', shadow: 'shadow-lg shadow-slate-500/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'order-2 md:order-1', marginTop: 'mt-8' },
-            2: { title: '3rd Place', borderColor: 'border-amber-700', textColor: 'text-amber-700', shadow: 'shadow-lg shadow-amber-800/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'order-3 md:order-3', marginTop: 'mt-8' }
+            1: { title: '2nd Place', borderColor: 'border-slate-400', textColor: 'text-slate-400', shadow: 'shadow-lg shadow-slate-500/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'order-2 md:order-1', marginTop: 'md:mt-8' },
+            2: { title: '3rd Place', borderColor: 'border-amber-700', textColor: 'text-amber-700', shadow: 'shadow-lg shadow-amber-800/10', avatarSize: 'w-20 h-20 md:w-24 md:h-24', isTop: false, trophySize: 'h-8 w-8', order: 'order-3 md:order-3', marginTop: 'md:mt-8' }
         }[rank];
 
         if (!placeDetails) return null;
 
         return (
-            <div className={cn(placeDetails.order, placeDetails.isTop ? 'md:-translate-y-8' : '')}>
-                <Card className={cn("relative text-center border-2", placeDetails.borderColor, placeDetails.shadow)}>
+            <div className={cn("w-full", placeDetails.order, placeDetails.isTop ? 'md:-translate-y-8' : '', placeDetails.marginTop)}>
+                <Card className={cn("relative text-center border-2 w-full", placeDetails.borderColor, placeDetails.shadow)}>
                     <CardHeader className="p-4 md:p-6">
                          <Trophy className={cn("mx-auto mb-2", placeDetails.trophySize, getTrophyColor(rank))} />
                         <Avatar className={cn("mx-auto border-4", placeDetails.avatarSize, placeDetails.borderColor)}>
@@ -127,9 +127,9 @@ export default function LeaderboardPage() {
                 <p className="text-muted-foreground">See who's leading the board with the highest total score!</p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 items-end">
-                {renderPodiumCard(topThree[1], 1)}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 md:items-end">
                 {renderPodiumCard(topThree[0], 0)}
+                {renderPodiumCard(topThree[1], 1)}
                 {renderPodiumCard(topThree[2], 2)}
             </div>
 
@@ -192,9 +192,9 @@ export default function LeaderboardPage() {
                 <Card className="sticky bottom-20 md:bottom-4 bg-background/90 backdrop-blur-lg border-primary shadow-lg z-10">
                     <CardContent className="p-4 flex items-center justify-between gap-4">
                          <div className="flex items-center gap-4 flex-1">
-                            <div className="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded-md p-2 w-20">
-                                <span className="text-xs font-bold">YOUR RANK</span>
-                                <span className="text-3xl font-bold">{currentUserRank + 1}</span>
+                            <div className="flex flex-col items-center justify-center bg-primary text-primary-foreground rounded-md p-2 w-16 md:w-20">
+                                <span className="text-xs font-bold">RANK</span>
+                                <span className="text-2xl md:text-3xl font-bold">{currentUserRank + 1}</span>
                             </div>
                             <div className="flex-1">
                                 <h3 className="text-base md:text-lg font-semibold">You are on the leaderboard! Keep it up!</h3>
