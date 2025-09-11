@@ -1,21 +1,14 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO, getDay, differenceInSeconds } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO } from 'date-fns';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-
-interface StudySession {
-  subject: string;
-  startTime: string;
-  endTime: string;
-  duration: number; // in seconds
-}
+import { useTimeTracker, type TimeSession } from '@/hooks/use-time-tracker';
+import { Skeleton } from '../ui/skeleton';
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -32,7 +25,7 @@ const formatTimeShort = (seconds: number) => {
 }
 
 export function InsightsView() {
-    const [sessions] = useLocalStorage<StudySession[]>('studySessions', []);
+    const { sessions, loading } = useTimeTracker();
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
 
@@ -44,10 +37,11 @@ export function InsightsView() {
             if (!stats[dateStr]) {
                 stats[dateStr] = { total: 0, count: 0, max: 0, subjects: {} };
             }
-            stats[dateStr].total += session.duration;
+            const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
+            stats[dateStr].total += duration;
             stats[dateStr].count += 1;
-            if (session.duration > stats[dateStr].max) {
-                stats[dateStr].max = session.duration;
+            if (duration > stats[dateStr].max) {
+                stats[dateStr].max = duration;
             }
 
             const sessionStart = parseISO(session.startTime);
@@ -59,7 +53,7 @@ export function InsightsView() {
                 stats[dateStr].end = sessionEnd;
             }
 
-            stats[dateStr].subjects[session.subject] = (stats[dateStr].subjects[session.subject] || 0) + session.duration;
+            stats[dateStr].subjects[session.subjectName] = (stats[dateStr].subjects[session.subjectName] || 0) + duration;
         });
 
         return stats;
@@ -104,6 +98,9 @@ export function InsightsView() {
 
                      <div className="grid grid-cols-7">
                         {days.map((day, index) => {
+                            if (loading) {
+                                return <Skeleton key={index} className="h-20" />
+                            }
                             const dayStr = format(day, 'yyyy-MM-dd');
                             const stat = dailyStats[dayStr];
                             const isSelected = isSameDay(day, selectedDate);
@@ -152,7 +149,7 @@ export function InsightsView() {
                     <CardTitle>Details for {format(selectedDate, 'EEEE, MMMM do')}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    {selectedDayStats ? (
+                    {loading ? <Skeleton className="h-64" /> : selectedDayStats ? (
                         <div className="space-y-6">
                             <div className="grid grid-cols-2 text-center gap-4">
                                 <div>
@@ -197,4 +194,3 @@ export function InsightsView() {
         </div>
     );
 }
-
