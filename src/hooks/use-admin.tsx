@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -21,13 +20,10 @@ export interface User {
   isBlocked: boolean;
   credits: number;
   votedPolls?: Record<string, string>; // { pollId: 'chosen_option' }
-  socialUnlocked?: boolean; 
+  unlockedResourceSections?: string[]; // Array of unlocked section IDs
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
-  class10Unlocked?: boolean;
-  jeeUnlocked?: boolean;
-  class12Unlocked?: boolean;
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number;
   totalStudyTime?: number; // in seconds
@@ -43,11 +39,20 @@ export interface Announcement {
     createdAt: string;
 }
 
+export interface ResourceSection {
+    id: string;
+    name: string;
+    description: string;
+    unlockCost: number;
+    createdAt: Timestamp;
+}
+
 export interface Resource {
     id: string;
     title: string;
     description: string;
     url: string;
+    sectionId: string; // 'general' or an ID from ResourceSection
     createdAt: string;
 }
 
@@ -76,7 +81,6 @@ export interface DailySurprise {
 // ============================================================================
 //  CONTEXT DEFINITIONS
 // ============================================================================
-type ResourceSection = 'class10' | 'jee' | 'class12';
 
 interface AppDataContextType {
     isAdmin: boolean;
@@ -88,8 +92,7 @@ interface AppDataContextType {
     giftCreditsToUser: (uid: string, amount: number) => Promise<void>;
     resetUserCredits: (uid: string) => Promise<void>;
     addFreeSpinsToUser: (uid: string, amount: number) => Promise<void>;
-    unlockSocialFeature: (uid: string) => Promise<void>;
-    unlockResourceSection: (uid: string, section: ResourceSection, cost?: number) => Promise<void>;
+    unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string) => Promise<void>;
@@ -104,26 +107,18 @@ interface AppDataContextType {
     updateAnnouncement: (id: string, data: Partial<Announcement>) => Promise<void>;
     deleteAnnouncement: (id: string) => Promise<void>;
     
+    // Unified Resource Management
     resources: Resource[];
     addResource: (resource: Omit<Resource, 'id' | 'createdAt'>) => Promise<void>;
-    updateResource: (id: string, data: Partial<Resource>) => Promise<void>;
+    updateResource: (id: string, data: Partial<Omit<Resource, 'id' | 'createdAt'>>) => Promise<void>;
     deleteResource: (id: string) => Promise<void>;
+
+    // Dynamic Resource Section Management
+    resourceSections: ResourceSection[];
+    addResourceSection: (section: Omit<ResourceSection, 'id' | 'createdAt'>) => Promise<void>;
+    updateResourceSection: (id: string, data: Partial<Omit<ResourceSection, 'id' | 'createdAt'>>) => Promise<void>;
+    deleteResourceSection: (id: string) => Promise<void>;
     
-    premiumResources: Resource[];
-    addPremiumResource: (resource: Omit<Resource, 'id' | 'createdAt'>) => Promise<void>;
-    updatePremiumResource: (id: string, data: Partial<Resource>) => Promise<void>;
-    deletePremiumResource: (id: string) => Promise<void>;
-
-    jeeResources: Resource[];
-    addJeeResource: (resource: Omit<Resource, 'id' | 'createdAt'>) => Promise<void>;
-    updateJeeResource: (id: string, data: Partial<Resource>) => Promise<void>;
-    deleteJeeResource: (id: string) => Promise<void>;
-
-    class12Resources: Resource[];
-    addClass12Resource: (resource: Omit<Resource, 'id' | 'createdAt'>) => Promise<void>;
-    updateClass12Resource: (id: string, data: Partial<Resource>) => Promise<void>;
-    deleteClass12Resource: (id: string) => Promise<void>;
-
     dailySurprises: DailySurprise[];
     addDailySurprise: (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => Promise<void>;
     deleteDailySurprise: (id: string) => Promise<void>;
@@ -151,9 +146,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [currentUserData, setCurrentUserData] = useState<User | null>(null);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [resources, setResources] = useState<Resource[]>([]);
-    const [premiumResources, setPremiumResources] = useState<Resource[]>([]);
-    const [jeeResources, setJeeResources] = useState<Resource[]>([]);
-    const [class12Resources, setClass12Resources] = useState<Resource[]>([]);
+    const [resourceSections, setResourceSections] = useState<ResourceSection[]>([]);
     const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
     const [loading, setLoading] = useState(true);
@@ -230,6 +223,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     isBlocked: false,
                     credits: 100,
                     isAdmin: false,
+                    unlockedResourceSections: [],
                     focusSessionsCompleted: 0,
                     dailyTasksCompleted: 0,
                     totalStudyTime: 0,
@@ -248,7 +242,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         
     }, [authUser, isClerkLoaded]);
     
-    // EFFECT: Listen for global data (announcements, resources, polls)
+    // EFFECT: Listen for global data (announcements, resources, polls, sections)
     useEffect(() => {
         const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
             return snapshot.docs.map((doc: any) => {
@@ -262,18 +256,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         };
 
         const announcementsQuery = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
-        const resourcesQuery = query(collection(db, 'generalResources'), orderBy('createdAt', 'desc'));
-        const premiumResourcesQuery = query(collection(db, 'premiumResources'), orderBy('createdAt', 'desc'));
-        const jeeResourcesQuery = query(collection(db, 'jeeResources'), orderBy('createdAt', 'desc'));
-        const class12ResourcesQuery = query(collection(db, 'class12Resources'), orderBy('createdAt', 'desc'));
+        const resourcesQuery = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
+        const resourceSectionsQuery = query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc'));
         const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'desc'));
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
-        const unsubPremium = onSnapshot(premiumResourcesQuery, (snapshot) => setPremiumResources(processSnapshot<Resource>(snapshot)));
-        const unsubJee = onSnapshot(jeeResourcesQuery, (snapshot) => setJeeResources(processSnapshot<Resource>(snapshot)));
-        const unsubClass12 = onSnapshot(class12ResourcesQuery, (snapshot) => setClass12Resources(processSnapshot<Resource>(snapshot)));
+        const unsubSections = onSnapshot(resourceSectionsQuery, (snapshot) => setResourceSections(processSnapshot<ResourceSection>(snapshot)));
         const unsubDailySurprises = onSnapshot(dailySurprisesQuery, (snapshot) => setDailySurprises(processSnapshot<DailySurprise>(snapshot)));
 
         const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
@@ -288,11 +278,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         return () => {
             unsubAnnouncements();
             unsubResources();
-            unsubPremium();
             unsubPolls();
-            unsubJee();
-            unsubClass12();
             unsubDailySurprises();
+            unsubSections();
         };
     }, []);
 
@@ -337,26 +325,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { credits: 100 });
     };
     
-    const unlockSocialFeature = async (uid: string) => {
+    const unlockResourceSection = async (uid: string, sectionId: string, cost: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, { socialUnlocked: true, credits: increment(-20) });
-    };
-
-    const unlockResourceSection = async (uid: string, section: ResourceSection, cost: number = 0) => {
-        if (!uid) return;
-        const userDocRef = doc(db, 'users', uid);
-        const updateData: any = {};
-        
-        if (section === 'class10') updateData.class10Unlocked = true;
-        if (section === 'jee') updateData.jeeUnlocked = true;
-        if (section === 'class12') updateData.class12Unlocked = true;
-        
-        if (cost > 0) {
-            updateData.credits = increment(-cost);
-        }
-
-        await updateDoc(userDocRef, updateData);
+        await updateDoc(userDocRef, { 
+            unlockedResourceSections: arrayUnion(sectionId),
+            credits: increment(-cost) 
+        });
     };
 
     const addPerfectedQuiz = async (uid: string, quizId: string) => {
@@ -393,39 +368,44 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { totalStudyTime: totalSeconds });
     }
 
+    // Announcement functions
     const addAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
-        await addDoc(collection(db, 'announcements'), {
-            ...announcement,
-            createdAt: serverTimestamp()
-        });
+        await addDoc(collection(db, 'announcements'), { ...announcement, createdAt: serverTimestamp() });
     }
     const updateAnnouncement = async (id: string, data: Partial<Announcement>) => await updateDoc(doc(db, 'announcements', id), data);
     const deleteAnnouncement = async (id: string) => await deleteDoc(doc(db, 'announcements', id));
 
+    // Resource Section functions
+    const addResourceSection = async (section: Omit<ResourceSection, 'id'|'createdAt'>) => {
+        await addDoc(collection(db, 'resourceSections'), { ...section, createdAt: serverTimestamp() });
+    };
+    const updateResourceSection = async (id: string, data: Partial<Omit<ResourceSection, 'id'|'createdAt'>>) => {
+        await updateDoc(doc(db, 'resourceSections', id), data);
+    };
+    const deleteResourceSection = async (id: string) => {
+        // Also delete all resources within this section
+        const q = query(collection(db, "resources"), where("sectionId", "==", id));
+        const querySnapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        querySnapshot.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+        batch.delete(doc(db, 'resourceSections', id));
+        await batch.commit();
+    };
+
+
+    // Unified Resource functions
     const addResource = async (resource: Omit<Resource, 'id' | 'createdAt'>) => {
-        await addDoc(collection(db, 'generalResources'), { ...resource, createdAt: serverTimestamp() });
+        await addDoc(collection(db, 'resources'), { ...resource, createdAt: serverTimestamp() });
     }
-    const updateResource = async (id: string, data: Partial<Resource>) => await updateDoc(doc(db, 'generalResources', id), data);
-    const deleteResource = async (id: string) => await deleteDoc(doc(db, 'generalResources', id));
+    const updateResource = async (id: string, data: Partial<Omit<Resource, 'id' | 'createdAt'>>) => {
+        await updateDoc(doc(db, 'resources', id), data);
+    }
+    const deleteResource = async (id: string) => {
+        await deleteDoc(doc(db, 'resources', id));
+    }
     
-    const addPremiumResource = async (resource: Omit<Resource, 'id' | 'createdAt'>) => {
-         await addDoc(collection(db, 'premiumResources'), { ...resource, createdAt: serverTimestamp() });
-    }
-    const updatePremiumResource = async (id: string, data: Partial<Resource>) => await updateDoc(doc(db, 'premiumResources', id), data);
-    const deletePremiumResource = async (id: string) => await deleteDoc(doc(db, 'premiumResources', id));
-
-    const addJeeResource = async (resource: Omit<Resource, 'id' | 'createdAt'>) => {
-         await addDoc(collection(db, 'jeeResources'), { ...resource, createdAt: serverTimestamp() });
-    }
-    const updateJeeResource = async (id: string, data: Partial<Resource>) => await updateDoc(doc(db, 'jeeResources', id), data);
-    const deleteJeeResource = async (id: string) => await deleteDoc(doc(db, 'jeeResources', id));
-
-    const addClass12Resource = async (resource: Omit<Resource, 'id' | 'createdAt'>) => {
-         await addDoc(collection(db, 'class12Resources'), { ...resource, createdAt: serverTimestamp() });
-    }
-    const updateClass12Resource = async (id: string, data: Partial<Resource>) => await updateDoc(doc(db, 'class12Resources', id), data);
-    const deleteClass12Resource = async (id: string) => await deleteDoc(doc(db, 'class12Resources', id));
-
     const addDailySurprise = async (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => {
         await addDoc(collection(db, 'dailySurprises'), { ...surprise, createdAt: serverTimestamp() });
     }
@@ -480,7 +460,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         giftCreditsToUser,
         resetUserCredits,
         addFreeSpinsToUser,
-        unlockSocialFeature,
         unlockResourceSection,
         addPerfectedQuiz,
         incrementQuizAttempt,
@@ -498,18 +477,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addResource,
         updateResource,
         deleteResource,
-        premiumResources,
-        addPremiumResource,
-        updatePremiumResource,
-        deletePremiumResource,
-        jeeResources,
-        addJeeResource,
-        updateJeeResource,
-        deleteJeeResource,
-        class12Resources,
-        addClass12Resource,
-        updateClass12Resource,
-        deleteClass12Resource,
+        resourceSections,
+        addResourceSection,
+        updateResourceSection,
+        deleteResourceSection,
         dailySurprises,
         addDailySurprise,
         deleteDailySurprise,
@@ -551,7 +522,15 @@ export const useAnnouncements = () => {
 export const useResources = () => {
     const context = useContext(AppDataContext);
     if (!context) throw new Error('useResources must be used within an AppDataProvider');
-    return context;
+    const generalResources = context.resources.filter(r => r.sectionId === 'general');
+    const dynamicSections = context.resourceSections;
+    const dynamicResources = context.resources.filter(r => r.sectionId !== 'general');
+    return { 
+        ...context,
+        generalResources,
+        dynamicSections,
+        dynamicResources,
+    };
 };
 
 export const usePolls = () => {
@@ -570,3 +549,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+      

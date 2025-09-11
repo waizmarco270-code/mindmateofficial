@@ -1,6 +1,5 @@
-
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // A helper function to safely parse JSON from localStorage
 function safeJsonParse<T>(item: string | null): T | null {
@@ -28,16 +27,21 @@ export const useLocalStorage = <T,>(key: string, initialValue: T) => {
             return initialValue;
         }
     });
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            try {
-                window.localStorage.setItem(key, JSON.stringify(storedValue));
-            } catch (error) {
-                console.error(`Error setting localStorage key “${key}”:`, error);
+    
+    const setValue = useCallback((value: T | ((val: T) => T)) => {
+        try {
+            const valueToStore = value instanceof Function ? value(storedValue) : value;
+            setStoredValue(valueToStore);
+             if (typeof window !== 'undefined') {
+                window.localStorage.setItem(key, JSON.stringify(valueToStore));
             }
+        } catch (error) {
+             console.error(`Error setting localStorage key “${key}”:`, error);
         }
     }, [key, storedValue]);
 
-    return [storedValue, setStoredValue] as const;
+
+    return [storedValue, setValue] as const;
 };
+
+      
