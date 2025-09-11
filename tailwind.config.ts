@@ -99,19 +99,18 @@ export default {
               transform: 'translateY(0)'
           },
         },
-        'pulse-slow': {
-            '0%, 100%': { opacity: '0.5' },
-            '50%': { opacity: '1' },
+        'stars-slow': {
+            '0%': { 'background-position': '0 0' },
+            '100%': { 'background-position': '0 300px' },
         },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
-        'pulse-slow': 'pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'stars-slow': 'stars-slow 20s linear infinite',
       },
     },
   },
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
-
