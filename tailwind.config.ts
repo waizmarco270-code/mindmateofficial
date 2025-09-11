@@ -89,11 +89,6 @@ export default {
             height: '0',
           },
         },
-         'aurora-bg': {
-          '0%': { transform: 'translateY(0%)' },
-          '50%': { transform: 'translateY(5%)' },
-          '100%': { transform: 'translateY(0%)' },
-        },
         'fade-in-up': {
           '0%': {
               opacity: '0',
@@ -112,7 +107,6 @@ export default {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        'aurora-bg': 'aurora-bg 20s ease-in-out infinite',
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'pulse-slow': 'pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
@@ -121,4 +115,3 @@ export default {
   plugins: [require('tailwindcss-animate')],
 } satisfies Config;
 
-    
