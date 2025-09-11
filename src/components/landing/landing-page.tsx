@@ -56,6 +56,14 @@ const WhatsAppIcon = () => (
      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
 )
 
+const GoogleIcon = () => (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M22.56 12.25C22.56 11.45 22.49 10.65 22.36 9.88H12V14.5H18.04C17.72 16.21 16.83 17.66 15.39 18.61V21.1H19.03C21.2 19.23 22.56 16.03 22.56 12.25Z" fill="#4285F4"/>
+        <path d="M12 23C15.24 23 17.95 21.92 19.92 20.19L15.39 18.61C14.33 19.33 13.06 19.79 12 19.79C9.07 19.79 6.64 17.9 5.72 15.22H2V17.8C3.96 21.13 7.7 23 12 23Z" fill="#34A853"/>
+        <path d="M5.72 15.22C5.48 14.51 5.34 13.76 5.34 13C5.34 12.24 5.48 11.49 5.72 10.78V8.2H2C1.22 9.77 0.75 11.34 0.75 13C0.75 14.66 1.22 16.23 2 17.8L5.72 15.22Z" fill="#FBBC05"/>
+        <path d="M12 6.21C13.56 6.21 14.87 6.78 15.82 7.7L19.96 3.54C17.95 1.83 15.24 0.75 12 0.75C7.7 0.75 3.96 2.87 2 6.2L5.72 8.79C6.64 6.1 9.07 4.21 12 4.21L12 6.21Z" fill="#EA4335"/>
+    </svg>
+)
 
 export function LandingPage() {
   return (
@@ -69,11 +77,11 @@ export function LandingPage() {
           </Link>
           <div className="flex items-center gap-2">
              <SignedOut>
-                <SignInButton mode="modal">
-                    <Button variant="ghost">Sign In</Button>
-                </SignInButton>
-                <SignUpButton mode="modal">
-                    <Button variant="default" className="bg-primary/90 hover:bg-primary">Get Started</Button>
+                <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
+                    <Button variant="default" className="bg-white text-slate-900 hover:bg-slate-200">
+                        <GoogleIcon />
+                        Continue with Google
+                    </Button>
                 </SignUpButton>
              </SignedOut>
              <SignedIn>
@@ -98,7 +106,7 @@ export function LandingPage() {
                     MindMate is your all-in-one AI-powered study companion, designed to help you learn smarter, stay focused, and achieve your academic goals.
                 </p>
                 <div className="mt-10 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
-                    <SignUpButton mode="modal">
+                    <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                         <Button size="lg" className="text-lg h-14 px-10 bg-primary/90 hover:bg-primary shadow-lg shadow-primary/20 transition-transform duration-300 hover:scale-105">
                             Start Learning for Free
                         </Button>
@@ -157,4 +165,3 @@ export function LandingPage() {
     </div>
   );
 }
-
