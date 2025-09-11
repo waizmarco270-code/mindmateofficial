@@ -103,12 +103,18 @@ export default {
             '0%': { 'background-position': '0 0' },
             '100%': { 'background-position': '0 300px' },
         },
+        'rainbow-shine': {
+          '0%': { 'background-position': '0% 50%' },
+          '50%': { 'background-position': '100% 50%' },
+          '100%': { 'background-position': '0% 50%' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'stars-slow': 'stars-slow 20s linear infinite',
+        'rainbow-shine': 'rainbow-shine 20s ease infinite',
       },
     },
   },
