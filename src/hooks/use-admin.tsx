@@ -10,7 +10,7 @@ import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, g
 //  TYPES & INITIAL DATA
 // ============================================================================
 
-export const SUPER_ADMIN_UID = "user_2jF4xG0A2e3r4t5Y6z7a8b9c0d1e2f3";
+export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
 
 export interface User {
   id: string; // Document ID from Firestore (should be same as Clerk UID)
@@ -471,3 +471,5 @@ export const usePolls = () => {
     if(!context) throw new Error('usePolls must be used within an AppDataProvider');
     return context;
 }
+
+    
