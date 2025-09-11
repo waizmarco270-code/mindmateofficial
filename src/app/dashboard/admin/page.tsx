@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -29,6 +29,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 
 const ADMIN_PASSWORD = "marcowaiz@admin";
 const AUTH_SESSION_KEY = "admin_authenticated";
+const CREDIT_PASSWORD = "waizcredit";
 
 
 interface QuizQuestion {
@@ -39,7 +40,7 @@ interface QuizQuestion {
 
 export default function AdminPanelPage() {
   const { 
-    isAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin,
+    isAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits, addCreditsToUser,
     announcements, updateAnnouncement, 
     activePoll, updatePoll,
     resources, addResource, updateResource, deleteResource,
@@ -63,8 +64,13 @@ export default function AdminPanelPage() {
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [isSavingPoll, setIsSavingPoll] = useState(false);
   
+  // State for Credit Management
+  const [isCreditUnlocked, setIsCreditUnlocked] = useState(false);
+  const [creditPassword, setCreditPassword] = useState('');
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [creditAmount, setCreditAmount] = useState(10);
+  
   useEffect(() => {
-    // Check session storage on component mount
     if (sessionStorage.getItem(AUTH_SESSION_KEY) === 'true') {
       setIsAuthenticated(true);
     }
@@ -108,6 +114,43 @@ export default function AdminPanelPage() {
       setPassword('');
     }
   };
+
+  const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if(creditPassword === CREDIT_PASSWORD){
+        setIsCreditUnlocked(true);
+        toast({ title: "Credit Controls Unlocked" });
+      } else {
+        toast({ variant: 'destructive', title: "Incorrect Password" });
+      }
+  };
+
+  const handleGiftCredits = async () => {
+    if (!selectedUserId || !creditAmount || creditAmount <= 0) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive credit amount.'});
+        return;
+    }
+    await giftCreditsToUser(selectedUserId, creditAmount);
+    toast({ title: 'Success', description: `${creditAmount} credits have been gifted to the user.`});
+  };
+
+  const handleDeductCredits = async () => {
+     if (!selectedUserId || !creditAmount || creditAmount <= 0) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive credit amount.'});
+        return;
+    }
+    await addCreditsToUser(selectedUserId, -creditAmount);
+    toast({ title: 'Success', description: `${creditAmount} credits have been deducted from the user.`});
+  };
+
+  const handleResetCredits = async () => {
+     if (!selectedUserId) {
+        toast({ variant: 'destructive', title: 'No User Selected', description: 'Please select a user to reset credits.'});
+        return;
+    }
+    await resetUserCredits(selectedUserId);
+    toast({ title: 'Success', description: `User's credits have been reset to 100.`});
+  };
   
   const handleSubmitAnnouncement = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -134,7 +177,6 @@ export default function AdminPanelPage() {
       }
   };
 
-  // Generic handler for submitting resource forms (add or edit)
   const handleResourceFormSubmit = async (e: React.FormEvent<HTMLFormElement>, type: 'general' | 'premium' | 'jee' | 'class12') => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -151,7 +193,6 @@ export default function AdminPanelPage() {
     
     try {
         if (editingResource) {
-            // Update logic
             const updateFunction = {
                 'general': updateResource,
                 'premium': updatePremiumResource,
@@ -161,7 +202,6 @@ export default function AdminPanelPage() {
             await updateFunction(editingResource.id, resourceData);
             toast({ title: "Resource Updated", description: "The resource has been successfully updated." });
         } else {
-            // Add logic
             const addFunction = {
                 'general': addResource,
                 'premium': addPremiumResource,
@@ -410,6 +450,76 @@ export default function AdminPanelPage() {
           </Card>
         </AccordionItem>
 
+        {/* Credit Management */}
+        <AccordionItem value="credit-management" className="border-b-0">
+           <Card>
+              <AccordionTrigger className="p-6">
+                <div className="flex items-center gap-3">
+                  <DollarSign className="h-6 w-6 text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold">Credit Management</h3>
+                    <p className="text-sm text-muted-foreground text-left">Gift, deduct, or reset credits for any user.</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardContent className="pt-6">
+                        {!isCreditUnlocked ? (
+                            <div className="flex flex-col items-center justify-center text-center p-8 rounded-lg bg-muted/50 border-2 border-dashed">
+                                 <Wallet className="h-10 w-10 text-muted-foreground mb-4"/>
+                                 <h3 className="font-semibold">Unlock Credit Controls</h3>
+                                 <p className="text-sm text-muted-foreground mb-4">Enter the password to manage user credits.</p>
+                                 <form onSubmit={handleCreditPasswordSubmit} className="flex items-center gap-2">
+                                     <Input 
+                                        type="password"
+                                        placeholder="Credit Password..."
+                                        value={creditPassword}
+                                        onChange={(e) => setCreditPassword(e.target.value)}
+                                     />
+                                     <Button type="submit">Unlock</Button>
+                                 </form>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="grid md:grid-cols-2 gap-4">
+                                     <div className="space-y-2">
+                                        <Label>Select User</Label>
+                                        <Select onValueChange={setSelectedUserId} value={selectedUserId ?? undefined}>
+                                            <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
+                                            <SelectContent>
+                                                {users.filter(u => !u.isBlocked).map(user => (
+                                                    <SelectItem key={user.uid} value={user.uid}>
+                                                        {user.displayName} ({user.email}) - {user.credits} credits
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                     </div>
+                                     <div className="space-y-2">
+                                        <Label htmlFor="credit-amount">Amount</Label>
+                                        <Input
+                                            id="credit-amount"
+                                            type="number"
+                                            value={creditAmount}
+                                            onChange={(e) => setCreditAmount(Number(e.target.value))}
+                                            min="0"
+                                        />
+                                     </div>
+                                </div>
+                                <div className="flex flex-wrap gap-2 justify-end">
+                                    <Button variant="outline" onClick={handleResetCredits} disabled={!selectedUserId}><RefreshCcw /> Reset to 100</Button>
+                                    <Button variant="destructive" onClick={handleDeductCredits} disabled={!selectedUserId || creditAmount <= 0}><MinusCircle /> Deduct</Button>
+                                    <Button onClick={handleGiftCredits} disabled={!selectedUserId || creditAmount <= 0}><Gift/> Gift</Button>
+                                </div>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+              </AccordionContent>
+            </Card>
+        </AccordionItem>
+
         {/* Content Management */}
         <AccordionItem value="content-management" className="border-b-0">
           <Card>
@@ -579,3 +689,6 @@ export default function AdminPanelPage() {
     </div>
   );
 }
+
+
+    
