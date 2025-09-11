@@ -109,12 +109,12 @@ export default function ProfilePage() {
                         <Button type="button" variant="outline" onClick={() => copyToClipboard(user.id)}>Copy UID</Button>
                       </div>
                   </div>
-                  <div className="flex justify-end pt-4">
-                      <Button type="submit" disabled={isSaveDisabled}>
-                          {isSaving ? 'Saving...' : 'Save Changes'}
-                      </Button>
-                  </div>
               </CardContent>
+              <CardFooter className="flex justify-end pt-4">
+                 <Button type="submit" disabled={isSaveDisabled}>
+                    {isSaving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </CardFooter>
               </form>
           </Card>
 
