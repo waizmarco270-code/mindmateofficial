@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Square, BrainCircuit, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Send, Mic, Square, BrainCircuit, AlertTriangle, ShieldAlert, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -65,6 +65,7 @@ export function ChatInterface() {
           title: 'Voice Recognition Error',
           description: event.error,
         });
+        setIsListening(false);
       };
       
       recognitionRef.current.onend = () => {
@@ -89,11 +90,20 @@ export function ChatInterface() {
     if (isListening) {
       recognitionRef.current.stop();
     } else {
-      try {
+       try {
         recognitionRef.current.start();
-      } catch (error) {
+      } catch (error: any) {
         // This can happen if the recognition is still cleaning up.
         console.error("Error starting speech recognition:", error);
+        if (error.name === 'InvalidStateError') {
+          // You might want to ignore this specific error or just log it.
+        } else {
+            toast({
+              variant: 'destructive',
+              title: 'Could not start voice recognition',
+              description: error.message
+            });
+        }
       }
     }
   };
@@ -139,11 +149,11 @@ export function ChatInterface() {
             }
 
             // Handle standard text explanation
-            if(response.explanation) {
+            if(response.explanation || response.simpleExplanation) {
               const aiMessage: Message = {
                   id: (Date.now() + 1).toString(),
                   role: 'assistant',
-                  content: response.explanation,
+                  content: response.explanation || response.simpleExplanation,
               };
               setMessages((prev) => [...prev, aiMessage]);
             }
@@ -198,49 +208,20 @@ export function ChatInterface() {
   };
   
   const handleExplainSimply = async (messageToSimplify: Message) => {
-      if (!user) {
-        return;
-      }
+      if (!user) return;
       const originalQuestion = messages.slice().reverse().find(m => m.role === 'user')?.content || "the previous topic";
 
       const userMessage: Message = { id: Date.now().toString(), role: 'user', content: "Can you explain that more simply?", isHidden: true };
       setMessages((prev) => [...prev, userMessage]);
 
-      setIsThinking(true);
-      try {
-        addCreditsToUser(user.id, -CHAT_COST);
-        toast({ title: "Credit Used", description: `You have been charged ${CHAT_COST} credit.`});
-
-        const response = await explainSimply({
-            textToSimplify: messageToSimplify.content,
-            originalQuestion: originalQuestion
-        });
-
-        const aiMessage: Message = {
-            id: (Date.now() + 1).toString(),
-            role: 'assistant',
-            content: response.simpleExplanation,
-        };
-        setMessages((prev) => [...prev, aiMessage]);
-
-      } catch (error) {
-         console.error(error);
-          const errorMessage: Message = {
-              id: (Date.now() + 1).toString(),
-              role: 'assistant',
-              content: "Sorry, I couldn't process your request. The AI model may be temporarily unavailable.",
-              isError: true,
-          };
-          setMessages((prev) => [...prev, errorMessage]);
-          addCreditsToUser(user.id, CHAT_COST);
-          toast({
-              variant: 'destructive',
-              title: 'AI Error - Credits Refunded',
-              description: `We failed to get a response from the AI. Your credit has been returned.`
-          });
-      } finally {
-          setIsThinking(false);
-      }
+       await callAiAndHandleResponse(
+        explainSimply,
+        {
+          textToSimplify: messageToSimplify.content,
+          originalQuestion: originalQuestion,
+        },
+        CHAT_COST
+      );
   }
   
   if (!user) {
@@ -267,9 +248,9 @@ export function ChatInterface() {
           {messages.length === 0 && (
              <div className="flex flex-col items-center justify-center h-full pt-16 text-center">
                 <AiAvatar isThinking={false} className="h-20 w-20 mb-4" />
-                <h1 className="text-3xl font-bold">How can I help you today?</h1>
+                <h1 className="text-3xl font-bold">Welcome back, {currentUserData?.displayName}!</h1>
                 <p className="text-muted-foreground max-w-md mt-2">
-                    Ask me anything from complex science concepts to simple definitions.
+                    How can I help you learn today?
                 </p>
                 <div className="grid grid-cols-2 gap-3 mt-8 text-left text-sm">
                     <button className="p-4 border rounded-lg hover:bg-muted transition-colors" onClick={() => setInput('Explain photosynthesis')}>
