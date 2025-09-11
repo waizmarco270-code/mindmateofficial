@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -105,22 +106,19 @@ export function useTimeTracker() {
     if (!todaySessionsColRef) return;
     const unsubscribe = onSnapshot(todaySessionsColRef, (snapshot) => {
       const todaySessions = snapshot.docs.map(doc => doc.data() as TimeSession);
-      const totalSeconds = todaySessions.reduce((acc, session) => {
-        const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
-        return acc + duration;
-      }, 0);
       
-      const newSubjects = state.subjects.map(s => {
+      setState(prev => {
+        const newSubjects = prev.subjects.map(s => {
           const subjectTime = todaySessions
             .filter(ts => ts.subjectId === s.id)
             .reduce((acc, ts) => acc + ((new Date(ts.endTime).getTime() - new Date(ts.startTime).getTime()) / 1000), 0);
           return {...s, timeTracked: subjectTime};
+        });
+        return {...prev, subjects: newSubjects};
       });
-      
-      setState(prev => ({...prev, subjects: newSubjects}));
     });
     return () => unsubscribe();
-  }, [todaySessionsColRef, state.subjects]);
+  }, [todaySessionsColRef]);
   
 
   const [activeSubjectTime, setActiveSubjectTime] = useState(0);
