@@ -3,7 +3,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit } from 'firebase/firestore';
+import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp } from 'firebase/firestore';
 
 
 // ============================================================================
@@ -194,6 +194,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     
     // EFFECT: Listen for global data (announcements, resources, polls)
     useEffect(() => {
+        const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
+            return snapshot.docs.map((doc: any) => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+                } as T;
+            });
+        };
+
         const announcementsQuery = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
         const resourcesQuery = query(collection(db, 'generalResources'), orderBy('createdAt', 'desc'));
         const premiumResourcesQuery = query(collection(db, 'premiumResources'), orderBy('createdAt', 'desc'));
@@ -201,21 +212,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const class12ResourcesQuery = query(collection(db, 'class12Resources'), orderBy('createdAt', 'desc'));
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
 
-        const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => {
-            setAnnouncements(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Announcement)));
-        });
-        const unsubResources = onSnapshot(resourcesQuery, (snapshot) => {
-            setResources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource)));
-        });
-        const unsubPremium = onSnapshot(premiumResourcesQuery, (snapshot) => {
-            setPremiumResources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource)));
-        });
-        const unsubJee = onSnapshot(jeeResourcesQuery, (snapshot) => {
-            setJeeResources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource)));
-        });
-        const unsubClass12 = onSnapshot(class12ResourcesQuery, (snapshot) => {
-            setClass12Resources(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Resource)));
-        });
+        const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
+        const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
+        const unsubPremium = onSnapshot(premiumResourcesQuery, (snapshot) => setPremiumResources(processSnapshot<Resource>(snapshot)));
+        const unsubJee = onSnapshot(jeeResourcesQuery, (snapshot) => setJeeResources(processSnapshot<Resource>(snapshot)));
+        const unsubClass12 = onSnapshot(class12ResourcesQuery, (snapshot) => setClass12Resources(processSnapshot<Resource>(snapshot)));
+
         const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
             if (!snapshot.empty) {
                 const pollDoc = snapshot.docs[0];
