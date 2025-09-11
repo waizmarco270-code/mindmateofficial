@@ -1,16 +1,27 @@
 
 'use client';
 
-import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare, Gift, VenetianMask } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useAnnouncements, useUsers } from '@/hooks/use-admin';
 import { CommunityPoll } from '@/components/dashboard/community-poll';
 import { cn } from '@/lib/utils';
+import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
+import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 
 const features = [
+  {
+    title: 'Reward Zone',
+    description: 'Spin the wheel for daily prizes.',
+    icon: VenetianMask,
+    href: '/dashboard/reward',
+    color: 'bg-gradient-to-br from-yellow-400 to-amber-500',
+    textColor: 'text-yellow-100',
+  },
   {
     title: 'Quiz Zone',
     description: 'Challenge yourself, earn credits.',
@@ -65,6 +76,7 @@ export default function DashboardPage() {
     const { user } = useUser();
     const { announcements } = useAnnouncements();
     const { currentUserData } = useUsers();
+    const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
 
     const credits = currentUserData?.credits ?? 0;
 
@@ -74,48 +86,74 @@ export default function DashboardPage() {
     };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <SignedOut>
+        <WelcomeDialog />
+      </SignedOut>
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {isSurpriseRevealed ? (
+        <DailySurpriseCard />
+      ) : (
+        <Card 
+          className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-yellow-400/20 via-pink-500/20 to-purple-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
+          onClick={() => setIsSurpriseRevealed(true)}
+        >
+          <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000"></div>
+          <CardContent className="relative p-6 text-center">
+              <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
+              <div className="relative flex flex-col items-center">
+                <Gift className="h-10 w-10 text-primary animate-bounce"/>
+                <h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3>
+                <p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p>
+              </div>
+          </CardContent>
+        </Card>
+      )}
+
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content Column */}
-        <div className="lg:col-span-2 space-y-8">
-           <Card className="bg-gradient-to-br from-primary/20 to-primary/5 border-primary/20 shadow-lg">
-                <CardHeader className="flex flex-row items-start gap-4">
-                    <div className="bg-primary/80 text-primary-foreground p-3 rounded-full">
-                        <Bell className="h-6 w-6" />
-                    </div>
-                    <div>
-                        <CardTitle className="text-primary text-xl">Latest Announcement</CardTitle>
-                        <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <h3 className="text-2xl font-bold">{latestAnnouncement.title}</h3>
-                    <p className="text-muted-foreground mt-2">
-                    {latestAnnouncement.description}
-                    </p>
-                </CardContent>
-            </Card>
+        <div className="lg:col-span-2 space-y-6">
+            <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                <Card className="relative">
+                    <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
+                        <div className="p-3 rounded-full bg-primary/20 animate-pulse">
+                            <Bell className="h-8 w-8 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-primary text-xl">Latest Announcement</CardTitle>
+                            <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-4 md:p-6 pt-0">
+                        <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
+                        <p className="text-muted-foreground mt-2">
+                        {latestAnnouncement.description}
+                        </p>
+                    </CardContent>
+                </Card>
+            </div>
 
             <CommunityPoll />
             
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold tracking-tight">Explore Your Toolkit</h2>
-                 <div className="grid gap-6 sm:grid-cols-2">
+                 <div className="grid gap-4 sm:grid-cols-2">
                     {features.map((feature) => (
                         <Link href={feature.href} key={feature.title} prefetch={true}>
                         <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col", feature.color)}>
-                             <CardHeader className="flex-row items-center gap-4">
-                                <div className={cn("p-4 rounded-full bg-white/10", feature.textColor)}>
-                                    <feature.icon className="h-8 w-8" />
+                             <CardHeader className="flex-row items-center gap-4 p-4">
+                                <div className={cn("p-3 rounded-full bg-white/10", feature.textColor)}>
+                                    <feature.icon className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <CardTitle className={cn("text-2xl font-extrabold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
-                                    <CardDescription className={cn("mt-1", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
+                                    <CardTitle className={cn("text-xl font-bold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
+                                    <CardDescription className={cn("mt-1 text-sm", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
                                 </div>
                              </CardHeader>
                             <CardFooter className="mt-auto bg-black/10 p-3">
@@ -131,7 +169,8 @@ export default function DashboardPage() {
         </div>
 
         {/* Side Column */}
-        <div className="lg:col-span-1 space-y-8">
+        <div className="lg:col-span-1 space-y-6">
+          <SignedIn>
             <Card className="border-amber-500/20 bg-amber-500/5">
                 <CardHeader className="pb-2">
                     <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600">
@@ -140,12 +179,13 @@ export default function DashboardPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-6xl font-bold text-amber-500">{credits}</div>
+                    <div className="text-5xl font-bold text-amber-500">{credits}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                     +1 for daily tasks, +5 for perfecting quizzes!
                     </p>
                 </CardContent>
             </Card>
+          </SignedIn>
         </div>
 
       </div>

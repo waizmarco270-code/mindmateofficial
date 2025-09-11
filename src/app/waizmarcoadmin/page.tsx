@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -26,7 +26,7 @@ const CREDIT_PASSWORD = "waizcredit";
 
 export default function SuperAdminPanelPage() {
   const { 
-    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits, addCreditsToUser, clearGlobalChat
+    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits, addCreditsToUser, clearGlobalChat, addFreeSpinsToUser
   } = useAdmin();
   const { toast } = useToast();
   
@@ -35,12 +35,13 @@ export default function SuperAdminPanelPage() {
   const [creditPassword, setCreditPassword] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [creditAmount, setCreditAmount] = useState(10);
+  const [spinAmount, setSpinAmount] = useState(1);
   
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if(creditPassword === CREDIT_PASSWORD){
         setIsCreditUnlocked(true);
-        toast({ title: "Credit Controls Unlocked" });
+        toast({ title: "Admin Controls Unlocked" });
       } else {
         toast({ variant: 'destructive', title: "Incorrect Password" });
       }
@@ -53,6 +54,15 @@ export default function SuperAdminPanelPage() {
     }
     await giftCreditsToUser(selectedUserId, creditAmount);
     toast({ title: 'Success', description: `${creditAmount} credits have been gifted to the user.`});
+  };
+  
+  const handleGiftSpins = async () => {
+    if (!selectedUserId || !spinAmount || spinAmount <= 0) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive spin amount.'});
+        return;
+    }
+    await addFreeSpinsToUser(selectedUserId, spinAmount);
+    toast({ title: 'Success', description: `${spinAmount} free spin(s) have been gifted to the user.`});
   };
 
   const handleDeductCredits = async () => {
@@ -103,7 +113,7 @@ export default function SuperAdminPanelPage() {
     <div className="space-y-8 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Super Admin Controls</h1>
-        <p className="text-muted-foreground">Manage user roles and credits.</p>
+        <p className="text-muted-foreground">Manage user roles, credits, and rewards.</p>
       </div>
 
       <Accordion type="multiple" defaultValue={['user-management']} className="w-full space-y-4">
@@ -172,15 +182,15 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* Credit Management */}
+        {/* Credit/Reward Management */}
         <AccordionItem value="credit-management" className="border-b-0">
            <Card>
               <AccordionTrigger className="p-6">
                 <div className="flex items-center gap-3">
-                  <DollarSign className="h-6 w-6 text-primary" />
+                  <Gift className="h-6 w-6 text-primary" />
                   <div>
-                    <h3 className="text-lg font-semibold">Credit Management</h3>
-                    <p className="text-sm text-muted-foreground text-left">Gift, deduct, or reset credits for any user.</p>
+                    <h3 className="text-lg font-semibold">Reward Management</h3>
+                    <p className="text-sm text-muted-foreground text-left">Gift credits or free spins to any user.</p>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -190,12 +200,12 @@ export default function SuperAdminPanelPage() {
                         {!isCreditUnlocked ? (
                             <div className="flex flex-col items-center justify-center text-center p-8 rounded-lg bg-muted/50 border-2 border-dashed">
                                  <Wallet className="h-10 w-10 text-muted-foreground mb-4"/>
-                                 <h3 className="font-semibold">Unlock Credit Controls</h3>
-                                 <p className="text-sm text-muted-foreground mb-4">Enter the password to manage user credits.</p>
+                                 <h3 className="font-semibold">Unlock Admin Controls</h3>
+                                 <p className="text-sm text-muted-foreground mb-4">Enter the password to manage user rewards.</p>
                                  <form onSubmit={handleCreditPasswordSubmit} className="flex items-center gap-2">
                                      <Input 
                                         type="password"
-                                        placeholder="Credit Password..."
+                                        placeholder="Admin Password..."
                                         value={creditPassword}
                                         onChange={(e) => setCreditPassword(e.target.value)}
                                      />
@@ -204,35 +214,44 @@ export default function SuperAdminPanelPage() {
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                <div className="grid md:grid-cols-2 gap-4">
-                                     <div className="space-y-2">
-                                        <Label>Select User</Label>
-                                        <Select onValueChange={setSelectedUserId} value={selectedUserId ?? undefined}>
-                                            <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
-                                            <SelectContent>
-                                                {users.filter(u => !u.isBlocked).map(user => (
-                                                    <SelectItem key={user.uid} value={user.uid}>
-                                                        {user.displayName} ({user.email}) - {user.credits} credits
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                     </div>
-                                     <div className="space-y-2">
-                                        <Label htmlFor="credit-amount">Amount</Label>
-                                        <Input
-                                            id="credit-amount"
-                                            type="number"
-                                            value={creditAmount}
-                                            onChange={(e) => setCreditAmount(Number(e.target.value))}
-                                            min="0"
-                                        />
-                                     </div>
-                                </div>
-                                <div className="flex flex-wrap gap-2 justify-end">
-                                    <Button variant="outline" onClick={handleResetCredits} disabled={!selectedUserId}><RefreshCcw /> Reset to 100</Button>
-                                    <Button variant="destructive" onClick={handleDeductCredits} disabled={!selectedUserId || creditAmount <= 0}><MinusCircle /> Deduct</Button>
-                                    <Button onClick={handleGiftCredits} disabled={!selectedUserId || creditAmount <= 0}><Gift/> Gift</Button>
+                                <div className="space-y-2">
+                                    <Label>Select User</Label>
+                                    <Select onValueChange={setSelectedUserId} value={selectedUserId ?? undefined}>
+                                        <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {users.filter(u => !u.isBlocked).map(user => (
+                                                <SelectItem key={user.uid} value={user.uid}>
+                                                    {user.displayName} ({user.email}) - {user.credits} credits, {user.freeSpins || 0} spins
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                 </div>
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    {/* Credit Management */}
+                                    <div className="space-y-4 rounded-lg border p-4">
+                                        <h4 className="font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" /> Manage Credits</h4>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="credit-amount">Amount</Label>
+                                            <Input id="credit-amount" type="number" value={creditAmount} onChange={(e) => setCreditAmount(Number(e.target.value))} min="0" />
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 justify-end">
+                                            <Button variant="destructive" onClick={handleDeductCredits} disabled={!selectedUserId || creditAmount <= 0}><MinusCircle /> Deduct</Button>
+                                            <Button onClick={handleGiftCredits} disabled={!selectedUserId || creditAmount <= 0}><Gift/> Gift</Button>
+                                        </div>
+                                        <Button variant="outline" className="w-full" onClick={handleResetCredits} disabled={!selectedUserId}><RefreshCcw /> Reset to 100</Button>
+                                    </div>
+                                    {/* Spin Management */}
+                                     <div className="space-y-4 rounded-lg border p-4">
+                                        <h4 className="font-semibold flex items-center gap-2"><VenetianMask className="h-4 w-4" /> Manage Free Spins</h4>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="spin-amount">Spins to Add</Label>
+                                            <Input id="spin-amount" type="number" value={spinAmount} onChange={(e) => setSpinAmount(Number(e.target.value))} min="1" />
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 justify-end">
+                                            <Button onClick={handleGiftSpins} disabled={!selectedUserId || spinAmount <= 0}><Gift/> Gift Spins</Button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}

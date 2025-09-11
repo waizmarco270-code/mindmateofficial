@@ -31,6 +31,9 @@ export interface User {
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number;
   totalStudyTime?: number; // in seconds
+  lastSpinDate?: string;
+  freeSpins?: number;
+  spinHistory?: { reward: number | string, date: Timestamp }[];
 }
 
 export interface Announcement {
@@ -84,6 +87,7 @@ interface AppDataContextType {
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
     giftCreditsToUser: (uid: string, amount: number) => Promise<void>;
     resetUserCredits: (uid: string) => Promise<void>;
+    addFreeSpinsToUser: (uid: string, amount: number) => Promise<void>;
     unlockSocialFeature: (uid: string) => Promise<void>;
     unlockResourceSection: (uid: string, section: ResourceSection, cost?: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
@@ -229,6 +233,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     focusSessionsCompleted: 0,
                     dailyTasksCompleted: 0,
                     totalStudyTime: 0,
+                    freeSpins: 0,
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -320,6 +325,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { credits: increment(amount) });
     };
     
+    const addFreeSpinsToUser = async (uid: string, amount: number) => {
+        if (!uid || !Number.isFinite(amount) || amount <= 0) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { freeSpins: increment(amount) });
+    };
+
     const resetUserCredits = async (uid: string) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
@@ -468,6 +479,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addCreditsToUser,
         giftCreditsToUser,
         resetUserCredits,
+        addFreeSpinsToUser,
         unlockSocialFeature,
         unlockResourceSection,
         addPerfectedQuiz,
