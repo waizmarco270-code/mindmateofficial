@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare, Gift } from 'lucide-react';
+import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare, Gift, Trophy, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -15,12 +14,20 @@ import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 
 const features = [
   {
-    title: 'Quiz Zone',
-    description: 'Challenge yourself, earn credits.',
-    icon: BrainCircuit,
-    href: '/dashboard/quiz',
+    title: 'Leaderboard',
+    description: 'See who is at the top.',
+    icon: Trophy,
+    href: '/dashboard/leaderboard',
     color: 'bg-gradient-to-br from-purple-500 to-indigo-600',
     textColor: 'text-purple-100',
+  },
+   {
+    title: 'Resources',
+    description: 'Premium study materials.',
+    icon: BookOpen,
+    href: '/dashboard/resources',
+    color: 'bg-gradient-to-br from-rose-500 to-pink-600',
+    textColor: 'text-rose-100',
   },
   {
     title: 'Focus Mode',
@@ -29,14 +36,6 @@ const features = [
     href: '/dashboard/tracker',
     color: 'bg-gradient-to-br from-green-500 to-teal-600',
     textColor: 'text-green-100',
-  },
-  {
-    title: 'Resources',
-    description: 'Premium study materials.',
-    icon: BookOpen,
-    href: '/dashboard/resources',
-    color: 'bg-gradient-to-br from-rose-500 to-pink-600',
-    textColor: 'text-rose-100',
   },
    {
     title: 'Schedule',
@@ -55,10 +54,10 @@ const features = [
     textColor: 'text-amber-100',
   },
    {
-    title: 'Chat with Marco AI',
-    description: 'Your personal AI tutor.',
-    icon: Bot,
-    href: '/dashboard/ai-assistant',
+    title: 'Community Hub',
+    description: 'Chat with the community.',
+    icon: Globe,
+    href: '/dashboard/community',
     color: 'bg-gradient-to-br from-slate-600 to-gray-800',
     textColor: 'text-slate-100',
   },
