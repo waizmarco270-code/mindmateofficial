@@ -15,17 +15,18 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 const CREDIT_PASSWORD = "waizcredit";
 
 export default function SuperAdminPanelPage() {
   const { 
-    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits, addCreditsToUser,
+    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits, addCreditsToUser, clearGlobalChat
   } = useAdmin();
   const { toast } = useToast();
   
@@ -72,6 +73,15 @@ export default function SuperAdminPanelPage() {
     toast({ title: 'Success', description: `User's credits have been reset to 100.`});
   };
   
+  const handleClearGlobalChat = async () => {
+      try {
+          await clearGlobalChat();
+          toast({ title: "Global Chat Cleared", description: "All messages have been permanently deleted." });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: "Error Clearing Chat", description: error.message });
+      }
+  };
+
   if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -231,6 +241,51 @@ export default function SuperAdminPanelPage() {
               </AccordionContent>
             </Card>
         </AccordionItem>
+        
+        {/* Chat Management */}
+         <AccordionItem value="chat-management" className="border-b-0">
+           <Card>
+              <AccordionTrigger className="p-6">
+                <div className="flex items-center gap-3">
+                  <Trash2 className="h-6 w-6 text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold">Chat Management</h3>
+                    <p className="text-sm text-muted-foreground text-left">Manage global application data.</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Global Chat</CardTitle>
+                        <CardDescription>Permanently delete all messages from the public community hub chat.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">
+                                    <Trash2 className="mr-2 h-4 w-4"/> Clear Global Chat
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete all messages in the global community hub for all users.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleClearGlobalChat}>Yes, delete all messages</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+              </AccordionContent>
+            </Card>
+        </AccordionItem>
+
       </Accordion>
     </div>
   );

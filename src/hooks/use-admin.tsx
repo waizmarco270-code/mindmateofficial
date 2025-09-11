@@ -75,6 +75,7 @@ interface AppDataContextType {
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
+    clearGlobalChat: () => Promise<void>;
     
     announcements: Announcement[];
     addAnnouncement: (announcement: Omit<Announcement, 'id' | 'createdAt'>) => Promise<void>;
@@ -374,6 +375,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         batch.update(userRef, { [`votedPolls.${pollId}`]: option });
         await batch.commit();
     };
+    
+    const clearGlobalChat = async () => {
+        const chatRef = collection(db, 'global_chat');
+        const chatSnapshot = await getDocs(chatRef);
+        
+        const batch = writeBatch(db);
+        chatSnapshot.docs.forEach((doc) => {
+            batch.delete(doc.ref);
+        });
+        
+        await batch.commit();
+    };
 
     // CONTEXT VALUE
     const value: AppDataContextType = {
@@ -391,6 +404,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         incrementQuizAttempt,
         makeUserAdmin,
         removeUserAdmin,
+        clearGlobalChat,
         announcements,
         addAnnouncement,
         updateAnnouncement,
