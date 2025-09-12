@@ -24,6 +24,7 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
   const { messages, sendMessage } = useChat(friend.uid);
   const [newMessage, setNewMessage] = useState('');
   const { markAsRead } = useUnreadMessages();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // When the chat box is opened, mark messages as read
@@ -31,6 +32,16 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
         markAsRead(friend.uid);
     }
   }, [friend.uid, markAsRead]);
+  
+  useEffect(() => {
+    if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTo({
+            top: scrollAreaRef.current.scrollHeight,
+            behavior: 'smooth',
+        });
+    }
+  }, [messages.length]);
+
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +65,7 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
         <h3 className="font-semibold">{friend.displayName}</h3>
       </CardHeader>
       
-      <ScrollArea className="flex-1 p-4 bg-muted/20">
+      <ScrollArea className="flex-1 p-4 bg-muted/20" viewportRef={scrollAreaRef}>
         <div className="space-y-6">
           {messages.map((msg) => (
             <ChatMessage key={msg.id} message={msg} friend={friend} isCurrentUser={msg.senderId === user?.id} />
