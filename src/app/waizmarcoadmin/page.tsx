@@ -27,7 +27,11 @@ const CREDIT_PASSWORD = "waizcredit";
 
 export default function SuperAdminPanelPage() {
   const { 
-    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits, addCreditsToUser, clearGlobalChat, addFreeSpinsToUser, addFreeGuessesToUser
+    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
+    addCreditsToUser, giftCreditsToAllUsers,
+    addFreeSpinsToUser, addSpinsToAllUsers,
+    addFreeGuessesToUser, addGuessesToAllUsers,
+    resetUserCredits, clearGlobalChat
   } = useAdmin();
   const { toast } = useToast();
   
@@ -51,35 +55,53 @@ export default function SuperAdminPanelPage() {
 
   const handleGiftCredits = async () => {
     if (!selectedUserId || !creditAmount || creditAmount <= 0) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive credit amount.'});
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user/group and enter a positive credit amount.'});
         return;
     }
-    await giftCreditsToUser(selectedUserId, creditAmount);
-    toast({ title: 'Success', description: `${creditAmount} credits have been gifted to the user.`});
+    
+    if (selectedUserId === '__all__') {
+        await giftCreditsToAllUsers(creditAmount);
+        toast({ title: 'Success', description: `${creditAmount} credits have been gifted to all users.`});
+    } else {
+        await addCreditsToUser(selectedUserId, creditAmount);
+        toast({ title: 'Success', description: `${creditAmount} credits have been gifted to the user.`});
+    }
   };
   
   const handleGiftSpins = async () => {
     if (!selectedUserId || !spinAmount || spinAmount <= 0) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive amount of scratch cards.'});
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user/group and enter a positive amount.'});
         return;
     }
-    await addFreeSpinsToUser(selectedUserId, spinAmount);
-    toast({ title: 'Success', description: `${spinAmount} free scratch card(s) have been gifted to the user.`});
+
+    if (selectedUserId === '__all__') {
+        await addSpinsToAllUsers(spinAmount);
+        toast({ title: 'Success', description: `${spinAmount} free card(s) have been gifted to all users.`});
+    } else {
+        await addFreeSpinsToUser(selectedUserId, spinAmount);
+        toast({ title: 'Success', description: `${spinAmount} free card(s) have been gifted to the user.`});
+    }
   };
   
   const handleGiftGuesses = async () => {
     if (!selectedUserId || !guessAmount || guessAmount <= 0) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive amount of guesses.'});
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user/group and enter a positive amount.'});
         return;
     }
-    await addFreeGuessesToUser(selectedUserId, guessAmount);
-    toast({ title: 'Success', description: `${guessAmount} free guess(es) have been gifted to the user.`});
+    
+    if (selectedUserId === '__all__') {
+        await addGuessesToAllUsers(guessAmount);
+        toast({ title: 'Success', description: `${guessAmount} free guess(es) have been gifted to all users.`});
+    } else {
+        await addFreeGuessesToUser(selectedUserId, guessAmount);
+        toast({ title: 'Success', description: `${guessAmount} free guess(es) have been gifted to the user.`});
+    }
   };
 
 
   const handleDeductCredits = async () => {
-     if (!selectedUserId || !creditAmount || creditAmount <= 0) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive credit amount.'});
+     if (!selectedUserId || !creditAmount || creditAmount <= 0 || selectedUserId === '__all__') {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a single user and enter a positive credit amount.'});
         return;
     }
     await addCreditsToUser(selectedUserId, -creditAmount);
@@ -87,8 +109,8 @@ export default function SuperAdminPanelPage() {
   };
 
   const handleResetCredits = async () => {
-     if (!selectedUserId) {
-        toast({ variant: 'destructive', title: 'No User Selected', description: 'Please select a user to reset credits.'});
+     if (!selectedUserId || selectedUserId === '__all__') {
+        toast({ variant: 'destructive', title: 'No User Selected', description: 'Please select a single user to reset credits.'});
         return;
     }
     await resetUserCredits(selectedUserId);
@@ -229,8 +251,11 @@ export default function SuperAdminPanelPage() {
                                 <div className="space-y-2">
                                     <Label>Select User</Label>
                                     <Select onValueChange={setSelectedUserId} value={selectedUserId ?? undefined}>
-                                        <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
+                                        <SelectTrigger><SelectValue placeholder="Select a user or group..." /></SelectTrigger>
                                         <SelectContent>
+                                            <SelectItem value="__all__">
+                                                <span className="font-bold text-primary">Gift to All Users</span>
+                                            </SelectItem>
                                             {users.filter(u => !u.isBlocked).map(user => (
                                                 <SelectItem key={user.uid} value={user.uid}>
                                                     {user.displayName} ({user.email}) - {user.credits} credits, {user.freeRewards || 0} cards, {user.freeGuesses || 0} guesses
@@ -248,10 +273,10 @@ export default function SuperAdminPanelPage() {
                                             <Input id="credit-amount" type="number" value={creditAmount} onChange={(e) => setCreditAmount(Number(e.target.value))} min="0" />
                                         </div>
                                         <div className="flex flex-wrap gap-2 justify-end">
-                                            <Button variant="destructive" onClick={handleDeductCredits} disabled={!selectedUserId || creditAmount <= 0}><MinusCircle /> Deduct</Button>
+                                            <Button variant="destructive" onClick={handleDeductCredits} disabled={!selectedUserId || creditAmount <= 0 || selectedUserId === '__all__'}><MinusCircle /> Deduct</Button>
                                             <Button onClick={handleGiftCredits} disabled={!selectedUserId || creditAmount <= 0}><Gift/> Gift</Button>
                                         </div>
-                                        <Button variant="outline" className="w-full" onClick={handleResetCredits} disabled={!selectedUserId}><RefreshCcw /> Reset to 100</Button>
+                                        <Button variant="outline" className="w-full" onClick={handleResetCredits} disabled={!selectedUserId || selectedUserId === '__all__'}><RefreshCcw /> Reset to 100</Button>
                                     </div>
                                     {/* Spin Management */}
                                      <div className="space-y-4 rounded-lg border p-4">

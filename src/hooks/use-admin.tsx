@@ -95,10 +95,12 @@ interface AppDataContextType {
     currentUserData: User | null;
     toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
-    giftCreditsToUser: (uid: string, amount: number) => Promise<void>;
+    giftCreditsToAllUsers: (amount: number) => Promise<void>;
     resetUserCredits: (uid: string) => Promise<void>;
     addFreeSpinsToUser: (uid: string, amount: number) => Promise<void>;
+    addSpinsToAllUsers: (amount: number) => Promise<void>;
     addFreeGuessesToUser: (uid: string, amount: number) => Promise<void>;
+    addGuessesToAllUsers: (amount: number) => Promise<void>;
     unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
@@ -315,23 +317,47 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { credits: increment(amount) });
     };
-
-    const giftCreditsToUser = async (uid: string, amount: number) => {
-        if (!uid || !Number.isFinite(amount) || amount <= 0) return;
-        const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, { credits: increment(amount) });
-    };
     
+    const giftCreditsToAllUsers = async (amount: number) => {
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
+        const batch = writeBatch(db);
+        usersSnapshot.forEach(userDoc => {
+            batch.update(userDoc.ref, { credits: increment(amount) });
+        });
+        await batch.commit();
+    };
+
     const addFreeSpinsToUser = async (uid: string, amount: number) => {
         if (!uid || !Number.isFinite(amount) || amount <= 0) return;
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { freeRewards: increment(amount) });
+    };
+    
+    const addSpinsToAllUsers = async (amount: number) => {
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
+        const batch = writeBatch(db);
+        usersSnapshot.forEach(userDoc => {
+            batch.update(userDoc.ref, { freeRewards: increment(amount) });
+        });
+        await batch.commit();
     };
 
     const addFreeGuessesToUser = async (uid: string, amount: number) => {
         if (!uid || !Number.isFinite(amount) || amount <= 0) return;
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { freeGuesses: increment(amount) });
+    };
+
+    const addGuessesToAllUsers = async (amount: number) => {
+        if (!Number.isFinite(amount) || amount <= 0) return;
+        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
+        const batch = writeBatch(db);
+        usersSnapshot.forEach(userDoc => {
+            batch.update(userDoc.ref, { freeGuesses: increment(amount) });
+        });
+        await batch.commit();
     };
 
     const resetUserCredits = async (uid: string) => {
@@ -472,10 +498,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         currentUserData,
         toggleUserBlock,
         addCreditsToUser,
-        giftCreditsToUser,
+        giftCreditsToAllUsers,
         resetUserCredits,
         addFreeSpinsToUser,
+        addSpinsToAllUsers,
         addFreeGuessesToUser,
+        addGuessesToAllUsers,
         unlockResourceSection,
         addPerfectedQuiz,
         incrementQuizAttempt,
