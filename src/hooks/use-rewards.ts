@@ -34,19 +34,19 @@ export const useRewards = () => {
         }
     }, [currentUserData]);
     
-    const canClaimReward = useMemo(() => {
+    const canClaimScratchCard = useMemo(() => {
         if (freeRewards > 0) return true;
         if (!lastRewardDate) return true; // Never claimed before
         return !isToday(lastRewardDate);
     }, [lastRewardDate, freeRewards]);
 
-     const availableRewards = useMemo(() => {
+     const availableScratchCards = useMemo(() => {
         const dailyReward = lastRewardDate && isToday(lastRewardDate) ? 0 : 1;
         return dailyReward + freeRewards;
     }, [lastRewardDate, freeRewards]);
     
-    const claimDailyReward = useCallback(async () => {
-        if (!canClaimReward || !user) {
+    const claimScratchCard = useCallback(async () => {
+        if (!canClaimScratchCard || !user) {
             toast({ variant: 'destructive', title: 'No rewards left for today!' });
             return { prize: 'better luck' };
         }
@@ -73,7 +73,7 @@ export const useRewards = () => {
         chosenPrize ??= weightedPrizes[0];
         
         const userDocRef = doc(db, 'users', user.id);
-        const newRecord = { reward: chosenPrize.value, date: new Date() };
+        const newRecord = { reward: chosenPrize.value, date: new Date(), source: 'Scratch Card' };
 
         if(freeRewards > 0) {
             await updateDoc(userDocRef, { freeRewards: increment(-1), rewardHistory: arrayUnion({ ...newRecord }) });
@@ -90,12 +90,12 @@ export const useRewards = () => {
 
         return { prize: chosenPrize.value };
 
-    }, [canClaimReward, user, addCreditsToUser, freeRewards, toast]);
+    }, [canClaimScratchCard, user, addCreditsToUser, freeRewards, toast]);
 
     return { 
-        canClaimReward, 
-        claimDailyReward, 
-        availableRewards,
+        canClaimScratchCard,
+        claimScratchCard, 
+        availableScratchCards,
         rewardHistory 
     };
 };

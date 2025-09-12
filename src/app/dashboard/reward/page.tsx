@@ -6,20 +6,39 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useRewards } from '@/hooks/use-rewards';
 import { Gift, History, VenetianMask } from 'lucide-react';
 import { format } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { GiftBoxGame } from '@/components/reward/gift-box-game';
 
 export default function RewardPage() {
-    const { rewardHistory, availableRewards } = useRewards();
+    const { rewardHistory, availableScratchCards } = useRewards();
 
     return (
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Reward Zone</h1>
-                <p className="text-muted-foreground">Scratch your daily card for a chance to win prizes!</p>
+                <p className="text-muted-foreground">Claim your daily rewards for a chance to win prizes!</p>
             </div>
             
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                    <ScratchCard />
+                   <Tabs defaultValue="scratch-card" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="scratch-card">
+                            <VenetianMask className="mr-2 h-4 w-4"/>
+                            Daily Scratch Card
+                        </TabsTrigger>
+                        <TabsTrigger value="guess-box">
+                            <Gift className="mr-2 h-4 w-4"/>
+                            Guess the Box
+                        </TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="scratch-card" className="mt-6">
+                        <ScratchCard />
+                      </TabsContent>
+                      <TabsContent value="guess-box" className="mt-6">
+                        <GiftBoxGame />
+                      </TabsContent>
+                    </Tabs>
                 </div>
                 <div className="lg:col-span-1 space-y-8">
                      <Card>
@@ -30,7 +49,7 @@ export default function RewardPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold">{availableRewards}</div>
+                            <div className="text-3xl font-bold">{availableScratchCards}</div>
                             <p className="text-xs text-muted-foreground mt-1">
                                 1 free daily card + gifted cards.
                             </p>
