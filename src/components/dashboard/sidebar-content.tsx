@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -45,8 +44,6 @@ const mainNav = [
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', highlight: true },
-  { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
-  { href: '/dashboard/community', icon: Globe, label: 'Community Hub' },
 ];
 
 const studyNav = [

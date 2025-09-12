@@ -45,22 +45,6 @@ const features = [
     color: 'bg-gradient-to-br from-sky-500 to-blue-600',
     textColor: 'text-sky-100',
   },
-  {
-    title: 'Social Hub',
-    description: 'Connect with other students.',
-    icon: Users,
-    href: '/dashboard/social',
-    color: 'bg-gradient-to-br from-amber-500 to-orange-600',
-    textColor: 'text-amber-100',
-  },
-   {
-    title: 'Community Hub',
-    description: 'Chat with the community.',
-    icon: Globe,
-    href: '/dashboard/community',
-    color: 'bg-gradient-to-br from-slate-600 to-gray-800',
-    textColor: 'text-slate-100',
-  },
 ];
 
 const studyTools = [
