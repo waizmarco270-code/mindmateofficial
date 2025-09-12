@@ -21,8 +21,8 @@ interface UserListProps {
 
 export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
     const { user: currentUser } = useUser();
-    const { users: allUsers, loading: usersLoading } = useUsers();
-    const { friends, friendRequests, sentRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend, loading: friendsLoading } = useFriends();
+    const { users: allUsers } = useUsers();
+    const { friends, friendRequests, sentRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend, loading } = useFriends();
     const { onlineUsers, loading: presenceLoading } = usePresence();
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -33,7 +33,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
         u.uid !== currentUser?.id && u.displayName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const loading = usersLoading || friendsLoading || presenceLoading;
+    const finalLoading = loading || presenceLoading;
 
     return (
         <Card className="h-full flex flex-col">
@@ -65,7 +65,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                             onAddFriend={sendFriendRequest}
                             onSelectFriend={onSelectFriend}
                             isOnline={getOnlineStatus}
-                            loading={loading}
+                            loading={finalLoading}
                         />
                     </TabsContent>
                     <TabsContent value="friends" className="h-full">
@@ -74,7 +74,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                             friends={friends}
                             onSelectFriend={onSelectFriend}
                             isOnline={getOnlineStatus}
-                            loading={loading}
+                            loading={finalLoading}
                             selectedFriendId={selectedFriendId}
                         />
                     </TabsContent>
@@ -84,7 +84,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                             onAccept={acceptFriendRequest}
                             onDecline={declineFriendRequest}
                             isOnline={getOnlineStatus}
-                            loading={loading}
+                            loading={finalLoading}
                         />
                     </TabsContent>
                 </div>

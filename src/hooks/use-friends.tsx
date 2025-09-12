@@ -32,13 +32,13 @@ const FriendsContext = createContext<FriendsContextType | undefined>(undefined);
 
 export const FriendsProvider = ({ children }: { children: ReactNode }) => {
     const { user: currentUser } = useUser();
-    const { users: allUsers, currentUserData } = useUsers();
+    const { users: allUsers, currentUserData, loading: usersLoading } = useUsers();
     const { toast } = useToast();
 
     const [friends, setFriends] = useState<User[]>([]);
     const [friendRequests, setFriendRequests] = useState<FriendRequest[]>([]);
     const [sentRequests, setSentRequests] = useState<FriendRequest[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [friendsAndRequestsLoading, setFriendsAndRequestsLoading] = useState(true);
 
     // Fetch friends
     useEffect(() => {
@@ -51,10 +51,10 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
     // Fetch incoming and sent friend requests
     useEffect(() => {
         if (!currentUser) {
-            setLoading(false);
+            setFriendsAndRequestsLoading(false);
             return;
         }
-        setLoading(true);
+        setFriendsAndRequestsLoading(true);
         const requestsRef = collection(db, 'friendRequests');
         
         const qReceived = query(requestsRef, where('receiverId', '==', currentUser.id), where('status', '==', 'pending'));
@@ -64,10 +64,10 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
             const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FriendRequest));
             setFriendRequests(requests);
             // This is the key fix: ensure loading is false after the fetch.
-            setLoading(false);
+            setFriendsAndRequestsLoading(false);
         }, (error) => {
             console.error("Error fetching received friend requests:", error);
-            setLoading(false);
+            setFriendsAndRequestsLoading(false);
         });
 
         const unsubSent = onSnapshot(qSent, snapshot => {
@@ -168,7 +168,16 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [currentUser, currentUserData, allUsers, toast]);
 
-    const value: FriendsContextType = { friends, friendRequests, sentRequests, loading, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend };
+    const value: FriendsContextType = { 
+        friends, 
+        friendRequests, 
+        sentRequests, 
+        loading: usersLoading || friendsAndRequestsLoading, 
+        sendFriendRequest, 
+        acceptFriendRequest, 
+        declineFriendRequest, 
+        removeFriend 
+    };
 
     return (
         <FriendsContext.Provider value={value}>
