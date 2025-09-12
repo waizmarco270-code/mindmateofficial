@@ -17,7 +17,6 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
-import { usePresence } from '@/hooks/use-presence';
 
 interface ChatBoxProps {
     friend: User;
@@ -28,11 +27,9 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
     const { user: currentUser } = useUser();
     const { messages, sendMessage, loading } = useChat(friend.uid);
     const { removeFriend } = useFriends();
-    const { onlineUsers } = usePresence();
     const [newMessage, setNewMessage] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
-    const isOnline = onlineUsers.some(u => u.uid === friend.uid);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -52,11 +49,9 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                             <AvatarImage src={friend.photoURL} alt={friend.displayName} />
                             <AvatarFallback>{friend.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
-                        {isOnline && <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />}
                     </div>
                     <div className="grid gap-0.5">
                         <p className="font-semibold">{friend.displayName}</p>
-                        <p className="text-xs text-muted-foreground">{isOnline ? 'Online' : 'Offline'}</p>
                     </div>
                  </div>
 

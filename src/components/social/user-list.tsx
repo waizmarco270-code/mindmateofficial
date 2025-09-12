@@ -12,7 +12,6 @@ import { Button } from '../ui/button';
 import { UserPlus, UserCheck, UserX, Check, X, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { usePresence } from '@/hooks/use-presence';
 
 interface UserListProps {
     onSelectFriend: (friend: User) => void;
@@ -22,18 +21,16 @@ interface UserListProps {
 export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
     const { user: currentUser } = useUser();
     const { users: allUsers } = useUsers();
-    const { friends, friendRequests, sentRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend, loading: friendsLoading } = useFriends();
-    const { onlineUsers, loading: presenceLoading } = usePresence();
+    const { friends, friendRequests, sentRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest, loading: friendsLoading } = useFriends();
 
     const [searchTerm, setSearchTerm] = useState('');
 
-    const getOnlineStatus = (uid: string) => onlineUsers.some(u => u.uid === uid);
 
     const filteredUsers = allUsers.filter(u =>
         u.uid !== currentUser?.id && u.displayName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const finalLoading = friendsLoading || presenceLoading;
+    const finalLoading = friendsLoading;
 
     return (
         <Card className="h-full flex flex-col">
@@ -64,7 +61,6 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                             sentRequests={sentRequests}
                             onAddFriend={sendFriendRequest}
                             onSelectFriend={onSelectFriend}
-                            isOnline={getOnlineStatus}
                             loading={finalLoading}
                         />
                     </TabsContent>
@@ -73,7 +69,6 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                             users={friends}
                             friends={friends}
                             onSelectFriend={onSelectFriend}
-                            isOnline={getOnlineStatus}
                             loading={finalLoading}
                             selectedFriendId={selectedFriendId}
                         />
@@ -83,7 +78,6 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                             requests={friendRequests}
                             onAccept={acceptFriendRequest}
                             onDecline={declineFriendRequest}
-                            isOnline={getOnlineStatus}
                             loading={finalLoading}
                         />
                     </TabsContent>
@@ -93,7 +87,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
     );
 }
 
-function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFriend, isOnline, loading, selectedFriendId }: { users: User[], friends?: User[], sentRequests?: FriendRequest[], onAddFriend?: (uid: string) => void, onSelectFriend: (user: User) => void, isOnline: (uid: string) => boolean, loading: boolean, selectedFriendId?: string | null }) {
+function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFriend, loading, selectedFriendId }: { users: User[], friends?: User[], sentRequests?: FriendRequest[], onAddFriend?: (uid: string) => void, onSelectFriend: (user: User) => void, loading: boolean, selectedFriendId?: string | null }) {
     const { user: currentUser } = useUser();
     if (loading) return <div className="p-4 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></div>;
     if (users.length === 0) return <div className="p-4 text-center text-muted-foreground">No users found.</div>;
@@ -118,7 +112,6 @@ function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFrien
                                 <AvatarImage src={user.photoURL} alt={user.displayName} />
                                 <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
-                            {isOnline(user.uid) && <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />}
                         </div>
                         <p className="flex-1 font-medium truncate">{user.displayName}</p>
                         {onAddFriend && (
@@ -145,7 +138,7 @@ function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFrien
     );
 }
 
-function FriendRequestList({ requests, onAccept, onDecline, isOnline, loading }: { requests: FriendRequest[], onAccept: (req: FriendRequest) => void, onDecline: (req: FriendRequest) => void, isOnline: (uid: string) => boolean, loading: boolean }) {
+function FriendRequestList({ requests, onAccept, onDecline, loading }: { requests: FriendRequest[], onAccept: (req: FriendRequest) => void, onDecline: (req: FriendRequest) => void, loading: boolean }) {
     if (loading) return <div className="p-4 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></div>;
     if (requests.length === 0) return <div className="p-4 text-center text-muted-foreground">No pending friend requests.</div>;
 
@@ -159,7 +152,6 @@ function FriendRequestList({ requests, onAccept, onDecline, isOnline, loading }:
                                 <AvatarImage src={req.sender.photoURL} alt={req.sender.displayName} />
                                 <AvatarFallback>{req.sender.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
-                             {isOnline(req.sender.uid) && <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-background" />}
                         </div>
                         <p className="flex-1 font-medium truncate">{req.sender.displayName}</p>
                         <Button size="icon" variant="ghost" className="text-green-500 hover:text-green-600" onClick={() => onAccept(req)}>
