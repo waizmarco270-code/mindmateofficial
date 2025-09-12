@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -38,7 +37,7 @@ export default function CommunityHub() {
             behavior: 'smooth',
           });
         }
-    }, [messages.length]); // *** THIS IS THE FIX: Depend on the message count, not the array object itself.
+    }, [messages.length]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
