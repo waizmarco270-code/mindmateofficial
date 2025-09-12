@@ -22,6 +22,7 @@ export default function CommunityHub() {
     const { user: currentUser } = useUser();
     const { users: allUsers } = useUsers();
     const { markGlobalAsRead } = useUnreadMessages();
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
    
     useEffect(() => {
       markGlobalAsRead();
@@ -29,6 +30,16 @@ export default function CommunityHub() {
         Notification.requestPermission();
       }
     }, [markGlobalAsRead]);
+
+    // Simple and stable auto-scrolling
+    useEffect(() => {
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTo({
+                top: scrollAreaRef.current.scrollHeight,
+                behavior: 'smooth',
+            });
+        }
+    }, [messages.length]); // Only triggers when a new message is added
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -50,7 +61,7 @@ export default function CommunityHub() {
                     <CardDescription>Talk with the entire MindMate community.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 overflow-hidden">
-                    <ScrollArea className="h-full">
+                    <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
                         <div className="p-4 space-y-6">
                             {chatLoading && Array.from({length: 5}).map((_, i) => (
                                 <div key={i} className="flex items-start gap-3">
@@ -126,7 +137,7 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
                     <AvatarFallback>{sender?.displayName.charAt(0) ?? '?'}</AvatarFallback>
                 </Avatar>
             )}
-            <div className="flex flex-col gap-1 max-w-md">
+            <div className="flex flex-col gap-1 max-w-md group">
                  {!isCurrentUser && (
                     <p className="text-xs text-muted-foreground font-semibold px-1 flex items-center gap-1.5">
                         {sender?.displayName ?? 'Unknown User'}
@@ -142,16 +153,16 @@ function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
                     </p>
                  )}
                 <div className={cn(
-                    'group relative rounded-2xl px-4 py-2 shadow-sm',
+                    'relative rounded-2xl px-4 py-2 shadow-sm',
                     isCurrentUser 
                         ? 'bg-primary text-primary-foreground rounded-br-none' 
-                        : 'bg-background rounded-bl-none'
+                        : 'bg-muted rounded-bl-none'
                 )}>
                     <p className="text-sm whitespace-pre-wrap">{message.text}</p>
                 </div>
                  <p className={cn(
-                    "text-xs px-1 text-right opacity-0 group-hover:opacity-100 transition-opacity", 
-                    isCurrentUser ? "text-muted-foreground" : "text-muted-foreground/80"
+                    "text-xs px-1 opacity-0 group-hover:opacity-100 transition-opacity", 
+                    isCurrentUser ? "text-right text-muted-foreground" : "text-left text-muted-foreground/80"
                 )}>
                     {displayTime}
                 </p>
