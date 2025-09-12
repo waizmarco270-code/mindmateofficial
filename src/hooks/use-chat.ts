@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, doc, setDoc } from 'firebase/firestore';
 import { useFriends } from './use-friends';
 
 export interface Message {
@@ -59,8 +59,6 @@ export const useChat = (friendId: string) => {
         if (!chatId || !currentUser) return;
         
         const messagesRef = collection(db, 'chats', chatId, 'messages');
-        const chatDocRef = doc(db, 'chats', chatId);
-
         await addDoc(messagesRef, {
             chatId,
             senderId: currentUser.id,
@@ -69,7 +67,8 @@ export const useChat = (friendId: string) => {
             seen: false,
         });
 
-        // Update the lastMessage on the chat document for previews/unread status
+        // Use setDoc with merge:true to either create a new chat doc or update an existing one.
+        const chatDocRef = doc(db, 'chats', chatId);
         await setDoc(chatDocRef, {
             users: [currentUser.id, friendId],
             lastMessage: {
