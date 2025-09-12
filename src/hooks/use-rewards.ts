@@ -158,7 +158,7 @@ export const useRewards = () => {
     }, [canClaimGiftBox, user, addCreditsToUser, toast, winningBoxIndex, freeGuesses]);
 
     return { 
-        canClaimScratchCard,
+        canClaimReward: canClaimScratchCard,
         claimDailyReward, 
         availableScratchCards,
         rewardHistory,
