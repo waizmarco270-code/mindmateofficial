@@ -63,6 +63,10 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
         const unsubReceived = onSnapshot(qReceived, snapshot => {
             const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FriendRequest));
             setFriendRequests(requests);
+            // This is the key fix: ensure loading is false after the fetch.
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching received friend requests:", error);
             setLoading(false);
         });
 
