@@ -5,11 +5,14 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Edit, Flag } from 'lucide-react';
+import { Plus, Trash2, Edit, Flag, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { format, isPast, startOfToday } from 'date-fns';
 
 export type TaskPriority = 'high' | 'medium' | 'low';
 
@@ -18,23 +21,34 @@ export interface Task {
   text: string;
   completed: boolean;
   priority: TaskPriority;
+  deadline?: string; // ISO string date
 }
 
 export function TodoList() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('low');
+  const [newTaskDeadline, setNewTaskDeadline] = useState<Date | undefined>(undefined);
   
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
+
+  // State for the editing dialog
+  const [editTaskText, setEditTaskText] = useState('');
+  const [editTaskPriority, setEditTaskPriority] = useState<TaskPriority>('low');
+  const [editTaskDeadline, setEditTaskDeadline] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
     try {
         const storedTasks = localStorage.getItem('dailyTasks');
         if (storedTasks) {
             const parsedTasks = JSON.parse(storedTasks);
-            // Add priority to old tasks if it doesn't exist
-            const tasksWithPriority = parsedTasks.map((t: any) => ({...t, id: t.id.toString(), priority: t.priority || 'low'}));
+            const tasksWithPriority = parsedTasks.map((t: any) => ({
+                ...t, 
+                id: t.id.toString(), 
+                priority: t.priority || 'low',
+                deadline: t.deadline
+            }));
             setTasks(tasksWithPriority);
         }
     } catch (error) {
@@ -55,10 +69,12 @@ export function TodoList() {
       text: newTaskText,
       completed: false,
       priority: newTaskPriority,
+      deadline: newTaskDeadline?.toISOString(),
     };
     setTasks([newTask, ...tasks]);
     setNewTaskText('');
     setNewTaskPriority('low');
+    setNewTaskDeadline(undefined);
   };
 
   const toggleTask = (id: string) => {
@@ -75,17 +91,17 @@ export function TodoList() {
   
   const openEditDialog = (task: Task) => {
     setEditingTask(task);
+    setEditTaskText(task.text);
+    setEditTaskPriority(task.priority);
+    setEditTaskDeadline(task.deadline ? new Date(task.deadline) : undefined);
     setIsEditDialogOpen(true);
   }
 
   const handleSaveEditedTask = (e: React.FormEvent) => {
       e.preventDefault();
       if (!editingTask) return;
-      const formData = new FormData(e.target as HTMLFormElement);
-      const text = formData.get('text') as string;
-      const priority = formData.get('priority') as TaskPriority;
 
-      setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, text, priority } : t));
+      setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, text: editTaskText, priority: editTaskPriority, deadline: editTaskDeadline?.toISOString() } : t));
       
       setEditingTask(null);
       setIsEditDialogOpen(false);
@@ -94,8 +110,16 @@ export function TodoList() {
   const sortedTasks = useMemo(() => {
       return [...tasks].sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
+        
         const priorityOrder: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 };
-        return priorityOrder[a.priority] - priorityOrder[b.priority];
+        if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+            return priorityOrder[a.priority] - priorityOrder[b.priority];
+        }
+
+        // Sort by deadline if priorities are the same
+        const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Infinity;
+        const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+        return aDeadline - bDeadline;
       })
   }, [tasks]);
 
@@ -125,6 +149,16 @@ export function TodoList() {
                         <SelectItem value="low"><Flag className="mr-2 h-4 w-4 text-green-500"/> General</SelectItem>
                     </SelectContent>
                 </Select>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon" className={cn("shrink-0", newTaskDeadline && "text-primary")}>
+                            <CalendarIcon className="h-4 w-4" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                        <Calendar mode="single" selected={newTaskDeadline} onSelect={setNewTaskDeadline} initialFocus />
+                    </PopoverContent>
+                </Popover>
                 <Button type="submit" disabled={!newTaskText.trim()}>
                     <Plus className="mr-2 h-4 w-4" /> Add
                 </Button>
@@ -135,50 +169,62 @@ export function TodoList() {
         {tasks.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">No tasks for today. Add one to get started!</p>
         ) : (
-            sortedTasks.map((task) => (
-            <div
-                key={task.id}
-                className={cn(
-                    "flex items-center gap-3 rounded-lg border p-3 transition-all hover:bg-muted/50 overflow-hidden relative",
-                    task.completed && 'bg-muted/30'
-                )}
-            >
-                <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", priorityClasses[task.priority].bg)}></div>
-                <div className="pl-4">
-                    <Checkbox
-                    id={`task-${task.id}`}
-                    checked={task.completed}
-                    onCheckedChange={() => toggleTask(task.id)}
-                    aria-label={`Mark task "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
-                    className={cn("h-5 w-5 rounded-full", priorityClasses[task.priority].ring)}
-                    />
-                </div>
-                <label
-                    htmlFor={`task-${task.id}`}
-                    className={cn('flex-1 cursor-pointer text-sm', task.completed && 'text-muted-foreground line-through')}
-                >
-                {task.text}
-                </label>
-                 <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-primary"
-                    onClick={() => openEditDialog(task)}
-                    aria-label={`Edit task "${task.text}"`}
+            sortedTasks.map((task) => {
+                const isOverdue = task.deadline && isPast(new Date(task.deadline)) && !task.completed;
+                return (
+                    <div
+                        key={task.id}
+                        className={cn(
+                            "flex items-center gap-3 rounded-lg border p-3 transition-all hover:bg-muted/50 overflow-hidden relative",
+                            task.completed && 'bg-muted/30'
+                        )}
                     >
-                    <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => deleteTask(task.id)}
-                    aria-label={`Delete task "${task.text}"`}
-                    >
-                    <Trash2 className="h-4 w-4" />
-                </Button>
-            </div>
-            ))
+                        <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", priorityClasses[task.priority].bg)}></div>
+                        <div className="pl-4">
+                            <Checkbox
+                            id={`task-${task.id}`}
+                            checked={task.completed}
+                            onCheckedChange={() => toggleTask(task.id)}
+                            aria-label={`Mark task "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
+                            className={cn("h-5 w-5 rounded-full", priorityClasses[task.priority].ring)}
+                            />
+                        </div>
+                        <div className="flex-1">
+                            <label
+                                htmlFor={`task-${task.id}`}
+                                className={cn('cursor-pointer text-sm', task.completed && 'text-muted-foreground line-through')}
+                            >
+                            {task.text}
+                            </label>
+                             {task.deadline && (
+                                <div className={cn("flex items-center gap-1.5 text-xs mt-1", isOverdue ? "text-destructive" : "text-muted-foreground")}>
+                                    <CalendarIcon className="h-3 w-3"/>
+                                    <span>{format(new Date(task.deadline), 'MMM d')}</span>
+                                    {isOverdue && <span className="font-semibold">(Overdue)</span>}
+                                </div>
+                            )}
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary"
+                            onClick={() => openEditDialog(task)}
+                            aria-label={`Edit task "${task.text}"`}
+                            >
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            onClick={() => deleteTask(task.id)}
+                            aria-label={`Delete task "${task.text}"`}
+                            >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )
+            })
         )}
       </div>
 
@@ -194,20 +240,36 @@ export function TodoList() {
                     <form id="edit-task-form" onSubmit={handleSaveEditedTask} className="space-y-4 py-4">
                         <div className="space-y-2">
                             <Label htmlFor="edit-task-text">Task</Label>
-                            <Input id="edit-task-text" name="text" defaultValue={editingTask.text} />
+                            <Input id="edit-task-text" name="text" value={editTaskText} onChange={e => setEditTaskText(e.target.value)} />
                         </div>
-                        <div className="space-y-2">
-                             <Label htmlFor="edit-task-priority">Priority</Label>
-                            <Select name="priority" defaultValue={editingTask.priority}>
-                                <SelectTrigger id="edit-task-priority">
-                                    <SelectValue placeholder="Set priority" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="high"><Flag className="mr-2 h-4 w-4 text-red-500"/> Compulsory</SelectItem>
-                                    <SelectItem value="medium"><Flag className="mr-2 h-4 w-4 text-yellow-500"/> Important</SelectItem>
-                                    <SelectItem value="low"><Flag className="mr-2 h-4 w-4 text-green-500"/> General</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-task-priority">Priority</Label>
+                                <Select name="priority" value={editTaskPriority} onValueChange={(v: TaskPriority) => setEditTaskPriority(v)}>
+                                    <SelectTrigger id="edit-task-priority">
+                                        <SelectValue placeholder="Set priority" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="high"><Flag className="mr-2 h-4 w-4 text-red-500"/> Compulsory</SelectItem>
+                                        <SelectItem value="medium"><Flag className="mr-2 h-4 w-4 text-yellow-500"/> Important</SelectItem>
+                                        <SelectItem value="low"><Flag className="mr-2 h-4 w-4 text-green-500"/> General</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Deadline</Label>
+                                 <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !editTaskDeadline && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {editTaskDeadline ? format(editTaskDeadline, "PPP") : <span>Pick a date</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar mode="single" selected={editTaskDeadline} onSelect={setEditTaskDeadline} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                         </div>
                     </form>
                 )}
@@ -221,3 +283,4 @@ export function TodoList() {
     </div>
   );
 }
+
