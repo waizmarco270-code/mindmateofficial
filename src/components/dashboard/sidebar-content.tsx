@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -43,6 +44,7 @@ const mainNav = [
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI' },
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
+  { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', highlight: true },
 ];
 
@@ -114,9 +116,6 @@ export default function SidebarContent() {
           <item.icon className="h-5 w-5" />
           <span className="flex-1">{item.label}</span>
           {item.href === '/dashboard/social' && hasUnread && (
-            <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-          )}
-          {item.href === '/dashboard/community' && hasGlobalUnread && (
             <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
           )}
           {item.href === '/dashboard/quiz' && hasNewQuiz && (

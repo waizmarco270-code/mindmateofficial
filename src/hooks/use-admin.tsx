@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -24,9 +25,10 @@ export interface User {
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
+  friends?: string[]; // Array of friend UIDs
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number;
-  totalStudyTime?: number; // in seconds
+totalStudyTime?: number; // in seconds
   lastSpinDate?: string;
   freeSpins?: number;
   spinHistory?: { reward: number | string, date: Timestamp }[];
@@ -224,6 +226,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     isBlocked: false,
                     credits: 100,
                     isAdmin: false,
+                    friends: [],
                     unlockedResourceSections: [],
                     focusSessionsCompleted: 0,
                     dailyTasksCompleted: 0,
