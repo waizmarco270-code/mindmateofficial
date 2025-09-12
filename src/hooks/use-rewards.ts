@@ -8,7 +8,7 @@ import { isToday, parseISO } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 
-interface SpinRecord {
+interface RewardRecord {
     reward: number | string;
     date: Date;
 }
@@ -18,37 +18,37 @@ export const useRewards = () => {
     const { currentUserData, addCreditsToUser } = useUsers();
     const { toast } = useToast();
     
-    const [lastSpinDate, setLastSpinDate] = useState<Date | null>(null);
-    const [freeSpins, setFreeSpins] = useState(0);
-    const [spinHistory, setSpinHistory] = useState<SpinRecord[]>([]);
+    const [lastRewardDate, setLastRewardDate] = useState<Date | null>(null);
+    const [freeRewards, setFreeRewards] = useState(0);
+    const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
 
     useEffect(() => {
         if(currentUserData) {
-            setLastSpinDate(currentUserData.lastSpinDate ? parseISO(currentUserData.lastSpinDate) : null);
-            setFreeSpins(currentUserData.freeSpins || 0);
-            setSpinHistory(
-                (currentUserData.spinHistory || [])
+            setLastRewardDate(currentUserData.lastRewardDate ? parseISO(currentUserData.lastRewardDate) : null);
+            setFreeRewards(currentUserData.freeRewards || 0);
+            setRewardHistory(
+                (currentUserData.rewardHistory || [])
                 .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date() }))
-                .sort((a: SpinRecord, b: SpinRecord) => b.date.getTime() - a.date.getTime())
+                .sort((a: RewardRecord, b: RewardRecord) => b.date.getTime() - a.date.getTime())
             );
         }
     }, [currentUserData]);
     
-    const canSpin = useMemo(() => {
-        if (freeSpins > 0) return true;
-        if (!lastSpinDate) return true; // Never spun before
-        return !isToday(lastSpinDate);
-    }, [lastSpinDate, freeSpins]);
+    const canClaimReward = useMemo(() => {
+        if (freeRewards > 0) return true;
+        if (!lastRewardDate) return true; // Never claimed before
+        return !isToday(lastRewardDate);
+    }, [lastRewardDate, freeRewards]);
 
-     const availableSpins = useMemo(() => {
-        const dailySpin = lastSpinDate && isToday(lastSpinDate) ? 0 : 1;
-        return dailySpin + freeSpins;
-    }, [lastSpinDate, freeSpins]);
+     const availableRewards = useMemo(() => {
+        const dailyReward = lastRewardDate && isToday(lastRewardDate) ? 0 : 1;
+        return dailyReward + freeRewards;
+    }, [lastRewardDate, freeRewards]);
     
-    const spin = useCallback(async () => {
-        if (!canSpin || !user) {
-            toast({ variant: 'destructive', title: 'No spins left for today!' });
-            return { finalRotation: 0, prizeIndex: 0 };
+    const claimDailyReward = useCallback(async () => {
+        if (!canClaimReward || !user) {
+            toast({ variant: 'destructive', title: 'No rewards left for today!' });
+            return { prize: 'better luck' };
         }
         
         const weightedPrizes = [
@@ -71,23 +71,14 @@ export const useRewards = () => {
             random -= prize.weight;
         }
         chosenPrize ??= weightedPrizes[0];
-
-        const possibleIndexes = prizes
-            .map((p, i) => (p.value === chosenPrize!.value ? i : -1))
-            .filter(i => i !== -1);
-        const prizeIndex = possibleIndexes[Math.floor(Math.random() * possibleIndexes.length)];
-        
-        const segmentAngle = 360 / prizes.length;
-        const randomOffset = (Math.random() - 0.5) * (segmentAngle * 0.8);
-        const finalRotation = 360 - (prizeIndex * segmentAngle) - (segmentAngle / 2) - randomOffset;
         
         const userDocRef = doc(db, 'users', user.id);
         const newRecord = { reward: chosenPrize.value, date: new Date() };
 
-        if(freeSpins > 0) {
-            await updateDoc(userDocRef, { freeSpins: increment(-1), spinHistory: arrayUnion({ ...newRecord }) });
+        if(freeRewards > 0) {
+            await updateDoc(userDocRef, { freeRewards: increment(-1), rewardHistory: arrayUnion({ ...newRecord }) });
         } else {
-            await updateDoc(userDocRef, { lastSpinDate: new Date().toISOString(), spinHistory: arrayUnion({ ...newRecord }) });
+            await updateDoc(userDocRef, { lastRewardDate: new Date().toISOString(), rewardHistory: arrayUnion({ ...newRecord }) });
         }
 
         if (typeof chosenPrize.value === 'number') {
@@ -97,27 +88,14 @@ export const useRewards = () => {
              toast({ title: "Better Luck Next Time!", description: "Keep trying, your lucky day is coming!" });
         }
 
-        return { finalRotation, prizeIndex };
+        return { prize: chosenPrize.value };
 
-    }, [canSpin, user, addCreditsToUser, freeSpins, toast]);
+    }, [canClaimReward, user, addCreditsToUser, freeRewards, toast]);
 
     return { 
-        canSpin, 
-        spin, 
-        availableSpins,
-        spinHistory 
+        canClaimReward, 
+        claimDailyReward, 
+        availableRewards,
+        rewardHistory 
     };
 };
-
-
-// MOCK DATA for the wheel UI
-const prizes = [
-    { value: 5, label: '5' },
-    { value: 'better luck', label: '😭' },
-    { value: 10, label: '10' },
-    { value: 2, label: '2' },
-    { value: 100, label: '100' },
-    { value: 'better luck', label: '😭' },
-    { value: 5, label: '5' },
-    { value: 2, label: '2' },
-];

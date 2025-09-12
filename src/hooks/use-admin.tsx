@@ -28,10 +28,10 @@ export interface User {
   friends?: string[]; // Array of friend UIDs
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number;
-totalStudyTime?: number; // in seconds
-  lastSpinDate?: string;
-  freeSpins?: number;
-  spinHistory?: { reward: number | string, date: Timestamp }[];
+  totalStudyTime?: number; // in seconds
+  lastRewardDate?: string;
+  freeRewards?: number;
+  rewardHistory?: { reward: number | string, date: Timestamp }[];
 }
 
 export interface Announcement {
@@ -231,7 +231,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     focusSessionsCompleted: 0,
                     dailyTasksCompleted: 0,
                     totalStudyTime: 0,
-                    freeSpins: 0,
+                    freeRewards: 0,
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -320,7 +320,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const addFreeSpinsToUser = async (uid: string, amount: number) => {
         if (!uid || !Number.isFinite(amount) || amount <= 0) return;
         const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, { freeSpins: increment(amount) });
+        await updateDoc(userDocRef, { freeRewards: increment(amount) });
     };
 
     const resetUserCredits = async (uid: string) => {
@@ -549,7 +549,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-      
-
-    

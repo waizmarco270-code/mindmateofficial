@@ -58,11 +58,11 @@ export default function SuperAdminPanelPage() {
   
   const handleGiftSpins = async () => {
     if (!selectedUserId || !spinAmount || spinAmount <= 0) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive spin amount.'});
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive reward amount.'});
         return;
     }
     await addFreeSpinsToUser(selectedUserId, spinAmount);
-    toast({ title: 'Success', description: `${spinAmount} free spin(s) have been gifted to the user.`});
+    toast({ title: 'Success', description: `${spinAmount} free reward(s) have been gifted to the user.`});
   };
 
   const handleDeductCredits = async () => {
@@ -190,7 +190,7 @@ export default function SuperAdminPanelPage() {
                   <Gift className="h-6 w-6 text-primary" />
                   <div>
                     <h3 className="text-lg font-semibold">Reward Management</h3>
-                    <p className="text-sm text-muted-foreground text-left">Gift credits or free spins to any user.</p>
+                    <p className="text-sm text-muted-foreground text-left">Gift credits or free rewards to any user.</p>
                   </div>
                 </div>
               </AccordionTrigger>
@@ -221,7 +221,7 @@ export default function SuperAdminPanelPage() {
                                         <SelectContent>
                                             {users.filter(u => !u.isBlocked).map(user => (
                                                 <SelectItem key={user.uid} value={user.uid}>
-                                                    {user.displayName} ({user.email}) - {user.credits} credits, {user.freeSpins || 0} spins
+                                                    {user.displayName} ({user.email}) - {user.credits} credits, {user.freeRewards || 0} rewards
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -243,13 +243,13 @@ export default function SuperAdminPanelPage() {
                                     </div>
                                     {/* Spin Management */}
                                      <div className="space-y-4 rounded-lg border p-4">
-                                        <h4 className="font-semibold flex items-center gap-2"><VenetianMask className="h-4 w-4" /> Manage Free Spins</h4>
+                                        <h4 className="font-semibold flex items-center gap-2"><VenetianMask className="h-4 w-4" /> Manage Free Rewards</h4>
                                         <div className="space-y-2">
-                                            <Label htmlFor="spin-amount">Spins to Add</Label>
+                                            <Label htmlFor="spin-amount">Rewards to Add</Label>
                                             <Input id="spin-amount" type="number" value={spinAmount} onChange={(e) => setSpinAmount(Number(e.target.value))} min="1" />
                                         </div>
                                         <div className="flex flex-wrap gap-2 justify-end">
-                                            <Button onClick={handleGiftSpins} disabled={!selectedUserId || spinAmount <= 0}><Gift/> Gift Spins</Button>
+                                            <Button onClick={handleGiftSpins} disabled={!selectedUserId || spinAmount <= 0}><Gift/> Gift Rewards</Button>
                                         </div>
                                     </div>
                                 </div>
@@ -309,5 +309,3 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
-
-    
