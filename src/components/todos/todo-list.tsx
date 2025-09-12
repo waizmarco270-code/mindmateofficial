@@ -1,18 +1,12 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Award, Flag, Edit, Settings } from 'lucide-react';
+import { Plus, Trash2, Edit, Flag } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { useUsers } from '@/hooks/use-admin';
-import { useUser } from '@clerk/nextjs';
-import { db } from '@/lib/firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
@@ -26,79 +20,57 @@ export interface Task {
   priority: TaskPriority;
 }
 
-interface DailyTasks {
-  date: string; // YYYY-MM-DD
-  tasks: Task[];
-  creditClaimed: boolean;
-}
-
 export function TodoList() {
-  const { toast } = useToast();
-  const { user } = useUser();
-  const { addCreditsToUser, incrementDailyTasksCompleted } = useUsers();
-  const todayString = format(new Date(), 'yyyy-MM-dd');
-  
-  const [todaysData, setTodaysData] = useState<DailyTasks>({ date: todayString, tasks: [], creditClaimed: false });
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('low');
-  const [loading, setLoading] = useState(true);
-
+  
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
 
-  const dailyDocRef = useMemo(() => {
-    if (!user) return null;
-    return doc(db, 'users', user.id, 'dailyTasks', todayString);
-  }, [user, todayString]);
+  useEffect(() => {
+    try {
+        const storedTasks = localStorage.getItem('dailyTasks');
+        if (storedTasks) {
+            const parsedTasks = JSON.parse(storedTasks);
+            // Add priority to old tasks if it doesn't exist
+            const tasksWithPriority = parsedTasks.map((t: any) => ({...t, id: t.id.toString(), priority: t.priority || 'low'}));
+            setTasks(tasksWithPriority);
+        }
+    } catch (error) {
+        console.error("Failed to parse tasks from localStorage", error);
+    }
+  }, []);
 
   useEffect(() => {
-    if (!dailyDocRef) return;
-    setLoading(true);
-    const unsubscribe = onSnapshot(dailyDocRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data() as DailyTasks;
-        // Add priority to old tasks if it doesn't exist
-        const tasksWithPriority = data.tasks.map(t => ({...t, priority: t.priority || 'low'}));
-        setTodaysData({ ...data, tasks: tasksWithPriority });
-      } else {
-        setTodaysData({ date: todayString, tasks: [], creditClaimed: false });
-      }
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, [dailyDocRef, todayString]);
+      localStorage.setItem('dailyTasks', JSON.stringify(tasks));
+  }, [tasks]);
 
-  const updateFirestore = useCallback(async (newData: DailyTasks) => {
-    if (dailyDocRef) {
-      await setDoc(dailyDocRef, newData, { merge: true });
-    }
-  }, [dailyDocRef]);
 
-  const handleAddTask = async (e: React.FormEvent) => {
+  const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newTaskText.trim() === '' || !user) return;
+    if (newTaskText.trim() === '') return;
     const newTask: Task = {
       id: Date.now().toString(),
       text: newTaskText,
       completed: false,
       priority: newTaskPriority,
     };
-    const newTasks = [newTask, ...todaysData.tasks];
-    await updateFirestore({ ...todaysData, tasks: newTasks });
+    setTasks([newTask, ...tasks]);
     setNewTaskText('');
     setNewTaskPriority('low');
   };
 
-  const toggleTask = async (id: string) => {
-    const updatedTasks = todaysData.tasks.map((task) =>
-      task.id === id ? { ...task, completed: !task.completed } : task
+  const toggleTask = (id: string) => {
+    setTasks(
+      tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
     );
-    await updateFirestore({ ...todaysData, tasks: updatedTasks });
   };
 
-  const deleteTask = async (id: string) => {
-    const updatedTasks = todaysData.tasks.filter((task) => task.id !== id);
-    await updateFirestore({ ...todaysData, tasks: updatedTasks });
+  const deleteTask = (id: string) => {
+    setTasks(tasks.filter((task) => task.id !== id));
   };
   
   const openEditDialog = (task: Task) => {
@@ -106,44 +78,26 @@ export function TodoList() {
     setIsEditDialogOpen(true);
   }
 
-  const handleSaveEditedTask = async (e: React.FormEvent) => {
+  const handleSaveEditedTask = (e: React.FormEvent) => {
       e.preventDefault();
       if (!editingTask) return;
       const formData = new FormData(e.target as HTMLFormElement);
       const text = formData.get('text') as string;
       const priority = formData.get('priority') as TaskPriority;
 
-      const updatedTasks = todaysData.tasks.map(t => t.id === editingTask.id ? { ...t, text, priority } : t);
-      await updateFirestore({ ...todaysData, tasks: updatedTasks });
+      setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, text, priority } : t));
       
       setEditingTask(null);
       setIsEditDialogOpen(false);
   }
 
-  const handleClaimCredit = async () => {
-    if (user && !todaysData.creditClaimed) {
-      await addCreditsToUser(user.id, 1);
-      await incrementDailyTasksCompleted(user.id);
-      await updateFirestore({ ...todaysData, creditClaimed: true });
-      toast({
-          title: "Credit Claimed!",
-          description: "Great job! You've earned 1 credit for your hard work.",
-      });
-    }
-  };
-  
-  const allTasksCompleted = useMemo(() => {
-      if(todaysData.tasks.length === 0) return false;
-      return todaysData.tasks.every(task => task.completed);
-  }, [todaysData.tasks]);
-
   const sortedTasks = useMemo(() => {
-      return [...todaysData.tasks].sort((a, b) => {
+      return [...tasks].sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
         const priorityOrder: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 };
         return priorityOrder[a.priority] - priorityOrder[b.priority];
       })
-  }, [todaysData.tasks]);
+  }, [tasks]);
 
   const priorityClasses: Record<TaskPriority, { bg: string, text: string, ring: string }> = {
     high: { bg: 'bg-red-500', text: 'text-red-500', ring: 'ring-red-500/50' },
@@ -159,7 +113,6 @@ export function TodoList() {
                 value={newTaskText}
                 onChange={(e) => setNewTaskText(e.target.value)}
                 className="flex-1"
-                disabled={loading}
             />
             <div className="flex w-full sm:w-auto gap-2">
                 <Select value={newTaskPriority} onValueChange={(v: TaskPriority) => setNewTaskPriority(v)}>
@@ -172,16 +125,14 @@ export function TodoList() {
                         <SelectItem value="low"><Flag className="mr-2 h-4 w-4 text-green-500"/> General</SelectItem>
                     </SelectContent>
                 </Select>
-                <Button type="submit" disabled={loading || !newTaskText.trim()}>
+                <Button type="submit" disabled={!newTaskText.trim()}>
                     <Plus className="mr-2 h-4 w-4" /> Add
                 </Button>
             </div>
         </form>
 
       <div className="space-y-3">
-        {loading ? (
-            <p className="text-muted-foreground text-center py-4">Loading today's tasks...</p>
-        ) : sortedTasks.length === 0 ? (
+        {tasks.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">No tasks for today. Add one to get started!</p>
         ) : (
             sortedTasks.map((task) => (
@@ -231,22 +182,6 @@ export function TodoList() {
         )}
       </div>
 
-      {allTasksCompleted && (
-        <div className="mt-6 flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/50 bg-primary/10 p-6 text-center">
-            <h3 className="text-lg font-semibold text-primary">All Tasks Completed!</h3>
-            {todaysData.creditClaimed ? (
-                 <p className="text-muted-foreground">You've already claimed your credit for today. See you tomorrow!</p>
-            ) : (
-                <>
-                    <p className="text-muted-foreground">You've crushed your to-do list. Claim your reward!</p>
-                    <Button onClick={handleClaimCredit}>
-                        <Award className="mr-2 h-4 w-4" /> Claim 1 Credit
-                    </Button>
-                </>
-            )}
-        </div>
-      )}
-
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent>
                 <DialogHeader>
@@ -286,5 +221,3 @@ export function TodoList() {
     </div>
   );
 }
-
-    
