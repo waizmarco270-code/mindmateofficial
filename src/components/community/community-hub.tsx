@@ -21,7 +21,6 @@ export default function CommunityHub() {
     const { user: currentUser } = useUser();
     const { users: allUsers } = useUsers();
     const { markGlobalAsRead } = useUnreadMessages();
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
    
     useEffect(() => {
       markGlobalAsRead();
@@ -29,15 +28,6 @@ export default function CommunityHub() {
         Notification.requestPermission();
       }
     }, [markGlobalAsRead]);
-
-    useEffect(() => {
-        if (scrollAreaRef.current) {
-          scrollAreaRef.current.scrollTo({
-            top: scrollAreaRef.current.scrollHeight,
-            behavior: 'smooth',
-          });
-        }
-    }, [messages.length]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -59,7 +49,7 @@ export default function CommunityHub() {
                     <CardDescription>Talk with the entire MindMate community.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 overflow-hidden">
-                    <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
+                    <ScrollArea className="h-full">
                         <div className="p-4 space-y-6">
                             {chatLoading && Array.from({length: 5}).map((_, i) => (
                                 <div key={i} className="flex items-start gap-3">
