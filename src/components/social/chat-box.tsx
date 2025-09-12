@@ -23,7 +23,6 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
   const { user } = useUser();
   const { messages, sendMessage } = useChat(friend.uid);
   const [newMessage, setNewMessage] = useState('');
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { markAsRead } = useUnreadMessages();
 
   useEffect(() => {
@@ -31,17 +30,7 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
     if (friend.uid) {
         markAsRead(friend.uid);
     }
-  }, [friend.uid, markAsRead]); // FIX: Removed 'messages' from dependency array
-
-  useEffect(() => {
-    // Scroll to bottom on new message
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTo({
-        top: scrollAreaRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  }, [messages]);
+  }, [friend.uid, markAsRead]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,7 +54,7 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
         <h3 className="font-semibold">{friend.displayName}</h3>
       </CardHeader>
       
-      <ScrollArea className="flex-1 p-4 bg-muted/20" ref={scrollAreaRef}>
+      <ScrollArea className="flex-1 p-4 bg-muted/20">
         <div className="space-y-6">
           {messages.map((msg) => (
             <ChatMessage key={msg.id} message={msg} friend={friend} isCurrentUser={msg.senderId === user?.id} />

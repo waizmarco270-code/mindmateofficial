@@ -15,13 +15,66 @@ import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useUnreadMessages } from '@/hooks/use-unread';
 
+function ChatMessage({ message, sender, isCurrentUser }: { message: GlobalMessage, sender: User | undefined, isCurrentUser: boolean }) {
+    const { user } = useUser();
+    const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
+    const isVip = sender?.isAdmin ?? false;
+    const isSuperAdmin = sender?.uid === SUPER_ADMIN_UID;
+
+    return (
+        <div className={cn("flex items-start gap-3", isCurrentUser && "justify-end")}>
+             {!isCurrentUser && (
+                <Avatar className="h-10 w-10">
+                    <AvatarImage src={sender?.photoURL ?? undefined} alt={sender?.displayName} />
+                    <AvatarFallback>{sender?.displayName.charAt(0) ?? '?'}</AvatarFallback>
+                </Avatar>
+            )}
+            <div className="flex flex-col gap-1 max-w-md group">
+                 {!isCurrentUser && (
+                    <p className="text-xs text-muted-foreground font-semibold px-1 flex items-center gap-1.5">
+                        {sender?.displayName ?? 'Unknown User'}
+                        {isSuperAdmin ? (
+                            <span className="dev-badge">
+                                <Code className="h-3 w-3" /> DEV
+                            </span>
+                        ) : isVip ? (
+                            <span className="vip-badge">
+                                <Crown className="h-3 w-3" /> VIP
+                            </span>
+                        ) : null}
+                    </p>
+                 )}
+                <div className={cn(
+                    'relative rounded-2xl px-4 py-2 shadow-sm',
+                    isCurrentUser 
+                        ? 'bg-primary text-primary-foreground rounded-br-none' 
+                        : 'bg-muted rounded-bl-none'
+                )}>
+                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
+                </div>
+                 <p className={cn(
+                    "text-xs px-1 opacity-0 group-hover:opacity-100 transition-opacity", 
+                    isCurrentUser ? "text-right text-muted-foreground" : "text-left text-muted-foreground/80"
+                )}>
+                    {displayTime}
+                </p>
+            </div>
+             {isCurrentUser && (
+                <Avatar className="h-10 w-10">
+                    <AvatarImage src={user?.imageUrl ?? undefined} alt={user?.fullName ?? ''} />
+                    <AvatarFallback>{user?.fullName?.charAt(0) ?? '?'}</AvatarFallback>
+                </Avatar>
+            )}
+        </div>
+    );
+}
+
 export default function CommunityHub() {
     const { messages, sendMessage, loading: chatLoading } = useGlobalChat();
     const [newMessage, setNewMessage] = useState('');
     const { user: currentUser } = useUser();
     const { users: allUsers } = useUsers();
     const { markGlobalAsRead } = useUnreadMessages();
-    const scrollAreaRef = useRef<HTMLDivElement>(null);
    
     useEffect(() => {
       markGlobalAsRead();
@@ -29,16 +82,6 @@ export default function CommunityHub() {
         Notification.requestPermission();
       }
     }, [markGlobalAsRead]);
-
-    // This effect will run ONLY when the number of messages changes.
-    useEffect(() => {
-        if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTo({
-                top: scrollAreaRef.current.scrollHeight,
-                behavior: 'smooth',
-            });
-        }
-    }, [messages.length]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,7 +103,7 @@ export default function CommunityHub() {
                     <CardDescription>Talk with the entire MindMate community.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex-1 p-0 overflow-hidden">
-                    <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
+                    <ScrollArea className="h-full">
                         <div className="p-4 space-y-6">
                             {chatLoading && Array.from({length: 5}).map((_, i) => (
                                 <div key={i} className="flex items-start gap-3">
@@ -112,66 +155,6 @@ export default function CommunityHub() {
                     </form>
                 </CardFooter>
             </Card>
-        </div>
-    );
-}
-
-interface ChatMessageProps {
-    message: GlobalMessage;
-    sender: User | undefined;
-    isCurrentUser: boolean;
-}
-
-function ChatMessage({ message, sender, isCurrentUser }: ChatMessageProps) {
-    const { user } = useUser();
-    const displayTime = message.timestamp ? formatRelative(message.timestamp, new Date()) : "sending...";
-    const isVip = sender?.isAdmin ?? false;
-    const isSuperAdmin = sender?.uid === SUPER_ADMIN_UID;
-
-    return (
-        <div className={cn("flex items-start gap-3", isCurrentUser && "justify-end")}>
-             {!isCurrentUser && (
-                <Avatar className="h-10 w-10">
-                    <AvatarImage src={sender?.photoURL ?? undefined} alt={sender?.displayName} />
-                    <AvatarFallback>{sender?.displayName.charAt(0) ?? '?'}</AvatarFallback>
-                </Avatar>
-            )}
-            <div className="flex flex-col gap-1 max-w-md group">
-                 {!isCurrentUser && (
-                    <p className="text-xs text-muted-foreground font-semibold px-1 flex items-center gap-1.5">
-                        {sender?.displayName ?? 'Unknown User'}
-                        {isSuperAdmin ? (
-                            <span className="dev-badge">
-                                <Code className="h-3 w-3" /> DEV
-                            </span>
-                        ) : isVip ? (
-                            <span className="vip-badge">
-                                <Crown className="h-3 w-3" /> VIP
-                            </span>
-                        ) : null}
-                    </p>
-                 )}
-                <div className={cn(
-                    'relative rounded-2xl px-4 py-2 shadow-sm',
-                    isCurrentUser 
-                        ? 'bg-primary text-primary-foreground rounded-br-none' 
-                        : 'bg-muted rounded-bl-none'
-                )}>
-                    <p className="text-sm whitespace-pre-wrap">{message.text}</p>
-                </div>
-                 <p className={cn(
-                    "text-xs px-1 opacity-0 group-hover:opacity-100 transition-opacity", 
-                    isCurrentUser ? "text-right text-muted-foreground" : "text-left text-muted-foreground/80"
-                )}>
-                    {displayTime}
-                </p>
-            </div>
-             {isCurrentUser && (
-                <Avatar className="h-10 w-10">
-                    <AvatarImage src={user?.imageUrl ?? undefined} alt={user?.fullName ?? ''} />
-                    <AvatarFallback>{user?.fullName?.charAt(0) ?? '?'}</AvatarFallback>
-                </Avatar>
-            )}
         </div>
     );
 }
