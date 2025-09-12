@@ -31,7 +31,7 @@ export function ChatBox({ friend, onBack }: ChatBoxProps) {
     if (friend.uid) {
         markAsRead(friend.uid);
     }
-  }, [friend.uid, markAsRead, messages]); // Also run on messages change to mark incoming as read
+  }, [friend.uid, markAsRead]); // FIX: Removed 'messages' from dependency array
 
   useEffect(() => {
     // Scroll to bottom on new message
