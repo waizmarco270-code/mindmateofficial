@@ -61,7 +61,7 @@ export function SpinWheel() {
 
                 {/* Wheel */}
                 <div
-                    className="absolute w-full h-full rounded-full border-8 border-purple-500/50 shadow-inner transition-transform duration-[5000ms] ease-out"
+                    className="absolute w-full h-full rounded-full border-8 border-purple-500/50 shadow-inner transition-transform duration-5000 ease-out"
                     style={{ transform: `rotate(${rotation}deg)` }}
                 >
                     <ul className="w-full h-full relative rounded-full overflow-hidden">
