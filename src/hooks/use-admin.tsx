@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -31,7 +32,8 @@ export interface User {
   totalStudyTime?: number; // in seconds
   lastRewardDate?: string; // For scratch card
   lastGiftBoxDate?: string; // For gift box game
-  freeRewards?: number;
+  freeRewards?: number; // Extra scratch cards
+  freeGuesses?: number; // Extra gift box guesses
   rewardHistory?: { reward: number | string, date: Timestamp, source: string }[];
 }
 
@@ -96,6 +98,7 @@ interface AppDataContextType {
     giftCreditsToUser: (uid: string, amount: number) => Promise<void>;
     resetUserCredits: (uid: string) => Promise<void>;
     addFreeSpinsToUser: (uid: string, amount: number) => Promise<void>;
+    addFreeGuessesToUser: (uid: string, amount: number) => Promise<void>;
     unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
@@ -233,6 +236,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     dailyTasksCompleted: 0,
                     totalStudyTime: 0,
                     freeRewards: 0,
+                    freeGuesses: 0,
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -322,6 +326,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (!uid || !Number.isFinite(amount) || amount <= 0) return;
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { freeRewards: increment(amount) });
+    };
+
+    const addFreeGuessesToUser = async (uid: string, amount: number) => {
+        if (!uid || !Number.isFinite(amount) || amount <= 0) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { freeGuesses: increment(amount) });
     };
 
     const resetUserCredits = async (uid: string) => {
@@ -465,6 +475,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         giftCreditsToUser,
         resetUserCredits,
         addFreeSpinsToUser,
+        addFreeGuessesToUser,
         unlockResourceSection,
         addPerfectedQuiz,
         incrementQuizAttempt,

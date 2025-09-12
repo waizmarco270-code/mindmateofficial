@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -26,7 +27,7 @@ const CREDIT_PASSWORD = "waizcredit";
 
 export default function SuperAdminPanelPage() {
   const { 
-    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits, addCreditsToUser, clearGlobalChat, addFreeSpinsToUser
+    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, giftCreditsToUser, resetUserCredits, addCreditsToUser, clearGlobalChat, addFreeSpinsToUser, addFreeGuessesToUser
   } = useAdmin();
   const { toast } = useToast();
   
@@ -36,6 +37,7 @@ export default function SuperAdminPanelPage() {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [creditAmount, setCreditAmount] = useState(10);
   const [spinAmount, setSpinAmount] = useState(1);
+  const [guessAmount, setGuessAmount] = useState(1);
   
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -58,12 +60,22 @@ export default function SuperAdminPanelPage() {
   
   const handleGiftSpins = async () => {
     if (!selectedUserId || !spinAmount || spinAmount <= 0) {
-        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive reward amount.'});
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive amount of scratch cards.'});
         return;
     }
     await addFreeSpinsToUser(selectedUserId, spinAmount);
-    toast({ title: 'Success', description: `${spinAmount} free reward(s) have been gifted to the user.`});
+    toast({ title: 'Success', description: `${spinAmount} free scratch card(s) have been gifted to the user.`});
   };
+  
+  const handleGiftGuesses = async () => {
+    if (!selectedUserId || !guessAmount || guessAmount <= 0) {
+        toast({ variant: 'destructive', title: 'Invalid Input', description: 'Please select a user and enter a positive amount of guesses.'});
+        return;
+    }
+    await addFreeGuessesToUser(selectedUserId, guessAmount);
+    toast({ title: 'Success', description: `${guessAmount} free guess(es) have been gifted to the user.`});
+  };
+
 
   const handleDeductCredits = async () => {
      if (!selectedUserId || !creditAmount || creditAmount <= 0) {
@@ -221,13 +233,13 @@ export default function SuperAdminPanelPage() {
                                         <SelectContent>
                                             {users.filter(u => !u.isBlocked).map(user => (
                                                 <SelectItem key={user.uid} value={user.uid}>
-                                                    {user.displayName} ({user.email}) - {user.credits} credits, {user.freeRewards || 0} rewards
+                                                    {user.displayName} ({user.email}) - {user.credits} credits, {user.freeRewards || 0} cards, {user.freeGuesses || 0} guesses
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
                                     </Select>
                                  </div>
-                                <div className="grid md:grid-cols-2 gap-6">
+                                <div className="grid md:grid-cols-3 gap-6">
                                     {/* Credit Management */}
                                     <div className="space-y-4 rounded-lg border p-4">
                                         <h4 className="font-semibold flex items-center gap-2"><DollarSign className="h-4 w-4" /> Manage Credits</h4>
@@ -243,13 +255,24 @@ export default function SuperAdminPanelPage() {
                                     </div>
                                     {/* Spin Management */}
                                      <div className="space-y-4 rounded-lg border p-4">
-                                        <h4 className="font-semibold flex items-center gap-2"><VenetianMask className="h-4 w-4" /> Manage Free Rewards</h4>
+                                        <h4 className="font-semibold flex items-center gap-2"><VenetianMask className="h-4 w-4" /> Manage Scratch Cards</h4>
                                         <div className="space-y-2">
-                                            <Label htmlFor="spin-amount">Rewards to Add</Label>
+                                            <Label htmlFor="spin-amount">Cards to Add</Label>
                                             <Input id="spin-amount" type="number" value={spinAmount} onChange={(e) => setSpinAmount(Number(e.target.value))} min="1" />
                                         </div>
                                         <div className="flex flex-wrap gap-2 justify-end">
-                                            <Button onClick={handleGiftSpins} disabled={!selectedUserId || spinAmount <= 0}><Gift/> Gift Rewards</Button>
+                                            <Button onClick={handleGiftSpins} disabled={!selectedUserId || spinAmount <= 0}><Gift/> Gift Cards</Button>
+                                        </div>
+                                    </div>
+                                     {/* Guess Management */}
+                                     <div className="space-y-4 rounded-lg border p-4">
+                                        <h4 className="font-semibold flex items-center gap-2"><Box className="h-4 w-4" /> Manage Free Guesses</h4>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="guess-amount">Guesses to Add</Label>
+                                            <Input id="guess-amount" type="number" value={guessAmount} onChange={(e) => setGuessAmount(Number(e.target.value))} min="1" />
+                                        </div>
+                                        <div className="flex flex-wrap gap-2 justify-end">
+                                            <Button onClick={handleGiftGuesses} disabled={!selectedUserId || guessAmount <= 0}><Gift/> Gift Guesses</Button>
                                         </div>
                                     </div>
                                 </div>

@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -22,7 +23,8 @@ export const useRewards = () => {
     // State for both games
     const [lastScratchDate, setLastScratchDate] = useState<Date | null>(null);
     const [lastGiftBoxDate, setLastGiftBoxDate] = useState<Date | null>(null);
-    const [freeRewards, setFreeRewards] = useState(0);
+    const [freeRewards, setFreeRewards] = useState(0); // For scratch cards
+    const [freeGuesses, setFreeGuesses] = useState(0); // For gift boxes
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
 
     useEffect(() => {
@@ -30,6 +32,7 @@ export const useRewards = () => {
             setLastScratchDate(currentUserData.lastRewardDate ? parseISO(currentUserData.lastRewardDate) : null);
             setLastGiftBoxDate(currentUserData.lastGiftBoxDate ? parseISO(currentUserData.lastGiftBoxDate) : null);
             setFreeRewards(currentUserData.freeRewards || 0);
+            setFreeGuesses(currentUserData.freeGuesses || 0);
             setRewardHistory(
                 (currentUserData.rewardHistory || [])
                 .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date(), source: h.source || 'Unknown' }))
@@ -98,13 +101,15 @@ export const useRewards = () => {
 
     // ===== GIFT BOX LOGIC =====
     const canClaimGiftBox = useMemo(() => {
+        if (freeGuesses > 0) return true;
         if (!lastGiftBoxDate) return true;
         return !isToday(lastGiftBoxDate);
-    }, [lastGiftBoxDate]);
+    }, [lastGiftBoxDate, freeGuesses]);
     
     const availableGiftBoxGuesses = useMemo(() => {
-        return canClaimGiftBox ? 1 : 0;
-    }, [canClaimGiftBox]);
+        const dailyGuess = (lastGiftBoxDate && isToday(lastGiftBoxDate)) ? 0 : 1;
+        return dailyGuess + freeGuesses;
+    }, [lastGiftBoxDate, freeGuesses]);
     
     // Determine a consistent winning box for the user for the entire day
     const winningBoxIndex = useMemo(() => {
@@ -136,13 +141,21 @@ export const useRewards = () => {
         }
         
         const newRecord = { reward: prize, date: new Date(), source: 'Gift Box' };
-        await updateDoc(userDocRef, {
-            lastGiftBoxDate: new Date().toISOString(),
-            rewardHistory: arrayUnion(newRecord)
-        });
+        
+        if (freeGuesses > 0) {
+             await updateDoc(userDocRef, {
+                freeGuesses: increment(-1),
+                rewardHistory: arrayUnion(newRecord)
+            });
+        } else {
+             await updateDoc(userDocRef, {
+                lastGiftBoxDate: new Date().toISOString(),
+                rewardHistory: arrayUnion(newRecord)
+            });
+        }
 
         return { prize, isWin };
-    }, [canClaimGiftBox, user, addCreditsToUser, toast, winningBoxIndex]);
+    }, [canClaimGiftBox, user, addCreditsToUser, toast, winningBoxIndex, freeGuesses]);
 
     return { 
         canClaimScratchCard,
