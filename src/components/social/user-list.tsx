@@ -22,7 +22,7 @@ interface UserListProps {
 export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
     const { user: currentUser } = useUser();
     const { users: allUsers } = useUsers();
-    const { friends, friendRequests, sentRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend, loading } = useFriends();
+    const { friends, friendRequests, sentRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend, loading: friendsLoading } = useFriends();
     const { onlineUsers, loading: presenceLoading } = usePresence();
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -33,7 +33,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
         u.uid !== currentUser?.id && u.displayName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const finalLoading = loading || presenceLoading;
+    const finalLoading = friendsLoading || presenceLoading;
 
     return (
         <Card className="h-full flex flex-col">
