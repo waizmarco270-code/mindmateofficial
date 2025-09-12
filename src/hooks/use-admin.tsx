@@ -29,9 +29,10 @@ export interface User {
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number;
   totalStudyTime?: number; // in seconds
-  lastRewardDate?: string;
+  lastRewardDate?: string; // For scratch card
+  lastGiftBoxDate?: string; // For gift box game
   freeRewards?: number;
-  rewardHistory?: { reward: number | string, date: Timestamp }[];
+  rewardHistory?: { reward: number | string, date: Timestamp, source: string }[];
 }
 
 export interface Announcement {

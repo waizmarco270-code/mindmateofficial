@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp } from 'firebase/firestore';
-import { isToday, parseISO } from 'date-fns';
+import { isToday, parseISO, getDayOfYear } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 
 interface RewardRecord {
     reward: number | string;
     date: Date;
+    source: string;
 }
 
 export const useRewards = () => {
@@ -18,36 +19,40 @@ export const useRewards = () => {
     const { currentUserData, addCreditsToUser } = useUsers();
     const { toast } = useToast();
     
-    const [lastRewardDate, setLastRewardDate] = useState<Date | null>(null);
+    // State for both games
+    const [lastScratchDate, setLastScratchDate] = useState<Date | null>(null);
+    const [lastGiftBoxDate, setLastGiftBoxDate] = useState<Date | null>(null);
     const [freeRewards, setFreeRewards] = useState(0);
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
 
     useEffect(() => {
         if(currentUserData) {
-            setLastRewardDate(currentUserData.lastRewardDate ? parseISO(currentUserData.lastRewardDate) : null);
+            setLastScratchDate(currentUserData.lastRewardDate ? parseISO(currentUserData.lastRewardDate) : null);
+            setLastGiftBoxDate(currentUserData.lastGiftBoxDate ? parseISO(currentUserData.lastGiftBoxDate) : null);
             setFreeRewards(currentUserData.freeRewards || 0);
             setRewardHistory(
                 (currentUserData.rewardHistory || [])
-                .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date() }))
+                .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date(), source: h.source || 'Unknown' }))
                 .sort((a: RewardRecord, b: RewardRecord) => b.date.getTime() - a.date.getTime())
             );
         }
     }, [currentUserData]);
     
+    // ===== SCRATCH CARD LOGIC =====
     const canClaimScratchCard = useMemo(() => {
         if (freeRewards > 0) return true;
-        if (!lastRewardDate) return true; // Never claimed before
-        return !isToday(lastRewardDate);
-    }, [lastRewardDate, freeRewards]);
+        if (!lastScratchDate) return true;
+        return !isToday(lastScratchDate);
+    }, [lastScratchDate, freeRewards]);
 
-     const availableScratchCards = useMemo(() => {
-        const dailyReward = lastRewardDate && isToday(lastRewardDate) ? 0 : 1;
+    const availableScratchCards = useMemo(() => {
+        const dailyReward = lastScratchDate && isToday(lastScratchDate) ? 0 : 1;
         return dailyReward + freeRewards;
-    }, [lastRewardDate, freeRewards]);
+    }, [lastScratchDate, freeRewards]);
     
-    const claimScratchCard = useCallback(async () => {
+    const claimDailyReward = useCallback(async () => {
         if (!canClaimScratchCard || !user) {
-            toast({ variant: 'destructive', title: 'No rewards left for today!' });
+            toast({ variant: 'destructive', title: 'No scratch cards left for today!' });
             return { prize: 'better luck' };
         }
         
@@ -89,13 +94,64 @@ export const useRewards = () => {
         }
 
         return { prize: chosenPrize.value };
-
     }, [canClaimScratchCard, user, addCreditsToUser, freeRewards, toast]);
+
+    // ===== GIFT BOX LOGIC =====
+    const canClaimGiftBox = useMemo(() => {
+        if (!lastGiftBoxDate) return true;
+        return !isToday(lastGiftBoxDate);
+    }, [lastGiftBoxDate]);
+    
+    const availableGiftBoxGuesses = useMemo(() => {
+        return canClaimGiftBox ? 1 : 0;
+    }, [canClaimGiftBox]);
+    
+    // Determine a consistent winning box for the user for the entire day
+    const winningBoxIndex = useMemo(() => {
+        if (!user) return 0;
+        const day = getDayOfYear(new Date());
+        // A simple "hash" to get a number between 0 and 3
+        const userNum = user.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+        return (day + userNum) % 4;
+    }, [user]);
+
+    const claimGiftBoxReward = useCallback(async (selectedIndex: number) => {
+        if (!canClaimGiftBox || !user) {
+            toast({ variant: 'destructive', title: 'No guesses left for today!' });
+            return { prize: 'better luck', isWin: false };
+        }
+        
+        const prizeAmount = 10; // The prize for the winning box
+        const userDocRef = doc(db, 'users', user.id);
+        let prize: number | 'better luck' = 'better luck';
+        let isWin = false;
+
+        if (selectedIndex === winningBoxIndex) {
+            prize = prizeAmount;
+            isWin = true;
+            await addCreditsToUser(user.id, prizeAmount);
+            toast({ title: "You Won!", description: `Congratulations! ${prizeAmount} credits have been added.`, className: "bg-green-500/10 border-green-500/50" });
+        } else {
+             toast({ title: "Not this one!", description: "Better luck next time!" });
+        }
+        
+        const newRecord = { reward: prize, date: new Date(), source: 'Gift Box' };
+        await updateDoc(userDocRef, {
+            lastGiftBoxDate: new Date().toISOString(),
+            rewardHistory: arrayUnion(newRecord)
+        });
+
+        return { prize, isWin };
+    }, [canClaimGiftBox, user, addCreditsToUser, toast, winningBoxIndex]);
 
     return { 
         canClaimScratchCard,
-        claimScratchCard, 
+        claimDailyReward, 
         availableScratchCards,
-        rewardHistory 
+        rewardHistory,
+        canClaimGiftBox,
+        availableGiftBoxGuesses,
+        winningBoxIndex,
+        claimGiftBoxReward,
     };
 };

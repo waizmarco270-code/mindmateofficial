@@ -8,9 +8,28 @@ import { Gift, History, VenetianMask } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { GiftBoxGame } from '@/components/reward/gift-box-game';
+import { useState } from 'react';
 
 export default function RewardPage() {
-    const { rewardHistory, availableScratchCards } = useRewards();
+    const { rewardHistory, availableScratchCards, availableGiftBoxGuesses } = useRewards();
+    const [activeTab, setActiveTab] = useState('scratch-card');
+
+    const getCardCount = () => {
+        if (activeTab === 'scratch-card') return availableScratchCards;
+        if (activeTab === 'guess-box') return availableGiftBoxGuesses;
+        return 0;
+    }
+     const getCardLabel = () => {
+        if (activeTab === 'scratch-card') return 'Cards Left Today';
+        if (activeTab === 'guess-box') return 'Guesses Left Today';
+        return 'Rewards Left';
+    }
+     const getCardDescription = () => {
+        if (activeTab === 'scratch-card') return '1 free daily card + gifted cards.';
+        if (activeTab === 'guess-box') return '1 free guess per day.';
+        return 'Come back tomorrow!';
+    }
+
 
     return (
         <div className="space-y-8">
@@ -21,7 +40,7 @@ export default function RewardPage() {
             
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                   <Tabs defaultValue="scratch-card" className="w-full">
+                   <Tabs defaultValue="scratch-card" className="w-full" onValueChange={setActiveTab}>
                       <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger value="scratch-card">
                             <VenetianMask className="mr-2 h-4 w-4"/>
@@ -44,14 +63,14 @@ export default function RewardPage() {
                      <Card>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-medium flex items-center justify-between">
-                                <span>Cards Left Today</span>
+                                <span>{getCardLabel()}</span>
                                 <VenetianMask className="h-4 w-4 text-muted-foreground" />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold">{availableScratchCards}</div>
+                            <div className="text-3xl font-bold">{getCardCount()}</div>
                             <p className="text-xs text-muted-foreground mt-1">
-                                1 free daily card + gifted cards.
+                                {getCardDescription()}
                             </p>
                         </CardContent>
                     </Card>
@@ -65,9 +84,12 @@ export default function RewardPage() {
                                 <ul className="space-y-2">
                                     {rewardHistory.map((rewardItem, index) => (
                                         <li key={index} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
-                                            <span className="font-medium">
-                                                {typeof rewardItem.reward === 'number' ? `${rewardItem.reward} Credits` : 'Better Luck!'}
-                                            </span>
+                                            <div className="flex flex-col">
+                                                <span className="font-medium">
+                                                    {typeof rewardItem.reward === 'number' ? `${rewardItem.reward} Credits` : 'Better Luck!'}
+                                                </span>
+                                                 <span className="text-xs text-muted-foreground">{rewardItem.source}</span>
+                                            </div>
                                             <span className="text-xs text-muted-foreground">
                                                 {format(rewardItem.date, 'MMM d, h:mm a')}
                                             </span>
