@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -31,7 +30,7 @@ export default function CommunityHub() {
       }
     }, [markGlobalAsRead]);
 
-    // Simple and stable auto-scrolling
+    // This effect will run ONLY when the number of messages changes.
     useEffect(() => {
         if (scrollAreaRef.current) {
             scrollAreaRef.current.scrollTo({
@@ -39,7 +38,7 @@ export default function CommunityHub() {
                 behavior: 'smooth',
             });
         }
-    }, [messages.length]); // Only triggers when a new message is added
+    }, [messages.length]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
