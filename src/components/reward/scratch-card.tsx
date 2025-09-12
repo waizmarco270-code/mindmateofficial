@@ -12,6 +12,8 @@ export function ScratchCard() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isScratched, setIsScratched] = useState(false);
     const [prize, setPrize] = useState<number | string | null>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const lastPointRef = useRef<{ x: number, y: number } | null>(null);
     
     const setupCanvas = useCallback(() => {
         const canvas = canvasRef.current;
@@ -44,36 +46,61 @@ export function ScratchCard() {
         }
     }, [canClaimReward, prize, setupCanvas]);
 
-    const handleScratch = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+    const getPoint = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return null;
+        const rect = canvas.getBoundingClientRect();
+        const pos = 'touches' in e ? e.touches[0] : e;
+        return {
+            x: pos.clientX - rect.left,
+            y: pos.clientY - rect.top,
+        };
+    };
+
+    const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (!canClaimReward || prize) return;
-        
+        setIsDrawing(true);
+        lastPointRef.current = getPoint(e);
+    };
+
+    const handleMouseUp = () => {
+        setIsDrawing(false);
+        lastPointRef.current = null;
+        checkScratchCompletion();
+    };
+
+    const handleScratch = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+        if (!isDrawing) return;
+
         const canvas = canvasRef.current;
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        const rect = canvas.getBoundingClientRect();
-        const pos = 'touches' in e ? e.touches[0] : e;
-        const x = pos.clientX - rect.left;
-        const y = pos.clientY - rect.top;
-        
+        const currentPoint = getPoint(e);
+        if (!currentPoint || !lastPointRef.current) return;
+
+        ctx.lineWidth = 40;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.beginPath();
-        ctx.arc(x, y, 20, 0, Math.PI * 2, false);
-        ctx.fill();
-        
-        checkScratchCompletion();
+        ctx.moveTo(lastPointRef.current.x, lastPointRef.current.y);
+        ctx.lineTo(currentPoint.x, currentPoint.y);
+        ctx.stroke();
+
+        lastPointRef.current = currentPoint;
     };
 
     const checkScratchCompletion = () => {
          const canvas = canvasRef.current;
         if (!canvas) return;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
         if (!ctx) return;
         
         const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
         let transparentPixels = 0;
         for (let i = 3; i < pixels.length; i += 4) {
-            if (pixels[i] === 0) {
+            if (pixels[i] < 128) { // Consider semi-transparent pixels as scratched
                 transparentPixels++;
             }
         }
@@ -81,7 +108,7 @@ export function ScratchCard() {
         const totalPixels = canvas.width * canvas.height;
         const scratchPercentage = (transparentPixels / totalPixels) * 100;
         
-        if (scratchPercentage > 50 && !isScratched) {
+        if (scratchPercentage > 60 && !isScratched) {
             setIsScratched(true);
             claimDailyReward().then(result => {
                 setPrize(result.prize);
@@ -125,7 +152,12 @@ export function ScratchCard() {
                         <canvas
                             ref={canvasRef}
                             className="absolute inset-0 z-10 w-full h-full cursor-grab active:cursor-grabbing rounded-lg"
-                            onMouseMove={(e) => { if (e.buttons === 1) handleScratch(e); }}
+                            onMouseDown={handleMouseDown}
+                            onMouseUp={handleMouseUp}
+                            onMouseLeave={handleMouseUp}
+                            onMouseMove={handleScratch}
+                            onTouchStart={handleMouseDown}
+                            onTouchEnd={handleMouseUp}
                             onTouchMove={handleScratch}
                         />
                     </>
