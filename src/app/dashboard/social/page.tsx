@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { UserList } from '@/components/social/user-list';
 import { ChatBox } from '@/components/social/chat-box';
 import { type User } from '@/hooks/use-admin';
-import { FriendsProvider } from '@/hooks/use-friends';
+import { FriendsProvider } from '@/hooks/use-friends.tsx';
 import { Card } from '@/components/ui/card';
 import { Users } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';

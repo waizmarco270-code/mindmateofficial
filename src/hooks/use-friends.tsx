@@ -164,7 +164,7 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [currentUser, currentUserData, allUsers, toast]);
 
-    const value = { friends, friendRequests, sentRequests, loading, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend };
+    const value: FriendsContextType = { friends, friendRequests, sentRequests, loading, sendFriendRequest, acceptFriendRequest, declineFriendRequest, removeFriend };
 
     return (
         <FriendsContext.Provider value={value}>
