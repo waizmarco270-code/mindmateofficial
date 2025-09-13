@@ -48,7 +48,7 @@ export default function Header() {
                     <PopoverTrigger asChild>
                          <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
                             <Flame className="h-5 w-5 text-orange-500" />
-                            <span>{streak} Day Streak</span>
+                            <span>{streak} <span className="hidden sm:inline">Day Streak</span></span>
                         </div>
                     </PopoverTrigger>
                     <PopoverContent className="max-w-xs p-4">
@@ -74,7 +74,7 @@ export default function Header() {
                     <PopoverTrigger asChild>
                         <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
                             <Medal className="h-5 w-5 text-yellow-500" />
-                            <span>{credits} Credits</span>
+                            <span>{credits} <span className="hidden sm:inline">Credits</span></span>
                         </div>
                     </PopoverTrigger>
                     <PopoverContent className="max-w-xs p-4">
