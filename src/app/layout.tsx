@@ -7,7 +7,7 @@ import { ClerkProvider } from '@clerk/nextjs';
 
 export const metadata: Metadata = {
   title: 'MindMate',
-  description: 'Your personal AI-powered study assistant.',
+  description: 'Your all-in-one study companion to learn smarter, stay focused, and connect with a community of learners.',
   manifest: '/manifest.json',
 };
 

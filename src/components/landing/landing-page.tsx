@@ -117,7 +117,7 @@ export function LandingPage() {
                     Unlock Your <span className="bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent">Full Potential</span>
                 </h1>
                 <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
-                    MindMate is your all-in-one AI-powered study companion, designed to help you learn smarter, stay focused, and achieve your academic goals.
+                    MindMate is your all-in-one study companion, designed to help you learn smarter, stay focused, and connect with a community of learners.
                 </p>
                  <div className="mt-10 flex items-center justify-center gap-x-6 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
                     <SignedOut>
@@ -189,5 +189,3 @@ export function LandingPage() {
     </div>
   );
 }
-
-    
