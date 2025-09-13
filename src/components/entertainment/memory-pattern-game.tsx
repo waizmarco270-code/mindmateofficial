@@ -217,7 +217,11 @@ export function MemoryPatternGame() {
                 <CardContent className="flex flex-col items-center gap-6">
                     <div className="flex justify-between items-center w-full bg-muted p-2 rounded-lg">
                         <div className="text-sm">Score: <span className="font-bold">{score}</span></div>
-                        <div className="text-lg font-bold text-primary">{getStatusMessage()}</div>
+                        <div className={cn("text-lg font-bold text-primary",
+                            gameState === 'gameOver' && "bg-destructive/80 text-destructive-foreground px-4 py-1 rounded-md"
+                        )}>
+                            {getStatusMessage()}
+                        </div>
                         <div className="text-sm">High Score: <span className="font-bold">{highScore}</span></div>
                     </div>
 
