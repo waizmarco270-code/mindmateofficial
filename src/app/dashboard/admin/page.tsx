@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -122,7 +123,7 @@ export default function AdminPanelPage() {
           const result = await generateQuiz({ topic: aiQuizTopic, numberOfQuestions: aiNumQuestions });
           setQuizTitle(result.title);
           setQuizCategory(result.category);
-          setQuizQuestions(result.questions);
+          setQuizQuestions(result.questions.map(q => ({ text: q.question, options: q.options, correctAnswer: q.correctAnswer })));
           toast({ title: 'Quiz Generated!', description: 'The quiz form has been populated. Review and save.'});
       } catch (error: any) {
            toast({ variant: 'destructive', title: 'AI Generation Failed', description: error.message || 'Could not generate quiz.' });

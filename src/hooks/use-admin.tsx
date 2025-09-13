@@ -39,6 +39,9 @@ export interface User {
   streak?: number;
   longestStreak?: number;
   lastStreakCheck?: string; // YYYY-MM-DD
+  referralCode?: string; // e.g. JOHNDOE-123
+  referralUsed?: boolean; // True if they have used someone else's code
+  referredBy?: string; // UID of the user who referred them
 }
 
 export interface Announcement {
@@ -128,8 +131,8 @@ interface AppDataContextType {
 
     // Dynamic Resource Section Management
     resourceSections: ResourceSection[];
-    addResourceSection: (section: Omit<ResourceSection, 'id' | 'createdAt'>) => Promise<void>;
-    updateResourceSection: (id: string, data: Partial<Omit<ResourceSection, 'id' | 'createdAt'>>) => Promise<void>;
+    addResourceSection: (section: Omit<ResourceSection, 'id'|'createdAt'>) => Promise<void>;
+    updateResourceSection: (id: string, data: Partial<Omit<ResourceSection, 'id'|'createdAt'>>) => Promise<void>;
     deleteResourceSection: (id: string) => Promise<void>;
     
     dailySurprises: DailySurprise[];
@@ -277,6 +280,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     streak: 1,
                     longestStreak: 1,
                     lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
+                    referralUsed: false,
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);

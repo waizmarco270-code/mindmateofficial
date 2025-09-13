@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -25,6 +26,7 @@ import {
   Gift,
   KeyRound,
   Send,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -46,6 +48,7 @@ const mainNav = [
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', highlight: true },
+  { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn' },
 ];
 
 const studyNav = [

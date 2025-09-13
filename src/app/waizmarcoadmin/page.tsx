@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User } from '@/hooks/use-admin';
+import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
   TableHeader,
@@ -16,11 +17,12 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { formatDistanceToNow } from 'date-fns';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -33,6 +35,7 @@ export default function SuperAdminPanelPage() {
     addFreeGuessesToUser, addGuessesToAllUsers,
     resetUserCredits, clearGlobalChat
   } = useAdmin();
+  const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
   
   // State for Credit Management
@@ -125,6 +128,22 @@ export default function SuperAdminPanelPage() {
           toast({ variant: 'destructive', title: "Error Clearing Chat", description: error.message });
       }
   };
+  
+  const handleApproveReferral = async (referral: ReferralRequest) => {
+      try {
+          await approveReferral(referral);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Approval Failed', description: error.message });
+      }
+  }
+  
+  const handleDeclineReferral = async (referralId: string) => {
+       try {
+          await declineReferral(referralId);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Decline Failed', description: error.message });
+      }
+  }
 
   if (!isSuperAdmin) {
     return (
@@ -308,6 +327,62 @@ export default function SuperAdminPanelPage() {
               </AccordionContent>
             </Card>
         </AccordionItem>
+
+        {/* Referral Management */}
+        <AccordionItem value="referral-management" className="border-b-0">
+           <Card>
+              <AccordionTrigger className="p-6">
+                <div className="flex items-center gap-3">
+                  <UserPlus className="h-6 w-6 text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold">Referral Management</h3>
+                    <p className="text-sm text-muted-foreground text-left">Approve or decline pending user referrals.</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Pending Referral Requests</CardTitle>
+                        <CardDescription>Approve requests to grant 50 credits to the referrer.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Inviter</TableHead>
+                                    <TableHead>New User</TableHead>
+                                    <TableHead>Code Used</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {referralsLoading && (
+                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">Loading requests...</TableCell></TableRow>
+                                )}
+                                {!referralsLoading && pendingReferrals.length === 0 && (
+                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No pending referrals.</TableCell></TableRow>
+                                )}
+                                {pendingReferrals.map(req => (
+                                    <TableRow key={req.id}>
+                                        <TableCell className="font-medium">{req.referrerName}</TableCell>
+                                        <TableCell>{req.newUserName}</TableCell>
+                                        <TableCell><Badge variant="outline">{req.codeUsed}</Badge></TableCell>
+                                        <TableCell>{formatDistanceToNow(req.createdAt.toDate(), { addSuffix: true })}</TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeclineReferral(req.id)}><XCircle /></Button>
+                                            <Button variant="ghost" size="icon" className="text-green-500" onClick={() => handleApproveReferral(req)}><CheckCircle /></Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+              </AccordionContent>
+            </Card>
+        </AccordionItem>
         
         {/* Chat Management */}
          <AccordionItem value="chat-management" className="border-b-0">
@@ -316,8 +391,8 @@ export default function SuperAdminPanelPage() {
                 <div className="flex items-center gap-3">
                   <Trash2 className="h-6 w-6 text-primary" />
                   <div>
-                    <h3 className="text-lg font-semibold">Chat Management</h3>
-                    <p className="text-sm text-muted-foreground text-left">Manage global application data.</p>
+                    <h3 className="text-lg font-semibold">Data Management</h3>
+                    <p className="text-sm text-muted-foreground text-left">Perform global data operations.</p>
                   </div>
                 </div>
               </AccordionTrigger>
