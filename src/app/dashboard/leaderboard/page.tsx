@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
@@ -69,10 +70,6 @@ export default function LeaderboardPage() {
 
                 return { ...user, totalScore: Math.round(totalScore), weeklyTime: userWeeklyTime };
             });
-
-        if (activeTab === 'streaks') {
-            return processedUsers.sort((a, b) => (b.streak || 0) - (a.streak || 0));
-        }
         
         if (activeTab === 'weekly') {
             return processedUsers.sort((a, b) => b.weeklyTime - a.weeklyTime);
@@ -85,7 +82,7 @@ export default function LeaderboardPage() {
 
 
     const topThree = sortedUsers.slice(0, 3);
-    const restOfUsers = sortedUsers.slice(3);
+    const restOfUsers = sortedUsers.slice(3, 20); // Show only top 20 users
 
     const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
     
@@ -135,13 +132,11 @@ export default function LeaderboardPage() {
         
         const scoreToDisplay = {
             'all-time': user.totalScore,
-            'streaks': user.streak || 0,
             'weekly': formatWeeklyTime(user.weeklyTime),
         }[activeTab];
 
         const scoreLabel = {
             'all-time': 'Total Score',
-            'streaks': 'Day Streak',
             'weekly': 'This Week',
         }[activeTab];
         
@@ -217,19 +212,15 @@ export default function LeaderboardPage() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-3 md:w-1/2 mx-auto">
+                <TabsList className="grid w-full grid-cols-2 md:w-1/2 mx-auto">
                     <TabsTrigger value="all-time">All-Time</TabsTrigger>
                     <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                    <TabsTrigger value="streaks">Streaks</TabsTrigger>
                 </TabsList>
                 <TabsContent value="all-time" className="mt-6">
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="all-time"/>
                 </TabsContent>
                 <TabsContent value="weekly" className="mt-6">
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="weekly"/>
-                </TabsContent>
-                <TabsContent value="streaks" className="mt-6">
-                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="streaks"/>
                 </TabsContent>
             </Tabs>
         </div>
@@ -241,7 +232,6 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
 
     const getScoreLabel = () => ({
         'all-time': 'Total Score',
-        'streaks': 'Streak',
         'weekly': 'Weekly Time',
     }[activeTab]);
     
@@ -254,7 +244,6 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
 
     const getScoreToDisplay = (user: any) => ({
         'all-time': user.totalScore,
-        'streaks': user.streak || 0,
         'weekly': formatWeeklyTime(user.weeklyTime)
     }[activeTab]);
 
@@ -314,6 +303,9 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                         })}
                         {sortedUsers.length === 0 && (
                              <p className="text-center text-muted-foreground py-10">No users to rank yet.</p>
+                        )}
+                        {restOfUsers.length === 0 && sortedUsers.length > 3 && (
+                            <p className="text-center text-muted-foreground py-10">Only the top 20 users are shown.</p>
                         )}
                     </div>
                 </CardContent>
