@@ -4,12 +4,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Award, Brain, Check, HelpCircle, Loader2, Play, RotateCw } from 'lucide-react';
+import { Award, Brain, HelpCircle, Loader2, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
-import { doc, getDoc, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -25,6 +25,14 @@ const PAD_STYLES: Record<PadColor, string> = {
     blue: "bg-blue-500 hover:bg-blue-400",
 };
 
+const PAD_SOUNDS: Record<PadColor, number> = {
+    green: 329.63, // E4
+    red: 392.00,  // G4
+    yellow: 440.00,// A4
+    blue: 523.25, // C5
+};
+
+
 const DAILY_MILESTONES = {
     5: 1,  // 1 credit for reaching level 5
     10: 2, // 2 credits for reaching level 10
@@ -34,6 +42,35 @@ type Milestone = keyof typeof DAILY_MILESTONES;
 
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+let audioContext: AudioContext | null = null;
+
+const playSound = (frequency: number) => {
+    if (typeof window === 'undefined') return;
+    if (!audioContext) {
+        try {
+            audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+        } catch (e) {
+            console.error("Web Audio API is not supported in this browser");
+            return;
+        }
+    }
+    
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.5);
+
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + 0.3);
+};
+
 
 export function MemoryPatternGame() {
     const { user } = useUser();
@@ -67,6 +104,15 @@ export function MemoryPatternGame() {
         };
         checkClaimStatus();
     }, [user]);
+    
+     const activatePad = async (pad: PadColor) => {
+        setActivePad(pad);
+        playSound(PAD_SOUNDS[pad]);
+        await sleep(400); // How long the pad stays lit
+        setActivePad(null);
+        await sleep(100); // Pause between pads
+    };
+
 
     const extendSequence = () => {
         const nextPad = PADS[Math.floor(Math.random() * PADS.length)];
@@ -76,10 +122,7 @@ export function MemoryPatternGame() {
     const playSequence = async () => {
         await sleep(700);
         for (const pad of sequence) {
-            setActivePad(pad);
-            await sleep(400); // How long the pad stays lit
-            setActivePad(null);
-            await sleep(200); // Pause between pads
+            await activatePad(pad);
         }
         setGameState('playing');
     };
@@ -129,9 +172,7 @@ export function MemoryPatternGame() {
     const handlePlayerClick = async (pad: PadColor) => {
         if (gameState !== 'playing') return;
 
-        setActivePad(pad);
-        await sleep(200);
-        setActivePad(null);
+        activatePad(pad);
 
         const newPlayerSequence = [...playerSequence, pad];
         setPlayerSequence(newPlayerSequence);
