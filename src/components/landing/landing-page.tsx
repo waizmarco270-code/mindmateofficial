@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -146,7 +147,7 @@ export function LandingPage() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                     <div className="h-[40rem] w-[40rem] bg-gradient-to-tr from-purple-500 to-sky-400 opacity-20 blur-[12rem]"></div>
                 </div>
-                 <div id="particle-container">
+                 <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
