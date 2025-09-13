@@ -124,12 +124,9 @@ export function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
              <SignedOut>
-                <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
-                    <Button variant="ghost">Sign In</Button>
-                </SignUpButton>
                  <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                     <Button>
-                        Get Started <ArrowRight className="ml-2" />
+                        Get Started <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 </SignUpButton>
              </SignedOut>
@@ -156,12 +153,17 @@ export function LandingPage() {
                 <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
                     MindMate is your all-in-one study companion to learn smarter, stay focused, and connect with a community of learners.
                 </p>
-                 <div className="mt-10 flex items-center justify-center gap-x-6 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
+                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
                     <SignedOut>
                         <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
-                            <Button size="lg">Create Free Account <ArrowRight className="ml-2" /></Button>
+                             <Button size="lg" className="relative group w-full sm:w-auto">
+                                <span className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></span>
+                                <span className="relative flex items-center">
+                                    Create Free Account <ArrowRight className="ml-2" />
+                                </span>
+                            </Button>
                         </SignUpButton>
-                        <Link href="/dashboard" className={cn(buttonVariants({ variant: "outline", size: "lg"}), "bg-transparent text-white")}>
+                        <Link href="/dashboard" className={cn(buttonVariants({ variant: "outline", size: "lg"}), "bg-transparent text-white w-full sm:w-auto")}>
                             Explore Demo
                         </Link>
                     </SignedOut>
