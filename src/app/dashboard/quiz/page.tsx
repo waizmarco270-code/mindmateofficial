@@ -3,7 +3,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useQuizzes } from '@/hooks/use-quizzes';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Film, Swords, BrainCircuit, BookOpen, Trophy, Award, Users } from 'lucide-react';
 import { QuizStartDialog } from '@/components/quiz/quiz-start-dialog';
@@ -13,14 +13,16 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 // A helper function to get an icon for a category
 const getCategoryIcon = (category: string) => {
     const lowerCaseCategory = category.toLowerCase();
-    if (lowerCaseCategory.includes('anime')) return Swords;
-    if (lowerCaseCategory.includes('movie') || lowerCaseCategory.includes('series')) return Film;
-    if (lowerCaseCategory.includes('study') || lowerCaseCategory.includes('science') || lowerCaseCategory.includes('history')) return BookOpen;
-    return BrainCircuit; // Default icon
+    if (lowerCaseCategory.includes('anime')) return { Icon: Swords, color: 'from-red-500 to-red-600', shadow: 'shadow-red-500/20' };
+    if (lowerCaseCategory.includes('movie') || lowerCaseCategory.includes('series')) return { Icon: Film, color: 'from-blue-500 to-blue-600', shadow: 'shadow-blue-500/20' };
+    if (lowerCaseCategory.includes('study') || lowerCaseCategory.includes('science') || lowerCaseCategory.includes('history')) return { Icon: BookOpen, color: 'from-green-500 to-green-600', shadow: 'shadow-green-500/20' };
+    return { Icon: BrainCircuit, color: 'from-purple-500 to-purple-600', shadow: 'shadow-purple-500/20' }; // Default icon
 }
 
 export default function QuizZonePage() {
@@ -98,7 +100,7 @@ export default function QuizZonePage() {
                          </div>
                     )}
                     {!loading && sortedCategories.map((category) => {
-                      const Icon = getCategoryIcon(category);
+                      const { Icon, color, shadow } = getCategoryIcon(category);
                       return (
                          <div key={category}>
                             <div className="flex items-center gap-3 mb-4">
@@ -106,18 +108,37 @@ export default function QuizZonePage() {
                                 <h2 className="text-2xl font-bold tracking-tight capitalize">{category}</h2>
                             </div>
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {quizzesByCategory[category].map(quiz => (
-                                    <Card key={quiz.id}>
+                                {quizzesByCategory[category].map((quiz, index) => (
+                                   <motion.div
+                                    key={quiz.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.3, delay: index * 0.1 }}
+                                    className="h-full"
+                                   >
+                                    <Card className={cn(
+                                        "h-full group flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1",
+                                        shadow
+                                    )}>
+                                       <div className={cn("absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300 bg-gradient-to-tr", color)}></div>
                                         <CardHeader>
-                                            <CardTitle>{quiz.title}</CardTitle>
-                                            <CardDescription>{quiz.questions.length} questions &bull; {quiz.timeLimit / 60} minutes</CardDescription>
+                                            <CardTitle className="flex items-start gap-4">
+                                                <div className={cn("p-2 rounded-lg bg-gradient-to-br", color)}>
+                                                    <Icon className="h-6 w-6 text-white"/>
+                                                </div>
+                                                <span>{quiz.title}</span>
+                                            </CardTitle>
                                         </CardHeader>
                                         <CardContent>
-                                            <Button className="w-full" onClick={() => handleQuizSelect(quiz)}>
+                                            <p className="text-muted-foreground text-sm">{quiz.questions.length} questions &bull; {quiz.timeLimit / 60} minutes</p>
+                                        </CardContent>
+                                        <CardFooter>
+                                            <Button className="w-full z-10" onClick={() => handleQuizSelect(quiz)}>
                                                 <BrainCircuit className="mr-2 h-4 w-4"/> Start Quiz
                                             </Button>
-                                        </CardContent>
+                                        </CardFooter>
                                     </Card>
+                                   </motion.div>
                                 ))}
                             </div>
                         </div>
