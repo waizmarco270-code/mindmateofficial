@@ -234,9 +234,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                         if (newStreak > (data.longestStreak || 0)) {
                             updates.longestStreak = newStreak;
                         }
-                        // Award credits
-                        if (newStreak === 5 || newStreak === 10) updates.credits = increment(50);
-                        if (newStreak > 0 && newStreak % 30 === 0) updates.credits = increment(200);
+                        // Award credits based on new streak
+                        if (newStreak > 0 && newStreak % 30 === 0) {
+                            updates.credits = increment(100); // 30-day bonus
+                        } else if (newStreak > 0 && newStreak % 5 === 0) {
+                            updates.credits = increment(50); // 5-day bonus
+                        }
 
                     } else if (!lastCheckDate || !isToday(lastCheckDate)) {
                         // Streak is broken or first login
