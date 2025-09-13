@@ -27,6 +27,7 @@ import {
   KeyRound,
   Send,
   UserPlus,
+  Gamepad2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -47,6 +48,7 @@ const mainNav = [
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
+  { href: '/dashboard/entertainment', icon: Gamepad2, label: 'Entertainment' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', highlight: true },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn' },
 ];
