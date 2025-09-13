@@ -87,16 +87,52 @@ export function useTimeTracker() {
   
   // Subscribe to all time sessions for the insights page
   useEffect(() => {
-    if (!allSessionsColRef) return;
-    const q = query(allSessionsColRef);
+    if (!user) return; // Need to get all users' sessions for global leaderboard
+    
+    const allUsersSessionsRef = collection(db, 'timeTrackerSessions'); // Simplified for now
+    const q = query(allUsersSessionsRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
-        const fetchedSessions = snapshot.docs.map(doc => ({...doc.data(), id: doc.id } as TimeSession));
-        setSessions(fetchedSessions);
+        const allFetchedSessions: TimeSession[] = [];
+         snapshot.forEach(doc => {
+            const data = doc.data();
+            // This is a simplification. In a real app, you'd query subcollections.
+            // For now, let's assume sessions are stored with a userId.
+            if(data.userId) { // Assuming a structure change I can't make now
+                 allFetchedSessions.push({...data, id: doc.id } as TimeSession)
+            }
+        });
+        
+        // Let's get ALL sessions from ALL users for leaderboard calculation
+        const usersCol = collection(db, 'users');
+        getDocs(usersCol).then(userSnapshot => {
+          const promises = userSnapshot.docs.map(userDoc => {
+            const userSessionsRef = collection(db, 'users', userDoc.id, 'timeTrackerSessions');
+            return getDocs(userSessionsRef).then(sessionSnapshot => {
+              return sessionSnapshot.docs.map(sessionDoc => {
+                const data = sessionDoc.data();
+                return {
+                  ...data,
+                  id: sessionDoc.id,
+                  // Manually add the user ID to the session object for filtering
+                  subjectId: userDoc.id 
+                } as TimeSession
+              });
+            });
+          });
+
+          Promise.all(promises).then(usersSessions => {
+            const allSessions = usersSessions.flat();
+            setSessions(allSessions);
+          });
+        });
+
+
     }, (error) => {
       console.error("Error fetching all sessions: ", error);
     });
+    
     return () => unsubscribe();
-  }, [allSessionsColRef]);
+  }, [user]); // Rerun if user changes to handle login/logout
   
    // Subscribe to today's sessions to calculate totalTimeToday
   useEffect(() => {
