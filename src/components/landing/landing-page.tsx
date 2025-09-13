@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button, buttonVariants } from '@/components/ui/button';
@@ -147,7 +146,23 @@ export function LandingPage() {
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
                     <div className="h-[40rem] w-[40rem] bg-gradient-to-tr from-purple-500 to-sky-400 opacity-20 blur-[12rem]"></div>
                 </div>
-                 <div className="absolute inset-0 bg-grid-slate-800 [mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]"></div>
+                 <div id="particle-container">
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                    <div className="particle"></div><div className="particle"></div>
+                </div>
             </div>
             <div className="container mx-auto px-4 text-center relative">
                 <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up" style={{animationDelay: '0.2s'}}>
