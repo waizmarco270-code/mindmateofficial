@@ -2,7 +2,7 @@
 'use client';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star } from 'lucide-react';
+import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
 import { SignedIn, SignedOut, SignUpButton, useUser } from '@clerk/nextjs';
@@ -27,9 +27,9 @@ const features = [
     bgColor: 'bg-purple-900/20',
   },
   {
-    name: 'Quiz Zone',
-    description: 'Test your knowledge with dynamic quizzes and earn credits for top performance.',
-    icon: BrainCircuit,
+    name: 'Entertainment Zone',
+    description: 'Play games like Tic-Tac-Toe and Word Unscramble to earn credits while you relax.',
+    icon: Gamepad2,
     color: 'text-green-400',
     bgColor: 'bg-green-900/20',
   },
@@ -41,11 +41,11 @@ const features = [
     bgColor: 'bg-yellow-900/20',
   },
   {
-    name: 'Social & Community Hub',
-    description: 'Connect with peers, share knowledge, and study together in a vibrant community.',
-    icon: Users,
-    color: 'text-sky-400',
-    bgColor: 'bg-sky-900/20',
+    name: 'Daily Streaks & Rewards',
+    description: 'Build a study streak, claim daily surprises, and earn credits for your consistency.',
+    icon: Flame,
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-900/20',
   },
    {
     name: 'Free Resources',
@@ -54,6 +54,13 @@ const features = [
     color: 'text-rose-400',
     bgColor: 'bg-rose-900/20',
   },
+  {
+    name: 'Invite & Earn',
+    description: 'Share MindMate with your friends and earn bonus credits when they sign up.',
+    icon: Gift,
+    color: 'text-sky-400',
+    bgColor: 'bg-sky-900/20',
+  }
 ];
 
 const whyMindMate = [
