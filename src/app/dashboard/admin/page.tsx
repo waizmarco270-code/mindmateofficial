@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -24,6 +25,7 @@ import { useQuizzes } from '@/hooks/use-quizzes';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { generateQuiz } from '@/ai/flows/generate-quiz-flow';
 
 
 interface QuizQuestion {
@@ -104,7 +106,31 @@ export default function AdminPanelPage() {
     { text: '', options: ['', '', '', ''], correctAnswer: '' }
   ]);
   const [isSavingQuiz, setIsSavingQuiz] = useState(false);
+
+  // State for AI Quiz Generator
+  const [aiQuizTopic, setAiQuizTopic] = useState('');
+  const [aiNumQuestions, setAiNumQuestions] = useState(5);
+  const [isGeneratingQuiz, setIsGeneratingQuiz] = useState(false);
   
+  const handleGenerateQuiz = async () => {
+      if (!aiQuizTopic.trim()) {
+          toast({ variant: 'destructive', title: 'Topic is required.'});
+          return;
+      }
+      setIsGeneratingQuiz(true);
+      try {
+          const result = await generateQuiz({ topic: aiQuizTopic, numberOfQuestions: aiNumQuestions });
+          setQuizTitle(result.title);
+          setQuizCategory(result.category);
+          setQuizQuestions(result.questions);
+          toast({ title: 'Quiz Generated!', description: 'The quiz form has been populated. Review and save.'});
+      } catch (error: any) {
+           toast({ variant: 'destructive', title: 'AI Generation Failed', description: error.message || 'Could not generate quiz.' });
+      } finally {
+          setIsGeneratingQuiz(false);
+      }
+  }
+
   const handleSubmitAnnouncement = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (latestAnnouncement && announcementTitle && announcementDesc) {
@@ -648,19 +674,27 @@ export default function AdminPanelPage() {
               </AccordionTrigger>
               <AccordionContent className="p-6 pt-0">
                 <div className="grid gap-8 lg:grid-cols-2">
-                  <Card>
-                      <CardHeader><CardTitle>Create New Quiz</CardTitle><CardDescription>Build and publish a new quiz for the Quiz Zone.</CardDescription></CardHeader>
-                      <CardContent className="space-y-6">
-                          <div className="grid md:grid-cols-3 gap-4">
-                              <div className="space-y-2 md:col-span-2"><Label htmlFor="quiz-title">Quiz Title</Label><Input id="quiz-title" value={quizTitle} onChange={e => setQuizTitle(e.target.value)} placeholder="e.g. The Ultimate Anime Quiz" /></div>
-                              <div className="space-y-2"><Label htmlFor="quiz-category">Category</Label><Input id="quiz-category" value={quizCategory} onChange={e => setQuizCategory(e.target.value)} placeholder="e.g. Anime or Study Quiz" /></div>
-                          </div>
-                          <div className="space-y-2"><Label htmlFor="quiz-time-limit">Time Limit (seconds)</Label><Input id="quiz-time-limit" type="number" value={quizTimeLimit} onChange={e => setQuizTimeLimit(Number(e.target.value))} placeholder="e.g. 300" /></div>
-                          <div className="space-y-4">{quizQuestions.map((q, qIndex) => (<div key={qIndex} className="p-4 border rounded-lg space-y-4 relative">{quizQuestions.length > 1 && (<Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => removeQuestion(qIndex)}><Trash2 className="h-4 w-4" /></Button>)}<div className="space-y-2"><Label htmlFor={`q-text-${qIndex}`}>Question {qIndex + 1}</Label><Input id={`q-text-${qIndex}`} value={q.text} onChange={e => handleQuestionChange(qIndex, 'text', e.target.value)} placeholder="e.g. Who is the main protagonist of 'Attack on Titan'?" /></div><div className="grid grid-cols-2 gap-4">{q.options.map((opt, oIndex) => (<div className="space-y-2" key={oIndex}><Label htmlFor={`q-${qIndex}-opt-${oIndex}`}>Option {oIndex + 1}</Label><Input id={`q-${qIndex}-opt-${oIndex}`} value={opt} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Option ${oIndex + 1}`} /></div>))}</div><div className="space-y-2"><Label htmlFor={`q-correct-${qIndex}`}>Correct Answer</Label><Select value={q.correctAnswer} onValueChange={val => handleQuestionChange(qIndex, 'correctAnswer', val)}><SelectTrigger id={`q-correct-${qIndex}`}><SelectValue placeholder="Select correct answer..." /></SelectTrigger><SelectContent>{q.options.filter(o => o.trim() !== '').map((opt, oIndex) => (<SelectItem key={oIndex} value={opt}>{opt}</SelectItem>))}</SelectContent></Select></div></div>))}</div>
-                          <div className="flex justify-between items-center"><Button variant="outline" onClick={addQuestion}>Add Another Question</Button><Button onClick={handleSaveQuiz} disabled={isSavingQuiz}>{isSavingQuiz ? 'Saving...' : 'Save Quiz'}</Button></div>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> AI Quiz Generator</CardTitle>
+                        <CardDescription>Generate a quiz automatically by providing a topic.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="ai-quiz-topic">Topic</Label>
+                          <Input id="ai-quiz-topic" value={aiQuizTopic} onChange={(e) => setAiQuizTopic(e.target.value)} placeholder="e.g., The Mughal Empire" />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="ai-num-questions">Number of Questions</Label>
+                          <Input id="ai-num-questions" type="number" value={aiNumQuestions} onChange={(e) => setAiNumQuestions(Math.max(1, Math.min(20, Number(e.target.value))))} />
+                        </div>
+                        <Button onClick={handleGenerateQuiz} disabled={isGeneratingQuiz}>
+                          {isGeneratingQuiz ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Sparkles className="mr-2 h-4 w-4"/>}
+                          {isGeneratingQuiz ? 'Generating...' : 'Generate Quiz'}
+                        </Button>
                       </CardContent>
-                  </Card>
-                  <Card>
+                    </Card>
+                    <Card>
                       <CardHeader><CardTitle>Quiz Management</CardTitle><CardDescription>Review and delete existing quizzes.</CardDescription></CardHeader>
                       <CardContent>
                           <Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Questions</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
@@ -671,6 +705,20 @@ export default function AdminPanelPage() {
                       </CardContent>
                   </Card>
                 </div>
+                 <div className="grid gap-8 lg:grid-cols-1 mt-8">
+                    <Card>
+                      <CardHeader><CardTitle>Create/Edit Quiz Manually</CardTitle><CardDescription>Build and publish a new quiz for the Quiz Zone or edit the one generated by AI.</CardDescription></CardHeader>
+                      <CardContent className="space-y-6">
+                          <div className="grid md:grid-cols-3 gap-4">
+                              <div className="space-y-2 md:col-span-2"><Label htmlFor="quiz-title">Quiz Title</Label><Input id="quiz-title" value={quizTitle} onChange={e => setQuizTitle(e.target.value)} placeholder="e.g. The Ultimate Anime Quiz" /></div>
+                              <div className="space-y-2"><Label htmlFor="quiz-category">Category</Label><Input id="quiz-category" value={quizCategory} onChange={e => setQuizCategory(e.target.value)} placeholder="e.g. Anime or Study Quiz" /></div>
+                          </div>
+                          <div className="space-y-2"><Label htmlFor="quiz-time-limit">Time Limit (seconds)</Label><Input id="quiz-time-limit" type="number" value={quizTimeLimit} onChange={e => setQuizTimeLimit(Number(e.target.value))} placeholder="e.g. 300" /></div>
+                          <div className="space-y-4">{quizQuestions.map((q, qIndex) => (<div key={qIndex} className="p-4 border rounded-lg space-y-4 relative">{quizQuestions.length > 1 && (<Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => removeQuestion(qIndex)}><Trash2 className="h-4 w-4" /></Button>)}<div className="space-y-2"><Label htmlFor={`q-text-${qIndex}`}>Question {qIndex + 1}</Label><Input id={`q-text-${qIndex}`} value={q.text} onChange={e => handleQuestionChange(qIndex, 'text', e.target.value)} placeholder="e.g. Who is the main protagonist of 'Attack on Titan'?" /></div><div className="grid grid-cols-2 gap-4">{q.options.map((opt, oIndex) => (<div className="space-y-2" key={oIndex}><Label htmlFor={`q-${qIndex}-opt-${oIndex}`}>Option {oIndex + 1}</Label><Input id={`q-${qIndex}-opt-${oIndex}`} value={opt} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Option ${oIndex + 1}`} /></div>))}</div><div className="space-y-2"><Label htmlFor={`q-correct-${qIndex}`}>Correct Answer</Label><Select value={q.correctAnswer} onValueChange={val => handleQuestionChange(qIndex, 'correctAnswer', val)}><SelectTrigger id={`q-correct-${qIndex}`}><SelectValue placeholder="Select correct answer..." /></SelectTrigger><SelectContent>{q.options.filter(o => o.trim() !== '').map((opt, oIndex) => (<SelectItem key={oIndex} value={opt}>{opt}</SelectItem>))}</SelectContent></Select></div></div>))}</div>
+                          <div className="flex justify-between items-center"><Button variant="outline" onClick={addQuestion}>Add Another Question</Button><Button onClick={handleSaveQuiz} disabled={isSavingQuiz}>{isSavingQuiz ? 'Saving...' : 'Save Quiz'}</Button></div>
+                      </CardContent>
+                  </Card>
+                 </div>
               </AccordionContent>
             </Card>
         </AccordionItem>
@@ -714,5 +762,3 @@ export default function AdminPanelPage() {
     </div>
   );
 }
-
-    
