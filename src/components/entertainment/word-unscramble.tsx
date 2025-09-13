@@ -5,21 +5,34 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Award, Brain, Check, HelpCircle, Loader2, RotateCw, Send } from 'lucide-react';
+import { Award, Brain, Check, HelpCircle, Loader2, RotateCw, Send, Code, FlaskConical, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
-import { doc, getDoc, setDoc, Timestamp, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 
-const WORDS = [
-    'react', 'firebase', 'tailwind', 'nextjs', 'typescript', 'javascript', 'html', 'css', 'developer',
-    'algorithm', 'database', 'component', 'function', 'variable', 'object', 'array', 'loop', 'conditional',
-    'debugging', 'deployment', 'repository', 'framework', 'library', 'interface', 'asynchronous'
-];
+const WORD_CATEGORIES = {
+    programming: [
+        'react', 'firebase', 'tailwind', 'nextjs', 'typescript', 'javascript', 'html', 'css', 'developer',
+        'algorithm', 'database', 'component', 'function', 'variable', 'object', 'array', 'loop', 'conditional',
+        'debugging', 'deployment', 'repository', 'framework', 'library', 'interface', 'asynchronous'
+    ],
+    science: [
+        'gravity', 'photosynthesis', 'galaxy', 'molecule', 'electron', 'mitosis', 'ecosystem', 'volcano',
+        'fossil', 'genetics', 'velocity', 'newton', 'einstein', 'chemistry', 'biology', 'physics', 'astronomy'
+    ],
+    general: [
+        'knowledge', 'language', 'mountain', 'country', 'ocean', 'history', 'capital', 'president', 'culture',
+        'festival', 'architecture', 'literature', 'mathematics', 'geography', 'philosophy', 'adventure'
+    ]
+};
+type WordCategory = keyof typeof WORD_CATEGORIES;
+
 const DAILY_WORD_LIMIT = 5;
 const CREDIT_PER_WORD = 1;
 
@@ -45,9 +58,10 @@ export function WordUnscrambleGame() {
     const [solvedWords, setSolvedWords] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [gameState, setGameState] = useState<'playing' | 'completed' | 'loading'>('loading');
+    const [activeCategory, setActiveCategory] = useState<WordCategory>('programming');
 
     const setupNewWord = useCallback(() => {
-        const availableWords = WORDS.filter(w => !solvedWords.includes(w));
+        const availableWords = WORD_CATEGORIES[activeCategory].filter(w => !solvedWords.includes(w));
         if(availableWords.length === 0 || solvedWords.length >= DAILY_WORD_LIMIT) {
             setGameState('completed');
             return;
@@ -56,7 +70,7 @@ export function WordUnscrambleGame() {
         setCurrentWord(newWord);
         setScrambledWord(shuffle(newWord));
         setUserInput('');
-    }, [solvedWords]);
+    }, [solvedWords, activeCategory]);
 
     useEffect(() => {
         const checkDailyProgress = async () => {
@@ -88,7 +102,7 @@ export function WordUnscrambleGame() {
         if(gameState === 'playing') {
             setupNewWord();
         }
-    }, [gameState, setupNewWord]);
+    }, [gameState, setupNewWord, activeCategory]); // Rerun when category changes
 
     const handleSkip = () => {
         if(isSubmitting) return;
@@ -192,9 +206,16 @@ export function WordUnscrambleGame() {
              <Card className="w-full md:max-w-md">
                 <CardHeader>
                     <CardTitle>Word Unscramble</CardTitle>
-                    <CardDescription>Unscramble the letters to form a word.</CardDescription>
+                    <CardDescription>Unscramble the letters to form a word from the selected category.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                    <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as WordCategory)} className="w-full mb-6">
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="programming"><Code className="mr-2 h-4 w-4" /> Code</TabsTrigger>
+                            <TabsTrigger value="science"><FlaskConical className="mr-2 h-4 w-4" /> Science</TabsTrigger>
+                            <TabsTrigger value="general"><Globe className="mr-2 h-4 w-4" /> General</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                     {renderContent()}
                 </CardContent>
             </Card>
@@ -205,7 +226,7 @@ export function WordUnscrambleGame() {
                 <CardContent className="space-y-4 text-sm text-muted-foreground">
                     <div className="flex items-start gap-3">
                         <Brain className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                        <p>You get 5 unique words to solve each day.</p>
+                        <p>You get <span className="font-bold text-foreground">5 total words</span> to solve each day across all categories.</p>
                     </div>
                     <div className="flex items-start gap-3">
                         <Award className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
@@ -213,7 +234,7 @@ export function WordUnscrambleGame() {
                     </div>
                     <div className="flex items-start gap-3">
                         <HelpCircle className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                        <p>All words are related to programming and web development. Good luck!</p>
+                        <p>Choose a category and test your knowledge. Good luck!</p>
                     </div>
                      <div className="pt-4">
                         <p className="font-bold text-foreground">Progress Today: <span className={cn(solvedWords.length > 0 && "text-primary")}>{solvedWords.length} / {DAILY_WORD_LIMIT}</span></p>
