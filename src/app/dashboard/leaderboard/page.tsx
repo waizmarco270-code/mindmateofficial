@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
