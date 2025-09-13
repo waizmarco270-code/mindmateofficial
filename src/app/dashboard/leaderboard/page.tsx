@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
@@ -30,6 +30,31 @@ export default function LeaderboardPage() {
     const { users } = useUsers();
     const { sessions: allSessions } = useTimeTracker();
     const [activeTab, setActiveTab] = useState('all-time');
+    const [timeLeft, setTimeLeft] = useState('');
+
+    useEffect(() => {
+        if (activeTab !== 'weekly') return;
+
+        const timer = setInterval(() => {
+            const now = new Date();
+            const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+            const diff = weekEnd.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeLeft("0d 0h 0m 0s");
+                return;
+            }
+
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / 1000 / 60) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+
+            setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+        }, 1000);
+
+        return () => clearInterval(timer);
+    }, [activeTab]);
 
     const weeklyStudyTime = useMemo(() => {
         const now = new Date();
@@ -219,7 +244,19 @@ export default function LeaderboardPage() {
                 <TabsContent value="all-time" className="mt-6">
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="all-time"/>
                 </TabsContent>
-                <TabsContent value="weekly" className="mt-6">
+                <TabsContent value="weekly" className="mt-6 space-y-6">
+                    <Card>
+                        <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
+                            <Clock className="h-8 w-8 text-primary" />
+                            <div>
+                                <h4 className="font-semibold text-lg">Weekly Leaderboard</h4>
+                                <p className="text-muted-foreground text-sm">This leaderboard resets every Monday. The ranking is based on total study time this week.</p>
+                            </div>
+                            <div className="font-mono text-xl sm:text-2xl font-bold bg-muted px-4 py-2 rounded-lg">
+                                Resets in: {timeLeft}
+                            </div>
+                        </CardContent>
+                    </Card>
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="weekly"/>
                 </TabsContent>
             </Tabs>
@@ -335,3 +372,5 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         </div>
     );
 };
+
+    
