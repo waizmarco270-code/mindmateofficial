@@ -211,12 +211,22 @@ export function MemoryPatternGame() {
             </Card>
              <Card className="flex-1 w-full">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Award className="text-amber-500"/> Daily Rewards</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><HelpCircle className="text-primary"/> How to Play & Rewards</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 text-sm text-muted-foreground">
                    <div className="flex items-start gap-3">
                         <Brain className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                        <p>You can earn credits by reaching score milestones for the first time each day.</p>
+                        <div>
+                            <h4 className="font-bold text-foreground">Game Rules</h4>
+                            <p>Watch the sequence of lights and sounds, then repeat it by clicking the pads in the same order. The sequence gets longer with each correct round.</p>
+                        </div>
+                    </div>
+                     <div className="flex items-start gap-3">
+                        <Award className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
+                         <div>
+                            <h4 className="font-bold text-foreground">Daily Rewards</h4>
+                             <p>You can earn credits by reaching score milestones for the first time each day.</p>
+                        </div>
                     </div>
                      <div>
                         <h4 className="font-bold text-foreground mb-2">Milestones:</h4>
