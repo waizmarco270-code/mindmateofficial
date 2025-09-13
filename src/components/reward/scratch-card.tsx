@@ -71,6 +71,8 @@ export function ScratchCard() {
 
     const handleScratch = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         if (!isDrawing) return;
+        
+        e.preventDefault();
 
         const canvas = canvasRef.current;
         if (!canvas) return;
