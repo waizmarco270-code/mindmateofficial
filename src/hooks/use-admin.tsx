@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp } from 'firebase/firestore';
 import { isToday, isYesterday, format } from 'date-fns';
+import { LucideIcon } from 'lucide-react';
 
 
 // ============================================================================
@@ -80,7 +81,7 @@ export interface Poll {
 
 export interface DailySurprise {
     id: string;
-    type: 'quote' | 'fact' | 'meme' | 'quiz';
+    type: 'quote' | 'fact' | 'meme' | 'quiz' | 'new-feature';
     text?: string; // For quote/fact
     author?: string; // For quote
     imageUrl?: string; // For meme
@@ -88,6 +89,11 @@ export interface DailySurprise {
     quizOptions?: string[];
     quizCorrectAnswer?: string;
     createdAt: string;
+    // For new-feature type
+    featureTitle?: string;
+    featureDescription?: string;
+    featureIcon?: string; // Lucide icon name
+    featureRoute?: string; // e.g., /dashboard/entertainment
 }
 
 

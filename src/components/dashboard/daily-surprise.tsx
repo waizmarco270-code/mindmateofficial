@@ -1,15 +1,18 @@
+
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDailySurprises } from '@/hooks/use-admin';
-import { Lightbulb, MessageSquare, Image as ImageIcon, HelpCircle, Check, X } from 'lucide-react';
+import { Lightbulb, MessageSquare, Image as ImageIcon, HelpCircle, Check, X, Award, Zap, Gamepad2, Gift as GiftIcon, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
 import Image from 'next/image';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 const getDayOfYear = (date: Date) => {
     const start = new Date(date.getFullYear(), 0, 0);
@@ -17,6 +20,15 @@ const getDayOfYear = (date: Date) => {
     const oneDay = 1000 * 60 * 60 * 24;
     return Math.floor(diff / oneDay);
 };
+
+// Map string names to Lucide components
+const iconMap: { [key: string]: React.ElementType } = {
+    Award,
+    Zap,
+    Gamepad2,
+    Gift: GiftIcon,
+};
+
 
 export function DailySurpriseCard() {
     const { dailySurprises, loading } = useDailySurprises();
@@ -109,7 +121,26 @@ export function DailySurpriseCard() {
                             })}
                         </div>
                     </div>
-                 )
+                 );
+            case 'new-feature':
+                const FeatureIcon = todaysSurprise.featureIcon ? iconMap[todaysSurprise.featureIcon] || GiftIcon : GiftIcon;
+                return (
+                     <Link href={todaysSurprise.featureRoute || '/dashboard'}>
+                        <div className="group rounded-lg p-6 bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 transition-all cursor-pointer">
+                            <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                                <div className="p-4 rounded-full bg-primary/20 text-primary">
+                                    <FeatureIcon className="h-10 w-10"/>
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-bold text-primary uppercase tracking-wider">New Feature</p>
+                                    <h3 className="text-2xl font-bold mt-1">{todaysSurprise.featureTitle}</h3>
+                                    <p className="text-muted-foreground mt-2">{todaysSurprise.featureDescription}</p>
+                                </div>
+                                <ArrowRight className="h-8 w-8 text-muted-foreground group-hover:translate-x-1 transition-transform"/>
+                            </div>
+                        </div>
+                    </Link>
+                );
             default:
                 return null;
         }
@@ -121,8 +152,14 @@ export function DailySurpriseCard() {
             case 'quote': return <MessageSquare className="h-6 w-6 text-blue-500" />;
             case 'meme': return <ImageIcon className="h-6 w-6 text-green-500" />;
             case 'quiz': return <HelpCircle className="h-6 w-6 text-purple-500" />;
+            case 'new-feature': return <GiftIcon className="h-6 w-6 text-pink-500"/>;
             default: return null;
         }
+    }
+    
+    // Don't wrap new feature announcements in the standard card
+    if (todaysSurprise.type === 'new-feature') {
+        return renderContent();
     }
 
     return (

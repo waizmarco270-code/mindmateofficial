@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2 } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -61,11 +61,13 @@ export default function AdminPanelPage() {
   const [isSavingPoll, setIsSavingPoll] = useState(false);
 
   // State for Daily Surprise
-  const [surpriseType, setSurpriseType] = useState<'quote' | 'fact' | 'meme' | 'quiz'>('fact');
+  const [surpriseType, setSurpriseType] = useState<'quote' | 'fact' | 'meme' | 'quiz' | 'new-feature'>('fact');
   const [surpriseText, setSurpriseText] = useState('');
   const [surpriseAuthor, setSurpriseAuthor] = useState('');
   const [surpriseImageUrl, setSurpriseImageUrl] = useState('');
   const [surpriseQuiz, setSurpriseQuiz] = useState({ question: '', options: ['', ''], correctAnswer: '' });
+  const [surpriseFeature, setSurpriseFeature] = useState({ title: '', description: '', icon: 'Award', route: '' });
+
   
   // State for new sections
   const [sectionName, setSectionName] = useState('');
@@ -257,6 +259,16 @@ export default function AdminPanelPage() {
             if (!surpriseQuiz.question || surpriseQuiz.options.some(o => !o) || !surpriseQuiz.correctAnswer) return toast({ variant: 'destructive', title: 'Quiz is incomplete' });
             surpriseData = { type: 'quiz', quizQuestion: surpriseQuiz.question, quizOptions: surpriseQuiz.options, quizCorrectAnswer: surpriseQuiz.correctAnswer };
             break;
+        case 'new-feature':
+            if (!surpriseFeature.title || !surpriseFeature.description || !surpriseFeature.route) return toast({ variant: 'destructive', title: 'Feature details are incomplete' });
+            surpriseData = { 
+                type: 'new-feature', 
+                featureTitle: surpriseFeature.title,
+                featureDescription: surpriseFeature.description,
+                featureIcon: surpriseFeature.icon,
+                featureRoute: surpriseFeature.route,
+            };
+            break;
     }
 
     try {
@@ -267,6 +279,7 @@ export default function AdminPanelPage() {
         setSurpriseAuthor('');
         setSurpriseImageUrl('');
         setSurpriseQuiz({ question: '', options: ['', ''], correctAnswer: '' });
+        setSurpriseFeature({ title: '', description: '', icon: 'Award', route: '' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
@@ -438,6 +451,7 @@ export default function AdminPanelPage() {
                                         <SelectItem value="quote"><MessageSquare className="mr-2 h-4 w-4" /> Quote</SelectItem>
                                         <SelectItem value="meme"><Image className="mr-2 h-4 w-4" /> Meme</SelectItem>
                                         <SelectItem value="quiz"><Mic className="mr-2 h-4 w-4" /> Micro Quiz</SelectItem>
+                                        <SelectItem value="new-feature"><Gift className="mr-2 h-4 w-4"/> New Feature</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -468,6 +482,25 @@ export default function AdminPanelPage() {
                                  </div>
                              )}
 
+                            {surpriseType === 'new-feature' && (
+                                <div className="space-y-4 p-4 border rounded-lg">
+                                    <div className="space-y-2"><Label>Feature Title</Label><Input value={surpriseFeature.title} onChange={e => setSurpriseFeature(p => ({...p, title: e.target.value}))} placeholder="e.g., Entertainment Zone"/></div>
+                                    <div className="space-y-2"><Label>Description</Label><Textarea value={surpriseFeature.description} onChange={e => setSurpriseFeature(p => ({...p, description: e.target.value}))} placeholder="Play games and earn credits!"/></div>
+                                    <div className="space-y-2"><Label>Icon</Label>
+                                         <Select value={surpriseFeature.icon} onValueChange={v => setSurpriseFeature(p => ({...p, icon: v}))}>
+                                            <SelectTrigger><SelectValue placeholder="Select an icon..."/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Award"><Award className="mr-2 h-4 w-4"/> Award</SelectItem>
+                                                <SelectItem value="Zap"><Zap className="mr-2 h-4 w-4"/> Zap</SelectItem>
+                                                <SelectItem value="Gamepad2"><Gamepad className="mr-2 h-4 w-4"/> Gamepad2</SelectItem>
+                                                <SelectItem value="Gift"><Gift className="mr-2 h-4 w-4"/> Gift</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                     <div className="space-y-2"><Label>Route</Label><Input value={surpriseFeature.route} onChange={e => setSurpriseFeature(p => ({...p, route: e.target.value}))} placeholder="/dashboard/entertainment"/></div>
+                                </div>
+                            )}
+
                              <Button type="submit"><PlusCircle className="mr-2 h-4 w-4"/> Add Surprise</Button>
                           </form>
                       </CardContent>
@@ -486,8 +519,8 @@ export default function AdminPanelPage() {
                                 <TableBody>
                                     {dailySurprises.map(s => (
                                         <TableRow key={s.id}>
-                                            <TableCell><Badge variant="secondary" className="capitalize">{s.type}</Badge></TableCell>
-                                            <TableCell className="max-w-xs truncate">{s.text || s.quizQuestion || s.imageUrl}</TableCell>
+                                            <TableCell><Badge variant="secondary" className="capitalize">{s.type.replace('-', ' ')}</Badge></TableCell>
+                                            <TableCell className="max-w-xs truncate">{s.text || s.quizQuestion || s.imageUrl || s.featureTitle}</TableCell>
                                             <TableCell className="text-right">
                                                  <AlertDialog>
                                                     <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
