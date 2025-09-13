@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
-import { Gift, Copy, Check, Users, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Gift, Copy, Check, Users, ShieldCheck, AlertTriangle, Send } from 'lucide-react';
 import { useReferrals } from '@/hooks/use-referrals';
 
 const REFERRAL_REWARD = 50;
@@ -20,7 +20,8 @@ export default function ReferralsPage() {
     const { submitReferralCode } = useReferrals();
     const { toast } = useToast();
 
-    const [isCopied, setIsCopied] = useState(false);
+    const [isCodeCopied, setIsCodeCopied] = useState(false);
+    const [isInviteCopied, setIsInviteCopied] = useState(false);
     const [referralCodeInput, setReferralCodeInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -32,12 +33,21 @@ export default function ReferralsPage() {
         return `${namePart}-${idPart}`.toUpperCase();
     }, [currentUserData]);
     
-    const handleCopy = () => {
+    const handleCopyCode = () => {
         navigator.clipboard.writeText(userReferralCode);
-        setIsCopied(true);
-        toast({ title: "Copied to clipboard!" });
-        setTimeout(() => setIsCopied(false), 2000);
+        setIsCodeCopied(true);
+        toast({ title: "Code copied to clipboard!" });
+        setTimeout(() => setIsCodeCopied(false), 2000);
     };
+
+    const handleShareInvite = () => {
+        const appUrl = window.location.origin;
+        const inviteMessage = `Hey! I'm using MindMate to supercharge my studies. It has an AI tutor, focus modes, and tons of resources. Sign up for free and use my referral code to get started: ${userReferralCode}\n\nJoin me here: ${appUrl}`;
+        navigator.clipboard.writeText(inviteMessage);
+        setIsInviteCopied(true);
+        toast({ title: "Invite message copied!" });
+        setTimeout(() => setIsInviteCopied(false), 2000);
+    }
     
     const handleSubmitCode = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -73,15 +83,22 @@ export default function ReferralsPage() {
                         <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/>Your Referral Code</CardTitle>
                         <CardDescription>Share this code with your friends. When they sign up and use it, you'll get {REFERRAL_REWARD} credits!</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex items-center gap-4">
+                    <CardContent className="space-y-4">
                         <Input 
                             readOnly
                             value={userReferralCode}
                             className="text-2xl font-mono tracking-widest h-14 text-center bg-muted"
                         />
-                        <Button size="icon" onClick={handleCopy} className="h-14 w-14">
-                            {isCopied ? <Check className="h-6 w-6" /> : <Copy className="h-6 w-6" />}
-                        </Button>
+                        <div className="flex gap-2">
+                             <Button onClick={handleCopyCode} className="w-full" variant="outline">
+                                {isCodeCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                                {isCodeCopied ? 'Code Copied!' : 'Copy Code'}
+                            </Button>
+                            <Button onClick={handleShareInvite} className="w-full">
+                                {isInviteCopied ? <Check className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
+                                {isInviteCopied ? 'Invite Copied!' : 'Share Invite'}
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
                 
