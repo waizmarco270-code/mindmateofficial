@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { ArrowRight, Bot, BrainCircuit, Users, Zap, Youtube, Twitter, Send, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
@@ -88,12 +88,12 @@ export function LandingPage() {
           <div className="flex items-center gap-2">
              <SignedOut>
                 <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
-                    <div>
-                        <Button variant="default" className="bg-white text-slate-900 hover:bg-slate-200">
-                            <GoogleIcon />
-                            Continue with Google
-                        </Button>
-                    </div>
+                    <Button variant="ghost">Sign In</Button>
+                </SignUpButton>
+                 <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
+                    <Button>
+                        Get Started <ArrowRight className="ml-2" />
+                    </Button>
                 </SignUpButton>
              </SignedOut>
              <SignedIn>
@@ -111,7 +111,6 @@ export function LandingPage() {
         <section className="relative overflow-hidden py-24 sm:py-32">
              <div className="absolute inset-0 -z-10 bg-slate-950">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_50%_50%_at_50%_50%,rgba(120,113,198,0.3),rgba(255,255,255,0))]"></div>
-              <div className="absolute inset-0 animate-stars-slow [background-image:radial-gradient(circle_at_center,theme(colors.white),transparent_2px),radial-gradient(circle_at_center,theme(colors.white),transparent_2px)] [background-position:0_0,150px_150px] [background-size:2px_2px]"></div>
             </div>
             <div className="container mx-auto px-4 text-center relative">
                 <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up" style={{animationDelay: '0.2s'}}>
@@ -120,23 +119,20 @@ export function LandingPage() {
                 <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
                     MindMate is your all-in-one AI-powered study companion, designed to help you learn smarter, stay focused, and achieve your academic goals.
                 </p>
-                <div className="mt-12 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
-                    <div className="mx-auto max-w-2xl rounded-2xl border border-destructive/30 bg-red-950/20 p-6 text-left shadow-2xl shadow-red-950/50">
-                        <h2 className="flex items-center gap-3 text-xl font-bold text-red-300">
-                            <FileText />
-                            How to Sign In
-                        </h2>
-                        <p className="mt-2 text-sm font-semibold text-red-300/80">
-                            Important: Read this before signing in!
-                        </p>
-                         <ol className="mt-4 list-decimal list-inside space-y-2 text-slate-300/90 text-sm">
-                           <li>Click "Continue with Google" in the top-right corner.</li>
-                           <li>Wait for the pop-up to load and select your email.</li>
-                           <li>The "I'm not a robot" checkbox may take 10-20 seconds to appear. Please wait patiently.</li>
-                           <li>Tick the checkbox and click "Continue".</li>
-                           <li>You'll be signed in and redirected to the dashboard.</li>
-                        </ol>
-                    </div>
+                 <div className="mt-10 flex items-center justify-center gap-x-6 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
+                    <SignedOut>
+                        <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
+                            <Button size="lg">Create Free Account <ArrowRight className="ml-2" /></Button>
+                        </SignUpButton>
+                        <Link href="/dashboard" className={cn(buttonVariants({ variant: "outline", size: "lg"}), "bg-transparent text-white")}>
+                            Explore Demo
+                        </Link>
+                    </SignedOut>
+                     <SignedIn>
+                        <Link href="/dashboard">
+                            <Button size="lg">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                        </Link>
+                     </SignedIn>
                 </div>
             </div>
         </section>
@@ -193,3 +189,5 @@ export function LandingPage() {
     </div>
   );
 }
+
+    

@@ -79,6 +79,11 @@ export function ChatInterface() {
   
   const handleMicClick = () => {
      if (!user) {
+      toast({
+          variant: 'destructive',
+          title: 'Please Sign In',
+          description: 'You need to be signed in to use the microphone.',
+        });
       return;
     }
     if (!recognitionRef.current) {
@@ -198,6 +203,11 @@ export function ChatInterface() {
   const handleSubmit = async (e: React.FormEvent | Event, voiceInput?: string) => {
     e.preventDefault();
     if (!user) {
+      toast({
+        variant: 'destructive',
+        title: 'Please Sign In',
+        description: 'You need to be signed in to chat with Marco AI.',
+      });
       return;
     }
     const currentInput = voiceInput || input;
@@ -258,10 +268,10 @@ export function ChatInterface() {
                 <div className="p-5 rounded-full bg-primary/10 mb-4">
                     <ShieldAlert className="h-12 w-12 text-primary" />
                 </div>
-                <h1 className="text-4xl font-bold tracking-tight">Access Marco AI</h1>
-                <p className="text-muted-foreground mt-2 max-w-lg">Please sign in or create an account to start a conversation with your personal AI tutor.</p>
-                <SignInButton>
-                  <Button size="lg" className="mt-6 text-lg py-7">
+                <h1 className="text-2xl font-bold tracking-tight">Access Marco AI</h1>
+                <p className="text-muted-foreground mt-2 max-w-sm">Please sign in or create an account to start a conversation with your personal AI tutor.</p>
+                <SignInButton mode="modal">
+                  <Button size="lg" className="mt-6">
                       Sign In to Continue
                   </Button>
                 </SignInButton>
