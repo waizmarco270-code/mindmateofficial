@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '../theme-toggle';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -18,6 +18,7 @@ export default function Header() {
   const { isAdmin } = useAdmin();
   
   const credits = currentUserData?.credits ?? 0;
+  const streak = currentUserData?.streak ?? 0;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -43,6 +44,11 @@ export default function Header() {
         <SignedIn>
             {isLoaded && user && (
             <>
+                <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
+                    <Flame className="h-5 w-5 text-orange-500" />
+                    <span>{streak} Day Streak</span>
+                </div>
+
                 <Popover>
                     <PopoverTrigger asChild>
                         <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
