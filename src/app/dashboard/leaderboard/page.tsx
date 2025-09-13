@@ -5,10 +5,12 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, CheckCircle, Clock, Shield, Code } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, CheckCircle, Clock, Shield, Code, Flame } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 const LEADERBOARD_EXCLUDED_UIDS: string[] = [];
 
@@ -23,9 +25,10 @@ const SCORE_WEIGHTS = {
 export default function LeaderboardPage() {
     const { user: currentUser } = useUser();
     const { users } = useUsers();
+    const [activeTab, setActiveTab] = useState('all-time');
 
     const sortedUsers = useMemo(() => {
-        return [...users]
+        const processedUsers = users
             .filter(u => !u.isBlocked && !LEADERBOARD_EXCLUDED_UIDS.includes(u.uid))
             .map(user => {
                 const credits = user.credits || 0;
@@ -39,9 +42,16 @@ export default function LeaderboardPage() {
                                    (studyTime * SCORE_WEIGHTS.totalStudyTime);
 
                 return { ...user, totalScore: Math.round(totalScore) };
-            })
-            .sort((a, b) => b.totalScore - a.totalScore);
-    }, [users]);
+            });
+
+        if (activeTab === 'streaks') {
+            return processedUsers.sort((a, b) => (b.streak || 0) - (a.streak || 0));
+        }
+        
+        // Default to all-time score
+        return processedUsers.sort((a, b) => b.totalScore - a.totalScore);
+        
+    }, [users, activeTab]);
 
 
     const topThree = sortedUsers.slice(0, 3);
@@ -51,6 +61,11 @@ export default function LeaderboardPage() {
     
     const renderUserStats = (user: User & { totalScore: number }) => (
         <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+             <div className="flex items-center gap-1.5">
+                <Flame className="h-3 w-3 text-orange-500" />
+                <span className="font-semibold">{user.streak || 0}</span>
+                <span>Day Streak</span>
+            </div>
             <div className="flex items-center gap-1.5">
                 <Award className="h-3 w-3 text-amber-500" />
                 <span className="font-semibold">{user.credits || 0}</span>
@@ -65,11 +80,6 @@ export default function LeaderboardPage() {
                 <Zap className="h-3 w-3 text-green-500" />
                 <span className="font-semibold">{user.focusSessionsCompleted || 0}</span>
                 <span>Focus Sessions</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-                <CheckCircle className="h-3 w-3 text-rose-500" />
-                <span className="font-semibold">{user.dailyTasksCompleted || 0}</span>
-                <span>Tasks Done</span>
             </div>
         </div>
     );
@@ -101,8 +111,8 @@ export default function LeaderboardPage() {
                         <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
                      </CardHeader>
                      <CardContent className="text-center p-6 pt-0">
-                        <p className="text-5xl font-bold text-yellow-400">{user.totalScore}</p>
-                        <p className="text-xs text-muted-foreground">Total Score</p>
+                        <p className="text-5xl font-bold text-yellow-400">{activeTab === 'streaks' ? (user.streak || 0) : user.totalScore}</p>
+                        <p className="text-xs text-muted-foreground">{activeTab === 'streaks' ? 'Day Streak' : 'Total Score'}</p>
                         {renderUserStats(user)}
                      </CardContent>
                 </Card>
@@ -141,7 +151,7 @@ export default function LeaderboardPage() {
                             </div>
                             <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
                         </div>
-                        <p className={cn("text-2xl font-bold", placeDetails.trophyColor)}>{user.totalScore}</p>
+                        <p className={cn("text-2xl font-bold", placeDetails.trophyColor)}>{activeTab === 'streaks' ? (user.streak || 0) : user.totalScore}</p>
                     </div>
                     <Separator />
                     {renderUserStats(user)}
@@ -154,9 +164,30 @@ export default function LeaderboardPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Top Achievers</h1>
-                <p className="text-muted-foreground">See who's leading the board with the highest total score!</p>
+                <p className="text-muted-foreground">See who's leading the board with the highest scores and longest streaks!</p>
             </div>
 
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 md:w-1/2 mx-auto">
+                    <TabsTrigger value="all-time">All-Time Score</TabsTrigger>
+                    <TabsTrigger value="streaks">Streaks</TabsTrigger>
+                </TabsList>
+                <TabsContent value="all-time" className="mt-6">
+                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} />
+                </TabsContent>
+                <TabsContent value="streaks" className="mt-6">
+                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} isStreakView/>
+                </TabsContent>
+            </Tabs>
+        </div>
+    );
+}
+
+const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, renderPodiumCard, renderUserStats, isStreakView = false }: any) => {
+    const currentUserRank = sortedUsers.findIndex((u: any) => u.uid === currentUser?.id);
+
+    return (
+        <div className="space-y-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8 items-center">
                 {topThree[0] && renderPodiumCard(topThree[0], 0)}
                  <div className="space-y-4">
@@ -171,7 +202,7 @@ export default function LeaderboardPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {restOfUsers.map((user, index) => {
+                        {restOfUsers.map((user: User & { totalScore: number }, index: number) => {
                             const rank = index + 4;
                             const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
                             return (
@@ -196,7 +227,10 @@ export default function LeaderboardPage() {
                                                         </span>
                                                     )}
                                                 </div>
-                                                 <p className="text-muted-foreground text-sm">Total Score: <span className="font-bold text-primary">{user.totalScore}</span></p>
+                                                 <p className="text-muted-foreground text-sm">
+                                                    {isStreakView ? "Streak" : "Total Score"}: 
+                                                    <span className="font-bold text-primary ml-1">{isStreakView ? (user.streak || 0) : user.totalScore}</span>
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="sm:border-l sm:pl-4 mt-4 sm:mt-0">
@@ -223,13 +257,17 @@ export default function LeaderboardPage() {
                             </div>
                             <div className="flex-1">
                                 <h3 className="text-base md:text-lg font-semibold">You are on the leaderboard! Keep it up!</h3>
-                                 <p className="text-sm text-muted-foreground">Your total score is <span className="font-bold text-primary">{sortedUsers[currentUserRank].totalScore}</span>.</p>
+                                 <p className="text-sm text-muted-foreground">
+                                    Your {isStreakView ? "current streak is" : "total score is"} 
+                                    <span className="font-bold text-primary ml-1">
+                                        {isStreakView ? (sortedUsers[currentUserRank].streak || 0) : sortedUsers[currentUserRank].totalScore}
+                                    </span>.
+                                 </p>
                             </div>
                          </div>
                     </CardContent>
                 </Card>
             )}
-
         </div>
     );
-}
+};

@@ -5,6 +5,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp } from 'firebase/firestore';
+import { isToday, isYesterday, format } from 'date-fns';
 
 
 // ============================================================================
@@ -35,6 +36,9 @@ export interface User {
   freeRewards?: number; // Extra scratch cards
   freeGuesses?: number; // Extra gift box guesses
   rewardHistory?: { reward: number | string, date: Timestamp, source: string }[];
+  streak?: number;
+  longestStreak?: number;
+  lastStreakCheck?: string; // YYYY-MM-DD
 }
 
 export interface Announcement {
@@ -196,30 +200,58 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const userDocRef = doc(db, 'users', authUser.id);
-        const unsubscribe = onSnapshot(userDocRef, (doc) => {
+        const unsubscribe = onSnapshot(userDocRef, async (doc) => {
             if (doc.exists()) {
                 const data = doc.data();
+                let userData = { id: doc.id, ...data } as User;
+                
+                // --- Sync Clerk data ---
                 const updates: Partial<User> = {};
-                let hasUpdates = false;
+                let hasProfileUpdates = false;
 
                 const clerkFullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ');
                 const clerkDisplayName = clerkFullName || authUser.username;
 
                 if (clerkDisplayName && data.displayName !== clerkDisplayName) {
                     updates.displayName = clerkDisplayName;
-                    hasUpdates = true;
+                    hasProfileUpdates = true;
                 }
                 
                 if (data.photoURL !== authUser.imageUrl) {
                     updates.photoURL = authUser.imageUrl;
-                    hasUpdates = true;
-                }
-
-                if (hasUpdates) {
-                    updateDoc(userDocRef, updates);
+                    hasProfileUpdates = true;
                 }
                 
-                setCurrentUserData({ id: doc.id, ...data, ...updates } as User);
+                // --- Daily Streak Logic ---
+                const todayStr = format(new Date(), 'yyyy-MM-dd');
+                if (data.lastStreakCheck !== todayStr) {
+                    const lastCheckDate = data.lastStreakCheck ? new Date(data.lastStreakCheck) : null;
+                    const currentStreak = data.streak || 0;
+                    
+                    if (lastCheckDate && isYesterday(lastCheckDate)) {
+                        const newStreak = currentStreak + 1;
+                        updates.streak = newStreak;
+                        if (newStreak > (data.longestStreak || 0)) {
+                            updates.longestStreak = newStreak;
+                        }
+                        // Award credits
+                        if (newStreak === 5 || newStreak === 10) updates.credits = increment(50);
+                        if (newStreak > 0 && newStreak % 30 === 0) updates.credits = increment(200);
+
+                    } else if (!lastCheckDate || !isToday(lastCheckDate)) {
+                        // Streak is broken or first login
+                        updates.streak = 1;
+                    }
+                    updates.lastStreakCheck = todayStr;
+                    hasProfileUpdates = true;
+                }
+                
+                if (hasProfileUpdates) {
+                    await updateDoc(userDocRef, updates);
+                    userData = { ...userData, ...updates };
+                }
+                
+                setCurrentUserData(userData);
 
             } else {
                 const clerkFullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ');
@@ -239,6 +271,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     totalStudyTime: 0,
                     freeRewards: 0,
                     freeGuesses: 0,
+                    streak: 1,
+                    longestStreak: 1,
+                    lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
