@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -93,12 +93,17 @@ export default function LeaderboardPage() {
                                    (studyTime * SCORE_WEIGHTS.totalStudyTime);
                                    
                 const userWeeklyTime = weeklyStudyTime[user.uid] || 0;
+                const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
 
-                return { ...user, totalScore: Math.round(totalScore), weeklyTime: userWeeklyTime };
+                return { ...user, totalScore: Math.round(totalScore), weeklyTime: userWeeklyTime, memoryGameHighScore };
             });
         
         if (activeTab === 'weekly') {
             return processedUsers.sort((a, b) => b.weeklyTime - a.weeklyTime);
+        }
+
+        if (activeTab === 'entertainment') {
+            return processedUsers.sort((a, b) => b.memoryGameHighScore - a.memoryGameHighScore);
         }
         
         // Default to all-time score
@@ -112,30 +117,43 @@ export default function LeaderboardPage() {
 
     const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
     
-    const renderUserStats = (user: User & { totalScore: number, weeklyTime: number }) => (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
-             <div className="flex items-center gap-1.5">
-                <Flame className="h-3 w-3 text-orange-500" />
-                <span className="font-semibold">{user.streak || 0}</span>
-                <span>Day Streak</span>
+    const renderUserStats = (user: User & { totalScore: number, weeklyTime: number, memoryGameHighScore: number }) => {
+        if (activeTab === 'entertainment') {
+             return (
+                 <div className="grid grid-cols-1 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+                     <div className="flex items-center gap-1.5">
+                        <Gamepad2 className="h-3 w-3 text-green-500" />
+                        <span className="font-semibold">{user.memoryGameHighScore || 0}</span>
+                        <span>Memory Game High Score</span>
+                    </div>
+                </div>
+            )
+        }
+        return (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+                 <div className="flex items-center gap-1.5">
+                    <Flame className="h-3 w-3 text-orange-500" />
+                    <span className="font-semibold">{user.streak || 0}</span>
+                    <span>Day Streak</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Award className="h-3 w-3 text-amber-500" />
+                    <span className="font-semibold">{user.credits || 0}</span>
+                    <span>Credits</span>
+                </div>
+                 <div className="flex items-center gap-1.5">
+                    <Clock className="h-3 w-3 text-blue-500" />
+                    <span className="font-semibold">{Math.round((user.totalStudyTime || 0) / 60)}</span>
+                    <span>Mins Studied</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <Zap className="h-3 w-3 text-green-500" />
+                    <span className="font-semibold">{user.focusSessionsCompleted || 0}</span>
+                    <span>Focus Sessions</span>
+                </div>
             </div>
-            <div className="flex items-center gap-1.5">
-                <Award className="h-3 w-3 text-amber-500" />
-                <span className="font-semibold">{user.credits || 0}</span>
-                <span>Credits</span>
-            </div>
-             <div className="flex items-center gap-1.5">
-                <Clock className="h-3 w-3 text-blue-500" />
-                <span className="font-semibold">{Math.round((user.totalStudyTime || 0) / 60)}</span>
-                <span>Mins Studied</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-                <Zap className="h-3 w-3 text-green-500" />
-                <span className="font-semibold">{user.focusSessionsCompleted || 0}</span>
-                <span>Focus Sessions</span>
-            </div>
-        </div>
-    );
+        );
+    }
     
     const getTrophyColor = (rank: number) => {
         if (rank === 0) return 'text-yellow-400';
@@ -151,7 +169,7 @@ export default function LeaderboardPage() {
         return `${m}m`;
     };
 
-    const renderPodiumCard = (user: (User & { totalScore: number, weeklyTime: number }), rank: number) => {
+    const renderPodiumCard = (user: (User & { totalScore: number, weeklyTime: number, memoryGameHighScore: number }), rank: number) => {
         if (!user) return null;
         
         const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
@@ -159,11 +177,13 @@ export default function LeaderboardPage() {
         const scoreToDisplay = {
             'all-time': user.totalScore,
             'weekly': formatWeeklyTime(user.weeklyTime),
+            'entertainment': user.memoryGameHighScore
         }[activeTab];
 
         const scoreLabel = {
             'all-time': 'Total Score',
             'weekly': 'This Week',
+            'entertainment': 'High Score'
         }[activeTab];
         
         if (rank === 0) { // First Place
@@ -253,9 +273,10 @@ export default function LeaderboardPage() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-2 md:w-1/2 mx-auto">
+                <TabsList className="grid w-full grid-cols-3 md:w-1/2 mx-auto">
                     <TabsTrigger value="all-time">All-Time</TabsTrigger>
                     <TabsTrigger value="weekly">Weekly</TabsTrigger>
+                    <TabsTrigger value="entertainment">Entertainment</TabsTrigger>
                 </TabsList>
                 <TabsContent value="all-time" className="mt-6">
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="all-time"/>
@@ -275,6 +296,18 @@ export default function LeaderboardPage() {
                     </Card>
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="weekly"/>
                 </TabsContent>
+                 <TabsContent value="entertainment" className="mt-6 space-y-6">
+                    <Card>
+                        <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
+                            <Gamepad2 className="h-8 w-8 text-primary" />
+                            <div>
+                                <h4 className="font-semibold text-lg">Entertainment Leaderboard</h4>
+                                <p className="text-muted-foreground text-sm">Ranking is based on the all-time high score in the Memory Pattern game.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="entertainment"/>
+                </TabsContent>
             </Tabs>
         </div>
     );
@@ -286,6 +319,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
     const getScoreLabel = () => ({
         'all-time': 'Total Score',
         'weekly': 'Weekly Time',
+        'entertainment': 'High Score',
     }[activeTab]);
     
     const formatWeeklyTime = (seconds: number) => {
@@ -297,7 +331,8 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
 
     const getScoreToDisplay = (user: any) => ({
         'all-time': user.totalScore,
-        'weekly': formatWeeklyTime(user.weeklyTime)
+        'weekly': formatWeeklyTime(user.weeklyTime),
+        'entertainment': user.memoryGameHighScore
     }[activeTab]);
 
     return (

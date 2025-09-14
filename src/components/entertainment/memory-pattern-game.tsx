@@ -75,16 +75,23 @@ const playSound = (frequency: number) => {
 export function MemoryPatternGame() {
     const { user } = useUser();
     const { toast } = useToast();
-    const { addCreditsToUser } = useUsers();
+    const { addCreditsToUser, currentUserData, updateGameHighScore } = useUsers();
 
     const [sequence, setSequence] = useState<PadColor[]>([]);
     const [playerSequence, setPlayerSequence] = useState<PadColor[]>([]);
     const [gameState, setGameState] = useState<'idle' | 'watching' | 'playing' | 'gameOver'>('idle');
     const [activePad, setActivePad] = useState<PadColor | null>(null);
     const [score, setScore] = useState(0);
-    const [highScore, setHighScore] = useLocalStorage('memoryGameHighScore', 0);
+    const [highScore, setHighScore] = useState(0);
     const [dailyMilestonesReached, setDailyMilestonesReached] = useState<Milestone[]>([]);
     const [isCheckingClaims, setIsCheckingClaims] = useState(true);
+
+     useEffect(() => {
+        if(currentUserData?.gameHighScores?.memoryGame) {
+            setHighScore(currentUserData.gameHighScores.memoryGame);
+        }
+    }, [currentUserData]);
+
 
      // Check daily claim status
     useEffect(() => {
@@ -180,8 +187,9 @@ export function MemoryPatternGame() {
         // Check if the latest click is correct
         if (newPlayerSequence[newPlayerSequence.length - 1] !== sequence[newPlayerSequence.length - 1]) {
             setGameState('gameOver');
-            if (score > highScore) {
+            if (user && score > highScore) {
                 setHighScore(score);
+                updateGameHighScore(user.id, 'memoryGame', score);
             }
             return;
         }

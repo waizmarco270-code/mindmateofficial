@@ -44,6 +44,9 @@ export interface User {
   referralCode?: string; // e.g. JOHNDOE-123
   referralUsed?: boolean; // True if they have used someone else's code
   referredBy?: string; // UID of the user who referred them
+  gameHighScores?: {
+    memoryGame?: number;
+  };
 }
 
 export interface Announcement {
@@ -128,6 +131,7 @@ interface AppDataContextType {
     incrementFocusSessions: (uid: string) => Promise<void>;
     incrementDailyTasksCompleted: (uid: string) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
+    updateGameHighScore: (uid: string, game: 'memoryGame', score: number) => Promise<void>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -303,6 +307,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     longestStreak: 1,
                     lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
                     referralUsed: false,
+                    gameHighScores: {
+                        memoryGame: 0
+                    },
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -489,6 +496,21 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { totalStudyTime: totalSeconds });
     }
 
+    const updateGameHighScore = async (uid: string, game: 'memoryGame', score: number) => {
+        if (!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        // Only update if the new score is higher
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+            const currentHighScore = userSnap.data().gameHighScores?.[game] || 0;
+            if (score > currentHighScore) {
+                await updateDoc(userDocRef, {
+                    [`gameHighScores.${game}`]: score
+                });
+            }
+        }
+    };
+
     // Announcement functions
     const addAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
         await addDoc(collection(db, 'announcements'), { ...announcement, createdAt: serverTimestamp() });
@@ -595,6 +617,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         incrementFocusSessions,
         incrementDailyTasksCompleted,
         updateStudyTime,
+        updateGameHighScore,
         makeUserAdmin,
         removeUserAdmin,
         makeUserVip,
