@@ -27,7 +27,6 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
     const [timeLeft, setTimeLeft] = useState(quiz.timeLimit);
     const [quizFinished, setQuizFinished] = useState(false);
-    const [isInitialAttempt, setIsInitialAttempt] = useState(true);
     
     const creditAwardedRef = useRef(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -75,17 +74,15 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
         // Always increment attempt count on finish
         await incrementQuizAttempt(user.id, quiz.id);
 
-        const currentAttempts = (currentUserData.quizAttempts?.[quiz.id] || 0) + 1;
         const isPerfect = score === quiz.questions.length && score > 0;
         const alreadyPerfected = currentUserData.perfectedQuizzes?.includes(quiz.id);
 
-        // Award logic: perfect score, within 2 attempts, and not already perfected
-        if (isPerfect && currentAttempts <= 2 && !alreadyPerfected && !creditAwardedRef.current) {
+        if (isPerfect && !alreadyPerfected && !creditAwardedRef.current) {
             creditAwardedRef.current = true;
-            await addCreditsToUser(user.id, 5);
+            await addCreditsToUser(user.id, quiz.reward);
             await addPerfectedQuiz(user.id, quiz.id);
             toast({
-                title: "Perfect Score! +5 Credits!",
+                title: `Perfect Score! +${quiz.reward} Credits!`,
                 description: "Congratulations! You've earned a reward for your excellent knowledge.",
                 className: "bg-green-500/10 text-green-700 border-green-500/50 dark:text-green-300"
             });
@@ -109,12 +106,24 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
         }
     };
     
-    const handleReattempt = () => {
+    const handleReattempt = async () => {
+        if (!user || !currentUserData) {
+            toast({ variant: 'destructive', title: "Please log in to re-attempt."});
+            return;
+        }
+
+        if (currentUserData.credits < quiz.entryFee) {
+            toast({ variant: 'destructive', title: "Insufficient Credits", description: `You need ${quiz.entryFee} credits to re-attempt.`});
+            return;
+        }
+
+        // Deduct entry fee for re-attempt
+        await addCreditsToUser(user.id, -quiz.entryFee);
+
         setCurrentQuestionIndex(0);
         setSelectedAnswers({});
         setTimeLeft(quiz.timeLimit);
         setQuizFinished(false);
-        setIsInitialAttempt(false); // It's no longer the first attempt
         creditAwardedRef.current = false; // Reset credit award lock
         startTimer();
     };
@@ -128,7 +137,6 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
     if (quizFinished) {
         const isPerfectScore = score === quiz.questions.length && score > 0;
         const alreadyPerfected = currentUserData?.perfectedQuizzes?.includes(quiz.id);
-        const currentAttempts = currentUserData?.quizAttempts?.[quiz.id] || 1;
         
         return (
             <div className="flex flex-col items-center justify-center p-4 h-full overflow-y-auto">
@@ -153,13 +161,13 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
                            <p className="text-6xl font-bold tracking-tight">{score} <span className="text-3xl text-muted-foreground">/ {quiz.questions.length}</span></p>
                         </div>
                         
-                        {isPerfectScore && currentAttempts <= 2 && !alreadyPerfected && (
+                        {isPerfectScore && !alreadyPerfected && (
                              <div className="flex items-center justify-center gap-2 rounded-lg border border-green-500/50 bg-green-500/10 p-3 text-green-700 dark:text-green-300">
                                 <CheckCircle className="h-5 w-5"/>
-                                <p className="font-semibold">Awesome! You earned 5 bonus credits!</p>
+                                <p className="font-semibold">Awesome! You earned {quiz.reward} bonus credits!</p>
                             </div>
                         )}
-                         {isPerfectScore && (currentAttempts > 2 || alreadyPerfected) && (
+                         {isPerfectScore && alreadyPerfected && (
                              <div className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
                                 <Trophy className="h-5 w-5"/>
                                 <p className="font-semibold">Perfect score! No more credits can be earned for this quiz.</p>
@@ -189,7 +197,7 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
                             </Button>
                         </DialogClose>
                         <Button className="w-full sm:w-auto" onClick={handleReattempt}>
-                            <RefreshCw className="mr-2 h-4 w-4"/> Re-attempt Quiz
+                            <RefreshCw className="mr-2 h-4 w-4"/> Re-attempt (Cost: {quiz.entryFee} credits)
                         </Button>
                     </CardFooter>
                 </Card>

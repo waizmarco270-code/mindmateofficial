@@ -22,7 +22,7 @@ import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useQuizzes } from '@/hooks/use-quizzes';
+import { useQuizzes, type QuizCategory } from '@/hooks/use-quizzes';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -79,10 +79,16 @@ const QuizQuestionSchema = z.object({
   path: ["correctAnswer"],
 });
 
+const quizCategories: QuizCategory[] = [
+    'general', 'jee-neet', 'sports-gk', 'movies-anime', 'exam-mcq'
+];
+
 const QuizImportSchema = z.object({
   title: z.string().min(1, "Quiz title is required."),
-  category: z.string().min(1, "Quiz category is required."),
+  category: z.enum(quizCategories),
   timeLimit: z.number().int().positive("Time limit must be a positive number."),
+  entryFee: z.number().int().nonnegative("Entry fee cannot be negative."),
+  reward: z.number().int().positive("Reward must be a positive number."),
   questions: z.array(QuizQuestionSchema).min(1, "Quiz must have at least one question."),
 });
 
@@ -153,8 +159,10 @@ export default function AdminPanelPage() {
 
   // State for Quiz
   const [quizTitle, setQuizTitle] = useState('');
-  const [quizCategory, setQuizCategory] = useState('');
+  const [quizCategory, setQuizCategory] = useState<QuizCategory>('general');
   const [quizTimeLimit, setQuizTimeLimit] = useState(300);
+  const [quizEntryFee, setQuizEntryFee] = useState(0);
+  const [quizReward, setQuizReward] = useState(5);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([
     { text: '', options: ['', '', '', ''], correctAnswer: '' }
   ]);
@@ -355,15 +363,19 @@ export default function AdminPanelPage() {
       try {
           await addDoc(collection(db, 'quizzes'), {
               title: quizTitle,
-              category: quizCategory.trim(),
+              category: quizCategory,
               timeLimit: quizTimeLimit,
+              entryFee: quizEntryFee,
+              reward: quizReward,
               questions: quizQuestions,
               createdAt: new Date().toISOString(),
           });
           toast({ title: "Quiz Saved!", description: "The new quiz has been added to the database." });
           setQuizTitle('');
-          setQuizCategory('');
+          setQuizCategory('general');
           setQuizTimeLimit(300);
+          setQuizEntryFee(0);
+          setQuizReward(5);
           setQuizQuestions([{ text: '', options: ['', '', '', ''], correctAnswer: '' }]);
       } catch (error: any) {
           toast({ variant: 'destructive', title: "Error Saving Quiz", description: error.message });
@@ -473,8 +485,10 @@ export default function AdminPanelPage() {
   const jsonExample = `
 {
   "title": "History 101",
-  "category": "Study Quiz",
+  "category": "general",
   "timeLimit": 600,
+  "entryFee": 0,
+  "reward": 10,
   "questions": [
     {
       "text": "In which year did World War II end?",
@@ -849,9 +863,24 @@ export default function AdminPanelPage() {
                       <CardContent className="space-y-6">
                           <div className="grid md:grid-cols-3 gap-4">
                               <div className="space-y-2 md:col-span-2"><Label htmlFor="quiz-title">Quiz Title</Label><Input id="quiz-title" value={quizTitle} onChange={e => setQuizTitle(e.target.value)} placeholder="e.g. The Ultimate Anime Quiz" /></div>
-                              <div className="space-y-2"><Label htmlFor="quiz-category">Category</Label><Input id="quiz-category" value={quizCategory} onChange={e => setQuizCategory(e.target.value)} placeholder="e.g. Anime or Study Quiz" /></div>
+                              <div className="space-y-2"><Label htmlFor="quiz-category">Category</Label>
+                                <Select value={quizCategory} onValueChange={(v: QuizCategory) => setQuizCategory(v)}>
+                                    <SelectTrigger id="quiz-category"><SelectValue placeholder="Select a category..."/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="general">General</SelectItem>
+                                        <SelectItem value="jee-neet">JEE/NEET Level</SelectItem>
+                                        <SelectItem value="sports-gk">Sports &amp; GK</SelectItem>
+                                        <SelectItem value="movies-anime">Movies, Webseries &amp; Anime</SelectItem>
+                                        <SelectItem value="exam-mcq">Exam Top MCQ (10th/12th)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                              </div>
                           </div>
-                          <div className="space-y-2"><Label htmlFor="quiz-time-limit">Time Limit (seconds)</Label><Input id="quiz-time-limit" type="number" value={quizTimeLimit} onChange={e => setQuizTimeLimit(Number(e.target.value))} placeholder="e.g. 300" /></div>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div className="space-y-2"><Label htmlFor="quiz-time-limit">Time Limit (seconds)</Label><Input id="quiz-time-limit" type="number" value={quizTimeLimit} onChange={e => setQuizTimeLimit(Number(e.target.value))} placeholder="e.g. 300" /></div>
+                            <div className="space-y-2"><Label htmlFor="quiz-entry-fee">Entry Fee (Credits)</Label><Input id="quiz-entry-fee" type="number" value={quizEntryFee} onChange={e => setQuizEntryFee(Number(e.target.value))} placeholder="e.g. 0" /></div>
+                            <div className="space-y-2"><Label htmlFor="quiz-reward">Perfect Score Reward (Credits)</Label><Input id="quiz-reward" type="number" value={quizReward} onChange={e => setQuizReward(Number(e.target.value))} placeholder="e.g. 5" /></div>
+                          </div>
                           <div className="space-y-4">{quizQuestions.map((q, qIndex) => (<div key={qIndex} className="p-4 border rounded-lg space-y-4 relative">{quizQuestions.length > 1 && (<Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => removeQuestion(qIndex)}><Trash2 className="h-4 w-4" /></Button>)}<div className="space-y-2"><Label htmlFor={`q-text-${qIndex}`}>Question {qIndex + 1}</Label><Input id={`q-text-${qIndex}`} value={q.text} onChange={e => handleQuestionChange(qIndex, 'text', e.target.value)} placeholder="e.g. Who is the main protagonist of 'Attack on Titan'?" /></div><div className="grid grid-cols-2 gap-4">{q.options.map((opt, oIndex) => (<div className="space-y-2" key={oIndex}><Label htmlFor={`q-${qIndex}-opt-${oIndex}`}>Option {oIndex + 1}</Label><Input id={`q-${qIndex}-opt-${oIndex}`} value={opt} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Option ${oIndex + 1}`} /></div>))}</div><div className="space-y-2"><Label htmlFor={`q-correct-${qIndex}`}>Correct Answer</Label><Select value={q.correctAnswer} onValueChange={val => handleQuestionChange(qIndex, 'correctAnswer', val)}><SelectTrigger id={`q-correct-${qIndex}`}><SelectValue placeholder="Select correct answer..." /></SelectTrigger><SelectContent>{q.options.filter(o => o.trim() !== '').map((opt, oIndex) => (<SelectItem key={oIndex} value={opt}>{opt}</SelectItem>))}</SelectContent></Select></div></div>))}</div>
                           <div className="flex justify-between items-center"><Button variant="outline" onClick={addQuestion}>Add Another Question</Button><Button onClick={handleSaveQuiz} disabled={isSavingQuiz}>{isSavingQuiz ? 'Saving...' : 'Save Quiz'}</Button></div>
                       </CardContent>
@@ -900,7 +929,3 @@ export default function AdminPanelPage() {
     </div>
   );
 }
-
-    
-
-    

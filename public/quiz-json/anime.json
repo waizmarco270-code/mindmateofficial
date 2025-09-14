@@ -1,0 +1,35 @@
+
+{
+  "title": "The Ultimate Anime Quiz",
+  "category": "movies-anime",
+  "timeLimit": 300,
+  "entryFee": 0,
+  "reward": 10,
+  "questions": [
+    {
+      "text": "Who is the main protagonist of 'Attack on Titan'?",
+      "options": ["Levi Ackerman", "Eren Yeager", "Mikasa Ackerman", "Armin Arlert"],
+      "correctAnswer": "Eren Yeager"
+    },
+    {
+      "text": "In 'Naruto', what is the name of the Nine-Tailed Fox sealed inside Naruto?",
+      "options": ["Shukaku", "Matatabi", "Kurama", "Gyuki"],
+      "correctAnswer": "Kurama"
+    },
+    {
+      "text": "What is the name of the ability to see and cut the lines of death in 'Tsukihime' & 'Kara no Kyoukai'?",
+      "options": ["Mystic Eyes of Death Perception", "Sharingan", "Geass", "Emperor Eye"],
+      "correctAnswer": "Mystic Eyes of Death Perception"
+    },
+    {
+      "text": "Which anime features a character named 'Saitama' who can defeat any enemy with a single punch?",
+      "options": ["My Hero Academia", "One-Punch Man", "Jujutsu Kaisen", "Mob Psycho 100"],
+      "correctAnswer": "One-Punch Man"
+    },
+    {
+      "text": "In 'Death Note', what is the name of the Shinigami who drops the Death Note into the human world?",
+      "options": ["Rem", "Ryuk", "Gelus", "Sidoh"],
+      "correctAnswer": "Ryuk"
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+
+{
+  "title": "JEE/NEET Physics Challenge",
+  "category": "jee-neet",
+  "timeLimit": 600,
+  "entryFee": 5,
+  "reward": 25,
+  "questions": [
+    {
+      "text": "What is the unit of gravitational constant 'G'?",
+      "options": ["N m^2/kg^2", "N m/kg", "N kg^2/m^2", "N m^2/kg"],
+      "correctAnswer": "N m^2/kg^2"
+    },
+    {
+      "text": "Which law of thermodynamics states that energy cannot be created or destroyed?",
+      "options": ["Zeroth Law", "First Law", "Second Law", "Third Law"],
+      "correctAnswer": "First Law"
+    },
+    {
+      "text": "The phenomenon of light bending as it passes from one medium to another is called:",
+      "options": ["Reflection", "Diffraction", "Refraction", "Interference"],
+      "correctAnswer": "Refraction"
+    },
+    {
+      "text": "What is the escape velocity of Earth?",
+      "options": ["11.2 km/s", "9.8 m/s", "11.2 m/s", "9.8 km/s"],
+      "correctAnswer": "11.2 km/s"
+    },
+    {
+      "text": "In an elastic collision, which of the following is conserved?",
+      "options": ["Kinetic Energy only", "Momentum only", "Both Kinetic Energy and Momentum", "Neither"],
+      "correctAnswer": "Both Kinetic Energy and Momentum"
+    }
+  ]
+}
