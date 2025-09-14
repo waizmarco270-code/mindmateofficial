@@ -1,11 +1,11 @@
 
 'use client';
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { usePolls } from '@/hooks/use-admin';
-import { Vote, CheckCircle } from 'lucide-react';
+import { Vote, CheckCircle, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useUser } from '@clerk/nextjs';
 
@@ -38,7 +38,7 @@ export function CommunityPoll() {
 
   if (!activePoll) {
     return (
-         <Card>
+         <Card className="h-full">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Vote className="h-5 w-5 text-primary" />
@@ -55,13 +55,18 @@ export function CommunityPoll() {
   const hasVoted = !!userVote;
 
   return (
-    <Card className="border-sky-500/20 bg-sky-500/5">
+    <Card className="border-sky-500/20 bg-sky-500/5 h-full">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-sky-600">
-           <Vote className="h-5 w-5" />
-           Community Poll
-        </CardTitle>
-        <CardDescription>{activePoll.question}</CardDescription>
+        <div className="flex justify-between items-start">
+            <div>
+                <CardTitle className="flex items-center gap-2 text-sky-600">
+                <Vote className="h-5 w-5" />
+                Community Poll
+                </CardTitle>
+                <CardDescription>{activePoll.question}</CardDescription>
+            </div>
+            <Button variant="ghost" size="icon" className="text-sky-600/70 hover:text-sky-600"><RefreshCw className="h-4 w-4" /></Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-3">
@@ -104,5 +109,3 @@ export function CommunityPoll() {
     </Card>
   );
 }
-
-    
