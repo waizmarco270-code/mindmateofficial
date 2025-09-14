@@ -7,22 +7,25 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
-import { startOfWeek, endOfWeek, parseISO, isWithinInterval } from 'date-fns';
+import { startOfWeek, endOfWeek, parseISO, isWithinInterval, subWeeks, format as formatDate } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { motion } from 'framer-motion';
 
 type UserWithStats = User & { 
     totalScore: number; 
     weeklyTime: number; 
+    prevWeeklyTime?: number;
     memoryGameHighScore: number;
+    prevWeekMemoryGameHighScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
 };
 
@@ -69,35 +72,40 @@ export default function LeaderboardPage() {
 
     const weeklyStats = useMemo(() => {
         const now = new Date();
-        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-        const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+        const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
+        const thisWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
+        const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+        const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
         
-        const stats: { [uid: string]: { totalTime: number; subjects: { [name: string]: number } } } = {};
+        const stats: { [uid: string]: { thisWeek: { totalTime: number; subjects: { [name: string]: number } }, lastWeek: { totalTime: number } } } = {};
 
         allSessions.forEach(session => {
-            // subjectId is actually userId from the hook modification
             const userId = session.subjectId;
             const sessionDate = parseISO(session.startTime);
 
-            if (isWithinInterval(sessionDate, { start: weekStart, end: weekEnd })) {
-                if (!stats[userId]) {
-                    stats[userId] = { totalTime: 0, subjects: {} };
-                }
-                const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
-                stats[userId].totalTime += duration;
+             if (!stats[userId]) {
+                stats[userId] = { thisWeek: { totalTime: 0, subjects: {} }, lastWeek: { totalTime: 0 } };
+            }
 
-                if (!stats[userId].subjects[session.subjectName]) {
-                    stats[userId].subjects[session.subjectName] = 0;
+            const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
+
+            if (isWithinInterval(sessionDate, { start: thisWeekStart, end: thisWeekEnd })) {
+                stats[userId].thisWeek.totalTime += duration;
+
+                if (!stats[userId].thisWeek.subjects[session.subjectName]) {
+                    stats[userId].thisWeek.subjects[session.subjectName] = 0;
                 }
-                stats[userId].subjects[session.subjectName] += duration;
+                stats[userId].thisWeek.subjects[session.subjectName] += duration;
+            } else if (isWithinInterval(sessionDate, { start: lastWeekStart, end: lastWeekEnd })) {
+                 stats[userId].lastWeek.totalTime += duration;
             }
         });
         return stats;
     }, [allSessions]);
     
 
-    const sortedUsers: UserWithStats[] = useMemo(() => {
-        const processedUsers = users
+    const { sortedUsers, lastWeekWeeklyWinner, lastWeekEntertainmentWinner } = useMemo(() => {
+        const processedUsers: UserWithStats[] = users
             .filter(u => !u.isBlocked && !LEADERBOARD_EXCLUDED_UIDS.includes(u.uid))
             .map(user => {
                 const credits = user.credits || 0;
@@ -110,28 +118,35 @@ export default function LeaderboardPage() {
                                    (dailyTasks * SCORE_WEIGHTS.dailyTasksCompleted) +
                                    (studyTime * SCORE_WEIGHTS.totalStudyTime);
                                    
-                const userWeeklyStats = weeklyStats[user.uid] || { totalTime: 0, subjects: {} };
+                const userWeeklyStats = weeklyStats[user.uid] || { thisWeek: { totalTime: 0, subjects: {} }, lastWeek: { totalTime: 0 } };
                 const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
 
                 return { 
                     ...user, 
                     totalScore: Math.round(totalScore), 
-                    weeklyTime: userWeeklyStats.totalTime,
-                    weeklySubjectBreakdown: userWeeklyStats.subjects,
-                    memoryGameHighScore 
+                    weeklyTime: userWeeklyStats.thisWeek.totalTime,
+                    prevWeeklyTime: userWeeklyStats.lastWeek.totalTime,
+                    weeklySubjectBreakdown: userWeeklyStats.thisWeek.subjects,
+                    memoryGameHighScore,
+                    prevWeekMemoryGameHighScore: user.gameHighScores?.memoryGame,
                 };
             });
         
-        if (activeTab === 'weekly') {
-            return processedUsers.sort((a, b) => b.weeklyTime - a.weeklyTime);
-        }
+        let sorted: UserWithStats[] = [];
 
-        if (activeTab === 'entertainment') {
-            return processedUsers.sort((a, b) => b.memoryGameHighScore - a.memoryGameHighScore);
+        if (activeTab === 'weekly') {
+            sorted = [...processedUsers].sort((a, b) => b.weeklyTime - a.weeklyTime);
+        } else if (activeTab === 'entertainment') {
+            sorted = [...processedUsers].sort((a, b) => b.memoryGameHighScore - a.memoryGameHighScore);
+        } else {
+            // Default to all-time score
+            sorted = [...processedUsers].sort((a, b) => b.totalScore - a.totalScore);
         }
         
-        // Default to all-time score
-        return processedUsers.sort((a, b) => b.totalScore - a.totalScore);
+        const lastWeekWeeklyWinner = [...processedUsers].sort((a,b) => (b.prevWeeklyTime || 0) - (a.prevWeeklyTime || 0))[0];
+        const lastWeekEntertainmentWinner = [...processedUsers].sort((a,b) => (b.prevWeekMemoryGameHighScore || 0) - (a.prevWeekMemoryGameHighScore || 0))[0];
+
+        return { sortedUsers: sorted, lastWeekWeeklyWinner, lastWeekEntertainmentWinner };
         
     }, [users, activeTab, weeklyStats]);
 
@@ -417,57 +432,47 @@ export default function LeaderboardPage() {
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="all-time" onUserClick={setSelectedUserForDetails} />
                 </TabsContent>
                 <TabsContent value="weekly" className="mt-6 space-y-6">
-                    <Card>
-                        <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-center">
-                           <div className="flex items-center gap-4">
-                                <Clock className="h-8 w-8 text-primary" />
-                                <div>
-                                    <h4 className="font-semibold text-lg text-left">Weekly Leaderboard</h4>
-                                    <p className="text-muted-foreground text-sm text-left">This leaderboard resets every Monday. The ranking is based on total study time this week.</p>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card>
+                            <CardContent className="p-4 flex items-center justify-between gap-4 text-center">
+                                <div className='flex items-center gap-3'>
+                                    <Clock className="h-8 w-8 text-primary" />
+                                    <div>
+                                        <h4 className="font-semibold text-lg text-left">Weekly Reset</h4>
+                                        <p className="text-muted-foreground text-sm text-left">Leaderboard resets every Monday.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" size="sm" className="text-xs text-muted-foreground">
-                                            <Info className="mr-2 h-4 w-4" /> Tap for reward info
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="max-w-xs">
-                                        <div className="space-y-3">
-                                            <h4 className="font-bold text-base flex items-center gap-2"><Trophy className="h-5 w-5 text-amber-500" /> Weekly Rewards</h4>
-                                            <p className="text-sm text-muted-foreground">At the end of the week, the top 3 performers on this leaderboard will receive bonus credits!</p>
-                                            <ul className="space-y-2 text-sm">
-                                                <li className="flex items-center justify-between font-medium"><span className="flex items-center gap-2"><Trophy className="h-4 w-4 text-yellow-400"/> 1st Place</span> <span className="font-bold text-primary">+200 Credits</span></li>
-                                                <li className="flex items-center justify-between font-medium"><span className="flex items-center gap-2"><Medal className="h-4 w-4 text-slate-400"/> 2nd Place</span> <span className="font-bold text-primary">+100 Credits</span></li>
-                                                <li className="flex items-center justify-between font-medium"><span className="flex items-center gap-2"><Award className="h-4 w-4 text-amber-700"/> 3rd Place</span> <span className="font-bold text-primary">+50 Credits</span></li>
-                                            </ul>
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
-                                <div className="font-mono text-xl sm:text-2xl font-bold bg-muted px-4 py-2 rounded-lg">
-                                    Resets in: {timeLeft}
+                                <div className="font-mono text-base font-bold bg-muted px-3 py-1.5 rounded-lg animate-pulse">
+                                    {timeLeft}
                                 </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            </CardContent>
+                        </Card>
+                        {lastWeekWeeklyWinner && lastWeekWeeklyWinner.prevWeeklyTime > 0 && (
+                            <LastWeekWinnerCard winner={lastWeekWeeklyWinner} score={formatTime(lastWeekWeeklyWinner.prevWeeklyTime)} />
+                        )}
+                    </div>
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="weekly" onUserClick={setSelectedUserForDetails} />
                 </TabsContent>
                  <TabsContent value="entertainment" className="mt-6 space-y-6">
-                    <Card>
-                        <CardContent className="p-4 flex items-center justify-between gap-4 text-center">
-                            <div className='flex items-center gap-3'>
-                                <Gamepad2 className="h-8 w-8 text-primary" />
-                                <div>
-                                    <h4 className="font-semibold text-lg text-left">Entertainment Leaderboard</h4>
-                                    <p className="text-muted-foreground text-sm text-left">The GM title is decided weekly based on high scores.</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                         <Card>
+                            <CardContent className="p-4 flex items-center justify-between gap-4 text-center">
+                                <div className='flex items-center gap-3'>
+                                    <Gamepad2 className="h-8 w-8 text-primary" />
+                                    <div>
+                                        <h4 className="font-semibold text-lg text-left">GM Title Race</h4>
+                                        <p className="text-muted-foreground text-sm text-left">GM title is decided weekly.</p>
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="font-mono text-base font-bold bg-muted px-3 py-1.5 rounded-lg animate-pulse">
-                                Resets in: {timeLeft}
-                            </div>
-                        </CardContent>
-                    </Card>
+                                <div className="font-mono text-base font-bold bg-muted px-3 py-1.5 rounded-lg animate-pulse">
+                                    {timeLeft}
+                                </div>
+                            </CardContent>
+                        </Card>
+                         {lastWeekEntertainmentWinner && lastWeekEntertainmentWinner.prevWeekMemoryGameHighScore > 0 && (
+                             <LastWeekWinnerCard winner={lastWeekEntertainmentWinner} score={lastWeekEntertainmentWinner.prevWeekMemoryGameHighScore} scoreLabel="High Score" />
+                        )}
+                    </div>
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="entertainment" onUserClick={setSelectedUserForDetails}/>
                 </TabsContent>
             </Tabs>
@@ -628,3 +633,36 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         </div>
     );
 };
+
+
+function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: UserWithStats, score: string | number, scoreLabel?: string}) {
+    const lastWeekStart = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
+    const lastWeekEnd = endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+        >
+            <Card className="h-full">
+                <CardContent className="p-4 flex items-center gap-4">
+                     <div className="p-2.5 bg-amber-500/10 rounded-lg">
+                        <History className="h-8 w-8 text-amber-500" />
+                     </div>
+                     <div className="flex-1">
+                        <h4 className="font-semibold text-lg">Last Week's Champion</h4>
+                        <p className="text-sm text-muted-foreground">
+                            {formatDate(lastWeekStart, 'd MMM')} - {formatDate(lastWeekEnd, 'd MMM')}
+                        </p>
+                    </div>
+                     <div className="text-right">
+                        <p className="font-bold text-lg">{winner.displayName}</p>
+                        <p className="text-sm font-mono text-primary">{scoreLabel}: {score}</p>
+                    </div>
+                </CardContent>
+            </Card>
+        </motion.div>
+    );
+}
+
