@@ -61,6 +61,7 @@ export function CardFlipGame() {
         if (canPlayCardFlip) {
             setLevel(1);
             setGameState('playing');
+            setupLevel(); // Recalculate cards for level 1
         } else {
             setGameState('ended');
         }
@@ -100,7 +101,6 @@ export function CardFlipGame() {
     }
     
     const renderCard = (cardValue: number | 'lose', index: number) => {
-        const isSelected = selectedCardIndex === index;
         const isRevealed = gameState === 'revealed';
         const isWin = cardValue !== 'lose';
 
@@ -116,7 +116,7 @@ export function CardFlipGame() {
                 <motion.button
                     onClick={() => handleCardClick(index)}
                     disabled={gameState !== 'playing'}
-                    className="relative w-24 h-36 rounded-lg shadow-lg transition-transform duration-300 preserve-3d"
+                    className="relative w-24 h-36 rounded-lg shadow-lg transition-transform duration-500 preserve-3d"
                     animate={{ rotateY: isRevealed ? 180 : 0 }}
                 >
                     {/* Card Back */}
@@ -175,12 +175,12 @@ export function CardFlipGame() {
                                 <Button className="mt-4" variant="outline" onClick={() => window.location.reload()}><RotateCw className="mr-2 h-4 w-4"/>Check Status</Button>
                             </motion.div>
                         ) : (
-                             <motion.div key="playing">
-                                 <div className="mb-4">
+                             <motion.div key="playing" className="flex flex-col items-center w-full">
+                                 <div className="mb-4 text-center">
                                     <h3 className="text-lg font-bold">Level {level}</h3>
                                     <p className="text-sm text-muted-foreground">Select one of the {LEVEL_CONFIG[level].cards} cards.</p>
                                 </div>
-                                <div className="grid grid-cols-4 gap-4 justify-center">
+                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 justify-center">
                                     {cards.map(renderCard)}
                                 </div>
                                  {gameState === 'revealed' && (
