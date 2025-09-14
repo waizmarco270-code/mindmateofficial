@@ -70,14 +70,14 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
         stopTimer();
         setQuizFinished(true);
 
-        if(!user) return;
+        if(!user || !currentUserData) return;
         
         // Always increment attempt count on finish
         await incrementQuizAttempt(user.id, quiz.id);
 
-        const currentAttempts = (currentUserData?.quizAttempts?.[quiz.id] || 0) + 1;
+        const currentAttempts = (currentUserData.quizAttempts?.[quiz.id] || 0) + 1;
         const isPerfect = score === quiz.questions.length && score > 0;
-        const alreadyPerfected = currentUserData?.perfectedQuizzes?.includes(quiz.id);
+        const alreadyPerfected = currentUserData.perfectedQuizzes?.includes(quiz.id);
 
         // Award logic: perfect score, within 2 attempts, and not already perfected
         if (isPerfect && currentAttempts <= 2 && !alreadyPerfected && !creditAwardedRef.current) {
@@ -247,5 +247,3 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
         </div>
     );
 }
-
-    
