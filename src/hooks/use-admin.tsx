@@ -137,6 +137,7 @@ interface AppDataContextType {
     makeUserVip: (uid: string) => Promise<void>;
     removeUserVip: (uid: string) => Promise<void>;
     clearGlobalChat: () => Promise<void>;
+    clearQuizLeaderboard: () => Promise<void>;
     
     announcements: Announcement[];
     addAnnouncement: (announcement: Omit<Announcement, 'id' | 'createdAt'>) => Promise<void>;
@@ -592,6 +593,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
     };
 
+    const clearQuizLeaderboard = async () => {
+        const usersSnapshot = await getDocs(query(collection(db, 'users')));
+        const batch = writeBatch(db);
+        usersSnapshot.forEach(userDoc => {
+            batch.update(userDoc.ref, { 
+                perfectedQuizzes: [],
+                quizAttempts: {} 
+            });
+        });
+        await batch.commit();
+    }
+
     const updateAppTheme = async (theme: AppTheme) => {
         const themeDocRef = doc(db, 'appConfig', 'theme');
         await setDoc(themeDocRef, theme);
@@ -623,6 +636,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         makeUserVip,
         removeUserVip,
         clearGlobalChat,
+        clearQuizLeaderboard,
         announcements,
         addAnnouncement,
         updateAnnouncement,

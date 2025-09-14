@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -34,7 +35,7 @@ export default function SuperAdminPanelPage() {
     addCreditsToUser, giftCreditsToAllUsers,
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
-    resetUserCredits, clearGlobalChat,
+    resetUserCredits, clearGlobalChat, clearQuizLeaderboard,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -131,6 +132,15 @@ export default function SuperAdminPanelPage() {
       }
   };
   
+  const handleClearQuizLeaderboard = async () => {
+      try {
+          await clearQuizLeaderboard();
+          toast({ title: "Quiz Leaderboard Cleared", description: "All user quiz stats have been reset." });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: "Error Clearing Leaderboard", description: error.message });
+      }
+  };
+
   const handleApproveReferral = async (referral: ReferralRequest) => {
       try {
           await approveReferral(referral);
@@ -416,7 +426,7 @@ export default function SuperAdminPanelPage() {
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="p-6 pt-0">
+              <AccordionContent className="p-6 pt-0 space-y-4">
                 <Card>
                     <CardHeader>
                         <CardTitle>Global Chat</CardTitle>
@@ -439,6 +449,34 @@ export default function SuperAdminPanelPage() {
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction onClick={handleClearGlobalChat}>Yes, delete all messages</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Quiz Leaderboard</CardTitle>
+                        <CardDescription>Permanently reset all quiz-related stats for all users (perfected quizzes, attempts).</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">
+                                    <Trophy className="mr-2 h-4 w-4"/> Reset Quiz Leaderboard
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will reset the Quiz Zone leaderboard for everyone by clearing all perfected quiz records and attempt counts. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleClearQuizLeaderboard}>Yes, reset the leaderboard</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
