@@ -9,12 +9,14 @@ import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
+import { useToast } from '@/hooks/use-toast';
 
 // Game Configuration
 const PLAYER_SIZE = 20;
 const OBSTACLE_WIDTH = 40;
 const OBSTACLE_HEIGHT = 20;
 const SCROLL_SPEED_START = 2;
+const SCROLL_SPEED_INCREASE = 0.1;
 
 // Player state
 interface Player {
@@ -30,13 +32,18 @@ interface Obstacle {
   width: number;
   height: number;
   dimension: 'light' | 'dark';
+  dx?: number; // Horizontal speed for moving obstacles
+  isVisible?: boolean; // For blinking obstacles
+  blinkCounter?: number;
 }
 
 export function DimensionShiftGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
   const { user } = useUser();
-  const { currentUserData, updateGameHighScore } = useUsers();
+  const { currentUserData, updateGameHighScore, addCreditsToUser } = useUsers();
+  const { toast } = useToast();
+
 
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver'>('idle');
   const [level, setLevel] = useState(1);
@@ -102,6 +109,21 @@ export function DimensionShiftGame() {
       }
     }
   };
+  
+  const handleScoreUpdate = useCallback((newScore: number) => {
+    setScore(newScore);
+    if(newScore > 0 && newScore % 5 === 0) {
+      if(user) {
+        addCreditsToUser(user.id, 10);
+        toast({ title: "Milestone!", description: "+10 Credits for reaching score " + newScore, className: "bg-green-500/10 border-green-500/50" });
+      }
+    }
+    // Update level based on score
+    const newLevel = Math.floor(newScore / 10) + 1;
+    setLevel(newLevel);
+    scrollSpeedRef.current = SCROLL_SPEED_START + (newLevel - 1) * SCROLL_SPEED_INCREASE;
+
+  }, [user, addCreditsToUser, toast]);
 
   const gameLoop = useCallback(() => {
     const canvas = canvasRef.current;
@@ -117,30 +139,68 @@ export function DimensionShiftGame() {
     // --- Update Logic ---
     frameCountRef.current++;
     
-    // Generate new obstacles (Level 1-10 logic)
-    if (frameCountRef.current % 100 === 0) {
+    // Generate new obstacles
+    if (frameCountRef.current % 80 === 0) { // Slightly less frequent
         const dimension = Math.random() > 0.5 ? 'light' : 'dark';
         const xPosition = Math.random() * (canvas.width - OBSTACLE_WIDTH);
-        obstaclesRef.current.push({
+        
+        const newObstacle: Obstacle = {
             x: xPosition,
             y: -OBSTACLE_HEIGHT,
             width: OBSTACLE_WIDTH,
             height: OBSTACLE_HEIGHT,
             dimension: dimension,
-        });
+        };
+        
+        // Level 11+: Moving obstacles
+        if(level >= 2) {
+             if (Math.random() < 0.3) { // 30% chance to be a moving obstacle
+                newObstacle.dx = (Math.random() - 0.5) * 2; // -1 to 1
+             }
+        }
+        
+        // Level 21+: Blinking obstacles
+        if(level >= 3) {
+            if (Math.random() < 0.2) { // 20% chance to be a blinking obstacle
+                newObstacle.isVisible = true;
+                newObstacle.blinkCounter = 0;
+            }
+        }
+
+        obstaclesRef.current.push(newObstacle);
     }
 
     // Move obstacles and remove off-screen ones
     obstaclesRef.current.forEach((obstacle, index) => {
         obstacle.y += scrollSpeedRef.current;
+
+        // Move horizontally if applicable
+        if (obstacle.dx) {
+            obstacle.x += obstacle.dx;
+            if (obstacle.x <= 0 || obstacle.x + obstacle.width >= canvas.width) {
+                obstacle.dx *= -1; // Bounce off edges
+            }
+        }
+
+        // Handle blinking
+        if (obstacle.blinkCounter !== undefined) {
+            obstacle.blinkCounter++;
+            if (obstacle.blinkCounter > 60) { // Blink every ~1 second
+                obstacle.isVisible = !obstacle.isVisible;
+                obstacle.blinkCounter = 0;
+            }
+        }
+        
         if (obstacle.y > canvas.height) {
             obstaclesRef.current.splice(index, 1);
-            setScore(prev => prev + 1); // Increment score for dodging
+            handleScoreUpdate(score + 1); // Increment score for dodging
         }
     });
     
     // --- Collision Detection ---
     for (const obstacle of obstaclesRef.current) {
+        if (obstacle.isVisible === false) continue; // Cannot collide with invisible obstacle
+
         if (obstacle.dimension === playerRef.current.dimension) {
             const playerBox = { x: playerRef.current.x - PLAYER_SIZE / 2, y: playerRef.current.y - PLAYER_SIZE / 2, width: PLAYER_SIZE, height: PLAYER_SIZE };
             const obstacleBox = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
@@ -158,11 +218,11 @@ export function DimensionShiftGame() {
 
 
     // --- Draw Logic ---
-
     // Draw obstacles
     obstaclesRef.current.forEach(obstacle => {
-      ctx.fillStyle = colors[obstacle.dimension].obstacle;
-      ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
+        if(obstacle.isVisible === false) return; // Don't draw invisible obstacles
+        ctx.fillStyle = colors[obstacle.dimension].obstacle;
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
     });
 
     // Draw player
@@ -172,7 +232,7 @@ export function DimensionShiftGame() {
     ctx.fill();
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [getThemeColors]);
+  }, [getThemeColors, level, score, handleScoreUpdate]);
 
 
   // Initialize and run game loop
@@ -191,16 +251,36 @@ export function DimensionShiftGame() {
     };
   }, [gameState, gameLoop]);
   
-   // Handle dimension switching
+   // Handle dimension switching and player movement
   useEffect(() => {
     const handleSwitch = (e: MouseEvent | TouchEvent) => {
       if (gameState !== 'playing') return;
       playerRef.current.dimension = playerRef.current.dimension === 'light' ? 'dark' : 'light';
     };
+    
+    const handleMove = (e: MouseEvent | TouchEvent) => {
+        if (gameState !== 'playing') return;
+        const canvas = canvasRef.current;
+        if(!canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+        const newX = clientX - rect.left;
+        
+        // Clamp player position within canvas bounds
+        playerRef.current.x = Math.max(PLAYER_SIZE / 2, Math.min(canvas.width - PLAYER_SIZE / 2, newX));
+    }
 
     const canvas = canvasRef.current;
     canvas?.addEventListener('click', handleSwitch);
-    return () => canvas?.removeEventListener('click', handleSwitch);
+    canvas?.addEventListener('mousemove', handleMove);
+    canvas?.addEventListener('touchmove', handleMove);
+
+    return () => {
+        canvas?.removeEventListener('click', handleSwitch);
+        canvas?.removeEventListener('mousemove', handleMove);
+        canvas?.removeEventListener('touchmove', handleMove);
+    }
   }, [gameState]);
 
 
@@ -219,7 +299,7 @@ export function DimensionShiftGame() {
       <Card className="w-full md:max-w-md mx-auto">
         <CardHeader>
           <CardTitle>Dimension Shift</CardTitle>
-          <CardDescription>Click to switch dimensions and dodge the obstacles.</CardDescription>
+          <CardDescription>Click to switch dimensions, move mouse to dodge.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
           <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
@@ -227,7 +307,7 @@ export function DimensionShiftGame() {
             <span>Level: {level}</span>
             <span>High Score: {highScore}</span>
           </div>
-          <div className="w-full rounded-lg overflow-hidden border relative">
+          <div className="w-full rounded-lg overflow-hidden border relative cursor-crosshair">
              <canvas ref={canvasRef} />
              {gameState !== 'playing' && (
                 <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-white z-10">
@@ -260,14 +340,14 @@ export function DimensionShiftGame() {
                     <Orbit className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
                     <div>
                         <h4 className="font-bold text-foreground">Game Rules</h4>
-                        <p>Your character exists in either the Light or Dark dimension. You must dodge obstacles of the SAME dimension. Click anywhere on the screen to switch dimensions. The longer you survive, the higher your score.</p>
+                        <p>Dodge obstacles that are the same dimension as you. Click to switch dimensions, and move your mouse to control your character. The game gets faster as your score increases!</p>
                     </div>
                 </div>
                  <div className="flex items-start gap-3">
                     <Award className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
                      <div>
                         <h4 className="font-bold text-foreground">Rewards</h4>
-                         <p>Rewards will be added in Phase 2! For now, chase the high score!</p>
+                         <p>You'll earn <span className="font-bold text-primary">+10 credits</span> every time your score is a multiple of 5 (e.g., at scores 5, 10, 15, and so on). Good luck!</p>
                     </div>
                 </div>
             </CardContent>
@@ -275,5 +355,3 @@ export function DimensionShiftGame() {
     </div>
   );
 }
-
-    
