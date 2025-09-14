@@ -125,8 +125,8 @@ export default function DashboardPage() {
                             <Bell className="h-8 w-8 text-primary" />
                         </div>
                         <div>
-                            <CardTitle className="text-primary text-xl">Latest Announcement</CardTitle>
-                            <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
+                            <CardTitle className="text-xl">Latest Announcement</CardTitle>
+                            <CardDescription className="text-muted-foreground">Don't miss out on important updates.</CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent className="p-4 md:p-6 pt-0">
