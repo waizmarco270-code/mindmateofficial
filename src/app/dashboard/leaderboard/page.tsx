@@ -46,8 +46,6 @@ export default function LeaderboardPage() {
     const [selectedUserForDetails, setSelectedUserForDetails] = useState<UserWithStats | null>(null);
 
     useEffect(() => {
-        if (activeTab !== 'weekly') return;
-
         const timer = setInterval(() => {
             const now = new Date();
             const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
@@ -67,7 +65,7 @@ export default function LeaderboardPage() {
         }, 1000);
 
         return () => clearInterval(timer);
-    }, [activeTab]);
+    }, []);
 
     const weeklyStats = useMemo(() => {
         const now = new Date();
@@ -457,11 +455,16 @@ export default function LeaderboardPage() {
                 </TabsContent>
                  <TabsContent value="entertainment" className="mt-6 space-y-6">
                     <Card>
-                        <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
-                            <Gamepad2 className="h-8 w-8 text-primary" />
-                            <div>
-                                <h4 className="font-semibold text-lg">Entertainment Leaderboard</h4>
-                                <p className="text-muted-foreground text-sm">Ranking is based on the all-time high score in the Memory Pattern game.</p>
+                        <CardContent className="p-4 flex items-center justify-between gap-4 text-center">
+                            <div className='flex items-center gap-3'>
+                                <Gamepad2 className="h-8 w-8 text-primary" />
+                                <div>
+                                    <h4 className="font-semibold text-lg text-left">Entertainment Leaderboard</h4>
+                                    <p className="text-muted-foreground text-sm text-left">The GM title is decided weekly based on high scores.</p>
+                                </div>
+                            </div>
+                            <div className="font-mono text-base font-bold bg-muted px-3 py-1.5 rounded-lg animate-pulse">
+                                Resets in: {timeLeft}
                             </div>
                         </CardContent>
                     </Card>
