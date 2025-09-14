@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MoreVertical, X, Trash2, UserX, Code, Crown, ArrowLeft } from 'lucide-react';
+import { Send, MoreVertical, X, Trash2, UserX, Code, Crown, ArrowLeft, ShieldCheck } from 'lucide-react';
 import { User, SUPER_ADMIN_UID, useUsers } from '@/hooks/use-admin';
 import { useChat, Message } from '@/hooks/use-chat';
 import { useFriends } from '@/hooks/use-friends';
@@ -138,10 +138,10 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
                         <p className="text-xs font-semibold">{friend.displayName}</p>
                          {isSuperAdmin ? (
                             <span className="dev-badge flex-shrink-0"><Code className="h-3 w-3" /> DEV</span>
-                        ) : isVip ? (
-                            <span className="vip-badge flex-shrink-0"><Crown className="h-3 w-3" /> VIP</span>
-                        ) : isAdmin && (
-                            <Badge variant="secondary" className="h-5 px-1.5 py-0 text-xs">Admin</Badge>
+                        ) : isAdmin ? (
+                            <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                        ) : isVip && (
+                            <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>
                         )}
                     </div>
                 )}
@@ -165,5 +165,3 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
         </div>
     );
 }
-
-    

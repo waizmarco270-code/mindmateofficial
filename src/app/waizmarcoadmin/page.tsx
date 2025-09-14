@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -267,9 +267,15 @@ export default function SuperAdminPanelPage() {
                             <TableCell><Badge variant={user.isBlocked ? 'destructive' : 'secondary'}>{user.isBlocked ? 'Blocked' : 'Active'}</Badge></TableCell>
                             <TableCell>
                                 <div className="flex items-center gap-2">
-                                    {user.isAdmin && <Badge>Admin</Badge>}
-                                    {user.isVip && <span className="vip-badge"><Crown className="h-3 w-3"/> VIP</span>}
-                                    {!user.isAdmin && !user.isVip && <Badge variant="outline">User</Badge>}
+                                    {user.uid === SUPER_ADMIN_UID ? (
+                                        <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>
+                                    ) : user.isAdmin ? (
+                                        <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                    ) : user.isVip ? (
+                                        <span className="elite-badge"><Crown className="h-3 w-3"/> ELITE</span>
+                                    ) : (
+                                        <Badge variant="outline">User</Badge>
+                                    )}
                                 </div>
                             </TableCell>
                             <TableCell className="text-right space-x-2">
@@ -286,11 +292,11 @@ export default function SuperAdminPanelPage() {
                                         )}
                                         {user.isVip ? (
                                             <Button variant="secondary" size="sm" onClick={() => removeUserVip(user.uid)}>
-                                                <Crown className="mr-2 h-4 w-4"/>Remove VIP
+                                                <Crown className="mr-2 h-4 w-4"/>Remove Elite
                                             </Button>
                                         ) : (
                                             <Button variant="outline" size="sm" onClick={() => makeUserVip(user.uid)}>
-                                                <Crown className="mr-2 h-4 w-4"/>Make VIP
+                                                <Crown className="mr-2 h-4 w-4"/>Make Elite
                                             </Button>
                                         )}
                                         <Button variant={user.isBlocked ? 'outline' : 'destructive'} size="sm" onClick={() => toggleUserBlock(user.uid, user.isBlocked)}>
@@ -577,5 +583,3 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
-
-    

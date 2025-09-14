@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -183,12 +183,12 @@ export default function LeaderboardPage() {
                                 <span className="dev-badge flex-shrink-0">
                                     <Code className="h-3 w-3" /> DEV
                                 </span>
-                            ) : user.isVip ? (
-                                <span className="vip-badge flex-shrink-0">
-                                    <Crown className="h-3 w-3" /> VIP
+                            ) : user.isAdmin ? (
+                                <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                            ) : user.isVip && (
+                                <span className="elite-badge flex-shrink-0">
+                                    <Crown className="h-3 w-3" /> ELITE
                                 </span>
-                            ) : user.isAdmin && (
-                                <Badge variant="secondary" className="h-6">Admin</Badge>
                             )}
                         </div>
                         <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
@@ -226,12 +226,12 @@ export default function LeaderboardPage() {
                                     <span className="dev-badge flex-shrink-0">
                                         <Code className="h-3 w-3" /> DEV
                                     </span>
-                                ) : user.isVip ? (
-                                    <span className="vip-badge flex-shrink-0">
-                                        <Crown className="h-3 w-3" /> VIP
+                                ) : user.isAdmin ? (
+                                    <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                ) : user.isVip && (
+                                    <span className="elite-badge flex-shrink-0">
+                                        <Crown className="h-3 w-3" /> ELITE
                                     </span>
-                                ) : user.isAdmin && (
-                                     <Badge variant="secondary" className="h-5 text-xs">Admin</Badge>
                                 )}
                             </div>
                             <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
@@ -335,12 +335,12 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                                         <span className="dev-badge flex-shrink-0">
                                                             <Code className="h-3 w-3" /> DEV
                                                         </span>
-                                                    ) : user.isVip ? (
-                                                        <span className="vip-badge flex-shrink-0">
-                                                            <Crown className="h-3 w-3" /> VIP
+                                                    ) : user.isAdmin ? (
+                                                        <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                                    ) : user.isVip && (
+                                                        <span className="elite-badge flex-shrink-0">
+                                                            <Crown className="h-3 w-3" /> ELITE
                                                         </span>
-                                                    ) : user.isAdmin && (
-                                                        <Badge variant="secondary" className="h-5 text-xs">Admin</Badge>
                                                     )}
                                                 </div>
                                                  <p className="text-muted-foreground text-sm">
@@ -390,7 +390,3 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         </div>
     );
 };
-
-    
-
-    
