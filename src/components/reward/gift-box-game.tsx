@@ -26,7 +26,7 @@ const cardVariants = {
 };
 
 export function CardFlipGame() {
-    const { canPlayCardFlip, playCardFlip, generateCardFlipPrize } = useRewards();
+    const { canPlayCardFlip, playCardFlip, generateCardFlipPrize, availableCardFlipPlays } = useRewards();
     const { toast } = useToast();
 
     const [level, setLevel] = useState<Level>(1);
@@ -97,9 +97,14 @@ export function CardFlipGame() {
             setGameState('ended');
         }
     }
+
+    const handleRetry = () => {
+        setupLevel();
+    }
     
     const renderCard = (cardValue: number | 'lose', index: number) => {
         const isRevealed = gameState === 'revealed';
+        const isSelected = selectedCardIndex === index;
         const isWin = cardValue !== 'lose';
 
         return (
@@ -109,47 +114,45 @@ export function CardFlipGame() {
                 variants={cardVariants}
                 initial="hidden"
                 animate="visible"
-                className="relative aspect-square"
+                className={cn(
+                    "relative aspect-square transition-all duration-300",
+                    isRevealed && !isSelected && "opacity-50 scale-90"
+                )}
             >
-                {/* Face-down Card */}
-                <AnimatePresence>
-                    {!isRevealed && (
-                        <motion.button
-                            onClick={() => handleCardClick(index)}
-                            className={cn(
-                                "absolute inset-0 w-full h-full rounded-lg flex items-center justify-center bg-gradient-to-br from-primary to-purple-600 p-1 shadow-lg",
-                                "hover:scale-105 transition-transform"
-                            )}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <div className="w-full h-full bg-slate-800 rounded-md flex items-center justify-center">
-                                <Layers className="h-10 w-10 text-primary animate-pulse" />
-                            </div>
-                        </motion.button>
-                    )}
-                </AnimatePresence>
-
-                {/* Face-up Content (Revealed) */}
-                <motion.div 
-                    className={cn(
-                        "w-full h-full rounded-lg flex flex-col items-center justify-center p-2 text-white shadow-inner",
-                        isWin ? "bg-gradient-to-br from-yellow-400 to-amber-600" : "bg-gradient-to-br from-slate-600 to-gray-800"
-                    )}
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: isRevealed ? 1 : 0, scale: isRevealed ? 1 : 0.8 }}
-                    transition={{ duration: 0.3 }}
+                <div 
+                    className="relative w-full h-full"
+                    style={{ transformStyle: 'preserve-3d', transition: 'transform 0.6s', transform: isSelected ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
                 >
-                    {isWin ? (
-                        <>
-                            <Sparkles className="h-6 w-6" />
-                            <p className="text-2xl font-bold mt-1">{cardValue}</p>
-                            <p className="text-xs font-semibold">CREDITS</p>
-                        </>
-                    ) : (
-                        <X className="h-10 w-10"/>
-                    )}
-                </motion.div>
+                    {/* Face-down Card */}
+                    <div 
+                        className="absolute w-full h-full rounded-lg flex items-center justify-center bg-gradient-to-br from-primary to-purple-600 p-1 shadow-lg cursor-pointer" 
+                        style={{ backfaceVisibility: 'hidden' }}
+                        onClick={() => handleCardClick(index)}
+                    >
+                        <div className="w-full h-full bg-slate-800 rounded-md flex items-center justify-center">
+                            <Layers className="h-10 w-10 text-primary animate-pulse" />
+                        </div>
+                    </div>
+
+                    {/* Face-up Content */}
+                     <div 
+                        className={cn(
+                            "absolute w-full h-full rounded-lg flex flex-col items-center justify-center p-2 text-white shadow-inner",
+                            isWin ? "bg-gradient-to-br from-yellow-400 to-amber-600" : "bg-gradient-to-br from-slate-600 to-gray-800"
+                        )}
+                        style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                    >
+                        {isWin ? (
+                            <>
+                                <Sparkles className="h-6 w-6" />
+                                <p className="text-2xl font-bold mt-1">{cardValue}</p>
+                                <p className="text-xs font-semibold">CREDITS</p>
+                            </>
+                        ) : (
+                            <X className="h-10 w-10"/>
+                        )}
+                    </div>
+                </div>
             </motion.div>
         )
     };
@@ -177,8 +180,17 @@ export function CardFlipGame() {
                                 className="text-center"
                             >
                                 <h3 className="text-2xl font-bold">Your run has ended.</h3>
-                                <p className="text-muted-foreground">Come back tomorrow for another chance!</p>
-                                <Button className="mt-4" variant="outline" onClick={() => window.location.reload()}><RotateCw className="mr-2 h-4 w-4"/>Check Status</Button>
+                                {availableCardFlipPlays > 0 ? (
+                                    <>
+                                        <p className="text-muted-foreground">You have {availableCardFlipPlays} play(s) left. Try again?</p>
+                                        <Button className="mt-4" onClick={handleRetry}><RotateCw className="mr-2 h-4 w-4"/>Try Again</Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-muted-foreground">Come back tomorrow for another chance!</p>
+                                        <Button className="mt-4" variant="outline" onClick={() => window.location.reload()}><RotateCw className="mr-2 h-4 w-4"/>Check Status</Button>
+                                    </>
+                                )}
                             </motion.div>
                         ) : (
                              <motion.div key="playing" className="flex flex-col items-center w-full">
@@ -187,7 +199,7 @@ export function CardFlipGame() {
                                     <p className="text-sm text-muted-foreground">Select one of the {LEVEL_CONFIG[level].cards} cards.</p>
                                 </div>
                                 <div className={cn("grid gap-4 justify-center w-full", LEVEL_CONFIG[level].grid)}>
-                                    {cards.map(renderCard)}
+                                    {cards.map((card, index) => renderCard(card, index))}
                                 </div>
                                  {gameState === 'revealed' && (
                                      <div className="mt-6 animate-in fade-in-50">
