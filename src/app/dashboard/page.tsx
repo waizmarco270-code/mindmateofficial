@@ -123,7 +123,7 @@ export default function DashboardPage() {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
 
-             <div className="relative group min-h-[220px] mb-8" style={{ perspective: 1000 }}>
+             <div className="relative group min-h-[220px]" style={{ perspective: 1000 }}>
                  <motion.div
                     className="relative w-full h-full cursor-pointer"
                     style={{ transformStyle: 'preserve-3d' }}
@@ -136,15 +136,15 @@ export default function DashboardPage() {
                         className="absolute w-full h-full"
                         style={{ backfaceVisibility: 'hidden' }}
                     >
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
+                        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 rounded-lg blur-lg opacity-50 group-hover:opacity-75 transition duration-300"></div>
                         <Card className="relative h-full">
                             <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
-                                <div className="p-3 rounded-full bg-primary/20 animate-pulse">
+                                <div className="p-3 rounded-full bg-primary/10">
                                     <Bell className="h-8 w-8 text-primary" />
                                 </div>
                                 <div>
-                                    <CardTitle className="text-xl text-primary [text-shadow:0_0_8px_hsl(var(--primary)/50%)]">Latest Announcement</CardTitle>
-                                    <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
+                                    <CardTitle className="text-xl text-primary">Latest Announcement</CardTitle>
+                                    <CardDescription>Don't miss out on important updates.</CardDescription>
                                 </div>
                                 <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
                             </CardHeader>

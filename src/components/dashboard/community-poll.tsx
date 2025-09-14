@@ -55,17 +55,19 @@ export function CommunityPoll() {
   const hasVoted = !!userVote;
 
   return (
-    <Card className="border-sky-500/20 bg-sky-500/5 h-full">
+    <Card className="relative h-full group">
+       <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 rounded-lg blur-lg opacity-50 group-hover:opacity-75 transition duration-300"></div>
+      <div className="relative h-full bg-background rounded-lg">
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
-                <CardTitle className="flex items-center gap-2 text-sky-600">
+                <CardTitle className="flex items-center gap-2 text-primary">
                 <Vote className="h-5 w-5" />
                 Community Poll
                 </CardTitle>
                 <CardDescription>{activePoll.question}</CardDescription>
             </div>
-            <Button variant="ghost" size="icon" className="text-sky-600/70 hover:text-sky-600"><RefreshCw className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" className="text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
         </div>
       </CardHeader>
       <CardContent>
@@ -106,6 +108,7 @@ export function CommunityPoll() {
           })}
         </div>
       </CardContent>
+      </div>
     </Card>
   );
 }
