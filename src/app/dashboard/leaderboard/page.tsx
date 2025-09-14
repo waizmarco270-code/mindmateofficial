@@ -24,8 +24,8 @@ type UserWithStats = User & {
     totalScore: number; 
     weeklyTime: number; 
     prevWeeklyTime?: number;
-    memoryGameHighScore: number;
-    prevWeekMemoryGameHighScore?: number;
+    emojiQuizHighScore: number;
+    prevWeekEmojiQuizHighScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
 };
 
@@ -119,7 +119,7 @@ export default function LeaderboardPage() {
                                    (studyTime * SCORE_WEIGHTS.totalStudyTime);
                                    
                 const userWeeklyStats = weeklyStats[user.uid] || { thisWeek: { totalTime: 0, subjects: {} }, lastWeek: { totalTime: 0 } };
-                const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
+                const emojiQuizHighScore = user.gameHighScores?.emojiQuiz || 0;
 
                 return { 
                     ...user, 
@@ -127,8 +127,8 @@ export default function LeaderboardPage() {
                     weeklyTime: userWeeklyStats.thisWeek.totalTime,
                     prevWeeklyTime: userWeeklyStats.lastWeek.totalTime,
                     weeklySubjectBreakdown: userWeeklyStats.thisWeek.subjects,
-                    memoryGameHighScore,
-                    prevWeekMemoryGameHighScore: user.gameHighScores?.memoryGame,
+                    emojiQuizHighScore,
+                    prevWeekEmojiQuizHighScore: user.gameHighScores?.emojiQuiz,
                 };
             });
         
@@ -137,14 +137,14 @@ export default function LeaderboardPage() {
         if (activeTab === 'weekly') {
             sorted = [...processedUsers].sort((a, b) => b.weeklyTime - a.weeklyTime);
         } else if (activeTab === 'entertainment') {
-            sorted = [...processedUsers].sort((a, b) => b.memoryGameHighScore - a.memoryGameHighScore);
+            sorted = [...processedUsers].sort((a, b) => b.emojiQuizHighScore - a.emojiQuizHighScore);
         } else {
             // Default to all-time score
             sorted = [...processedUsers].sort((a, b) => b.totalScore - a.totalScore);
         }
         
         const lastWeekWeeklyWinner = [...processedUsers].sort((a,b) => (b.prevWeeklyTime || 0) - (a.prevWeeklyTime || 0))[0];
-        const lastWeekEntertainmentWinner = [...processedUsers].sort((a,b) => (b.prevWeekMemoryGameHighScore || 0) - (a.prevWeekMemoryGameHighScore || 0))[0];
+        const lastWeekEntertainmentWinner = [...processedUsers].sort((a,b) => (b.prevWeekEmojiQuizHighScore || 0) - (a.prevWeekEmojiQuizHighScore || 0))[0];
 
         return { sortedUsers: sorted, lastWeekWeeklyWinner, lastWeekEntertainmentWinner };
         
@@ -162,8 +162,8 @@ export default function LeaderboardPage() {
                  <div className="grid grid-cols-1 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
                      <div className="flex items-center gap-1.5">
                         <Gamepad2 className="h-3 w-3 text-green-500" />
-                        <span className="font-semibold">{user.memoryGameHighScore || 0}</span>
-                        <span>Memory Game High Score</span>
+                        <span className="font-semibold">{user.emojiQuizHighScore || 0}</span>
+                        <span>Emoji Quiz High Score</span>
                     </div>
                 </div>
             )
@@ -221,7 +221,7 @@ export default function LeaderboardPage() {
         const scoreToDisplay = {
             'all-time': user.totalScore,
             'weekly': formatTime(user.weeklyTime),
-            'entertainment': user.memoryGameHighScore
+            'entertainment': user.emojiQuizHighScore
         }[activeTab];
 
         const scoreLabel = {
@@ -469,8 +469,8 @@ export default function LeaderboardPage() {
                                 </div>
                             </CardContent>
                         </Card>
-                         {lastWeekEntertainmentWinner && lastWeekEntertainmentWinner.prevWeekMemoryGameHighScore > 0 && (
-                             <LastWeekWinnerCard winner={lastWeekEntertainmentWinner} score={lastWeekEntertainmentWinner.prevWeekMemoryGameHighScore} scoreLabel="High Score" />
+                         {lastWeekEntertainmentWinner && lastWeekEntertainmentWinner.prevWeekEmojiQuizHighScore > 0 && (
+                             <LastWeekWinnerCard winner={lastWeekEntertainmentWinner} score={lastWeekEntertainmentWinner.prevWeekEmojiQuizHighScore} scoreLabel="High Score" />
                         )}
                     </div>
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="entertainment" onUserClick={setSelectedUserForDetails}/>
@@ -535,7 +535,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
     const getScoreToDisplay = (user: any) => ({
         'all-time': user.totalScore,
         'weekly': formatWeeklyTime(user.weeklyTime),
-        'entertainment': user.memoryGameHighScore
+        'entertainment': user.emojiQuizHighScore
     }[activeTab]);
 
     return (
@@ -665,4 +665,3 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
         </motion.div>
     );
 }
-

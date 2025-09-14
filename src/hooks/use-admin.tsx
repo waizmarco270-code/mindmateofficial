@@ -48,6 +48,7 @@ export interface User {
   referredBy?: string; // UID of the user who referred them
   gameHighScores?: {
     memoryGame?: number;
+    emojiQuiz?: number;
   };
 }
 
@@ -133,7 +134,7 @@ interface AppDataContextType {
     incrementFocusSessions: (uid: string) => Promise<void>;
     claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
-    updateGameHighScore: (uid: string, game: 'memoryGame', score: number) => Promise<void>;
+    updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz', score: number) => Promise<void>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -314,7 +315,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
                     referralUsed: false,
                     gameHighScores: {
-                        memoryGame: 0
+                        memoryGame: 0,
+                        emojiQuiz: 0,
                     },
                 };
                 setDoc(userDocRef, newUser).then(() => {
@@ -516,7 +518,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { totalStudyTime: totalSeconds });
     }
 
-    const updateGameHighScore = async (uid: string, game: 'memoryGame', score: number) => {
+    const updateGameHighScore = async (uid: string, game: 'memoryGame' | 'emojiQuiz', score: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
         // Only update if the new score is higher
@@ -736,6 +738,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-
-

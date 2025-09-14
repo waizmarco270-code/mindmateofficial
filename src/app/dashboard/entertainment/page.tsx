@@ -7,6 +7,7 @@ import { TicTacToeGame } from '@/components/entertainment/tic-tac-toe';
 import { WordUnscrambleGame } from '@/components/entertainment/word-unscramble';
 import { MemoryPatternGame } from '@/components/entertainment/memory-pattern-game';
 import { WordHuntGame } from '@/components/entertainment/word-hunt';
+import { EmojiQuiz } from '@/components/entertainment/emoji-quiz';
 
 export default function EntertainmentPage() {
   return (
@@ -30,10 +31,10 @@ export default function EntertainmentPage() {
                 <TicTacToeGame />
             </TabsContent>
             <TabsContent value="puzzle" className="mt-6">
-                 <WordHuntGame />
+                 <EmojiQuiz />
             </TabsContent>
              <TabsContent value="word-games" className="mt-6">
-                <WordUnscrambleGame />
+                <WordHuntGame />
             </TabsContent>
              <TabsContent value="arcade" className="mt-6">
                 <MemoryPatternGame />

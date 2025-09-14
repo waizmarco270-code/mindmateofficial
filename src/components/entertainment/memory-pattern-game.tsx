@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { isToday } from 'date-fns';
+import { isThisWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
@@ -33,7 +33,7 @@ const PAD_SOUNDS: Record<PadColor, number> = {
 };
 
 
-const DAILY_MILESTONES = {
+const WEEKLY_MILESTONES = {
     5: 1,
     10: 2,
     15: 5,
@@ -43,7 +43,7 @@ const DAILY_MILESTONES = {
     40: 1000,
     50: 10000,
 };
-type Milestone = keyof typeof DAILY_MILESTONES;
+type Milestone = keyof typeof WEEKLY_MILESTONES;
 
 
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -88,7 +88,7 @@ export function MemoryPatternGame() {
     const [activePad, setActivePad] = useState<PadColor | null>(null);
     const [score, setScore] = useState(0);
     const [highScore, setHighScore] = useState(0);
-    const [dailyMilestonesReached, setDailyMilestonesReached] = useState<Milestone[]>([]);
+    const [weeklyMilestonesReached, setWeeklyMilestonesReached] = useState<Milestone[]>([]);
     const [isCheckingClaims, setIsCheckingClaims] = useState(true);
 
      useEffect(() => {
@@ -98,19 +98,19 @@ export function MemoryPatternGame() {
     }, [currentUserData]);
 
 
-     // Check daily claim status
+     // Check weekly claim status
     useEffect(() => {
         const checkClaimStatus = async () => {
             if (!user) {
                 setIsCheckingClaims(false);
                 return;
             };
-            const claimDocRef = doc(db, 'users', user.id, 'dailyClaims', 'memoryGame');
+            const claimDocRef = doc(db, 'users', user.id, 'weeklyClaims', 'memoryGame');
             const docSnap = await getDoc(claimDocRef);
-            if (docSnap.exists() && isToday(docSnap.data().lastPlayed.toDate())) {
-                setDailyMilestonesReached(docSnap.data().milestonesReached || []);
+            if (docSnap.exists() && isThisWeek(docSnap.data().lastPlayed.toDate(), { weekStartsOn: 1 })) {
+                setWeeklyMilestonesReached(docSnap.data().milestonesReached || []);
             } else {
-                setDailyMilestonesReached([]);
+                setWeeklyMilestonesReached([]);
             }
              setIsCheckingClaims(false);
         };
@@ -160,18 +160,18 @@ export function MemoryPatternGame() {
     
     const handleMilestoneCheck = useCallback(async (currentScore: number) => {
         const milestone = currentScore as Milestone;
-        if(user && DAILY_MILESTONES[milestone] && !dailyMilestonesReached.includes(milestone)) {
-            const creditsToAward = DAILY_MILESTONES[milestone];
+        if(user && WEEKLY_MILESTONES[milestone] && !weeklyMilestonesReached.includes(milestone)) {
+            const creditsToAward = WEEKLY_MILESTONES[milestone];
             await addCreditsToUser(user.id, creditsToAward);
             
-            const newMilestones: Milestone[] = [...dailyMilestonesReached, milestone];
-            const claimDocRef = doc(db, 'users', user.id, 'dailyClaims', 'memoryGame');
+            const newMilestones: Milestone[] = [...weeklyMilestonesReached, milestone];
+            const claimDocRef = doc(db, 'users', user.id, 'weeklyClaims', 'memoryGame');
             await setDoc(claimDocRef, { 
                 lastPlayed: Timestamp.now(),
                 milestonesReached: newMilestones
             }, { merge: true });
 
-            setDailyMilestonesReached(newMilestones);
+            setWeeklyMilestonesReached(newMilestones);
 
             toast({
                 title: `Milestone Reached! +${creditsToAward} Credits!`,
@@ -179,7 +179,7 @@ export function MemoryPatternGame() {
                 className: "bg-green-500/10 text-green-700 border-green-500/50"
             });
         }
-    }, [user, dailyMilestonesReached, addCreditsToUser, toast]);
+    }, [user, weeklyMilestonesReached, addCreditsToUser, toast]);
 
     const handlePlayerClick = async (pad: PadColor) => {
         if (gameState !== 'playing') return;
@@ -282,15 +282,15 @@ export function MemoryPatternGame() {
                      <div className="flex items-start gap-3">
                         <Award className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
                          <div>
-                            <h4 className="font-bold text-foreground">Daily Rewards</h4>
-                             <p>You can earn credits by reaching score milestones for the first time each day.</p>
+                            <h4 className="font-bold text-foreground">Weekly Rewards</h4>
+                             <p>You can earn credits by reaching score milestones for the first time each week.</p>
                         </div>
                     </div>
                      <div>
                         <h4 className="font-bold text-foreground mb-2">Milestones:</h4>
                         <ul className="space-y-2">
-                            {Object.entries(DAILY_MILESTONES).map(([level, credit]) => (
-                                <li key={level} className={cn("flex justify-between p-2 rounded-md bg-muted/50", dailyMilestonesReached.includes(Number(level) as Milestone) && "line-through text-muted-foreground/70")}>
+                            {Object.entries(WEEKLY_MILESTONES).map(([level, credit]) => (
+                                <li key={level} className={cn("flex justify-between p-2 rounded-md bg-muted/50", weeklyMilestonesReached.includes(Number(level) as Milestone) && "line-through text-muted-foreground/70")}>
                                     <span>Reach Level {level}</span>
                                     <span className="font-bold text-primary">+{credit.toLocaleString()} Credit{credit > 1 ? 's' : ''}</span>
                                 </li>
@@ -303,5 +303,3 @@ export function MemoryPatternGame() {
         </div>
     )
 }
-
-    
