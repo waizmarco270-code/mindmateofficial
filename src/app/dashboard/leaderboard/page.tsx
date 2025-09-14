@@ -28,7 +28,7 @@ type UserWithStats = User & {
     emojiQuizHighScore: number;
     memoryGameHighScore: number;
     dimensionShiftHighScore: number;
-    prevWeekEmojiQuizHighScore?: number;
+    prevWeekEntertainmentTotalScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
 };
 
@@ -126,7 +126,11 @@ export default function LeaderboardPage() {
                 const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
                 const dimensionShiftHighScore = user.gameHighScores?.dimensionShift || 0;
                 
-                const entertainmentTotalScore = emojiQuizHighScore + memoryGameHighScore + dimensionShiftHighScore;
+                 // New logic for Entertainment Total Score: slightly weight different games
+                const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5);
+
+                // Use a snapshot of scores for previous week winner calculation
+                const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0);
 
 
                 return { 
@@ -135,11 +139,11 @@ export default function LeaderboardPage() {
                     weeklyTime: userWeeklyStats.thisWeek.totalTime,
                     prevWeeklyTime: userWeeklyStats.lastWeek.totalTime,
                     weeklySubjectBreakdown: userWeeklyStats.thisWeek.subjects,
-                    entertainmentTotalScore,
+                    entertainmentTotalScore: Math.round(entertainmentTotalScore),
                     emojiQuizHighScore,
                     memoryGameHighScore,
                     dimensionShiftHighScore,
-                    prevWeekEmojiQuizHighScore: user.gameHighScores?.emojiQuiz,
+                    prevWeekEntertainmentTotalScore: Math.round(prevWeekEntertainmentTotalScore)
                 };
             });
         
@@ -155,7 +159,7 @@ export default function LeaderboardPage() {
         }
         
         const lastWeekWeeklyWinner = [...processedUsers].sort((a,b) => (b.prevWeeklyTime || 0) - (a.prevWeeklyTime || 0))[0];
-        const lastWeekEntertainmentWinner = [...processedUsers].sort((a,b) => (b.prevWeekEmojiQuizHighScore || 0) - (a.prevWeekEmojiQuizHighScore || 0))[0];
+        const lastWeekEntertainmentWinner = [...processedUsers].sort((a,b) => (b.prevWeekEntertainmentTotalScore || 0) - (a.prevWeekEntertainmentTotalScore || 0))[0];
 
         return { sortedUsers: sorted, lastWeekWeeklyWinner, lastWeekEntertainmentWinner };
         
@@ -170,11 +174,10 @@ export default function LeaderboardPage() {
     const renderUserStats = (user: UserWithStats) => {
         if (activeTab === 'entertainment') {
              return (
-                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
-                     <div className="flex items-center gap-1.5 col-span-2">
+                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+                     <div className="flex items-center gap-1.5 col-span-full font-bold text-base text-foreground mb-1">
                         <Gamepad2 className="h-4 w-4 text-green-500" />
-                        <span className="font-semibold">{user.entertainmentTotalScore || 0}</span>
-                        <span>Total Score</span>
+                        <span>{user.entertainmentTotalScore || 0} Total Score</span>
                     </div>
                      <div className="flex items-center gap-1.5">
                         <Puzzle className="h-3 w-3 text-blue-500" />
@@ -492,8 +495,8 @@ export default function LeaderboardPage() {
                                 </div>
                             </CardContent>
                         </Card>
-                         {lastWeekEntertainmentWinner && lastWeekEntertainmentWinner.prevWeekEmojiQuizHighScore > 0 && (
-                             <LastWeekWinnerCard winner={lastWeekEntertainmentWinner} score={lastWeekEntertainmentWinner.prevWeekEmojiQuizHighScore} scoreLabel="High Score" />
+                         {lastWeekEntertainmentWinner && lastWeekEntertainmentWinner.prevWeekEntertainmentTotalScore > 0 && (
+                             <LastWeekWinnerCard winner={lastWeekEntertainmentWinner} score={lastWeekEntertainmentWinner.prevWeekEntertainmentTotalScore} scoreLabel="Total Score" />
                         )}
                     </div>
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="entertainment" onUserClick={setSelectedUserForDetails}/>
@@ -688,5 +691,3 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
         </motion.div>
     );
 }
-
-    

@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Award, Brain, Clock, Loader2, Play, AlertTriangle, Heart, Send, RotateCw, Sparkles, Check, Lightbulb } from 'lucide-react';
+import { Award, Brain, Clock, Loader2, Play, AlertTriangle, Heart, Send, RotateCw, Sparkles, Check, Forward } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -74,7 +74,7 @@ const WEEKLY_MILESTONES: Record<number, number> = {
     5: 2, 10: 4, 15: 10, 20: 20, 25: 30, 30: 40, 40: 60, 50: 100,
 };
 const MAX_MISTAKES = 3;
-const HINT_COUNT = 3;
+const SKIP_COUNT = 2;
 
 const getLevelTime = (level: number) => {
     if (level > 20) return 15;
@@ -93,7 +93,7 @@ export function EmojiQuiz() {
     const [userInput, setUserInput] = useState('');
     const [timeLeft, setTimeLeft] = useState(getLevelTime(1));
     const [mistakes, setMistakes] = useState(0);
-    const [hintsLeft, setHintsLeft] = useState(HINT_COUNT);
+    const [skipsLeft, setSkipsLeft] = useState(SKIP_COUNT);
     const [highScore, setHighScore] = useState(0);
     const [weeklyMilestones, setWeeklyMilestones] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -152,7 +152,7 @@ export function EmojiQuiz() {
     const startGame = () => {
         setLevel(1);
         setMistakes(0);
-        setHintsLeft(HINT_COUNT);
+        setSkipsLeft(SKIP_COUNT);
         setGameState('playing');
         startTimer();
     };
@@ -179,6 +179,17 @@ export function EmojiQuiz() {
         }
     }, [user, weeklyMilestones, addCreditsToUser, toast]);
 
+    const goToNextLevel = () => {
+        if (level >= EMOJI_LEVELS.length) {
+            setGameState('gameOver');
+            toast({ title: 'WOW!', description: 'You have completed all levels!' });
+        } else {
+            setLevel(prev => prev + 1);
+            setUserInput('');
+            startTimer();
+        }
+    }
+
     const handleSubmit = async () => {
         if (gameState !== 'playing' || !userInput.trim()) return;
 
@@ -196,14 +207,7 @@ export function EmojiQuiz() {
                 if (user) updateGameHighScore(user.id, 'emojiQuiz', level + 1);
             }
             
-            if(level >= EMOJI_LEVELS.length) {
-                setGameState('gameOver');
-                 toast({ title: 'WOW!', description: 'You have completed all levels!' });
-            } else {
-                setLevel(prev => prev + 1);
-                setUserInput('');
-                startTimer();
-            }
+            goToNextLevel();
 
         } else {
             const newMistakes = mistakes + 1;
@@ -230,19 +234,11 @@ export function EmojiQuiz() {
         }
     };
     
-    const useHint = () => {
-        if (hintsLeft <= 0 || gameState !== 'playing') return;
-
-        const answer = EMOJI_LEVELS[level - 1].answer.replace(/\s/g, '');
-        const currentGuess = userInput.replace(/\s/g, '');
-
-        for (let i = 0; i < answer.length; i++) {
-            if (i >= currentGuess.length || currentGuess[i].toLowerCase() !== answer[i].toLowerCase()) {
-                setUserInput(prev => prev + answer[i].toUpperCase());
-                setHintsLeft(prev => prev - 1);
-                return;
-            }
-        }
+    const useSkip = () => {
+        if (skipsLeft <= 0 || gameState !== 'playing') return;
+        setSkipsLeft(prev => prev - 1);
+        toast({ title: "Level Skipped!" });
+        goToNextLevel();
     };
     
     if (isLoading) {
@@ -306,9 +302,9 @@ export function EmojiQuiz() {
                             </div>
                             <div className="flex gap-2 w-full mt-2">
                                 <Button variant="secondary" className="flex-1" onClick={() => handleKeyboardClick('BACKSPACE')}>Backspace</Button>
-                                <Button onClick={useHint} variant="outline" size="icon" disabled={hintsLeft <= 0} className="relative">
-                                    <Lightbulb />
-                                    {hintsLeft > 0 && <span className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">{hintsLeft}</span>}
+                                <Button onClick={useSkip} variant="outline" size="icon" disabled={skipsLeft <= 0} className="relative">
+                                    <Forward />
+                                    {skipsLeft > 0 && <span className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">{skipsLeft}</span>}
                                 </Button>
                                 <Button className="flex-1" onClick={handleSubmit}><Send className="mr-2 h-4 w-4"/>Submit</Button>
                             </div>

@@ -18,8 +18,8 @@ import { isToday } from 'date-fns';
 const PLAYER_SIZE = 20;
 const OBSTACLE_WIDTH = 40;
 const OBSTACLE_HEIGHT = 20;
-const WIN_SCORE = 30;
-const DAILY_WIN_REWARD = 1000;
+const WIN_SCORE = 50;
+const DAILY_WIN_REWARD = 100;
 
 
 // Player state
@@ -178,13 +178,15 @@ export function DimensionShiftGame() {
     
     // Difficulty scaling based on score
     let spawnRate = 80;
-    if(score > 10) spawnRate = 60;
-    if(score > 15) spawnRate = 40;
-    if(score > 20) spawnRate = 25; // Impossible
-    if(score > 25) spawnRate = 15; // Super car
+    if (score > 15) spawnRate = 60;
+    if (score > 20) spawnRate = 40; // Insane
+    if (score > 30) spawnRate = 25; // Impossible
+    if (score > 40) spawnRate = 15; // SUPER CAR
+
+    if (score > 15) scrollSpeedRef.current += 0.025; // "Insane" speed increase
+    if (score > 20) scrollSpeedRef.current += 0.05;  // "Impossible" speed increase
+    if (score > 30) scrollSpeedRef.current += 0.075;  // SUPER CAR speed increase
     
-    if(score > 15) scrollSpeedRef.current += 0.025; // "Insane" speed increase
-    if(score > 20) scrollSpeedRef.current += 0.05;  // "Impossible" speed increase
 
     // Generate new obstacles
     if (frameCountRef.current % spawnRate === 0) { 
