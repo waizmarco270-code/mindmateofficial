@@ -235,11 +235,10 @@ export function TicTacToeGame() {
                             <p className="font-semibold text-center">You've already claimed your win reward for today. Come back tomorrow!</p>
                         </div>
                     ) : (
-                        <div className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-4 text-amber-700 dark:text-amber-300">
-                            <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
-                            <p className="text-xs">
-                              <span className="font-semibold">Win your first game of the day to earn {DAILY_WIN_REWARD} credits.</span> No credits are awarded for a draw.
-                            </p>
+                         <div className="text-center rounded-lg border-2 border-dashed border-amber-500/50 bg-amber-500/10 p-6 text-amber-700 dark:text-amber-300">
+                            <p className="text-2xl font-bold tracking-tight">If you have the will,</p>
+                            <p className="text-4xl font-extrabold text-amber-500 my-2">WIN IT & TAKE {DAILY_WIN_REWARD} CREDITS</p>
+                            <p className="text-xs mt-2">No credits are awarded for a draw. This is a one-time daily reward.</p>
                         </div>
                     )}
                 </CardContent>
