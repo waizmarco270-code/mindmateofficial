@@ -34,7 +34,8 @@ export default function QuizZonePage() {
 
   useEffect(() => {
     markAsSeen();
-  }, [markAsSeen]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const loading = quizzesLoading || usersLoading;
 
