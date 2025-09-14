@@ -77,12 +77,12 @@ export default function RewardPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><History /> Reward History</CardTitle>
-                            <CardDescription>Your last 10 rewards.</CardDescription>
+                            <CardDescription>Your last 7 rewards.</CardDescription>
                         </CardHeader>
                         <CardContent>
                             {rewardHistory.length > 0 ? (
                                 <ul className="space-y-2">
-                                    {rewardHistory.map((rewardItem, index) => (
+                                    {rewardHistory.slice(0, 7).map((rewardItem, index) => (
                                         <li key={index} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
                                             <div className="flex flex-col">
                                                 <span className="font-medium">
