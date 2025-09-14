@@ -57,7 +57,7 @@ export function CommunityPoll() {
   return (
     <Card className="relative h-full group">
        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 rounded-lg blur-lg opacity-50 group-hover:opacity-75 transition duration-300"></div>
-      <div className="relative h-full bg-background rounded-lg">
+      <div className="relative h-full bg-background rounded-lg flex flex-col">
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
@@ -70,7 +70,7 @@ export function CommunityPoll() {
             <Button variant="ghost" size="icon" className="text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex-1 flex flex-col justify-center">
         <div className="space-y-3">
           {activePoll.options.map((option, index) => {
             const votesForOption = activePoll.results[option] || 0;
@@ -99,7 +99,10 @@ export function CommunityPoll() {
                 key={index}
                 variant="outline"
                 className="w-full justify-start h-12 text-base"
-                onClick={() => handleVote(option)}
+                onClick={(e) => {
+                    e.stopPropagation(); // Prevents the card from flipping back
+                    handleVote(option);
+                }}
                 disabled={isSubmitting}
               >
                 {isSubmitting ? 'Voting...' : option}
