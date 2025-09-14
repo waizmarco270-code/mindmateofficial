@@ -317,7 +317,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const announcementsQuery = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
         const resourcesQuery = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
         const resourceSectionsQuery = query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc'));
-        const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'desc'));
+        const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')); // Changed to 'asc'
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
@@ -637,3 +637,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    

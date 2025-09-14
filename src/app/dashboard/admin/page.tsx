@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -37,6 +37,38 @@ interface QuizQuestion {
 
 type EditableResource = Resource & { type: 'general' | 'premium' };
 type EditableSection = ResourceSection;
+
+const availableIcons = {
+    "Award": Award,
+    "Zap": Zap,
+    "Gamepad2": Gamepad2,
+    "Gift": Gift,
+    "BrainCircuit": BrainCircuit,
+    "Trophy": Trophy,
+    "BookOpen": BookOpenIcon,
+    "Clock": Clock,
+    "LineChart": LineChart,
+} as const;
+
+type AvailableIconName = keyof typeof availableIcons;
+
+const availableRoutes = {
+    "Home": "/dashboard",
+    "AI Assistant": "/dashboard/ai-assistant",
+    "Reward Zone": "/dashboard/reward",
+    "Quiz Zone": "/dashboard/quiz",
+    "Social Hub": "/dashboard/social",
+    "Entertainment": "/dashboard/entertainment",
+    "Resources": "/dashboard/resources",
+    "Invite & Earn": "/dashboard/refer",
+    "Focus Mode": "/dashboard/tracker",
+    "Time Tracker": "/dashboard/time-tracker",
+    "Schedule": "/dashboard/schedule",
+    "To-Dos": "/dashboard/todos",
+    "Insights": "/dashboard/insights",
+    "Leaderboard": "/dashboard/leaderboard",
+    "Calculator": "/dashboard/calculator",
+};
 
 export default function AdminPanelPage() {
   const { 
@@ -66,7 +98,7 @@ export default function AdminPanelPage() {
   const [surpriseAuthor, setSurpriseAuthor] = useState('');
   const [surpriseImageUrl, setSurpriseImageUrl] = useState('');
   const [surpriseQuiz, setSurpriseQuiz] = useState({ question: '', options: ['', ''], correctAnswer: '' });
-  const [surpriseFeature, setSurpriseFeature] = useState({ title: '', description: '', icon: 'Award', route: '' });
+  const [surpriseFeature, setSurpriseFeature] = useState({ title: '', description: '', icon: 'Award' as AvailableIconName, route: '/dashboard' });
 
   
   // State for new sections
@@ -279,7 +311,7 @@ export default function AdminPanelPage() {
         setSurpriseAuthor('');
         setSurpriseImageUrl('');
         setSurpriseQuiz({ question: '', options: ['', ''], correctAnswer: '' });
-        setSurpriseFeature({ title: '', description: '', icon: 'Award', route: '' });
+        setSurpriseFeature({ title: '', description: '', icon: 'Award', route: '/dashboard' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
     }
@@ -487,17 +519,25 @@ export default function AdminPanelPage() {
                                     <div className="space-y-2"><Label>Feature Title</Label><Input value={surpriseFeature.title} onChange={e => setSurpriseFeature(p => ({...p, title: e.target.value}))} placeholder="e.g., Entertainment Zone"/></div>
                                     <div className="space-y-2"><Label>Description</Label><Textarea value={surpriseFeature.description} onChange={e => setSurpriseFeature(p => ({...p, description: e.target.value}))} placeholder="Play games and earn credits!"/></div>
                                     <div className="space-y-2"><Label>Icon</Label>
-                                         <Select value={surpriseFeature.icon} onValueChange={v => setSurpriseFeature(p => ({...p, icon: v}))}>
+                                         <Select value={surpriseFeature.icon} onValueChange={(v: AvailableIconName) => setSurpriseFeature(p => ({...p, icon: v}))}>
                                             <SelectTrigger><SelectValue placeholder="Select an icon..."/></SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="Award"><Award className="mr-2 h-4 w-4"/> Award</SelectItem>
-                                                <SelectItem value="Zap"><Zap className="mr-2 h-4 w-4"/> Zap</SelectItem>
-                                                <SelectItem value="Gamepad2"><Gamepad className="mr-2 h-4 w-4"/> Gamepad2</SelectItem>
-                                                <SelectItem value="Gift"><Gift className="mr-2 h-4 w-4"/> Gift</SelectItem>
+                                                {Object.entries(availableIcons).map(([name, Icon]) => (
+                                                    <SelectItem key={name} value={name}><Icon className="mr-2 h-4 w-4"/> {name}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                     <div className="space-y-2"><Label>Route</Label><Input value={surpriseFeature.route} onChange={e => setSurpriseFeature(p => ({...p, route: e.target.value}))} placeholder="/dashboard/entertainment"/></div>
+                                     <div className="space-y-2"><Label>Route</Label>
+                                        <Select value={surpriseFeature.route} onValueChange={(v: string) => setSurpriseFeature(p => ({...p, route: v}))}>
+                                            <SelectTrigger><SelectValue placeholder="Select a page..." /></SelectTrigger>
+                                            <SelectContent>
+                                                 {Object.entries(availableRoutes).map(([name, route]) => (
+                                                    <SelectItem key={route} value={route}>{name}</SelectItem>
+                                                 ))}
+                                            </SelectContent>
+                                        </Select>
+                                     </div>
                                 </div>
                             )}
 
@@ -796,3 +836,5 @@ export default function AdminPanelPage() {
     </div>
   );
 }
+
+    
