@@ -27,7 +27,7 @@ export interface Task {
   text: string;
   completed: boolean;
   priority: TaskPriority;
-  deadline?: string; // ISO string date
+  deadline?: string; // ISO string
   createdAt: string; // ISO string date
 }
 
@@ -82,17 +82,20 @@ export function TodoList() {
     e.preventDefault();
     if (newTaskText.trim() === '' || !user) return;
     
-    const newTask: Omit<Task, 'id'> = {
+    const newTaskPayload: Omit<Task, 'id'> = {
       text: newTaskText,
       completed: false,
       priority: newTaskPriority,
-      deadline: newTaskDeadline?.toISOString(),
       createdAt: new Date().toISOString(),
     };
     
+    if (newTaskDeadline) {
+      newTaskPayload.deadline = newTaskDeadline.toISOString();
+    }
+
     const tasksColRef = collection(db, 'users', user.id, 'dailyTasks');
     const newDocRef = doc(tasksColRef); // Auto-generate ID
-    await setDoc(newDocRef, { ...newTask, id: newDocRef.id });
+    await setDoc(newDocRef, { ...newTaskPayload, id: newDocRef.id });
 
     setNewTaskText('');
     setNewTaskPriority('low');
@@ -124,12 +127,20 @@ export function TodoList() {
       if (!editingTask || !user) return;
 
       const taskDocRef = doc(db, 'users', user.id, 'dailyTasks', editingTask.id);
-      await setDoc(taskDocRef, { 
+      
+      const updatedTaskData: any = { 
         ...editingTask, 
         text: editTaskText, 
-        priority: editTaskPriority, 
-        deadline: editTaskDeadline?.toISOString() 
-      }, { merge: true });
+        priority: editTaskPriority,
+      };
+
+      if (editTaskDeadline) {
+          updatedTaskData.deadline = editTaskDeadline.toISOString();
+      } else {
+          updatedTaskData.deadline = null; // or delete(it) if you prefer
+      }
+
+      await setDoc(taskDocRef, updatedTaskData, { merge: true });
       
       setEditingTask(null);
       setIsEditDialogOpen(false);
