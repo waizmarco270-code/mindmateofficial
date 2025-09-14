@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -27,6 +26,19 @@ import { Slider } from '@/components/ui/slider';
 
 
 const CREDIT_PASSWORD = "waizcredit";
+
+const themePresets: Record<string, AppTheme> = {
+    "Crimson Red": { primary: "0 84.2% 60.2%", background: "240 10% 3.9%", accent: "0 84.2% 60.2%", radius: 0.8 },
+    "Ocean Blue": { primary: "207 90% 54%", background: "222 84% 4.9%", accent: "217 33% 17%", radius: 0.8 },
+    "Forest Green": { primary: "142 76% 36%", background: "142 100% 4%", accent: "142 76% 15%", radius: 0.8 },
+    "Goldenrod Yellow": { primary: "45 100% 51%", background: "45 100% 5%", accent: "45 100% 20%", radius: 0.8 },
+    "Royal Purple": { primary: "262 80% 56%", background: "240 10% 3.9%", accent: "240 3.7% 15.9%", radius: 0.8 },
+    "Electric Lime": { primary: "84 100% 50%", background: "240 10% 3.9%", accent: "84 100% 20%", radius: 0.8 },
+    "Slate Gray": { primary: "215 28% 47%", background: "222 47% 11%", accent: "215 28% 27%", radius: 0.8 },
+    "Cyberpunk Pink": { primary: "316 100% 64%", background: "316 100% 5%", accent: "316 100% 25%", radius: 0.8 },
+    "Mocha Brown": { primary: "30 59% 45%", background: "25 60% 10%", accent: "30 59% 25%", radius: 0.8 },
+}
+
 
 export default function SuperAdminPanelPage() {
   const { 
@@ -182,6 +194,17 @@ export default function SuperAdminPanelPage() {
         toast({ variant: 'destructive', title: 'Theme Update Failed', description: error.message });
     }
   }
+
+   const applyPreset = (presetName: string) => {
+        const preset = themePresets[presetName];
+        if (preset) {
+            setThemePrimary(preset.primary);
+            setThemeBackground(preset.background);
+            setThemeAccent(preset.accent);
+            setThemeRadius(preset.radius);
+            toast({ title: 'Preset Applied!', description: `"${presetName}" values are ready. Click "Update Global Theme" to save.` });
+        }
+    };
 
   if (!isSuperAdmin) {
     return (
@@ -434,7 +457,7 @@ export default function SuperAdminPanelPage() {
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="p-6 pt-0">
+              <AccordionContent className="p-6 pt-0 space-y-4">
                 <Card>
                     <CardHeader>
                         <CardTitle>Global Theme Settings</CardTitle>
@@ -462,6 +485,31 @@ export default function SuperAdminPanelPage() {
                         <Button onClick={handleUpdateTheme}>
                             <RefreshCcw className="mr-2 h-4 w-4"/> Update Global Theme
                         </Button>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Theme Preset Guide</CardTitle>
+                        <CardDescription>Click a preset to apply its colors to the fields above, then save.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Accordion type="single" collapsible className="w-full">
+                            {Object.entries(themePresets).map(([name, theme]) => (
+                                <AccordionItem value={name} key={name}>
+                                    <AccordionTrigger>{name}</AccordionTrigger>
+                                    <AccordionContent>
+                                        <div className="flex items-center justify-between p-2 rounded-lg bg-muted">
+                                            <div className="space-y-1 text-sm">
+                                                <p><b>Primary:</b> {theme.primary}</p>
+                                                <p><b>Background:</b> {theme.background}</p>
+                                                <p><b>Accent:</b> {theme.accent}</p>
+                                            </div>
+                                            <Button onClick={() => applyPreset(name)}>Apply</Button>
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
                     </CardContent>
                 </Card>
               </AccordionContent>
