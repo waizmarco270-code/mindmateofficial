@@ -99,22 +99,6 @@ export default function Header() {
                     </PopoverContent>
                 </Popover>
 
-                {isAdmin && (
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button asChild variant="ghost" size="icon">
-                        <Link href="/dashboard/admin">
-                            <Shield className="h-5 w-5 text-primary" />
-                            <span className="sr-only">Admin Panel</span>
-                        </Link>
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent>
-                        <p>Admin Panel</p>
-                    </PopoverContent>
-                </Popover>
-                )}
-
                 <ThemeToggle />
                 <UserButton afterSignOutUrl="/" appearance={{
                     elements: {
