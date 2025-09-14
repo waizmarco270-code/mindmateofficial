@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,7 +44,7 @@ export function WordHuntGame() {
     const [letterPool, setLetterPool] = useState<string[]>([]);
     const [guess, setGuess] = useState<(string | null)[]>([]);
     const [timeLeft, setTimeLeft] = useState(LEVEL_CONFIG[level].time);
-    const timerRef = React.useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     const setupLevel = useCallback(() => {
         const config = LEVEL_CONFIG[level];
