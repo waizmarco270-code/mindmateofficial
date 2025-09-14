@@ -116,19 +116,19 @@ export function DailySurpriseCard() {
                 const FeatureIcon = surprise.featureIcon ? iconMap[surprise.featureIcon] || GiftIcon : GiftIcon;
                 return (
                     <Link href={surprise.featureRoute || '/dashboard'} className="block h-full group">
-                        <div className="relative h-full rounded-lg p-6 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-primary/10 via-transparent to-transparent group-hover:from-primary/20 transition-all">
-                            <div className="flex flex-col items-start gap-4">
+                         <div className="relative h-full rounded-lg p-4 sm:p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center overflow-hidden bg-gradient-to-br from-primary/10 via-transparent to-transparent group-hover:from-primary/20 transition-all">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
                                 <div className="p-3 rounded-full bg-primary/20 text-primary w-fit">
-                                    <FeatureIcon className="h-8 w-8"/>
+                                    <FeatureIcon className="h-8 w-8 sm:h-10 sm:w-10"/>
                                 </div>
                                 <div className="flex-1">
                                     <p className="text-sm font-bold text-primary uppercase tracking-wider">New Feature</p>
-                                    <h3 className="text-2xl sm:text-3xl font-bold mt-1 text-foreground">{surprise.featureTitle}</h3>
+                                    <h3 className="text-xl sm:text-2xl font-bold mt-1 text-foreground break-words">{surprise.featureTitle}</h3>
                                 </div>
                             </div>
-                            <div className="flex items-end justify-between mt-4">
-                                <p className="text-muted-foreground break-words max-w-[80%]">{surprise.featureDescription}</p>
-                                <ArrowRight className="h-8 w-8 text-muted-foreground group-hover:translate-x-1 transition-transform flex-shrink-0 self-end"/>
+                            <div className="flex items-end justify-between mt-4 sm:mt-0 w-full sm:w-auto">
+                                <p className="text-muted-foreground break-words">{surprise.featureDescription}</p>
+                                <ArrowRight className="h-6 w-6 sm:h-8 sm:w-8 text-muted-foreground group-hover:translate-x-1 transition-transform flex-shrink-0 self-end ml-4"/>
                             </div>
                         </div>
                     </Link>
@@ -170,7 +170,7 @@ export function DailySurpriseCard() {
                                 </>
                             ) : (
                                 // For new-feature, render content directly inside Card to fill space
-                                <div className="p-0 h-full flex-1">
+                                <div className="p-0 h-full flex-1 flex">
                                     {renderSurpriseContent(surprise)}
                                 </div>
                             )}
