@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
 import { startOfWeek, endOfWeek, parseISO, isWithinInterval } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 
 const LEADERBOARD_EXCLUDED_UIDS: string[] = [];
@@ -389,5 +390,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         </div>
     );
 };
+
+    
 
     
