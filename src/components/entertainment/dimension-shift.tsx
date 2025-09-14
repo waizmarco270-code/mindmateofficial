@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Orbit, Play, RotateCw, HelpCircle, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
+import { useUser } from '@clerk/nextjs';
+import { useUsers } from '@/hooks/use-admin';
 
 // Game Configuration
 const PLAYER_SIZE = 20;
@@ -33,6 +35,8 @@ interface Obstacle {
 export function DimensionShiftGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
+  const { user } = useUser();
+  const { currentUserData, updateGameHighScore } = useUsers();
 
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver'>('idle');
   const [level, setLevel] = useState(1);
@@ -45,6 +49,12 @@ export function DimensionShiftGame() {
   const frameCountRef = useRef(0);
   const scrollSpeedRef = useRef(SCROLL_SPEED_START);
   const gameLoopRef = useRef<number>();
+  
+  useEffect(() => {
+    if(currentUserData?.gameHighScores?.dimensionShift) {
+        setHighScore(currentUserData.gameHighScores.dimensionShift);
+    }
+  }, [currentUserData]);
 
   const getThemeColors = useCallback(() => {
     const isDark = resolvedTheme === 'dark';
@@ -87,7 +97,9 @@ export function DimensionShiftGame() {
     setGameState('gameOver');
     if (score > highScore) {
       setHighScore(score);
-      // Here you would also save the high score to the user's profile
+       if (user) {
+        updateGameHighScore(user.id, 'dimensionShift', score);
+      }
     }
   };
 
@@ -263,3 +275,5 @@ export function DimensionShiftGame() {
     </div>
   );
 }
+
+    

@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -24,7 +24,10 @@ type UserWithStats = User & {
     totalScore: number; 
     weeklyTime: number; 
     prevWeeklyTime?: number;
+    entertainmentTotalScore: number;
     emojiQuizHighScore: number;
+    memoryGameHighScore: number;
+    dimensionShiftHighScore: number;
     prevWeekEmojiQuizHighScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
 };
@@ -120,6 +123,11 @@ export default function LeaderboardPage() {
                                    
                 const userWeeklyStats = weeklyStats[user.uid] || { thisWeek: { totalTime: 0, subjects: {} }, lastWeek: { totalTime: 0 } };
                 const emojiQuizHighScore = user.gameHighScores?.emojiQuiz || 0;
+                const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
+                const dimensionShiftHighScore = user.gameHighScores?.dimensionShift || 0;
+                
+                const entertainmentTotalScore = emojiQuizHighScore + memoryGameHighScore + dimensionShiftHighScore;
+
 
                 return { 
                     ...user, 
@@ -127,7 +135,10 @@ export default function LeaderboardPage() {
                     weeklyTime: userWeeklyStats.thisWeek.totalTime,
                     prevWeeklyTime: userWeeklyStats.lastWeek.totalTime,
                     weeklySubjectBreakdown: userWeeklyStats.thisWeek.subjects,
+                    entertainmentTotalScore,
                     emojiQuizHighScore,
+                    memoryGameHighScore,
+                    dimensionShiftHighScore,
                     prevWeekEmojiQuizHighScore: user.gameHighScores?.emojiQuiz,
                 };
             });
@@ -137,7 +148,7 @@ export default function LeaderboardPage() {
         if (activeTab === 'weekly') {
             sorted = [...processedUsers].sort((a, b) => b.weeklyTime - a.weeklyTime);
         } else if (activeTab === 'entertainment') {
-            sorted = [...processedUsers].sort((a, b) => b.emojiQuizHighScore - a.emojiQuizHighScore);
+            sorted = [...processedUsers].sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
         } else {
             // Default to all-time score
             sorted = [...processedUsers].sort((a, b) => b.totalScore - a.totalScore);
@@ -159,11 +170,23 @@ export default function LeaderboardPage() {
     const renderUserStats = (user: UserWithStats) => {
         if (activeTab === 'entertainment') {
              return (
-                 <div className="grid grid-cols-1 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+                     <div className="flex items-center gap-1.5 col-span-2">
+                        <Gamepad2 className="h-4 w-4 text-green-500" />
+                        <span className="font-semibold">{user.entertainmentTotalScore || 0}</span>
+                        <span>Total Score</span>
+                    </div>
                      <div className="flex items-center gap-1.5">
-                        <Gamepad2 className="h-3 w-3 text-green-500" />
+                        <Puzzle className="h-3 w-3 text-blue-500" />
                         <span className="font-semibold">{user.emojiQuizHighScore || 0}</span>
-                        <span>Emoji Quiz High Score</span>
+                    </div>
+                     <div className="flex items-center gap-1.5">
+                        <Brain className="h-3 w-3 text-purple-500" />
+                        <span className="font-semibold">{user.memoryGameHighScore || 0}</span>
+                    </div>
+                     <div className="flex items-center gap-1.5">
+                        <Orbit className="h-3 w-3 text-rose-500" />
+                        <span className="font-semibold">{user.dimensionShiftHighScore || 0}</span>
                     </div>
                 </div>
             )
@@ -221,13 +244,13 @@ export default function LeaderboardPage() {
         const scoreToDisplay = {
             'all-time': user.totalScore,
             'weekly': formatTime(user.weeklyTime),
-            'entertainment': user.emojiQuizHighScore
+            'entertainment': user.entertainmentTotalScore
         }[activeTab];
 
         const scoreLabel = {
             'all-time': 'Total Score',
             'weekly': 'This Week',
-            'entertainment': 'High Score'
+            'entertainment': 'Total Score'
         }[activeTab];
         
         const CardWrapper = activeTab === 'weekly' ? 'button' : 'div';
@@ -522,7 +545,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
     const getScoreLabel = () => ({
         'all-time': 'Total Score',
         'weekly': 'Weekly Time',
-        'entertainment': 'High Score',
+        'entertainment': 'Total Score',
     }[activeTab]);
     
     const formatWeeklyTime = (seconds: number) => {
@@ -535,7 +558,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
     const getScoreToDisplay = (user: any) => ({
         'all-time': user.totalScore,
         'weekly': formatWeeklyTime(user.weeklyTime),
-        'entertainment': user.emojiQuizHighScore
+        'entertainment': user.entertainmentTotalScore
     }[activeTab]);
 
     return (
@@ -665,3 +688,5 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
         </motion.div>
     );
 }
+
+    
