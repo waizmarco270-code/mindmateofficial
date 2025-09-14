@@ -239,10 +239,12 @@ export default function LeaderboardPage() {
                                     </span>
                                 ) : user.isAdmin ? (
                                     <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                                ) : user.isVip && (
+                                ) : user.isVip ? (
                                     <span className="elite-badge flex-shrink-0">
                                         <Crown className="h-3 w-3" /> ELITE
                                     </span>
+                                ) : user.isGM && (
+                                    <span className="gm-badge">GM</span>
                                 )}
                             </div>
                             <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
@@ -284,10 +286,12 @@ export default function LeaderboardPage() {
                                         </span>
                                     ) : user.isAdmin ? (
                                         <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                                    ) : user.isVip && (
+                                    ) : user.isVip ? (
                                         <span className="elite-badge flex-shrink-0">
                                             <Crown className="h-3 w-3" /> ELITE
                                         </span>
+                                     ) : user.isGM && (
+                                        <span className="gm-badge">GM</span>
                                     )}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
@@ -565,10 +569,12 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                                             </span>
                                                         ) : user.isAdmin ? (
                                                             <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                                                        ) : user.isVip && (
+                                                        ) : user.isVip ? (
                                                             <span className="elite-badge flex-shrink-0">
                                                                 <Crown className="h-3 w-3" /> ELITE
                                                             </span>
+                                                        ) : user.isGM && (
+                                                            <span className="gm-badge">GM</span>
                                                         )}
                                                     </div>
                                                      <p className="text-muted-foreground text-sm">

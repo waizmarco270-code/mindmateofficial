@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -32,6 +32,7 @@ export default function SuperAdminPanelPage() {
   const { 
     isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
     makeUserVip, removeUserVip,
+    makeUserGM, removeUserGM,
     addCreditsToUser, giftCreditsToAllUsers,
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
@@ -222,6 +223,8 @@ export default function SuperAdminPanelPage() {
                                         <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
                                     ) : user.isVip ? (
                                         <span className="elite-badge"><Crown className="h-3 w-3"/> ELITE</span>
+                                    ) : user.isGM ? (
+                                        <span className="gm-badge">GM</span>
                                     ) : (
                                         <Badge variant="outline">User</Badge>
                                     )}
@@ -246,6 +249,15 @@ export default function SuperAdminPanelPage() {
                                         ) : (
                                             <Button variant="outline" size="sm" onClick={() => makeUserVip(user.uid)}>
                                                 <Crown className="mr-2 h-4 w-4"/>Make Elite
+                                            </Button>
+                                        )}
+                                        {user.isGM ? (
+                                            <Button variant="secondary" size="sm" onClick={() => removeUserGM(user.uid)}>
+                                                <Gamepad2 className="mr-2 h-4 w-4"/>Remove GM
+                                            </Button>
+                                        ) : (
+                                            <Button variant="outline" size="sm" onClick={() => makeUserGM(user.uid)}>
+                                                <Gamepad2 className="mr-2 h-4 w-4"/>Make GM
                                             </Button>
                                         )}
                                         <Button variant={user.isBlocked ? 'outline' : 'destructive'} size="sm" onClick={() => toggleUserBlock(user.uid, user.isBlocked)}>
@@ -492,4 +504,5 @@ export default function SuperAdminPanelPage() {
 }
 
     
+
 

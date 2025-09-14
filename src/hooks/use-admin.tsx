@@ -29,6 +29,7 @@ export interface User {
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
   isVip?: boolean; // For the special recognition badge
+  isGM?: boolean; // For the Game Master badge
   friends?: string[]; // Array of friend UIDs
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number; // Total count over all time
@@ -137,6 +138,8 @@ interface AppDataContextType {
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
     removeUserVip: (uid: string) => Promise<void>;
+    makeUserGM: (uid: string) => Promise<void>;
+    removeUserGM: (uid: string) => Promise<void>;
     clearGlobalChat: () => Promise<void>;
     clearQuizLeaderboard: () => Promise<void>;
     
@@ -298,6 +301,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     credits: 100,
                     isAdmin: false,
                     isVip: false,
+                    isGM: false,
                     friends: [],
                     unlockedResourceSections: [],
                     focusSessionsCompleted: 0,
@@ -394,6 +398,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const removeUserVip = async (uid: string) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { isVip: false });
+    };
+
+    const makeUserGM = async (uid: string) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { isGM: true });
+    };
+
+    const removeUserGM = async (uid: string) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { isGM: false });
     };
 
     const toggleUserBlock = async (uid: string, isBlocked: boolean) => {
@@ -640,6 +654,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         removeUserAdmin,
         makeUserVip,
         removeUserVip,
+        makeUserGM,
+        removeUserGM,
         clearGlobalChat,
         clearQuizLeaderboard,
         announcements,
@@ -720,5 +736,6 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
 
 

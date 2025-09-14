@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MoreVertical, X, Trash2, UserX, Code, Crown, ArrowLeft, ShieldCheck } from 'lucide-react';
+import { Send, MoreVertical, X, Trash2, UserX, Code, Crown, ArrowLeft, ShieldCheck, Gamepad2 } from 'lucide-react';
 import { User, SUPER_ADMIN_UID, useUsers } from '@/hooks/use-admin';
 import { useChat, Message } from '@/hooks/use-chat';
 import { useFriends } from '@/hooks/use-friends';
@@ -123,6 +123,8 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
     const isSuperAdmin = userToShow?.uid === SUPER_ADMIN_UID;
     const isAdmin = userToShow?.isAdmin;
     const isVip = userToShow?.isVip;
+    const isGM = userToShow?.isGM;
+
 
     return (
         <div className={cn("flex items-end gap-2", isOwn && "justify-end")}>
@@ -140,8 +142,10 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
                             <span className="dev-badge flex-shrink-0"><Code className="h-3 w-3" /> DEV</span>
                         ) : isAdmin ? (
                             <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                        ) : isVip && (
+                        ) : isVip ? (
                             <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>
+                        ) : isGM && (
+                             <span className="gm-badge">GM</span>
                         )}
                     </div>
                 )}
