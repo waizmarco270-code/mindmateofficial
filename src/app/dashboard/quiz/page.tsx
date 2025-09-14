@@ -117,15 +117,8 @@ export default function QuizZonePage() {
                             </div>
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {quizzesByCategory[category].map((quiz, index) => (
-                                   <motion.div
-                                    key={quiz.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                                    className="h-full"
-                                   >
-                                    <Card className={cn(
-                                        "h-full group flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1",
+                                    <Card key={quiz.id} className={cn(
+                                        "h-full flex flex-col justify-between",
                                         shadow
                                     )}>
                                         <CardHeader>
@@ -145,7 +138,6 @@ export default function QuizZonePage() {
                                             </Button>
                                         </CardFooter>
                                     </Card>
-                                   </motion.div>
                                 ))}
                             </div>
                         </div>
