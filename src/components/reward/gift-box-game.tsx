@@ -1,8 +1,8 @@
 
 'use client';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Award, Layers, X, Sparkles, Trophy, RotateCw } from 'lucide-react';
+import { Layers, X, Sparkles, Trophy, RotateCw } from 'lucide-react';
 import { useRewards } from '@/hooks/use-rewards';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -17,7 +17,7 @@ const LEVEL_CONFIG = {
 type Level = keyof typeof LEVEL_CONFIG;
 
 const cardVariants = {
-  hidden: { scale: 0.5, opacity: 0 },
+  hidden: { scale: 0.8, opacity: 0 },
   visible: (i: number) => ({
     scale: 1,
     opacity: 1,
@@ -99,53 +99,57 @@ export function CardFlipGame() {
     }
     
     const renderCard = (cardValue: number | 'lose', index: number) => {
-        const isSelected = selectedCardIndex === index;
+        const isRevealed = gameState === 'revealed';
         const isWin = cardValue !== 'lose';
 
         return (
-             <motion.div
+            <motion.div
                 key={index}
                 custom={index}
                 variants={cardVariants}
                 initial="hidden"
                 animate="visible"
-                className="perspective-[1000px]"
-             >
-                <motion.button
-                    onClick={() => handleCardClick(index)}
-                    disabled={gameState !== 'playing'}
-                    className="relative w-full aspect-square rounded-lg shadow-lg preserve-3d"
-                    animate={{ rotateY: isSelected ? 180 : 0 }}
-                    transition={{ duration: 0.6 }}
+                className="relative aspect-square"
+            >
+                {/* Face-down Card */}
+                <AnimatePresence>
+                    {!isRevealed && (
+                        <motion.button
+                            onClick={() => handleCardClick(index)}
+                            className={cn(
+                                "absolute inset-0 w-full h-full rounded-lg flex items-center justify-center bg-gradient-to-br from-primary to-purple-600 p-1 shadow-lg",
+                                "hover:scale-105 transition-transform"
+                            )}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.2 }}
+                        >
+                            <div className="w-full h-full bg-slate-800 rounded-md flex items-center justify-center">
+                                <Layers className="h-10 w-10 text-primary animate-pulse" />
+                            </div>
+                        </motion.button>
+                    )}
+                </AnimatePresence>
+
+                {/* Face-up Content (Revealed) */}
+                <motion.div 
+                    className={cn(
+                        "w-full h-full rounded-lg flex flex-col items-center justify-center p-2 text-white shadow-inner",
+                        isWin ? "bg-gradient-to-br from-yellow-400 to-amber-600" : "bg-gradient-to-br from-slate-600 to-gray-800"
+                    )}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: isRevealed ? 1 : 0, scale: isRevealed ? 1 : 0.8 }}
+                    transition={{ duration: 0.3 }}
                 >
-                    {/* Card Back */}
-                    <div className={cn(
-                        "absolute inset-0 w-full h-full rounded-lg backface-hidden flex items-center justify-center bg-gradient-to-br from-primary to-purple-600 p-1",
-                         gameState === 'playing' && "cursor-pointer hover:scale-105 transition-transform"
-                     )}>
-                         <div className="w-full h-full bg-slate-800 rounded-md flex items-center justify-center">
-                            <Layers className="h-10 w-10 text-primary animate-pulse" />
-                        </div>
-                    </div>
-                    {/* Card Front */}
-                     <motion.div 
-                        initial={{ rotateY: 180 }}
-                        className={cn(
-                            "absolute inset-0 w-full h-full rounded-lg backface-hidden flex flex-col items-center justify-center p-2 text-white",
-                            isWin ? "bg-gradient-to-br from-yellow-400 to-amber-600" : "bg-gradient-to-br from-slate-600 to-gray-800"
-                        )}
-                    >
-                        {isWin ? (
-                            <>
-                                <Sparkles className="h-6 w-6" />
-                                <p className="text-2xl font-bold mt-1">{cardValue}</p>
-                                <p className="text-xs font-semibold">CREDITS</p>
-                            </>
-                        ) : (
-                            <X className="h-10 w-10"/>
-                        )}
-                    </motion.div>
-                </motion.button>
+                    {isWin ? (
+                        <>
+                            <Sparkles className="h-6 w-6" />
+                            <p className="text-2xl font-bold mt-1">{cardValue}</p>
+                            <p className="text-xs font-semibold">CREDITS</p>
+                        </>
+                    ) : (
+                        <X className="h-10 w-10"/>
+                    )}
+                </motion.div>
             </motion.div>
         )
     };
