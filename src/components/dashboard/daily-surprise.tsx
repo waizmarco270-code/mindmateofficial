@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useDailySurprises } from '@/hooks/use-admin';
-import { Lightbulb, MessageSquare, Image as ImageIcon, HelpCircle, Check, X, Award, Zap, Gamepad2, Gift as GiftIcon, ArrowRight } from 'lucide-react';
+import { Lightbulb, MessageSquare, Image as ImageIcon, HelpCircle, Check, X, Award, Zap, Gamepad2, Gift as GiftIcon, ArrowRight, BrainCircuit, Trophy, BookOpen, Clock, LineChart } from 'lucide-react';
 import Image from 'next/image';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
@@ -19,11 +20,11 @@ const iconMap: { [key: string]: React.ElementType } = {
     Zap,
     Gamepad2,
     Gift: GiftIcon,
-    BrainCircuit: HelpCircle,
-    Trophy: Award,
-    BookOpen: ImageIcon,
-    Clock: HelpCircle,
-    LineChart: HelpCircle,
+    BrainCircuit,
+    Trophy,
+    BookOpen,
+    Clock,
+    LineChart,
 };
 
 
