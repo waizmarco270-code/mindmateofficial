@@ -123,7 +123,7 @@ export default function DashboardPage() {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
 
-             <div className="relative group min-h-[220px]" style={{ perspective: 1000 }}>
+             <div className="relative group min-h-[220px] mb-8" style={{ perspective: 1000 }}>
                  <motion.div
                     className="relative w-full h-full cursor-pointer"
                     style={{ transformStyle: 'preserve-3d' }}
@@ -133,11 +133,10 @@ export default function DashboardPage() {
                 >
                     {/* Front of the Card: Announcement */}
                      <motion.div
-                        className="absolute w-full h-full"
+                        className="absolute w-full h-full card-front"
                         style={{ backfaceVisibility: 'hidden' }}
                     >
-                        <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 rounded-lg blur-lg opacity-50 group-hover:opacity-75 transition duration-300"></div>
-                        <Card className="relative h-full">
+                        <Card className="relative h-full overflow-hidden">
                             <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
                                 <div className="p-3 rounded-full bg-primary/10">
                                     <Bell className="h-8 w-8 text-primary" />

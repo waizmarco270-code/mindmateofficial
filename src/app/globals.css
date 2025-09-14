@@ -99,6 +99,17 @@
       transform: translate3d(0, 0, 1px) rotate(360deg);
     }
   }
+
+  @keyframes rainbow-glow {
+      0% { --glow-color: #ff0000; }
+      14% { --glow-color: #ff7f00; }
+      28% { --glow-color: #ffff00; }
+      42% { --glow-color: #00ff00; }
+      57% { --glow-color: #0000ff; }
+      71% { --glow-color: #4b0082; }
+      85% { --glow-color: #8f00ff; }
+      100% { --glow-color: #ff0000; }
+  }
 }
 
 @layer components {
@@ -173,4 +184,30 @@
   .particle:nth-child(10) { left: 60%; top: 95%; width: 1px; height: 1px; animation: move 14s linear infinite; animation-delay: -10s; }
   .particle:nth-child(11) { left: 33%; top: 33%; width: 2px; height: 2px; animation: move 12s linear infinite; animation-delay: -11s; }
   .particle:nth-child(12) { left: 66%; top: 66%; width: 1px; height: 1px; animation: move 17s linear infinite; animation-delay: -12s; }
+
+  .card-front, .card-back {
+    @apply relative rounded-lg;
+  }
+  .card-front::before, .card-back::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: calc(var(--radius) + 2px);
+    background: conic-gradient(from var(--angle, 0deg), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff, #ff0000);
+    animation: rainbow-glow 4s linear infinite;
+    filter: blur(8px);
+    opacity: 0.75;
+  }
+  
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
+  
+  @keyframes rainbow-glow {
+    0% { --angle: 0deg; }
+    100% { --angle: 360deg; }
+  }
 }

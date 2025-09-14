@@ -55,8 +55,7 @@ export function CommunityPoll() {
   const hasVoted = !!userVote;
 
   return (
-    <Card className="relative h-full group">
-       <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 via-purple-600 to-blue-600 rounded-lg blur-lg opacity-50 group-hover:opacity-75 transition duration-300"></div>
+    <Card className="relative h-full card-back overflow-hidden">
       <div className="relative h-full bg-background rounded-lg flex flex-col">
       <CardHeader>
         <div className="flex justify-between items-start">
