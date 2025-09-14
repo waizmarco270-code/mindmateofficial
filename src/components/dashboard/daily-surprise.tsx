@@ -153,7 +153,7 @@ export function DailySurpriseCard() {
             <CarouselContent>
                 {latestSurprises.map((surprise) => (
                     <CarouselItem key={surprise.id}>
-                         <Card className="min-h-[220px] overflow-hidden">
+                         <Card className="min-h-[250px] sm:min-h-[220px] overflow-hidden flex flex-col">
                             {surprise.type !== 'new-feature' ? (
                                 <>
                                     <CardHeader className="flex flex-row items-center justify-between">
@@ -162,15 +162,15 @@ export function DailySurpriseCard() {
                                             <CardTitle>Today's Surprises</CardTitle>
                                         </div>
                                     </CardHeader>
-                                    <CardContent className="flex items-center justify-center h-full">
+                                    <CardContent className="flex items-center justify-center h-full flex-1">
                                         {renderSurpriseContent(surprise)}
                                     </CardContent>
                                 </>
                             ) : (
-                                // For new-feature, render content directly inside CardContent to fill space
-                                <CardContent className="p-0 h-full">
+                                // For new-feature, render content directly inside Card to fill space
+                                <div className="p-0 h-full flex-1">
                                     {renderSurpriseContent(surprise)}
-                                </CardContent>
+                                </div>
                             )}
                         </Card>
                     </CarouselItem>
