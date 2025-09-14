@@ -23,7 +23,7 @@ const WINNING_COMBINATIONS = [
   [0, 4, 8], [2, 4, 6],           // diagonals
 ];
 
-const DAILY_WIN_REWARD = 2;
+const DAILY_WIN_REWARD = 1000;
 
 export function TicTacToeGame() {
     const { user } = useUser();

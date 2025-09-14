@@ -34,9 +34,13 @@ const PAD_SOUNDS: Record<PadColor, number> = {
 
 
 const DAILY_MILESTONES = {
-    5: 1,  // 1 credit for reaching level 5
-    10: 2, // 2 credits for reaching level 10
-    15: 5, // 5 credits for reaching level 15
+    5: 1,
+    10: 2,
+    15: 5,
+    20: 100,
+    25: 200,
+    30: 500,
+    40: 1000,
 };
 type Milestone = keyof typeof DAILY_MILESTONES;
 
