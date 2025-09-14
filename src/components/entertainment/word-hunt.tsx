@@ -8,20 +8,37 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
-import { Award, Brain, Clock, Loader2, Sparkles, Star } from 'lucide-react';
+import { Award, Brain, Clock, Loader2, Sparkles, Star, Code, FlaskConical, Globe } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { isToday } from 'date-fns';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 
-const GAME_WORDS = ['REACT', 'FIREBASE', 'NEXTJS', 'TAILWIND', 'LEGEND', 'AWESOME', 'STUDIO', 'AGENT', 'GENKIT'];
+
+const WORD_CATEGORIES = {
+    programming: [
+        'AGENT', 'GENKIT', 'REACT', 'STATE', 'QUERY', 'ARRAY', 'PROXY', 'CACHE', 'DEBUG', 'BUILD'
+    ],
+    science: [
+        'ATOM', 'FORCE', 'CELL', 'GENE', 'ORBIT', 'PULSE', 'WAVE', 'LUNAR', 'SOLAR', 'FLORA'
+    ],
+    general: [
+        'ECHO', 'MYTH', 'EPIC', 'QUEST', 'ZEN', 'QUICK', 'BROWN', 'JUMPS', 'LAZY', 'DOG'
+    ]
+};
+type WordCategory = keyof typeof WORD_CATEGORIES;
 
 const LEVEL_CONFIG = {
-    1: { time: 30, reward: 1, wordLength: 5 },
-    2: { time: 25, reward: 1, wordLength: 6 },
-    3: { time: 20, reward: 2, wordLength: 7 },
-    4: { time: 15, reward: 5, wordLength: 8 },
-    5: { time: 10, reward: 10, wordLength: 8 },
+    1: { time: 20, reward: 1, words: WORD_CATEGORIES.programming.filter(w => w.length <= 5) },
+    2: { time: 15, reward: 1, words: WORD_CATEGORIES.science.filter(w => w.length <= 5) },
+    3: { time: 10, reward: 2, words: [...WORD_CATEGORIES.programming, ...WORD_CATEGORIES.science].filter(w => w.length > 5) },
+    4: { time: 8, reward: 5, words: WORD_CATEGORIES.general.filter(w => w.length <= 5) },
+    5: { time: 5, reward: 10, words: [...WORD_CATEGORIES.programming, ...WORD_CATEGORIES.general].filter(w => w.length > 5) }
 };
 type Level = keyof typeof LEVEL_CONFIG;
+
+const DAILY_WORD_LIMIT = 5;
 
 const shuffle = (array: string[]) => {
     let currentIndex = array.length, randomIndex;
@@ -38,23 +55,57 @@ export function WordHuntGame() {
     const { toast } = useToast();
     const { addCreditsToUser } = useUsers();
 
-    const [level, setLevel] = useLocalStorage<Level>('wordHuntLevel', 1);
-    const [gameState, setGameState] = useState<'idle' | 'playing' | 'won' | 'lost'>('idle');
+    const [level, setLevel] = useState<Level>(1);
+    const [gameState, setGameState] = useState<'idle' | 'playing' | 'won' | 'lost' | 'completed'>('idle');
     const [currentWord, setCurrentWord] = useState('');
     const [letterPool, setLetterPool] = useState<string[]>([]);
     const [guess, setGuess] = useState<(string | null)[]>([]);
     const [timeLeft, setTimeLeft] = useState(LEVEL_CONFIG[level].time);
+    const [solvedTodayCount, setSolvedTodayCount] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Fetch daily progress
+    useEffect(() => {
+        const checkDailyProgress = async () => {
+            setIsLoading(true);
+            if (!user) {
+                setSolvedTodayCount(0);
+                setIsLoading(false);
+                return;
+            }
+            const progressDocRef = doc(db, 'users', user.id, 'dailyClaims', 'wordHunt');
+            const docSnap = await getDoc(progressDocRef);
+
+            if (docSnap.exists() && isToday(docSnap.data().lastPlayed.toDate())) {
+                const count = docSnap.data().solvedCount || 0;
+                setSolvedTodayCount(count);
+                if (count >= DAILY_WORD_LIMIT) {
+                    setGameState('completed');
+                }
+            } else {
+                setSolvedTodayCount(0);
+            }
+            setIsLoading(false);
+        };
+        checkDailyProgress();
+    }, [user]);
 
     const setupLevel = useCallback(() => {
         const config = LEVEL_CONFIG[level];
-        const possibleWords = GAME_WORDS.filter(w => w.length === config.wordLength);
+        const possibleWords = config.words;
+        if (possibleWords.length === 0) {
+            // Fallback if a level has no words
+            setGameState('completed');
+            toast({title: "No words for this level!", variant: "destructive"});
+            return;
+        }
         const word = possibleWords[Math.floor(Math.random() * possibleWords.length)];
         setCurrentWord(word);
         setGuess(Array(word.length).fill(null));
         setLetterPool(shuffle(word.split('')));
         setTimeLeft(config.time);
-    }, [level]);
+    }, [level, toast]);
 
     const stopTimer = () => {
         if (timerRef.current) {
@@ -78,6 +129,10 @@ export function WordHuntGame() {
     };
 
     const startGame = () => {
+        if (solvedTodayCount >= DAILY_WORD_LIMIT) {
+            setGameState('completed');
+            return;
+        }
         setupLevel();
         setGameState('playing');
         startTimer();
@@ -102,38 +157,67 @@ export function WordHuntGame() {
             const newGuess = [...guess];
             newGuess[index] = null;
             setGuess(newGuess);
-            setLetterPool(prev => [...prev, letter]);
+            // Re-shuffle the pool to make it less predictable
+            setLetterPool(prev => shuffle([...prev, letter]));
         }
     };
+    
+    const handleWin = useCallback(async () => {
+        stopTimer();
+        const reward = LEVEL_CONFIG[level].reward;
+        
+        if (user && solvedTodayCount < DAILY_WORD_LIMIT) {
+            const newSolvedCount = solvedTodayCount + 1;
+            setSolvedTodayCount(newSolvedCount);
+            
+            await addCreditsToUser(user.id, reward);
+            
+            const progressDocRef = doc(db, 'users', user.id, 'dailyClaims', 'wordHunt');
+            await setDoc(progressDocRef, { 
+                lastPlayed: Timestamp.now(),
+                solvedCount: newSolvedCount
+            }, { merge: true });
+
+            toast({
+                title: `Level ${level} Complete!`,
+                description: `You earned ${reward} credits!`,
+                className: "bg-green-500/10 text-green-700 border-green-500/50"
+            });
+        } else if (!user) {
+             toast({
+                title: `Level ${level} Complete!`,
+                description: `Login to save progress and earn rewards!`,
+            });
+        }
+        
+        setGameState('won');
+
+    }, [level, user, solvedTodayCount, addCreditsToUser, toast]);
+
 
     useEffect(() => {
         if (gameState === 'playing' && !guess.includes(null)) {
             const finalGuess = guess.join('');
             if (finalGuess === currentWord) {
-                stopTimer();
-                const reward = LEVEL_CONFIG[level].reward;
-                if (user) {
-                    addCreditsToUser(user.id, reward);
-                }
-                toast({
-                    title: `Level ${level} Complete!`,
-                    description: `You earned ${reward} credits!`,
-                    className: "bg-green-500/10 text-green-700 border-green-500/50"
-                });
-                setGameState('won');
+                handleWin();
+            } else {
+                 toast({ variant: 'destructive', title: "Not quite!", description: "The letters don't form the right word. Try again!" });
             }
         }
-    }, [guess, currentWord, gameState, level, user, addCreditsToUser, toast]);
+    }, [guess, currentWord, gameState, handleWin, toast]);
     
     const nextLevel = () => {
+        if (solvedTodayCount >= DAILY_WORD_LIMIT) {
+            setGameState('completed');
+            return;
+        }
+
         if(level < 5) {
             setLevel(prev => (prev + 1) as Level);
             setGameState('idle');
         } else {
-            // Reached max level
-            toast({ title: "Master Word Hunter!", description: "You've beaten all levels!" });
-            setLevel(1); // Reset to level 1 for replayability
-            setGameState('idle');
+            toast({ title: "Master Word Hunter!", description: "You've beaten all levels! They reset tomorrow." });
+            setGameState('completed');
         }
     };
     
@@ -141,14 +225,28 @@ export function WordHuntGame() {
         setGameState('idle');
     }
 
+    if (isLoading) {
+        return (
+             <Card className="w-full">
+                <CardHeader>
+                    <CardTitle>Word Hunt</CardTitle>
+                    <CardDescription>Unscramble the letters to form a word before time runs out!</CardDescription>
+                </CardHeader>
+                <CardContent className="min-h-[250px] flex justify-center items-center">
+                    <Loader2 className="h-8 w-8 animate-spin" />
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
-        <Card className="w-full">
+        <Card className="w-full bg-gradient-to-br from-card to-muted/50 overflow-hidden">
             <CardHeader>
                 <CardTitle>Word Hunt</CardTitle>
-                <CardDescription>Form the word from the letters below before time runs out!</CardDescription>
+                <CardDescription>Unscramble the letters to form a word before time runs out!</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 flex flex-col items-center">
-                <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg">
+                <div className="w-full flex justify-between items-center bg-background/50 p-2 rounded-lg border">
                      <div className="flex items-center gap-2 text-sm">
                         <Star className="h-4 w-4 text-yellow-500"/>
                         Level: <span className="font-bold">{level}</span>
@@ -157,68 +255,81 @@ export function WordHuntGame() {
                         <Clock className={cn("h-4 w-4", timeLeft <= 5 && gameState === 'playing' && "text-destructive")}/>
                         <span className={cn(timeLeft <= 5 && gameState === 'playing' && "text-destructive font-bold")}>{timeLeft}s</span>
                     </div>
+                     <div className="flex items-center gap-2 text-sm">
+                        <Award className="h-4 w-4 text-green-500"/>
+                        Solved Today: <span className="font-bold">{solvedTodayCount} / {DAILY_WORD_LIMIT}</span>
+                    </div>
                 </div>
 
-                {gameState === 'idle' && (
-                    <div className="min-h-[200px] flex flex-col justify-center items-center">
-                        <Button onClick={startGame} size="lg">Start Level {level}</Button>
-                    </div>
-                )}
-                 {gameState === 'won' && (
-                    <div className="min-h-[200px] flex flex-col justify-center items-center text-center">
-                        <Sparkles className="h-12 w-12 text-yellow-400 mb-4"/>
-                        <h3 className="text-2xl font-bold">You did it!</h3>
-                        <p className="text-muted-foreground">The word was <span className="font-bold text-primary">{currentWord}</span></p>
-                        <Button onClick={nextLevel} className="mt-4">Next Level</Button>
-                    </div>
-                )}
-                {gameState === 'lost' && (
-                     <div className="min-h-[200px] flex flex-col justify-center items-center text-center">
-                        <Clock className="h-12 w-12 text-destructive mb-4"/>
-                        <h3 className="text-2xl font-bold">Time's Up!</h3>
-                        <p className="text-muted-foreground">The word was <span className="font-bold text-primary">{currentWord}</span></p>
-                        <Button onClick={retryLevel} className="mt-4">Try Again</Button>
-                    </div>
-                )}
-                {gameState === 'playing' && (
-                    <div className="space-y-8 w-full flex flex-col items-center">
-                         {/* Guess Boxes */}
-                        <div className="flex gap-2 justify-center flex-wrap">
-                             <AnimatePresence>
+                <AnimatePresence mode="wait">
+                    {gameState === 'idle' && (
+                        <motion.div key="idle" initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: -20}} className="min-h-[200px] flex flex-col justify-center items-center">
+                            <Button onClick={startGame} size="lg" className="shadow-lg shadow-primary/20">Start Level {level}</Button>
+                        </motion.div>
+                    )}
+                    {gameState === 'completed' && (
+                         <motion.div key="completed" initial={{opacity: 0, scale: 0.8}} animate={{opacity: 1, scale: 1}} className="min-h-[200px] flex flex-col justify-center items-center text-center">
+                            <Award className="h-12 w-12 text-green-400 mb-4"/>
+                            <h3 className="text-2xl font-bold">Daily Limit Reached!</h3>
+                            <p className="text-muted-foreground">You've solved {DAILY_WORD_LIMIT} words today. Come back tomorrow for more!</p>
+                        </motion.div>
+                    )}
+                    {gameState === 'won' && (
+                        <motion.div key="won" initial={{opacity: 0, scale: 0.8}} animate={{opacity: 1, scale: 1}} className="min-h-[200px] flex flex-col justify-center items-center text-center">
+                            <Sparkles className="h-12 w-12 text-yellow-400 mb-4"/>
+                            <h3 className="text-2xl font-bold">You did it!</h3>
+                            <p className="text-muted-foreground">The word was <span className="font-bold text-primary">{currentWord}</span></p>
+                            <Button onClick={nextLevel} className="mt-4">Next Level</Button>
+                        </motion.div>
+                    )}
+                    {gameState === 'lost' && (
+                        <motion.div key="lost" initial={{opacity: 0, scale: 0.8}} animate={{opacity: 1, scale: 1}} className="min-h-[200px] flex flex-col justify-center items-center text-center">
+                            <Clock className="h-12 w-12 text-destructive mb-4"/>
+                            <h3 className="text-2xl font-bold">Time's Up!</h3>
+                            <p className="text-muted-foreground">The word was <span className="font-bold text-primary">{currentWord}</span></p>
+                            <Button onClick={retryLevel} className="mt-4">Try Again</Button>
+                        </motion.div>
+                    )}
+                    {gameState === 'playing' && (
+                        <motion.div key="playing" initial={{opacity: 0}} animate={{opacity: 1}} className="space-y-8 w-full flex flex-col items-center">
+                            {/* Guess Boxes */}
+                            <div className="flex gap-2 justify-center flex-wrap">
                                 {guess.map((letter, index) => (
                                     <motion.div
                                         key={`guess-${index}`}
                                         layout
-                                        initial={{ scale: 0.8, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        className="h-16 w-14 bg-background border-2 border-dashed rounded-lg flex items-center justify-center text-3xl font-bold cursor-pointer"
+                                        className="h-16 w-14 bg-background/50 border-2 border-dashed rounded-lg flex items-center justify-center text-3xl font-bold cursor-pointer"
                                         onClick={() => handleGuessBoxClick(index)}
                                     >
-                                        {letter}
+                                        <AnimatePresence>
+                                        {letter && <motion.span initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}} exit={{scale: 0.5, opacity: 0}}>{letter}</motion.span>}
+                                        </AnimatePresence>
                                     </motion.div>
                                 ))}
-                            </AnimatePresence>
-                        </div>
-                        {/* Letter Pool */}
-                        <div className="flex gap-2 justify-center flex-wrap max-w-sm">
-                            <AnimatePresence>
-                                {letterPool.map((letter, index) => (
-                                    <motion.button
-                                        key={`pool-${letter}-${index}`}
-                                        layout
-                                        initial={{ scale: 0.5, opacity: 0 }}
-                                        animate={{ scale: 1, opacity: 1 }}
-                                        exit={{ scale: 0.5, opacity: 0 }}
-                                        onClick={() => handleLetterClick(letter, index)}
-                                        className="h-12 w-12 bg-muted rounded-lg flex items-center justify-center text-2xl font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
-                                    >
-                                        {letter}
-                                    </motion.button>
-                                ))}
-                            </AnimatePresence>
-                        </div>
-                    </div>
-                )}
+                            </div>
+                            {/* Letter Pool */}
+                            <div className="flex gap-2 justify-center flex-wrap max-w-sm">
+                                <AnimatePresence>
+                                    {letterPool.map((letter, index) => (
+                                        <motion.button
+                                            key={`pool-${letter}-${index}`}
+                                            layout
+                                            initial={{ scale: 0.5, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0.5, opacity: 0 }}
+                                            whileHover={{scale: 1.1}}
+                                            whileTap={{scale: 0.9}}
+                                            onClick={() => handleLetterClick(letter, index)}
+                                            className="h-14 w-12 bg-muted/50 rounded-lg flex items-center justify-center text-2xl font-semibold hover:bg-primary hover:text-primary-foreground transition-colors shadow-md border"
+                                        >
+                                            {letter}
+                                        </motion.button>
+                                    ))}
+                                </AnimatePresence>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </CardContent>
         </Card>
     );

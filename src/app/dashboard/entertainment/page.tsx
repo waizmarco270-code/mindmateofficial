@@ -19,20 +19,21 @@ export default function EntertainmentPage() {
         <p className="text-muted-foreground">Relax, play some games, and earn credits!</p>
       </div>
 
-      <Tabs defaultValue="strategy" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="puzzle" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="strategy"><Swords className="mr-2 h-4 w-4" /> Strategy</TabsTrigger>
                 <TabsTrigger value="puzzle"><Puzzle className="mr-2 h-4 w-4" /> Puzzle</TabsTrigger>
+                <TabsTrigger value="word-games"><Puzzle className="mr-2 h-4 w-4" /> Word Games</TabsTrigger>
                 <TabsTrigger value="arcade"><Dice5 className="mr-2 h-4 w-4" /> Arcade</TabsTrigger>
             </TabsList>
             <TabsContent value="strategy" className="mt-6">
                 <TicTacToeGame />
             </TabsContent>
             <TabsContent value="puzzle" className="mt-6">
-                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <WordHuntGame />
-                    <WordUnscrambleGame />
-                </div>
+                 <WordHuntGame />
+            </TabsContent>
+             <TabsContent value="word-games" className="mt-6">
+                <WordUnscrambleGame />
             </TabsContent>
              <TabsContent value="arcade" className="mt-6">
                 <MemoryPatternGame />
