@@ -10,6 +10,9 @@ import { useTheme } from 'next-themes';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
+import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { isToday } from 'date-fns';
 
 // Game Configuration
 const PLAYER_SIZE = 20;
@@ -17,6 +20,8 @@ const OBSTACLE_WIDTH = 40;
 const OBSTACLE_HEIGHT = 20;
 const SCROLL_SPEED_START = 2;
 const SCROLL_SPEED_INCREASE = 0.1;
+const DAILY_WIN_REWARD = 15;
+
 
 // Player state
 interface Player {
@@ -51,6 +56,7 @@ export function DimensionShiftGame() {
   const [level, setLevel] = useState(1);
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
+  const [hasClaimedToday, setHasClaimedToday] = useState(true);
 
   // Using refs for game state that changes every frame to avoid re-renders
   const playerRef = useRef<Player>({ x: 0, y: 0, dimension: 'light' });
@@ -64,6 +70,24 @@ export function DimensionShiftGame() {
         setHighScore(currentUserData.gameHighScores.dimensionShift);
     }
   }, [currentUserData]);
+  
+  // Check daily claim status
+  useEffect(() => {
+    const checkClaimStatus = async () => {
+        if (!user) {
+          setHasClaimedToday(true); // Can't claim if not logged in
+          return;
+        };
+        const claimDocRef = doc(db, 'users', user.id, 'dailyClaims', 'dimensionShiftWin');
+        const docSnap = await getDoc(claimDocRef);
+        if (docSnap.exists() && isToday(docSnap.data().lastClaimed.toDate())) {
+            setHasClaimedToday(true);
+        } else {
+            setHasClaimedToday(false);
+        }
+    };
+    checkClaimStatus();
+  }, [user, gameState]);
 
   const getThemeColors = useCallback(() => {
     const isDark = resolvedTheme === 'dark';
@@ -103,6 +127,20 @@ export function DimensionShiftGame() {
     resetGame();
     setGameState('playing');
   };
+  
+  const handleWin = async () => {
+    if (!hasClaimedToday && user) {
+        await addCreditsToUser(user.id, DAILY_WIN_REWARD);
+        const claimDocRef = doc(db, 'users', user.id, 'dailyClaims', 'dimensionShiftWin');
+        await setDoc(claimDocRef, { lastClaimed: Timestamp.now() });
+        setHasClaimedToday(true);
+        toast({
+            title: `You won! +${DAILY_WIN_REWARD} Credits!`,
+            description: "You've claimed your daily win reward for Dimension Shift.",
+            className: "bg-green-500/10 text-green-700 border-green-500/50"
+        });
+    }
+  }
 
   const gameOver = () => {
     setGameState('gameOver');
@@ -116,18 +154,16 @@ export function DimensionShiftGame() {
   
   const handleScoreUpdate = useCallback((newScore: number) => {
     setScore(newScore);
-    if(newScore > 0 && newScore % 5 === 0) {
-      if(user) {
-        addCreditsToUser(user.id, 10);
-        toast({ title: "Milestone!", description: "+10 Credits for reaching score " + newScore, className: "bg-green-500/10 border-green-500/50" });
-      }
+    // Trigger win condition on first point scored if reward is available
+    if(newScore === 1 && !hasClaimedToday) {
+        handleWin();
     }
     // Update level based on score
     const newLevel = Math.floor(newScore / 10) + 1;
     setLevel(newLevel);
     scrollSpeedRef.current = SCROLL_SPEED_START + (newLevel - 1) * SCROLL_SPEED_INCREASE;
 
-  }, [user, addCreditsToUser, toast]);
+  }, [user, hasClaimedToday]);
 
   const gameLoop = useCallback(() => {
     const canvas = canvasRef.current;
@@ -375,14 +411,20 @@ export function DimensionShiftGame() {
                     <Orbit className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
                     <div>
                         <h4 className="font-bold text-foreground">Game Rules</h4>
-                        <p>Dodge obstacles that are the same dimension as you. Click to switch dimensions, and move your mouse to control your character. The game gets faster as your score increases!</p>
+                        <ul className="list-disc pl-4 space-y-1 mt-1">
+                          <li>Dodge obstacles that are the same dimension as you.</li>
+                          <li>Pass through obstacles of the opposite dimension.</li>
+                          <li>Click to switch dimensions.</li>
+                          <li>Move your mouse to move your character.</li>
+                           <li className="text-red-500">Watch out for <span className="font-bold">Trap Obstacles</span> (colored bars)! You must pass through these if you are the SAME dimension.</li>
+                        </ul>
                     </div>
                 </div>
                  <div className="flex items-start gap-3">
                     <Award className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
                      <div>
                         <h4 className="font-bold text-foreground">Rewards</h4>
-                         <p>You'll earn <span className="font-bold text-primary">+10 credits</span> every time your score is a multiple of 5 (e.g., at scores 5, 10, 15, and so on). Good luck!</p>
+                         <p>You'll earn a <span className="font-bold text-primary">+{DAILY_WIN_REWARD} credit bonus</span> for your first win each day. Score at least 1 point to claim it!</p>
                     </div>
                 </div>
             </CardContent>
