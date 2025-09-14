@@ -94,6 +94,11 @@
     100% { background-position: 200% 0; }
   }
 
+  @keyframes gm-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
   @keyframes move {
     100% {
       transform: translate3d(0, 0, 1px) rotate(360deg);
@@ -133,6 +138,16 @@
   }
   .elite-badge > svg {
       @apply text-yellow-800;
+  }
+
+  .gm-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(45deg, #001f3f, #0074d9, #7fdbff, #39cccc, #0074d9, #001f3f);
+    background-size: 250% 250%;
+    color: #ffffff;
+    border: 1px solid #7fdbff;
+    text-shadow: 0 0 6px rgba(127, 219, 255, 0.7);
+    animation: gm-shimmer 4s ease infinite;
   }
   
   .dev-badge {
