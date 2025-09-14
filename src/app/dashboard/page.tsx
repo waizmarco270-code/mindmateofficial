@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -70,6 +71,7 @@ export default function DashboardPage() {
     const { user } = useUser();
     const { announcements } = useAnnouncements();
     const { currentUserData } = useUsers();
+    const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     
     const credits = currentUserData?.credits ?? 0;
 
@@ -89,7 +91,24 @@ export default function DashboardPage() {
       </div>
 
       <SignedIn>
+        {isSurpriseRevealed ? (
           <DailySurpriseCard />
+        ) : (
+          <Card 
+            className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-yellow-400/20 via-pink-500/20 to-purple-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
+            onClick={() => setIsSurpriseRevealed(true)}
+          >
+            <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000"></div>
+            <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center">
+                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
+                <div className="relative flex flex-col items-center">
+                  <Gift className="h-10 w-10 text-primary animate-bounce"/>
+                  <h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3>
+                  <p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p>
+                </div>
+            </CardContent>
+          </Card>
+        )}
       </SignedIn>
 
 
