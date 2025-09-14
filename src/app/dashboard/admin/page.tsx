@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -26,6 +26,7 @@ import { useQuizzes } from '@/hooks/use-quizzes';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { z } from 'zod';
 
 
 interface QuizQuestion {
@@ -68,6 +69,23 @@ const availableRoutes = {
     "Leaderboard": "/dashboard/leaderboard",
     "Calculator": "/dashboard/calculator",
 };
+
+const QuizQuestionSchema = z.object({
+  text: z.string().min(1, "Question text cannot be empty."),
+  options: z.array(z.string().min(1)).min(2, "Must have at least 2 options.").max(4, "Cannot have more than 4 options."),
+  correctAnswer: z.string().min(1, "Correct answer cannot be empty."),
+}).refine(data => data.options.includes(data.correctAnswer), {
+  message: "Correct answer must be one of the options.",
+  path: ["correctAnswer"],
+});
+
+const QuizImportSchema = z.object({
+  title: z.string().min(1, "Quiz title is required."),
+  category: z.string().min(1, "Quiz category is required."),
+  timeLimit: z.number().int().positive("Time limit must be a positive number."),
+  questions: z.array(QuizQuestionSchema).min(1, "Quiz must have at least one question."),
+});
+
 
 export default function AdminPanelPage() {
   const { 
@@ -116,6 +134,7 @@ export default function AdminPanelPage() {
   // State for editing
   const [editingItem, setEditingItem] = useState<EditableResource | EditableSection | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
 
   useEffect(() => {
@@ -377,6 +396,57 @@ export default function AdminPanelPage() {
           toast({ variant: 'destructive', title: "Error Deleting Quiz", description: error.message });
       }
   }
+
+  const handleQuizImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.type !== 'application/json') {
+        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a valid .json file.' });
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        const content = e.target?.result;
+        if (typeof content !== 'string') return;
+        
+        setIsImporting(true);
+        try {
+            const jsonData = JSON.parse(content);
+            const validationResult = QuizImportSchema.safeParse(jsonData);
+
+            if (!validationResult.success) {
+                const errorMessage = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join('\n');
+                console.error("Validation Error:", validationResult.error.flatten());
+                toast({ variant: 'destructive', title: 'Invalid JSON Format', description: errorMessage, duration: 10000 });
+                return;
+            }
+
+            const quizData = validationResult.data;
+            await addDoc(collection(db, 'quizzes'), {
+                ...quizData,
+                createdAt: new Date().toISOString(),
+            });
+
+            toast({ title: "Quiz Imported Successfully!", description: `"${quizData.title}" has been added.` });
+
+        } catch (error: any) {
+            if (error instanceof z.ZodError) {
+                toast({ variant: 'destructive', title: 'Validation Error', description: error.errors.map(e => e.message).join(', ') });
+            } else if (error instanceof SyntaxError) {
+                 toast({ variant: 'destructive', title: 'JSON Syntax Error', description: 'The provided file is not valid JSON.' });
+            }
+            else {
+                toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
+            }
+        } finally {
+            setIsImporting(false);
+            event.target.value = ''; // Reset file input
+        }
+    };
+    reader.readAsText(file);
+};
   
   const generalResources = allResources.filter(r => r.sectionId === 'general');
 
@@ -399,6 +469,26 @@ export default function AdminPanelPage() {
       </div>
     );
   }
+
+  const jsonExample = `
+{
+  "title": "History 101",
+  "category": "Study Quiz",
+  "timeLimit": 600,
+  "questions": [
+    {
+      "text": "In which year did World War II end?",
+      "options": ["1942", "1945", "1950", "1939"],
+      "correctAnswer": "1945"
+    },
+    {
+      "text": "Who was the first US President?",
+      "options": ["A. Lincoln", "G. Washington"],
+      "correctAnswer": "G. Washington"
+    }
+  ]
+}
+`.trim();
 
   return (
     <div className="space-y-8">
@@ -721,19 +811,38 @@ export default function AdminPanelPage() {
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="p-6 pt-0">
-                <div className="grid gap-8 lg:grid-cols-1">
-                    <Card>
-                      <CardHeader><CardTitle>Quiz Management</CardTitle><CardDescription>Review and delete existing quizzes.</CardDescription></CardHeader>
-                      <CardContent>
-                          <Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Questions</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                              <TableBody>{quizzes.map((quiz) => (<TableRow key={quiz.id}><TableCell className="font-medium">{quiz.title}</TableCell><TableCell>{quiz.category}</TableCell><TableCell>{quiz.questions.length}</TableCell><TableCell className="text-right"><AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/> Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the<span className="font-semibold text-foreground"> {quiz.title} </span> quiz and remove it from the database.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteQuiz(quiz.id)}>Yes, delete quiz</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>))}
-                                  {quizzes.length === 0 && (<TableRow><TableCell colSpan={4} className="h-24 text-center">No quizzes created yet.</TableCell></TableRow>)}
-                              </TableBody>
-                          </Table>
-                      </CardContent>
-                  </Card>
-                </div>
+              <AccordionContent className="p-6 pt-0 space-y-8">
+                  <div className="grid gap-8 lg:grid-cols-2">
+                      <Card>
+                          <CardHeader><CardTitle>Existing Quizzes</CardTitle><CardDescription>Review and delete existing quizzes.</CardDescription></CardHeader>
+                          <CardContent>
+                              <Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Questions</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                  <TableBody>{quizzes.map((quiz) => (<TableRow key={quiz.id}><TableCell className="font-medium">{quiz.title}</TableCell><TableCell>{quiz.category}</TableCell><TableCell>{quiz.questions.length}</TableCell><TableCell className="text-right"><AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/> Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the<span className="font-semibold text-foreground"> {quiz.title} </span> quiz and remove it from the database.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteQuiz(quiz.id)}>Yes, delete quiz</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>))}
+                                      {quizzes.length === 0 && (<TableRow><TableCell colSpan={4} className="h-24 text-center">No quizzes created yet.</TableCell></TableRow>)}
+                                  </TableBody>
+                              </Table>
+                          </CardContent>
+                      </Card>
+                      <Card>
+                          <CardHeader><CardTitle>Import Quiz from JSON</CardTitle><CardDescription>Upload a .json file to quickly add a new quiz.</CardDescription></CardHeader>
+                          <CardContent className="space-y-4">
+                              <div>
+                                  <Label htmlFor="quiz-import" className="sr-only">Import Quiz</Label>
+                                  <Input id="quiz-import" type="file" accept=".json" onChange={handleQuizImport} disabled={isImporting} />
+                              </div>
+                              {isImporting && <p className="text-sm text-muted-foreground flex items-center gap-2"><Loader2 className="animate-spin h-4 w-4" /> Validating and importing...</p>}
+                              <Accordion type="single" collapsible>
+                                  <AccordionItem value="format-guide">
+                                      <AccordionTrigger className="text-sm">View JSON Format Guide</AccordionTrigger>
+                                      <AccordionContent>
+                                          <p className="text-xs text-muted-foreground mb-2">Your JSON file must match this structure:</p>
+                                          <pre className="p-2 bg-muted rounded-md text-xs whitespace-pre-wrap">{jsonExample}</pre>
+                                      </AccordionContent>
+                                  </AccordionItem>
+                              </Accordion>
+                          </CardContent>
+                      </Card>
+                  </div>
                  <div className="grid gap-8 lg:grid-cols-1 mt-8">
                     <Card>
                       <CardHeader><CardTitle>Create/Edit Quiz Manually</CardTitle><CardDescription>Build and publish a new quiz for the Quiz Zone.</CardDescription></CardHeader>
@@ -791,5 +900,7 @@ export default function AdminPanelPage() {
     </div>
   );
 }
+
+    
 
     
