@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
@@ -6,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2 } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -150,6 +151,11 @@ export default function LeaderboardPage() {
                     <Zap className="h-3 w-3 text-green-500" />
                     <span className="font-semibold">{user.focusSessionsCompleted || 0}</span>
                     <span>Focus Sessions</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <ListChecks className="h-3 w-3 text-purple-500" />
+                    <span className="font-semibold">{user.dailyTasksCompleted || 0}</span>
+                    <span>Tasks Done</span>
                 </div>
             </div>
         );
@@ -425,3 +431,4 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         </div>
     );
 };
+

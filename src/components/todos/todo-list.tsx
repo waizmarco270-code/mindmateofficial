@@ -82,7 +82,7 @@ export function TodoList() {
     e.preventDefault();
     if (newTaskText.trim() === '' || !user) return;
     
-    const newTaskPayload: Omit<Task, 'id'> = {
+    const newTaskPayload: Omit<Task, 'id' | 'createdAt'> = {
       text: newTaskText,
       completed: false,
       priority: newTaskPriority,
@@ -128,8 +128,7 @@ export function TodoList() {
 
       const taskDocRef = doc(db, 'users', user.id, 'dailyTasks', editingTask.id);
       
-      const updatedTaskData: any = { 
-        ...editingTask, 
+      const updatedTaskData: Partial<Task> = { 
         text: editTaskText, 
         priority: editTaskPriority,
       };
@@ -137,10 +136,10 @@ export function TodoList() {
       if (editTaskDeadline) {
           updatedTaskData.deadline = editTaskDeadline.toISOString();
       } else {
-          updatedTaskData.deadline = null; // or delete(it) if you prefer
+          updatedTaskData.deadline = undefined;
       }
-
-      await setDoc(taskDocRef, updatedTaskData, { merge: true });
+      
+      await updateDoc(taskDocRef, updatedTaskData);
       
       setEditingTask(null);
       setIsEditDialogOpen(false);
@@ -162,8 +161,7 @@ export function TodoList() {
     const { completedCount, reward, canClaim, hasClaimedToday } = useMemo(() => {
         const completed = tasks.filter(t => t.completed).length;
         let calculatedReward = 0;
-        if (completed >= 10) calculatedReward = 5;
-        else if (completed >= 5) calculatedReward = 3;
+        if (completed >= 5) calculatedReward = 3;
         else if (completed >= 3) calculatedReward = 1;
         
         const todayStr = format(new Date(), 'yyyy-MM-dd');
@@ -303,14 +301,16 @@ export function TodoList() {
         )}
       </div>
 
-       <div className="mt-8 border-t pt-6 text-center space-y-4">
-            <h3 className="font-semibold">Daily Task Bonus</h3>
-            <p className="text-sm text-muted-foreground">Complete tasks to earn credits. You have completed {completedCount} task{completedCount !== 1 && 's'} today.</p>
-            <Button onClick={handleClaimReward} disabled={!canClaim || isClaiming} className="w-full max-w-xs mx-auto" size="lg">
-                {isClaiming ? <Loader2 className="animate-spin mr-2"/> : <Award className="mr-2 h-5 w-5"/>}
-                {hasClaimedToday ? "Reward Claimed for Today" : `Claim +${reward} Credits`}
-            </Button>
-        </div>
+       {completedCount >= 3 && (
+            <div className="mt-8 border-t pt-6 text-center space-y-4">
+                <h3 className="font-semibold">Daily Task Bonus</h3>
+                <p className="text-sm text-muted-foreground">You have completed {completedCount} task{completedCount !== 1 && 's'} today.</p>
+                <Button onClick={handleClaimReward} disabled={!canClaim || isClaiming} className="w-full max-w-xs mx-auto" size="lg">
+                    {isClaiming ? <Loader2 className="animate-spin mr-2"/> : <Award className="mr-2 h-5 w-5"/>}
+                    {hasClaimedToday ? "Reward Claimed for Today" : `Claim +${reward} Credits`}
+                </Button>
+            </div>
+       )}
 
 
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -368,3 +368,4 @@ export function TodoList() {
     </div>
   );
 }
+
