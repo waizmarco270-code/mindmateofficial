@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
@@ -31,6 +32,8 @@ interface Obstacle {
   width: number;
   height: number;
   dimension: 'light' | 'dark';
+  type: 'normal' | 'trap' | 'accelerating';
+  speed: number;
   dx?: number; // Horizontal speed for moving obstacles
   isVisible?: boolean; // For blinking obstacles
   blinkCounter?: number;
@@ -69,11 +72,13 @@ export function DimensionShiftGame() {
         bg: isDark ? 'hsl(240 10% 3.9%)' : 'hsl(0 0% 100%)',
         player: isDark ? '#FFFFFF' : '#000000',
         obstacle: isDark ? '#A0A0A0' : '#A0A0A0',
+        trapObstacle: isDark ? '#FF6B6B' : '#FF6B6B',
       },
       dark: {
         bg: isDark ? '#000000' : '#E5E7EB',
         player: isDark ? '#FFFFFF' : '#000000',
         obstacle: isDark ? '#4B5563' : '#4B5563',
+        trapObstacle: isDark ? '#C92A2A' : '#C92A2A',
       },
     };
   }, [resolvedTheme]);
@@ -143,12 +148,20 @@ export function DimensionShiftGame() {
         const dimension = Math.random() > 0.5 ? 'light' : 'dark';
         const xPosition = Math.random() * (canvas.width - OBSTACLE_WIDTH);
         
+        let type: Obstacle['type'] = 'normal';
+        // Level 4+: Introduce Trap and Accelerating obstacles
+        if (level >= 4 && Math.random() < 0.3) { // 30% chance for special obstacle
+            type = Math.random() < 0.5 ? 'trap' : 'accelerating';
+        }
+
         const newObstacle: Obstacle = {
             x: xPosition,
             y: -OBSTACLE_HEIGHT,
             width: OBSTACLE_WIDTH,
             height: OBSTACLE_HEIGHT,
             dimension: dimension,
+            type: type,
+            speed: scrollSpeedRef.current,
         };
         
         // Level 2+: Moving obstacles
@@ -171,7 +184,11 @@ export function DimensionShiftGame() {
 
     // Move obstacles and remove off-screen ones
     obstaclesRef.current.forEach((obstacle, index) => {
-        obstacle.y += scrollSpeedRef.current;
+        // Handle accelerating obstacles
+        if (obstacle.type === 'accelerating' && obstacle.y > canvas.height / 3) {
+            obstacle.speed += 0.15;
+        }
+        obstacle.y += obstacle.speed;
 
         // Move horizontally if applicable
         if (obstacle.dx) {
@@ -197,18 +214,32 @@ export function DimensionShiftGame() {
     });
     
     // --- Collision Detection ---
+    const playerBox = { x: playerRef.current.x - PLAYER_SIZE / 2, y: playerRef.current.y - PLAYER_SIZE / 2, width: PLAYER_SIZE, height: PLAYER_SIZE };
     for (const obstacle of obstaclesRef.current) {
         if (obstacle.isVisible === false) continue; // Cannot collide with invisible obstacle
 
-        if (obstacle.dimension === playerRef.current.dimension) {
-            const playerBox = { x: playerRef.current.x - PLAYER_SIZE / 2, y: playerRef.current.y - PLAYER_SIZE / 2, width: PLAYER_SIZE, height: PLAYER_SIZE };
-            const obstacleBox = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
-            if (
-                playerBox.x < obstacleBox.x + obstacleBox.width &&
-                playerBox.x + playerBox.width > obstacleBox.x &&
-                playerBox.y < obstacleBox.y + obstacleBox.height &&
-                playerBox.y + playerBox.height > obstacleBox.y
-            ) {
+        const obstacleBox = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
+        const isColliding = playerBox.x < obstacleBox.x + obstacleBox.width &&
+                            playerBox.x + playerBox.width > obstacleBox.x &&
+                            playerBox.y < obstacleBox.y + obstacleBox.height &&
+                            playerBox.y + playerBox.height > obstacleBox.y;
+
+        if (isColliding) {
+            let collisionHappened = false;
+            // Normal collision: hit if same dimension
+            if (obstacle.type === 'normal' || obstacle.type === 'accelerating') {
+                if (obstacle.dimension === playerRef.current.dimension) {
+                    collisionHappened = true;
+                }
+            }
+            // Trap collision: hit if DIFFERENT dimension
+            else if (obstacle.type === 'trap') {
+                if (obstacle.dimension !== playerRef.current.dimension) {
+                    collisionHappened = true;
+                }
+            }
+
+            if(collisionHappened) {
                 gameOver();
                 return;
             }
@@ -220,7 +251,12 @@ export function DimensionShiftGame() {
     // Draw obstacles
     obstaclesRef.current.forEach(obstacle => {
         if(obstacle.isVisible === false) return; // Don't draw invisible obstacles
-        ctx.fillStyle = colors[obstacle.dimension].obstacle;
+        
+        if(obstacle.type === 'trap') {
+            ctx.fillStyle = colors[obstacle.dimension].trapObstacle;
+        } else {
+            ctx.fillStyle = colors[obstacle.dimension].obstacle;
+        }
         ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
     });
 
