@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -17,6 +17,14 @@ import { startOfWeek, endOfWeek, parseISO, isWithinInterval } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+
+type UserWithStats = User & { 
+    totalScore: number; 
+    weeklyTime: number; 
+    memoryGameHighScore: number;
+    weeklySubjectBreakdown: { [subjectName: string]: number };
+};
 
 
 const LEADERBOARD_EXCLUDED_UIDS: string[] = [];
@@ -35,6 +43,7 @@ export default function LeaderboardPage() {
     const { sessions: allSessions } = useTimeTracker();
     const [activeTab, setActiveTab] = useState('all-time');
     const [timeLeft, setTimeLeft] = useState('');
+    const [selectedUserForDetails, setSelectedUserForDetails] = useState<UserWithStats | null>(null);
 
     useEffect(() => {
         if (activeTab !== 'weekly') return;
@@ -60,28 +69,36 @@ export default function LeaderboardPage() {
         return () => clearInterval(timer);
     }, [activeTab]);
 
-    const weeklyStudyTime = useMemo(() => {
+    const weeklyStats = useMemo(() => {
         const now = new Date();
         const weekStart = startOfWeek(now, { weekStartsOn: 1 });
         const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
         
-        const weeklyTimes: { [uid: string]: number } = {};
+        const stats: { [uid: string]: { totalTime: number; subjects: { [name: string]: number } } } = {};
 
         allSessions.forEach(session => {
+            // subjectId is actually userId from the hook modification
+            const userId = session.subjectId;
             const sessionDate = parseISO(session.startTime);
+
             if (isWithinInterval(sessionDate, { start: weekStart, end: weekEnd })) {
-                const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
-                if (!weeklyTimes[session.subjectId]) {
-                    weeklyTimes[session.subjectId] = 0;
+                if (!stats[userId]) {
+                    stats[userId] = { totalTime: 0, subjects: {} };
                 }
-                weeklyTimes[session.subjectId] += duration;
+                const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
+                stats[userId].totalTime += duration;
+
+                if (!stats[userId].subjects[session.subjectName]) {
+                    stats[userId].subjects[session.subjectName] = 0;
+                }
+                stats[userId].subjects[session.subjectName] += duration;
             }
         });
-        return weeklyTimes;
+        return stats;
     }, [allSessions]);
     
 
-    const sortedUsers = useMemo(() => {
+    const sortedUsers: UserWithStats[] = useMemo(() => {
         const processedUsers = users
             .filter(u => !u.isBlocked && !LEADERBOARD_EXCLUDED_UIDS.includes(u.uid))
             .map(user => {
@@ -95,10 +112,16 @@ export default function LeaderboardPage() {
                                    (dailyTasks * SCORE_WEIGHTS.dailyTasksCompleted) +
                                    (studyTime * SCORE_WEIGHTS.totalStudyTime);
                                    
-                const userWeeklyTime = weeklyStudyTime[user.uid] || 0;
+                const userWeeklyStats = weeklyStats[user.uid] || { totalTime: 0, subjects: {} };
                 const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
 
-                return { ...user, totalScore: Math.round(totalScore), weeklyTime: userWeeklyTime, memoryGameHighScore };
+                return { 
+                    ...user, 
+                    totalScore: Math.round(totalScore), 
+                    weeklyTime: userWeeklyStats.totalTime,
+                    weeklySubjectBreakdown: userWeeklyStats.subjects,
+                    memoryGameHighScore 
+                };
             });
         
         if (activeTab === 'weekly') {
@@ -112,7 +135,7 @@ export default function LeaderboardPage() {
         // Default to all-time score
         return processedUsers.sort((a, b) => b.totalScore - a.totalScore);
         
-    }, [users, activeTab, weeklyStudyTime]);
+    }, [users, activeTab, weeklyStats]);
 
 
     const topThree = sortedUsers.slice(0, 3);
@@ -120,7 +143,7 @@ export default function LeaderboardPage() {
 
     const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
     
-    const renderUserStats = (user: User & { totalScore: number, weeklyTime: number, memoryGameHighScore: number }) => {
+    const renderUserStats = (user: UserWithStats) => {
         if (activeTab === 'entertainment') {
              return (
                  <div className="grid grid-cols-1 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
@@ -170,21 +193,21 @@ export default function LeaderboardPage() {
         return 'text-muted-foreground';
     };
     
-    const formatWeeklyTime = (seconds: number) => {
+    const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
         if (h > 0) return `${h}h ${m}m`;
         return `${m}m`;
     };
 
-    const renderPodiumCard = (user: (User & { totalScore: number, weeklyTime: number, memoryGameHighScore: number }), rank: number) => {
+    const renderPodiumCard = (user: UserWithStats, rank: number) => {
         if (!user) return null;
         
         const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
         
         const scoreToDisplay = {
             'all-time': user.totalScore,
-            'weekly': formatWeeklyTime(user.weeklyTime),
+            'weekly': formatTime(user.weeklyTime),
             'entertainment': user.memoryGameHighScore
         }[activeTab];
 
@@ -194,38 +217,42 @@ export default function LeaderboardPage() {
             'entertainment': 'High Score'
         }[activeTab];
         
+        const CardComponent = activeTab === 'weekly' ? 'button' : 'div';
+
         if (rank === 0) { // First Place
             return (
-                <Card className="w-full border-2 border-yellow-400 bg-yellow-500/5 shadow-2xl shadow-yellow-500/20">
-                     <CardHeader className="text-center p-6">
-                        <div className="relative w-24 h-24 mx-auto">
-                            <Trophy className="absolute -top-2 -left-2 h-8 w-8 text-yellow-400 -rotate-12" />
-                            <Avatar className="w-24 h-24 border-4 border-yellow-400">
-                                <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                        </div>
-                        <div className="flex items-center justify-center gap-2 mt-4">
-                            <CardTitle className="text-2xl">{user.displayName}</CardTitle>
-                             {isSuperAdmin ? (
-                                <span className="dev-badge flex-shrink-0">
-                                    <Code className="h-3 w-3" /> DEV
-                                </span>
-                            ) : user.isAdmin ? (
-                                <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                            ) : user.isVip && (
-                                <span className="elite-badge flex-shrink-0">
-                                    <Crown className="h-3 w-3" /> ELITE
-                                </span>
-                            )}
-                        </div>
-                        <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
-                     </CardHeader>
-                     <CardContent className="text-center p-6 pt-0">
-                        <p className="text-5xl font-bold text-yellow-400">{scoreToDisplay}</p>
-                        <p className="text-xs text-muted-foreground">{scoreLabel}</p>
-                        {renderUserStats(user)}
-                     </CardContent>
+                <Card asChild className={cn(activeTab === 'weekly' && 'cursor-pointer hover:shadow-yellow-500/40 transition-shadow')}>
+                     <CardComponent onClick={activeTab === 'weekly' ? () => setSelectedUserForDetails(user) : undefined} className="w-full border-2 border-yellow-400 bg-yellow-500/5 shadow-2xl shadow-yellow-500/20 text-left">
+                         <CardHeader className="text-center p-6">
+                            <div className="relative w-24 h-24 mx-auto">
+                                <Trophy className="absolute -top-2 -left-2 h-8 w-8 text-yellow-400 -rotate-12" />
+                                <Avatar className="w-24 h-24 border-4 border-yellow-400">
+                                    <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <div className="flex items-center justify-center gap-2 mt-4">
+                                <CardTitle className="text-2xl">{user.displayName}</CardTitle>
+                                 {isSuperAdmin ? (
+                                    <span className="dev-badge flex-shrink-0">
+                                        <Code className="h-3 w-3" /> DEV
+                                    </span>
+                                ) : user.isAdmin ? (
+                                    <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                ) : user.isVip && (
+                                    <span className="elite-badge flex-shrink-0">
+                                        <Crown className="h-3 w-3" /> ELITE
+                                    </span>
+                                )}
+                            </div>
+                            <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
+                         </CardHeader>
+                         <CardContent className="text-center p-6 pt-0">
+                            <p className="text-5xl font-bold text-yellow-400">{scoreToDisplay}</p>
+                            <p className="text-xs text-muted-foreground">{scoreLabel}</p>
+                            {renderUserStats(user)}
+                         </CardContent>
+                    </CardComponent>
                 </Card>
             )
         }
@@ -239,36 +266,38 @@ export default function LeaderboardPage() {
         if (!placeDetails) return null;
 
         return (
-            <Card className="w-full">
-                 <CardContent className="p-4 flex flex-col gap-2">
-                    <div className="flex items-center gap-4">
-                        <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
-                        <Avatar className="w-12 h-12 border-2">
-                            <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                             <div className="flex items-center gap-2">
-                                <p className="font-semibold">{user.displayName}</p>
-                                {isSuperAdmin ? (
-                                    <span className="dev-badge flex-shrink-0">
-                                        <Code className="h-3 w-3" /> DEV
-                                    </span>
-                                ) : user.isAdmin ? (
-                                    <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                                ) : user.isVip && (
-                                    <span className="elite-badge flex-shrink-0">
-                                        <Crown className="h-3 w-3" /> ELITE
-                                    </span>
-                                )}
+            <Card asChild className={cn(activeTab === 'weekly' && 'cursor-pointer hover:bg-muted transition-colors')}>
+                <CardComponent onClick={activeTab === 'weekly' ? () => setSelectedUserForDetails(user) : undefined} className="w-full text-left">
+                     <CardContent className="p-4 flex flex-col gap-2">
+                        <div className="flex items-center gap-4">
+                            <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
+                            <Avatar className="w-12 h-12 border-2">
+                                <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                 <div className="flex items-center gap-2">
+                                    <p className="font-semibold">{user.displayName}</p>
+                                    {isSuperAdmin ? (
+                                        <span className="dev-badge flex-shrink-0">
+                                            <Code className="h-3 w-3" /> DEV
+                                        </span>
+                                    ) : user.isAdmin ? (
+                                        <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                    ) : user.isVip && (
+                                        <span className="elite-badge flex-shrink-0">
+                                            <Crown className="h-3 w-3" /> ELITE
+                                        </span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
                             </div>
-                            <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
+                            <p className={cn("text-2xl font-bold", placeDetails.trophyColor)}>{scoreToDisplay}</p>
                         </div>
-                        <p className={cn("text-2xl font-bold", placeDetails.trophyColor)}>{scoreToDisplay}</p>
-                    </div>
-                    <Separator />
-                    {renderUserStats(user)}
-                </CardContent>
+                        <Separator />
+                        {renderUserStats(user)}
+                    </CardContent>
+                </CardComponent>
             </Card>
         )
     }
@@ -287,7 +316,7 @@ export default function LeaderboardPage() {
                     <TabsTrigger value="entertainment">Entertainment</TabsTrigger>
                 </TabsList>
                 <TabsContent value="all-time" className="mt-6">
-                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="all-time"/>
+                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="all-time" onUserClick={setSelectedUserForDetails} />
                 </TabsContent>
                 <TabsContent value="weekly" className="mt-6 space-y-6">
                     <Card>
@@ -324,7 +353,7 @@ export default function LeaderboardPage() {
                             </div>
                         </CardContent>
                     </Card>
-                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="weekly"/>
+                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="weekly" onUserClick={setSelectedUserForDetails} />
                 </TabsContent>
                  <TabsContent value="entertainment" className="mt-6 space-y-6">
                     <Card>
@@ -336,14 +365,50 @@ export default function LeaderboardPage() {
                             </div>
                         </CardContent>
                     </Card>
-                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="entertainment"/>
+                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="entertainment" onUserClick={setSelectedUserForDetails}/>
                 </TabsContent>
             </Tabs>
+             <Dialog open={!!selectedUserForDetails} onOpenChange={(open) => !open && setSelectedUserForDetails(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Weekly Study Breakdown</DialogTitle>
+                        <DialogDescription>Time spent on each subject by {selectedUserForDetails?.displayName} this week.</DialogDescription>
+                    </DialogHeader>
+                    {selectedUserForDetails && (
+                        <div className="py-4 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-16 w-16">
+                                    <AvatarImage src={selectedUserForDetails.photoURL} />
+                                    <AvatarFallback>{selectedUserForDetails.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <h3 className="text-lg font-bold">{selectedUserForDetails.displayName}</h3>
+                                    <p className="text-sm text-muted-foreground">Total This Week: <span className="font-bold text-primary">{formatTime(selectedUserForDetails.weeklyTime)}</span></p>
+                                </div>
+                            </div>
+                             <ul className="space-y-2 rounded-md border p-4 max-h-64 overflow-y-auto">
+                                {Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length > 0 ? (
+                                    Object.entries(selectedUserForDetails.weeklySubjectBreakdown)
+                                    .sort(([, a], [, b]) => b - a)
+                                    .map(([subject, time]) => (
+                                         <li key={subject} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
+                                            <span className="font-medium">{subject}</span>
+                                            <span className="font-mono text-muted-foreground">{formatTime(time)}</span>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <p className="text-center text-muted-foreground py-4">No specific subjects tracked this week.</p>
+                                )}
+                            </ul>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
 
-const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, renderPodiumCard, renderUserStats, activeTab }: any) => {
+const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, renderPodiumCard, renderUserStats, activeTab, onUserClick }: any) => {
     const currentUserRank = sortedUsers.findIndex((u: any) => u.uid === currentUser?.id);
 
     const getScoreLabel = () => ({
@@ -381,43 +446,46 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {restOfUsers.map((user: User & { totalScore: number }, index: number) => {
+                        {restOfUsers.map((user: UserWithStats, index: number) => {
                             const rank = index + 4;
                             const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+                            const CardComponent = activeTab === 'weekly' ? 'button' : 'div';
                             return (
-                                <Card key={user.uid} className={cn("overflow-hidden", currentUser?.id === user.uid && 'border-primary')}>
-                                    <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:gap-4">
-                                        <div className="flex items-center gap-4 flex-1">
-                                            <p className="font-bold text-lg text-muted-foreground w-8 text-center">{rank}</p>
-                                            <Avatar className="w-12 h-12 border">
-                                                <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-1">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-medium truncate">{user.displayName}</span>
-                                                    {isSuperAdmin ? (
-                                                        <span className="dev-badge flex-shrink-0">
-                                                            <Code className="h-3 w-3" /> DEV
-                                                        </span>
-                                                    ) : user.isAdmin ? (
-                                                        <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                                                    ) : user.isVip && (
-                                                        <span className="elite-badge flex-shrink-0">
-                                                            <Crown className="h-3 w-3" /> ELITE
-                                                        </span>
-                                                    )}
+                                <Card asChild key={user.uid} className={cn("overflow-hidden text-left", currentUser?.id === user.uid && 'border-primary', activeTab === 'weekly' && 'cursor-pointer hover:bg-muted/50')}>
+                                    <CardComponent onClick={activeTab === 'weekly' ? () => onUserClick(user) : undefined}>
+                                        <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                                            <div className="flex items-center gap-4 flex-1">
+                                                <p className="font-bold text-lg text-muted-foreground w-8 text-center">{rank}</p>
+                                                <Avatar className="w-12 h-12 border">
+                                                    <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-medium truncate">{user.displayName}</span>
+                                                        {isSuperAdmin ? (
+                                                            <span className="dev-badge flex-shrink-0">
+                                                                <Code className="h-3 w-3" /> DEV
+                                                            </span>
+                                                        ) : user.isAdmin ? (
+                                                            <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                                        ) : user.isVip && (
+                                                            <span className="elite-badge flex-shrink-0">
+                                                                <Crown className="h-3 w-3" /> ELITE
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                     <p className="text-muted-foreground text-sm">
+                                                        {getScoreLabel()}: 
+                                                        <span className="font-bold text-primary ml-1">{getScoreToDisplay(user)}</span>
+                                                    </p>
                                                 </div>
-                                                 <p className="text-muted-foreground text-sm">
-                                                    {getScoreLabel()}: 
-                                                    <span className="font-bold text-primary ml-1">{getScoreToDisplay(user)}</span>
-                                                </p>
                                             </div>
-                                        </div>
-                                        <div className="sm:border-l sm:pl-4 mt-4 sm:mt-0">
-                                            {renderUserStats(user)}
-                                        </div>
-                                    </CardContent>
+                                            <div className="sm:border-l sm:pl-4 mt-4 sm:mt-0">
+                                                {renderUserStats(user)}
+                                            </div>
+                                        </CardContent>
+                                    </CardComponent>
                                 </Card>
                             )
                         })}
@@ -455,4 +523,3 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         </div>
     );
 };
-
