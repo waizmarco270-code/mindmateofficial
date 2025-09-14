@@ -18,9 +18,8 @@ import { isToday } from 'date-fns';
 const PLAYER_SIZE = 20;
 const OBSTACLE_WIDTH = 40;
 const OBSTACLE_HEIGHT = 20;
-const SCROLL_SPEED_START = 2;
-const SCROLL_SPEED_INCREASE = 0.1;
-const DAILY_WIN_REWARD = 15;
+const WIN_SCORE = 30;
+const DAILY_WIN_REWARD = 1000;
 
 
 // Player state
@@ -52,8 +51,7 @@ export function DimensionShiftGame() {
   const { toast } = useToast();
 
 
-  const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver'>('idle');
-  const [level, setLevel] = useState(1);
+  const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver' | 'won'>('idle');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [hasClaimedToday, setHasClaimedToday] = useState(true);
@@ -62,7 +60,7 @@ export function DimensionShiftGame() {
   const playerRef = useRef<Player>({ x: 0, y: 0, dimension: 'light' });
   const obstaclesRef = useRef<Obstacle[]>([]);
   const frameCountRef = useRef(0);
-  const scrollSpeedRef = useRef(SCROLL_SPEED_START);
+  const scrollSpeedRef = useRef(2);
   const gameLoopRef = useRef<number>();
   
   useEffect(() => {
@@ -95,14 +93,14 @@ export function DimensionShiftGame() {
       light: {
         bg: isDark ? 'hsl(240 10% 3.9%)' : 'hsl(0 0% 100%)',
         player: isDark ? '#FFFFFF' : '#000000',
-        obstacle: isDark ? '#A0A0A0' : '#A0A0A0',
-        trapObstacle: isDark ? '#FF6B6B' : '#FF6B6B',
+        obstacle: '#A0A0A0', // Changed to a distinct gray for visibility on both themes
+        trapObstacle: '#FF6B6B',
       },
       dark: {
         bg: isDark ? '#000000' : '#E5E7EB',
         player: isDark ? '#FFFFFF' : '#000000',
-        obstacle: isDark ? '#4B5563' : '#4B5563',
-        trapObstacle: isDark ? '#C92A2A' : '#C92A2A',
+        obstacle: '#4B5563',
+        trapObstacle: '#C92A2A',
       },
     };
   }, [resolvedTheme]);
@@ -117,8 +115,7 @@ export function DimensionShiftGame() {
       dimension: 'light',
     };
     obstaclesRef.current = [];
-    scrollSpeedRef.current = SCROLL_SPEED_START;
-    setLevel(1);
+    scrollSpeedRef.current = 2; // Start speed
     setScore(0);
     frameCountRef.current = 0;
   }, []);
@@ -129,14 +126,20 @@ export function DimensionShiftGame() {
   };
   
   const handleWin = async () => {
+    setGameState('won');
+    if (score > highScore) {
+      setHighScore(score);
+      if(user) updateGameHighScore(user.id, 'dimensionShift', score);
+    }
+    
     if (!hasClaimedToday && user) {
         await addCreditsToUser(user.id, DAILY_WIN_REWARD);
         const claimDocRef = doc(db, 'users', user.id, 'dailyClaims', 'dimensionShiftWin');
         await setDoc(claimDocRef, { lastClaimed: Timestamp.now() });
         setHasClaimedToday(true);
         toast({
-            title: `You won! +${DAILY_WIN_REWARD} Credits!`,
-            description: "You've claimed your daily win reward for Dimension Shift.",
+            title: `LEGENDARY! +${DAILY_WIN_REWARD} Credits!`,
+            description: "You've beaten the impossible and claimed your daily reward!",
             className: "bg-green-500/10 text-green-700 border-green-500/50"
         });
     }
@@ -152,18 +155,12 @@ export function DimensionShiftGame() {
     }
   };
   
-  const handleScoreUpdate = useCallback((newScore: number) => {
+  const updateScore = (newScore: number) => {
     setScore(newScore);
-    // Trigger win condition on first point scored if reward is available
-    if(newScore === 1 && !hasClaimedToday) {
+    if(newScore >= WIN_SCORE) {
         handleWin();
     }
-    // Update level based on score
-    const newLevel = Math.floor(newScore / 10) + 1;
-    setLevel(newLevel);
-    scrollSpeedRef.current = SCROLL_SPEED_START + (newLevel - 1) * SCROLL_SPEED_INCREASE;
-
-  }, [user, hasClaimedToday]);
+  };
 
   const gameLoop = useCallback(() => {
     const canvas = canvasRef.current;
@@ -179,14 +176,24 @@ export function DimensionShiftGame() {
     // --- Update Logic ---
     frameCountRef.current++;
     
+    // Difficulty scaling based on score
+    let spawnRate = 80;
+    if(score > 10) spawnRate = 60;
+    if(score > 15) spawnRate = 40;
+    if(score > 20) spawnRate = 25; // Impossible
+    if(score > 25) spawnRate = 15; // Super car
+    
+    if(score > 15) scrollSpeedRef.current += 0.025; // "Insane" speed increase
+    if(score > 20) scrollSpeedRef.current += 0.05;  // "Impossible" speed increase
+
     // Generate new obstacles
-    if (frameCountRef.current % 80 === 0) { // Slightly less frequent
+    if (frameCountRef.current % spawnRate === 0) { 
         const dimension = Math.random() > 0.5 ? 'light' : 'dark';
         const xPosition = Math.random() * (canvas.width - OBSTACLE_WIDTH);
         
         let type: Obstacle['type'] = 'normal';
-        // Level 4+: Introduce Trap and Accelerating obstacles
-        if (level >= 4 && Math.random() < 0.3) { // 30% chance for special obstacle
+        const specialChance = 0.1 + (score * 0.02); // Chance increases with score
+        if (Math.random() < specialChance) {
             type = Math.random() < 0.5 ? 'trap' : 'accelerating';
         }
 
@@ -200,19 +207,15 @@ export function DimensionShiftGame() {
             speed: scrollSpeedRef.current,
         };
         
-        // Level 2+: Moving obstacles
-        if(level >= 2) {
-             if (Math.random() < 0.3) { // 30% chance to be a moving obstacle
-                newObstacle.dx = (Math.random() - 0.5) * 2; // -1 to 1
-             }
+        const movingChance = 0.1 + (score * 0.015);
+        if(Math.random() < movingChance) {
+            newObstacle.dx = (Math.random() - 0.5) * (2 + score * 0.1); // Speed increases
         }
         
-        // Level 3+: Blinking obstacles
-        if(level >= 3) {
-            if (Math.random() < 0.2) { // 20% chance to be a blinking obstacle
-                newObstacle.isVisible = true;
-                newObstacle.blinkCounter = 0;
-            }
+        const blinkingChance = score > 10 ? 0.2 : 0; // Starts after score 10
+        if(Math.random() < blinkingChance) {
+            newObstacle.isVisible = true;
+            newObstacle.blinkCounter = 0;
         }
 
         obstaclesRef.current.push(newObstacle);
@@ -220,13 +223,11 @@ export function DimensionShiftGame() {
 
     // Move obstacles and remove off-screen ones
     obstaclesRef.current.forEach((obstacle, index) => {
-        // Handle accelerating obstacles
         if (obstacle.type === 'accelerating' && obstacle.y > canvas.height / 3) {
             obstacle.speed += 0.15;
         }
         obstacle.y += obstacle.speed;
 
-        // Move horizontally if applicable
         if (obstacle.dx) {
             obstacle.x += obstacle.dx;
             if (obstacle.x <= 0 || obstacle.x + obstacle.width >= canvas.width) {
@@ -234,10 +235,10 @@ export function DimensionShiftGame() {
             }
         }
 
-        // Handle blinking
         if (obstacle.blinkCounter !== undefined) {
+            const blinkSpeed = score > 20 ? 30 : 60; // Blinks faster at high scores
             obstacle.blinkCounter++;
-            if (obstacle.blinkCounter > 60) { // Blink every ~1 second
+            if (obstacle.blinkCounter > blinkSpeed) {
                 obstacle.isVisible = !obstacle.isVisible;
                 obstacle.blinkCounter = 0;
             }
@@ -245,14 +246,16 @@ export function DimensionShiftGame() {
         
         if (obstacle.y > canvas.height) {
             obstaclesRef.current.splice(index, 1);
-            handleScoreUpdate(score + 1); // Increment score for dodging
+            if(gameState === 'playing') {
+                updateScore(score + 1);
+            }
         }
     });
     
     // --- Collision Detection ---
     const playerBox = { x: playerRef.current.x - PLAYER_SIZE / 2, y: playerRef.current.y - PLAYER_SIZE / 2, width: PLAYER_SIZE, height: PLAYER_SIZE };
     for (const obstacle of obstaclesRef.current) {
-        if (obstacle.isVisible === false) continue; // Cannot collide with invisible obstacle
+        if (obstacle.isVisible === false) continue; 
 
         const obstacleBox = { x: obstacle.x, y: obstacle.y, width: obstacle.width, height: obstacle.height };
         const isColliding = playerBox.x < obstacleBox.x + obstacleBox.width &&
@@ -262,13 +265,11 @@ export function DimensionShiftGame() {
 
         if (isColliding) {
             let collisionHappened = false;
-            // Normal collision: hit if same dimension
             if (obstacle.type === 'normal' || obstacle.type === 'accelerating') {
                 if (obstacle.dimension === playerRef.current.dimension) {
                     collisionHappened = true;
                 }
             }
-            // Trap collision: hit if DIFFERENT dimension
             else if (obstacle.type === 'trap') {
                 if (obstacle.dimension !== playerRef.current.dimension) {
                     collisionHappened = true;
@@ -284,9 +285,8 @@ export function DimensionShiftGame() {
 
 
     // --- Draw Logic ---
-    // Draw obstacles
     obstaclesRef.current.forEach(obstacle => {
-        if(obstacle.isVisible === false) return; // Don't draw invisible obstacles
+        if(obstacle.isVisible === false) return; 
         
         if(obstacle.type === 'trap') {
             ctx.fillStyle = colors[obstacle.dimension].trapObstacle;
@@ -296,14 +296,13 @@ export function DimensionShiftGame() {
         ctx.fillRect(obstacle.x, obstacle.y, obstacle.width, obstacle.height);
     });
 
-    // Draw player
     ctx.fillStyle = colors[playerRef.current.dimension].player;
     ctx.beginPath();
     ctx.arc(playerRef.current.x, playerRef.current.y, PLAYER_SIZE / 2, 0, Math.PI * 2);
     ctx.fill();
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [getThemeColors, level, score, handleScoreUpdate]);
+  }, [getThemeColors, score, gameState]);
 
 
   // Initialize and run game loop
@@ -338,7 +337,6 @@ export function DimensionShiftGame() {
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const newX = clientX - rect.left;
         
-        // Clamp player position within canvas bounds
         playerRef.current.x = Math.max(PLAYER_SIZE / 2, Math.min(canvas.width - PLAYER_SIZE / 2, newX));
     }
 
@@ -350,7 +348,7 @@ export function DimensionShiftGame() {
     return () => {
         canvas?.removeEventListener('click', handleSwitch);
         canvas?.removeEventListener('mousemove', handleMove);
-        canvas?.removeEventListener('touchmove', handleMove);
+        canvas?.addEventListener('touchmove', handleMove);
     }
   }, [gameState]);
 
@@ -374,14 +372,13 @@ export function DimensionShiftGame() {
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
           <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
-            <span>Score: {score}</span>
-            <span>Level: {level}</span>
+            <span>Score: {score} / {WIN_SCORE}</span>
             <span>High Score: {highScore}</span>
           </div>
           <div className="w-full rounded-lg overflow-hidden border relative cursor-crosshair">
              <canvas ref={canvasRef} />
              {gameState !== 'playing' && (
-                <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-white z-10">
+                <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-white z-10 p-4">
                     {gameState === 'idle' && (
                         <Button size="lg" onClick={startGame}>
                             <Play className="mr-2"/> Start Game
@@ -390,7 +387,16 @@ export function DimensionShiftGame() {
                     {gameState === 'gameOver' && (
                         <div className="text-center space-y-4">
                             <h3 className="text-3xl font-bold">Game Over</h3>
-                            <p>Your score: {score}</p>
+                            <p>You reached a score of {score}.</p>
+                            <Button size="lg" onClick={startGame}>
+                                <RotateCw className="mr-2"/> Play Again
+                            </Button>
+                        </div>
+                    )}
+                    {gameState === 'won' && (
+                         <div className="text-center space-y-4">
+                            <h3 className="text-3xl font-bold text-yellow-400">YOU WON!</h3>
+                            <p>You conquered the impossible! You earned {DAILY_WIN_REWARD} credits!</p>
                             <Button size="lg" onClick={startGame}>
                                 <RotateCw className="mr-2"/> Play Again
                             </Button>
@@ -424,7 +430,7 @@ export function DimensionShiftGame() {
                     <Award className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
                      <div>
                         <h4 className="font-bold text-foreground">Rewards</h4>
-                         <p>You'll earn a <span className="font-bold text-primary">+{DAILY_WIN_REWARD} credit bonus</span> for your first win each day. Score at least 1 point to claim it!</p>
+                         <p>Achieve the legendary score of <span className="font-bold text-primary">{WIN_SCORE}</span> to earn a massive <span className="font-bold text-amber-500">{DAILY_WIN_REWARD} credit</span> prize! This reward can only be claimed once per day.</p>
                     </div>
                 </div>
             </CardContent>

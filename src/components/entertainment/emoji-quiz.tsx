@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Award, Brain, Clock, Loader2, Play, AlertTriangle, Heart, Send, RotateCw, Sparkles, Check } from 'lucide-react';
+import { Award, Brain, Clock, Loader2, Play, AlertTriangle, Heart, Send, RotateCw, Sparkles, Check, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -74,6 +74,7 @@ const WEEKLY_MILESTONES: Record<number, number> = {
     5: 2, 10: 4, 15: 10, 20: 20, 25: 30, 30: 40, 40: 60, 50: 100,
 };
 const MAX_MISTAKES = 3;
+const HINT_COUNT = 3;
 
 const getLevelTime = (level: number) => {
     if (level > 20) return 15;
@@ -92,12 +93,14 @@ export function EmojiQuiz() {
     const [userInput, setUserInput] = useState('');
     const [timeLeft, setTimeLeft] = useState(getLevelTime(1));
     const [mistakes, setMistakes] = useState(0);
+    const [hintsLeft, setHintsLeft] = useState(HINT_COUNT);
     const [highScore, setHighScore] = useState(0);
     const [weeklyMilestones, setWeeklyMilestones] = useState<number[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const timeProgress = (timeLeft / getLevelTime(level)) * 100;
+    const keyboardLayout = "QWERTYUIOPASDFGHJKLZXCVBNM".split('');
 
     useEffect(() => {
         if(currentUserData?.gameHighScores?.emojiQuiz) {
@@ -149,6 +152,7 @@ export function EmojiQuiz() {
     const startGame = () => {
         setLevel(1);
         setMistakes(0);
+        setHintsLeft(HINT_COUNT);
         setGameState('playing');
         startTimer();
     };
@@ -175,14 +179,14 @@ export function EmojiQuiz() {
         }
     }, [user, weeklyMilestones, addCreditsToUser, toast]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async () => {
         if (gameState !== 'playing' || !userInput.trim()) return;
 
         const currentLevelData = EMOJI_LEVELS[level - 1];
+        const correctAnswer = currentLevelData.answer.replace(/\s/g, '').toLowerCase();
+        const userAnswer = userInput.replace(/\s/g, '').toLowerCase();
 
-        if (userInput.trim().toLowerCase() === currentLevelData.answer.toLowerCase()) {
-            // Correct answer
+        if (userAnswer === correctAnswer) {
             toast({ title: `Level ${level} Passed!`, className: 'bg-green-500/10 border-green-500/50' });
             
             await handleMilestoneCheck(level);
@@ -202,7 +206,6 @@ export function EmojiQuiz() {
             }
 
         } else {
-            // Incorrect answer
             const newMistakes = mistakes + 1;
             setMistakes(newMistakes);
             setUserInput('');
@@ -212,6 +215,32 @@ export function EmojiQuiz() {
                 toast({ variant: 'destructive', title: 'Game Over!', description: `The correct answer was: ${currentLevelData.answer}`});
             } else {
                 toast({ variant: 'destructive', title: 'Incorrect!', description: `You have ${MAX_MISTAKES - newMistakes} chance left.` });
+            }
+        }
+    };
+
+    const handleKeyboardClick = (key: string) => {
+        if (gameState !== 'playing') return;
+        if (key === 'BACKSPACE') {
+            setUserInput(prev => prev.slice(0, -1));
+        } else if (key === 'ENTER') {
+            handleSubmit();
+        } else {
+            setUserInput(prev => prev + key);
+        }
+    };
+    
+    const useHint = () => {
+        if (hintsLeft <= 0 || gameState !== 'playing') return;
+
+        const answer = EMOJI_LEVELS[level - 1].answer.replace(/\s/g, '');
+        const currentGuess = userInput.replace(/\s/g, '');
+
+        for (let i = 0; i < answer.length; i++) {
+            if (i >= currentGuess.length || currentGuess[i].toLowerCase() !== answer[i].toLowerCase()) {
+                setUserInput(prev => prev + answer[i].toUpperCase());
+                setHintsLeft(prev => prev - 1);
+                return;
             }
         }
     };
@@ -264,15 +293,26 @@ export function EmojiQuiz() {
                             <p className="text-5xl md:text-6xl tracking-widest">{EMOJI_LEVELS[level-1].emojis}</p>
                         </div>
                        
-                        <form onSubmit={handleSubmit} className="flex gap-2">
-                            <Input
-                                placeholder="Type your answer..."
-                                value={userInput}
-                                onChange={(e) => setUserInput(e.target.value)}
-                                autoFocus
-                            />
-                            <Button type="submit" size="icon"><Send/></Button>
-                        </form>
+                        <div className="h-14 w-full bg-muted rounded-md flex items-center justify-center text-2xl font-bold tracking-widest border">
+                            {userInput || <span className="text-muted-foreground/50">Your Guess</span>}
+                            <span className="animate-pulse border-r-2 border-primary h-6 ml-1"></span>
+                        </div>
+
+                        <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-wrap justify-center gap-1.5">
+                                {keyboardLayout.map(key => (
+                                    <Button key={key} variant="outline" className="w-10 h-10 p-0 text-lg" onClick={() => handleKeyboardClick(key)}>{key}</Button>
+                                ))}
+                            </div>
+                            <div className="flex gap-2 w-full mt-2">
+                                <Button variant="secondary" className="flex-1" onClick={() => handleKeyboardClick('BACKSPACE')}>Backspace</Button>
+                                <Button onClick={useHint} variant="outline" size="icon" disabled={hintsLeft <= 0} className="relative">
+                                    <Lightbulb />
+                                    {hintsLeft > 0 && <span className="absolute -top-1 -right-1 h-5 w-5 bg-primary text-primary-foreground text-xs rounded-full flex items-center justify-center">{hintsLeft}</span>}
+                                </Button>
+                                <Button className="flex-1" onClick={handleSubmit}><Send className="mr-2 h-4 w-4"/>Submit</Button>
+                            </div>
+                        </div>
                     </div>
                 )}
 
