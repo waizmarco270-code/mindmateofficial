@@ -115,18 +115,18 @@ export function DailySurpriseCard() {
             case 'new-feature':
                 const FeatureIcon = surprise.featureIcon ? iconMap[surprise.featureIcon] || GiftIcon : GiftIcon;
                 return (
-                     <Link href={surprise.featureRoute || '/dashboard'} className="block -m-6">
-                        <div className="group rounded-lg p-6 bg-gradient-to-br from-primary/10 to-primary/5 hover:from-primary/20 transition-all cursor-pointer h-full flex items-center">
-                            <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left w-full">
-                                <div className="p-4 rounded-full bg-primary/20 text-primary">
-                                    <FeatureIcon className="h-10 w-10"/>
+                    <Link href={surprise.featureRoute || '/dashboard'} className="block h-full group">
+                        <div className="relative h-full rounded-lg p-6 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-primary/10 via-transparent to-transparent group-hover:from-primary/20 transition-all">
+                            <div>
+                                <div className="p-3 rounded-full bg-primary/20 text-primary w-fit mb-4">
+                                    <FeatureIcon className="h-8 w-8"/>
                                 </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-bold text-primary uppercase tracking-wider">New Feature</p>
-                                    <h3 className="text-2xl font-bold mt-1">{surprise.featureTitle}</h3>
-                                    <p className="text-muted-foreground mt-2">{surprise.featureDescription}</p>
-                                </div>
-                                <ArrowRight className="h-8 w-8 text-muted-foreground group-hover:translate-x-1 transition-transform hidden sm:block"/>
+                                <p className="text-sm font-bold text-primary uppercase tracking-wider">New Feature</p>
+                                <h3 className="text-3xl font-bold mt-1 text-foreground">{surprise.featureTitle}</h3>
+                            </div>
+                            <div className="flex items-end justify-between mt-4">
+                                <p className="text-muted-foreground max-w-xs">{surprise.featureDescription}</p>
+                                <ArrowRight className="h-8 w-8 text-muted-foreground group-hover:translate-x-1 transition-transform flex-shrink-0"/>
                             </div>
                         </div>
                     </Link>
@@ -153,16 +153,25 @@ export function DailySurpriseCard() {
             <CarouselContent>
                 {latestSurprises.map((surprise) => (
                     <CarouselItem key={surprise.id}>
-                        <Card className="min-h-[220px]">
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                    {getIcon(surprise.type)}
-                                    <CardTitle>Today's Surprises</CardTitle>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="flex items-center justify-center h-full">
-                                {renderSurpriseContent(surprise)}
-                            </CardContent>
+                         <Card className="min-h-[220px] overflow-hidden">
+                            {surprise.type !== 'new-feature' ? (
+                                <>
+                                    <CardHeader className="flex flex-row items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            {getIcon(surprise.type)}
+                                            <CardTitle>Today's Surprises</CardTitle>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="flex items-center justify-center h-full">
+                                        {renderSurpriseContent(surprise)}
+                                    </CardContent>
+                                </>
+                            ) : (
+                                // For new-feature, render content directly inside CardContent to fill space
+                                <CardContent className="p-0 h-full">
+                                    {renderSurpriseContent(surprise)}
+                                </CardContent>
+                            )}
                         </Card>
                     </CarouselItem>
                 ))}
