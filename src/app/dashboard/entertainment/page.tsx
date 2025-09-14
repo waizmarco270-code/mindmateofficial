@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TicTacToeGame } from '@/components/entertainment/tic-tac-toe';
 import { WordUnscrambleGame } from '@/components/entertainment/word-unscramble';
 import { MemoryPatternGame } from '@/components/entertainment/memory-pattern-game';
+import { WordHuntGame } from '@/components/entertainment/word-hunt';
 
 export default function EntertainmentPage() {
   return (
@@ -28,7 +29,10 @@ export default function EntertainmentPage() {
                 <TicTacToeGame />
             </TabsContent>
             <TabsContent value="puzzle" className="mt-6">
-                <WordUnscrambleGame />
+                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <WordHuntGame />
+                    <WordUnscrambleGame />
+                </div>
             </TabsContent>
              <TabsContent value="arcade" className="mt-6">
                 <MemoryPatternGame />

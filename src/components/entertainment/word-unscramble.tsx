@@ -202,46 +202,24 @@ export function WordUnscrambleGame() {
     }
 
     return (
-        <div className="flex flex-col md:flex-row gap-8 items-start">
-             <Card className="w-full md:max-w-md">
-                <CardHeader>
-                    <CardTitle>Word Unscramble</CardTitle>
-                    <CardDescription>Unscramble the letters to form a word from the selected category.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as WordCategory)} className="w-full mb-6">
-                        <TabsList className="grid w-full grid-cols-3">
-                            <TabsTrigger value="programming"><Code className="mr-2 h-4 w-4" /> Code</TabsTrigger>
-                            <TabsTrigger value="science"><FlaskConical className="mr-2 h-4 w-4" /> Science</TabsTrigger>
-                            <TabsTrigger value="general"><Globe className="mr-2 h-4 w-4" /> General</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                    {renderContent()}
-                </CardContent>
-            </Card>
-            <Card className="flex-1 w-full">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Award className="text-amber-500"/> How to Play</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4 text-sm text-muted-foreground">
-                    <div className="flex items-start gap-3">
-                        <Brain className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                        <p>You get <span className="font-bold text-foreground">5 total words</span> to solve each day across all categories.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <Award className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                        <p>Earn <span className="font-bold text-foreground">{CREDIT_PER_WORD} credit</span> for each word you solve correctly.</p>
-                    </div>
-                    <div className="flex items-start gap-3">
-                        <HelpCircle className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                        <p>Choose a category and test your knowledge. Good luck!</p>
-                    </div>
-                     <div className="pt-4">
-                        <p className="font-bold text-foreground">Progress Today: <span className={cn(solvedWords.length > 0 && "text-primary")}>{solvedWords.length} / {DAILY_WORD_LIMIT}</span></p>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+        <Card className="w-full">
+            <CardHeader>
+                <CardTitle>Word Unscramble</CardTitle>
+                <CardDescription>Unscramble the letters to form a word.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as WordCategory)} className="w-full mb-6">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="programming"><Code className="mr-2 h-4 w-4" /> Code</TabsTrigger>
+                        <TabsTrigger value="science"><FlaskConical className="mr-2 h-4 w-4" /> Science</TabsTrigger>
+                        <TabsTrigger value="general"><Globe className="mr-2 h-4 w-4" /> General</TabsTrigger>
+                    </TabsList>
+                </Tabs>
+                {renderContent()}
+                 <div className="pt-6">
+                    <p className="font-bold text-foreground text-center">Progress Today: <span className={cn(solvedWords.length > 0 && "text-primary")}>{solvedWords.length} / {DAILY_WORD_LIMIT}</span></p>
+                </div>
+            </CardContent>
+        </Card>
     );
 }
-
