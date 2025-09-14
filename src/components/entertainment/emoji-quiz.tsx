@@ -70,10 +70,10 @@ const EMOJI_LEVELS = [
     { emojis: 'IT’S+ALWAYS+SUNNY+IN+PHILADELPHIA', answer: 'it\'s always sunny in philadelphia' }, // Level 50
 ];
 
-const DAILY_MILESTONES: Record<number, number> = {
+const WEEKLY_MILESTONES: Record<number, number> = {
     5: 1, 10: 2, 15: 5, 20: 10, 25: 15, 30: 20, 40: 50, 50: 100,
 };
-const MAX_MISTAKES = 2;
+const MAX_MISTAKES = 3;
 
 const getLevelTime = (level: number) => {
     if (level > 20) return 15;
@@ -154,8 +154,8 @@ export function EmojiQuiz() {
     };
 
     const handleMilestoneCheck = useCallback(async (currentLevel: number) => {
-        if(user && DAILY_MILESTONES[currentLevel] && !weeklyMilestones.includes(currentLevel)) {
-            const creditsToAward = DAILY_MILESTONES[currentLevel];
+        if(user && WEEKLY_MILESTONES[currentLevel] && !weeklyMilestones.includes(currentLevel)) {
+            const creditsToAward = WEEKLY_MILESTONES[currentLevel];
             await addCreditsToUser(user.id, creditsToAward);
             
             const newMilestones = [...weeklyMilestones, currentLevel];
@@ -224,7 +224,7 @@ export function EmojiQuiz() {
          <Card className="w-full max-w-lg mx-auto">
              <CardHeader>
                 <CardTitle>Emoji Quiz</CardTitle>
-                <CardDescription>Guess the word or phrase from the emojis. You get two mistakes!</CardDescription>
+                <CardDescription>Guess the word or phrase from the emojis. You get {MAX_MISTAKES} chances!</CardDescription>
             </CardHeader>
              <CardContent className="space-y-6">
                 {gameState === 'idle' && (
@@ -276,13 +276,25 @@ export function EmojiQuiz() {
                     </div>
                 )}
 
-                 <div>
-                    <h4 className="font-bold text-foreground mb-2 text-center">Weekly Milestone Rewards</h4>
-                    <div className="flex flex-wrap justify-center gap-2">
-                        {Object.entries(DAILY_MILESTONES).map(([level, credit]) => (
-                            <div key={level} className={cn("p-1 px-2 rounded-md text-xs", weeklyMilestones.includes(Number(level)) ? "bg-green-500/20 text-green-500 line-through" : "bg-muted")}>
-                                Lv {level}: <span className="font-bold">+{credit}</span>
-                            </div>
+                 <div className="pt-4">
+                    <h4 className="font-bold text-foreground mb-4 text-center">Weekly Milestone Rewards</h4>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        {Object.entries(WEEKLY_MILESTONES).map(([level, credit]) => (
+                            <motion.div 
+                                key={level} 
+                                className={cn("flex flex-col items-center justify-center p-2 rounded-lg text-xs text-center border-2", 
+                                    weeklyMilestones.includes(Number(level)) 
+                                    ? "bg-green-500/10 border-green-500/30 text-green-500" 
+                                    : "bg-muted border-transparent"
+                                )}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: (Number(level) % 5) * 0.1 }}
+                            >
+                                {weeklyMilestones.includes(Number(level)) && <Check className="h-4 w-4 mb-1"/>}
+                                <span className={cn("font-semibold", weeklyMilestones.includes(Number(level)) && "line-through")}>Level {level}</span>
+                                <span className={cn("font-bold text-primary", weeklyMilestones.includes(Number(level)) && "text-green-500/70")}>+{credit} credits</span>
+                            </motion.div>
                         ))}
                     </div>
                 </div>

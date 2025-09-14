@@ -1,13 +1,14 @@
 
 'use client';
 
-import { Gamepad2, Puzzle, Swords, Dice5 } from 'lucide-react';
+import { Gamepad2, Puzzle, Swords, Dice5, Brain, Newspaper } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { TicTacToeGame } from '@/components/entertainment/tic-tac-toe';
 import { WordUnscrambleGame } from '@/components/entertainment/word-unscramble';
 import { MemoryPatternGame } from '@/components/entertainment/memory-pattern-game';
 import { WordHuntGame } from '@/components/entertainment/word-hunt';
 import { EmojiQuiz } from '@/components/entertainment/emoji-quiz';
+import { Card, CardContent } from '@/components/ui/card';
 
 export default function EntertainmentPage() {
   return (
@@ -21,10 +22,10 @@ export default function EntertainmentPage() {
       </div>
 
       <Tabs defaultValue="puzzle" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                 <TabsTrigger value="strategy"><Swords className="mr-2 h-4 w-4" /> Strategy</TabsTrigger>
-                <TabsTrigger value="puzzle"><Puzzle className="mr-2 h-4 w-4" /> Puzzle</TabsTrigger>
-                <TabsTrigger value="word-games"><Puzzle className="mr-2 h-4 w-4" /> Word Games</TabsTrigger>
+                <TabsTrigger value="puzzle"><Brain className="mr-2 h-4 w-4" /> Puzzle</TabsTrigger>
+                <TabsTrigger value="word-games"><Newspaper className="mr-2 h-4 w-4" /> Word Games</TabsTrigger>
                 <TabsTrigger value="arcade"><Dice5 className="mr-2 h-4 w-4" /> Arcade</TabsTrigger>
             </TabsList>
             <TabsContent value="strategy" className="mt-6">
@@ -34,7 +35,10 @@ export default function EntertainmentPage() {
                  <EmojiQuiz />
             </TabsContent>
              <TabsContent value="word-games" className="mt-6">
-                <WordHuntGame />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <WordHuntGame />
+                    <WordUnscrambleGame />
+                </div>
             </TabsContent>
              <TabsContent value="arcade" className="mt-6">
                 <MemoryPatternGame />
