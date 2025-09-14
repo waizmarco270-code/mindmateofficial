@@ -122,11 +122,11 @@ export function DailySurpriseCard() {
                                     <FeatureIcon className="h-8 w-8"/>
                                 </div>
                                 <p className="text-sm font-bold text-primary uppercase tracking-wider">New Feature</p>
-                                <h3 className="text-3xl font-bold mt-1 text-foreground">{surprise.featureTitle}</h3>
+                                <h3 className="text-2xl sm:text-3xl font-bold mt-1 text-foreground">{surprise.featureTitle}</h3>
                             </div>
-                            <div className="flex items-end justify-between mt-4">
+                            <div className="flex flex-col sm:flex-row sm:items-end justify-between mt-4 gap-4">
                                 <p className="text-muted-foreground max-w-xs">{surprise.featureDescription}</p>
-                                <ArrowRight className="h-8 w-8 text-muted-foreground group-hover:translate-x-1 transition-transform flex-shrink-0"/>
+                                <ArrowRight className="h-8 w-8 text-muted-foreground group-hover:translate-x-1 transition-transform flex-shrink-0 self-end"/>
                             </div>
                         </div>
                     </Link>
