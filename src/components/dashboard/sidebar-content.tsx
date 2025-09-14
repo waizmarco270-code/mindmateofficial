@@ -108,12 +108,18 @@ export default function SidebarContent() {
           prefetch={true}
           className={cn(
             'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 hover:text-primary text-sm font-medium relative',
-            isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold'
+            isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold',
+            (item.label === 'Resources' || item.label === 'Social Hub' || item.label === 'Insights') && 'text-yellow-400 hover:text-yellow-300',
+            item.label === 'Invite & Earn' && 'text-green-400 hover:text-green-300',
+            isActive(item.href) && (item.label === 'Resources' || item.label === 'Social Hub' || item.label === 'Insights') && 'bg-yellow-400/10 text-yellow-300',
+            isActive(item.href) && item.label === 'Invite & Earn' && 'bg-green-400/10 text-green-300'
           )}
         >
           <div className={cn(
             "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50"
+            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
+            isActive(item.href) && (item.label === 'Resources' || item.label === 'Social Hub' || item.label === 'Insights') && 'bg-yellow-400',
+            isActive(item.href) && item.label === 'Invite & Earn' && 'bg-green-400'
           )}></div>
           <item.icon className="h-5 w-5" />
           <span className="flex-1">{item.label}</span>
