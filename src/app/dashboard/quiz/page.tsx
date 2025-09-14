@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useQuizzes } from '@/hooks/use-quizzes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Film, Swords, BrainCircuit, BookOpen, Trophy, Award, Users } from 'lucide-react';
+import { Film, Swords, BrainCircuit, BookOpen, Trophy, Award, Users, CheckCircle, ClipboardList } from 'lucide-react';
 import { QuizStartDialog } from '@/components/quiz/quiz-start-dialog';
 import { type Quiz } from '@/hooks/use-quizzes';
 import { useUsers } from '@/hooks/use-admin';
@@ -62,10 +62,18 @@ export default function QuizZonePage() {
         .map(user => ({
             ...user,
             perfectedCount: user.perfectedQuizzes?.length || 0,
+            attemptedCount: user.quizAttempts ? Object.keys(user.quizAttempts).length : 0,
         }))
-        .filter(user => user.perfectedCount > 0)
-        .sort((a, b) => b.perfectedCount - a.perfectedCount)
-        .slice(0, 10); // Get top 10
+        .filter(user => user.perfectedCount > 0 || user.attemptedCount > 0)
+        .sort((a, b) => {
+            // Sort primarily by perfected count
+            if (b.perfectedCount !== a.perfectedCount) {
+                return b.perfectedCount - a.perfectedCount;
+            }
+            // Then by attempted count
+            return b.attemptedCount - a.attemptedCount;
+        })
+        .slice(0, 20); // Get top 20
   }, [users]);
 
 
@@ -157,7 +165,7 @@ export default function QuizZonePage() {
                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><Trophy className="text-amber-500"/> Top Performers</CardTitle>
-                        <CardDescription>Users who have achieved a perfect score on the most quizzes.</CardDescription>
+                        <CardDescription>Users who have perfected the most quizzes.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {loading && (
@@ -168,18 +176,26 @@ export default function QuizZonePage() {
                             </div>
                         )}
                         {!loading && topPerformers.length > 0 ? (
-                             <ol className="space-y-3">
+                             <ol className="space-y-4">
                                  {topPerformers.map((user, index) => (
-                                     <li key={user.uid} className="flex items-center gap-4 rounded-md p-2 bg-muted/50">
+                                     <li key={user.uid} className="flex items-center gap-4 rounded-lg p-3 bg-muted/50 border">
                                          <span className="font-bold text-lg text-muted-foreground w-8 text-center">{index + 1}</span>
-                                         <Avatar className="h-10 w-10 border">
+                                         <Avatar className="h-12 w-12 border">
                                             <AvatarImage src={user.photoURL ?? undefined} />
                                             <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                          </Avatar>
-                                         <p className="font-semibold flex-1">{user.displayName}</p>
-                                         <div className="flex items-center gap-2 text-amber-600 font-bold">
-                                             <Award className="h-5 w-5" />
-                                             <span>{user.perfectedCount} {user.perfectedCount > 1 ? 'Quizzes' : 'Quiz'}</span>
+                                         <div className="flex-1">
+                                            <p className="font-semibold">{user.displayName}</p>
+                                            <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                                                <div className="flex items-center gap-1.5" title="Quizzes Perfected">
+                                                    <CheckCircle className="h-4 w-4 text-green-500" />
+                                                    <span className="font-medium">{user.perfectedCount}</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5" title="Quizzes Attempted">
+                                                    <ClipboardList className="h-4 w-4 text-blue-500" />
+                                                    <span className="font-medium">{user.attemptedCount}</span>
+                                                </div>
+                                            </div>
                                          </div>
                                      </li>
                                  ))}
@@ -187,7 +203,7 @@ export default function QuizZonePage() {
                         ) : !loading && (
                             <div className="text-center text-muted-foreground py-10 flex flex-col items-center gap-4">
                                 <Users className="h-12 w-12" />
-                                <p>Be the first to perfect a quiz and appear here!</p>
+                                <p>Be the first to attempt or perfect a quiz and appear here!</p>
                             </div>
                         )}
                     </CardContent>
