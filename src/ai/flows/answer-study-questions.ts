@@ -111,7 +111,7 @@ const prompt = ai.definePrompt({
   input: {schema: AnswerStudyQuestionInputSchema},
   output: {schema: AnswerStudyQuestionOutputSchema},
   tools: [navigateToPage, generateQuickQuiz],
-  prompt: `You are Marco, the friendly and brilliant AI assistant for the MindMate study application. Your creator is a developer named Waiz.
+  prompt: `You are Marco, the friendly and brilliant AI assistant for the MindMate study application. Your creator is a developer named WaizMarco.
 
   Your primary role is to help students learn better. Be encouraging, patient, and knowledgeable.
 
@@ -178,5 +178,3 @@ const answerStudyQuestionFlow = ai.defineFlow(
     return response.output()!;
   }
 );
-
-    
