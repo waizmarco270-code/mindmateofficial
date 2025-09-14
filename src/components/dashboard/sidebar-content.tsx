@@ -49,7 +49,7 @@ const mainNav = [
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
   { href: '/dashboard/entertainment', icon: Gamepad2, label: 'Entertainment' },
-  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', highlight: true },
+  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn' },
 ];
 
@@ -61,7 +61,7 @@ const studyNav = [
 ];
 
 const progressNav = [
-  { href: '/dashboard/insights', icon: LineChart, label: 'Insights', highlight: true },
+  { href: '/dashboard/insights', icon: LineChart, label: 'Insights' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
   { href: '/dashboard/calculator', icon: Percent, label: 'Percentage Calc' },
 ];
@@ -108,15 +108,12 @@ export default function SidebarContent() {
           prefetch={true}
           className={cn(
             'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 hover:text-primary text-sm font-medium relative',
-            isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold',
-            item.highlight && !isActive(item.href) && 'text-yellow-400 hover:text-yellow-500',
-            item.highlight && isActive(item.href) && 'text-yellow-400 bg-yellow-500/10 hover:text-yellow-500'
+            isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold'
           )}
         >
           <div className={cn(
             "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
-            item.highlight && isActive(item.href) && 'bg-yellow-500'
+            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50"
           )}></div>
           <item.icon className="h-5 w-5" />
           <span className="flex-1">{item.label}</span>
@@ -125,9 +122,6 @@ export default function SidebarContent() {
           )}
           {item.href === '/dashboard/quiz' && hasNewQuiz && (
             <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-          )}
-          {item.highlight && (
-            <span className="h-2 w-2 rounded-full bg-yellow-500" />
           )}
         </Link>
       ))}
