@@ -1,11 +1,10 @@
 
-
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp } from 'firebase/firestore';
-import { isToday, parseISO, getDayOfYear } from 'date-fns';
+import { isToday, parseISO } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 
@@ -22,15 +21,15 @@ export const useRewards = () => {
     
     // State for both games
     const [lastScratchDate, setLastScratchDate] = useState<Date | null>(null);
-    const [lastGiftBoxDate, setLastGiftBoxDate] = useState<Date | null>(null);
+    const [lastCardFlipDate, setLastCardFlipDate] = useState<Date | null>(null);
     const [freeRewards, setFreeRewards] = useState(0); // For scratch cards
-    const [freeGuesses, setFreeGuesses] = useState(0); // For gift boxes
+    const [freeGuesses, setFreeGuesses] = useState(0); // Renamed from freeGuesses for clarity
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
 
     useEffect(() => {
         if(currentUserData) {
             setLastScratchDate(currentUserData.lastRewardDate ? parseISO(currentUserData.lastRewardDate) : null);
-            setLastGiftBoxDate(currentUserData.lastGiftBoxDate ? parseISO(currentUserData.lastGiftBoxDate) : null);
+            setLastCardFlipDate(currentUserData.lastGiftBoxDate ? parseISO(currentUserData.lastGiftBoxDate) : null);
             setFreeRewards(currentUserData.freeRewards || 0);
             setFreeGuesses(currentUserData.freeGuesses || 0);
             setRewardHistory(
@@ -99,72 +98,78 @@ export const useRewards = () => {
         return { prize: chosenPrize.value };
     }, [canClaimScratchCard, user, addCreditsToUser, freeRewards, toast]);
 
-    // ===== GIFT BOX LOGIC =====
-    const canClaimGiftBox = useMemo(() => {
+    // ===== CARD FLIP GAME LOGIC =====
+    const canPlayCardFlip = useMemo(() => {
         if (freeGuesses > 0) return true;
-        if (!lastGiftBoxDate) return true;
-        return !isToday(lastGiftBoxDate);
-    }, [lastGiftBoxDate, freeGuesses]);
-    
-    const availableGiftBoxGuesses = useMemo(() => {
-        const dailyGuess = (lastGiftBoxDate && isToday(lastGiftBoxDate)) ? 0 : 1;
-        return dailyGuess + freeGuesses;
-    }, [lastGiftBoxDate, freeGuesses]);
-    
-    // Determine a consistent winning box for the user for the entire day
-    const winningBoxIndex = useMemo(() => {
-        if (!user) return 0;
-        const day = getDayOfYear(new Date());
-        // A simple "hash" to get a number between 0 and 3
-        const userNum = user.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        return (day + userNum) % 4;
-    }, [user]);
+        if (!lastCardFlipDate) return true;
+        return !isToday(lastCardFlipDate);
+    }, [lastCardFlipDate, freeGuesses]);
 
-    const claimGiftBoxReward = useCallback(async (selectedIndex: number) => {
-        if (!canClaimGiftBox || !user) {
-            toast({ variant: 'destructive', title: 'No guesses left for today!' });
-            return { prize: 'better luck', isWin: false };
-        }
+    const availableCardFlipPlays = useMemo(() => {
+        const dailyPlay = (lastCardFlipDate && isToday(lastCardFlipDate)) ? 0 : 1;
+        return dailyPlay + freeGuesses;
+    }, [lastCardFlipDate, freeGuesses]);
+
+    const generateCardFlipPrize = useCallback(() => {
+        const rand = Math.random() * 100;
+        if (rand < 2) return 100; // 2% chance for 100 credits
+        if (rand < 10) return Math.floor(Math.random() * 41) + 10; // 8% chance for 10-50 credits
+        return Math.floor(Math.random() * 9) + 1; // 90% chance for 1-9 credits
+    }, []);
+
+    const playCardFlip = useCallback(async (isWin: boolean, prizeAmount: number) => {
+        if (!user) return;
         
-        const prizeAmount = 10; // The prize for the winning box
         const userDocRef = doc(db, 'users', user.id);
         let prize: number | 'better luck' = 'better luck';
-        let isWin = false;
+        
+        const newRecord = { 
+            reward: isWin ? prizeAmount : 'better luck', 
+            date: new Date(), 
+            source: 'Card Flip Game' 
+        };
 
-        if (selectedIndex === winningBoxIndex) {
+        if (isWin) {
             prize = prizeAmount;
-            isWin = true;
             await addCreditsToUser(user.id, prizeAmount);
-            toast({ title: "You Won!", description: `Congratulations! ${prizeAmount} credits have been added.`, className: "bg-green-500/10 border-green-500/50" });
+            toast({ title: "You Won!", description: `+${prizeAmount} credits! You can advance to the next level.`, className: "bg-green-500/10 border-green-500/50" });
         } else {
-             toast({ title: "Not this one!", description: "Better luck next time!" });
+            toast({ title: "Not this one!", description: "Better luck tomorrow!" });
         }
         
-        const newRecord = { reward: prize, date: new Date(), source: 'Gift Box' };
-        
-        if (freeGuesses > 0) {
-             await updateDoc(userDocRef, {
-                freeGuesses: increment(-1),
-                rewardHistory: arrayUnion(newRecord)
-            });
+        // This function is now only called ONCE per run, when the run ends (win or lose).
+        // A win only advances the level state, it doesn't call this function again.
+        // A loss calls this function and marks the daily play as used.
+        if (!isWin) {
+            if (freeGuesses > 0) {
+                 await updateDoc(userDocRef, {
+                    freeGuesses: increment(-1),
+                    rewardHistory: arrayUnion(newRecord)
+                });
+            } else {
+                 await updateDoc(userDocRef, {
+                    lastGiftBoxDate: new Date().toISOString(),
+                    rewardHistory: arrayUnion(newRecord)
+                });
+            }
         } else {
+            // For a win, we just log the reward without consuming the daily play
              await updateDoc(userDocRef, {
-                lastGiftBoxDate: new Date().toISOString(),
                 rewardHistory: arrayUnion(newRecord)
             });
         }
-
-        return { prize, isWin };
-    }, [canClaimGiftBox, user, addCreditsToUser, toast, winningBoxIndex, freeGuesses]);
+        
+        return { prize };
+    }, [user, addCreditsToUser, toast, freeGuesses]);
 
     return { 
         canClaimReward: canClaimScratchCard,
         claimDailyReward, 
         availableScratchCards,
         rewardHistory,
-        canClaimGiftBox,
-        availableGiftBoxGuesses,
-        winningBoxIndex,
-        claimGiftBoxReward,
+        canPlayCardFlip,
+        availableCardFlipPlays,
+        generateCardFlipPrize,
+        playCardFlip,
     };
 };

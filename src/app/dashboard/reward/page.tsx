@@ -4,29 +4,29 @@
 import { ScratchCard } from '@/components/reward/scratch-card';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useRewards } from '@/hooks/use-rewards';
-import { Gift, History, VenetianMask } from 'lucide-react';
+import { Gift, History, VenetianMask, Layers } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { GiftBoxGame } from '@/components/reward/gift-box-game';
+import { CardFlipGame } from '@/components/reward/gift-box-game';
 import { useState } from 'react';
 
 export default function RewardPage() {
-    const { rewardHistory, availableScratchCards, availableGiftBoxGuesses } = useRewards();
-    const [activeTab, setActiveTab] = useState('scratch-card');
+    const { rewardHistory, availableScratchCards, availableCardFlipPlays } = useRewards();
+    const [activeTab, setActiveTab] = useState('card-flip');
 
     const getCardCount = () => {
         if (activeTab === 'scratch-card') return availableScratchCards;
-        if (activeTab === 'guess-box') return availableGiftBoxGuesses;
+        if (activeTab === 'card-flip') return availableCardFlipPlays;
         return 0;
     }
      const getCardLabel = () => {
         if (activeTab === 'scratch-card') return 'Cards Left Today';
-        if (activeTab === 'guess-box') return 'Guesses Left Today';
+        if (activeTab === 'card-flip') return 'Plays Left Today';
         return 'Rewards Left';
     }
      const getCardDescription = () => {
         if (activeTab === 'scratch-card') return '1 free daily card + gifted cards.';
-        if (activeTab === 'guess-box') return '1 free guess per day.';
+        if (activeTab === 'card-flip') return '1 free play per day.';
         return 'Come back tomorrow!';
     }
 
@@ -40,22 +40,22 @@ export default function RewardPage() {
             
             <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
-                   <Tabs defaultValue="scratch-card" className="w-full" onValueChange={setActiveTab}>
+                   <Tabs defaultValue="card-flip" className="w-full" onValueChange={setActiveTab}>
                       <TabsList className="grid w-full grid-cols-2">
+                         <TabsTrigger value="card-flip">
+                            <Layers className="mr-2 h-4 w-4"/>
+                            Card Flip Challenge
+                        </TabsTrigger>
                         <TabsTrigger value="scratch-card">
                             <VenetianMask className="mr-2 h-4 w-4"/>
                             Daily Scratch Card
-                        </TabsTrigger>
-                        <TabsTrigger value="guess-box">
-                            <Gift className="mr-2 h-4 w-4"/>
-                            Guess the Box
                         </TabsTrigger>
                       </TabsList>
                       <TabsContent value="scratch-card" className="mt-6">
                         <ScratchCard />
                       </TabsContent>
-                      <TabsContent value="guess-box" className="mt-6">
-                        <GiftBoxGame />
+                      <TabsContent value="card-flip" className="mt-6">
+                        <CardFlipGame />
                       </TabsContent>
                     </Tabs>
                 </div>
@@ -64,7 +64,7 @@ export default function RewardPage() {
                         <CardHeader className="pb-2">
                             <CardTitle className="text-base font-medium flex items-center justify-between">
                                 <span>{getCardLabel()}</span>
-                                <VenetianMask className="h-4 w-4 text-muted-foreground" />
+                                <Gift className="h-4 w-4 text-muted-foreground" />
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
