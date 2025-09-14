@@ -145,7 +145,7 @@ export default function DashboardPage() {
                                     </div>
                                     <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
                                 </CardHeader>
-                                <CardContent className="p-4 md:p-6 pt-0">
+                                <CardContent className="p-4 md:px-6">
                                     <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
                                     <div className="text-muted-foreground mt-2 min-h-[40px]">
                                        <TypingAnimation text={latestAnnouncement.description} />
