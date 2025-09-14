@@ -30,11 +30,11 @@ const WORD_CATEGORIES = {
 type WordCategory = keyof typeof WORD_CATEGORIES;
 
 const LEVEL_CONFIG = {
-    1: { time: 20, reward: 1, words: WORD_CATEGORIES.programming.filter(w => w.length <= 5) },
-    2: { time: 15, reward: 1, words: WORD_CATEGORIES.science.filter(w => w.length <= 5) },
-    3: { time: 10, reward: 2, words: [...WORD_CATEGORIES.programming, ...WORD_CATEGORIES.science].filter(w => w.length > 5) },
-    4: { time: 8, reward: 5, words: WORD_CATEGORIES.general.filter(w => w.length <= 5) },
-    5: { time: 5, reward: 10, words: [...WORD_CATEGORIES.programming, ...WORD_CATEGORIES.general].filter(w => w.length > 5) }
+    1: { time: 50, reward: 1, words: WORD_CATEGORIES.programming.filter(w => w.length <= 5) },
+    2: { time: 40, reward: 1, words: WORD_CATEGORIES.science.filter(w => w.length <= 5) },
+    3: { time: 30, reward: 2, words: [...WORD_CATEGORIES.programming, ...WORD_CATEGORIES.science].filter(w => w.length > 5) },
+    4: { time: 20, reward: 5, words: WORD_CATEGORIES.general.filter(w => w.length <= 5) },
+    5: { time: 15, reward: 10, words: [...WORD_CATEGORIES.programming, ...WORD_CATEGORIES.general].filter(w => w.length > 5) }
 };
 type Level = keyof typeof LEVEL_CONFIG;
 
