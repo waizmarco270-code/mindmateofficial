@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -308,6 +308,52 @@ export default function LeaderboardPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Top Achievers</h1>
                 <p className="text-muted-foreground">See who's leading the board with the highest scores and longest streaks!</p>
             </div>
+            
+            <Card className="relative overflow-hidden border-yellow-400/30 bg-yellow-950/40">
+                <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_50%,transparent_100%)]"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-transparent to-transparent"></div>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                       <button className="relative w-full p-6 text-left group">
+                         <div className="flex flex-col md:flex-row md:items-center gap-4">
+                            <div className="p-3 rounded-full bg-yellow-400/20 text-yellow-400 animate-pulse w-fit">
+                                <Crown className="h-10 w-10"/>
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-xl font-bold text-yellow-400 [text-shadow:0_0_8px_hsl(var(--primary)/50%)]">Become an Elite Member</h3>
+                                <p className="text-yellow-400/80 mt-1">Discover the benefits of being a top performer in the MindMate community.</p>
+                            </div>
+                             <div className="flex items-center gap-2 text-sm font-semibold text-yellow-400/90 group-hover:text-yellow-300 transition-colors">
+                                Learn More
+                                <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                            </div>
+                        </div>
+                       </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 md:w-96">
+                        <div className="space-y-4">
+                            <h4 className="font-bold text-base flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Elite Member Status</h4>
+                             <div>
+                                <p className="text-sm text-muted-foreground font-semibold mb-2">How to achieve:</p>
+                                <p className="text-xs text-muted-foreground">The <span className="elite-badge inline-flex items-center gap-1"><Crown className="h-3 w-3"/>ELITE</span> badge is awarded manually by admins to users who show exceptional dedication. This includes:</p>
+                                 <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
+                                    <li>Consistently placing in the top 3 of the Weekly Leaderboard.</li>
+                                    <li>High daily activity (focus sessions, tasks, quizzes).</li>
+                                    <li>Maintaining long streaks.</li>
+                                </ul>
+                            </div>
+                             <div>
+                                <p className="text-sm text-muted-foreground font-semibold mb-2">Exclusive Perks:</p>
+                                <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
+                                    <li><span className="font-semibold text-foreground">Daily Rewards:</span> 20+ Free Credits, 5 Free Scratch Cards, and 5 Free Card Flip plays.</li>
+                                    <li><span className="font-semibold text-foreground">Special Recognition:</span> The prestigious animated Elite badge next to your name.</li>
+                                    <li><span className="font-semibold text-foreground">Early Access:</span> Be the first to try out new "Elite Features" as they are released.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </Card>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 md:w-1/2 mx-auto">
