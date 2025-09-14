@@ -6,31 +6,12 @@ import { ThemeProvider } from '@/components/theme-provider';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { ClerkProvider } from '@clerk/nextjs';
-import { useEffect } from 'react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
-  useEffect(() => {
-    const fetchAndApplyTheme = async () => {
-      const themeDocRef = doc(db, 'appConfig', 'theme');
-      const themeDoc = await getDoc(themeDocRef);
-      if (themeDoc.exists()) {
-        const theme = themeDoc.data();
-        const root = document.documentElement;
-        root.style.setProperty('--primary', `hsl(${theme.primary})`);
-        root.style.setProperty('--background', `hsl(${theme.background})`);
-        root.style.setProperty('--accent', `hsl(${theme.accent})`);
-        root.style.setProperty('--radius', `${theme.radius}rem`);
-      }
-    };
-    fetchAndApplyTheme();
-  }, []);
 
   return (
     <ClerkProvider>
@@ -61,3 +42,5 @@ export default function RootLayout({
     </ClerkProvider>
   );
 }
+
+    

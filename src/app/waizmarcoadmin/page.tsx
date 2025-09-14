@@ -27,20 +27,6 @@ import { Slider } from '@/components/ui/slider';
 
 const CREDIT_PASSWORD = "waizcredit";
 
-const themePresets: Record<string, AppTheme> = {
-    "Default Theme": { primary: "262 80% 56%", background: "240 10% 3.9%", accent: "240 3.7% 15.9%", radius: 0.8 },
-    "Crimson Red": { primary: "0 84.2% 60.2%", background: "240 10% 3.9%", accent: "0 84.2% 60.2%", radius: 0.8 },
-    "Ocean Blue": { primary: "207 90% 54%", background: "222 84% 4.9%", accent: "217 33% 17%", radius: 0.8 },
-    "Forest Green": { primary: "142 76% 36%", background: "142 100% 4%", accent: "142 76% 15%", radius: 0.8 },
-    "Goldenrod Yellow": { primary: "45 100% 51%", background: "45 100% 5%", accent: "45 100% 20%", radius: 0.8 },
-    "Royal Purple": { primary: "262 80% 56%", background: "240 10% 3.9%", accent: "240 3.7% 15.9%", radius: 0.8 },
-    "Electric Lime": { primary: "84 100% 50%", background: "240 10% 3.9%", accent: "84 100% 20%", radius: 0.8 },
-    "Slate Gray": { primary: "215 28% 47%", background: "222 47% 11%", accent: "215 28% 27%", radius: 0.8 },
-    "Cyberpunk Pink": { primary: "316 100% 64%", background: "316 100% 5%", accent: "316 100% 25%", radius: 0.8 },
-    "Mocha Brown": { primary: "30 59% 45%", background: "25 60% 10%", accent: "30 59% 25%", radius: 0.8 },
-}
-
-
 export default function SuperAdminPanelPage() {
   const { 
     isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
@@ -49,7 +35,6 @@ export default function SuperAdminPanelPage() {
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
     resetUserCredits, clearGlobalChat,
-    appTheme, updateAppTheme,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -61,21 +46,6 @@ export default function SuperAdminPanelPage() {
   const [creditAmount, setCreditAmount] = useState(10);
   const [spinAmount, setSpinAmount] = useState(1);
   const [guessAmount, setGuessAmount] = useState(1);
-
-  // State for Theme Management
-  const [themePrimary, setThemePrimary] = useState('262 80% 56%');
-  const [themeBackground, setThemeBackground] = useState('240 10% 3.9%');
-  const [themeAccent, setThemeAccent] = useState('240 3.7% 15.9%');
-  const [themeRadius, setThemeRadius] = useState(0.8);
-
-  useEffect(() => {
-    if (appTheme) {
-        setThemePrimary(appTheme.primary);
-        setThemeBackground(appTheme.background);
-        setThemeAccent(appTheme.accent);
-        setThemeRadius(appTheme.radius);
-    }
-  }, [appTheme]);
   
   
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -176,37 +146,6 @@ export default function SuperAdminPanelPage() {
           toast({ variant: 'destructive', title: 'Decline Failed', description: error.message });
       }
   }
-
-  const handleUpdateTheme = async () => {
-    const newTheme: AppTheme = {
-        primary: themePrimary,
-        background: themeBackground,
-        accent: themeAccent,
-        radius: themeRadius
-    };
-    try {
-        await updateAppTheme(newTheme);
-        const root = document.documentElement;
-        root.style.setProperty('--primary', `hsl(${newTheme.primary})`);
-        root.style.setProperty('--background', `hsl(${newTheme.background})`);
-        root.style.setProperty('--accent', `hsl(${newTheme.accent})`);
-        root.style.setProperty('--radius', `${newTheme.radius}rem`);
-        toast({ title: 'Theme Updated!', description: 'The new theme has been applied globally.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Theme Update Failed', description: error.message });
-    }
-  }
-
-   const applyPreset = (presetName: string) => {
-        const preset = themePresets[presetName];
-        if (preset) {
-            setThemePrimary(preset.primary);
-            setThemeBackground(preset.background);
-            setThemeAccent(preset.accent);
-            setThemeRadius(preset.radius);
-            toast({ title: 'Preset Applied!', description: `"${presetName}" values are ready. Click "Update Global Theme" to save.` });
-        }
-    };
 
   if (!isSuperAdmin) {
     return (
@@ -464,76 +403,6 @@ export default function SuperAdminPanelPage() {
             </Card>
         </AccordionItem>
         
-        {/* Theme Management */}
-        <AccordionItem value="theme-management" className="border-b-0">
-           <Card>
-              <AccordionTrigger className="p-6">
-                <div className="flex items-center gap-3">
-                  <Palette className="h-6 w-6 text-primary" />
-                  <div>
-                    <h3 className="text-lg font-semibold">Theme Management</h3>
-                    <p className="text-sm text-muted-foreground text-left">Customize the look and feel of the app for all users.</p>
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="p-6 pt-0 space-y-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Global Theme Settings</CardTitle>
-                        <CardDescription>Changes will be applied to all users instantly. Use HSL values without 'hsl()' for colors.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="grid md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="theme-primary">Primary Color (HSL)</Label>
-                                <Input id="theme-primary" value={themePrimary} onChange={e => setThemePrimary(e.target.value)} placeholder="e.g. 262 80% 56%"/>
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="theme-background">Background (HSL)</Label>
-                                <Input id="theme-background" value={themeBackground} onChange={e => setThemeBackground(e.target.value)} placeholder="e.g. 240 10% 3.9%"/>
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="theme-accent">Accent (HSL)</Label>
-                                <Input id="theme-accent" value={themeAccent} onChange={e => setThemeAccent(e.target.value)} placeholder="e.g. 240 3.7% 15.9%"/>
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="theme-radius">Border Radius: {themeRadius}rem</Label>
-                            <Slider id="theme-radius" value={[themeRadius]} onValueChange={(v) => setThemeRadius(v[0])} max={1} step={0.1}/>
-                        </div>
-                        <Button onClick={handleUpdateTheme}>
-                            <RefreshCcw className="mr-2 h-4 w-4"/> Update Global Theme
-                        </Button>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Theme Preset Guide</CardTitle>
-                        <CardDescription>Click a preset to apply its colors to the fields above, then save.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Accordion type="single" collapsible className="w-full">
-                            {Object.entries(themePresets).map(([name, theme]) => (
-                                <AccordionItem value={name} key={name}>
-                                    <AccordionTrigger>{name}</AccordionTrigger>
-                                    <AccordionContent>
-                                        <div className="flex items-center justify-between p-2 rounded-lg bg-muted">
-                                            <div className="space-y-1 text-sm">
-                                                <p><b>Primary:</b> {theme.primary}</p>
-                                                <p><b>Background:</b> {theme.background}</p>
-                                                <p><b>Accent:</b> {theme.accent}</p>
-                                            </div>
-                                            <Button onClick={() => applyPreset(name)}>Apply</Button>
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    </CardContent>
-                </Card>
-              </AccordionContent>
-            </Card>
-        </AccordionItem>
 
         {/* Data Management */}
          <AccordionItem value="data-management" className="border-b-0">
@@ -583,3 +452,5 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
+
+    

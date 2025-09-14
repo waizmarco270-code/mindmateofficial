@@ -136,7 +136,7 @@
   }
    .admin-badge > svg {
       @apply text-green-300;
-  }
+   }
 
   .bg-grid-slate-800 {
     background-image: linear-gradient(white 1px, transparent 1px),
@@ -174,3 +174,5 @@
   .particle:nth-child(11) { left: 33%; top: 33%; width: 2px; height: 2px; animation: move 12s linear infinite; animation-delay: -11s; }
   .particle:nth-child(12) { left: 66%; top: 66%; width: 1px; height: 1px; animation: move 17s linear infinite; animation-delay: -12s; }
 }
+
+    
