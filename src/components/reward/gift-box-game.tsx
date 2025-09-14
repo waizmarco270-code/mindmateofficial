@@ -10,9 +10,9 @@ import { Button } from '../ui/button';
 import { useToast } from '@/hooks/use-toast';
 
 const LEVEL_CONFIG = {
-    1: { cards: 4 },
-    2: { cards: 6 },
-    3: { cards: 8 },
+    1: { cards: 4, grid: 'grid-cols-2' },
+    2: { cards: 6, grid: 'grid-cols-3' },
+    3: { cards: 8, grid: 'grid-cols-4' },
 };
 type Level = keyof typeof LEVEL_CONFIG;
 
@@ -77,8 +77,8 @@ export function CardFlipGame() {
         setGameState('revealed');
 
         if (isWin) {
-            setLastPrize(prize);
-            await playCardFlip(true, prize);
+            setLastPrize(prize as number);
+            await playCardFlip(true, prize as number);
         } else {
             setLastPrize(null);
             await playCardFlip(false, 0); // Loss, no prize
@@ -101,7 +101,8 @@ export function CardFlipGame() {
     }
     
     const renderCard = (cardValue: number | 'lose', index: number) => {
-        const isRevealed = gameState === 'revealed';
+        const isRevealed = selectedCardIndex !== null;
+        const isSelected = selectedCardIndex === index;
         const isWin = cardValue !== 'lose';
 
         return (
@@ -116,8 +117,8 @@ export function CardFlipGame() {
                 <motion.button
                     onClick={() => handleCardClick(index)}
                     disabled={gameState !== 'playing'}
-                    className="relative w-24 h-36 rounded-lg shadow-lg transition-transform duration-500 preserve-3d"
-                    animate={{ rotateY: isRevealed ? 180 : 0 }}
+                    className="relative w-full aspect-square rounded-lg shadow-lg transition-transform duration-500 preserve-3d"
+                    animate={{ rotateY: isSelected ? 180 : 0 }}
                 >
                     {/* Card Back */}
                     <div className={cn(
@@ -125,7 +126,7 @@ export function CardFlipGame() {
                          gameState === 'playing' && "cursor-pointer hover:scale-105 transition-transform"
                      )}>
                          <div className="w-full h-full bg-slate-800 rounded-md flex items-center justify-center">
-                            <Layers className="h-12 w-12 text-primary animate-pulse" />
+                            <Layers className="h-10 w-10 text-primary animate-pulse" />
                         </div>
                     </div>
                     {/* Card Front */}
@@ -135,12 +136,12 @@ export function CardFlipGame() {
                     )}>
                         {isWin ? (
                             <>
-                                <Sparkles className="h-8 w-8" />
-                                <p className="text-3xl font-bold mt-2">{cardValue}</p>
+                                <Sparkles className="h-6 w-6" />
+                                <p className="text-2xl font-bold mt-1">{cardValue}</p>
                                 <p className="text-xs font-semibold">CREDITS</p>
                             </>
                         ) : (
-                            <X className="h-12 w-12"/>
+                            <X className="h-10 w-10"/>
                         )}
                     </div>
                 </motion.button>
@@ -176,16 +177,16 @@ export function CardFlipGame() {
                             </motion.div>
                         ) : (
                              <motion.div key="playing" className="flex flex-col items-center w-full">
-                                 <div className="mb-4 text-center">
+                                 <div className="mb-6 text-center">
                                     <h3 className="text-lg font-bold">Level {level}</h3>
                                     <p className="text-sm text-muted-foreground">Select one of the {LEVEL_CONFIG[level].cards} cards.</p>
                                 </div>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 gap-4 justify-center">
+                                <div className={cn("grid gap-4 justify-center w-full", LEVEL_CONFIG[level].grid)}>
                                     {cards.map(renderCard)}
                                 </div>
                                  {gameState === 'revealed' && (
                                      <div className="mt-6 animate-in fade-in-50">
-                                        {lastPrize ? (
+                                        {lastPrize !== null ? (
                                             level < 3 ? (
                                                 <Button onClick={handleNextLevel}>
                                                     <Trophy className="mr-2 h-4 w-4"/> Advance to Level {level + 1}

@@ -113,8 +113,8 @@ export const useRewards = () => {
     const generateCardFlipPrize = useCallback(() => {
         const rand = Math.random() * 100;
         if (rand < 2) return 100; // 2% chance for 100 credits
-        if (rand < 10) return Math.floor(Math.random() * 41) + 10; // 8% chance for 10-50 credits
-        return Math.floor(Math.random() * 9) + 1; // 90% chance for 1-9 credits
+        if (rand < 10) return Math.floor(Math.random() * 5) + 5; // 8% chance for 5-9 credits
+        return Math.floor(Math.random() * 4) + 1; // 90% chance for 1-4 credits
     }, []);
 
     const playCardFlip = useCallback(async (isWin: boolean, prizeAmount: number) => {
