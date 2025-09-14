@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { TodoList } from '@/components/todos/todo-list';
@@ -26,7 +27,7 @@ export default function TodosPage() {
       <Card>
         <CardHeader>
           <CardTitle>My Daily Checklist</CardTitle>
-          <CardDescription>Add your tasks for the day. Complete them all to earn a credit!</CardDescription>
+          <CardDescription>Add your tasks for the day. Complete tasks to unlock a daily credit reward!</CardDescription>
         </CardHeader>
         <CardContent>
           <TodoList />

@@ -31,7 +31,8 @@ export interface User {
   isVip?: boolean; // For the special recognition badge
   friends?: string[]; // Array of friend UIDs
   focusSessionsCompleted?: number;
-  dailyTasksCompleted?: number;
+  dailyTasksCompleted?: number; // Total count over all time
+  lastDailyTasksClaim?: string; // YYYY-MM-DD, for per-day reward claim
   totalStudyTime?: number; // in seconds
   lastRewardDate?: string; // For scratch card
   lastGiftBoxDate?: string; // For gift box game
@@ -129,7 +130,7 @@ interface AppDataContextType {
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string) => Promise<void>;
-    incrementDailyTasksCompleted: (uid: string) => Promise<void>;
+    claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
     updateGameHighScore: (uid: string, game: 'memoryGame', score: number) => Promise<void>;
     makeUserAdmin: (uid: string) => Promise<void>;
@@ -485,10 +486,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { focusSessionsCompleted: increment(1) });
     }
 
-    const incrementDailyTasksCompleted = async (uid: string) => {
-        if(!uid) return;
+    const claimDailyTaskReward = async (uid: string, amount: number) => {
+        if(!uid || amount <= 0) return;
         const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, { dailyTasksCompleted: increment(1) });
+        await updateDoc(userDocRef, { 
+            credits: increment(amount),
+            dailyTasksCompleted: increment(1),
+            lastDailyTasksClaim: format(new Date(), 'yyyy-MM-dd')
+        });
     }
     
     const updateStudyTime = async (uid: string, totalSeconds: number) => {
@@ -628,7 +633,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addPerfectedQuiz,
         incrementQuizAttempt,
         incrementFocusSessions,
-        incrementDailyTasksCompleted,
+        claimDailyTaskReward,
         updateStudyTime,
         updateGameHighScore,
         makeUserAdmin,

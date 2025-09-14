@@ -1,18 +1,24 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Edit, Flag, Calendar as CalendarIcon } from 'lucide-react';
+import { Plus, Trash2, Edit, Flag, Calendar as CalendarIcon, Award, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, isPast, startOfToday } from 'date-fns';
+import { format, isPast } from 'date-fns';
+import { useUser } from '@clerk/nextjs';
+import { db } from '@/lib/firebase';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, where, addDoc } from 'firebase/firestore';
+import { useUsers } from '@/hooks/use-admin';
+import { useToast } from '@/hooks/use-toast';
 
 export type TaskPriority = 'high' | 'medium' | 'low';
 
@@ -22,71 +28,87 @@ export interface Task {
   completed: boolean;
   priority: TaskPriority;
   deadline?: string; // ISO string date
+  createdAt: string; // ISO string date
 }
 
 export function TodoList() {
+  const { user } = useUser();
+  const { currentUserData, claimDailyTaskReward } = useUsers();
+  const { toast } = useToast();
+  
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isClaiming, setIsClaiming] = useState(false);
+
+  // Form state
   const [newTaskText, setNewTaskText] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('low');
   const [newTaskDeadline, setNewTaskDeadline] = useState<Date | undefined>(undefined);
   
+  // Edit dialog state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
-
-  // State for the editing dialog
   const [editTaskText, setEditTaskText] = useState('');
   const [editTaskPriority, setEditTaskPriority] = useState<TaskPriority>('low');
   const [editTaskDeadline, setEditTaskDeadline] = useState<Date | undefined>(undefined);
 
+  // Daily Tasks from Firestore
   useEffect(() => {
-    try {
-        const storedTasks = localStorage.getItem('dailyTasks');
-        if (storedTasks) {
-            const parsedTasks = JSON.parse(storedTasks);
-            const tasksWithPriority = parsedTasks.map((t: any) => ({
-                ...t, 
-                id: t.id.toString(), 
-                priority: t.priority || 'low',
-                deadline: t.deadline
-            }));
-            setTasks(tasksWithPriority);
-        }
-    } catch (error) {
-        console.error("Failed to parse tasks from localStorage", error);
+    if (!user) {
+        setLoading(false);
+        return;
     }
-  }, []);
+    setLoading(true);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-  useEffect(() => {
-      localStorage.setItem('dailyTasks', JSON.stringify(tasks));
-  }, [tasks]);
+    const tasksColRef = collection(db, 'users', user.id, 'dailyTasks');
+    const q = query(tasksColRef, where('createdAt', '>=', today.toISOString()), orderBy('createdAt', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const fetchedTasks = snapshot.docs.map(doc => doc.data() as Task);
+        setTasks(fetchedTasks);
+        setLoading(false);
+    }, (error) => {
+        console.error("Error fetching tasks: ", error);
+        setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
 
-  const handleAddTask = (e: React.FormEvent) => {
+  const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (newTaskText.trim() === '') return;
-    const newTask: Task = {
-      id: Date.now().toString(),
+    if (newTaskText.trim() === '' || !user) return;
+    
+    const newTask: Omit<Task, 'id'> = {
       text: newTaskText,
       completed: false,
       priority: newTaskPriority,
       deadline: newTaskDeadline?.toISOString(),
+      createdAt: new Date().toISOString(),
     };
-    setTasks([newTask, ...tasks]);
+    
+    const tasksColRef = collection(db, 'users', user.id, 'dailyTasks');
+    const newDocRef = doc(tasksColRef); // Auto-generate ID
+    await setDoc(newDocRef, { ...newTask, id: newDocRef.id });
+
     setNewTaskText('');
     setNewTaskPriority('low');
     setNewTaskDeadline(undefined);
   };
 
-  const toggleTask = (id: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === id ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const toggleTask = async (task: Task) => {
+    if (!user) return;
+    const taskDocRef = doc(db, 'users', user.id, 'dailyTasks', task.id);
+    await setDoc(taskDocRef, { ...task, completed: !task.completed }, { merge: true });
   };
 
-  const deleteTask = (id: string) => {
-    setTasks(tasks.filter((task) => task.id !== id));
+  const deleteTask = async (id: string) => {
+    if (!user) return;
+    const taskDocRef = doc(db, 'users', user.id, 'dailyTasks', id);
+    await deleteDoc(taskDocRef);
   };
   
   const openEditDialog = (task: Task) => {
@@ -97,11 +119,17 @@ export function TodoList() {
     setIsEditDialogOpen(true);
   }
 
-  const handleSaveEditedTask = (e: React.FormEvent) => {
+  const handleSaveEditedTask = async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!editingTask) return;
+      if (!editingTask || !user) return;
 
-      setTasks(tasks.map(t => t.id === editingTask.id ? { ...t, text: editTaskText, priority: editTaskPriority, deadline: editTaskDeadline?.toISOString() } : t));
+      const taskDocRef = doc(db, 'users', user.id, 'dailyTasks', editingTask.id);
+      await setDoc(taskDocRef, { 
+        ...editingTask, 
+        text: editTaskText, 
+        priority: editTaskPriority, 
+        deadline: editTaskDeadline?.toISOString() 
+      }, { merge: true });
       
       setEditingTask(null);
       setIsEditDialogOpen(false);
@@ -110,18 +138,51 @@ export function TodoList() {
   const sortedTasks = useMemo(() => {
       return [...tasks].sort((a, b) => {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
-        
         const priorityOrder: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 };
         if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
             return priorityOrder[a.priority] - priorityOrder[b.priority];
         }
-
-        // Sort by deadline if priorities are the same
         const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Infinity;
         const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Infinity;
         return aDeadline - bDeadline;
       })
   }, [tasks]);
+
+    const { completedCount, reward, canClaim, hasClaimedToday } = useMemo(() => {
+        const completed = tasks.filter(t => t.completed).length;
+        let calculatedReward = 0;
+        if (completed >= 10) calculatedReward = 5;
+        else if (completed >= 5) calculatedReward = 3;
+        else if (completed >= 3) calculatedReward = 1;
+        
+        const todayStr = format(new Date(), 'yyyy-MM-dd');
+        const claimed = currentUserData?.lastDailyTasksClaim === todayStr;
+
+        return {
+            completedCount: completed,
+            reward: calculatedReward,
+            canClaim: completed >= 3 && !claimed,
+            hasClaimedToday: claimed
+        };
+    }, [tasks, currentUserData]);
+    
+    const handleClaimReward = async () => {
+        if (!user || !canClaim || reward <= 0) return;
+        setIsClaiming(true);
+        try {
+            await claimDailyTaskReward(user.id, reward);
+            toast({
+                title: "Reward Claimed!",
+                description: `You've earned ${reward} credits for your hard work today!`,
+                className: "bg-green-500/10 border-green-500/50"
+            });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Claim Failed", description: error.message });
+        } finally {
+            setIsClaiming(false);
+        }
+    };
+
 
   const priorityClasses: Record<TaskPriority, { bg: string, text: string, ring: string }> = {
     high: { bg: 'bg-red-500', text: 'text-red-500', ring: 'ring-red-500/50' },
@@ -137,9 +198,10 @@ export function TodoList() {
                 value={newTaskText}
                 onChange={(e) => setNewTaskText(e.target.value)}
                 className="flex-1"
+                disabled={!user}
             />
             <div className="flex w-full sm:w-auto gap-2">
-                <Select value={newTaskPriority} onValueChange={(v: TaskPriority) => setNewTaskPriority(v)}>
+                <Select value={newTaskPriority} onValueChange={(v: TaskPriority) => setNewTaskPriority(v)} disabled={!user}>
                     <SelectTrigger className="w-full sm:w-[130px]">
                         <SelectValue placeholder="Set priority" />
                     </SelectTrigger>
@@ -151,7 +213,7 @@ export function TodoList() {
                 </Select>
                  <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon" className={cn("shrink-0", newTaskDeadline && "text-primary")}>
+                        <Button variant="outline" size="icon" className={cn("shrink-0", newTaskDeadline && "text-primary")} disabled={!user}>
                             <CalendarIcon className="h-4 w-4" />
                         </Button>
                     </PopoverTrigger>
@@ -159,14 +221,16 @@ export function TodoList() {
                         <Calendar mode="single" selected={newTaskDeadline} onSelect={setNewTaskDeadline} initialFocus />
                     </PopoverContent>
                 </Popover>
-                <Button type="submit" disabled={!newTaskText.trim()}>
+                <Button type="submit" disabled={!newTaskText.trim() || !user}>
                     <Plus className="mr-2 h-4 w-4" /> Add
                 </Button>
             </div>
         </form>
 
       <div className="space-y-3">
-        {tasks.length === 0 ? (
+        {loading ? (
+            <div className="text-muted-foreground text-center py-4"><Loader2 className="h-6 w-6 animate-spin mx-auto"/></div>
+        ) : tasks.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">No tasks for today. Add one to get started!</p>
         ) : (
             sortedTasks.map((task) => {
@@ -184,7 +248,7 @@ export function TodoList() {
                             <Checkbox
                             id={`task-${task.id}`}
                             checked={task.completed}
-                            onCheckedChange={() => toggleTask(task.id)}
+                            onCheckedChange={() => toggleTask(task)}
                             aria-label={`Mark task "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
                             className={cn("h-5 w-5 rounded-full", priorityClasses[task.priority].ring)}
                             />
@@ -227,6 +291,16 @@ export function TodoList() {
             })
         )}
       </div>
+
+       <div className="mt-8 border-t pt-6 text-center space-y-4">
+            <h3 className="font-semibold">Daily Task Bonus</h3>
+            <p className="text-sm text-muted-foreground">Complete tasks to earn credits. You have completed {completedCount} task{completedCount !== 1 && 's'} today.</p>
+            <Button onClick={handleClaimReward} disabled={!canClaim || isClaiming} className="w-full max-w-xs mx-auto" size="lg">
+                {isClaiming ? <Loader2 className="animate-spin mr-2"/> : <Award className="mr-2 h-5 w-5"/>}
+                {hasClaimedToday ? "Reward Claimed for Today" : `Claim +${reward} Credits`}
+            </Button>
+        </div>
+
 
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
             <DialogContent>
@@ -283,4 +357,3 @@ export function TodoList() {
     </div>
   );
 }
-
