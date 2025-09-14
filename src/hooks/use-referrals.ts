@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, writeBatch, serverTimestamp, addDoc, Timestamp } from 'firebase/firestore';
+import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, writeBatch, serverTimestamp, addDoc, Timestamp, increment } from 'firebase/firestore';
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
 
@@ -96,7 +96,7 @@ export const useReferrals = () => {
         const batch = writeBatch(db);
         
         // Grant credits to the referrer
-        batch.update(referrerRef, { credits: 50 });
+        batch.update(referrerRef, { credits: increment(50) });
         // Mark referral as completed
         batch.update(referralRef, { status: 'completed' });
 
