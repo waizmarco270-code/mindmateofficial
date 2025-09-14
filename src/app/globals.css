@@ -193,24 +193,8 @@
   .rainbow-border-card {
     --angle: 0deg;
     position: relative;
-    border-width: 2px;
-    border-style: solid;
-    border-color: transparent;
-    background-clip: padding-box;
-    background-color: hsl(var(--card));
-  }
-
-  .rainbow-border-card::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: -1;
-    margin: -2px; /* same as border-width */
-    border-radius: inherit;
-    background: conic-gradient(from var(--angle), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff, #ff0000);
+    border: 2px solid;
+    border-image: conic-gradient(from var(--angle), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff, #ff0000) 1;
     animation: rotate-angle 4s linear infinite;
   }
 }
