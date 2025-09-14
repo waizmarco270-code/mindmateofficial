@@ -41,6 +41,7 @@ const DAILY_MILESTONES = {
     25: 200,
     30: 500,
     40: 1000,
+    50: 10000,
 };
 type Milestone = keyof typeof DAILY_MILESTONES;
 
@@ -291,7 +292,7 @@ export function MemoryPatternGame() {
                             {Object.entries(DAILY_MILESTONES).map(([level, credit]) => (
                                 <li key={level} className={cn("flex justify-between p-2 rounded-md bg-muted/50", dailyMilestonesReached.includes(Number(level) as Milestone) && "line-through text-muted-foreground/70")}>
                                     <span>Reach Level {level}</span>
-                                    <span className="font-bold text-primary">+{credit} Credit{credit > 1 ? 's' : ''}</span>
+                                    <span className="font-bold text-primary">+{credit.toLocaleString()} Credit{credit > 1 ? 's' : ''}</span>
                                 </li>
                             ))}
                         </ul>
@@ -302,3 +303,5 @@ export function MemoryPatternGame() {
         </div>
     )
 }
+
+    
