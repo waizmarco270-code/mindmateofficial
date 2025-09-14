@@ -71,7 +71,7 @@ const EMOJI_LEVELS = [
 ];
 
 const WEEKLY_MILESTONES: Record<number, number> = {
-    5: 1, 10: 2, 15: 5, 20: 10, 25: 15, 30: 20, 40: 50, 50: 100,
+    5: 2, 10: 4, 15: 10, 20: 20, 25: 30, 30: 40, 40: 60, 50: 100,
 };
 const MAX_MISTAKES = 3;
 
