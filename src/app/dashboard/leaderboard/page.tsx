@@ -217,12 +217,12 @@ export default function LeaderboardPage() {
             'entertainment': 'High Score'
         }[activeTab];
         
-        const CardComponent = activeTab === 'weekly' ? 'button' : 'div';
+        const CardWrapper = activeTab === 'weekly' ? 'button' : 'div';
 
         if (rank === 0) { // First Place
             return (
-                <Card asChild className={cn(activeTab === 'weekly' && 'cursor-pointer hover:shadow-yellow-500/40 transition-shadow')}>
-                     <CardComponent onClick={activeTab === 'weekly' ? () => setSelectedUserForDetails(user) : undefined} className="w-full border-2 border-yellow-400 bg-yellow-500/5 shadow-2xl shadow-yellow-500/20 text-left">
+                 <CardWrapper onClick={activeTab === 'weekly' ? () => setSelectedUserForDetails(user) : undefined} className={cn(activeTab === 'weekly' && 'cursor-pointer hover:shadow-yellow-500/40 transition-shadow', "w-full text-left rounded-lg")}>
+                    <Card className="w-full border-2 border-yellow-400 bg-yellow-500/5 shadow-2xl shadow-yellow-500/20">
                          <CardHeader className="text-center p-6">
                             <div className="relative w-24 h-24 mx-auto">
                                 <Trophy className="absolute -top-2 -left-2 h-8 w-8 text-yellow-400 -rotate-12" />
@@ -252,8 +252,8 @@ export default function LeaderboardPage() {
                             <p className="text-xs text-muted-foreground">{scoreLabel}</p>
                             {renderUserStats(user)}
                          </CardContent>
-                    </CardComponent>
-                </Card>
+                    </Card>
+                </CardWrapper>
             )
         }
         
@@ -266,8 +266,8 @@ export default function LeaderboardPage() {
         if (!placeDetails) return null;
 
         return (
-            <Card asChild className={cn(activeTab === 'weekly' && 'cursor-pointer hover:bg-muted transition-colors')}>
-                <CardComponent onClick={activeTab === 'weekly' ? () => setSelectedUserForDetails(user) : undefined} className="w-full text-left">
+             <CardWrapper onClick={activeTab === 'weekly' ? () => setSelectedUserForDetails(user) : undefined} className={cn(activeTab === 'weekly' && 'cursor-pointer hover:bg-muted transition-colors', "w-full text-left rounded-lg")}>
+                <Card className="w-full">
                      <CardContent className="p-4 flex flex-col gap-2">
                         <div className="flex items-center gap-4">
                             <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
@@ -297,8 +297,8 @@ export default function LeaderboardPage() {
                         <Separator />
                         {renderUserStats(user)}
                     </CardContent>
-                </CardComponent>
-            </Card>
+                </Card>
+            </CardWrapper>
         )
     }
 
@@ -378,7 +378,7 @@ export default function LeaderboardPage() {
                         <div className="py-4 space-y-4">
                             <div className="flex items-center gap-4">
                                 <Avatar className="h-16 w-16">
-                                    <AvatarImage src={selectedUserForDetails.photoURL} />
+                                    <AvatarImage src={selectedUserForDetails.photoURL ?? undefined} />
                                     <AvatarFallback>{selectedUserForDetails.displayName.charAt(0)}</AvatarFallback>
                                 </Avatar>
                                 <div>
@@ -449,10 +449,10 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                         {restOfUsers.map((user: UserWithStats, index: number) => {
                             const rank = index + 4;
                             const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
-                            const CardComponent = activeTab === 'weekly' ? 'button' : 'div';
+                            const CardWrapper = activeTab === 'weekly' ? 'button' : 'div';
                             return (
-                                <Card asChild key={user.uid} className={cn("overflow-hidden text-left", currentUser?.id === user.uid && 'border-primary', activeTab === 'weekly' && 'cursor-pointer hover:bg-muted/50')}>
-                                    <CardComponent onClick={activeTab === 'weekly' ? () => onUserClick(user) : undefined}>
+                                <CardWrapper key={user.uid} onClick={activeTab === 'weekly' ? () => onUserClick(user) : undefined} className={cn("overflow-hidden text-left rounded-lg", currentUser?.id === user.uid && 'border border-primary', activeTab === 'weekly' && 'cursor-pointer hover:bg-muted/50 w-full')}>
+                                    <Card>
                                         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:gap-4">
                                             <div className="flex items-center gap-4 flex-1">
                                                 <p className="font-bold text-lg text-muted-foreground w-8 text-center">{rank}</p>
@@ -485,8 +485,8 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                                 {renderUserStats(user)}
                                             </div>
                                         </CardContent>
-                                    </CardComponent>
-                                </Card>
+                                    </Card>
+                                </CardWrapper>
                             )
                         })}
                         {sortedUsers.length === 0 && (
