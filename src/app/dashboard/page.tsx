@@ -123,7 +123,7 @@ export default function DashboardPage() {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
 
-             <div className="relative h-[220px] mb-8 overflow-hidden" onClick={handleFlip}>
+             <div className="relative h-[250px] mb-8 overflow-hidden" onClick={handleFlip}>
                  <AnimatePresence initial={false}>
                     {!isShowingPoll ? (
                         <motion.div
