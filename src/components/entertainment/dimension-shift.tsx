@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
@@ -152,14 +151,14 @@ export function DimensionShiftGame() {
             dimension: dimension,
         };
         
-        // Level 11+: Moving obstacles
+        // Level 2+: Moving obstacles
         if(level >= 2) {
              if (Math.random() < 0.3) { // 30% chance to be a moving obstacle
                 newObstacle.dx = (Math.random() - 0.5) * 2; // -1 to 1
              }
         }
         
-        // Level 21+: Blinking obstacles
+        // Level 3+: Blinking obstacles
         if(level >= 3) {
             if (Math.random() < 0.2) { // 20% chance to be a blinking obstacle
                 newObstacle.isVisible = true;
