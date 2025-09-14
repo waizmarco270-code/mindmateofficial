@@ -190,16 +190,18 @@
   .particle:nth-child(11) { left: 33%; top: 33%; width: 2px; height: 2px; animation: move 12s linear infinite; animation-delay: -11s; }
   .particle:nth-child(12) { left: 66%; top: 66%; width: 1px; height: 1px; animation: move 17s linear infinite; animation-delay: -12s; }
 
-  .card-front, .card-back {
+  .rainbow-border-card {
     --angle: 0deg;
     position: relative;
-    border: 2px solid transparent;
+    border-width: 2px;
+    border-style: solid;
+    border-color: transparent;
     border-radius: var(--radius);
     background-clip: padding-box;
     background-color: hsl(var(--card));
   }
 
-  .card-front::before, .card-back::before {
+  .rainbow-border-card::before {
     content: "";
     position: absolute;
     top: 0;

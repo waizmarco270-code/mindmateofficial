@@ -55,8 +55,7 @@ export function CommunityPoll() {
   const hasVoted = !!userVote;
 
   return (
-    <Card className="relative h-full card-back overflow-hidden">
-      <div className="relative h-full bg-background rounded-lg flex flex-col">
+    <Card className="rainbow-border-card h-full">
       <CardHeader>
         <div className="flex justify-between items-start">
             <div>
@@ -110,7 +109,6 @@ export function CommunityPoll() {
           })}
         </div>
       </CardContent>
-      </div>
     </Card>
   );
 }

@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
 import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 import { TypingAnimation } from '@/components/dashboard/typing-animation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const features = [
   {
@@ -74,7 +74,7 @@ export default function DashboardPage() {
     const { announcements } = useAnnouncements();
     const { currentUserData } = useUsers();
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
-    const [isFlipped, setIsFlipped] = useState(false);
+    const [isShowingPoll, setIsShowingPoll] = useState(false);
     
     const credits = currentUserData?.credits ?? 0;
 
@@ -84,7 +84,7 @@ export default function DashboardPage() {
     };
 
     const handleFlip = () => {
-        setIsFlipped(!isFlipped);
+        setIsShowingPoll(!isShowingPoll);
     }
 
   return (
@@ -123,47 +123,49 @@ export default function DashboardPage() {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
 
-             <div className="relative group min-h-[220px] mb-8" style={{ perspective: 1000 }}>
-                 <motion.div
-                    className="relative w-full h-full cursor-pointer"
-                    style={{ transformStyle: 'preserve-3d' }}
-                    animate={{ rotateY: isFlipped ? 180 : 0 }}
-                    transition={{ duration: 0.6 }}
-                    onClick={handleFlip}
-                >
-                    {/* Front of the Card: Announcement */}
-                     <motion.div
-                        className="absolute w-full h-full card-front"
-                        style={{ backfaceVisibility: 'hidden' }}
-                    >
-                        <Card className="relative h-full overflow-hidden">
-                            <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
-                                <div className="p-3 rounded-full bg-primary/10">
-                                    <Bell className="h-8 w-8 text-primary" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-xl text-primary">Latest Announcement</CardTitle>
-                                    <CardDescription>Don't miss out on important updates.</CardDescription>
-                                </div>
-                                <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
-                            </CardHeader>
-                            <CardContent className="p-4 md:p-6 pt-0">
-                                <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                                <div className="text-muted-foreground mt-2 min-h-[40px]">
-                                   <TypingAnimation text={latestAnnouncement.description} />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-
-                    {/* Back of the Card: Poll */}
-                     <motion.div
-                        className="absolute w-full h-full"
-                        style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-                    >
-                        <CommunityPoll />
-                    </motion.div>
-                 </motion.div>
+             <div className="relative h-[220px] mb-8 overflow-hidden" onClick={handleFlip}>
+                 <AnimatePresence initial={false}>
+                    {!isShowingPoll ? (
+                        <motion.div
+                            key="announcement"
+                            className="absolute w-full h-full"
+                            initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                            transition={{ duration: 0.5, ease: 'easeInOut' }}
+                        >
+                            <Card className="rainbow-border-card h-full">
+                                <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
+                                    <div className="p-3 rounded-full bg-primary/10">
+                                        <Bell className="h-8 w-8 text-primary" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className="text-xl text-primary">Latest Announcement</CardTitle>
+                                        <CardDescription>Don't miss out on important updates.</CardDescription>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
+                                </CardHeader>
+                                <CardContent className="p-4 md:p-6 pt-0">
+                                    <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
+                                    <div className="text-muted-foreground mt-2 min-h-[40px]">
+                                       <TypingAnimation text={latestAnnouncement.description} />
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    ) : (
+                         <motion.div
+                            key="poll"
+                            className="absolute w-full h-full"
+                             initial={{ x: '100%' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-100%' }}
+                             transition={{ duration: 0.5, ease: 'easeInOut' }}
+                        >
+                            <CommunityPoll />
+                        </motion.div>
+                    )}
+                 </AnimatePresence>
              </div>
             
             <div className="space-y-4">
