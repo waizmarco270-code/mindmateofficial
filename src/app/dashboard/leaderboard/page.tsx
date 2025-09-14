@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -15,6 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
 import { startOfWeek, endOfWeek, parseISO, isWithinInterval } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 
 const LEADERBOARD_EXCLUDED_UIDS: string[] = [];
@@ -289,14 +291,36 @@ export default function LeaderboardPage() {
                 </TabsContent>
                 <TabsContent value="weekly" className="mt-6 space-y-6">
                     <Card>
-                        <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-center gap-4 text-center">
-                            <Clock className="h-8 w-8 text-primary" />
-                            <div>
-                                <h4 className="font-semibold text-lg">Weekly Leaderboard</h4>
-                                <p className="text-muted-foreground text-sm">This leaderboard resets every Monday. The ranking is based on total study time this week.</p>
+                        <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4 text-center">
+                           <div className="flex items-center gap-4">
+                                <Clock className="h-8 w-8 text-primary" />
+                                <div>
+                                    <h4 className="font-semibold text-lg text-left">Weekly Leaderboard</h4>
+                                    <p className="text-muted-foreground text-sm text-left">This leaderboard resets every Monday. The ranking is based on total study time this week.</p>
+                                </div>
                             </div>
-                            <div className="font-mono text-xl sm:text-2xl font-bold bg-muted px-4 py-2 rounded-lg">
-                                Resets in: {timeLeft}
+                            <div className="flex items-center gap-4">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button variant="outline" size="sm" className="text-xs text-muted-foreground">
+                                            <Info className="mr-2 h-4 w-4" /> Tap for reward info
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="max-w-xs">
+                                        <div className="space-y-3">
+                                            <h4 className="font-bold text-base flex items-center gap-2"><Trophy className="h-5 w-5 text-amber-500" /> Weekly Rewards</h4>
+                                            <p className="text-sm text-muted-foreground">At the end of the week, the top 3 performers on this leaderboard will receive bonus credits!</p>
+                                            <ul className="space-y-2 text-sm">
+                                                <li className="flex items-center justify-between font-medium"><span className="flex items-center gap-2"><Trophy className="h-4 w-4 text-yellow-400"/> 1st Place</span> <span className="font-bold text-primary">+200 Credits</span></li>
+                                                <li className="flex items-center justify-between font-medium"><span className="flex items-center gap-2"><Medal className="h-4 w-4 text-slate-400"/> 2nd Place</span> <span className="font-bold text-primary">+100 Credits</span></li>
+                                                <li className="flex items-center justify-between font-medium"><span className="flex items-center gap-2"><Award className="h-4 w-4 text-amber-700"/> 3rd Place</span> <span className="font-bold text-primary">+50 Credits</span></li>
+                                            </ul>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                                <div className="font-mono text-xl sm:text-2xl font-bold bg-muted px-4 py-2 rounded-lg">
+                                    Resets in: {timeLeft}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
