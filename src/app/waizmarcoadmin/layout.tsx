@@ -2,7 +2,7 @@
 
 'use client';
 
-import { AppDataProvider } from "../hooks/use-admin";
+import { AppDataProvider } from "@/hooks/use-admin";
 
 // This is the root layout for the secret admin page.
 // It's separate from the main dashboard layout.
