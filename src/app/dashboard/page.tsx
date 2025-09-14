@@ -12,6 +12,7 @@ import { CommunityPoll } from '@/components/dashboard/community-poll';
 import { cn } from '@/lib/utils';
 import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
 import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
+import { TypingAnimation } from '@/components/dashboard/typing-animation';
 
 const features = [
   {
@@ -72,6 +73,7 @@ export default function DashboardPage() {
     const { announcements } = useAnnouncements();
     const { currentUserData } = useUsers();
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
+    const [isTypingAnimationDone, setIsTypingAnimationDone] = useState(false);
     
     const credits = currentUserData?.credits ?? 0;
 
@@ -117,7 +119,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
             <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-                <Card className="relative">
+                <Card className="relative" onClick={() => setIsTypingAnimationDone(true)} >
                     <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
                         <div className="p-3 rounded-full bg-primary/20 animate-pulse">
                             <Bell className="h-8 w-8 text-primary" />
@@ -129,9 +131,13 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent className="p-4 md:p-6 pt-0">
                         <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                        <p className="text-muted-foreground mt-2">
-                        {latestAnnouncement.description}
-                        </p>
+                        <div className="text-muted-foreground mt-2 min-h-[40px]">
+                           {isTypingAnimationDone ? (
+                             <p>{latestAnnouncement.description}</p>
+                           ) : (
+                             <TypingAnimation text={latestAnnouncement.description} />
+                           )}
+                        </div>
                     </CardContent>
                 </Card>
             </div>
