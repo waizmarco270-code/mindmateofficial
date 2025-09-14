@@ -56,12 +56,11 @@ export function CardFlipGame() {
         setupLevel();
     }, [level, setupLevel]);
     
-    // Reset the component state if the user's daily play status changes
     useEffect(() => {
         if (canPlayCardFlip) {
             setLevel(1);
             setGameState('playing');
-            setupLevel(); // Recalculate cards for level 1
+            setupLevel();
         } else {
             setGameState('ended');
         }
@@ -81,7 +80,7 @@ export function CardFlipGame() {
             await playCardFlip(true, prize as number);
         } else {
             setLastPrize(null);
-            await playCardFlip(false, 0); // Loss, no prize
+            await playCardFlip(false, 0);
             setTimeout(() => setGameState('ended'), 2000);
         }
     };
@@ -90,7 +89,6 @@ export function CardFlipGame() {
         if (level < 3) {
             setLevel(prev => (prev + 1) as Level);
         } else {
-            // Completed all levels
             toast({
                 title: "Challenge Complete!",
                 description: "You've beaten all levels for today. What a legend!",
@@ -101,7 +99,6 @@ export function CardFlipGame() {
     }
     
     const renderCard = (cardValue: number | 'lose', index: number) => {
-        const isRevealed = selectedCardIndex !== null;
         const isSelected = selectedCardIndex === index;
         const isWin = cardValue !== 'lose';
 
@@ -117,8 +114,9 @@ export function CardFlipGame() {
                 <motion.button
                     onClick={() => handleCardClick(index)}
                     disabled={gameState !== 'playing'}
-                    className="relative w-full aspect-square rounded-lg shadow-lg transition-transform duration-500 preserve-3d"
+                    className="relative w-full aspect-square rounded-lg shadow-lg preserve-3d"
                     animate={{ rotateY: isSelected ? 180 : 0 }}
+                    transition={{ duration: 0.6 }}
                 >
                     {/* Card Back */}
                     <div className={cn(
@@ -130,10 +128,13 @@ export function CardFlipGame() {
                         </div>
                     </div>
                     {/* Card Front */}
-                     <div className={cn(
-                        "absolute inset-0 w-full h-full rounded-lg backface-hidden flex flex-col items-center justify-center p-2 text-white rotate-y-180",
-                        isWin ? "bg-gradient-to-br from-yellow-400 to-amber-600" : "bg-gradient-to-br from-slate-600 to-gray-800"
-                    )}>
+                     <motion.div 
+                        initial={{ rotateY: 180 }}
+                        className={cn(
+                            "absolute inset-0 w-full h-full rounded-lg backface-hidden flex flex-col items-center justify-center p-2 text-white",
+                            isWin ? "bg-gradient-to-br from-yellow-400 to-amber-600" : "bg-gradient-to-br from-slate-600 to-gray-800"
+                        )}
+                    >
                         {isWin ? (
                             <>
                                 <Sparkles className="h-6 w-6" />
@@ -143,7 +144,7 @@ export function CardFlipGame() {
                         ) : (
                             <X className="h-10 w-10"/>
                         )}
-                    </div>
+                    </motion.div>
                 </motion.button>
             </motion.div>
         )
