@@ -28,6 +28,7 @@ import { Slider } from '@/components/ui/slider';
 const CREDIT_PASSWORD = "waizcredit";
 
 const themePresets: Record<string, AppTheme> = {
+    "Default Theme": { primary: "262 80% 56%", background: "240 10% 3.9%", accent: "240 3.7% 15.9%", radius: 0.8 },
     "Crimson Red": { primary: "0 84.2% 60.2%", background: "240 10% 3.9%", accent: "0 84.2% 60.2%", radius: 0.8 },
     "Ocean Blue": { primary: "207 90% 54%", background: "222 84% 4.9%", accent: "217 33% 17%", radius: 0.8 },
     "Forest Green": { primary: "142 76% 36%", background: "142 100% 4%", accent: "142 76% 15%", radius: 0.8 },
@@ -564,3 +565,4 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
+
