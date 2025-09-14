@@ -28,6 +28,7 @@ export interface User {
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
+  isVip?: boolean; // For the special recognition badge
   friends?: string[]; // Array of friend UIDs
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number;
@@ -129,6 +130,8 @@ interface AppDataContextType {
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
+    makeUserVip: (uid: string) => Promise<void>;
+    removeUserVip: (uid: string) => Promise<void>;
     clearGlobalChat: () => Promise<void>;
     
     announcements: Announcement[];
@@ -288,6 +291,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     isBlocked: false,
                     credits: 100,
                     isAdmin: false,
+                    isVip: false,
                     friends: [],
                     unlockedResourceSections: [],
                     focusSessionsCompleted: 0,
@@ -371,6 +375,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const removeUserAdmin = async (uid: string) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { isAdmin: false });
+    };
+    
+    const makeUserVip = async (uid: string) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { isVip: true });
+    };
+
+    const removeUserVip = async (uid: string) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { isVip: false });
     };
 
     const toggleUserBlock = async (uid: string, isBlocked: boolean) => {
@@ -583,6 +597,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateStudyTime,
         makeUserAdmin,
         removeUserAdmin,
+        makeUserVip,
+        removeUserVip,
         clearGlobalChat,
         announcements,
         addAnnouncement,

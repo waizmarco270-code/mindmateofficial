@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -44,6 +45,7 @@ const themePresets: Record<string, AppTheme> = {
 export default function SuperAdminPanelPage() {
   const { 
     isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
+    makeUserVip, removeUserVip,
     addCreditsToUser, giftCreditsToAllUsers,
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
@@ -265,9 +267,11 @@ export default function SuperAdminPanelPage() {
                             <TableCell>{user.email}</TableCell>
                             <TableCell><Badge variant={user.isBlocked ? 'destructive' : 'secondary'}>{user.isBlocked ? 'Blocked' : 'Active'}</Badge></TableCell>
                             <TableCell>
-                                <Badge variant={user.isAdmin ? 'default' : 'outline'}>
-                                    {user.isAdmin ? 'Admin' : 'User'}
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                    {user.isAdmin && <Badge>Admin</Badge>}
+                                    {user.isVip && <Badge className="vip-badge"><Crown className="h-3 w-3"/> VIP</Badge>}
+                                    {!user.isAdmin && !user.isVip && <Badge variant="outline">User</Badge>}
+                                </div>
                             </TableCell>
                             <TableCell className="text-right space-x-2">
                                 {user.uid !== SUPER_ADMIN_UID && ( // Prevent super admin from losing their own status
@@ -279,6 +283,15 @@ export default function SuperAdminPanelPage() {
                                         ) : (
                                             <Button variant="outline" size="sm" onClick={() => makeUserAdmin(user.uid)}>
                                                 <ShieldCheck className="mr-2 h-4 w-4"/>Make Admin
+                                            </Button>
+                                        )}
+                                        {user.isVip ? (
+                                            <Button variant="secondary" size="sm" onClick={() => removeUserVip(user.uid)}>
+                                                <Crown className="mr-2 h-4 w-4"/>Remove VIP
+                                            </Button>
+                                        ) : (
+                                            <Button variant="outline" size="sm" onClick={() => makeUserVip(user.uid)}>
+                                                <Crown className="mr-2 h-4 w-4"/>Make VIP
                                             </Button>
                                         )}
                                         <Button variant={user.isBlocked ? 'outline' : 'destructive'} size="sm" onClick={() => toggleUserBlock(user.uid, user.isBlocked)}>

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -7,7 +8,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, MoreVertical, X, Trash2, UserX, Code, Crown, ArrowLeft } from 'lucide-react';
-import { User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
+import { User, SUPER_ADMIN_UID, useUsers } from '@/hooks/use-admin';
 import { useChat, Message } from '@/hooks/use-chat';
 import { useFriends } from '@/hooks/use-friends';
 import { useUser } from '@clerk/nextjs';
@@ -111,11 +112,17 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
 }
 
 function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: boolean; friend: User }) {
-    const { user: currentUser } = useUser();
-    const userToShow = isOwn ? currentUser : friend;
+    const { user: clerkUser } = useUser();
+    const { users } = useUsers();
+    
+    // Determine which user's data to display
+    const userToShow = isOwn ? users.find(u => u.uid === clerkUser?.id) : friend;
 
-    const isSuperAdmin = userToShow?.id === SUPER_ADMIN_UID;
-    const isAdmin = (userToShow as any)?.isAdmin;
+    if (!userToShow) return null; // Or a loading/error state
+
+    const isSuperAdmin = userToShow?.uid === SUPER_ADMIN_UID;
+    const isAdmin = userToShow?.isAdmin;
+    const isVip = userToShow?.isVip;
 
     return (
         <div className={cn("flex items-end gap-2", isOwn && "justify-end")}>
@@ -131,8 +138,10 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
                         <p className="text-xs font-semibold">{friend.displayName}</p>
                         {isSuperAdmin ? (
                             <span className="dev-badge flex-shrink-0"><Code className="h-3 w-3" /> DEV</span>
-                        ) : isAdmin && (
+                        ) : isVip ? (
                             <span className="vip-badge flex-shrink-0"><Crown className="h-3 w-3" /> VIP</span>
+                        ) : isAdmin && (
+                            <Badge variant="secondary" className="h-5 px-1.5 py-0 text-xs">Admin</Badge>
                         )}
                     </div>
                 )}
@@ -149,10 +158,11 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
             </div>
              {isOwn && (
                 <Avatar className="h-8 w-8">
-                    <AvatarImage src={currentUser?.imageUrl} />
-                    <AvatarFallback>{currentUser?.firstName?.charAt(0)}</AvatarFallback>
+                    <AvatarImage src={clerkUser?.imageUrl} />
+                    <AvatarFallback>{clerkUser?.firstName?.charAt(0)}</AvatarFallback>
                 </Avatar>
             )}
         </div>
     );
 }
+
