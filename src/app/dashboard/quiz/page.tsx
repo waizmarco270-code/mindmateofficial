@@ -34,8 +34,7 @@ export default function QuizZonePage() {
 
   useEffect(() => {
     markAsSeen();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [markAsSeen]);
 
   const loading = quizzesLoading || usersLoading;
 
@@ -129,7 +128,6 @@ export default function QuizZonePage() {
                                         "h-full group flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1",
                                         shadow
                                     )}>
-                                       <div className={cn("absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300 bg-gradient-to-tr", color)}></div>
                                         <CardHeader>
                                             <CardTitle className="flex items-start gap-4">
                                                 <div className={cn("p-2 rounded-lg bg-gradient-to-br", color)}>
