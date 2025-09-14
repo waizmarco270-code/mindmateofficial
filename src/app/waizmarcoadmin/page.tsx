@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -269,7 +268,7 @@ export default function SuperAdminPanelPage() {
                             <TableCell>
                                 <div className="flex items-center gap-2">
                                     {user.isAdmin && <Badge>Admin</Badge>}
-                                    {user.isVip && <Badge className="vip-badge"><Crown className="h-3 w-3"/> VIP</Badge>}
+                                    {user.isVip && <span className="vip-badge"><Crown className="h-3 w-3"/> VIP</span>}
                                     {!user.isAdmin && !user.isVip && <Badge variant="outline">User</Badge>}
                                 </div>
                             </TableCell>
@@ -579,3 +578,4 @@ export default function SuperAdminPanelPage() {
   );
 }
 
+    

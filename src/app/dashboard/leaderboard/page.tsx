@@ -176,7 +176,20 @@ export default function LeaderboardPage() {
                                 <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
                         </div>
-                        <CardTitle className="mt-4 text-2xl">{user.displayName}</CardTitle>
+                        <div className="flex items-center justify-center gap-2 mt-4">
+                            <CardTitle className="text-2xl">{user.displayName}</CardTitle>
+                             {isSuperAdmin ? (
+                                <span className="dev-badge flex-shrink-0">
+                                    <Code className="h-3 w-3" /> DEV
+                                </span>
+                            ) : user.isVip ? (
+                                <span className="vip-badge flex-shrink-0">
+                                    <Crown className="h-3 w-3" /> VIP
+                                </span>
+                            ) : user.isAdmin && (
+                                <Badge variant="secondary" className="h-6">Admin</Badge>
+                            )}
+                        </div>
                         <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
                      </CardHeader>
                      <CardContent className="text-center p-6 pt-0">
@@ -212,10 +225,12 @@ export default function LeaderboardPage() {
                                     <span className="dev-badge flex-shrink-0">
                                         <Code className="h-3 w-3" /> DEV
                                     </span>
-                                ) : user.isAdmin && (
+                                ) : user.isVip ? (
                                     <span className="vip-badge flex-shrink-0">
                                         <Crown className="h-3 w-3" /> VIP
                                     </span>
+                                ) : user.isAdmin && (
+                                     <Badge variant="secondary" className="h-5 text-xs">Admin</Badge>
                                 )}
                             </div>
                             <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
@@ -319,10 +334,12 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                                         <span className="dev-badge flex-shrink-0">
                                                             <Code className="h-3 w-3" /> DEV
                                                         </span>
-                                                    ) : user.isAdmin && (
+                                                    ) : user.isVip ? (
                                                         <span className="vip-badge flex-shrink-0">
                                                             <Crown className="h-3 w-3" /> VIP
                                                         </span>
+                                                    ) : user.isAdmin && (
+                                                        <Badge variant="secondary" className="h-5 text-xs">Admin</Badge>
                                                     )}
                                                 </div>
                                                  <p className="text-muted-foreground text-sm">

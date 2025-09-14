@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -18,6 +17,7 @@ import { format, formatDistanceToNow } from 'date-fns';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { Badge } from '../ui/badge';
 
 interface ChatBoxProps {
     friend: User;
@@ -136,7 +136,7 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
                 {!isOwn && (
                     <div className="flex items-center gap-2 mb-1">
                         <p className="text-xs font-semibold">{friend.displayName}</p>
-                        {isSuperAdmin ? (
+                         {isSuperAdmin ? (
                             <span className="dev-badge flex-shrink-0"><Code className="h-3 w-3" /> DEV</span>
                         ) : isVip ? (
                             <span className="vip-badge flex-shrink-0"><Crown className="h-3 w-3" /> VIP</span>
@@ -166,3 +166,4 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
     );
 }
 
+    
