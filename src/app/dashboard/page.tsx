@@ -125,8 +125,8 @@ export default function DashboardPage() {
                             <Bell className="h-8 w-8 text-primary" />
                         </div>
                         <div>
-                            <CardTitle className="text-xl text-cyan-400 [text-shadow:0_0_8px_theme(colors.cyan.400/50)]">Latest Announcement</CardTitle>
-                            <CardDescription className="text-cyan-400/80">Don't miss out on important updates.</CardDescription>
+                            <CardTitle className="text-xl text-primary [text-shadow:0_0_8px_hsl(var(--primary)/50%)]">Latest Announcement</CardTitle>
+                            <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent className="p-4 md:p-6 pt-0">
@@ -222,3 +222,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
