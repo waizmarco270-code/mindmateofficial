@@ -1,12 +1,12 @@
 
 
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -17,12 +17,13 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
+import { Slider } from '@/components/ui/slider';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -33,7 +34,8 @@ export default function SuperAdminPanelPage() {
     addCreditsToUser, giftCreditsToAllUsers,
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
-    resetUserCredits, clearGlobalChat
+    resetUserCredits, clearGlobalChat,
+    appTheme, updateAppTheme,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -45,6 +47,22 @@ export default function SuperAdminPanelPage() {
   const [creditAmount, setCreditAmount] = useState(10);
   const [spinAmount, setSpinAmount] = useState(1);
   const [guessAmount, setGuessAmount] = useState(1);
+
+  // State for Theme Management
+  const [themePrimary, setThemePrimary] = useState('262 80% 56%');
+  const [themeBackground, setThemeBackground] = useState('240 10% 3.9%');
+  const [themeAccent, setThemeAccent] = useState('240 3.7% 15.9%');
+  const [themeRadius, setThemeRadius] = useState(0.8);
+
+  useEffect(() => {
+    if (appTheme) {
+        setThemePrimary(appTheme.primary);
+        setThemeBackground(appTheme.background);
+        setThemeAccent(appTheme.accent);
+        setThemeRadius(appTheme.radius);
+    }
+  }, [appTheme]);
+  
   
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -145,6 +163,26 @@ export default function SuperAdminPanelPage() {
       }
   }
 
+  const handleUpdateTheme = async () => {
+    const newTheme: AppTheme = {
+        primary: themePrimary,
+        background: themeBackground,
+        accent: themeAccent,
+        radius: themeRadius
+    };
+    try {
+        await updateAppTheme(newTheme);
+        const root = document.documentElement;
+        root.style.setProperty('--primary', `hsl(${newTheme.primary})`);
+        root.style.setProperty('--background', `hsl(${newTheme.background})`);
+        root.style.setProperty('--accent', `hsl(${newTheme.accent})`);
+        root.style.setProperty('--radius', `${newTheme.radius}rem`);
+        toast({ title: 'Theme Updated!', description: 'The new theme has been applied globally.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Theme Update Failed', description: error.message });
+    }
+  }
+
   if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -166,7 +204,7 @@ export default function SuperAdminPanelPage() {
     <div className="space-y-8 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Super Admin Controls</h1>
-        <p className="text-muted-foreground">Manage user roles, credits, and rewards.</p>
+        <p className="text-muted-foreground">Manage user roles, credits, rewards and app theme.</p>
       </div>
 
       <Accordion type="multiple" defaultValue={['user-management']} className="w-full space-y-4">
@@ -384,8 +422,54 @@ export default function SuperAdminPanelPage() {
             </Card>
         </AccordionItem>
         
-        {/* Chat Management */}
-         <AccordionItem value="chat-management" className="border-b-0">
+        {/* Theme Management */}
+        <AccordionItem value="theme-management" className="border-b-0">
+           <Card>
+              <AccordionTrigger className="p-6">
+                <div className="flex items-center gap-3">
+                  <Palette className="h-6 w-6 text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold">Theme Management</h3>
+                    <p className="text-sm text-muted-foreground text-left">Customize the look and feel of the app for all users.</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Global Theme Settings</CardTitle>
+                        <CardDescription>Changes will be applied to all users instantly. Use HSL values without 'hsl()' for colors.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="theme-primary">Primary Color (HSL)</Label>
+                                <Input id="theme-primary" value={themePrimary} onChange={e => setThemePrimary(e.target.value)} placeholder="e.g. 262 80% 56%"/>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="theme-background">Background (HSL)</Label>
+                                <Input id="theme-background" value={themeBackground} onChange={e => setThemeBackground(e.target.value)} placeholder="e.g. 240 10% 3.9%"/>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="theme-accent">Accent (HSL)</Label>
+                                <Input id="theme-accent" value={themeAccent} onChange={e => setThemeAccent(e.target.value)} placeholder="e.g. 240 3.7% 15.9%"/>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="theme-radius">Border Radius: {themeRadius}rem</Label>
+                            <Slider id="theme-radius" value={[themeRadius]} onValueChange={(v) => setThemeRadius(v[0])} max={1} step={0.1}/>
+                        </div>
+                        <Button onClick={handleUpdateTheme}>
+                            <RefreshCcw className="mr-2 h-4 w-4"/> Update Global Theme
+                        </Button>
+                    </CardContent>
+                </Card>
+              </AccordionContent>
+            </Card>
+        </AccordionItem>
+
+        {/* Data Management */}
+         <AccordionItem value="data-management" className="border-b-0">
            <Card>
               <AccordionTrigger className="p-6">
                 <div className="flex items-center gap-3">

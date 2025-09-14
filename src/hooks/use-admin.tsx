@@ -96,6 +96,13 @@ export interface DailySurprise {
     featureRoute?: string; // e.g., /dashboard/entertainment
 }
 
+export interface AppTheme {
+    primary: string; // "H S L" e.g. "262 80% 56%"
+    background: string;
+    accent: string;
+    radius: number; // 0 to 1
+}
+
 
 // ============================================================================
 //  CONTEXT DEFINITIONS
@@ -150,6 +157,10 @@ interface AppDataContextType {
     activePoll: Poll | null;
     updatePoll: (id: string, data: Partial<Poll>) => Promise<void>;
     submitPollVote: (pollId: string, option: string) => Promise<void>;
+
+    // Theme Management
+    appTheme: AppTheme | null;
+    updateAppTheme: (theme: AppTheme) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -171,6 +182,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [resourceSections, setResourceSections] = useState<ResourceSection[]>([]);
     const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
+    const [appTheme, setAppTheme] = useState<AppTheme | null>(null);
     const [loading, setLoading] = useState(true);
 
     // EFFECT: Determine if the logged-in user is an admin or super admin
@@ -301,7 +313,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         
     }, [authUser, isClerkLoaded]);
     
-    // EFFECT: Listen for global data (announcements, resources, polls, sections)
+    // EFFECT: Listen for global data (announcements, resources, polls, sections, theme)
     useEffect(() => {
         const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
             return snapshot.docs.map((doc: any) => {
@@ -317,20 +329,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const announcementsQuery = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
         const resourcesQuery = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
         const resourceSectionsQuery = query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc'));
-        const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')); // Changed to 'asc'
+        const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc'));
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
+        const themeDocRef = doc(db, 'appConfig', 'theme');
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
         const unsubSections = onSnapshot(resourceSectionsQuery, (snapshot) => setResourceSections(processSnapshot<ResourceSection>(snapshot)));
         const unsubDailySurprises = onSnapshot(dailySurprisesQuery, (snapshot) => setDailySurprises(processSnapshot<DailySurprise>(snapshot)));
-
         const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
             if (!snapshot.empty) {
                 const pollDoc = snapshot.docs[0];
                 setActivePoll({ id: pollDoc.id, ...pollDoc.data() } as Poll);
             } else {
                 setActivePoll(null);
+            }
+        });
+        const unsubTheme = onSnapshot(themeDocRef, (doc) => {
+            if (doc.exists()) {
+                setAppTheme(doc.data() as AppTheme);
             }
         });
 
@@ -340,6 +357,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubPolls();
             unsubDailySurprises();
             unsubSections();
+            unsubTheme();
         };
     }, []);
 
@@ -538,6 +556,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
     };
 
+    const updateAppTheme = async (theme: AppTheme) => {
+        const themeDocRef = doc(db, 'appConfig', 'theme');
+        await setDoc(themeDocRef, theme);
+    }
+
     // CONTEXT VALUE
     const value: AppDataContextType = {
         isAdmin,
@@ -580,6 +603,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         activePoll,
         updatePoll,
         submitPollVote,
+        appTheme,
+        updateAppTheme,
     };
 
     return (
@@ -637,5 +662,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
