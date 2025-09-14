@@ -123,7 +123,7 @@ export default function DashboardPage() {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
 
-             <div className="relative group min-h-[220px] mb-6" style={{ perspective: 1000 }}>
+             <div className="relative group min-h-[220px] mb-8" style={{ perspective: 1000 }}>
                  <motion.div
                     className="relative w-full h-full cursor-pointer"
                     style={{ transformStyle: 'preserve-3d' }}
