@@ -1,13 +1,14 @@
+
 'use client';
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bot, ListTodo, Home, BookOpen, Trophy, Zap } from 'lucide-react';
+import { Gamepad2, ListTodo, Home, BookOpen, Trophy, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos' },
-  { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI' },
+  { href: '/dashboard/entertainment', icon: Gamepad2, label: 'Games' },
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
