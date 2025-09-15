@@ -89,7 +89,7 @@ export default function HelpPage() {
                     <Award className="h-4 w-4" />
                     <AlertTitle className="font-bold">Found a Bug?</AlertTitle>
                     <AlertDescription>
-                       Users who find and report a real bug or glitch can receive a reward of up to <span className="font-bold text-primary">1000 credits!</span>
+                       The reward is based on the bug's severity—the more critical the bug, the better the reward. Potential rewards include <span className="font-bold text-primary">credits, scratch cards, card flip plays, or even the Elite Member badge!</span>
                     </AlertDescription>
                 </Alert>
 
