@@ -35,7 +35,7 @@ const EMOJI_LEVELS = [
     { emojis: '🤫+🐑', answer: 'silence of the lambs' }, // Level 15
     { emojis: 'BREAKING+ kötü', answer: 'breaking bad' },
     { emojis: 'ドクター+ STRANGE', answer: 'doctor strange' },
-    { emojis: '🎮+👑', answerp: 'game of thrones' },
+    { emojis: '🎮+👑', answer: 'game of thrones' },
     { emojis: '🚲+ STRANGER+THINGS', answer: 'stranger things' },
     { emojis: '💸+HEIST', answer: 'money heist' }, // Level 20
     { emojis: '🎩+PEAKY+😎', answer: 'peaky blinders' },
@@ -77,9 +77,9 @@ const MAX_MISTAKES = 3;
 const SKIP_COUNT = 2;
 
 const getLevelTime = (level: number) => {
-    if (level > 20) return 15;
-    if (level > 15) return 20;
-    if (level > 10) return 25;
+    if (level > 20) return 20;
+    if (level > 15) return 25;
+    if (level > 10) return 30;
     return 30;
 }
 
