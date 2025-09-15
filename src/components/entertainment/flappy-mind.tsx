@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
@@ -332,7 +333,7 @@ export function FlappyMindGame() {
         </CardContent>
       </Card>
       <Card className="flex-1 w-full">
-        <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+        <Accordion type="single" collapsible className="w-full">
           <AccordionItem value="item-1">
             <AccordionTrigger className="p-6">
                 <div className="flex items-center gap-2 text-base font-semibold">
