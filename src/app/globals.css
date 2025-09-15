@@ -32,7 +32,7 @@
     --radius: 0.8rem;
 
     /* Sidebar is always dark */
-    --sidebar-background: hsla(240, 5.9%, 10%, 0.8);
+    --sidebar-background: 240 10% 3.9%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 262 80% 56%;
     --sidebar-primary-foreground: 0 0% 98%;
@@ -69,7 +69,7 @@
     --chart-5: 27 87% 67%;
 
     /* Sidebar variables are the same in dark mode, but defined for clarity */
-    --sidebar-background: hsla(240, 5.9%, 10%, 0.8);
+    --sidebar-background: 240 10% 3.9%;
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: 262 80% 56%;
     --sidebar-primary-foreground: 0 0% 98%;
