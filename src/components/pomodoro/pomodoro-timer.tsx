@@ -167,7 +167,7 @@ export function PomodoroTimer() {
   }
 
   return (
-    <div className="relative h-screen w-full flex flex-col items-center justify-center text-white overflow-hidden bg-gray-900">
+    <div className="relative h-[calc(100svh_-_8rem)] w-[calc(100%_+_2rem)] sm:w-[calc(100%_+_3rem)] lg:w-[calc(100%_+_4rem)] -m-4 sm:-m-6 lg:-m-8 flex flex-col items-center justify-center text-white overflow-hidden bg-gray-900 rounded-xl">
       <AnimatePresence>
         {selectedTheme && (
             <motion.div
