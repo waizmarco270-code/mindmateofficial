@@ -122,6 +122,17 @@
     inherits: false;
   }
 
+  @keyframes nebula-animation {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
+  }
 }
 
 @layer components {
@@ -213,5 +224,14 @@
     border: 2px solid;
     border-image: conic-gradient(from var(--angle), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff, #ff0000) 1;
     animation: rotate-angle 4s linear infinite;
+  }
+
+  .green-nebula-bg {
+    background: linear-gradient(135deg, #05380c, #011405, #0a4f0f, #2e7d32);
+    background-size: 400% 400%;
+    animation: nebula-animation 25s ease infinite;
+    position: absolute;
+    inset: 0;
+    z-index: 0;
   }
 }
