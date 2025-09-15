@@ -9,6 +9,8 @@ import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CardFlipGame } from '@/components/reward/gift-box-game';
 import { useState } from 'react';
+import { SignedOut } from '@clerk/nextjs';
+import { LoginWall } from '@/components/ui/login-wall';
 
 export default function RewardPage() {
     const { rewardHistory, availableScratchCards, availableCardFlipPlays } = useRewards();
@@ -39,7 +41,13 @@ export default function RewardPage() {
             </div>
             
             <div className="grid lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
+                <div className="lg:col-span-2 relative">
+                    <SignedOut>
+                         <LoginWall 
+                            title="Unlock the Reward Zone"
+                            description="Sign up for free to claim daily rewards, play games, and win credits!"
+                        />
+                    </SignedOut>
                    <Tabs defaultValue="card-flip" className="w-full" onValueChange={setActiveTab}>
                       <TabsList className="grid w-full grid-cols-2">
                          <TabsTrigger value="card-flip">

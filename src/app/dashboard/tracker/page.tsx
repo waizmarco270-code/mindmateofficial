@@ -5,11 +5,12 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlarmClock, AlertTriangle, Award, Zap, X, Play, Pause, RotateCcw } from 'lucide-react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useBeforeunload } from 'react-beforeunload';
+import { LoginWall } from '@/components/ui/login-wall';
 
 interface FocusSlot {
     duration: number; // in seconds
@@ -27,7 +28,7 @@ const PENALTY = 10;
 export const FOCUS_PENALTY_SESSION_KEY = 'focusPenaltyApplied';
 
 export default function FocusModePage() {
-    const { user } = useUser();
+    const { user, isSignedIn } = useUser();
     const { currentUserData, addCreditsToUser, incrementFocusSessions } = useUsers();
     const { toast } = useToast();
 
@@ -122,7 +123,6 @@ export default function FocusModePage() {
     };
 
     if (activeSlot) {
-        const progress = ((activeSlot.duration - timeLeft) / activeSlot.duration) * 100;
         return (
             <div className="flex justify-center items-center h-full">
                 <Card className="w-full max-w-md text-center animate-in fade-in-50">
@@ -166,7 +166,13 @@ export default function FocusModePage() {
 
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
+             <SignedOut>
+                <LoginWall 
+                    title="Unlock Focus Mode"
+                    description="Sign up for a free account to start rewarded study sessions, eliminate distractions, and boost your productivity."
+                />
+            </SignedOut>
             <div className="flex items-center gap-3">
                 <Zap className="h-8 w-8 text-primary"/>
                 <div>
@@ -184,8 +190,9 @@ export default function FocusModePage() {
                     {focusSlots.map(slot => (
                         <button
                             key={slot.label}
-                            className="p-6 border rounded-lg text-center hover:shadow-lg hover:-translate-y-1 transition-transform"
+                            className="p-6 border rounded-lg text-center hover:shadow-lg hover:-translate-y-1 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
                             onClick={() => handleSelectSlot(slot)}
+                            disabled={!isSignedIn}
                         >
                             <AlarmClock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                             <h3 className="text-2xl font-bold">{slot.label}</h3>

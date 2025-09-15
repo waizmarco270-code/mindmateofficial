@@ -13,6 +13,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { notFound } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useUser, SignedOut } from '@clerk/nextjs';
+import { LoginWall } from '@/components/ui/login-wall';
 
 interface QuizCategoryPageProps {
   params: {
@@ -22,7 +24,7 @@ interface QuizCategoryPageProps {
 
 export default function QuizCategoryPage({ params: { category } }: QuizCategoryPageProps) {
   const details = categoryDetails[category];
-
+  const { isSignedIn } = useUser();
   const { quizzes, loading: quizzesLoading } = useQuizzes();
   const { users, loading: usersLoading } = useUsers();
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
@@ -85,7 +87,13 @@ export default function QuizCategoryPage({ params: { category } }: QuizCategoryP
       </div>
       
       <div className="grid lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-6 relative">
+             <SignedOut>
+                <LoginWall 
+                    title="Unlock Quizzes"
+                    description="Sign up to start taking quizzes, earn credits for perfect scores, and compete on the leaderboard."
+                />
+            </SignedOut>
             <h2 className="text-2xl font-bold">Available Quizzes</h2>
             {loading && (
                 <div className="grid gap-6 md:grid-cols-2">
@@ -115,7 +123,7 @@ export default function QuizCategoryPage({ params: { category } }: QuizCategoryP
                                 </CardDescription>
                             </CardHeader>
                             <CardFooter>
-                                <Button className="w-full z-10" onClick={() => handleQuizSelect(quiz)}>
+                                <Button className="w-full z-10" onClick={() => handleQuizSelect(quiz)} disabled={!isSignedIn}>
                                     <BrainCircuit className="mr-2 h-4 w-4"/> Start Quiz
                                 </Button>
                             </CardFooter>

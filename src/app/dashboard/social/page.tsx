@@ -11,6 +11,8 @@ import { Users } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
+import { SignedOut } from '@clerk/nextjs';
+import { LoginWall } from '@/components/ui/login-wall';
 
 export default function SocialPage() {
   const [selectedFriend, setSelectedFriend] = useState<User | null>(null);
@@ -26,7 +28,13 @@ export default function SocialPage() {
 
   return (
     <FriendsProvider>
-      <div className="h-full">
+      <div className="h-full relative">
+          <SignedOut>
+              <LoginWall 
+                title="Unlock the Social Hub"
+                description="Sign up for a free account to add friends, join the community chat, and connect with other learners."
+              />
+          </SignedOut>
           <div className="grid h-full grid-cols-1 md:grid-cols-12 gap-6">
               <AnimatePresence>
                 {isMobile ? (

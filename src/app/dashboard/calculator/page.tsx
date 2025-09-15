@@ -9,9 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Plus, Percent, Sparkles, AlertTriangle, Medal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { Separator } from '@/components/ui/separator';
+import { LoginWall } from '@/components/ui/login-wall';
 
 interface Subject {
   id: number;
@@ -23,7 +24,7 @@ interface Subject {
 const CALCULATION_COST = 2;
 
 export default function PercentageCalculatorPage() {
-  const { user } = useUser();
+  const { user, isSignedIn } = useUser();
   const { currentUserData, addCreditsToUser } = useUsers();
   const { toast } = useToast();
 
@@ -105,7 +106,14 @@ export default function PercentageCalculatorPage() {
         <h1 className="text-3xl font-bold tracking-tight">Percentage Calculator</h1>
         <p className="text-muted-foreground">Calculate your CBSE/Board exam percentage based on the "Best of 5" rule.</p>
       </div>
-      <div className="grid lg:grid-cols-3 gap-8">
+      <div className="grid lg:grid-cols-3 gap-8 relative">
+        <SignedOut>
+             <LoginWall 
+                title="Unlock the Calculator"
+                description="Sign up for a free account to calculate your exam percentages and track your academic progress."
+                className="col-span-full"
+            />
+        </SignedOut>
         <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle>Enter Your Marks</CardTitle>
@@ -121,7 +129,7 @@ export default function PercentageCalculatorPage() {
                                 placeholder={`Subject ${index + 1}`}
                                 value={subject.name}
                                 onChange={(e) => handleSubjectChange(subject.id, 'name', e.target.value)}
-                                disabled={subject.name === 'English'}
+                                disabled={subject.name === 'English' || !isSignedIn}
                             />
                         </div>
                         <div className="col-span-3">
@@ -134,6 +142,7 @@ export default function PercentageCalculatorPage() {
                                 onChange={(e) => handleSubjectChange(subject.id, 'marks', e.target.value)}
                                 min="0"
                                 max="100"
+                                disabled={!isSignedIn}
                             />
                         </div>
                         <div className="col-span-2 flex items-center justify-center gap-2">
@@ -141,13 +150,13 @@ export default function PercentageCalculatorPage() {
                                 id={`compulsory-${subject.id}`}
                                 checked={subject.isCompulsory}
                                 onCheckedChange={(checked) => handleSubjectChange(subject.id, 'isCompulsory', Boolean(checked))}
-                                disabled={subject.name === 'English'}
+                                disabled={subject.name === 'English' || !isSignedIn}
                             />
                             <Label htmlFor={`compulsory-${subject.id}`} className="text-xs text-muted-foreground">Compulsory</Label>
                         </div>
                         <div className="col-span-1">
                             {subject.name !== 'English' && (
-                                <Button variant="ghost" size="icon" onClick={() => removeSubject(subject.id)} className="text-muted-foreground hover:text-destructive">
+                                <Button variant="ghost" size="icon" onClick={() => removeSubject(subject.id)} className="text-muted-foreground hover:text-destructive" disabled={!isSignedIn}>
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
                             )}
@@ -155,7 +164,7 @@ export default function PercentageCalculatorPage() {
                     </div>
                 ))}
                 <div className="flex justify-between items-center pt-4">
-                    <Button variant="outline" onClick={addSubject}>
+                    <Button variant="outline" onClick={addSubject} disabled={!isSignedIn}>
                         <Plus className="mr-2 h-4 w-4" /> Add Subject
                     </Button>
                     <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-2 text-amber-700 dark:text-amber-300">
@@ -164,7 +173,7 @@ export default function PercentageCalculatorPage() {
                             Cost: {CALCULATION_COST} Credits
                         </p>
                     </div>
-                    <Button onClick={handleCalculate} disabled={isCalculating}>
+                    <Button onClick={handleCalculate} disabled={isCalculating || !isSignedIn}>
                         <Percent className="mr-2 h-4 w-4" /> {isCalculating ? 'Calculating...' : 'Calculate Best of 5'}
                     </Button>
                 </div>
@@ -218,5 +227,3 @@ export default function PercentageCalculatorPage() {
     </div>
   );
 }
-
-    

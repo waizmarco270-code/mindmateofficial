@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card'
 import { Play, Pause, MoreVertical, Trash2, Edit, Plus, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTimeTracker, type Subject } from '@/hooks/use-time-tracker';
+import { useUser } from '@clerk/nextjs';
 
 const subjectColors = [
     '#ef4444', // red-500
@@ -26,6 +28,7 @@ const subjectColors = [
 ];
 
 export function TimeTracker() {
+    const { isSignedIn } = useUser();
     const {
         subjects,
         activeSubjectId,
@@ -99,7 +102,7 @@ export function TimeTracker() {
                     <div className="space-y-2">
                         {subjects.map(subject => (
                             <div key={subject.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted">
-                                <button onClick={() => handlePlayPause(subject.id)} style={{ color: subject.color }}>
+                                <button onClick={() => handlePlayPause(subject.id)} style={{ color: subject.color }} disabled={!isSignedIn}>
                                     {activeSubjectId === subject.id ? (
                                         <Pause className="h-8 w-8" fill="currentColor" />
                                     ) : (
@@ -110,7 +113,7 @@ export function TimeTracker() {
                                 <span className="font-mono text-muted-foreground">{formatTime(subject.timeTracked)}</span>
                                  <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!isSignedIn}>
                                             <MoreVertical className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
@@ -125,7 +128,7 @@ export function TimeTracker() {
                     </div>
                 </CardContent>
                 <CardFooter>
-                     <Button variant="outline" onClick={handleAddNewClick}><Plus className="mr-2 h-4 w-4"/> Add Subject</Button>
+                     <Button variant="outline" onClick={handleAddNewClick} disabled={!isSignedIn}><Plus className="mr-2 h-4 w-4"/> Add Subject</Button>
                 </CardFooter>
             </Card>
 
@@ -158,7 +161,7 @@ export function TimeTracker() {
                          <Button onClick={handleSaveSubject}>Save</Button>
                     </DialogFooter>
                 </DialogContent>
-            </Dialog>
+            </>
         </>
     );
 }
