@@ -34,12 +34,6 @@ import { Logo } from '../ui/logo';
 import { useUnreadMessages } from '@/hooks/use-unread';
 import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
 import { Separator } from '../ui/separator';
 
 const mainNav = [
@@ -54,7 +48,7 @@ const mainNav = [
 ];
 
 const studyNav = [
-  { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule', glow: 'text-sky-400' },
+  { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
   { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-green-400' },
   { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker', glow: 'text-blue-400' },
   { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos', glow: 'text-orange-400' },
@@ -141,51 +135,21 @@ export default function SidebarContent() {
           <span className="text-xl">MindMate</span>
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto py-4 space-y-2">
+      <div className="flex-1 overflow-y-auto py-4 space-y-4">
         
         <div className="px-4">
-            <Accordion type="multiple" defaultValue={['main-tools', 'study-tools', 'other-tools']}>
-              <AccordionItem value="main-tools" className="border-b-0">
-                <AccordionTrigger className="hover:no-underline text-sidebar-foreground/60 hover:text-sidebar-foreground/80 px-3 py-2 text-sm font-semibold tracking-tight">
-                    <div className="flex items-center gap-3">Main</div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-0">
-                    <div className="space-y-1 mt-2">
-                        {renderNavLinks(mainNav)}
-                    </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+          <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Main</h2>
+          {renderNavLinks(mainNav)}
         </div>
         
-         <div className="px-4">
-            <Accordion type="multiple" defaultValue={['main-tools', 'study-tools', 'other-tools']}>
-              <AccordionItem value="study-tools" className="border-b-0">
-                <AccordionTrigger className="hover:no-underline text-sidebar-foreground/60 hover:text-sidebar-foreground/80 px-3 py-2 text-sm font-semibold tracking-tight">
-                    <div className="flex items-center gap-3">Study</div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-0">
-                    <div className="space-y-1 mt-2">
-                        {renderNavLinks(studyNav as any)}
-                    </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+        <div className="px-4">
+          <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Study</h2>
+          {renderNavLinks(studyNav as any)}
         </div>
 
         <div className="px-4">
-            <Accordion type="multiple" defaultValue={['main-tools', 'study-tools', 'other-tools']}>
-              <AccordionItem value="other-tools" className="border-b-0">
-                <AccordionTrigger className="hover:no-underline text-sidebar-foreground/60 hover:text-sidebar-foreground/80 px-3 py-2 text-sm font-semibold tracking-tight">
-                    <div className="flex items-center gap-3">Other</div>
-                </AccordionTrigger>
-                <AccordionContent className="pb-0">
-                    <div className="space-y-1 mt-2">
-                        {renderNavLinks(otherNav as any)}
-                    </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
+          <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Other</h2>
+          {renderNavLinks(otherNav as any)}
         </div>
         
         {isAdmin && (

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
@@ -19,8 +20,6 @@ export default function SchedulePage() {
             const task = active.data.current as Task;
             const dropDate = over.id as string; // This will be the date string 'YYYY-MM-DD'
             
-            console.log(`Task '${task.text}' was dropped over ${dropDate}`);
-
             // Update the task's deadline in Firestore
             const taskDocRef = doc(db, 'users', user.id, 'dailyTasks', task.id);
             await updateDoc(taskDocRef, {

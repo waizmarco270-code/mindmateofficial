@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -48,7 +49,7 @@ const features = [
     textColor: 'text-rose-100',
   },
    {
-    title: 'Schedule',
+    title: 'MindMate Nexus',
     description: 'Plan your study calendar.',
     icon: Calendar,
     href: '/dashboard/schedule',
