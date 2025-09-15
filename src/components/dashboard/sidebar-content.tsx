@@ -144,7 +144,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 space-y-2">
         
         <div className="px-4">
-            <Accordion type="multiple" defaultValue={[]}>
+            <Accordion type="multiple" defaultValue={['main-tools']}>
               <AccordionItem value="main-tools" className="border-b-0">
                 <AccordionTrigger className="hover:no-underline text-sidebar-foreground/60 hover:text-sidebar-foreground/80 px-3 py-2 text-sm font-semibold tracking-tight">
                     <div className="flex items-center gap-3">Main</div>
@@ -174,7 +174,7 @@ export default function SidebarContent() {
         </div>
 
         <div className="px-4">
-            <Accordion type="multiple" defaultValue={[]}>
+            <Accordion type="multiple" defaultValue={['other-tools']}>
               <AccordionItem value="other-tools" className="border-b-0">
                 <AccordionTrigger className="hover:no-underline text-sidebar-foreground/60 hover:text-sidebar-foreground/80 px-3 py-2 text-sm font-semibold tracking-tight">
                     <div className="flex items-center gap-3">Other</div>
@@ -227,6 +227,7 @@ export default function SidebarContent() {
     </div>
   );
 }
+
 
 
 
