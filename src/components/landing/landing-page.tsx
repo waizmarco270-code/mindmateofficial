@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Card, CardContent } from '../ui/card';
+import { InstallPWAButton } from '../pwa/install-pwa-button';
 
 const navLinks = [
     { name: 'Features', href: '#features' },
@@ -130,6 +131,7 @@ export function LandingPage() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
+             <InstallPWAButton />
              <SignedOut>
                  <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                     <Button>
@@ -155,7 +157,6 @@ export function LandingPage() {
                     <div className="h-[40rem] w-[40rem] bg-gradient-to-tr from-purple-500 to-sky-400 opacity-20 blur-[12rem]"></div>
                 </div>
                  <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
-                    <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
@@ -296,5 +297,3 @@ export function LandingPage() {
     </div>
   );
 }
-
-    
