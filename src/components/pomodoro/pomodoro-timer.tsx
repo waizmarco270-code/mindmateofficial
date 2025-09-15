@@ -154,6 +154,9 @@ export function PomodoroTimer() {
   
   const handleReset = () => {
     setIsActive(false);
+    if (timerRef.current) {
+        clearInterval(timerRef.current);
+    }
     setTimeLeft(settings[mode] * 60);
   }
 
