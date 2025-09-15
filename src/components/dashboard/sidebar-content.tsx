@@ -44,13 +44,13 @@ import { Separator } from '../ui/separator';
 
 const mainNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
-  { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
-  { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
-  { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
-  { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone' },
-  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
-  { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn' },
-  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
+  { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
+  { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-orange-400' },
+  { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
+  { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-red-400' },
+  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-yellow-400' },
+  { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
+  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-red-400' },
 ];
 
 const studyNav = [
@@ -108,16 +108,17 @@ export default function SidebarContent() {
           href={item.href}
           prefetch={true}
           className={cn(
-            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 hover:text-primary text-sm font-medium relative',
-            isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold',
-            item.label === 'Leaderboard' && 'text-red-500 hover:text-red-400 [text-shadow:0_0_8px_currentColor]',
-            isActive(item.href) && item.label === 'Leaderboard' && 'bg-red-500/10 text-red-400'
+            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
+            isActive(item.href) 
+                ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
+                : 'hover:text-primary',
+            item.glow && !isActive(item.href) && `${item.glow} [text-shadow:0_0_8px_currentColor]`,
           )}
         >
           <div className={cn(
             "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
             isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
-            isActive(item.href) && item.label === 'Leaderboard' && 'bg-red-400'
+            isActive(item.href) && item.glow && 'bg-current'
           )}></div>
           <item.icon className="h-5 w-5" />
           <span className="flex-1">{item.label}</span>
@@ -155,7 +156,7 @@ export default function SidebarContent() {
                 </AccordionTrigger>
                 <AccordionContent className="pb-0">
                     <div className="space-y-1 mt-2">
-                        {renderNavLinks(studyNav)}
+                        {renderNavLinks(studyNav as any)}
                     </div>
                 </AccordionContent>
               </AccordionItem>
@@ -164,20 +165,20 @@ export default function SidebarContent() {
 
         <div className="px-4 space-y-2">
             <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Other</h2>
-            {renderNavLinks(otherNav)}
+            {renderNavLinks(otherNav as any)}
         </div>
         
         {isAdmin && (
             <div className="px-4 space-y-2">
                 <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Admin</h2>
-                {renderNavLinks(adminNav)}
+                {renderNavLinks(adminNav as any)}
             </div>
         )}
         
         {isSuperAdmin && (
              <div className="px-4 space-y-2">
                 <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-destructive/80">Super Admin</h2>
-                {renderNavLinks(superAdminNav)}
+                {renderNavLinks(superAdminNav as any)}
             </div>
         )}
       </div>
