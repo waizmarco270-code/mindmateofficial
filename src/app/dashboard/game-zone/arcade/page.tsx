@@ -1,8 +1,9 @@
-
 'use client';
 import Link from "next/link";
 import { ArrowLeft, Orbit } from "lucide-react";
 import { DimensionShiftGame } from "@/components/entertainment/dimension-shift";
+import { FlappyMindGame } from "@/components/entertainment/flappy-mind";
+import { Separator } from "@/components/ui/separator";
 
 export default function ArcadeGamesPage() {
     return (
@@ -15,7 +16,11 @@ export default function ArcadeGamesPage() {
                 </h1>
                 <p className="text-muted-foreground">Test your reflexes in these fast-paced games.</p>
             </div>
-            <DimensionShiftGame />
+            <div className="space-y-12">
+                <FlappyMindGame />
+                <Separator />
+                <DimensionShiftGame />
+            </div>
         </div>
     )
 }

@@ -1,5 +1,3 @@
-
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -51,9 +49,11 @@ export interface User {
     emojiQuiz?: number;
     dimensionShift?: number;
     subjectSprint?: number;
+    flappyMind?: number;
   };
   claimedGlobalGifts?: string[];
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
+  flappyMindClaims?: Record<string, number[]>;
 }
 
 export interface Announcement {
@@ -157,8 +157,9 @@ interface AppDataContextType {
     incrementFocusSessions: (uid: string) => Promise<void>;
     claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
-    updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint', score: number) => Promise<void>;
+    updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind', score: number) => Promise<void>;
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
+    claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -357,6 +358,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                         emojiQuiz: 0,
                         dimensionShift: 0,
                         subjectSprint: 0,
+                        flappyMind: 0,
                     },
                 };
                 setDoc(userDocRef, newUser).then(() => {
@@ -582,7 +584,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { totalStudyTime: totalSeconds });
     }
 
-    const updateGameHighScore = async (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint', score: number) => {
+    const updateGameHighScore = async (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind', score: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
         // Only update if the new score is higher
@@ -621,6 +623,40 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, {
             credits: increment(reward),
             [`dimensionShiftClaims.${todayStr}`]: newClaims
+        });
+
+        return true;
+    };
+    
+    const claimFlappyMindMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (!userSnap.exists()) return false;
+
+        const userData = userSnap.data() as User;
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayClaims = userData.flappyMindClaims?.[todayStr] || [];
+        
+        const MILESTONE_REWARDS: Record<number, number> = { 5: 2, 10: 5, 15: 10, 20: 50, 30: 100 };
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !todayClaims.includes(m));
+
+        if (!validMilestone) {
+             // Also update high score if it's a new personal best, even if no reward is given
+            const currentHighScore = userData.gameHighScores?.flappyMind || 0;
+            if (milestone > currentHighScore) {
+                 await updateDoc(userDocRef, { [`gameHighScores.flappyMind`]: milestone });
+            }
+            return false;
+        }
+
+        const reward = MILESTONE_REWARDS[validMilestone];
+        const newClaims = [...todayClaims, validMilestone];
+
+        await updateDoc(userDocRef, {
+            credits: increment(reward),
+            [`flappyMindClaims.${todayStr}`]: newClaims,
+             [`gameHighScores.flappyMind`]: Math.max(userData.gameHighScores?.flappyMind || 0, milestone),
         });
 
         return true;
@@ -763,6 +799,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             emojiQuiz: 0,
             dimensionShift: 0,
             subjectSprint: 0,
+            flappyMind: 0,
         };
         usersSnapshot.forEach(userDoc => {
             batch.update(userDoc.ref, { 
@@ -854,6 +891,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateStudyTime,
         updateGameHighScore,
         claimDimensionShiftMilestone,
+        claimFlappyMindMilestone,
         makeUserAdmin,
         removeUserAdmin,
         makeUserVip,
