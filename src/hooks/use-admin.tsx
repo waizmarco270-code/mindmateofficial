@@ -53,6 +53,7 @@ export interface User {
     subjectSprint?: number;
   };
   claimedGlobalGifts?: string[];
+  dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
 }
 
 export interface Announcement {
@@ -157,6 +158,7 @@ interface AppDataContextType {
     claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
     updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint', score: number) => Promise<void>;
+    claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -594,6 +596,35 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             }
         }
     };
+    
+    const claimDimensionShiftMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (!userSnap.exists()) return false;
+
+        const userData = userSnap.data() as User;
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayClaims = userData.dimensionShiftClaims?.[todayStr] || [];
+
+        if (todayClaims.includes(milestone)) {
+            return false; // Already claimed today
+        }
+        
+        const MILESTONE_REWARDS: Record<number, number> = { 50: 30, 100: 50, 150: 100, 200: 200 };
+        const reward = MILESTONE_REWARDS[milestone];
+
+        if (!reward) return false;
+
+        const newClaims = [...todayClaims, milestone];
+
+        await updateDoc(userDocRef, {
+            credits: increment(reward),
+            [`dimensionShiftClaims.${todayStr}`]: newClaims
+        });
+
+        return true;
+    };
 
     // Announcement functions
     const addAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
@@ -822,6 +853,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         claimDailyTaskReward,
         updateStudyTime,
         updateGameHighScore,
+        claimDimensionShiftMilestone,
         makeUserAdmin,
         removeUserAdmin,
         makeUserVip,

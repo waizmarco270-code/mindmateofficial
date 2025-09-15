@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
@@ -10,8 +11,6 @@ import { useTheme } from 'next-themes';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
-import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { isToday } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LoginWall } from '../ui/login-wall';
@@ -20,9 +19,14 @@ import { LoginWall } from '../ui/login-wall';
 const PLAYER_SIZE = 20;
 const OBSTACLE_WIDTH = 40;
 const OBSTACLE_HEIGHT = 20;
-const WIN_SCORE = 50;
-const DAILY_WIN_REWARD = 100;
+const WIN_SCORE = 200;
 
+const MILESTONE_REWARDS: Record<number, number> = {
+  50: 30,
+  100: 50,
+  150: 100,
+  200: 200,
+};
 
 // Player state
 interface Player {
@@ -49,14 +53,14 @@ export function DimensionShiftGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
   const { user, isSignedIn } = useUser();
-  const { currentUserData, updateGameHighScore, addCreditsToUser } = useUsers();
+  const { currentUserData, updateGameHighScore, claimDimensionShiftMilestone } = useUsers();
   const { toast } = useToast();
 
 
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver' | 'won'>('idle');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [hasClaimedToday, setHasClaimedToday] = useState(true);
+  const [claimedMilestones, setClaimedMilestones] = useState<number[]>([]);
 
   // Using refs for game state that changes every frame to avoid re-renders
   const playerRef = useRef<Player>({ x: 0, y: 0, dimension: 'light' });
@@ -73,21 +77,15 @@ export function DimensionShiftGame() {
   
   // Check daily claim status
   useEffect(() => {
-    const checkClaimStatus = async () => {
-        if (!user) {
-          setHasClaimedToday(true); // Can't claim if not logged in
-          return;
-        };
-        const claimDocRef = doc(db, 'users', user.id, 'dailyClaims', 'dimensionShiftWin');
-        const docSnap = await getDoc(claimDocRef);
-        if (docSnap.exists() && isToday(docSnap.data().lastClaimed.toDate())) {
-            setHasClaimedToday(true);
-        } else {
-            setHasClaimedToday(false);
-        }
-    };
-    checkClaimStatus();
-  }, [user, gameState]);
+    if (user && currentUserData?.dimensionShiftClaims) {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayClaims = currentUserData.dimensionShiftClaims[todayStr] || [];
+        setClaimedMilestones(todayClaims);
+    } else {
+        setClaimedMilestones([]);
+    }
+  }, [user, currentUserData, gameState]);
+
 
   const getThemeColors = useCallback(() => {
     const isDark = resolvedTheme === 'dark';
@@ -133,18 +131,6 @@ export function DimensionShiftGame() {
       setHighScore(score);
       if(user) updateGameHighScore(user.id, 'dimensionShift', score);
     }
-    
-    if (!hasClaimedToday && user) {
-        await addCreditsToUser(user.id, DAILY_WIN_REWARD);
-        const claimDocRef = doc(db, 'users', user.id, 'dailyClaims', 'dimensionShiftWin');
-        await setDoc(claimDocRef, { lastClaimed: Timestamp.now() });
-        setHasClaimedToday(true);
-        toast({
-            title: `LEGENDARY! +${DAILY_WIN_REWARD} Credits!`,
-            description: "You've beaten the impossible and claimed your daily reward!",
-            className: "bg-green-500/10 text-green-700 border-green-500/50"
-        });
-    }
   }
 
   const gameOver = () => {
@@ -157,12 +143,33 @@ export function DimensionShiftGame() {
     }
   };
   
-  const updateScore = (newScore: number) => {
+  const handleScoreUpdate = useCallback((newScore: number) => {
     setScore(newScore);
-    if(newScore >= WIN_SCORE) {
+    
+    // Check for milestone
+    const reachedMilestone = Object.keys(MILESTONE_REWARDS)
+      .map(Number)
+      .find(m => newScore >= m && !claimedMilestones.includes(m));
+
+    if (reachedMilestone && user) {
+        claimDimensionShiftMilestone(user.id, reachedMilestone)
+            .then(success => {
+                if (success) {
+                    toast({
+                        title: `Milestone! +${MILESTONE_REWARDS[reachedMilestone]} Credits!`,
+                        description: `You reached a score of ${reachedMilestone}!`,
+                        className: "bg-green-500/10 text-green-700 border-green-500/50"
+                    });
+                    setClaimedMilestones(prev => [...prev, reachedMilestone]);
+                }
+            });
+    }
+
+    if (newScore >= WIN_SCORE) {
         handleWin();
     }
-  };
+  }, [claimedMilestones, user, claimDimensionShiftMilestone, toast]);
+
 
   const gameLoop = useCallback(() => {
     const canvas = canvasRef.current;
@@ -180,18 +187,21 @@ export function DimensionShiftGame() {
     
     // Difficulty scaling based on score
     let spawnRate = 80;
-    if (score > 15) spawnRate = 60;
-    if (score > 20) spawnRate = 40; // Insane
-    if (score > 30) spawnRate = 25; // Impossible
-    if (score > 40) spawnRate = 15; // SUPER CAR
+    if (score > 15) spawnRate = 60; // Insane
+    if (score > 20) spawnRate = 40; // Impossible
+    if (score > 30) spawnRate = 25; // SUPER CAR
+    if (score > 50) spawnRate = 20; // Super Insane
+    if (score > 100) spawnRate = 12; // Impossible Level
 
-    if (score > 15) scrollSpeedRef.current += 0.025; // "Insane" speed increase
-    if (score > 20) scrollSpeedRef.current += 0.05;  // "Impossible" speed increase
-    if (score > 30) scrollSpeedRef.current += 0.075;  // SUPER CAR speed increase
-    
+    // Speed increases
+    if (score > 15) scrollSpeedRef.current += 0.025;
+    if (score > 20) scrollSpeedRef.current += 0.05;
+    if (score > 30) scrollSpeedRef.current += 0.075;
+    if (score > 50) scrollSpeedRef.current += 0.1;   // Super Insane
+    if (score > 100) scrollSpeedRef.current += 0.15; // Impossible Level
 
     // Generate new obstacles
-    if (frameCountRef.current % spawnRate === 0) { 
+    if (frameCountRef.current % Math.floor(spawnRate) === 0) { 
         const dimension = Math.random() > 0.5 ? 'light' : 'dark';
         const xPosition = Math.random() * (canvas.width - OBSTACLE_WIDTH);
         
@@ -226,6 +236,7 @@ export function DimensionShiftGame() {
     }
 
     // Move obstacles and remove off-screen ones
+    let scoreGainedThisFrame = 0;
     obstaclesRef.current.forEach((obstacle, index) => {
         if (obstacle.type === 'accelerating' && obstacle.y > canvas.height / 3) {
             obstacle.speed += 0.15;
@@ -251,10 +262,14 @@ export function DimensionShiftGame() {
         if (obstacle.y > canvas.height) {
             obstaclesRef.current.splice(index, 1);
             if(gameState === 'playing') {
-                updateScore(score + 1);
+                scoreGainedThisFrame++;
             }
         }
     });
+
+    if (scoreGainedThisFrame > 0) {
+        handleScoreUpdate(score + scoreGainedThisFrame);
+    }
     
     // --- Collision Detection ---
     const playerBox = { x: playerRef.current.x - PLAYER_SIZE / 2, y: playerRef.current.y - PLAYER_SIZE / 2, width: PLAYER_SIZE, height: PLAYER_SIZE };
@@ -306,7 +321,7 @@ export function DimensionShiftGame() {
     ctx.fill();
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [getThemeColors, score, gameState, user, hasClaimedToday, toast, updateGameHighScore, addCreditsToUser, highScore]);
+  }, [getThemeColors, score, gameState, handleScoreUpdate]);
 
 
   // Initialize and run game loop
@@ -410,7 +425,7 @@ export function DimensionShiftGame() {
                     {gameState === 'won' && (
                          <div className="text-center space-y-4">
                             <h3 className="text-3xl font-bold text-yellow-400">YOU WON!</h3>
-                            <p>You conquered the impossible! You earned {DAILY_WIN_REWARD} credits!</p>
+                            <p>You conquered the impossible!</p>
                             <Button size="lg" onClick={startGame}>
                                 <RotateCw className="mr-2"/> Play Again
                             </Button>
@@ -448,8 +463,13 @@ export function DimensionShiftGame() {
                          <div className="flex items-start gap-3">
                             <Award className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
                              <div>
-                                <h4 className="font-bold text-foreground">Rewards</h4>
-                                 <p>Achieve the legendary score of <span className="font-bold text-primary">{WIN_SCORE}</span> to earn a massive <span className="font-bold text-amber-500">{DAILY_WIN_REWARD} credit</span> prize! This reward can only be claimed once per day.</p>
+                                <h4 className="font-bold text-foreground">Daily Rewards</h4>
+                                <p>Reach score milestones to earn credit rewards! Rewards are claimable once per day.</p>
+                                <ul className="list-disc pl-4 space-y-1 mt-2">
+                                    {Object.entries(MILESTONE_REWARDS).map(([score, reward]) => (
+                                        <li key={score}><span className="font-bold text-primary">{score} Score</span> = <span className="font-semibold text-amber-500">{reward} Credits</span></li>
+                                    ))}
+                                </ul>
                             </div>
                         </div>
                     </div>
