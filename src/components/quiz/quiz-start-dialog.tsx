@@ -25,6 +25,8 @@ export function QuizStartDialog({ quiz, isOpen, onOpenChange }: QuizStartDialogP
   const [quizStarted, setQuizStarted] = useState(false);
   
   const alreadyPerfected = currentUserData?.perfectedQuizzes?.includes(quiz.id);
+  const attempts = currentUserData?.quizAttempts?.[quiz.id] || 0;
+  const canEarnReward = !alreadyPerfected && attempts < 2;
 
   const handleStartQuiz = async () => {
       if (!user || !currentUserData) {
@@ -68,7 +70,7 @@ export function QuizStartDialog({ quiz, isOpen, onOpenChange }: QuizStartDialogP
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="text-2xl">Ready to Start?</DialogTitle>
-          <DialogDescription>You are about to start the "{quiz.title}" quiz.</DialogDescription>
+          <DialogDescription>You have {2 - attempts} attempt(s) left to earn the reward.</DialogDescription>
         </DialogHeader>
         <div className="space-y-6 py-4">
           <div className="flex items-center justify-around text-center">
@@ -93,11 +95,16 @@ export function QuizStartDialog({ quiz, isOpen, onOpenChange }: QuizStartDialogP
                 <CheckCircle className="h-5 w-5"/>
                 <p className="font-semibold text-sm">You have already earned the reward for this quiz!</p>
             </div>
+          ) : !canEarnReward ? (
+             <div className="flex items-center justify-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-destructive">
+                <AlertTriangle className="h-5 w-5"/>
+                <p className="font-semibold text-sm">You have used all your reward attempts for this quiz.</p>
+            </div>
           ) : (
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
                 <AlertTriangle className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <p className="text-xs">
-                  <span className="font-semibold">The +{quiz.reward} credit reward is only awarded for a perfect score.</span> The timer begins immediately after starting.
+                  <span className="font-semibold">The +{quiz.reward} credit reward is only available for a perfect score within your first 2 attempts.</span> The timer begins immediately after starting.
                 </p>
             </div>
           )}

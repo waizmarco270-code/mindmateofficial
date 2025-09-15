@@ -71,13 +71,16 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
 
         if(!user || !currentUserData) return;
         
+        const previousAttempts = currentUserData.quizAttempts?.[quiz.id] || 0;
+        
         // Always increment attempt count on finish
         await incrementQuizAttempt(user.id, quiz.id);
 
         const isPerfect = score === quiz.questions.length && score > 0;
         const alreadyPerfected = currentUserData.perfectedQuizzes?.includes(quiz.id);
+        const withinAttemptLimit = previousAttempts < 2;
 
-        if (isPerfect && !alreadyPerfected && !creditAwardedRef.current) {
+        if (isPerfect && !alreadyPerfected && withinAttemptLimit && !creditAwardedRef.current) {
             creditAwardedRef.current = true;
             await addCreditsToUser(user.id, quiz.reward);
             await addPerfectedQuiz(user.id, quiz.id);
@@ -137,6 +140,8 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
     if (quizFinished) {
         const isPerfectScore = score === quiz.questions.length && score > 0;
         const alreadyPerfected = currentUserData?.perfectedQuizzes?.includes(quiz.id);
+        const previousAttempts = (currentUserData?.quizAttempts?.[quiz.id] || 0); // before this attempt
+        const withinAttemptLimit = previousAttempts < 2;
         
         return (
             <div className="flex flex-col items-center justify-center p-4 h-full overflow-y-auto">
@@ -161,16 +166,22 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
                            <p className="text-6xl font-bold tracking-tight">{score} <span className="text-3xl text-muted-foreground">/ {quiz.questions.length}</span></p>
                         </div>
                         
-                        {isPerfectScore && !alreadyPerfected && (
+                        {isPerfectScore && withinAttemptLimit && !alreadyPerfected && (
                              <div className="flex items-center justify-center gap-2 rounded-lg border border-green-500/50 bg-green-500/10 p-3 text-green-700 dark:text-green-300">
                                 <CheckCircle className="h-5 w-5"/>
                                 <p className="font-semibold">Awesome! You earned {quiz.reward} bonus credits!</p>
                             </div>
                         )}
+                        {isPerfectScore && !withinAttemptLimit && !alreadyPerfected && (
+                             <div className="flex items-center justify-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-destructive">
+                                <XCircle className="h-5 w-5"/>
+                                <p className="font-semibold">Perfect score, but reward is only for the first 2 attempts.</p>
+                            </div>
+                        )}
                          {isPerfectScore && alreadyPerfected && (
                              <div className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
                                 <Trophy className="h-5 w-5"/>
-                                <p className="font-semibold">Perfect score! No more credits can be earned for this quiz.</p>
+                                <p className="font-semibold">Perfect score! You've already earned the reward for this quiz.</p>
                             </div>
                         )}
 
