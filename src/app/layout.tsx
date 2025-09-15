@@ -7,6 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/react';
+import { PWAInstallPrompt } from '@/components/pwa/pwa-install-prompt';
 
 export default function RootLayout({
   children,
@@ -38,6 +39,7 @@ export default function RootLayout({
             {children}
             <Toaster />
             <Analytics />
+            <PWAInstallPrompt />
           </ThemeProvider>
         </body>
       </html>

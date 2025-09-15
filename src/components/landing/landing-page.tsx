@@ -11,7 +11,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Card, CardContent } from '../ui/card';
-import { InstallPWAButton } from '../pwa/install-pwa-button';
 
 const navLinks = [
     { name: 'Features', href: '#features' },
@@ -121,7 +120,7 @@ export function LandingPage() {
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl">
             <Logo className="h-8 w-8" />
-            <span>MindMate</span>
+            <span className="hidden sm:inline">MindMate</span>
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             {navLinks.map(link => (
@@ -131,7 +130,6 @@ export function LandingPage() {
             ))}
           </nav>
           <div className="flex items-center gap-2">
-             <InstallPWAButton />
              <SignedOut>
                  <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                     <Button>
@@ -169,7 +167,6 @@ export function LandingPage() {
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
                 </div>
             </div>
             <div className="container mx-auto px-4 text-center relative">
@@ -189,9 +186,6 @@ export function LandingPage() {
                                 </span>
                             </Button>
                         </SignUpButton>
-                        <Link href="/dashboard" className={cn(buttonVariants({ variant: "outline", size: "lg"}), "bg-transparent text-white w-full sm:w-auto")}>
-                            Explore Demo
-                        </Link>
                     </SignedOut>
                      <SignedIn>
                         <Link href="/dashboard">
