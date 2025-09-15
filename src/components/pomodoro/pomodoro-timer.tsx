@@ -46,19 +46,22 @@ export function PomodoroTimer() {
   const [tempSettings, setTempSettings] = useState(settings);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        audioRef.current = new Audio();
-    }
-  }, []);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const playNotificationSound = useCallback(() => {
-    if (audioRef.current) {
-        audioRef.current.src = soundMap[settings.sound];
-        audioRef.current.play().catch(error => console.error("Audio playback failed:", error));
-    }
+    if (!audioContextRef.current) return;
+    const audioContext = audioContextRef.current;
+    
+    fetch(soundMap[settings.sound])
+      .then(response => response.arrayBuffer())
+      .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+      .then(audioBuffer => {
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+      })
+      .catch(error => console.error("Error playing sound:", error));
   }, [settings.sound]);
 
   const resetTimer = useCallback(() => {
@@ -107,6 +110,17 @@ export function PomodoroTimer() {
   }, [settings, mode, isActive]);
 
   const handleToggle = () => {
+    if (!audioContextRef.current && typeof window !== 'undefined') {
+        try {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        } catch (e) {
+            console.error("Web Audio API is not supported in this browser");
+        }
+    }
+    // Resume audio context if it's suspended
+    if(audioContextRef.current?.state === 'suspended') {
+        audioContextRef.current.resume();
+    }
     setIsActive(!isActive);
   };
   
@@ -141,12 +155,12 @@ export function PomodoroTimer() {
   return (
     <div className="relative h-screen w-full flex flex-col items-center justify-center text-white overflow-hidden bg-gray-900">
       <div className="absolute inset-0 z-0 blue-nebula-bg" />
-      <AnimatePresence>
+      <AnimatePresence mode="wait">
         <motion.div
           key={mode}
           initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
+          exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
           className="absolute top-16 md:top-24 text-center z-10"
         >
             <p className="text-xl font-medium tracking-wider uppercase text-white/80">{modeText[mode]}</p>
@@ -155,7 +169,7 @@ export function PomodoroTimer() {
       <motion.div 
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 flex flex-col items-center justify-center p-4"
       >
         <div className="relative h-64 w-64 md:h-80 md:w-80 rounded-full flex items-center justify-center">
@@ -167,8 +181,8 @@ export function PomodoroTimer() {
                 <motion.circle
                     className="text-green-400"
                     strokeWidth="3"
-                    strokeDasharray="295.3"
-                    strokeDashoffset={295.3 * (1 - progress / 100)}
+                    strokeDasharray="301.59"
+                    strokeDashoffset={301.59 * (1 - progress / 100)}
                     strokeLinecap="round"
                     stroke="currentColor"
                     fill="transparent"
@@ -176,9 +190,9 @@ export function PomodoroTimer() {
                     cx="50"
                     cy="50"
                     style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
-                    initial={{ strokeDashoffset: 295.3 }}
-                    animate={{ strokeDashoffset: 295.3 * (1 - progress / 100) }}
-                    transition={{ duration: 1 }}
+                    initial={{ strokeDashoffset: 301.59 }}
+                    animate={{ strokeDashoffset: 301.59 * (1 - progress / 100) }}
+                    transition={{ duration: 1, ease: "linear" }}
                 />
             </svg>
              <div className="relative flex flex-col items-center text-center">
