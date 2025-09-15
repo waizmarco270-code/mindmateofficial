@@ -11,6 +11,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '../ui/separator';
 import { InsightsView } from '../insights/insights-view';
+import { TodoList } from '../todos/todo-list';
 
 type CalendarView = 'month' | 'week' | 'agenda';
 
@@ -121,7 +122,7 @@ export function NexusView() {
                             >
                                 {view === 'month' && renderMonthView()}
                                 {(view === 'week' || view === 'agenda') && (
-                                    <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
+                                    <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-4">
                                         <p className="font-bold text-lg">Coming Soon!</p>
                                         <p>The <span className="capitalize font-semibold text-primary">{view}</span> view will be built here.</p>
                                     </div>
@@ -134,15 +135,25 @@ export function NexusView() {
             <ResizableHandle withHandle />
             <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
                 <div className="h-full flex flex-col">
-                    <CardHeader>
-                        <CardTitle>Insights Panel</CardTitle>
-                         <CardDescription>
-                            Showing data for: {format(selectedDate, 'MMMM d, yyyy')}
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-1 overflow-y-auto">
-                        <InsightsView selectedDate={selectedDate} />
-                    </CardContent>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>Insights for {format(selectedDate, 'MMMM d')}</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <InsightsView selectedDate={selectedDate} />
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Today's Tasks</CardTitle>
+                                <CardDescription>Drag tasks to the calendar to schedule them.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <TodoList />
+                            </CardContent>
+                        </Card>
+                    </div>
                 </div>
             </ResizablePanel>
        </ResizablePanelGroup>
