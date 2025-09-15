@@ -161,7 +161,7 @@ export function TimeTracker() {
                          <Button onClick={handleSaveSubject}>Save</Button>
                     </DialogFooter>
                 </DialogContent>
-            </>
+            </Dialog>
         </>
     );
 }
