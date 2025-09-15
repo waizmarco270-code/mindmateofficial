@@ -95,10 +95,15 @@ export function PomodoroTimer() {
   }, [isMuted, settings.sound]);
 
 
-  const resetTimer = useCallback(() => {
+  const resetTimer = useCallback((isManualReset = false) => {
     setIsActive(false);
     if (timerRef.current) clearInterval(timerRef.current);
     
+    if (isManualReset) {
+      setTimeLeft(settings[mode] * 60);
+      return;
+    }
+
     let nextMode: TimerMode = 'focus';
     let nextTime = settings.focus * 60;
     
@@ -153,11 +158,7 @@ export function PomodoroTimer() {
   };
   
   const handleReset = () => {
-    setIsActive(false);
-    if (timerRef.current) {
-        clearInterval(timerRef.current);
-    }
-    setTimeLeft(settings[mode] * 60);
+    resetTimer(true);
   }
 
   const handleSaveSettings = () => {
@@ -279,22 +280,22 @@ export function PomodoroTimer() {
                         <div className="py-4 space-y-6 overflow-y-auto">
                             <div>
                                 <h3 className="mb-4 font-semibold">Nature</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
                                     {pomodoroThemes.nature.map((theme) => (
-                                        <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-[9/16] w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="30vw" className="object-cover group-hover:scale-105 transition-transform duration-300"/>
-                                            {selectedTheme?.id === theme.id && <div className="absolute top-2 right-2 p-1.5 bg-primary rounded-full text-primary-foreground"><CheckCircle className="h-4 w-4"/></div>}
+                                        <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
+                                            {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
                                         </button>
                                     ))}
                                 </div>
                             </div>
                              <div>
                                 <h3 className="mb-4 font-semibold">Lofi</h3>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
                                     {pomodoroThemes.lofi.map((theme) => (
-                                        <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-[9/16] w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="30vw" className="object-cover group-hover:scale-105 transition-transform duration-300"/>
-                                            {selectedTheme?.id === theme.id && <div className="absolute top-2 right-2 p-1.5 bg-primary rounded-full text-primary-foreground"><CheckCircle className="h-4 w-4"/></div>}
+                                        <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
+                                            {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
                                         </button>
                                     ))}
                                 </div>
