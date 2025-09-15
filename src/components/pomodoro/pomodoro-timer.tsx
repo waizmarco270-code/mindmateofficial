@@ -63,16 +63,27 @@ export function PomodoroTimer() {
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const playNotificationSound = useCallback(() => {
-    if (!audioContextRef.current) return;
-    const audioContext = audioContextRef.current;
+    if (typeof window === 'undefined') return;
+    if (!audioContextRef.current) {
+        try {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        } catch (e) {
+            console.error("Web Audio API is not supported in this browser");
+            return;
+        }
+    }
+    // Ensure context is running
+    if (audioContextRef.current.state === 'suspended') {
+      audioContextRef.current.resume();
+    }
     
     fetch(soundMap[settings.sound])
       .then(response => response.arrayBuffer())
-      .then(arrayBuffer => audioContext.decodeAudioData(arrayBuffer))
+      .then(arrayBuffer => audioContextRef.current!.decodeAudioData(arrayBuffer))
       .then(audioBuffer => {
-        const source = audioContext.createBufferSource();
+        const source = audioContextRef.current!.createBufferSource();
         source.buffer = audioBuffer;
-        source.connect(audioContext.destination);
+        source.connect(audioContextRef.current!.destination);
         source.start(0);
       })
       .catch(error => console.error("Error playing sound:", error));
@@ -124,7 +135,7 @@ export function PomodoroTimer() {
   }, [settings, mode, isActive]);
 
   const handleToggle = () => {
-    if (!audioContextRef.current && typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !audioContextRef.current) {
         try {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         } catch (e) {
@@ -167,7 +178,7 @@ export function PomodoroTimer() {
   }
 
   return (
-    <div className="relative h-full w-full flex flex-col items-center justify-center text-white overflow-hidden bg-gray-900">
+    <div className="relative h-full w-full flex flex-col items-center justify-between text-white overflow-hidden bg-gray-900 py-10 md:py-16">
       <AnimatePresence>
         {selectedTheme && (
             <motion.div
@@ -195,7 +206,7 @@ export function PomodoroTimer() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
           exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
-          className="absolute top-16 md:top-24 text-center z-10"
+          className="text-center z-10"
         >
             <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
         </motion.div>
@@ -240,7 +251,7 @@ export function PomodoroTimer() {
         </div>
       </motion.div>
       
-      <div className="absolute bottom-16 md:bottom-24 z-10 flex items-center gap-4">
+      <div className="z-10 flex items-center gap-4">
           <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white" onClick={handleReset}>
               <RotateCcw className="h-8 w-8" />
           </Button>
