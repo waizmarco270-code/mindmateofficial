@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -606,11 +607,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (!userSnap.exists()) return false;
 
         const userData = userSnap.data() as User;
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const todayClaims = userData.dimensionShiftClaims?.[todayStr] || [];
+        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const weekClaims = userData.dimensionShiftClaims?.[weekKey] || [];
 
-        if (todayClaims.includes(milestone)) {
-            return false; // Already claimed today
+        if (weekClaims.includes(milestone)) {
+            return false; // Already claimed this week
         }
         
         const MILESTONE_REWARDS: Record<number, number> = { 50: 30, 100: 50, 150: 100, 200: 200 };
@@ -618,11 +619,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
         if (!reward) return false;
 
-        const newClaims = [...todayClaims, milestone];
+        const newClaims = [...weekClaims, milestone];
 
         await updateDoc(userDocRef, {
             credits: increment(reward),
-            [`dimensionShiftClaims.${todayStr}`]: newClaims
+            [`dimensionShiftClaims.${weekKey}`]: newClaims
         });
 
         return true;
@@ -635,11 +636,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (!userSnap.exists()) return false;
 
         const userData = userSnap.data() as User;
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const todayClaims = userData.flappyMindClaims?.[todayStr] || [];
+        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const weekClaims = userData.flappyMindClaims?.[weekKey] || [];
         
         const MILESTONE_REWARDS: Record<number, number> = { 5: 2, 10: 5, 15: 10, 20: 50, 30: 100 };
-        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !todayClaims.includes(m));
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
 
         if (!validMilestone) {
              // Also update high score if it's a new personal best, even if no reward is given
@@ -651,11 +652,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const reward = MILESTONE_REWARDS[validMilestone];
-        const newClaims = [...todayClaims, validMilestone];
+        const newClaims = [...weekClaims, validMilestone];
 
         await updateDoc(userDocRef, {
             credits: increment(reward),
-            [`flappyMindClaims.${todayStr}`]: newClaims,
+            [`flappyMindClaims.${weekKey}`]: newClaims,
              [`gameHighScores.flappyMind`]: Math.max(userData.gameHighScores?.flappyMind || 0, milestone),
         });
 

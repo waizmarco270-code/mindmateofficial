@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useRef, useEffect, useState, useCallback } from 'react';
@@ -11,6 +12,7 @@ import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LoginWall } from '../ui/login-wall';
+import { startOfWeek, format } from 'date-fns';
 
 // Game Configuration
 const PLAYER_SIZE = { width: 40, height: 30 };
@@ -69,9 +71,14 @@ export function FlappyMindGame() {
   
   useEffect(() => {
     if (user && currentUserData?.flappyMindClaims) {
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const todayClaims = currentUserData.flappyMindClaims[todayStr] || [];
-        setClaimedMilestones(todayClaims);
+      const weeklyClaims = currentUserData.flappyMindClaims;
+      const currentWeekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+      
+      if (weeklyClaims[currentWeekKey]) {
+          setClaimedMilestones(weeklyClaims[currentWeekKey]);
+      } else {
+          setClaimedMilestones([]);
+      }
     } else {
         setClaimedMilestones([]);
     }
@@ -352,8 +359,8 @@ export function FlappyMindGame() {
                      <div className="flex items-start gap-3">
                         <Trophy className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
                          <div>
-                            <h4 className="font-bold text-foreground">Daily Milestone Rewards</h4>
-                            <p>Reach score milestones to earn credit rewards! Rewards are claimable once per day, so aim high!</p>
+                            <h4 className="font-bold text-foreground">Weekly Milestone Rewards</h4>
+                            <p>Reach score milestones to earn credit rewards! Rewards are claimable once per week.</p>
                             <ul className="list-disc pl-4 space-y-1 mt-2">
                                 {Object.entries(MILESTONE_REWARDS).map(([score, reward]) => (
                                     <li key={score}><span className="font-bold text-primary">{score} Score</span> = <span className="font-semibold text-amber-500">{reward} Credits</span></li>
