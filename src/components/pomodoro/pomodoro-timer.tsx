@@ -180,7 +180,7 @@ export function PomodoroTimer() {
   }
 
   return (
-    <div className="relative inset-0 z-0 h-full w-full flex flex-col text-white overflow-hidden bg-gray-900">
+    <div className="absolute inset-0 z-0 h-full w-full flex flex-col text-white overflow-hidden bg-gray-900">
         <AnimatePresence>
             {selectedTheme && (
                 <motion.div
@@ -203,14 +203,14 @@ export function PomodoroTimer() {
                 </motion.div>
             )}
         </AnimatePresence>
-        <div className="flex-1 flex flex-col items-center justify-between p-4 sm:p-6 lg:p-8">
+        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-8">
             <AnimatePresence mode="wait">
                 <motion.div
                 key={mode}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
                 exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
-                className="text-center z-10 pt-16 sm:pt-0"
+                className="text-center z-10"
                 >
                     <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
                 </motion.div>
@@ -221,7 +221,7 @@ export function PomodoroTimer() {
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 className="relative z-10 flex flex-col items-center justify-center p-4"
             >
-                <div className="relative h-64 w-64 md:h-80 md:w-80 rounded-full flex items-center justify-center">
+                <div className="relative h-64 w-64 sm:h-72 sm:w-72 md:h-80 md:w-80 rounded-full flex items-center justify-center">
                     <div className="absolute inset-0 bg-black/40 backdrop-blur-md rounded-full shadow-2xl"/>
                     <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
                         <circle className="text-white/10" strokeWidth="3" stroke="currentColor" fill="transparent" r="48" cx="50" cy="50"/>
