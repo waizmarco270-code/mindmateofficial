@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Award, Brain, Check, HelpCircle, Loader2, RotateCw, Send, Code, FlaskConical, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
@@ -15,6 +15,7 @@ import { db } from '@/lib/firebase';
 import { isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import { LoginWall } from '../ui/login-wall';
 
 const WORD_CATEGORIES = {
     programming: [
@@ -48,7 +49,7 @@ const shuffle = (str: string) => {
 }
 
 export function WordUnscrambleGame() {
-    const { user } = useUser();
+    const { user, isSignedIn } = useUser();
     const { toast } = useToast();
     const { addCreditsToUser } = useUsers();
     
@@ -188,13 +189,13 @@ export function WordUnscrambleGame() {
                         onChange={(e) => setUserInput(e.target.value)}
                         placeholder="Your answer..."
                         className="h-12 text-lg text-center"
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || !isSignedIn}
                     />
-                    <Button type="submit" size="icon" className="h-12 w-12" disabled={isSubmitting}>
+                    <Button type="submit" size="icon" className="h-12 w-12" disabled={isSubmitting || !isSignedIn}>
                        {isSubmitting ? <Loader2 className="animate-spin" /> : <Send />}
                     </Button>
                 </div>
-                 <Button type="button" variant="outline" onClick={handleSkip} className="w-full" disabled={isSubmitting}>
+                 <Button type="button" variant="outline" onClick={handleSkip} className="w-full" disabled={isSubmitting || !isSignedIn}>
                     <RotateCw className="mr-2 h-4 w-4"/> Skip Word
                 </Button>
             </form>
@@ -202,7 +203,10 @@ export function WordUnscrambleGame() {
     }
 
     return (
-        <Card className="w-full">
+        <Card className="w-full relative">
+             <SignedOut>
+                <LoginWall title="Unlock Word Unscramble" description="Sign up to play this word game, earn daily rewards, and track your progress." />
+            </SignedOut>
             <CardHeader>
                 <CardTitle>Word Unscramble</CardTitle>
                 <CardDescription>Unscramble the letters to form a word.</CardDescription>
@@ -210,9 +214,9 @@ export function WordUnscrambleGame() {
             <CardContent>
                 <Tabs value={activeCategory} onValueChange={(v) => setActiveCategory(v as WordCategory)} className="w-full mb-6">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="programming"><Code className="mr-2 h-4 w-4" /> Code</TabsTrigger>
-                        <TabsTrigger value="science"><FlaskConical className="mr-2 h-4 w-4" /> Science</TabsTrigger>
-                        <TabsTrigger value="general"><Globe className="mr-2 h-4 w-4" /> General</TabsTrigger>
+                        <TabsTrigger value="programming" disabled={!isSignedIn}><Code className="mr-2 h-4 w-4" /> Code</TabsTrigger>
+                        <TabsTrigger value="science" disabled={!isSignedIn}><FlaskConical className="mr-2 h-4 w-4" /> Science</TabsTrigger>
+                        <TabsTrigger value="general" disabled={!isSignedIn}><Globe className="mr-2 h-4 w-4" /> General</TabsTrigger>
                     </TabsList>
                 </Tabs>
                 {renderContent()}

@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
 import { Award, Brain, Clock, Loader2, Sparkles, Star, Code, FlaskConical, Globe } from 'lucide-react';
@@ -14,6 +14,7 @@ import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { isToday } from 'date-fns';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
+import { LoginWall } from '../ui/login-wall';
 
 
 const WORD_CATEGORIES = {
@@ -51,7 +52,7 @@ const shuffle = (array: string[]) => {
 };
 
 export function WordHuntGame() {
-    const { user } = useUser();
+    const { user, isSignedIn } = useUser();
     const { toast } = useToast();
     const { addCreditsToUser } = useUsers();
 
@@ -227,7 +228,7 @@ export function WordHuntGame() {
 
     if (isLoading) {
         return (
-             <Card className="w-full">
+             <Card className="w-full relative">
                 <CardHeader>
                     <CardTitle>Word Hunt</CardTitle>
                     <CardDescription>Unscramble the letters to form a word before time runs out!</CardDescription>
@@ -240,7 +241,10 @@ export function WordHuntGame() {
     }
 
     return (
-        <Card className="w-full bg-gradient-to-br from-card to-muted/50 overflow-hidden">
+        <Card className="w-full bg-gradient-to-br from-card to-muted/50 overflow-hidden relative">
+             <SignedOut>
+                <LoginWall title="Unlock Word Hunt" description="Sign up to play this unscrambling game, earn daily rewards, and track your progress." />
+            </SignedOut>
             <CardHeader>
                 <CardTitle>Word Hunt</CardTitle>
                 <CardDescription>Unscramble the letters to form a word before time runs out!</CardDescription>
@@ -264,7 +268,7 @@ export function WordHuntGame() {
                 <AnimatePresence mode="wait">
                     {gameState === 'idle' && (
                         <motion.div key="idle" initial={{opacity: 0, y: 20}} animate={{opacity: 1, y: 0}} exit={{opacity: 0, y: -20}} className="min-h-[200px] flex flex-col justify-center items-center">
-                            <Button onClick={startGame} size="lg" className="shadow-lg shadow-primary/20">Start Level {level}</Button>
+                            <Button onClick={startGame} size="lg" className="shadow-lg shadow-primary/20" disabled={!isSignedIn}>Start Level {level}</Button>
                         </motion.div>
                     )}
                     {gameState === 'completed' && (

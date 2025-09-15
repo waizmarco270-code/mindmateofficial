@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Award, Brain, HelpCircle, Loader2, Play } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
@@ -14,6 +14,7 @@ import { db } from '@/lib/firebase';
 import { isThisWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { LoginWall } from '../ui/login-wall';
 
 const PADS = ['green', 'red', 'yellow', 'blue'] as const;
 type PadColor = typeof PADS[number];
@@ -78,7 +79,7 @@ const playSound = (frequency: number) => {
 
 
 export function MemoryPatternGame() {
-    const { user } = useUser();
+    const { user, isSignedIn } = useUser();
     const { toast } = useToast();
     const { addCreditsToUser, currentUserData, updateGameHighScore } = useUsers();
 
@@ -222,7 +223,10 @@ export function MemoryPatternGame() {
 
     return (
          <div className="flex flex-col md:flex-row gap-8 items-start">
-            <Card className="w-full md:max-w-lg">
+            <Card className="w-full md:max-w-lg relative">
+                <SignedOut>
+                    <LoginWall title="Unlock Memory Pattern" description="Sign up to play this classic memory game, track your high score, and earn weekly milestone rewards." />
+                </SignedOut>
                  <CardHeader>
                     <CardTitle>Memory Pattern</CardTitle>
                     <CardDescription>Repeat the sequence of lights and sounds. How long can you last?</CardDescription>
@@ -255,7 +259,7 @@ export function MemoryPatternGame() {
                     </div>
 
                     {gameState === 'idle' || gameState === 'gameOver' ? (
-                        <Button onClick={startGame} size="lg" className="w-full">
+                        <Button onClick={startGame} size="lg" className="w-full" disabled={!isSignedIn}>
                             <Play className="mr-2"/>
                             {gameState === 'gameOver' ? 'Play Again' : 'Start Game'}
                         </Button>

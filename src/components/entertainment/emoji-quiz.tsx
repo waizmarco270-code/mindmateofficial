@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Award, Brain, Clock, Loader2, Play, AlertTriangle, Heart, Send, RotateCw, Sparkles, Check, Forward } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
@@ -15,6 +15,7 @@ import { isThisWeek, startOfWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Input } from '../ui/input';
 import { Progress } from '../ui/progress';
+import { LoginWall } from '../ui/login-wall';
 
 
 const EMOJI_LEVELS = [
@@ -84,7 +85,7 @@ const getLevelTime = (level: number) => {
 }
 
 export function EmojiQuiz() {
-    const { user } = useUser();
+    const { user, isSignedIn } = useUser();
     const { toast } = useToast();
     const { addCreditsToUser, currentUserData, updateGameHighScore } = useUsers();
 
@@ -246,7 +247,10 @@ export function EmojiQuiz() {
     }
 
     return (
-         <Card className="w-full max-w-lg mx-auto">
+         <Card className="w-full max-w-lg mx-auto relative">
+            <SignedOut>
+                <LoginWall title="Unlock Emoji Quiz" description="Sign up to play this fun emoji quiz, track your high score, and earn weekly milestone rewards." />
+            </SignedOut>
              <CardHeader>
                 <CardTitle>Emoji Quiz</CardTitle>
                 <CardDescription>Guess the word or phrase from the emojis. You get {MAX_MISTAKES} chances!</CardDescription>
@@ -254,7 +258,7 @@ export function EmojiQuiz() {
              <CardContent className="space-y-6">
                 {gameState === 'idle' && (
                     <div className="text-center py-10">
-                        <Button onClick={startGame} size="lg"><Play className="mr-2"/> Start Game</Button>
+                        <Button onClick={startGame} size="lg" disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button>
                     </div>
                 )}
                  {gameState === 'gameOver' && (

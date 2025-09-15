@@ -7,13 +7,14 @@ import { Button } from '@/components/ui/button';
 import { Orbit, Play, RotateCw, HelpCircle, Award } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from 'next-themes';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { isToday } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { LoginWall } from '../ui/login-wall';
 
 // Game Configuration
 const PLAYER_SIZE = 20;
@@ -47,7 +48,7 @@ interface Obstacle {
 export function DimensionShiftGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
-  const { user } = useUser();
+  const { user, isSignedIn } = useUser();
   const { currentUserData, updateGameHighScore, addCreditsToUser } = useUsers();
   const { toast } = useToast();
 
@@ -375,7 +376,10 @@ export function DimensionShiftGame() {
 
   return (
     <div className="flex flex-col md:flex-row gap-8 items-start">
-      <Card className="w-full md:max-w-md mx-auto">
+      <Card className="w-full md:max-w-md mx-auto relative">
+         <SignedOut>
+            <LoginWall title="Unlock Dimension Shift" description="Sign up to play this fast-paced arcade game, track your high score, and earn legendary rewards." />
+        </SignedOut>
         <CardHeader>
           <CardTitle>Dimension Shift</CardTitle>
           <CardDescription>Click to switch dimensions, move mouse to dodge.</CardDescription>
@@ -390,7 +394,7 @@ export function DimensionShiftGame() {
              {gameState !== 'playing' && (
                 <div className="absolute inset-0 bg-black/50 flex flex-col justify-center items-center text-white z-10 p-4">
                     {gameState === 'idle' && (
-                        <Button size="lg" onClick={startGame}>
+                        <Button size="lg" onClick={startGame} disabled={!isSignedIn}>
                             <Play className="mr-2"/> Start Game
                         </Button>
                     )}

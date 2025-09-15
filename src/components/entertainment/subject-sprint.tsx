@@ -6,12 +6,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Loader2, Play, AlertTriangle, Send, RotateCw, Sparkles, Check, Forward, Zap, BookCheck, Trophy, Film, TestTube2, BrainCircuit, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
 import { useQuizzes, type Quiz, type QuizQuestion, type QuizCategory, categoryDetails } from '@/hooks/use-quizzes';
 import { Progress } from '../ui/progress';
 import { cn } from '@/lib/utils';
+import { LoginWall } from '../ui/login-wall';
 
 const INITIAL_TIME = 30; // seconds
 const TIME_PER_CORRECT_ANSWER = 3;
@@ -23,7 +24,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 };
 
 export function SubjectSprintGame() {
-    const { user } = useUser();
+    const { user, isSignedIn } = useUser();
     const { toast } = useToast();
     const { currentUserData, updateGameHighScore } = useUsers();
     const { quizzes, loading: quizzesLoading } = useQuizzes();
@@ -144,7 +145,10 @@ export function SubjectSprintGame() {
 
     if (gameState === 'selecting') {
         return (
-            <Card>
+            <Card className="relative">
+                 <SignedOut>
+                    <LoginWall title="Unlock Subject Sprint" description="Sign up to play this fast-paced quiz game, challenge your knowledge, and set high scores." />
+                </SignedOut>
                 <CardHeader>
                     <CardTitle>Subject Sprint</CardTitle>
                     <CardDescription>Choose a category and answer as many questions as you can before time runs out!</CardDescription>
@@ -153,7 +157,7 @@ export function SubjectSprintGame() {
                     {Object.entries(categoryDetails).map(([key, details]) => {
                         const { Icon, title } = details;
                         return (
-                            <Button key={key} variant="outline" className="h-auto py-4" onClick={() => handleCategorySelect(key as QuizCategory)}>
+                            <Button key={key} variant="outline" className="h-auto py-4" onClick={() => handleCategorySelect(key as QuizCategory)} disabled={!isSignedIn}>
                                 <Icon className="mr-3 h-5 w-5"/>
                                 {title}
                             </Button>

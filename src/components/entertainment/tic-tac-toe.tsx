@@ -7,12 +7,13 @@ import { Button } from '@/components/ui/button';
 import { X, Circle, RotateCw, Award, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { useUsers } from '@/hooks/use-admin';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { isToday } from 'date-fns';
+import { LoginWall } from '../ui/login-wall';
 
 type Player = 'X' | 'O';
 type Board = (Player | null)[];
@@ -26,7 +27,7 @@ const WINNING_COMBINATIONS = [
 const DAILY_WIN_REWARD = 1000;
 
 export function TicTacToeGame() {
-    const { user } = useUser();
+    const { user, isSignedIn } = useUser();
     const { toast } = useToast();
     const { addCreditsToUser } = useUsers();
     
@@ -48,7 +49,7 @@ export function TicTacToeGame() {
             }
         };
         checkClaimStatus();
-    }, [user]);
+    }, [user, winner]);
 
     const checkWinner = (currentBoard: Board): Player | 'draw' | null => {
         for (const combination of WINNING_COMBINATIONS) {
@@ -79,7 +80,7 @@ export function TicTacToeGame() {
 
 
     const handleClick = (index: number) => {
-        if (board[index] || winner) return;
+        if (board[index] || winner || !isSignedIn) return;
 
         const newBoard = [...board];
         newBoard[index] = currentPlayer;
@@ -177,7 +178,10 @@ export function TicTacToeGame() {
 
     return (
         <div className="flex flex-col md:flex-row gap-8 items-start">
-             <Card className="w-full md:w-auto">
+             <Card className="w-full md:w-auto relative">
+                 <SignedOut>
+                    <LoginWall title="Unlock Tic-Tac-Toe" description="Sign up to play against our unbeatable AI and claim a legendary daily win reward." />
+                </SignedOut>
                 <CardHeader>
                     <CardTitle>Tic-Tac-Toe</CardTitle>
                     <CardDescription>A classic game of strategy. Can you beat the AI?</CardDescription>
@@ -217,7 +221,7 @@ export function TicTacToeGame() {
                         )}>
                             {getStatusMessage()}
                         </div>
-                        <Button onClick={resetGame} variant="outline" className="w-full">
+                        <Button onClick={resetGame} variant="outline" className="w-full" disabled={!isSignedIn}>
                             <RotateCw className="mr-2 h-4 w-4" />
                             {winner ? 'Play Again' : 'Reset Game'}
                         </Button>
