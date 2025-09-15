@@ -19,19 +19,23 @@ export const useRewards = () => {
     const { currentUserData, addCreditsToUser } = useUsers();
     const { toast } = useToast();
     
-    // State for both games
+    // State for all games
     const [lastScratchDate, setLastScratchDate] = useState<Date | null>(null);
     const [lastCardFlipDate, setLastCardFlipDate] = useState<Date | null>(null);
+    const [lastRpsDate, setLastRpsDate] = useState<Date | null>(null);
     const [freeRewards, setFreeRewards] = useState(0); // For scratch cards
-    const [freeGuesses, setFreeGuesses] = useState(0); // Renamed from freeGuesses for clarity
+    const [freeGuesses, setFreeGuesses] = useState(0); // For Card Flip
+    const [freeRpsPlays, setFreeRpsPlays] = useState(0); // For Rock Paper Scissors
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
 
     useEffect(() => {
         if(currentUserData) {
             setLastScratchDate(currentUserData.lastRewardDate ? parseISO(currentUserData.lastRewardDate) : null);
             setLastCardFlipDate(currentUserData.lastGiftBoxDate ? parseISO(currentUserData.lastGiftBoxDate) : null);
+            setLastRpsDate(currentUserData.lastRpsDate ? parseISO(currentUserData.lastRpsDate) : null);
             setFreeRewards(currentUserData.freeRewards || 0);
             setFreeGuesses(currentUserData.freeGuesses || 0);
+            setFreeRpsPlays(currentUserData.freeRpsPlays || 0);
             setRewardHistory(
                 (currentUserData.rewardHistory || [])
                 .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date(), source: h.source || 'Unknown' }))
@@ -121,7 +125,6 @@ export const useRewards = () => {
         if (!user) return;
         
         const userDocRef = doc(db, 'users', user.id);
-        let prize: number | 'better luck' = 'better luck';
         
         const newRecord = { 
             reward: isWin ? prizeAmount : 'better luck', 
@@ -130,16 +133,12 @@ export const useRewards = () => {
         };
 
         if (isWin) {
-            prize = prizeAmount;
             await addCreditsToUser(user.id, prizeAmount);
             toast({ title: "You Won!", description: `+${prizeAmount} credits! You can advance to the next level.`, className: "bg-green-500/10 border-green-500/50" });
         } else {
             toast({ title: "Not this one!", description: "Better luck tomorrow!" });
         }
         
-        // This function is now only called ONCE per run, when the run ends (win or lose).
-        // A win only advances the level state, it doesn't call this function again.
-        // A loss calls this function and marks the daily play as used.
         if (!isWin) {
             if (freeGuesses > 0) {
                  await updateDoc(userDocRef, {
@@ -153,14 +152,65 @@ export const useRewards = () => {
                 });
             }
         } else {
-            // For a win, we just log the reward without consuming the daily play
              await updateDoc(userDocRef, {
                 rewardHistory: arrayUnion(newRecord)
             });
         }
         
-        return { prize };
+        return { prize: isWin ? prizeAmount : 'better luck' };
     }, [user, addCreditsToUser, toast, freeGuesses]);
+
+    // ===== ROCK PAPER SCISSORS LOGIC =====
+    const availableRpsPlays = useMemo(() => {
+        const dailyPlayCount = (lastRpsDate && isToday(lastRpsDate)) ? (currentUserData?.rpsPlaysToday || 0) : 0;
+        return 5 - dailyPlayCount + (freeRpsPlays || 0);
+    }, [lastRpsDate, freeRpsPlays, currentUserData]);
+
+    const playRpsMatch = useCallback(async (isWin: boolean) => {
+        if (!user) return;
+        if (availableRpsPlays <= 0) {
+            toast({ variant: 'destructive', title: "No plays left today!"});
+            return;
+        }
+
+        const userDocRef = doc(db, 'users', user.id);
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const currentPlays = (currentUserData?.lastRpsDate === todayStr) ? (currentUserData?.rpsPlaysToday || 0) : 0;
+        
+        const newRecord = {
+            reward: isWin ? 10 : 'RPS Match',
+            date: new Date(),
+            source: isWin ? 'RPS Win' : 'RPS Play'
+        };
+
+        const updateData: any = {
+            lastRpsDate: new Date().toISOString(),
+            rpsPlaysToday: increment(1),
+            rewardHistory: arrayUnion(newRecord)
+        };
+        
+        if (currentUserData?.lastRpsDate !== todayStr) {
+            updateData.rpsPlaysToday = 1; // Reset to 1 if it's a new day
+        }
+
+
+        if(freeRpsPlays > 0) {
+            updateData.freeRpsPlays = increment(-1);
+            delete updateData.rpsPlaysToday; // Don't use a daily play if a free play is used
+            delete updateData.lastRpsDate;
+        }
+
+        if (isWin) {
+            updateData.credits = increment(10);
+            toast({ title: "You Won the Match!", description: "+10 credits have been added to your account.", className: "bg-green-500/10 border-green-500/50" });
+        } else {
+            toast({ title: "You Lost the Match!", description: "Better luck next time." });
+        }
+
+        await updateDoc(userDocRef, updateData);
+
+    }, [user, availableRpsPlays, freeRpsPlays, currentUserData, toast]);
+
 
     return { 
         canClaimReward: canClaimScratchCard,
@@ -171,5 +221,7 @@ export const useRewards = () => {
         availableCardFlipPlays,
         generateCardFlipPrize,
         playCardFlip,
+        availableRpsPlays,
+        playRpsMatch
     };
 };

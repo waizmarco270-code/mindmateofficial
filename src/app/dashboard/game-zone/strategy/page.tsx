@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { ArrowLeft, Swords } from "lucide-react";
 import { TicTacToeGame } from "@/components/entertainment/tic-tac-toe";
+import { RockPaperScissorsGame } from "@/components/entertainment/rock-paper-scissors";
+import { Separator } from "@/components/ui/separator";
 
 export default function StrategyGamesPage() {
     return (
@@ -15,7 +17,12 @@ export default function StrategyGamesPage() {
                 </h1>
                 <p className="text-muted-foreground">Challenge your mind with classic strategy games.</p>
             </div>
-            <TicTacToeGame />
+            
+            <div className="space-y-12">
+                <RockPaperScissorsGame />
+                <Separator />
+                <TicTacToeGame />
+            </div>
         </div>
     )
 }
