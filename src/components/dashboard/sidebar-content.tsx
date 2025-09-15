@@ -109,14 +109,14 @@ export default function SidebarContent() {
           className={cn(
             'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 hover:text-primary text-sm font-medium relative',
             isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold',
-            item.label === 'Entertainment' && 'text-red-400 hover:text-red-300',
-            item.label === 'Quiz Zone' && 'text-orange-400 hover:text-orange-300',
-            item.label === 'Reward Zone' && 'text-pink-400 hover:text-pink-300',
+            item.label === 'Entertainment' && 'text-red-500 hover:text-red-400 [text-shadow:0_0_8px_currentColor]',
+            item.label === 'Quiz Zone' && 'text-orange-500 hover:text-orange-400 [text-shadow:0_0_8px_currentColor]',
+            item.label === 'Reward Zone' && 'text-pink-500 hover:text-pink-400 [text-shadow:0_0_8px_currentColor]',
             (item.label === 'Resources' || item.label === 'Social Hub' || item.label === 'Insights') && 'text-yellow-400 hover:text-yellow-300',
             item.label === 'Invite & Earn' && 'text-green-400 hover:text-green-300',
-            isActive(item.href) && item.label === 'Entertainment' && 'bg-red-400/10 text-red-300',
-            isActive(item.href) && item.label === 'Quiz Zone' && 'bg-orange-400/10 text-orange-300',
-            isActive(item.href) && item.label === 'Reward Zone' && 'bg-pink-400/10 text-pink-300',
+            isActive(item.href) && item.label === 'Entertainment' && 'bg-red-500/10 text-red-400',
+            isActive(item.href) && item.label === 'Quiz Zone' && 'bg-orange-500/10 text-orange-400',
+            isActive(item.href) && item.label === 'Reward Zone' && 'bg-pink-500/10 text-pink-400',
             isActive(item.href) && (item.label === 'Resources' || item.label === 'Social Hub' || item.label === 'Insights') && 'bg-yellow-400/10 text-yellow-300',
             isActive(item.href) && item.label === 'Invite & Earn' && 'bg-green-400/10 text-green-300'
           )}
