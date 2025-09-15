@@ -36,15 +36,6 @@ const studyTools = [
 ];
 
 const toolkitFeatures = [
-  {
-    title: 'Leaderboard',
-    description: 'See who is at the top.',
-    icon: Trophy,
-    href: '/dashboard/leaderboard',
-    color: 'from-purple-500 to-indigo-500',
-    textColor: 'text-purple-100',
-    isSpecial: true,
-  },
    {
     title: 'Resources',
     description: 'Premium study materials.',
@@ -184,6 +175,40 @@ export default function DashboardPage() {
                     </motion.div>
                  </div>
              </div>
+
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                         <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
+                             <div className="p-4 rounded-full bg-amber-500/10 border-2 border-amber-500/30">
+                                <Trophy className="h-10 w-10 text-amber-400"/>
+                            </div>
+                            <div className="flex-1 text-center sm:text-left">
+                                <CardTitle className="text-2xl font-bold text-white">Top Achievers</CardTitle>
+                                <CardDescription className="text-slate-400 mt-1">See who's dominating the leaderboards and claim your spot at the top!</CardDescription>
+                            </div>
+                            <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
+                                View Leaderboards <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2"><Trophy/> Select Leaderboard</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex flex-col space-y-3 py-4">
+                        {leaderboardOptions.map(option => (
+                            <Link key={option.name} href={option.href}>
+                                <Button variant="outline" className="w-full justify-start h-14 text-base">
+                                    <option.icon className="mr-4 h-5 w-5 text-primary" /> {option.name}
+                                </Button>
+                            </Link>
+                        ))}
+                    </div>
+                </DialogContent>
+            </Dialog>
             
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold tracking-tight">Your Study Tools</h2>
@@ -238,31 +263,9 @@ export default function DashboardPage() {
 
                         return (
                             <motion.div key={feature.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
-                                {feature.isSpecial ? (
-                                     <Dialog>
-                                        <DialogTrigger asChild>
-                                            <div className="cursor-pointer h-full">{cardContent}</div>
-                                        </DialogTrigger>
-                                        <DialogContent className="sm:max-w-md">
-                                            <DialogHeader>
-                                                <DialogTitle className="flex items-center gap-2"><Trophy/> Select Leaderboard</DialogTitle>
-                                            </DialogHeader>
-                                            <div className="flex flex-col space-y-3 py-4">
-                                                {leaderboardOptions.map(option => (
-                                                    <Link key={option.name} href={option.href}>
-                                                        <Button variant="outline" className="w-full justify-start h-14 text-base">
-                                                            <option.icon className="mr-4 h-5 w-5 text-primary" /> {option.name}
-                                                        </Button>
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        </DialogContent>
-                                    </Dialog>
-                                ) : (
-                                    <Link href={feature.href} prefetch={true} className="h-full block">
-                                       {cardContent}
-                                    </Link>
-                                )}
+                                <Link href={feature.href} prefetch={true} className="h-full block">
+                                   {cardContent}
+                                </Link>
                             </motion.div>
                         )
                     })}
