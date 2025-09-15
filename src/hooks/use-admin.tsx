@@ -708,7 +708,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             case 'scratch':
                 batch.update(userRef, { freeRewards: increment(gift.amount) });
                 break;
-ci-lint case 'flip':
+            case 'flip':
                  batch.update(userRef, { freeGuesses: increment(gift.amount) });
                 break;
         }
