@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +9,6 @@ import { Calendar, LayoutGrid, List, ChevronLeft, ChevronRight, Target, Edit } f
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek as endOfWeekDateFns, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Separator } from '../ui/separator';
 import { InsightsView } from '../insights/insights-view';
 import { TodoList } from '../todos/todo-list';
@@ -85,10 +85,10 @@ export function NexusView() {
     );
 
     return (
-       <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-12rem)] min-h-[500px] rounded-lg border">
-            <ResizablePanel defaultSize={75}>
-                <div className="h-full flex flex-col">
-                    <div className="flex flex-row items-center justify-between border-b p-4">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)] min-h-[700px]">
+            <div className="lg:col-span-2 h-full">
+                 <Card className="h-full flex flex-col">
+                     <div className="flex flex-row items-center justify-between border-b p-4">
                          <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
                                 <Button variant="outline" size="icon" onClick={handlePrevMonth}>
@@ -132,7 +132,7 @@ export function NexusView() {
                             </Button>
                         </div>
                     </div>
-                    <div className="flex-1 flex items-stretch justify-center">
+                     <div className="flex-1 flex items-stretch justify-center">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={view}
@@ -152,32 +152,27 @@ export function NexusView() {
                             </motion.div>
                         </AnimatePresence>
                     </div>
-                </div>
-            </ResizablePanel>
-            <ResizableHandle withHandle />
-            <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-                <div className="h-full flex flex-col">
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>Insights for {format(selectedDate, 'MMMM d')}</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <InsightsView selectedDate={selectedDate} />
-                            </CardContent>
-                        </Card>
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Today's Tasks</CardTitle>
-                                <CardDescription>Drag tasks to the calendar to schedule them.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <TodoList />
-                            </CardContent>
-                        </Card>
-                    </div>
-                </div>
-            </ResizablePanel>
-       </ResizablePanelGroup>
+                 </Card>
+            </div>
+            <div className="lg:col-span-1 h-full flex flex-col gap-6 overflow-y-auto">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Insights for {format(selectedDate, 'MMMM d')}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <InsightsView selectedDate={selectedDate} />
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Today's Tasks</CardTitle>
+                        <CardDescription>Drag tasks to the calendar to schedule them.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <TodoList />
+                    </CardContent>
+                </Card>
+            </div>
+       </div>
     );
 }
