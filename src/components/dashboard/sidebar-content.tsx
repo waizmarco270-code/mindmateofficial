@@ -54,17 +54,17 @@ const mainNav = [
 ];
 
 const studyNav = [
-  { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode' },
-  { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker' },
-  { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule' },
-  { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos' },
-  { href: '/dashboard/insights', icon: LineChart, label: 'Insights' },
+  { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-green-400' },
+  { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker', glow: 'text-blue-400' },
+  { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule', glow: 'text-rose-400' },
+  { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos', glow: 'text-orange-400' },
+  { href: '/dashboard/insights', icon: LineChart, label: 'Insights', glow: 'text-sky-400' },
 ];
 
 const otherNav = [
-    { href: '/dashboard/calculator', icon: Percent, label: 'Percentage Calc' },
-    { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI' },
-    { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support' },
+    { href: '/dashboard/calculator', icon: Percent, label: 'Percentage Calc', glow: 'text-lime-400' },
+    { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
+    { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
 ];
 
 const adminNav = [
@@ -159,7 +159,7 @@ export default function SidebarContent() {
         </div>
         
          <div className="px-4">
-            <Accordion type="multiple">
+            <Accordion type="multiple" defaultValue={['study-tools']}>
               <AccordionItem value="study-tools" className="border-b-0">
                 <AccordionTrigger className="hover:no-underline text-sidebar-foreground/60 hover:text-sidebar-foreground/80 px-3 py-2 text-sm font-semibold tracking-tight">
                     <div className="flex items-center gap-3">Study</div>
@@ -174,7 +174,7 @@ export default function SidebarContent() {
         </div>
 
         <div className="px-4">
-            <Accordion type="multiple">
+            <Accordion type="multiple" defaultValue={['other-tools']}>
               <AccordionItem value="other-tools" className="border-b-0">
                 <AccordionTrigger className="hover:no-underline text-sidebar-foreground/60 hover:text-sidebar-foreground/80 px-3 py-2 text-sm font-semibold tracking-tight">
                     <div className="flex items-center gap-3">Other</div>
@@ -227,4 +227,5 @@ export default function SidebarContent() {
     </div>
   );
 }
+
 
