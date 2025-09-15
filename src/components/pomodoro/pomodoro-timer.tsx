@@ -9,11 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
-import Header from '../dashboard/header';
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -211,9 +210,7 @@ export function PomodoroTimer() {
   }
 
   return (
-    <div className="relative h-svh w-full flex flex-col text-white overflow-hidden bg-gray-900">
-      <Header />
-      <div className="flex-1 flex flex-col items-center justify-between p-4 sm:p-6 lg:p-8">
+    <div className="absolute inset-0 z-0 h-full w-full flex flex-col text-white overflow-hidden bg-gray-900">
         <AnimatePresence>
             {selectedTheme && (
                 <motion.div
@@ -236,121 +233,122 @@ export function PomodoroTimer() {
                 </motion.div>
             )}
         </AnimatePresence>
-        <AnimatePresence mode="wait">
-            <motion.div
-            key={mode}
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
-            exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
-            className="text-center z-10"
+        <div className="flex-1 flex flex-col items-center justify-between p-4 sm:p-6 lg:p-8">
+            <AnimatePresence mode="wait">
+                <motion.div
+                key={mode}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
+                exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
+                className="text-center z-10"
+                >
+                    <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
+                </motion.div>
+            </AnimatePresence>
+            <motion.div 
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                className="relative z-10 flex flex-col items-center justify-center p-4"
             >
-                <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
-            </motion.div>
-        </AnimatePresence>
-        <motion.div 
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="relative z-10 flex flex-col items-center justify-center p-4"
-        >
-            <div className="relative h-64 w-64 md:h-80 md:w-80 rounded-full flex items-center justify-center">
-                <div className="absolute inset-0 bg-black/40 backdrop-blur-md rounded-full shadow-2xl"/>
-                <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
-                    <circle className="text-white/10" strokeWidth="3" stroke="currentColor" fill="transparent" r="48" cx="50" cy="50"/>
-                    <motion.circle
-                        className="text-green-400 [filter:drop-shadow(0_0_4px_currentColor)]"
-                        strokeWidth="3"
-                        strokeDasharray="301.59"
-                        strokeLinecap="round"
-                        stroke="currentColor"
-                        fill="transparent"
-                        r="48"
-                        cx="50"
-                        cy="50"
-                        style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
-                        initial={{ strokeDashoffset: 301.59 }}
-                        animate={{ strokeDashoffset: 301.59 * (1 - progress / 100) }}
-                        transition={{ duration: 1, ease: "linear" }}
-                    />
-                </svg>
-                <div className="relative flex flex-col items-center text-center">
-                    <p className="font-mono text-6xl md:text-7xl font-bold tabular-nums tracking-tighter [text-shadow:0_2px_8px_rgba(0,0,0,0.7)]">
-                        {formatTime(timeLeft)}
-                    </p>
-                    <Button variant="ghost" className="mt-4 text-white/70 hover:text-white" onClick={() => { setTempSettings(settings); setIsEditDialogOpen(true); }}>
-                        <Edit className="mr-2 h-4 w-4" /> Edit
-                    </Button>
-                </div>
-            </div>
-        </motion.div>
-        
-        <div className="z-10 flex items-center gap-4">
-            <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white" onClick={handleReset}>
-                <RotateCcw className="h-8 w-8" />
-            </Button>
-
-            <Sheet open={isMusicSheetOpen} onOpenChange={setIsMusicSheetOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
-                    <Music className="h-8 w-8" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="bottom">
-                <SheetHeader><SheetTitle>Soothing Music</SheetTitle></SheetHeader>
-                 <div className="py-4 space-y-4">
-                     {musicTracks.map(track => (
-                        <button key={track.id} onClick={() => setSelectedMusic(track)} className={cn("w-full text-left p-4 rounded-lg flex items-center justify-between transition-colors", selectedMusic?.id === track.id ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>
-                           <span>{track.title}</span>
-                           {selectedMusic?.id === track.id && <CheckCircle className="h-5 w-5"/>}
-                        </button>
-                     ))}
-                      {selectedMusic && <Button variant="outline" onClick={() => setSelectedMusic(null)}>Stop Music</Button>}
-                </div>
-              </SheetContent>
-            </Sheet>
-
-            <Button 
-                className="h-20 w-48 rounded-full text-2xl font-bold shadow-lg bg-white/90 text-gray-900 hover:bg-white"
-                onClick={handleToggle}
-            >
-                {isActive ? <Pause className="h-8 w-8"/> : <Play className="h-8 w-8"/>}
-            </Button>
-            <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
-                        <Palette className="h-8 w-8" />
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="bottom" className="max-h-[80dvh]">
-                    <SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
-                    <div className="py-4 space-y-6 overflow-y-auto">
-                        <div>
-                            <h3 className="mb-4 font-semibold">Nature</h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {pomodoroThemes.nature.map((theme) => (
-                                    <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-[9/16] w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                        <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="30vw" className="object-cover group-hover:scale-105 transition-transform duration-300"/>
-                                        {selectedTheme?.id === theme.id && <div className="absolute top-2 right-2 p-1.5 bg-primary rounded-full text-primary-foreground"><CheckCircle className="h-4 w-4"/></div>}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                         <div>
-                            <h3 className="mb-4 font-semibold">Lofi</h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                {pomodoroThemes.lofi.map((theme) => (
-                                    <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-[9/16] w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                        <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="30vw" className="object-cover group-hover:scale-105 transition-transform duration-300"/>
-                                        {selectedTheme?.id === theme.id && <div className="absolute top-2 right-2 p-1.5 bg-primary rounded-full text-primary-foreground"><CheckCircle className="h-4 w-4"/></div>}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                <div className="relative h-64 w-64 md:h-80 md:w-80 rounded-full flex items-center justify-center">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-md rounded-full shadow-2xl"/>
+                    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
+                        <circle className="text-white/10" strokeWidth="3" stroke="currentColor" fill="transparent" r="48" cx="50" cy="50"/>
+                        <motion.circle
+                            className="text-green-400 [filter:drop-shadow(0_0_4px_currentColor)]"
+                            strokeWidth="3"
+                            strokeDasharray="301.59"
+                            strokeLinecap="round"
+                            stroke="currentColor"
+                            fill="transparent"
+                            r="48"
+                            cx="50"
+                            cy="50"
+                            style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
+                            initial={{ strokeDashoffset: 301.59 }}
+                            animate={{ strokeDashoffset: 301.59 * (1 - progress / 100) }}
+                            transition={{ duration: 1, ease: "linear" }}
+                        />
+                    </svg>
+                    <div className="relative flex flex-col items-center text-center">
+                        <p className="font-mono text-6xl md:text-7xl font-bold tabular-nums tracking-tighter [text-shadow:0_2px_8px_rgba(0,0,0,0.7)]">
+                            {formatTime(timeLeft)}
+                        </p>
+                        <Button variant="ghost" className="mt-4 text-white/70 hover:text-white" onClick={() => { setTempSettings(settings); setIsEditDialogOpen(true); }}>
+                            <Edit className="mr-2 h-4 w-4" /> Edit
+                        </Button>
                     </div>
-                </SheetContent>
-            </Sheet>
+                </div>
+            </motion.div>
+            
+            <div className="z-10 flex items-center gap-4">
+                <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white" onClick={handleReset}>
+                    <RotateCcw className="h-8 w-8" />
+                </Button>
+
+                <Sheet open={isMusicSheetOpen} onOpenChange={setIsMusicSheetOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
+                        <Music className="h-8 w-8" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="bottom">
+                    <SheetHeader><SheetTitle>Soothing Music</SheetTitle></SheetHeader>
+                     <div className="py-4 space-y-4">
+                         {musicTracks.map(track => (
+                            <button key={track.id} onClick={() => setSelectedMusic(track)} className={cn("w-full text-left p-4 rounded-lg flex items-center justify-between transition-colors", selectedMusic?.id === track.id ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>
+                               <span>{track.title}</span>
+                               {selectedMusic?.id === track.id && <CheckCircle className="h-5 w-5"/>}
+                            </button>
+                         ))}
+                          {selectedMusic && <Button variant="outline" onClick={() => setSelectedMusic(null)}>Stop Music</Button>}
+                    </div>
+                  </SheetContent>
+                </Sheet>
+
+                <Button 
+                    className="h-20 w-48 rounded-full text-2xl font-bold shadow-lg bg-white/90 text-gray-900 hover:bg-white"
+                    onClick={handleToggle}
+                >
+                    {isActive ? <Pause className="h-8 w-8"/> : <Play className="h-8 w-8"/>}
+                </Button>
+                <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
+                    <SheetTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
+                            <Palette className="h-8 w-8" />
+                        </Button>
+                    </SheetTrigger>
+                    <SheetContent side="bottom" className="max-h-[80dvh]">
+                        <SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
+                        <div className="py-4 space-y-6 overflow-y-auto">
+                            <div>
+                                <h3 className="mb-4 font-semibold">Nature</h3>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    {pomodoroThemes.nature.map((theme) => (
+                                        <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-[9/16] w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="30vw" className="object-cover group-hover:scale-105 transition-transform duration-300"/>
+                                            {selectedTheme?.id === theme.id && <div className="absolute top-2 right-2 p-1.5 bg-primary rounded-full text-primary-foreground"><CheckCircle className="h-4 w-4"/></div>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                             <div>
+                                <h3 className="mb-4 font-semibold">Lofi</h3>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    {pomodoroThemes.lofi.map((theme) => (
+                                        <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-[9/16] w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="30vw" className="object-cover group-hover:scale-105 transition-transform duration-300"/>
+                                            {selectedTheme?.id === theme.id && <div className="absolute top-2 right-2 p-1.5 bg-primary rounded-full text-primary-foreground"><CheckCircle className="h-4 w-4"/></div>}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </SheetContent>
+                </Sheet>
+            </div>
         </div>
-      </div>
        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Pomodoro Settings</DialogTitle><DialogDescription>Customize your focus and break intervals.</DialogDescription></DialogHeader>
