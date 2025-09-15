@@ -10,6 +10,7 @@ import { WordHuntGame } from '@/components/entertainment/word-hunt';
 import { EmojiQuiz } from '@/components/entertainment/emoji-quiz';
 import { DimensionShiftGame } from '@/components/entertainment/dimension-shift';
 import { Card, CardContent } from '@/components/ui/card';
+import { SubjectSprintGame } from '@/components/entertainment/subject-sprint';
 
 export default function EntertainmentPage() {
   return (
@@ -37,7 +38,10 @@ export default function EntertainmentPage() {
                 <TicTacToeGame />
             </TabsContent>
             <TabsContent value="puzzle" className="mt-6">
-                 <EmojiQuiz />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <EmojiQuiz />
+                    <SubjectSprintGame />
+                </div>
             </TabsContent>
              <TabsContent value="word-games" className="mt-6">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
