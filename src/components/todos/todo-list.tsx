@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Edit, Flag, Calendar as CalendarIcon, Award, Loader2, Clock } from 'lucide-react';
+import { Plus, Trash2, Edit, Flag, Calendar as CalendarIcon, Award, Loader2, Clock, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
@@ -19,6 +18,7 @@ import { db } from '@/lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
+import { useDraggable } from '@dnd-kit/core';
 
 export type TaskPriority = 'high' | 'medium' | 'low';
 
@@ -32,6 +32,100 @@ export interface Task {
   endTime?: string;   // HH:mm format
   createdAt: string; // ISO string date
 }
+
+function DraggableTask({ task, isOverdue, priorityClasses, onToggle, onEdit, onDelete }: {
+    task: Task,
+    isOverdue: boolean,
+    priorityClasses: Record<TaskPriority, { bg: string, text: string, ring: string }>,
+    onToggle: (task: Task) => void,
+    onEdit: (task: Task) => void,
+    onDelete: (id: string) => void
+}) {
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
+        id: task.id,
+        data: task, // Pass the whole task object
+    });
+    
+    const style = transform ? {
+        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+    } : undefined;
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} className={cn("relative", isDragging && "z-50 opacity-50")}>
+            <div
+                className={cn(
+                    "flex items-center gap-3 rounded-lg border bg-background p-3 transition-all hover:bg-muted/50 overflow-hidden",
+                    task.completed && 'bg-muted/30'
+                )}
+            >
+                <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", priorityClasses[task.priority].bg)}></div>
+                <button {...listeners} className="cursor-grab active:cursor-grabbing px-1 text-muted-foreground">
+                    <GripVertical className="h-5 w-5" />
+                </button>
+                <div>
+                    <Checkbox
+                    id={`task-${task.id}`}
+                    checked={task.completed}
+                    onCheckedChange={() => onToggle(task)}
+                    aria-label={`Mark task "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
+                    className={cn("h-5 w-5 rounded-full", priorityClasses[task.priority].ring)}
+                    />
+                </div>
+                <div className="flex-1">
+                    <label
+                        htmlFor={`task-${task.id}`}
+                        className={cn('cursor-pointer text-sm font-medium', task.completed && 'text-muted-foreground line-through')}
+                    >
+                    {task.text}
+                    </label>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+                        {task.startTime && task.endTime && (
+                            <div className="flex items-center gap-1.5">
+                                <Clock className="h-3 w-3"/>
+                                <span>{formatTime12h(task.startTime)} - {formatTime12h(task.endTime)}</span>
+                            </div>
+                        )}
+                        {task.deadline && (
+                            <div className={cn("flex items-center gap-1.5", isOverdue && "text-destructive")}>
+                                <CalendarIcon className="h-3 w-3"/>
+                                <span>{format(new Date(task.deadline), 'MMM d')}</span>
+                                {isOverdue && <span className="font-semibold">(Overdue)</span>}
+                            </div>
+                        )}
+                    </div>
+                </div>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-primary"
+                    onClick={() => onEdit(task)}
+                    aria-label={`Edit task "${task.text}"`}
+                    >
+                    <Edit className="h-4 w-4" />
+                </Button>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => onDelete(task.id)}
+                    aria-label={`Delete task "${task.text}"`}
+                    >
+                    <Trash2 className="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
+    );
+}
+
+const formatTime12h = (time24: string) => {
+    if (!time24) return '';
+    try {
+        const date = parse(time24, 'HH:mm', new Date());
+        return format(date, 'h:mm a');
+    } catch (e) {
+        return '';
+    }
+};
 
 export function TodoList() {
   const { user } = useUser();
@@ -215,16 +309,6 @@ export function TodoList() {
     low: { bg: 'bg-green-500', text: 'text-green-500', ring: 'ring-green-500/50' },
   }
   
-  const formatTime12h = (time24: string) => {
-    if (!time24) return '';
-    try {
-        const date = parse(time24, 'HH:mm', new Date());
-        return format(date, 'h:mm a');
-    } catch (e) {
-        return '';
-    }
-  };
-
   return (
     <div>
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
@@ -294,65 +378,15 @@ export function TodoList() {
             sortedTasks.map((task) => {
                 const isOverdue = task.deadline && isPast(new Date(task.deadline)) && !task.completed;
                 return (
-                    <div
+                    <DraggableTask
                         key={task.id}
-                        className={cn(
-                            "flex items-center gap-3 rounded-lg border p-3 transition-all hover:bg-muted/50 overflow-hidden relative",
-                            task.completed && 'bg-muted/30'
-                        )}
-                    >
-                        <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", priorityClasses[task.priority].bg)}></div>
-                        <div className="pl-4">
-                            <Checkbox
-                            id={`task-${task.id}`}
-                            checked={task.completed}
-                            onCheckedChange={() => toggleTask(task)}
-                            aria-label={`Mark task "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
-                            className={cn("h-5 w-5 rounded-full", priorityClasses[task.priority].ring)}
-                            />
-                        </div>
-                        <div className="flex-1">
-                            <label
-                                htmlFor={`task-${task.id}`}
-                                className={cn('cursor-pointer text-sm font-medium', task.completed && 'text-muted-foreground line-through')}
-                            >
-                            {task.text}
-                            </label>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
-                                {task.startTime && task.endTime && (
-                                    <div className="flex items-center gap-1.5">
-                                        <Clock className="h-3 w-3"/>
-                                        <span>{formatTime12h(task.startTime)} - {formatTime12h(task.endTime)}</span>
-                                    </div>
-                                )}
-                                {task.deadline && (
-                                    <div className={cn("flex items-center gap-1.5", isOverdue && "text-destructive")}>
-                                        <CalendarIcon className="h-3 w-3"/>
-                                        <span>{format(new Date(task.deadline), 'MMM d')}</span>
-                                        {isOverdue && <span className="font-semibold">(Overdue)</span>}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary"
-                            onClick={() => openEditDialog(task)}
-                            aria-label={`Edit task "${task.text}"`}
-                            >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                            onClick={() => deleteTask(task.id)}
-                            aria-label={`Delete task "${task.text}"`}
-                            >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
+                        task={task}
+                        isOverdue={isOverdue}
+                        priorityClasses={priorityClasses}
+                        onToggle={toggleTask}
+                        onEdit={openEditDialog}
+                        onDelete={deleteTask}
+                    />
                 )
             })
         )}
@@ -428,4 +462,3 @@ export function TodoList() {
     </div>
   );
 }
-
