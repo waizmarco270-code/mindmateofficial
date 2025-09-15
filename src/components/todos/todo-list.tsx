@@ -6,17 +6,17 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Trash2, Edit, Flag, Calendar as CalendarIcon, Award, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Edit, Flag, Calendar as CalendarIcon, Award, Loader2, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '../ui/select';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { format, isPast } from 'date-fns';
+import { format, isPast, parse } from 'date-fns';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, where, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 
@@ -28,6 +28,8 @@ export interface Task {
   completed: boolean;
   priority: TaskPriority;
   deadline?: string; // ISO string
+  startTime?: string; // HH:mm format
+  endTime?: string;   // HH:mm format
   createdAt: string; // ISO string date
 }
 
@@ -41,9 +43,12 @@ export function TodoList() {
   const [isClaiming, setIsClaiming] = useState(false);
 
   // Form state
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newTaskText, setNewTaskText] = useState('');
   const [newTaskPriority, setNewTaskPriority] = useState<TaskPriority>('low');
   const [newTaskDeadline, setNewTaskDeadline] = useState<Date | undefined>(undefined);
+  const [newTaskStartTime, setNewTaskStartTime] = useState('');
+  const [newTaskEndTime, setNewTaskEndTime] = useState('');
   
   // Edit dialog state
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -51,6 +56,9 @@ export function TodoList() {
   const [editTaskText, setEditTaskText] = useState('');
   const [editTaskPriority, setEditTaskPriority] = useState<TaskPriority>('low');
   const [editTaskDeadline, setEditTaskDeadline] = useState<Date | undefined>(undefined);
+  const [editTaskStartTime, setEditTaskStartTime] = useState('');
+  const [editTaskEndTime, setEditTaskEndTime] = useState('');
+
 
   // Daily Tasks from Firestore
   useEffect(() => {
@@ -77,29 +85,34 @@ export function TodoList() {
     return () => unsubscribe();
   }, [user]);
 
+  const resetAddForm = () => {
+    setNewTaskText('');
+    setNewTaskPriority('low');
+    setNewTaskDeadline(undefined);
+    setNewTaskStartTime('');
+    setNewTaskEndTime('');
+    setIsAddDialogOpen(false);
+  };
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newTaskText.trim() === '' || !user) return;
     
-    const newTaskPayload: Omit<Task, 'id' | 'createdAt'> = {
+    const newTaskPayload: Omit<Task, 'id' | 'createdAt'> & {createdAt: string} = {
       text: newTaskText,
       completed: false,
       priority: newTaskPriority,
+      startTime: newTaskStartTime || undefined,
+      endTime: newTaskEndTime || undefined,
+      deadline: newTaskDeadline?.toISOString(),
       createdAt: new Date().toISOString(),
     };
-    
-    if (newTaskDeadline) {
-      newTaskPayload.deadline = newTaskDeadline.toISOString();
-    }
 
     const tasksColRef = collection(db, 'users', user.id, 'dailyTasks');
     const newDocRef = doc(tasksColRef); // Auto-generate ID
     await setDoc(newDocRef, { ...newTaskPayload, id: newDocRef.id });
 
-    setNewTaskText('');
-    setNewTaskPriority('low');
-    setNewTaskDeadline(undefined);
+    resetAddForm();
   };
 
   const toggleTask = async (task: Task) => {
@@ -119,6 +132,8 @@ export function TodoList() {
     setEditTaskText(task.text);
     setEditTaskPriority(task.priority);
     setEditTaskDeadline(task.deadline ? new Date(task.deadline) : undefined);
+    setEditTaskStartTime(task.startTime || '');
+    setEditTaskEndTime(task.endTime || '');
     setIsEditDialogOpen(true);
   }
 
@@ -131,13 +146,10 @@ export function TodoList() {
       const updatedTaskData: Partial<Task> = { 
         text: editTaskText, 
         priority: editTaskPriority,
+        startTime: editTaskStartTime || undefined,
+        endTime: editTaskEndTime || undefined,
+        deadline: editTaskDeadline?.toISOString(),
       };
-
-      if (editTaskDeadline) {
-          updatedTaskData.deadline = editTaskDeadline.toISOString();
-      } else {
-          updatedTaskData.deadline = undefined;
-      }
       
       await updateDoc(taskDocRef, updatedTaskData);
       
@@ -152,6 +164,10 @@ export function TodoList() {
         if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
             return priorityOrder[a.priority] - priorityOrder[b.priority];
         }
+        if(a.startTime && b.startTime) return a.startTime.localeCompare(b.startTime);
+        if(a.startTime) return -1;
+        if(b.startTime) return 1;
+
         const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Infinity;
         const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Infinity;
         return aDeadline - bDeadline;
@@ -198,43 +214,76 @@ export function TodoList() {
     medium: { bg: 'bg-yellow-500', text: 'text-yellow-500', ring: 'ring-yellow-500/50' },
     low: { bg: 'bg-green-500', text: 'text-green-500', ring: 'ring-green-500/50' },
   }
+  
+  const formatTime12h = (time24: string) => {
+    if (!time24) return '';
+    try {
+        const date = parse(time24, 'HH:mm', new Date());
+        return format(date, 'h:mm a');
+    } catch (e) {
+        return '';
+    }
+  };
 
   return (
     <div>
-        <form onSubmit={handleAddTask} className="flex flex-col sm:flex-row items-center gap-2 mb-4">
-            <Input
-                placeholder="What's your main focus today?"
-                value={newTaskText}
-                onChange={(e) => setNewTaskText(e.target.value)}
-                className="flex-1"
-                disabled={!user}
-            />
-            <div className="flex w-full sm:w-auto gap-2">
-                <Select value={newTaskPriority} onValueChange={(v: TaskPriority) => setNewTaskPriority(v)} disabled={!user}>
-                    <SelectTrigger className="w-full sm:w-[130px]">
-                        <SelectValue placeholder="Set priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="high"><Flag className="mr-2 h-4 w-4 text-red-500"/> Compulsory</SelectItem>
-                        <SelectItem value="medium"><Flag className="mr-2 h-4 w-4 text-yellow-500"/> Important</SelectItem>
-                        <SelectItem value="low"><Flag className="mr-2 h-4 w-4 text-green-500"/> General</SelectItem>
-                    </SelectContent>
-                </Select>
-                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon" className={cn("shrink-0", newTaskDeadline && "text-primary")} disabled={!user}>
-                            <CalendarIcon className="h-4 w-4" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                        <Calendar mode="single" selected={newTaskDeadline} onSelect={setNewTaskDeadline} initialFocus />
-                    </PopoverContent>
-                </Popover>
-                <Button type="submit" disabled={!newTaskText.trim() || !user}>
-                    <Plus className="mr-2 h-4 w-4" /> Add
-                </Button>
-            </div>
-        </form>
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="mb-4" disabled={!user}>
+            <Plus className="mr-2 h-4 w-4" /> Add Task
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add a New Task</DialogTitle>
+          </DialogHeader>
+          <form id="add-task-form" onSubmit={handleAddTask} className="space-y-4 py-4">
+              <div className="space-y-2">
+                  <Label htmlFor="add-task-text">Task</Label>
+                  <Input id="add-task-text" value={newTaskText} onChange={e => setNewTaskText(e.target.value)} placeholder="e.g. Finish chemistry homework"/>
+              </div>
+               <div className="grid grid-cols-2 gap-4">
+                   <div className="space-y-2">
+                        <Label htmlFor="add-task-priority">Priority</Label>
+                        <Select name="priority" value={newTaskPriority} onValueChange={(v: TaskPriority) => setNewTaskPriority(v)}>
+                            <SelectTrigger id="add-task-priority"><SelectValue placeholder="Set priority" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="high"><Flag className="mr-2 h-4 w-4 text-red-500"/> Compulsory</SelectItem>
+                                <SelectItem value="medium"><Flag className="mr-2 h-4 w-4 text-yellow-500"/> Important</SelectItem>
+                                <SelectItem value="low"><Flag className="mr-2 h-4 w-4 text-green-500"/> General</SelectItem>
+                            </SelectContent>
+                        </Select>
+                   </div>
+                   <div className="space-y-2">
+                      <Label>Deadline</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !newTaskDeadline && "text-muted-foreground")}>
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {newTaskDeadline ? format(newTaskDeadline, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={newTaskDeadline} onSelect={setNewTaskDeadline} initialFocus /></PopoverContent>
+                        </Popover>
+                   </div>
+               </div>
+               <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                      <Label htmlFor="add-task-start-time">Start Time</Label>
+                      <Input id="add-task-start-time" type="time" value={newTaskStartTime} onChange={e => setNewTaskStartTime(e.target.value)}/>
+                  </div>
+                  <div className="space-y-2">
+                      <Label htmlFor="add-task-end-time">End Time</Label>
+                      <Input id="add-task-end-time" type="time" value={newTaskEndTime} onChange={e => setNewTaskEndTime(e.target.value)}/>
+                  </div>
+              </div>
+          </form>
+          <DialogFooter>
+            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+            <Button type="submit" form="add-task-form">Add Task</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-3">
         {loading ? (
@@ -265,17 +314,25 @@ export function TodoList() {
                         <div className="flex-1">
                             <label
                                 htmlFor={`task-${task.id}`}
-                                className={cn('cursor-pointer text-sm', task.completed && 'text-muted-foreground line-through')}
+                                className={cn('cursor-pointer text-sm font-medium', task.completed && 'text-muted-foreground line-through')}
                             >
                             {task.text}
                             </label>
-                             {task.deadline && (
-                                <div className={cn("flex items-center gap-1.5 text-xs mt-1", isOverdue ? "text-destructive" : "text-muted-foreground")}>
-                                    <CalendarIcon className="h-3 w-3"/>
-                                    <span>{format(new Date(task.deadline), 'MMM d')}</span>
-                                    {isOverdue && <span className="font-semibold">(Overdue)</span>}
-                                </div>
-                            )}
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
+                                {task.startTime && task.endTime && (
+                                    <div className="flex items-center gap-1.5">
+                                        <Clock className="h-3 w-3"/>
+                                        <span>{formatTime12h(task.startTime)} - {formatTime12h(task.endTime)}</span>
+                                    </div>
+                                )}
+                                {task.deadline && (
+                                    <div className={cn("flex items-center gap-1.5", isOverdue && "text-destructive")}>
+                                        <CalendarIcon className="h-3 w-3"/>
+                                        <span>{format(new Date(task.deadline), 'MMM d')}</span>
+                                        {isOverdue && <span className="font-semibold">(Overdue)</span>}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                         <Button
                             variant="ghost"
@@ -317,9 +374,6 @@ export function TodoList() {
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>Edit Task</DialogTitle>
-                    <DialogDescription>
-                        Make changes to your task here. Click save when you're done.
-                    </DialogDescription>
                 </DialogHeader>
                 {editingTask && (
                     <form id="edit-task-form" onSubmit={handleSaveEditedTask} className="space-y-4 py-4">
@@ -331,9 +385,7 @@ export function TodoList() {
                             <div className="space-y-2">
                                 <Label htmlFor="edit-task-priority">Priority</Label>
                                 <Select name="priority" value={editTaskPriority} onValueChange={(v: TaskPriority) => setEditTaskPriority(v)}>
-                                    <SelectTrigger id="edit-task-priority">
-                                        <SelectValue placeholder="Set priority" />
-                                    </SelectTrigger>
+                                    <SelectTrigger id="edit-task-priority"><SelectValue placeholder="Set priority" /></SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="high"><Flag className="mr-2 h-4 w-4 text-red-500"/> Compulsory</SelectItem>
                                         <SelectItem value="medium"><Flag className="mr-2 h-4 w-4 text-yellow-500"/> Important</SelectItem>
@@ -350,10 +402,18 @@ export function TodoList() {
                                             {editTaskDeadline ? format(editTaskDeadline, "PPP") : <span>Pick a date</span>}
                                         </Button>
                                     </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0">
-                                        <Calendar mode="single" selected={editTaskDeadline} onSelect={setEditTaskDeadline} initialFocus />
-                                    </PopoverContent>
+                                    <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={editTaskDeadline} onSelect={setEditTaskDeadline} initialFocus /></PopoverContent>
                                 </Popover>
+                            </div>
+                        </div>
+                         <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-task-start-time">Start Time</Label>
+                                <Input id="edit-task-start-time" type="time" value={editTaskStartTime} onChange={e => setEditTaskStartTime(e.target.value)}/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-task-end-time">End Time</Label>
+                                <Input id="edit-task-end-time" type="time" value={editTaskEndTime} onChange={e => setEditTaskEndTime(e.target.value)}/>
                             </div>
                         </div>
                     </form>
@@ -368,4 +428,3 @@ export function TodoList() {
     </div>
   );
 }
-
