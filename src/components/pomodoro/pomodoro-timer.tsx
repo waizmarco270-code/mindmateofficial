@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw, Music, Palette, CheckCircle } from 'lucide-react';
+import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -30,12 +30,6 @@ interface PomodoroSettings {
   sound: 'digital' | 'chime' | 'sweet';
 }
 
-interface MusicTrack {
-    id: string;
-    title: string;
-    src: string;
-}
-
 const defaultSettings: PomodoroSettings = {
   focus: 25,
   shortBreak: 5,
@@ -50,11 +44,6 @@ const soundMap = {
     sweet: '/sounds/sweet.mp3',
 };
 
-const musicTracks: MusicTrack[] = [
-    { id: 'lofi', title: 'Lofi Beats', src: '/sounds/lofi.mp3' },
-    { id: 'nature', title: 'Nature Sounds', src: '/sounds/nature.mp3' },
-    { id: 'ambient', title: 'Ambient Waves', src: '/sounds/ambient.mp3' },
-];
 
 export function PomodoroTimer() {
   const [settings, setSettings] = useLocalStorage<PomodoroSettings>('pomodoroSettings', defaultSettings);
@@ -64,17 +53,14 @@ export function PomodoroTimer() {
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
-  const [isMusicSheetOpen, setIsMusicSheetOpen] = useState(false);
 
   const [tempSettings, setTempSettings] = useState(settings);
   
   const { pomodoroThemes } = placeholderData;
   const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroSelectedTheme', pomodoroThemes.nature[0]);
-  const [selectedMusic, setSelectedMusic] = useLocalStorage<MusicTrack | null>('pomodoroSelectedMusic', null);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const playNotificationSound = useCallback(() => {
     if (typeof window === 'undefined') return;
@@ -90,16 +76,34 @@ export function PomodoroTimer() {
       audioContextRef.current.resume();
     }
     
-    fetch(soundMap[settings.sound])
-      .then(response => response.arrayBuffer())
-      .then(arrayBuffer => audioContextRef.current!.decodeAudioData(arrayBuffer))
-      .then(audioBuffer => {
-        const source = audioContextRef.current!.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(audioContextRef.current!.destination);
-        source.start(0);
-      })
-      .catch(error => console.error("Error playing sound:", error));
+    // As we cannot create real audio files, we'll create a synthetic sound as a fallback.
+    const oscillator = audioContextRef.current.createOscillator();
+    const gainNode = audioContextRef.current.createGain();
+
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContextRef.current.destination);
+
+    oscillator.type = 'sine';
+    
+    // A simple melody
+    const now = audioContextRef.current.currentTime;
+    if (settings.sound === 'digital') {
+        oscillator.frequency.setValueAtTime(659.25, now); // E5
+        gainNode.gain.setValueAtTime(0.5, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+    } else if (settings.sound === 'chime') {
+        oscillator.frequency.setValueAtTime(523.25, now); // C5
+        oscillator.frequency.setValueAtTime(659.25, now + 0.1);
+        oscillator.frequency.setValueAtTime(783.99, now + 0.2);
+    } else { // sweet
+        oscillator.frequency.setValueAtTime(783.99, now); // G5
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+    }
+
+    oscillator.start(now);
+    oscillator.stop(now + 0.5);
+
   }, [settings.sound]);
 
   const resetTimer = useCallback(() => {
@@ -145,29 +149,6 @@ export function PomodoroTimer() {
       setTimeLeft(settings[mode] * 60);
     }
   }, [settings, mode, isActive]);
-
-  // Music Player Logic
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-        if (!musicAudioRef.current) {
-            musicAudioRef.current = new Audio();
-            musicAudioRef.current.loop = true;
-        }
-
-        if (selectedMusic && musicAudioRef.current.src !== selectedMusic.src) {
-             musicAudioRef.current.src = selectedMusic.src;
-             if (isActive) {
-                 musicAudioRef.current.play().catch(e => console.error("Error playing music:", e));
-             }
-        }
-        
-        if (isActive && selectedMusic) {
-            musicAudioRef.current.play().catch(e => console.error("Error playing music:", e));
-        } else {
-            musicAudioRef.current.pause();
-        }
-    }
-  }, [isActive, selectedMusic]);
 
   const handleToggle = () => {
     if (typeof window !== 'undefined' && !audioContextRef.current) {
@@ -287,26 +268,6 @@ export function PomodoroTimer() {
                     <RotateCcw className="h-8 w-8" />
                 </Button>
 
-                <Sheet open={isMusicSheetOpen} onOpenChange={setIsMusicSheetOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
-                        <Music className="h-8 w-8" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="bottom">
-                    <SheetHeader><SheetTitle>Soothing Music</SheetTitle></SheetHeader>
-                     <div className="py-4 space-y-4">
-                         {musicTracks.map(track => (
-                            <button key={track.id} onClick={() => setSelectedMusic(track)} className={cn("w-full text-left p-4 rounded-lg flex items-center justify-between transition-colors", selectedMusic?.id === track.id ? "bg-primary text-primary-foreground" : "hover:bg-muted")}>
-                               <span>{track.title}</span>
-                               {selectedMusic?.id === track.id && <CheckCircle className="h-5 w-5"/>}
-                            </button>
-                         ))}
-                          {selectedMusic && <Button variant="outline" onClick={() => setSelectedMusic(null)}>Stop Music</Button>}
-                    </div>
-                  </SheetContent>
-                </Sheet>
-
                 <Button 
                     className="h-20 w-48 rounded-full text-2xl font-bold shadow-lg bg-white/90 text-gray-900 hover:bg-white"
                     onClick={handleToggle}
@@ -360,9 +321,9 @@ export function PomodoroTimer() {
             <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="sound" className="text-right">Sound</Label>
                 <Select value={tempSettings.sound} onValueChange={(v: any) => setTempSettings(s => ({...s, sound: v}))}><SelectTrigger id="sound" className="col-span-3"><SelectValue placeholder="Select a sound" /></SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="digital"><Music className="mr-2 h-4 w-4" /> Digital</SelectItem>
-                        <SelectItem value="chime"><Music className="mr-2 h-4 w-4" /> Chime</SelectItem>
-                        <SelectItem value="sweet"><Music className="mr-2 h-4 w-4" /> Short & Sweet</SelectItem>
+                        <SelectItem value="digital">Digital</SelectItem>
+                        <SelectItem value="chime">Chime</SelectItem>
+                        <SelectItem value="sweet">Short & Sweet</SelectItem>
                     </SelectContent>
                 </Select>
             </div>
