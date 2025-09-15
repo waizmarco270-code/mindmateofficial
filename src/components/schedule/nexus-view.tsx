@@ -10,8 +10,6 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, en
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Separator } from '../ui/separator';
-import { InsightsView } from '../insights/insights-view';
-import { TodoList } from '../todos/todo-list';
 import { useDroppable } from '@dnd-kit/core';
 
 type CalendarView = 'month' | 'week' | 'agenda';
@@ -85,94 +83,73 @@ export function NexusView() {
     );
 
     return (
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)] min-h-[700px]">
-            <div className="lg:col-span-2 h-full">
-                 <Card className="h-full flex flex-col">
-                     <div className="flex flex-row items-center justify-between border-b p-4">
-                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon" onClick={handlePrevMonth}>
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <Button variant="outline" size="icon" onClick={handleNextMonth}>
-                                     <ChevronRight className="h-4 w-4" />
-                                </Button>
-                            </div>
-                            <h2 className="text-xl font-bold">
-                                {format(currentMonth, 'MMMM yyyy')}
-                            </h2>
-                        </div>
-                        <div className="flex items-center gap-2 rounded-lg bg-muted p-1">
-                             <Button
-                                variant={view === 'month' ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => setView('month')}
-                                className="transition-all"
-                            >
-                                <LayoutGrid className="h-4 w-4 mr-2"/>
-                                Month
+       <div className="h-[calc(100vh-12rem)] min-h-[700px]">
+            <Card className="h-full flex flex-col">
+                <div className="flex flex-row items-center justify-between border-b p-4">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1">
+                            <Button variant="outline" size="icon" onClick={handlePrevMonth}>
+                                <ChevronLeft className="h-4 w-4" />
                             </Button>
-                             <Button
-                                variant={view === 'week' ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => setView('week')}
-                                className="transition-all"
-                            >
-                                <Calendar className="h-4 w-4 mr-2"/>
-                                Week
-                            </Button>
-                             <Button
-                                variant={view === 'agenda' ? 'default' : 'ghost'}
-                                size="sm"
-                                onClick={() => setView('agenda')}
-                                className="transition-all"
-                            >
-                                <List className="h-4 w-4 mr-2"/>
-                                Agenda
+                            <Button variant="outline" size="icon" onClick={handleNextMonth}>
+                                    <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
+                        <h2 className="text-xl font-bold">
+                            {format(currentMonth, 'MMMM yyyy')}
+                        </h2>
                     </div>
-                     <div className="flex-1 flex items-stretch justify-center">
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={view}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                transition={{ duration: 0.3 }}
-                                className="w-full flex flex-col"
-                            >
-                                {view === 'month' && renderMonthView()}
-                                {(view === 'week' || view === 'agenda') && (
-                                    <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-4">
-                                        <p className="font-bold text-lg">Coming Soon!</p>
-                                        <p>The <span className="capitalize font-semibold text-primary">{view}</span> view will be built here.</p>
-                                    </div>
-                                )}
-                            </motion.div>
-                        </AnimatePresence>
+                    <div className="flex items-center gap-2 rounded-lg bg-muted p-1">
+                            <Button
+                            variant={view === 'month' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('month')}
+                            className="transition-all"
+                        >
+                            <LayoutGrid className="h-4 w-4 mr-2"/>
+                            Month
+                        </Button>
+                            <Button
+                            variant={view === 'week' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('week')}
+                            className="transition-all"
+                        >
+                            <Calendar className="h-4 w-4 mr-2"/>
+                            Week
+                        </Button>
+                            <Button
+                            variant={view === 'agenda' ? 'default' : 'ghost'}
+                            size="sm"
+                            onClick={() => setView('agenda')}
+                            className="transition-all"
+                        >
+                            <List className="h-4 w-4 mr-2"/>
+                            Agenda
+                        </Button>
                     </div>
-                 </Card>
-            </div>
-            <div className="lg:col-span-1 h-full flex flex-col gap-6 overflow-y-auto">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Insights for {format(selectedDate, 'MMMM d')}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <InsightsView selectedDate={selectedDate} />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Today's Tasks</CardTitle>
-                        <CardDescription>Drag tasks to the calendar to schedule them.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <TodoList />
-                    </CardContent>
-                </Card>
-            </div>
+                </div>
+                    <div className="flex-1 flex items-stretch justify-center">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={view}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -20 }}
+                            transition={{ duration: 0.3 }}
+                            className="w-full flex flex-col"
+                        >
+                            {view === 'month' && renderMonthView()}
+                            {(view === 'week' || view === 'agenda') && (
+                                <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-4">
+                                    <p className="font-bold text-lg">Coming Soon!</p>
+                                    <p>The <span className="capitalize font-semibold text-primary">{view}</span> view will be built here.</p>
+                                </div>
+                            )}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+            </Card>
        </div>
     );
 }
