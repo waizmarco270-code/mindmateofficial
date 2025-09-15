@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Hand, Scissors, Gem, Award, RotateCw, X, Check, Gamepad2, Users, Trophy } from 'lucide-react';
@@ -38,9 +38,10 @@ export function RockPaperScissorsGame() {
     const [aiChoice, setAiChoice] = useState<Choice | null>(null);
     const [result, setResult] = useState<'win' | 'lose' | 'draw' | null>(null);
     const [gameState, setGameState] = useState<'playing' | 'showing' | 'gameOver'>('playing');
+    const gameOverFired = useRef(false);
 
     const handlePlayerChoice = (choice: Choice) => {
-        if (gameState !== 'playing') return;
+        if (gameState !== 'playing' || !isSignedIn) return;
 
         const aiRandomChoice = choices[Math.floor(Math.random() * choices.length)];
         setPlayerChoice(choice);
@@ -64,7 +65,8 @@ export function RockPaperScissorsGame() {
     };
     
     useEffect(() => {
-        if (playerScore >= MAX_SCORE || aiScore >= MAX_SCORE) {
+        if ((playerScore >= MAX_SCORE || aiScore >= MAX_SCORE) && !gameOverFired.current) {
+            gameOverFired.current = true; // Prevent this from firing again
             setGameState('gameOver');
             const playerWon = playerScore >= MAX_SCORE;
             playRpsMatch(playerWon);
@@ -82,6 +84,7 @@ export function RockPaperScissorsGame() {
     const resetGame = () => {
         setPlayerScore(0);
         setAiScore(0);
+        gameOverFired.current = false; // Reset the guard for a new game
         nextRound();
     };
 
