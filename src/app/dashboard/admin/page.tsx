@@ -294,11 +294,10 @@ export default function AdminPanelPage() {
             surpriseData = { type: 'quiz', quizQuestion: surpriseQuiz.question, quizOptions: surpriseQuiz.options, quizCorrectAnswer: surpriseQuiz.correctAnswer };
             break;
         case 'new-feature':
-            if (!surpriseFeature.title || !surpriseFeature.description || !surpriseFeature.route) return toast({ variant: 'destructive', title: 'Feature details are incomplete' });
+            if (!surpriseFeature.title || !surpriseFeature.route) return toast({ variant: 'destructive', title: 'Feature details are incomplete' });
             surpriseData = { 
                 type: 'new-feature', 
                 featureTitle: surpriseFeature.title,
-                featureDescription: surpriseFeature.description,
                 featureIcon: surpriseFeature.icon,
                 featureRoute: surpriseFeature.route,
             };
@@ -596,7 +595,6 @@ export default function AdminPanelPage() {
                             {surpriseType === 'new-feature' && (
                                 <div className="space-y-4 p-4 border rounded-lg">
                                     <div className="space-y-2"><Label>Feature Title</Label><Input value={surpriseFeature.title} onChange={e => setSurpriseFeature(p => ({...p, title: e.target.value}))} placeholder="e.g., Game Zone"/></div>
-                                    <div className="space-y-2"><Label>Description</Label><Textarea value={surpriseFeature.description} onChange={e => setSurpriseFeature(p => ({...p, description: e.target.value}))} placeholder="Play games and earn credits!"/></div>
                                     <div className="space-y-2"><Label>Icon</Label>
                                          <Select value={surpriseFeature.icon} onValueChange={(v: AvailableIconName) => setSurpriseFeature(p => ({...p, icon: v}))}>
                                             <SelectTrigger><SelectValue placeholder="Select an icon..."/></SelectTrigger>

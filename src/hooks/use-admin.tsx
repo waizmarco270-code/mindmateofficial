@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -371,7 +372,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc'));
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
         const themeDocRef = doc(db, 'appConfig', 'theme');
-        const giftsQuery = query(collection(db, 'globalGifts'), where('isActive', '==', true), limit(1));
+        const giftsQuery = query(collection(db, 'globalGifts'), where('isActive', '==', true));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
