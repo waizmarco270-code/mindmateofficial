@@ -166,7 +166,6 @@ export function LandingPage() {
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
                 </div>
             </div>
             <div className="container mx-auto px-4 text-center relative">
@@ -186,6 +185,15 @@ export function LandingPage() {
                                 </span>
                             </Button>
                         </SignUpButton>
+                        <Link
+                            href="/dashboard"
+                            className={cn(
+                                buttonVariants({ variant: "outline", size: "lg" }),
+                                "w-full sm:w-auto"
+                            )}
+                            >
+                            Explore Demo
+                        </Link>
                     </SignedOut>
                      <SignedIn>
                         <Link href="/dashboard">
@@ -291,3 +299,5 @@ export function LandingPage() {
     </div>
   );
 }
+
+    
