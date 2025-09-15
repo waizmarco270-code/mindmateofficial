@@ -48,7 +48,7 @@ const mainNav = [
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
-  { href: '/dashboard/entertainment', icon: Gamepad2, label: 'Entertainment' },
+  { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn' },
 ];
@@ -109,12 +109,12 @@ export default function SidebarContent() {
           className={cn(
             'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 hover:text-primary text-sm font-medium relative',
             isActive(item.href) && 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold',
-            item.label === 'Entertainment' && 'text-red-500 hover:text-red-400 [text-shadow:0_0_8px_currentColor]',
+            item.label === 'Game Zone' && 'text-red-500 hover:text-red-400 [text-shadow:0_0_8px_currentColor]',
             item.label === 'Quiz Zone' && 'text-orange-500 hover:text-orange-400 [text-shadow:0_0_8px_currentColor]',
             item.label === 'Reward Zone' && 'text-pink-500 hover:text-pink-400 [text-shadow:0_0_8px_currentColor]',
             (item.label === 'Resources' || item.label === 'Social Hub' || item.label === 'Insights') && 'text-yellow-400 hover:text-yellow-300',
             item.label === 'Invite & Earn' && 'text-green-400 hover:text-green-300',
-            isActive(item.href) && item.label === 'Entertainment' && 'bg-red-500/10 text-red-400',
+            isActive(item.href) && item.label === 'Game Zone' && 'bg-red-500/10 text-red-400',
             isActive(item.href) && item.label === 'Quiz Zone' && 'bg-orange-500/10 text-orange-400',
             isActive(item.href) && item.label === 'Reward Zone' && 'bg-pink-500/10 text-pink-400',
             isActive(item.href) && (item.label === 'Resources' || item.label === 'Social Hub' || item.label === 'Insights') && 'bg-yellow-400/10 text-yellow-300',
@@ -124,7 +124,7 @@ export default function SidebarContent() {
           <div className={cn(
             "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
             isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
-            isActive(item.href) && item.label === 'Entertainment' && 'bg-red-400',
+            isActive(item.href) && item.label === 'Game Zone' && 'bg-red-400',
             isActive(item.href) && item.label === 'Quiz Zone' && 'bg-orange-400',
             isActive(item.href) && item.label === 'Reward Zone' && 'bg-pink-400',
             isActive(item.href) && (item.label === 'Resources' || item.label === 'Social Hub' || item.label === 'Insights') && 'bg-yellow-400',
@@ -207,3 +207,5 @@ export default function SidebarContent() {
     </div>
   );
 }
+
+    

@@ -58,7 +58,7 @@ const availableRoutes = {
     "Reward Zone": "/dashboard/reward",
     "Quiz Zone": "/dashboard/quiz",
     "Social Hub": "/dashboard/social",
-    "Entertainment": "/dashboard/entertainment",
+    "Game Zone": "/dashboard/game-zone",
     "Resources": "/dashboard/resources",
     "Invite & Earn": "/dashboard/refer",
     "Focus Mode": "/dashboard/tracker",
@@ -595,7 +595,7 @@ export default function AdminPanelPage() {
 
                             {surpriseType === 'new-feature' && (
                                 <div className="space-y-4 p-4 border rounded-lg">
-                                    <div className="space-y-2"><Label>Feature Title</Label><Input value={surpriseFeature.title} onChange={e => setSurpriseFeature(p => ({...p, title: e.target.value}))} placeholder="e.g., Entertainment Zone"/></div>
+                                    <div className="space-y-2"><Label>Feature Title</Label><Input value={surpriseFeature.title} onChange={e => setSurpriseFeature(p => ({...p, title: e.target.value}))} placeholder="e.g., Game Zone"/></div>
                                     <div className="space-y-2"><Label>Description</Label><Textarea value={surpriseFeature.description} onChange={e => setSurpriseFeature(p => ({...p, description: e.target.value}))} placeholder="Play games and earn credits!"/></div>
                                     <div className="space-y-2"><Label>Icon</Label>
                                          <Select value={surpriseFeature.icon} onValueChange={(v: AvailableIconName) => setSurpriseFeature(p => ({...p, icon: v}))}>
@@ -929,5 +929,7 @@ export default function AdminPanelPage() {
     </div>
   );
 }
+
+    
 
     

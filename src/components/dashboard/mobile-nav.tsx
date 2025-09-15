@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 const navItems = [
   { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos' },
-  { href: '/dashboard/entertainment', icon: Gamepad2, label: 'Games' },
+  { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Games' },
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
@@ -57,3 +57,5 @@ export default function MobileNav() {
     </nav>
   );
 }
+
+    

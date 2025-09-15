@@ -27,7 +27,7 @@ const features = [
     bgColor: 'bg-purple-900/20',
   },
   {
-    name: 'Entertainment Zone',
+    name: 'Game Zone',
     description: 'Play games like Tic-Tac-Toe and Word Unscramble to earn credits while you relax.',
     icon: Gamepad2,
     color: 'text-green-400',
@@ -169,7 +169,6 @@ export function LandingPage() {
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
                 </div>
             </div>
             <div className="container mx-auto px-4 text-center relative">
@@ -297,3 +296,5 @@ export function LandingPage() {
     </div>
   );
 }
+
+    

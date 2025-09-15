@@ -77,10 +77,10 @@ const exploreFeatures = [
     textColor: 'text-purple-100',
   },
    {
-    title: 'Entertainment Zone',
+    title: 'Game Zone',
     description: 'Play games, relax, and earn!',
     icon: Gamepad2,
-    href: '/dashboard/entertainment',
+    href: '/dashboard/game-zone',
     color: 'from-blue-500 to-sky-500',
     textColor: 'text-blue-100',
   },
@@ -97,7 +97,7 @@ const exploreFeatures = [
 const leaderboardOptions = [
     { name: 'All-Time', href: '/dashboard/leaderboard?tab=all-time', icon: Users },
     { name: 'Weekly', href: '/dashboard/leaderboard?tab=weekly', icon: Calendar },
-    { name: 'Entertainment', href: '/dashboard/leaderboard?tab=entertainment', icon: Gamepad2 }
+    { name: 'Game Zone', href: '/dashboard/leaderboard?tab=entertainment', icon: Gamepad2 }
 ]
 
 export default function DashboardPage() {
@@ -390,3 +390,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
