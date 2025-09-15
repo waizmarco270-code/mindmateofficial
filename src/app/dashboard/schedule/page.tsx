@@ -4,16 +4,28 @@
 import { DndContext, type DragEndEvent } from '@dnd-kit/core';
 import { NexusView } from '@/components/schedule/nexus-view';
 import { Calendar } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { Task } from '@/components/todos/todo-list';
 
 export default function SchedulePage() {
+    const { user } = useUser();
 
-    const handleDragEnd = (event: DragEndEvent) => {
+    const handleDragEnd = async (event: DragEndEvent) => {
         const { over, active } = event;
         
-        if (over) {
-            console.log(`Task '${active.data.current?.text}' was dropped over ${over.id}`);
-            // In the next step, we'll use this to schedule the task,
-            // for example, by opening a modal to set the time.
+        if (over && user) {
+            const task = active.data.current as Task;
+            const dropDate = over.id as string; // This will be the date string 'YYYY-MM-DD'
+            
+            console.log(`Task '${task.text}' was dropped over ${dropDate}`);
+
+            // Update the task's deadline in Firestore
+            const taskDocRef = doc(db, 'users', user.id, 'dailyTasks', task.id);
+            await updateDoc(taskDocRef, {
+                deadline: new Date(dropDate).toISOString()
+            });
         }
     }
 

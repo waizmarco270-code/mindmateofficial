@@ -376,7 +376,7 @@ export function TodoList() {
             <p className="text-muted-foreground text-center py-4">No tasks for today. Add one to get started!</p>
         ) : (
             sortedTasks.map((task) => {
-                const isOverdue = task.deadline && isPast(new Date(task.deadline)) && !task.completed;
+                const isOverdue = task.deadline ? isPast(new Date(task.deadline)) && !task.completed : false;
                 return (
                     <DraggableTask
                         key={task.id}
