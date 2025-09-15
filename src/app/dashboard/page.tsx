@@ -43,14 +43,6 @@ const studyTools = [
         textColor: 'text-green-100',
     },
     {
-        title: 'Schedule',
-        description: 'Plan your study calendar.',
-        icon: Calendar,
-        href: '/dashboard/schedule',
-        color: 'from-sky-500 to-blue-500',
-        textColor: 'text-sky-100',
-    },
-    {
         title: 'To-Dos',
         description: 'Manage your daily tasks.',
         icon: ListTodo,

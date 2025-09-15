@@ -56,7 +56,6 @@ const mainNav = [
 const studyNav = [
   { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-green-400' },
   { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker', glow: 'text-blue-400' },
-  { href: '/dashboard/schedule', icon: Calendar, label: 'Schedule', glow: 'text-rose-400' },
   { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos', glow: 'text-orange-400' },
   { href: '/dashboard/insights', icon: LineChart, label: 'Insights', glow: 'text-sky-400' },
 ];
@@ -227,7 +226,3 @@ export default function SidebarContent() {
     </div>
   );
 }
-
-
-
-
