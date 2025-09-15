@@ -59,7 +59,7 @@ const studyTools = [
     },
 ];
 
-const otherFeatures = [
+const exploreFeatures = [
    {
     title: 'Resources',
     description: 'Premium study materials.',
@@ -76,6 +76,22 @@ const otherFeatures = [
     color: 'from-purple-500 to-indigo-500',
     textColor: 'text-purple-100',
   },
+   {
+    title: 'Entertainment Zone',
+    description: 'Play games, relax, and earn!',
+    icon: Gamepad2,
+    href: '/dashboard/entertainment',
+    color: 'from-blue-500 to-sky-500',
+    textColor: 'text-blue-100',
+  },
+   {
+    title: 'Reward Zone',
+    description: 'Claim daily rewards & prizes.',
+    icon: Gift,
+    href: '/dashboard/reward',
+    color: 'from-pink-500 to-rose-500',
+    textColor: 'text-pink-100',
+  },
 ];
 
 const leaderboardOptions = [
@@ -91,6 +107,7 @@ export default function DashboardPage() {
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [isShowingPoll, setIsShowingPoll] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
+    const [isExploreZoneOpen, setIsExploreZoneOpen] = useState(false);
     
     const credits = currentUserData?.credits ?? 0;
 
@@ -287,40 +304,65 @@ export default function DashboardPage() {
                 </div>
             )}
 
+            <AnimatePresence>
+                {!isExploreZoneOpen && (
+                    <motion.div
+                        key="explore-zone-gateway"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1, transition: { delay: 0.2 } }}
+                        exit={{ opacity: 0, height: 0, transition: { duration: 0.3 } }}
+                        onClick={() => setIsExploreZoneOpen(true)}
+                    >
+                         <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-rose-900 via-purple-900 to-rose-900 border-rose-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                             <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
+                                 <div className="p-4 rounded-full bg-rose-500/10 border-2 border-rose-500/30">
+                                    <Gamepad2 className="h-10 w-10 text-rose-400"/>
+                                </div>
+                                <div className="flex-1 text-center sm:text-left">
+                                    <CardTitle className="text-2xl font-bold text-white">Explore, Compete & Earn</CardTitle>
+                                    <CardDescription className="text-slate-400 mt-1">Dive into quizzes, games, and rewards when you need a break.</CardDescription>
+                                </div>
+                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
+                                    Explore <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-            <div className="space-y-4">
-                <h2 className="text-2xl font-bold tracking-tight">Explore More</h2>
-                 <div className="grid gap-4 sm:grid-cols-2">
-                    {otherFeatures.map((feature, i) => {
-                        const cardContent = (
-                            <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", feature.color)}>
-                                 <CardHeader className="flex-row items-center gap-4 p-4">
-                                    <div className={cn("p-3 rounded-full bg-white/10", feature.textColor)}>
-                                        <feature.icon className="h-6 w-6" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className={cn("text-xl font-bold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
-                                        <CardDescription className={cn("mt-1 text-sm", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
-                                    </div>
-                                 </CardHeader>
-                                <CardFooter className="mt-auto bg-black/10 p-3">
-                                     <p className={cn("text-sm font-semibold flex items-center w-full justify-end", feature.textColor, "opacity-90")}>
-                                         Explore Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                     </p>
-                                </CardFooter>
-                            </Card>
-                        );
-
-                        return (
-                            <motion.div key={feature.title} custom={i + (isStudyZoneOpen ? studyTools.length : 0)} variants={cardVariants} initial="hidden" animate="visible">
-                                <Link href={feature.href} prefetch={true} className="h-full block">
-                                   {cardContent}
+            {isExploreZoneOpen && (
+                 <div className="space-y-4">
+                    <h2 className="text-2xl font-bold tracking-tight">Explore Your Toolkit</h2>
+                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {exploreFeatures.map((feature, i) => (
+                           <motion.div key={feature.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
+                                <Link href={feature.href} prefetch={true}>
+                                <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", feature.color)}>
+                                     <CardHeader className="flex-row items-center gap-4 p-4">
+                                        <div className={cn("p-3 rounded-full bg-white/10", feature.textColor)}>
+                                            <feature.icon className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <CardTitle className={cn("text-xl font-bold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
+                                        </div>
+                                     </CardHeader>
+                                     <CardContent className="p-4 pt-0">
+                                         <CardDescription className={cn("text-sm", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
+                                     </CardContent>
+                                    <CardFooter className="mt-auto bg-black/10 p-3">
+                                         <p className={cn("text-sm font-semibold flex items-center w-full justify-end", feature.textColor, "opacity-90")}>
+                                             Explore Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                         </p>
+                                    </CardFooter>
+                                </Card>
                                 </Link>
                             </motion.div>
-                        )
-                    })}
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
 
         {/* Side Column */}
