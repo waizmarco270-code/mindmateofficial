@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, Bot, CreditCard, ListTodo, Users, Vote, BrainCircuit, Medal, BookOpen, Calendar, Zap, MessageSquare, Gift, Trophy, Globe, Clock, LineChart, RefreshCw } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -14,41 +14,7 @@ import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
 import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 import { TypingAnimation } from '@/components/dashboard/typing-animation';
 import { motion, AnimatePresence } from 'framer-motion';
-
-const features = [
-  {
-    title: 'Leaderboard',
-    description: 'See who is at the top.',
-    icon: Trophy,
-    href: '/dashboard/leaderboard',
-    color: 'bg-gradient-to-br from-purple-500 to-indigo-600',
-    textColor: 'text-purple-100',
-  },
-   {
-    title: 'Resources',
-    description: 'Premium study materials.',
-    icon: BookOpen,
-    href: '/dashboard/resources',
-    color: 'bg-gradient-to-br from-rose-500 to-pink-600',
-    textColor: 'text-rose-100',
-  },
-  {
-    title: 'Focus Mode',
-    description: 'Deep work sessions, rewarded.',
-    icon: Zap,
-    href: '/dashboard/tracker',
-    color: 'bg-gradient-to-br from-green-500 to-teal-600',
-    textColor: 'text-green-100',
-  },
-   {
-    title: 'Schedule',
-    description: 'Plan your study calendar.',
-    icon: Calendar,
-    href: '/dashboard/schedule',
-    color: 'bg-gradient-to-br from-sky-500 to-blue-600',
-    textColor: 'text-sky-100',
-  },
-];
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const studyTools = [
     {
@@ -56,7 +22,7 @@ const studyTools = [
         description: 'Log and manage the time you spend on each subject.',
         icon: Clock,
         href: '/dashboard/time-tracker',
-        color: 'bg-gradient-to-br from-cyan-500 to-blue-600',
+        color: 'from-cyan-500 to-blue-500',
         textColor: 'text-cyan-100',
     },
     {
@@ -64,9 +30,51 @@ const studyTools = [
         description: 'Visualize your study patterns and progress over time.',
         icon: LineChart,
         href: '/dashboard/insights',
-        color: 'bg-gradient-to-br from-pink-500 to-rose-600',
+        color: 'from-pink-500 to-rose-500',
         textColor: 'text-pink-100',
     }
+];
+
+const toolkitFeatures = [
+  {
+    title: 'Leaderboard',
+    description: 'See who is at the top.',
+    icon: Trophy,
+    href: '/dashboard/leaderboard',
+    color: 'from-purple-500 to-indigo-500',
+    textColor: 'text-purple-100',
+    isSpecial: true,
+  },
+   {
+    title: 'Resources',
+    description: 'Premium study materials.',
+    icon: BookOpen,
+    href: '/dashboard/resources',
+    color: 'from-rose-500 to-red-500',
+    textColor: 'text-rose-100',
+  },
+  {
+    title: 'Focus Mode',
+    description: 'Deep work sessions, rewarded.',
+    icon: Zap,
+    href: '/dashboard/tracker',
+    color: 'from-green-500 to-teal-500',
+    textColor: 'text-green-100',
+  },
+   {
+    title: 'Schedule',
+    description: 'Plan your study calendar.',
+    icon: Calendar,
+    href: '/dashboard/schedule',
+    color: 'from-sky-500 to-blue-500',
+    textColor: 'text-sky-100',
+  },
+];
+
+const leaderboardOptions = [
+    { name: 'All-Time', href: '/dashboard/leaderboard?tab=all-time', icon: Users },
+    { name: 'Weekly', href: '/dashboard/leaderboard?tab=weekly', icon: Calendar },
+    { name: 'Entertainment', href: '/dashboard/leaderboard?tab=entertainment', icon: Gamepad2 }
 ]
 
 export default function DashboardPage() {
@@ -86,6 +94,20 @@ export default function DashboardPage() {
     const handleFlip = () => {
         setIsShowingPoll(!isShowingPoll);
     }
+    
+    const cardVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: (i: number) => ({
+            opacity: 1,
+            y: 0,
+            transition: {
+                delay: i * 0.1,
+                duration: 0.5,
+                ease: "easeOut"
+            }
+        })
+    };
+
 
   return (
     <div className="space-y-8">
@@ -123,75 +145,70 @@ export default function DashboardPage() {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
 
-             <div className="relative h-[250px] mb-8 overflow-hidden" style={{ perspective: '1000px' }} onClick={handleFlip}>
-                 <AnimatePresence initial={false}>
-                    {!isShowingPoll ? (
-                        <motion.div
-                            key="announcement"
-                            className="absolute w-full h-full"
-                            initial={{ rotateY: 180 }}
-                            animate={{ rotateY: 0 }}
-                            exit={{ rotateY: -180 }}
-                            transition={{ duration: 0.6, ease: "easeInOut" }}
-                            style={{ backfaceVisibility: 'hidden' }}
-                        >
-                            <Card className="rainbow-border-card h-full">
-                                <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
-                                    <div className="p-3 rounded-full bg-primary/10">
-                                        <Bell className="h-8 w-8 text-primary" />
-                                    </div>
-                                    <div>
-                                        <CardTitle className="text-xl text-primary">Latest Announcement</CardTitle>
-                                        <CardDescription>Don't miss out on important updates.</CardDescription>
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
-                                </CardHeader>
-                                <CardContent className="p-4 md:px-6">
-                                    <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                                    <div className="text-muted-foreground mt-2 min-h-[40px]">
-                                       <TypingAnimation text={latestAnnouncement.description} />
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
-                    ) : (
-                         <motion.div
-                            key="poll"
-                            className="absolute w-full h-full"
-                             initial={{ rotateY: 180 }}
-                            animate={{ rotateY: 0 }}
-                            exit={{ rotateY: -180 }}
-                             transition={{ duration: 0.6, ease: "easeInOut" }}
-                             style={{ backfaceVisibility: 'hidden' }}
-                        >
-                            <CommunityPoll />
-                        </motion.div>
-                    )}
-                 </AnimatePresence>
+             <div className="relative h-[250px] mb-8 overflow-hidden" style={{ perspective: '1000px' }}>
+                 <div 
+                    className="relative w-full h-full cursor-pointer transition-transform duration-700" 
+                    style={{ transformStyle: 'preserve-3d', transform: isShowingPoll ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+                    onClick={handleFlip}
+                >
+                    <motion.div
+                        key="announcement"
+                        className="absolute w-full h-full"
+                        style={{ backfaceVisibility: 'hidden' }}
+                    >
+                        <Card className="rainbow-border-card h-full">
+                            <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
+                                <div className="p-3 rounded-full bg-primary/10">
+                                    <Bell className="h-8 w-8 text-primary" />
+                                </div>
+                                <div>
+                                    <CardTitle className="text-xl text-primary">Latest Announcement</CardTitle>
+                                    <CardDescription>Don't miss out on important updates.</CardDescription>
+                                </div>
+                                <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
+                            </CardHeader>
+                            <CardContent className="p-4 md:px-6">
+                                <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
+                                <div className="text-muted-foreground mt-2 min-h-[40px]">
+                                   <TypingAnimation text={latestAnnouncement.description} />
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                     <motion.div
+                        key="poll"
+                        className="absolute w-full h-full"
+                         style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                    >
+                        <CommunityPoll />
+                    </motion.div>
+                 </div>
              </div>
             
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold tracking-tight">Your Study Tools</h2>
                  <div className="grid gap-4 sm:grid-cols-2">
-                    {studyTools.map((tool) => (
-                        <Link href={tool.href} key={tool.title} prefetch={true}>
-                        <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col", tool.color)}>
-                             <CardHeader className="flex-row items-center gap-4 p-4">
-                                <div className={cn("p-3 rounded-full bg-white/10", tool.textColor)}>
-                                    <tool.icon className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <CardTitle className={cn("text-xl font-bold tracking-tight", tool.textColor)}>{tool.title}</CardTitle>
-                                    <CardDescription className={cn("mt-1 text-sm", tool.textColor, "opacity-80")}>{tool.description}</CardDescription>
-                                </div>
-                             </CardHeader>
-                            <CardFooter className="mt-auto bg-black/10 p-3">
-                                 <p className={cn("text-sm font-semibold flex items-center w-full justify-end", tool.textColor, "opacity-90")}>
-                                     Go to {tool.title} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                 </p>
-                            </CardFooter>
-                        </Card>
-                        </Link>
+                    {studyTools.map((tool, i) => (
+                        <motion.div key={tool.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
+                            <Link href={tool.href} prefetch={true}>
+                            <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", tool.color)}>
+                                 <CardHeader className="flex-row items-center gap-4 p-4">
+                                    <div className={cn("p-3 rounded-full bg-white/10", tool.textColor)}>
+                                        <tool.icon className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className={cn("text-xl font-bold tracking-tight", tool.textColor)}>{tool.title}</CardTitle>
+                                        <CardDescription className={cn("mt-1 text-sm", tool.textColor, "opacity-80")}>{tool.description}</CardDescription>
+                                    </div>
+                                 </CardHeader>
+                                <CardFooter className="mt-auto bg-black/10 p-3">
+                                     <p className={cn("text-sm font-semibold flex items-center w-full justify-end", tool.textColor, "opacity-90")}>
+                                         Go to {tool.title} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                     </p>
+                                </CardFooter>
+                            </Card>
+                            </Link>
+                        </motion.div>
                     ))}
                 </div>
             </div>
@@ -199,26 +216,56 @@ export default function DashboardPage() {
             <div className="space-y-4">
                 <h2 className="text-2xl font-bold tracking-tight">Explore Your Toolkit</h2>
                  <div className="grid gap-4 sm:grid-cols-2">
-                    {features.map((feature) => (
-                        <Link href={feature.href} key={feature.title} prefetch={true}>
-                        <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col", feature.color)}>
-                             <CardHeader className="flex-row items-center gap-4 p-4">
-                                <div className={cn("p-3 rounded-full bg-white/10", feature.textColor)}>
-                                    <feature.icon className="h-6 w-6" />
-                                </div>
-                                <div>
-                                    <CardTitle className={cn("text-xl font-bold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
-                                    <CardDescription className={cn("mt-1 text-sm", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
-                                </div>
-                             </CardHeader>
-                            <CardFooter className="mt-auto bg-black/10 p-3">
-                                 <p className={cn("text-sm font-semibold flex items-center w-full justify-end", feature.textColor, "opacity-90")}>
-                                     Explore Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                 </p>
-                            </CardFooter>
-                        </Card>
-                        </Link>
-                    ))}
+                    {toolkitFeatures.map((feature, i) => {
+                        const cardContent = (
+                            <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", feature.color)}>
+                                 <CardHeader className="flex-row items-center gap-4 p-4">
+                                    <div className={cn("p-3 rounded-full bg-white/10", feature.textColor)}>
+                                        <feature.icon className="h-6 w-6" />
+                                    </div>
+                                    <div>
+                                        <CardTitle className={cn("text-xl font-bold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
+                                        <CardDescription className={cn("mt-1 text-sm", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
+                                    </div>
+                                 </CardHeader>
+                                <CardFooter className="mt-auto bg-black/10 p-3">
+                                     <p className={cn("text-sm font-semibold flex items-center w-full justify-end", feature.textColor, "opacity-90")}>
+                                         Explore Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                     </p>
+                                </CardFooter>
+                            </Card>
+                        );
+
+                        return (
+                            <motion.div key={feature.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
+                                {feature.isSpecial ? (
+                                     <Dialog>
+                                        <DialogTrigger asChild>
+                                            <div className="cursor-pointer h-full">{cardContent}</div>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-md">
+                                            <DialogHeader>
+                                                <DialogTitle className="flex items-center gap-2"><Trophy/> Select Leaderboard</DialogTitle>
+                                            </DialogHeader>
+                                            <div className="flex flex-col space-y-3 py-4">
+                                                {leaderboardOptions.map(option => (
+                                                    <Link key={option.name} href={option.href}>
+                                                        <Button variant="outline" className="w-full justify-start h-14 text-base">
+                                                            <option.icon className="mr-4 h-5 w-5 text-primary" /> {option.name}
+                                                        </Button>
+                                                    </Link>
+                                                ))}
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                ) : (
+                                    <Link href={feature.href} prefetch={true} className="h-full block">
+                                       {cardContent}
+                                    </Link>
+                                )}
+                            </motion.div>
+                        )
+                    })}
                 </div>
             </div>
         </div>
