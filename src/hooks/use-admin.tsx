@@ -1,10 +1,10 @@
 
 
 'use client';
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp } from 'firebase/firestore';
+import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup, startOfWeek, endOfWeek } from 'firebase/firestore';
 import { isToday, isYesterday, format } from 'date-fns';
 import { LucideIcon } from 'lucide-react';
 
@@ -156,6 +156,9 @@ interface AppDataContextType {
     removeUserGM: (uid: string) => Promise<void>;
     clearGlobalChat: () => Promise<void>;
     clearQuizLeaderboard: () => Promise<void>;
+    resetWeeklyStudyTime: () => Promise<void>;
+    resetGameZoneLeaderboard: () => Promise<void>;
+    submitSupportTicket: (message: string) => Promise<void>;
     
     announcements: Announcement[];
     addAnnouncement: (announcement: Omit<Announcement, 'id' | 'createdAt'>) => Promise<void>;
@@ -633,6 +636,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
     };
     
+    const submitSupportTicket = useCallback(async (message: string) => {
+        if (!authUser || !currentUserData) throw new Error("User not found");
+        
+        await addDoc(collection(db, 'supportTickets'), {
+            userId: authUser.id,
+            userName: currentUserData.displayName,
+            message: message,
+            status: 'new',
+            createdAt: serverTimestamp(),
+        });
+    }, [authUser, currentUserData]);
+
     const clearGlobalChat = async () => {
         const chatRef = collection(db, 'global_chat');
         const chatSnapshot = await getDocs(chatRef);
@@ -656,6 +671,39 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
         await batch.commit();
     }
+
+    const resetWeeklyStudyTime = useCallback(async () => {
+        const today = new Date();
+        const weekStart = startOfWeek(today, { weekStartsOn: 1 }).toISOString();
+        const weekEnd = endOfWeek(today, { weekStartsOn: 1 }).toISOString();
+
+        const timeSessionsGroup = collectionGroup(db, 'timeTrackerSessions');
+        const q = query(timeSessionsGroup, where('startTime', '>=', weekStart), where('startTime', '<=', weekEnd));
+        
+        const sessionsSnapshot = await getDocs(q);
+        const batch = writeBatch(db);
+        sessionsSnapshot.forEach(doc => {
+            batch.delete(doc.ref);
+        });
+        await batch.commit();
+    }, []);
+    
+    const resetGameZoneLeaderboard = useCallback(async () => {
+        const usersSnapshot = await getDocs(query(collection(db, 'users')));
+        const batch = writeBatch(db);
+        const resetScores = {
+            memoryGame: 0,
+            emojiQuiz: 0,
+            dimensionShift: 0,
+            subjectSprint: 0,
+        };
+        usersSnapshot.forEach(userDoc => {
+            batch.update(userDoc.ref, { 
+                gameHighScores: resetScores
+            });
+        });
+        await batch.commit();
+    }, []);
 
     const updateAppTheme = async (theme: AppTheme) => {
         const themeDocRef = doc(db, 'appConfig', 'theme');
@@ -746,6 +794,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         removeUserGM,
         clearGlobalChat,
         clearQuizLeaderboard,
+        resetWeeklyStudyTime,
+        resetGameZoneLeaderboard,
+        submitSupportTicket,
         announcements,
         addAnnouncement,
         updateAnnouncement,

@@ -38,6 +38,7 @@ export default function SuperAdminPanelPage() {
     addFreeGuessesToUser, addGuessesToAllUsers,
     resetUserCredits, clearGlobalChat, clearQuizLeaderboard,
     resetWeeklyStudyTime,
+    resetGameZoneLeaderboard,
     sendGlobalGift
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
@@ -157,6 +158,15 @@ export default function SuperAdminPanelPage() {
     } catch (error: any) {
         toast({ variant: 'destructive', title: "Error Resetting Study Time", description: error.message });
     }
+  }
+
+  const handleResetGameZoneLeaderboard = async () => {
+      try {
+          await resetGameZoneLeaderboard();
+          toast({ title: "Game Zone Leaderboard Reset", description: "All game high scores have been reset to 0." });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: "Error Resetting Game Leaderboard", description: error.message });
+      }
   }
 
   const handleApproveReferral = async (referral: ReferralRequest) => {
@@ -581,6 +591,33 @@ export default function SuperAdminPanelPage() {
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction onClick={handleClearQuizLeaderboard}>Yes, reset the leaderboard</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Game Zone Leaderboard</CardTitle>
+                        <CardDescription>Permanently reset all game high scores for all users. This is useful for starting a new season.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">
+                                    <Gamepad2 className="mr-2 h-4 w-4"/> Reset Game Zone Leaderboard
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will reset all `gameHighScores` to 0 for every user. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleResetGameZoneLeaderboard}>Yes, reset game scores</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
