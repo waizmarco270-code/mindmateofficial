@@ -71,8 +71,8 @@ export function TicTacToeGame() {
             await setDoc(claimDocRef, { lastClaimed: Timestamp.now() });
             setHasClaimedToday(true);
             toast({
-                title: `You won! +${DAILY_WIN_REWARD} Credits!`,
-                description: "You've claimed your daily reward for Tic-Tac-Toe.",
+                title: `You beat the Unbeatable! +${DAILY_WIN_REWARD} Credits!`,
+                description: "You've claimed your legendary daily reward for Tic-Tac-Toe.",
                 className: "bg-green-500/10 text-green-700 border-green-500/50"
             });
         }
@@ -184,7 +184,7 @@ export function TicTacToeGame() {
                 </SignedOut>
                 <CardHeader>
                     <CardTitle>Tic-Tac-Toe</CardTitle>
-                    <CardDescription>A classic game of strategy. Can you beat the AI?</CardDescription>
+                    <CardDescription>A classic game of strategy. Can you beat the unbeatable AI?</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center gap-6">
                     <div className="grid grid-cols-3 gap-2 bg-muted p-2 rounded-lg">
@@ -230,7 +230,7 @@ export function TicTacToeGame() {
             </Card>
              <Card className="flex-1 w-full md:w-auto">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Award className="text-amber-500"/> Daily Reward</CardTitle>
+                    <CardTitle className="flex items-center gap-2"><Award className="text-amber-500"/> Legendary Daily Reward</CardTitle>
                 </CardHeader>
                 <CardContent>
                     {hasClaimedToday ? (
@@ -240,8 +240,8 @@ export function TicTacToeGame() {
                         </div>
                     ) : (
                          <div className="text-center rounded-lg border-2 border-dashed border-amber-500/50 bg-amber-500/10 p-6 text-amber-700 dark:text-amber-300">
-                            <p className="text-2xl font-bold tracking-tight">If you have the will,</p>
-                            <p className="text-4xl font-extrabold text-amber-500 my-2">WIN IT & TAKE {DAILY_WIN_REWARD} CREDITS</p>
+                            <p className="text-2xl font-bold tracking-tight">Defeat the Unbeatable!</p>
+                            <p className="text-4xl font-extrabold text-amber-500 my-2">WIN & TAKE {DAILY_WIN_REWARD} CREDITS</p>
                             <p className="text-xs mt-2">No credits are awarded for a draw. This is a one-time daily reward.</p>
                         </div>
                     )}

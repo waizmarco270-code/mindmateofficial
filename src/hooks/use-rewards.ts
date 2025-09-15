@@ -25,7 +25,6 @@ export const useRewards = () => {
     const [lastRpsDate, setLastRpsDate] = useState<Date | null>(null);
     const [freeRewards, setFreeRewards] = useState(0); // For scratch cards
     const [freeGuesses, setFreeGuesses] = useState(0); // For Card Flip
-    const [freeRpsPlays, setFreeRpsPlays] = useState(0); // For Rock Paper Scissors
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
 
     useEffect(() => {
@@ -35,7 +34,6 @@ export const useRewards = () => {
             setLastRpsDate(currentUserData.lastRpsDate ? parseISO(currentUserData.lastRpsDate) : null);
             setFreeRewards(currentUserData.freeRewards || 0);
             setFreeGuesses(currentUserData.freeGuesses || 0);
-            setFreeRpsPlays(currentUserData.freeRpsPlays || 0);
             setRewardHistory(
                 (currentUserData.rewardHistory || [])
                 .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date(), source: h.source || 'Unknown' }))
@@ -161,55 +159,44 @@ export const useRewards = () => {
     }, [user, addCreditsToUser, toast, freeGuesses]);
 
     // ===== ROCK PAPER SCISSORS LOGIC =====
-    const availableRpsPlays = useMemo(() => {
-        const dailyPlayCount = (lastRpsDate && isToday(lastRpsDate)) ? (currentUserData?.rpsPlaysToday || 0) : 0;
-        return 5 - dailyPlayCount + (freeRpsPlays || 0);
-    }, [lastRpsDate, freeRpsPlays, currentUserData]);
-
-    const playRpsMatch = useCallback(async (isWin: boolean) => {
+    const hasClaimedRpsWinToday = useCallback(() => {
+        return !!(lastRpsDate && isToday(lastRpsDate));
+    }, [lastRpsDate]);
+    
+    const playRpsMatch = useCallback(async (playerWonMatch: boolean) => {
         if (!user) return;
-        if (availableRpsPlays <= 0) {
-            toast({ variant: 'destructive', title: "No plays left today!"});
-            return;
-        }
-
-        const userDocRef = doc(db, 'users', user.id);
-        const todayStr = new Date().toISOString().slice(0, 10);
-        const currentPlays = (currentUserData?.lastRpsDate === todayStr) ? (currentUserData?.rpsPlaysToday || 0) : 0;
-        
-        const newRecord = {
-            reward: isWin ? 10 : 'RPS Match',
-            date: new Date(),
-            source: isWin ? 'RPS Win' : 'RPS Play'
-        };
-
-        const updateData: any = {
-            lastRpsDate: new Date().toISOString(),
-            rpsPlaysToday: increment(1),
-            rewardHistory: arrayUnion(newRecord)
-        };
-        
-        if (currentUserData?.lastRpsDate !== todayStr) {
-            updateData.rpsPlaysToday = 1; // Reset to 1 if it's a new day
-        }
-
-
-        if(freeRpsPlays > 0) {
-            updateData.freeRpsPlays = increment(-1);
-            delete updateData.rpsPlaysToday; // Don't use a daily play if a free play is used
-            delete updateData.lastRpsDate;
-        }
-
-        if (isWin) {
-            updateData.credits = increment(10);
-            toast({ title: "You Won the Match!", description: "+10 credits have been added to your account.", className: "bg-green-500/10 border-green-500/50" });
-        } else {
+    
+        const alreadyClaimed = hasClaimedRpsWinToday();
+    
+        if (playerWonMatch && !alreadyClaimed) {
+            const userDocRef = doc(db, 'users', user.id);
+            const newRecord = { 
+                reward: 10,
+                date: new Date(), 
+                source: 'RPS Win' 
+            };
+    
+            await updateDoc(userDocRef, {
+                credits: increment(10),
+                lastRpsDate: new Date().toISOString(),
+                rewardHistory: arrayUnion(newRecord)
+            });
+    
+            toast({ 
+                title: "You Won the Match!", 
+                description: "+10 credits have been added to your account.", 
+                className: "bg-green-500/10 border-green-500/50" 
+            });
+        } else if (playerWonMatch && alreadyClaimed) {
+             toast({ 
+                title: "You Won Again!", 
+                description: "You've already claimed your daily reward for this game.", 
+            });
+        } else if (!playerWonMatch) {
             toast({ title: "You Lost the Match!", description: "Better luck next time." });
         }
-
-        await updateDoc(userDocRef, updateData);
-
-    }, [user, availableRpsPlays, freeRpsPlays, currentUserData, toast]);
+    
+    }, [user, hasClaimedRpsWinToday, toast]);
 
 
     return { 
@@ -221,7 +208,7 @@ export const useRewards = () => {
         availableCardFlipPlays,
         generateCardFlipPrize,
         playCardFlip,
-        availableRpsPlays,
-        playRpsMatch
+        playRpsMatch,
+        hasClaimedRpsWinToday,
     };
 };

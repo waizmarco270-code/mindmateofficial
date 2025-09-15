@@ -30,7 +30,7 @@ const MAX_SCORE = 3;
 
 export function RockPaperScissorsGame() {
     const { isSignedIn } = useUser();
-    const { availableRpsPlays, playRpsMatch } = useRewards();
+    const { playRpsMatch, hasClaimedRpsWinToday } = useRewards();
 
     const [playerScore, setPlayerScore] = useState(0);
     const [aiScore, setAiScore] = useState(0);
@@ -40,10 +40,33 @@ export function RockPaperScissorsGame() {
     const [gameState, setGameState] = useState<'playing' | 'showing' | 'gameOver'>('playing');
     const gameOverFired = useRef(false);
 
+    const getAiChoice = (playerChoice: Choice): Choice => {
+        // "God Mode" AI Logic
+        if (playerScore >= 2) {
+            // 99% chance to win, 1% chance to lose (the user wins)
+            if (Math.random() < 0.99) {
+                // AI picks the winning move
+                if (playerChoice === 'rock') return 'paper';
+                if (playerChoice === 'paper') return 'scissors';
+                if (playerChoice === 'scissors') return 'rock';
+            } else {
+                // AI "slips up" and picks the losing move (player wins)
+                if (playerChoice === 'rock') return 'scissors';
+                if (playerChoice === 'paper') return 'rock';
+                if (playerChoice === 'scissors') return 'paper';
+            }
+        }
+        
+        // "Easy Mode" AI for the first 2 player wins
+        // This AI is predictable and easy to beat
+        const predictableChoices: Choice[] = ['rock', 'paper', 'rock', 'scissors'];
+        return predictableChoices[playerScore % predictableChoices.length];
+    }
+
     const handlePlayerChoice = (choice: Choice) => {
         if (gameState !== 'playing' || !isSignedIn) return;
 
-        const aiRandomChoice = choices[Math.floor(Math.random() * choices.length)];
+        const aiRandomChoice = getAiChoice(choice);
         setPlayerChoice(choice);
         setAiChoice(aiRandomChoice);
         setGameState('showing');
@@ -69,7 +92,11 @@ export function RockPaperScissorsGame() {
             gameOverFired.current = true; // Prevent this from firing again
             setGameState('gameOver');
             const playerWon = playerScore >= MAX_SCORE;
-            playRpsMatch(playerWon);
+            if (playerWon) {
+                playRpsMatch(true); // Only call if player wins the match
+            } else {
+                 playRpsMatch(false); // Call with false if player loses, to track play without reward
+            }
         }
     }, [playerScore, aiScore, playRpsMatch]);
 
@@ -112,12 +139,19 @@ export function RockPaperScissorsGame() {
                 <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                         <span>Rock, Paper, Scissors</span>
-                        <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                            <Gamepad2 className="h-4 w-4" />
-                            <span>Plays Left: {availableRpsPlays}</span>
-                        </div>
+                        {hasClaimedRpsWinToday() ? (
+                            <div className="text-sm font-medium text-green-500 flex items-center gap-2">
+                                <Award className="h-4 w-4" />
+                                <span>Daily reward claimed!</span>
+                            </div>
+                        ) : (
+                             <div className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                                <Award className="h-4 w-4" />
+                                <span>Daily win reward: +10 Credits</span>
+                            </div>
+                        )}
                     </CardTitle>
-                    <CardDescription>First to {MAX_SCORE} wins the match. Win a match to earn 10 credits.</CardDescription>
+                    <CardDescription>First to {MAX_SCORE} wins the match. Can you defeat the God-level AI?</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-8">
                      <div className="flex justify-around items-center text-center bg-muted p-4 rounded-xl">
