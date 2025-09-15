@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle } from 'lucide-react';
+import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -38,18 +38,12 @@ const defaultSettings: PomodoroSettings = {
   sound: 'digital',
 };
 
-const soundMap = {
-    digital: '/sounds/digital.mp3',
-    chime: '/sounds/chime.mp3',
-    sweet: '/sounds/sweet.mp3',
-};
-
-
 export function PomodoroTimer() {
   const [settings, setSettings] = useLocalStorage<PomodoroSettings>('pomodoroSettings', defaultSettings);
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(settings.focus * 60);
   const [isActive, setIsActive] = useState(false);
+  const [isMuted, setIsMuted] = useLocalStorage('pomodoroMuted', false);
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
@@ -62,49 +56,43 @@ export function PomodoroTimer() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
-  const playNotificationSound = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    if (!audioContextRef.current) {
-        try {
-            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
-        } catch (e) {
-            console.error("Web Audio API is not supported in this browser");
-            return;
-        }
-    }
-    if (audioContextRef.current.state === 'suspended') {
-      audioContextRef.current.resume();
-    }
+  const playSound = useCallback((type: 'tick' | 'notification') => {
+    if (isMuted || typeof window === 'undefined') return;
+    if (!audioContextRef.current) return;
     
-    // As we cannot create real audio files, we'll create a synthetic sound as a fallback.
     const oscillator = audioContextRef.current.createOscillator();
     const gainNode = audioContextRef.current.createGain();
-
     oscillator.connect(gainNode);
     gainNode.connect(audioContextRef.current.destination);
 
-    oscillator.type = 'sine';
-    
-    // A simple melody
-    const now = audioContextRef.current.currentTime;
-    if (settings.sound === 'digital') {
-        oscillator.frequency.setValueAtTime(659.25, now); // E5
-        gainNode.gain.setValueAtTime(0.5, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
-    } else if (settings.sound === 'chime') {
-        oscillator.frequency.setValueAtTime(523.25, now); // C5
-        oscillator.frequency.setValueAtTime(659.25, now + 0.1);
-        oscillator.frequency.setValueAtTime(783.99, now + 0.2);
-    } else { // sweet
-        oscillator.frequency.setValueAtTime(783.99, now); // G5
-        gainNode.gain.setValueAtTime(0.3, now);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+    if (type === 'tick') {
+        oscillator.type = 'triangle';
+        oscillator.frequency.setValueAtTime(1000, audioContextRef.current.currentTime);
+        gainNode.gain.setValueAtTime(0.2, audioContextRef.current.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContextRef.current.currentTime + 0.1);
+        oscillator.start(audioContextRef.current.currentTime);
+        oscillator.stop(audioContextRef.current.currentTime + 0.1);
+    } else { // notification
+        oscillator.type = 'sine';
+        const now = audioContextRef.current.currentTime;
+        if (settings.sound === 'digital') {
+            oscillator.frequency.setValueAtTime(659.25, now);
+            gainNode.gain.setValueAtTime(0.5, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
+        } else if (settings.sound === 'chime') {
+            oscillator.frequency.setValueAtTime(523.25, now);
+            oscillator.frequency.setValueAtTime(659.25, now + 0.1);
+            oscillator.frequency.setValueAtTime(783.99, now + 0.2);
+        } else { // sweet
+            oscillator.frequency.setValueAtTime(783.99, now);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+        }
+        oscillator.start(now);
+        oscillator.stop(now + 0.5);
     }
+  }, [isMuted, settings.sound]);
 
-    oscillator.start(now);
-    oscillator.stop(now + 0.5);
-
-  }, [settings.sound]);
 
   const resetTimer = useCallback(() => {
     setIsActive(false);
@@ -134,15 +122,16 @@ export function PomodoroTimer() {
     if (isActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
+        playSound('tick');
       }, 1000);
     } else if (isActive && timeLeft === 0) {
-      playNotificationSound();
+      playSound('notification');
       resetTimer();
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isActive, timeLeft, resetTimer, playNotificationSound]);
+  }, [isActive, timeLeft, resetTimer, playSound]);
   
   useEffect(() => {
     if (!isActive) {
@@ -191,7 +180,7 @@ export function PomodoroTimer() {
   }
 
   return (
-    <div className="absolute inset-0 z-0 h-full w-full flex flex-col text-white overflow-hidden bg-gray-900">
+    <div className="relative inset-0 z-0 h-full w-full flex flex-col text-white overflow-hidden bg-gray-900">
         <AnimatePresence>
             {selectedTheme && (
                 <motion.div
@@ -221,7 +210,7 @@ export function PomodoroTimer() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
                 exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
-                className="text-center z-10"
+                className="text-center z-10 pt-16 sm:pt-0"
                 >
                     <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
                 </motion.div>
@@ -274,7 +263,8 @@ export function PomodoroTimer() {
                 >
                     {isActive ? <Pause className="h-8 w-8"/> : <Play className="h-8 w-8"/>}
                 </Button>
-                <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
+
+                 <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
                     <SheetTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
                             <Palette className="h-8 w-8" />
@@ -308,6 +298,9 @@ export function PomodoroTimer() {
                         </div>
                     </SheetContent>
                 </Sheet>
+                 <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white" onClick={() => setIsMuted(m => !m)}>
+                    {isMuted ? <VolumeX className="h-8 w-8" /> : <Volume2 className="h-8 w-8" />}
+                </Button>
             </div>
         </div>
        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
