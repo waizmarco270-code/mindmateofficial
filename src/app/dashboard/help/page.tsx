@@ -1,0 +1,87 @@
+
+'use client';
+
+import { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { LifeBuoy, Send, CheckCircle, MailQuestion } from 'lucide-react';
+import { useAdmin } from '@/hooks/use-admin';
+import { useToast } from '@/hooks/use-toast';
+import { useUser, SignedOut } from '@clerk/nextjs';
+import { LoginWall } from '@/components/ui/login-wall';
+
+export default function HelpPage() {
+    const { user, isSignedIn } = useUser();
+    const { submitSupportTicket } = useAdmin();
+    const { toast } = useToast();
+    const [message, setMessage] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isSubmitted, setIsSubmitted] = useState(false);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!message.trim() || !user) {
+            toast({ variant: 'destructive', title: 'Message cannot be empty.' });
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await submitSupportTicket(message);
+            setIsSubmitted(true);
+            setMessage('');
+            toast({ title: "Message Sent!", description: "An admin will review your message shortly."});
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="space-y-8">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight">Help & Support</h1>
+                <p className="text-muted-foreground">Have a problem or a suggestion? Let us know!</p>
+            </div>
+            <Card className="max-w-2xl mx-auto relative">
+                 <SignedOut>
+                    <LoginWall 
+                        title="Unlock Support"
+                        description="Sign up for free to send messages directly to our admin team for help and suggestions."
+                    />
+                </SignedOut>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><MailQuestion className="text-primary"/> Contact an Admin</CardTitle>
+                    <CardDescription>Your message will be sent directly to the site administrators. We'll do our best to get back to you if needed.</CardDescription>
+                </CardHeader>
+                {isSubmitted ? (
+                    <CardContent className="text-center py-16">
+                        <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+                        <h3 className="text-xl font-bold">Thank You!</h3>
+                        <p className="text-muted-foreground mb-6">Your message has been received.</p>
+                        <Button onClick={() => setIsSubmitted(false)}>Send Another Message</Button>
+                    </CardContent>
+                ) : (
+                    <form onSubmit={handleSubmit}>
+                        <CardContent>
+                            <Textarea 
+                                value={message}
+                                onChange={(e) => setMessage(e.target.value)}
+                                placeholder="Describe your issue or suggestion here..."
+                                rows={8}
+                                disabled={isSubmitting || !isSignedIn}
+                            />
+                        </CardContent>
+                        <CardContent>
+                            <Button type="submit" className="w-full" disabled={isSubmitting || !message.trim() || !isSignedIn}>
+                                <Send className="mr-2 h-4 w-4"/> {isSubmitting ? 'Sending...' : 'Send Message'}
+                            </Button>
+                        </CardContent>
+                    </form>
+                )}
+            </Card>
+        </div>
+    );
+}
