@@ -154,7 +154,7 @@ export default function LeaderboardPage() {
 
         if (activeTab === 'weekly') {
             sorted = [...processedUsers].sort((a, b) => b.weeklyTime - a.weeklyTime);
-        } else if (activeTab === 'entertainment') {
+        } else if (activeTab === 'game-zone') {
             sorted = [...processedUsers].sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
         } else {
             // Default to all-time score
@@ -175,7 +175,7 @@ export default function LeaderboardPage() {
     const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
     
     const renderUserStats = (user: UserWithStats) => {
-        if (activeTab === 'entertainment') {
+        if (activeTab === 'game-zone') {
              return (
                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
                      <div className="flex items-center gap-1.5 col-span-full font-bold text-base text-foreground mb-1">
@@ -254,13 +254,13 @@ export default function LeaderboardPage() {
         const scoreToDisplay = {
             'all-time': user.totalScore,
             'weekly': formatTime(user.weeklyTime),
-            'entertainment': user.entertainmentTotalScore
+            'game-zone': user.entertainmentTotalScore
         }[activeTab];
 
         const scoreLabel = {
             'all-time': 'Total Score',
             'weekly': 'This Week',
-            'entertainment': 'Total Score'
+            'game-zone': 'Total Score'
         }[activeTab];
         
         const CardWrapper = activeTab === 'weekly' ? 'button' : 'div';
@@ -359,7 +359,7 @@ export default function LeaderboardPage() {
                 <p className="text-muted-foreground">See who's leading the board with the highest scores and longest streaks!</p>
             </div>
             
-            {activeTab !== 'entertainment' && (
+            {activeTab !== 'game-zone' && (
                 <Card className="relative overflow-hidden border-yellow-400/30 bg-yellow-950/40">
                     <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_50%,transparent_100%)]"></div>
                     <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-transparent to-transparent"></div>
@@ -407,7 +407,7 @@ export default function LeaderboardPage() {
                 </Card>
             )}
 
-            {activeTab === 'entertainment' && (
+            {activeTab === 'game-zone' && (
                  <Card className="relative overflow-hidden border-blue-400/30 bg-blue-950/40">
                     <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_50%,transparent_100%)]"></div>
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-transparent to-transparent"></div>
@@ -436,7 +436,7 @@ export default function LeaderboardPage() {
                                     <p className="text-sm text-muted-foreground font-semibold mb-2">How to achieve:</p>
                                      <p className="text-xs text-muted-foreground">The <span className="gm-badge inline-flex items-center gap-1">GM</span> badge is for the best players.</p>
                                     <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
-                                        <li>Finish at the #1 spot on the weekly Entertainment leaderboard.</li>
+                                        <li>Finish at the #1 spot on the weekly Game Zone leaderboard.</li>
                                         <li>You must stay in the Top 3 in subsequent weeks to keep the badge.</li>
                                     </ul>
                                 </div>
@@ -459,7 +459,7 @@ export default function LeaderboardPage() {
                 <TabsList className="grid w-full grid-cols-3 md:w-1/2 mx-auto">
                     <TabsTrigger value="all-time">All-Time</TabsTrigger>
                     <TabsTrigger value="weekly">Weekly</TabsTrigger>
-                    <TabsTrigger value="entertainment">Entertainment</TabsTrigger>
+                    <TabsTrigger value="game-zone">Game Zone</TabsTrigger>
                 </TabsList>
                 <TabsContent value="all-time" className="mt-6">
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="all-time" onUserClick={setSelectedUserForDetails} />
@@ -486,7 +486,7 @@ export default function LeaderboardPage() {
                     </div>
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="weekly" onUserClick={setSelectedUserForDetails} />
                 </TabsContent>
-                 <TabsContent value="entertainment" className="mt-6 space-y-6">
+                 <TabsContent value="game-zone" className="mt-6 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <Card>
                             <CardContent className="p-4 flex items-center justify-between gap-4 text-center">
@@ -506,7 +506,7 @@ export default function LeaderboardPage() {
                              <LastWeekWinnerCard winner={lastWeekEntertainmentWinner} score={lastWeekEntertainmentWinner.prevWeekEntertainmentTotalScore} scoreLabel="Total Score" />
                         )}
                     </div>
-                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="entertainment" onUserClick={setSelectedUserForDetails}/>
+                    <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="game-zone" onUserClick={setSelectedUserForDetails}/>
                 </TabsContent>
             </Tabs>
              <Dialog open={!!selectedUserForDetails} onOpenChange={(open) => !open && setSelectedUserForDetails(null)}>
@@ -555,7 +555,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
     const getScoreLabel = () => ({
         'all-time': 'Total Score',
         'weekly': 'Weekly Time',
-        'entertainment': 'Total Score',
+        'game-zone': 'Total Score',
     }[activeTab]);
     
     const formatWeeklyTime = (seconds: number) => {
@@ -568,7 +568,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
     const getScoreToDisplay = (user: any) => ({
         'all-time': user.totalScore,
         'weekly': formatWeeklyTime(user.weeklyTime),
-        'entertainment': user.entertainmentTotalScore
+        'game-zone': user.entertainmentTotalScore
     }[activeTab]);
 
     return (
