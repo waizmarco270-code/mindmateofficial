@@ -5,12 +5,12 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { LifeBuoy, Send, CheckCircle, MailQuestion, AlertTriangle } from 'lucide-react';
+import { LifeBuoy, Send, CheckCircle, MailQuestion, AlertTriangle, Award } from 'lucide-react';
 import { useAdmin } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function HelpPage() {
     const { user, isSignedIn } = useUser();
@@ -85,6 +85,14 @@ export default function HelpPage() {
                     )}
                 </Card>
                 
+                 <Alert>
+                    <Award className="h-4 w-4" />
+                    <AlertTitle className="font-bold">Found a Bug?</AlertTitle>
+                    <AlertDescription>
+                       Users who find and report a real bug or glitch can receive a reward of up to <span className="font-bold text-primary">1000 credits!</span>
+                    </AlertDescription>
+                </Alert>
+
                  <Alert variant="destructive">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription>
