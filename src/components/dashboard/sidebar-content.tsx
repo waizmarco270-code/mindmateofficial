@@ -72,7 +72,7 @@ const superAdminNav = [
 ]
 
 const socialLinks = [
-    { name: 'Instagram', href: 'https://www.instagram.com/mindmate100?utm_source=ig_web_button_share_sheet&igsh=emJwcTZxdmZnaGF1', icon: 'instagram' },
+    { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx', icon: 'instagram' },
     { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H', icon: 'whatsapp' },
     { name: 'Telegram', href: 'https://t.me/EmityGate', icon: Send },
 ];
