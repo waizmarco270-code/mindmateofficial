@@ -15,6 +15,7 @@ import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 import { TypingAnimation } from '@/components/dashboard/typing-animation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { GlobalGiftCard } from '@/components/dashboard/global-gift';
 
 const studyTools = [
     {
@@ -97,7 +98,7 @@ const exploreFeatures = [
 const leaderboardOptions = [
     { name: 'All-Time', href: '/dashboard/leaderboard?tab=all-time', icon: Users },
     { name: 'Weekly', href: '/dashboard/leaderboard?tab=weekly', icon: Calendar },
-    { name: 'Game Zone', href: '/dashboard/leaderboard?tab=entertainment', icon: Gamepad2 }
+    { name: 'Game Zone', href: '/dashboard/leaderboard?tab=game-zone', icon: Gamepad2 }
 ]
 
 export default function DashboardPage() {
@@ -145,6 +146,7 @@ export default function DashboardPage() {
       </div>
 
       <SignedIn>
+        <GlobalGiftCard />
         {isSurpriseRevealed ? (
           <DailySurpriseCard />
         ) : (
@@ -390,5 +392,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -52,6 +51,7 @@ export interface User {
     dimensionShift?: number;
     subjectSprint?: number;
   };
+  claimedGlobalGifts?: string[];
 }
 
 export interface Announcement {
@@ -110,6 +110,16 @@ export interface AppTheme {
     background: string;
     accent: string;
     radius: number; // 0 to 1
+}
+
+export interface GlobalGift {
+    id: string;
+    message: string;
+    type: 'credits' | 'scratch' | 'flip';
+    amount: number;
+    createdAt: Timestamp;
+    isActive: boolean;
+    claimedBy?: string[]; // Array of UIDs who have claimed it
 }
 
 
@@ -176,6 +186,11 @@ interface AppDataContextType {
     // Theme Management
     appTheme: AppTheme | null;
     updateAppTheme: (theme: AppTheme) => Promise<void>;
+
+    // Global Gift Management
+    activeGlobalGift: GlobalGift | null;
+    sendGlobalGift: (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => Promise<void>;
+    claimGlobalGift: (giftId: string, userId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -198,6 +213,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
     const [appTheme, setAppTheme] = useState<AppTheme | null>(null);
+    const [activeGlobalGift, setActiveGlobalGift] = useState<GlobalGift | null>(null);
     const [loading, setLoading] = useState(true);
 
     // EFFECT: Determine if the logged-in user is an admin or super admin
@@ -336,7 +352,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         
     }, [authUser, isClerkLoaded]);
     
-    // EFFECT: Listen for global data (announcements, resources, polls, sections, theme)
+    // EFFECT: Listen for global data (announcements, resources, polls, sections, theme, gifts)
     useEffect(() => {
         const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
             return snapshot.docs.map((doc: any) => {
@@ -355,6 +371,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc'));
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
         const themeDocRef = doc(db, 'appConfig', 'theme');
+        const giftsQuery = query(collection(db, 'globalGifts'), where('isActive', '==', true), orderBy('createdAt', 'desc'), limit(1));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
@@ -373,6 +390,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 setAppTheme(doc.data() as AppTheme);
             }
         });
+        const unsubGifts = onSnapshot(giftsQuery, (snapshot) => {
+             if (!snapshot.empty) {
+                const giftDoc = snapshot.docs[0];
+                setActiveGlobalGift({ id: giftDoc.id, ...giftDoc.data() } as GlobalGift);
+            } else {
+                setActiveGlobalGift(null);
+            }
+        });
 
         return () => {
             unsubAnnouncements();
@@ -381,6 +406,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubDailySurprises();
             unsubSections();
             unsubTheme();
+            unsubGifts();
         };
     }, []);
 
@@ -634,6 +660,61 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const themeDocRef = doc(db, 'appConfig', 'theme');
         await setDoc(themeDocRef, theme);
     }
+    
+    const sendGlobalGift = async (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => {
+        // Deactivate all other gifts first
+        const giftsRef = collection(db, 'globalGifts');
+        const q = query(giftsRef, where('isActive', '==', true));
+        const activeGiftsSnapshot = await getDocs(q);
+        
+        const batch = writeBatch(db);
+        activeGiftsSnapshot.forEach(doc => {
+            batch.update(doc.ref, { isActive: false });
+        });
+
+        // Add the new gift
+        const newGiftRef = doc(collection(db, 'globalGifts'));
+        batch.set(newGiftRef, {
+            ...gift,
+            id: newGiftRef.id,
+            createdAt: serverTimestamp(),
+            isActive: true,
+            claimedBy: []
+        });
+
+        await batch.commit();
+    };
+
+    const claimGlobalGift = async (giftId: string, userId: string) => {
+        const giftRef = doc(db, 'globalGifts', giftId);
+        const userRef = doc(db, 'users', userId);
+        const giftDoc = await getDoc(giftRef);
+
+        if (!giftDoc.exists()) throw new Error("Gift not found.");
+        const gift = giftDoc.data() as GlobalGift;
+
+        const batch = writeBatch(db);
+        
+        // Mark as claimed for the gift
+        batch.update(giftRef, { claimedBy: arrayUnion(userId) });
+        // Mark as claimed for the user
+        batch.update(userRef, { claimedGlobalGifts: arrayUnion(giftId) });
+        
+        // Award the prize
+        switch(gift.type) {
+            case 'credits':
+                batch.update(userRef, { credits: increment(gift.amount) });
+                break;
+            case 'scratch':
+                batch.update(userRef, { freeRewards: increment(gift.amount) });
+                break;
+ci-lint case 'flip':
+                 batch.update(userRef, { freeGuesses: increment(gift.amount) });
+                break;
+        }
+
+        await batch.commit();
+    };
 
     // CONTEXT VALUE
     const value: AppDataContextType = {
@@ -685,6 +766,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         submitPollVote,
         appTheme,
         updateAppTheme,
+        activeGlobalGift,
+        sendGlobalGift,
+        claimGlobalGift,
     };
 
     return (

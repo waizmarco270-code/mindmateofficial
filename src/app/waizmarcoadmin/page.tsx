@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2 } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -37,6 +36,7 @@ export default function SuperAdminPanelPage() {
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
     resetUserCredits, clearGlobalChat, clearQuizLeaderboard,
+    sendGlobalGift
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -48,6 +48,12 @@ export default function SuperAdminPanelPage() {
   const [creditAmount, setCreditAmount] = useState(10);
   const [spinAmount, setSpinAmount] = useState(1);
   const [guessAmount, setGuessAmount] = useState(1);
+  
+  // State for Global Gift
+  const [giftMessage, setGiftMessage] = useState('');
+  const [giftType, setGiftType] = useState<'credits' | 'scratch' | 'flip'>('credits');
+  const [giftAmount, setGiftAmount] = useState(5);
+  const [isSendingGift, setIsSendingGift] = useState(false);
   
   
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -158,6 +164,28 @@ export default function SuperAdminPanelPage() {
       }
   }
 
+  const handleSendGlobalGift = async () => {
+      if(!giftMessage.trim() || giftAmount <= 0) {
+          toast({variant: 'destructive', title: 'Invalid Gift', description: 'Please provide a message and a positive gift amount.'});
+          return;
+      }
+      setIsSendingGift(true);
+      try {
+          await sendGlobalGift({
+              message: giftMessage,
+              type: giftType,
+              amount: giftAmount,
+          });
+          toast({ title: "Global Gift Sent!", description: "The gift is now available for all users to claim."});
+          setGiftMessage('');
+          setGiftAmount(5);
+      } catch (error: any) {
+          toast({variant: 'destructive', title: 'Failed to Send Gift', description: error.message });
+      } finally {
+          setIsSendingGift(false);
+      }
+  }
+
   if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -198,7 +226,11 @@ export default function SuperAdminPanelPage() {
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0">
                 <Card>
-                  <CardContent className="pt-6">
+                    <CardHeader>
+                        <CardTitle>All Registered Users</CardTitle>
+                        <CardDescription>Total Users: {users.length}</CardDescription>
+                    </CardHeader>
+                  <CardContent className="pt-2">
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -270,6 +302,55 @@ export default function SuperAdminPanelPage() {
                         ))}
                       </TableBody>
                     </Table>
+                  </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+        
+        {/* Global Gifts */}
+        <AccordionItem value="global-gifts" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Send className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Global Gifts</h3>
+                  <p className="text-sm text-muted-foreground text-left">Send a claimable reward to all users.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Create a New Global Gift</CardTitle>
+                        <CardDescription>This gift will appear as a popup on every user's dashboard until they claim it.</CardDescription>
+                    </CardHeader>
+                  <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="gift-message">Gift Message</Label>
+                        <Input id="gift-message" value={giftMessage} onChange={e => setGiftMessage(e.target.value)} placeholder="e.g., Happy New Year! Here's a gift."/>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="gift-type">Gift Type</Label>
+                            <Select value={giftType} onValueChange={(v: any) => setGiftType(v)}>
+                                <SelectTrigger id="gift-type"><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="credits"><DollarSign className="mr-2 h-4 w-4"/> Credits</SelectItem>
+                                    <SelectItem value="scratch"><VenetianMask className="mr-2 h-4 w-4"/> Scratch Cards</SelectItem>
+                                    <SelectItem value="flip"><Box className="mr-2 h-4 w-4"/> Card Flip Plays</SelectItem>
+                                </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="gift-amount">Amount</Label>
+                            <Input id="gift-amount" type="number" value={giftAmount} onChange={e => setGiftAmount(Number(e.target.value))} min="1"/>
+                          </div>
+                      </div>
+                      <Button onClick={handleSendGlobalGift} disabled={isSendingGift}>
+                        {isSendingGift ? 'Sending...' : 'Send Global Gift to All Users'}
+                      </Button>
                   </CardContent>
                 </Card>
             </AccordionContent>
@@ -502,7 +583,3 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
-
-    
-
-
