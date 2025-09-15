@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { useUsers } from './use-admin';
+import { useVisibilityChange } from './use-visibility-change';
 
 export interface Subject {
   id: string;
@@ -40,9 +41,11 @@ interface TimeTrackerState {
   currentSessionStart: string | null; // ISO string
 }
 
+const ONE_HOUR = 3600 * 1000; // in milliseconds
+
 export function useTimeTracker() {
   const { user } = useUser();
-  const { currentUserData, updateStudyTime } = useUsers(); // Using from useUsers hook now
+  const { currentUserData, updateStudyTime } = useUsers();
   const todayString = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const [state, setState] = useState<TimeTrackerState>({
@@ -88,52 +91,31 @@ export function useTimeTracker() {
   
   // Subscribe to all time sessions for the insights page
   useEffect(() => {
-    if (!user) return; // Need to get all users' sessions for global leaderboard
+    if (!user) return;
     
-    const allUsersSessionsRef = collection(db, 'timeTrackerSessions'); // Simplified for now
-    const q = query(allUsersSessionsRef);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const allFetchedSessions: TimeSession[] = [];
-         snapshot.forEach(doc => {
-            const data = doc.data();
-            // This is a simplification. In a real app, you'd query subcollections.
-            // For now, let's assume sessions are stored with a userId.
-            if(data.userId) { // Assuming a structure change I can't make now
-                 allFetchedSessions.push({...data, id: doc.id } as TimeSession)
-            }
-        });
-        
-        // Let's get ALL sessions from ALL users for leaderboard calculation
-        const usersCol = collection(db, 'users');
-        getDocs(usersCol).then(userSnapshot => {
-          const promises = userSnapshot.docs.map(userDoc => {
-            const userSessionsRef = collection(db, 'users', userDoc.id, 'timeTrackerSessions');
-            return getDocs(userSessionsRef).then(sessionSnapshot => {
-              return sessionSnapshot.docs.map(sessionDoc => {
-                const data = sessionDoc.data();
-                return {
-                  ...data,
-                  id: sessionDoc.id,
-                  // Manually add the user ID to the session object for filtering
-                  subjectId: userDoc.id 
-                } as TimeSession
-              });
-            });
-          });
-
-          Promise.all(promises).then(usersSessions => {
-            const allSessions = usersSessions.flat();
-            setSessions(allSessions);
+    const usersCol = collection(db, 'users');
+    getDocs(usersCol).then(userSnapshot => {
+      const promises = userSnapshot.docs.map(userDoc => {
+        const userSessionsRef = collection(db, 'users', userDoc.id, 'timeTrackerSessions');
+        return getDocs(userSessionsRef).then(sessionSnapshot => {
+          return sessionSnapshot.docs.map(sessionDoc => {
+            const data = sessionDoc.data();
+            return {
+              ...data,
+              id: sessionDoc.id,
+              subjectId: userDoc.id 
+            } as TimeSession
           });
         });
+      });
 
-
-    }, (error) => {
-      console.error("Error fetching all sessions: ", error);
+      Promise.all(promises).then(usersSessions => {
+        const allSessions = usersSessions.flat();
+        setSessions(allSessions);
+      });
     });
-    
-    return () => unsubscribe();
-  }, [user]); // Rerun if user changes to handle login/logout
+
+  }, [user]);
   
    // Subscribe to today's sessions to calculate totalTimeToday
   useEffect(() => {
@@ -178,7 +160,6 @@ export function useTimeTracker() {
       interval = setInterval(updateTimer, 1000);
 
     } else {
-      // When no subject is active, just show its total tracked time
       const activeSub = state.subjects.find(s => s.id === state.activeSubjectId);
       setActiveSubjectTime(activeSub?.timeTracked || 0);
     }
@@ -186,13 +167,13 @@ export function useTimeTracker() {
   }, [state.activeSubjectId, state.currentSessionStart, state.subjects]);
   
 
-  const finishSession = useCallback(async (subjectId: string, startTime: string): Promise<number> => {
+  const finishSession = useCallback(async (subjectId: string, startTime: string, endTimeOverride?: Date): Promise<number> => {
     if (!user || !allSessionsColRef) return 0;
 
     const subject = state.subjects.find(s => s.id === subjectId);
     if (!subject) return 0;
 
-    const endTime = new Date();
+    const endTime = endTimeOverride || new Date();
     const duration = (endTime.getTime() - new Date(startTime).getTime()) / 1000;
 
     if (duration < 1) return subject.timeTracked; // Ignore very short sessions, return existing time
@@ -204,10 +185,8 @@ export function useTimeTracker() {
         endTime: endTime.toISOString()
     };
     
-    // Add to all sessions collection
     await addDoc(allSessionsColRef, newSession);
     
-    // Update total study time on user profile
     const newTotalStudyTime = (currentUserData?.totalStudyTime || 0) + duration;
     await updateStudyTime(user.id, newTotalStudyTime);
 
@@ -236,7 +215,26 @@ export function useTimeTracker() {
       setState({ subjects: newSubjects, activeSubjectId: subjectId, currentSessionStart: nowISO });
     }
   }, [state, finishSession]);
-  
+
+  // Auto-pause on background
+  useVisibilityChange(() => {
+    if (document.visibilityState === 'hidden' && state.activeSubjectId && state.currentSessionStart) {
+      const hiddenTimestamp = Date.now();
+      
+      const handleVisibilityReturn = async () => {
+        if (document.visibilityState === 'visible') {
+            const visibleTimestamp = Date.now();
+            if(visibleTimestamp - hiddenTimestamp > ONE_HOUR) {
+                // Time in background exceeded 1 hour, pause the timer
+                await handlePlayPause(state.activeSubjectId!);
+            }
+            window.removeEventListener('visibilitychange', handleVisibilityReturn);
+        }
+      }
+      window.addEventListener('visibilitychange', handleVisibilityReturn);
+    }
+  });
+
   const addSubject = useCallback(async ({ name, color }: { name: string; color: string }) => {
     if (!subjectsDocRef) return;
     const newSubject: Subject = {

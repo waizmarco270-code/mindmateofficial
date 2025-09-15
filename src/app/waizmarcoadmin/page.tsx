@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -36,6 +37,7 @@ export default function SuperAdminPanelPage() {
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
     resetUserCredits, clearGlobalChat, clearQuizLeaderboard,
+    resetWeeklyStudyTime,
     sendGlobalGift
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
@@ -147,6 +149,15 @@ export default function SuperAdminPanelPage() {
           toast({ variant: 'destructive', title: "Error Clearing Leaderboard", description: error.message });
       }
   };
+
+  const handleResetWeeklyStudy = async () => {
+    try {
+        await resetWeeklyStudyTime();
+        toast({ title: "Weekly Study Time Reset", description: "All time tracking sessions for this week have been deleted." });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: "Error Resetting Study Time", description: error.message });
+    }
+  }
 
   const handleApproveReferral = async (referral: ReferralRequest) => {
       try {
@@ -575,6 +586,35 @@ export default function SuperAdminPanelPage() {
                         </AlertDialog>
                     </CardContent>
                 </Card>
+
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Weekly Study Leaderboard</CardTitle>
+                        <CardDescription>Permanently delete all of this week's study sessions for all users. This is useful for correcting data after a bug.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive">
+                                    <History className="mr-2 h-4 w-4"/> Reset Weekly Study Time
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will delete all `timeTrackerSessions` for the current week for all users. This cannot be undone and will reset the weekly leaderboard.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleResetWeeklyStudy}>Yes, reset weekly time</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+
               </AccordionContent>
             </Card>
         </AccordionItem>

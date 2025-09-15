@@ -1,11 +1,16 @@
 
-import { useEffect } from 'react';
+'use client';
+
+import { useEffect, useRef } from 'react';
 
 export function useVisibilityChange(onHidden: () => void) {
+  const onHiddenRef = useRef(onHidden);
+  onHiddenRef.current = onHidden;
+
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        onHidden();
+        onHiddenRef.current();
       }
     };
 
@@ -14,5 +19,5 @@ export function useVisibilityChange(onHidden: () => void) {
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [onHidden]);
+  }, []);
 }
