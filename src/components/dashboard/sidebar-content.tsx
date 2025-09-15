@@ -35,6 +35,7 @@ import { useUnreadMessages } from '@/hooks/use-unread';
 import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
 import { Separator } from '../ui/separator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 const mainNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
@@ -135,36 +136,51 @@ export default function SidebarContent() {
           <span className="text-xl">MindMate</span>
         </Link>
       </div>
-      <div className="flex-1 overflow-y-auto py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto py-4">
+        <Accordion
+          type="multiple"
+          defaultValue={['main-tools', 'study-tools', 'other-tools', 'admin-tools']}
+          className="w-full"
+        >
+          <AccordionItem value="main-tools" className="border-b-0">
+            <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+              Main
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-2">
+              {renderNavLinks(mainNav)}
+            </AccordionContent>
+          </AccordionItem>
         
-        <div className="px-4">
-          <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Main</h2>
-          {renderNavLinks(mainNav)}
-        </div>
-        
-        <div className="px-4">
-          <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Study</h2>
-          {renderNavLinks(studyNav as any)}
-        </div>
+          <AccordionItem value="study-tools" className="border-b-0">
+            <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+              Study
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-2">
+              {renderNavLinks(studyNav as any)}
+            </AccordionContent>
+          </AccordionItem>
 
-        <div className="px-4">
-          <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Other</h2>
-          {renderNavLinks(otherNav as any)}
-        </div>
-        
-        {isAdmin && (
-            <div className="px-4 space-y-2">
-                <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Admin</h2>
+          <AccordionItem value="other-tools" className="border-b-0">
+            <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+              Other
+            </AccordionTrigger>
+            <AccordionContent className="px-4 pb-2">
+              {renderNavLinks(otherNav as any)}
+            </AccordionContent>
+          </AccordionItem>
+          
+          {(isAdmin || isSuperAdmin) && (
+            <AccordionItem value="admin-tools" className="border-b-0">
+               <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+                Admin
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-2">
                 {renderNavLinks(adminNav as any)}
-            </div>
-        )}
-        
-        {isSuperAdmin && (
-             <div className="px-4 space-y-2">
-                <h2 className="mb-2 px-3 text-sm font-semibold tracking-tight text-destructive/80">Super Admin</h2>
-                {renderNavLinks(superAdminNav as any)}
-            </div>
-        )}
+                 {isSuperAdmin && renderNavLinks(superAdminNav as any)}
+              </AccordionContent>
+            </AccordionItem>
+          )}
+        </Accordion>
       </div>
 
        <div className="mt-auto p-4 border-t border-sidebar-border">
