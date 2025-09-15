@@ -126,7 +126,7 @@ export function PomodoroTimer() {
 
   return (
     <div className="relative h-screen w-full flex flex-col items-center justify-center text-white overflow-hidden bg-gray-900">
-      <div className="absolute inset-0 z-0 green-nebula-bg" />
+      <div className="absolute inset-0 z-0 blue-nebula-bg" />
       <AnimatePresence>
         <motion.div
           key={mode}
@@ -225,4 +225,3 @@ export function PomodoroTimer() {
   );
 }
 
-    

@@ -226,10 +226,10 @@
     animation: rotate-angle 4s linear infinite;
   }
 
-  .green-nebula-bg {
-    background: linear-gradient(135deg, #05380c, #011405, #0a4f0f, #2e7d32);
-    background-size: 400% 400%;
-    animation: nebula-animation 25s ease infinite;
+  .blue-nebula-bg {
+    background: linear-gradient(225deg, #000428, #004e92, #0c2e4e, #2980b9);
+    background-size: 250% 250%;
+    animation: nebula-animation 20s ease infinite;
     position: absolute;
     inset: 0;
     z-index: 0;
