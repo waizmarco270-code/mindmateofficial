@@ -123,16 +123,17 @@ export default function DashboardPage() {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
 
-             <div className="relative h-[250px] mb-8 overflow-hidden" onClick={handleFlip}>
+             <div className="relative h-[250px] mb-8 overflow-hidden" style={{ perspective: '1000px' }} onClick={handleFlip}>
                  <AnimatePresence initial={false}>
                     {!isShowingPoll ? (
                         <motion.div
                             key="announcement"
                             className="absolute w-full h-full"
-                            initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '-100%' }}
-                            transition={{ duration: 0.5, ease: 'easeInOut' }}
+                            initial={{ rotateY: 180 }}
+                            animate={{ rotateY: 0 }}
+                            exit={{ rotateY: -180 }}
+                            transition={{ duration: 0.6, ease: "easeInOut" }}
+                            style={{ backfaceVisibility: 'hidden' }}
                         >
                             <Card className="rainbow-border-card h-full">
                                 <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
@@ -157,10 +158,11 @@ export default function DashboardPage() {
                          <motion.div
                             key="poll"
                             className="absolute w-full h-full"
-                             initial={{ x: '100%' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '-100%' }}
-                             transition={{ duration: 0.5, ease: 'easeInOut' }}
+                             initial={{ rotateY: 180 }}
+                            animate={{ rotateY: 0 }}
+                            exit={{ rotateY: -180 }}
+                             transition={{ duration: 0.6, ease: "easeInOut" }}
+                             style={{ backfaceVisibility: 'hidden' }}
                         >
                             <CommunityPoll />
                         </motion.div>
