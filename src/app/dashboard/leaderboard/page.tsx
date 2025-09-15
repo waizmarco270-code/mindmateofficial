@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -28,6 +28,7 @@ type UserWithStats = User & {
     emojiQuizHighScore: number;
     memoryGameHighScore: number;
     dimensionShiftHighScore: number;
+    subjectSprintHighScore: number;
     prevWeekEntertainmentTotalScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
 };
@@ -125,12 +126,13 @@ export default function LeaderboardPage() {
                 const emojiQuizHighScore = user.gameHighScores?.emojiQuiz || 0;
                 const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
                 const dimensionShiftHighScore = user.gameHighScores?.dimensionShift || 0;
+                const subjectSprintHighScore = user.gameHighScores?.subjectSprint || 0;
                 
                  // New logic for Entertainment Total Score: slightly weight different games
-                const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5);
+                const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5) + (subjectSprintHighScore * 1.1);
 
                 // Use a snapshot of scores for previous week winner calculation
-                const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0);
+                const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0);
 
 
                 return { 
@@ -143,6 +145,7 @@ export default function LeaderboardPage() {
                     emojiQuizHighScore,
                     memoryGameHighScore,
                     dimensionShiftHighScore,
+                    subjectSprintHighScore,
                     prevWeekEntertainmentTotalScore: Math.round(prevWeekEntertainmentTotalScore)
                 };
             });
@@ -174,7 +177,7 @@ export default function LeaderboardPage() {
     const renderUserStats = (user: UserWithStats) => {
         if (activeTab === 'entertainment') {
              return (
-                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
+                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2 text-xs text-muted-foreground mt-4">
                      <div className="flex items-center gap-1.5 col-span-full font-bold text-base text-foreground mb-1">
                         <Gamepad2 className="h-4 w-4 text-green-500" />
                         <span>{user.entertainmentTotalScore || 0} Total Score</span>
@@ -190,6 +193,10 @@ export default function LeaderboardPage() {
                      <div className="flex items-center gap-1.5">
                         <Orbit className="h-3 w-3 text-rose-500" />
                         <span className="font-semibold">{user.dimensionShiftHighScore || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <BookCheckIcon className="h-3 w-3 text-teal-500" />
+                        <span className="font-semibold">{user.subjectSprintHighScore || 0}</span>
                     </div>
                 </div>
             )

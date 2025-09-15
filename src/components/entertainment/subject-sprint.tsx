@@ -25,7 +25,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
 export function SubjectSprintGame() {
     const { user } = useUser();
     const { toast } = useToast();
-    const { addCreditsToUser, currentUserData, updateGameHighScore } = useUsers();
+    const { currentUserData, updateGameHighScore } = useUsers();
     const { quizzes, loading: quizzesLoading } = useQuizzes();
     
     const [gameState, setGameState] = useState<'selecting' | 'playing' | 'gameOver'>('selecting');
@@ -33,11 +33,18 @@ export function SubjectSprintGame() {
     const [allQuestions, setAllQuestions] = useState<QuizQuestion[]>([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [score, setScore] = useState(0);
+    const [highScore, setHighScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState(INITIAL_TIME);
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [isAnswered, setIsAnswered] = useState(false);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    
+    useEffect(() => {
+        if(currentUserData?.gameHighScores?.subjectSprint) {
+            setHighScore(currentUserData.gameHighScores.subjectSprint);
+        }
+    }, [currentUserData]);
 
     const handleCategorySelect = (category: QuizCategory) => {
         const questionsFromCategory = quizzes
@@ -67,6 +74,16 @@ export function SubjectSprintGame() {
             timerRef.current = null;
         }
     };
+    
+    const handleGameOver = () => {
+        setGameState('gameOver');
+        if(score > highScore) {
+            setHighScore(score);
+            if(user) {
+                updateGameHighScore(user.id, 'subjectSprint', score);
+            }
+        }
+    }
 
     const startGame = () => {
         setScore(0);
@@ -77,7 +94,7 @@ export function SubjectSprintGame() {
             setTimeLeft(prev => {
                 if (prev <= 1) {
                     stopTimer();
-                    setGameState('gameOver');
+                    handleGameOver();
                     return 0;
                 }
                 return prev - 1;
@@ -109,7 +126,7 @@ export function SubjectSprintGame() {
             } else {
                 // End of questions, game over
                 stopTimer();
-                setGameState('gameOver');
+                handleGameOver();
             }
         }, 1000);
     };
@@ -209,6 +226,7 @@ export function SubjectSprintGame() {
                         <Trophy className="h-16 w-16 mx-auto text-amber-500"/>
                         <h2 className="text-3xl font-bold">Time's Up!</h2>
                         <p className="text-xl text-muted-foreground">You scored <span className="font-bold text-primary">{score}</span> points!</p>
+                        {score > highScore && <p className="font-bold text-green-500">New High Score!</p>}
                         <Button onClick={restartGame}><RotateCw className="mr-2 h-4 w-4"/> Play Again</Button>
                     </div>
                 ) : null}
