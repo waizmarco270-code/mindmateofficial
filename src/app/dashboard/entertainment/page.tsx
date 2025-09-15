@@ -1,58 +1,105 @@
 
 'use client';
 
-import { Gamepad2, Puzzle, Swords, Dice5, Brain, Newspaper, Orbit } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { TicTacToeGame } from '@/components/entertainment/tic-tac-toe';
-import { WordUnscrambleGame } from '@/components/entertainment/word-unscramble';
-import { MemoryPatternGame } from '@/components/entertainment/memory-pattern-game';
-import { WordHuntGame } from '@/components/entertainment/word-hunt';
-import { EmojiQuiz } from '@/components/entertainment/emoji-quiz';
-import { DimensionShiftGame } from '@/components/entertainment/dimension-shift';
-import { Card, CardContent } from '@/components/ui/card';
-import { SubjectSprintGame } from '@/components/entertainment/subject-sprint';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2 } from 'lucide-react';
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
-export default function EntertainmentPage() {
-  return (
-    <div className="space-y-8">
-       <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <Gamepad2 className="h-8 w-8 text-primary" />
-          Entertainment Zone
-        </h1>
-        <p className="text-muted-foreground">Relax, play some games, and earn credits!</p>
-      </div>
 
-      <Tabs defaultValue="arcade" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
-                <TabsTrigger value="arcade"><Orbit className="mr-2 h-4 w-4" /> Arcade</TabsTrigger>
-                <TabsTrigger value="strategy"><Swords className="mr-2 h-4 w-4" /> Strategy</TabsTrigger>
-                <TabsTrigger value="puzzle"><Brain className="mr-2 h-4 w-4" /> Puzzle</TabsTrigger>
-                <TabsTrigger value="word-games"><Newspaper className="mr-2 h-4 w-4" /> Word Games</TabsTrigger>
-                <TabsTrigger value="memory"><Dice5 className="mr-2 h-4 w-4" /> Memory</TabsTrigger>
-            </TabsList>
-            <TabsContent value="arcade" className="mt-6">
-                <DimensionShiftGame />
-            </TabsContent>
-            <TabsContent value="strategy" className="mt-6">
-                <TicTacToeGame />
-            </TabsContent>
-            <TabsContent value="puzzle" className="mt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <EmojiQuiz />
-                    <SubjectSprintGame />
-                </div>
-            </TabsContent>
-             <TabsContent value="word-games" className="mt-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <WordHuntGame />
-                    <WordUnscrambleGame />
-                </div>
-            </TabsContent>
-             <TabsContent value="memory" className="mt-6">
-                <MemoryPatternGame />
-            </TabsContent>
-      </Tabs>
-    </div>
-  );
+const gameCategories = [
+    {
+        title: "Arcade",
+        description: "Test your reflexes in fast-paced action games.",
+        icon: Orbit,
+        href: "/dashboard/entertainment/arcade",
+        color: "from-rose-500 to-red-500",
+        shadow: "shadow-rose-500/30"
+    },
+    {
+        title: "Strategy",
+        description: "Challenge your mind with classic strategy games.",
+        icon: Swords,
+        href: "/dashboard/entertainment/strategy",
+        color: "from-amber-500 to-orange-500",
+        shadow: "shadow-amber-500/30"
+    },
+    {
+        title: "Puzzle",
+        description: "Solve clever puzzles and subject-based sprints.",
+        icon: Brain,
+        href: "/dashboard/entertainment/puzzle",
+        color: "from-purple-500 to-indigo-500",
+        shadow: "shadow-purple-500/30"
+    },
+    {
+        title: "Word Games",
+        description: "Unscramble and hunt for words to test your vocabulary.",
+        icon: Newspaper,
+        href: "/dashboard/entertainment/word-games",
+        color: "from-sky-500 to-blue-500",
+        shadow: "shadow-sky-500/30"
+    },
+     {
+        title: "Memory",
+        description: "Train your brain by remembering complex patterns.",
+        icon: Dice5,
+        href: "/dashboard/entertainment/memory",
+        color: "from-green-500 to-emerald-500",
+        shadow: "shadow-green-500/30"
+    },
+]
+
+export default function EntertainmentHubPage() {
+    
+    return (
+        <div className="space-y-8">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+                  <Gamepad2 className="h-8 w-8 text-primary" />
+                  Entertainment Zone
+                </h1>
+                <p className="text-muted-foreground">Relax, play some games, and earn credits!</p>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {gameCategories.map((category, index) => (
+                    <motion.div
+                        key={category.title}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                    >
+                        <Link href={category.href} className="block h-full">
+                           <Card className={cn(
+                               "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2",
+                               category.shadow
+                            )}>
+                               <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-tr", category.color)}></div>
+                               <CardHeader>
+                                   <div className="flex items-center gap-4">
+                                       <div className={cn("p-3 rounded-lg bg-gradient-to-br", category.color)}>
+                                            <category.icon className="h-6 w-6 text-white"/>
+                                       </div>
+                                       <CardTitle>{category.title}</CardTitle>
+                                   </div>
+                               </CardHeader>
+                               <CardContent>
+                                   <p className="text-muted-foreground">{category.description}</p>
+                               </CardContent>
+                               <CardContent>
+                                    <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors">
+                                       Play Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                   </Button>
+                               </CardContent>
+                           </Card>
+                        </Link>
+                    </motion.div>
+                ))}
+            </div>
+
+        </div>
+    );
 }
