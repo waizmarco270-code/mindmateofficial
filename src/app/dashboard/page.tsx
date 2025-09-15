@@ -19,6 +19,14 @@ import { GlobalGiftCard } from '@/components/dashboard/global-gift';
 
 const studyTools = [
     {
+        title: 'MindMate Nexus',
+        description: 'Your new Study Command Center.',
+        icon: Calendar,
+        href: '/dashboard/schedule',
+        color: 'from-sky-500 to-blue-500',
+        textColor: 'text-sky-100',
+    },
+    {
         title: 'Time Tracker',
         description: 'Log and manage your study sessions.',
         icon: Clock,
