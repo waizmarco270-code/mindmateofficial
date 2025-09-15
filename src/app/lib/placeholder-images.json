@@ -1,0 +1,16 @@
+
+{
+    "pomodoroThemes": {
+        "nature": [
+            { "id": "nature-1", "src": "https://picsum.photos/seed/n1/720/1280", "data-ai-hint": "aurora borealis" },
+            { "id": "nature-2", "src": "https://picsum.photos/seed/n2/720/1280", "data-ai-hint": "forest night" },
+            { "id": "nature-3", "src": "https://picsum.photos/seed/n3/720/1280", "data-ai-hint": "starry sky" }
+        ],
+        "lofi": [
+            { "id": "lofi-1", "src": "https://picsum.photos/seed/l1/720/1280", "data-ai-hint": "cozy library" },
+            { "id": "lofi-2-2", "src": "https://picsum.photos/seed/l2/720/1280", "data-ai-hint": "study room" },
+            { "id": "lofi-3", "src": "https://picsum.photos/seed/l3/720/1280", "data-ai-hint": "library window" },
+            { "id": "lofi-4", "src": "https://picsum.photos/seed/l4/720/1280", "data-ai-hint": "anime workspace" }
+        ]
+    }
+}

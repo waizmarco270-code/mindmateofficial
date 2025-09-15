@@ -115,6 +115,10 @@ export default {
           '0%': { transform: 'translateX(-100%)' },
           '100%': { transform: 'translateX(100%)' },
         },
+        'zoom-pan': {
+          '0%, 100%': { transform: 'scale(1) translate(0, 0)' },
+          '50%': { transform: 'scale(1.1) translate(2%, -2%)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -122,6 +126,7 @@ export default {
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'tilt': 'tilt 10s infinite linear',
         'shimmer': 'shimmer 2s infinite',
+        'zoom-pan': 'zoom-pan 30s ease-in-out infinite',
       },
     },
   },

@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw, Music } from 'lucide-react';
+import { Edit, Play, Pause, RotateCcw, Music, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -10,8 +10,18 @@ import { Label } from '@/components/ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import Image from 'next/image';
+import placeholderData from '@/app/lib/placeholder-images.json';
+import { CheckCircle } from 'lucide-react';
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
+
+interface PomodoroTheme {
+  id: string;
+  src: string;
+  'data-ai-hint': string;
+}
 
 interface PomodoroSettings {
   focus: number;
@@ -42,8 +52,12 @@ export function PomodoroTimer() {
   const [isActive, setIsActive] = useState(false);
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
 
   const [tempSettings, setTempSettings] = useState(settings);
+  
+  const { pomodoroThemes } = placeholderData;
+  const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroSelectedTheme', pomodoroThemes.nature[0]);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -154,7 +168,27 @@ export function PomodoroTimer() {
 
   return (
     <div className="relative h-screen w-full flex flex-col items-center justify-center text-white overflow-hidden bg-gray-900">
-      <div className="absolute inset-0 z-0 blue-nebula-bg" />
+      <AnimatePresence>
+        {selectedTheme && (
+            <motion.div
+                key={selectedTheme.id}
+                initial={{ opacity: 0, scale: 1.1 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 1, ease: 'easeOut' }}
+                className="absolute inset-0 z-0"
+            >
+                <Image
+                    src={selectedTheme.src}
+                    alt="Pomodoro background theme"
+                    layout="fill"
+                    objectFit="cover"
+                    className="animate-[zoom-pan_30s_ease-in-out_infinite]"
+                    data-ai-hint={selectedTheme['data-ai-hint']}
+                />
+                <div className="absolute inset-0 bg-black/50" />
+            </motion.div>
+        )}
+      </AnimatePresence>
       <AnimatePresence mode="wait">
         <motion.div
           key={mode}
@@ -163,7 +197,7 @@ export function PomodoroTimer() {
           exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
           className="absolute top-16 md:top-24 text-center z-10"
         >
-            <p className="text-xl font-medium tracking-wider uppercase text-white/80">{modeText[mode]}</p>
+            <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
         </motion.div>
       </AnimatePresence>
       <motion.div 
@@ -174,12 +208,12 @@ export function PomodoroTimer() {
       >
         <div className="relative h-64 w-64 md:h-80 md:w-80 rounded-full flex items-center justify-center">
             {/* Background circle */}
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-md rounded-full shadow-2xl"/>
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-md rounded-full shadow-2xl"/>
             {/* Progress circle */}
             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
                 <circle className="text-white/10" strokeWidth="3" stroke="currentColor" fill="transparent" r="48" cx="50" cy="50"/>
                 <motion.circle
-                    className="text-green-400"
+                    className="text-green-400 [filter:drop-shadow(0_0_4px_currentColor)]"
                     strokeWidth="3"
                     strokeDasharray="301.59"
                     strokeDashoffset={301.59 * (1 - progress / 100)}
@@ -196,7 +230,7 @@ export function PomodoroTimer() {
                 />
             </svg>
              <div className="relative flex flex-col items-center text-center">
-                <p className="font-mono text-6xl md:text-7xl font-bold tabular-nums tracking-tighter">
+                <p className="font-mono text-6xl md:text-7xl font-bold tabular-nums tracking-tighter [text-shadow:0_2px_8px_rgba(0,0,0,0.7)]">
                     {formatTime(timeLeft)}
                 </p>
                  <Button variant="ghost" className="mt-4 text-white/70 hover:text-white" onClick={() => { setTempSettings(settings); setIsEditDialogOpen(true); }}>
@@ -216,7 +250,42 @@ export function PomodoroTimer() {
           >
               {isActive ? <Pause className="h-8 w-8"/> : <Play className="h-8 w-8"/>}
           </Button>
-          <div className="h-16 w-16"></div>
+            <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
+                <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
+                        <Palette className="h-8 w-8" />
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="bottom" className="max-h-[80dvh]">
+                    <SheetHeader>
+                        <SheetTitle>Themes</SheetTitle>
+                    </SheetHeader>
+                    <div className="py-4 space-y-6 overflow-y-auto">
+                        <div>
+                            <h3 className="mb-4 font-semibold">Nature</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {pomodoroThemes.nature.map((theme) => (
+                                    <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-[9/16] w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                        <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="30vw" className="object-cover group-hover:scale-105 transition-transform duration-300"/>
+                                        {selectedTheme?.id === theme.id && <div className="absolute top-2 right-2 p-1.5 bg-primary rounded-full text-primary-foreground"><CheckCircle className="h-4 w-4"/></div>}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                         <div>
+                            <h3 className="mb-4 font-semibold">Lofi</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                {pomodoroThemes.lofi.map((theme) => (
+                                    <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-[9/16] w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                        <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="30vw" className="object-cover group-hover:scale-105 transition-transform duration-300"/>
+                                        {selectedTheme?.id === theme.id && <div className="absolute top-2 right-2 p-1.5 bg-primary rounded-full text-primary-foreground"><CheckCircle className="h-4 w-4"/></div>}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </SheetContent>
+            </Sheet>
       </div>
       
        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
