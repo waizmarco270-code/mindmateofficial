@@ -9,11 +9,11 @@ export default function SchedulePage() {
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { over, active } = event;
-        // This is where we will handle the logic when a task is dropped on a calendar day
-        // For now, we'll just log it.
+        
         if (over) {
-            console.log(`Task ${active.id} was dropped over ${over.id}`);
-            // In the next step, we'll use this to schedule the task.
+            console.log(`Task '${active.data.current?.text}' was dropped over ${over.id}`);
+            // In the next step, we'll use this to schedule the task,
+            // for example, by opening a modal to set the time.
         }
     }
 

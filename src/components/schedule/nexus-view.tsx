@@ -12,8 +12,37 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/componen
 import { Separator } from '../ui/separator';
 import { InsightsView } from '../insights/insights-view';
 import { TodoList } from '../todos/todo-list';
+import { useDroppable } from '@dnd-kit/core';
 
 type CalendarView = 'month' | 'week' | 'agenda';
+
+function DroppableDay({ day, isSelected, isTodayFlag, isCurrentMonth, onClick, children }: { day: Date, isSelected: boolean, isTodayFlag: boolean, isCurrentMonth: boolean, onClick: () => void, children: React.ReactNode }) {
+    const { isOver, setNodeRef } = useDroppable({
+        id: day.toISOString().split('T')[0], // Use YYYY-MM-DD as ID
+    });
+
+    return (
+        <div
+            ref={setNodeRef}
+            onClick={onClick}
+            className={cn(
+                "border-r border-b p-2 flex flex-col transition-colors cursor-pointer hover:bg-accent",
+                !isCurrentMonth && "bg-muted/30 text-muted-foreground/50",
+                isSelected && "bg-primary/10 ring-2 ring-primary z-10",
+                isOver && "bg-primary/20 ring-2 ring-primary z-20"
+            )}
+        >
+            <div className={cn(
+                "h-7 w-7 flex items-center justify-center rounded-full text-sm",
+                 isTodayFlag && !isSelected && "bg-primary text-primary-foreground font-bold"
+            )}>
+                {format(day, 'd')}
+            </div>
+            {children}
+        </div>
+    );
+}
+
 
 export function NexusView() {
     const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -40,23 +69,16 @@ export function NexusView() {
             </div>
             <div className="grid grid-cols-7 grid-rows-6 flex-1">
                 {days.map(day => (
-                    <div 
+                    <DroppableDay
                         key={day.toString()}
-                        className={cn(
-                            "border-r border-b p-2 flex flex-col transition-colors cursor-pointer hover:bg-accent",
-                            !isSameMonth(day, monthStart) && "bg-muted/30 text-muted-foreground/50",
-                            isSameDay(day, selectedDate) && "bg-primary/10 ring-2 ring-primary z-10"
-                        )}
+                        day={day}
+                        isSelected={isSameDay(day, selectedDate)}
+                        isTodayFlag={isToday(day)}
+                        isCurrentMonth={isSameMonth(day, monthStart)}
                         onClick={() => setSelectedDate(day)}
                     >
-                        <div className={cn(
-                            "h-7 w-7 flex items-center justify-center rounded-full text-sm",
-                             isToday(day) && "bg-primary text-primary-foreground font-bold"
-                        )}>
-                            {format(day, 'd')}
-                        </div>
-                        {/* Event placeholders will go here */}
-                    </div>
+                       {/* Event placeholders will go here */}
+                    </DroppableDay>
                 ))}
             </div>
         </div>
