@@ -2,13 +2,14 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw } from 'lucide-react';
+import { Edit, Play, Pause, RotateCcw, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { cn } from '@/lib/utils';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -17,6 +18,7 @@ interface PomodoroSettings {
   shortBreak: number;
   longBreak: number;
   sessions: number;
+  sound: 'digital' | 'chime' | 'sweet';
 }
 
 const defaultSettings: PomodoroSettings = {
@@ -24,6 +26,13 @@ const defaultSettings: PomodoroSettings = {
   shortBreak: 5,
   longBreak: 15,
   sessions: 4,
+  sound: 'digital',
+};
+
+const soundMap = {
+    digital: '/sounds/digital.mp3',
+    chime: '/sounds/chime.mp3',
+    sweet: '/sounds/sweet.mp3',
 };
 
 export function PomodoroTimer() {
@@ -41,9 +50,16 @@ export function PomodoroTimer() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-        audioRef.current = new Audio('/sounds/notification.mp3');
+        audioRef.current = new Audio();
     }
   }, []);
+
+  const playNotificationSound = useCallback(() => {
+    if (audioRef.current) {
+        audioRef.current.src = soundMap[settings.sound];
+        audioRef.current.play().catch(error => console.error("Audio playback failed:", error));
+    }
+  }, [settings.sound]);
 
   const resetTimer = useCallback(() => {
     setIsActive(false);
@@ -75,15 +91,13 @@ export function PomodoroTimer() {
         setTimeLeft((prev) => prev - 1);
       }, 1000);
     } else if (isActive && timeLeft === 0) {
-      if (audioRef.current) {
-        audioRef.current.play();
-      }
+      playNotificationSound();
       resetTimer();
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isActive, timeLeft, resetTimer]);
+  }, [isActive, timeLeft, resetTimer, playNotificationSound]);
   
   useEffect(() => {
     // Reset timer when settings change and it's not active
@@ -171,7 +185,7 @@ export function PomodoroTimer() {
                 <p className="font-mono text-6xl md:text-7xl font-bold tabular-nums tracking-tighter">
                     {formatTime(timeLeft)}
                 </p>
-                 <Button variant="ghost" className="mt-4 text-white/70 hover:text-white" onClick={() => setIsEditDialogOpen(true)}>
+                 <Button variant="ghost" className="mt-4 text-white/70 hover:text-white" onClick={() => { setTempSettings(settings); setIsEditDialogOpen(true); }}>
                     <Edit className="mr-2 h-4 w-4" /> Edit
                 </Button>
             </div>
@@ -197,7 +211,7 @@ export function PomodoroTimer() {
             <DialogTitle>Edit Pomodoro Settings</DialogTitle>
             <DialogDescription>Customize your focus and break intervals.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="focus" className="text-right">Focus</Label>
               <Input id="focus" type="number" value={tempSettings.focus} onChange={(e) => setTempSettings(s => ({...s, focus: parseInt(e.target.value)}))} className="col-span-3"/>
@@ -214,6 +228,19 @@ export function PomodoroTimer() {
               <Label htmlFor="sessions" className="text-right">Sessions</Label>
               <Input id="sessions" type="number" value={tempSettings.sessions} onChange={(e) => setTempSettings(s => ({...s, sessions: parseInt(e.target.value)}))} className="col-span-3"/>
             </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="sound" className="text-right">Sound</Label>
+                <Select value={tempSettings.sound} onValueChange={(v: any) => setTempSettings(s => ({...s, sound: v}))}>
+                    <SelectTrigger id="sound" className="col-span-3">
+                        <SelectValue placeholder="Select a sound" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="digital"><Music className="mr-2 h-4 w-4" /> Digital</SelectItem>
+                        <SelectItem value="chime"><Music className="mr-2 h-4 w-4" /> Chime</SelectItem>
+                        <SelectItem value="sweet"><Music className="mr-2 h-4 w-4" /> Short & Sweet</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={handleSaveSettings}>Save Changes</Button>
@@ -224,4 +251,3 @@ export function PomodoroTimer() {
     </div>
   );
 }
-
