@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlarmClock, AlertTriangle, Award, Zap, X, Play, Pause, RotateCcw } from 'lucide-react';
+import { AlarmClock, AlertTriangle, Award, Zap, X } from 'lucide-react';
 import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
@@ -123,6 +123,7 @@ export default function FocusModePage() {
     };
 
     if (activeSlot) {
+        const progress = (timeLeft / activeSlot.duration) * 100;
         return (
             <div className="flex justify-center items-center h-full">
                 <Card className="w-full max-w-md text-center animate-in fade-in-50">

@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX } from 'lucide-react';
+import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -47,6 +47,7 @@ export function PomodoroTimer() {
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
+  const [isMusicSheetOpen, setIsMusicSheetOpen] = useState(false);
 
   const [tempSettings, setTempSettings] = useState(settings);
   
@@ -55,7 +56,7 @@ export function PomodoroTimer() {
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
-
+  
   const playSound = useCallback((type: 'tick' | 'notification') => {
     if (isMuted || typeof window === 'undefined') return;
     if (!audioContextRef.current) return;
@@ -180,7 +181,7 @@ export function PomodoroTimer() {
   }
 
   return (
-    <div className="absolute inset-0 z-0 h-full w-full flex flex-col text-white overflow-hidden bg-gray-900">
+    <div className="absolute inset-0 z-0 flex flex-col h-full w-full text-white overflow-hidden bg-gray-900">
         <AnimatePresence>
             {selectedTheme && (
                 <motion.div
@@ -203,14 +204,14 @@ export function PomodoroTimer() {
                 </motion.div>
             )}
         </AnimatePresence>
-        <div className="flex-1 flex flex-col items-center justify-center p-4 gap-8">
+        <div className="flex-1 flex flex-col items-center justify-between p-4 sm:p-6 lg:p-8">
             <AnimatePresence mode="wait">
                 <motion.div
                 key={mode}
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
                 exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
-                className="text-center z-10"
+                className="text-center z-10 pt-16 sm:pt-0"
                 >
                     <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
                 </motion.div>
@@ -252,19 +253,19 @@ export function PomodoroTimer() {
                 </div>
             </motion.div>
             
-            <div className="z-10 flex items-center gap-4">
+            <div className="z-10 flex items-center gap-2 sm:gap-4 pb-16 sm:pb-0">
                 <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white" onClick={handleReset}>
                     <RotateCcw className="h-8 w-8" />
                 </Button>
 
                 <Button 
-                    className="h-20 w-48 rounded-full text-2xl font-bold shadow-lg bg-white/90 text-gray-900 hover:bg-white"
+                    className="h-20 w-40 sm:w-48 rounded-full text-2xl font-bold shadow-lg bg-white/90 text-gray-900 hover:bg-white"
                     onClick={handleToggle}
                 >
                     {isActive ? <Pause className="h-8 w-8"/> : <Play className="h-8 w-8"/>}
                 </Button>
-
-                 <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
+                
+                <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
                     <SheetTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
                             <Palette className="h-8 w-8" />
