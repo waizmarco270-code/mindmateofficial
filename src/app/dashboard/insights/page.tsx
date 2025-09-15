@@ -12,7 +12,7 @@ export default function InsightsPage() {
           <Link href="/dashboard" className="md:hidden">
             <ArrowLeft className="h-6 w-6" />
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Insights</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Study Insights</h1>
       </div>
       <InsightsView />
     </div>

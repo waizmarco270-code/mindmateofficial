@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, isSameMonth, isSameDay, parseISO } from 'date-fns';
@@ -24,10 +25,22 @@ const formatTimeShort = (seconds: number) => {
     return `${m}m`;
 }
 
-export function InsightsView() {
+interface InsightsViewProps {
+    selectedDate?: Date;
+}
+
+export function InsightsView({ selectedDate: initialSelectedDate }: InsightsViewProps) {
     const { sessions, loading } = useTimeTracker();
-    const [currentMonth, setCurrentMonth] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [currentMonth, setCurrentMonth] = useState(initialSelectedDate || new Date());
+    const [selectedDate, setSelectedDate] = useState(initialSelectedDate || new Date());
+    
+    // Sync external selected date change
+    useEffect(() => {
+        if(initialSelectedDate) {
+            setSelectedDate(initialSelectedDate);
+            setCurrentMonth(initialSelectedDate);
+        }
+    }, [initialSelectedDate]);
 
     const dailyStats = useMemo(() => {
         const stats: { [key: string]: { total: number, count: number, max: number, start?: Date, end?: Date, subjects: {[key:string]: number} } } = {};
@@ -62,7 +75,7 @@ export function InsightsView() {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
     const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const endDate = endOfWeek(currentMonth);
 
     const days = [];
     let day = startDate;
@@ -75,79 +88,85 @@ export function InsightsView() {
     const selectedDayStats = dailyStats[selectedDayStr];
     
     const subjectBreakdown = selectedDayStats ? Object.entries(selectedDayStats.subjects).sort(([, a], [, b]) => b - a) : [];
+    
+    const renderCalendar = () => (
+         <Card>
+            <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-4 px-2">
+                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                        <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <h2 className="text-xl font-bold text-center">{format(currentMonth, 'MMMM yyyy')}</h2>
+                    <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                        <ChevronRight className="h-5 w-5" />
+                    </Button>
+                </div>
+                
+                    <div className="grid grid-cols-7 text-center font-semibold text-sm text-muted-foreground">
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                        <div key={day} className="py-2">{day}</div>
+                    ))}
+                </div>
+
+                    <div className="grid grid-cols-7">
+                    {days.map((day, index) => {
+                        if (loading) {
+                            return <Skeleton key={index} className="h-20" />
+                        }
+                        const dayStr = format(day, 'yyyy-MM-dd');
+                        const stat = dailyStats[dayStr];
+                        const isSelected = isSameDay(day, selectedDate);
+                        const isToday = isSameDay(day, new Date());
+                        const hours = stat ? stat.total / 3600 : 0;
+                        
+                            const intensityColor = 
+                                hours >= 4 ? 'bg-green-500/80 text-white' :
+                                hours >= 2 ? 'bg-green-400/70' :
+                                hours > 0 ? 'bg-green-300/60' :
+                                '';
+
+                        return (
+                            <div
+                                key={index}
+                                onClick={() => setSelectedDate(day)}
+                                className={cn(
+                                    'h-20 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all duration-200',
+                                    !isSameMonth(day, currentMonth) && 'text-muted-foreground/50',
+                                    isSelected && 'bg-primary/20 ring-2 ring-primary',
+                                )}
+                            >
+                                <div className={cn(
+                                    "h-8 w-8 flex items-center justify-center rounded-full text-sm",
+                                    isToday && !isSelected && 'bg-primary text-primary-foreground font-bold'
+                                )}>
+                                    {format(day, 'd')}
+                                </div>
+                                {stat && (
+                                    <div className={cn(
+                                        "text-xs font-bold rounded-full px-1.5 py-0.5 mt-1",
+                                        intensityColor
+                                    )}>
+                                        {formatTimeShort(stat.total)}
+                                    </div>
+                                )}
+                            </div>
+                        )
+                    })}
+                </div>
+            </CardContent>
+        </Card>
+    );
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardContent className="p-4">
-                     <div className="flex items-center justify-between mb-4 px-2">
-                        <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-                            <ChevronLeft className="h-5 w-5" />
-                        </Button>
-                        <h2 className="text-xl font-bold text-center">{format(currentMonth, 'MMMM yyyy')}</h2>
-                        <Button variant="ghost" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-                            <ChevronRight className="h-5 w-5" />
-                        </Button>
-                    </div>
-                    
-                     <div className="grid grid-cols-7 text-center font-semibold text-sm text-muted-foreground">
-                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
-                            <div key={day} className="py-2">{day}</div>
-                        ))}
-                    </div>
-
-                     <div className="grid grid-cols-7">
-                        {days.map((day, index) => {
-                            if (loading) {
-                                return <Skeleton key={index} className="h-20" />
-                            }
-                            const dayStr = format(day, 'yyyy-MM-dd');
-                            const stat = dailyStats[dayStr];
-                            const isSelected = isSameDay(day, selectedDate);
-                            const isToday = isSameDay(day, new Date());
-                            const hours = stat ? stat.total / 3600 : 0;
-                            
-                             const intensityColor = 
-                                 hours >= 4 ? 'bg-green-500/80 text-white' :
-                                 hours >= 2 ? 'bg-green-400/70' :
-                                 hours > 0 ? 'bg-green-300/60' :
-                                 '';
-
-                            return (
-                                <div
-                                    key={index}
-                                    onClick={() => setSelectedDate(day)}
-                                    className={cn(
-                                        'h-20 flex flex-col items-center justify-center rounded-lg cursor-pointer transition-all duration-200',
-                                        !isSameMonth(day, currentMonth) && 'text-muted-foreground/50',
-                                        isSelected && 'bg-primary/20 ring-2 ring-primary',
-                                    )}
-                                >
-                                   <div className={cn(
-                                        "h-8 w-8 flex items-center justify-center rounded-full text-sm",
-                                        isToday && !isSelected && 'bg-primary text-primary-foreground font-bold'
-                                    )}>
-                                       {format(day, 'd')}
-                                   </div>
-                                   {stat && (
-                                       <div className={cn(
-                                           "text-xs font-bold rounded-full px-1.5 py-0.5 mt-1",
-                                           intensityColor
-                                        )}>
-                                           {formatTimeShort(stat.total)}
-                                       </div>
-                                   )}
-                                </div>
-                            )
-                        })}
-                    </div>
-                </CardContent>
-            </Card>
+            {!initialSelectedDate && renderCalendar()}
 
             <Card>
-                <CardHeader>
-                    <CardTitle>Details for {format(selectedDate, 'EEEE, MMMM do')}</CardTitle>
-                </CardHeader>
+                {!initialSelectedDate && (
+                    <CardHeader>
+                        <CardTitle>Details for {format(selectedDate, 'EEEE, MMMM do')}</CardTitle>
+                    </CardHeader>
+                )}
                 <CardContent>
                     {loading ? <Skeleton className="h-64" /> : selectedDayStats ? (
                         <div className="space-y-6">

@@ -2,38 +2,81 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Calendar, LayoutGrid, List, ChevronLeft, ChevronRight, Target, Edit } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek as endOfWeekDateFns, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { TodoList } from '../todos/todo-list';
 import { Separator } from '../ui/separator';
+import { InsightsView } from '../insights/insights-view';
 
 type CalendarView = 'month' | 'week' | 'agenda';
 
 export function NexusView() {
-    const [currentDate, setCurrentDate] = useState(new Date());
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(new Date());
     const [view, setView] = useState<CalendarView>('month');
 
+    const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+    const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const endDate = endOfWeekDateFns(monthEnd, { weekStartsOn: 1 });
+    
+    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    const renderMonthView = () => (
+         <div className="flex flex-col flex-1">
+            <div className="grid grid-cols-7 text-center text-sm font-semibold text-muted-foreground border-b">
+                {weekDays.map(day => (
+                    <div key={day} className="py-2">{day}</div>
+                ))}
+            </div>
+            <div className="grid grid-cols-7 grid-rows-6 flex-1">
+                {days.map(day => (
+                    <div 
+                        key={day.toString()}
+                        className={cn(
+                            "border-r border-b p-2 flex flex-col transition-colors cursor-pointer hover:bg-accent",
+                            !isSameMonth(day, monthStart) && "bg-muted/30 text-muted-foreground/50",
+                            isSameDay(day, selectedDate) && "bg-primary/10 ring-2 ring-primary z-10"
+                        )}
+                        onClick={() => setSelectedDate(day)}
+                    >
+                        <div className={cn(
+                            "h-7 w-7 flex items-center justify-center rounded-full text-sm",
+                             isToday(day) && "bg-primary text-primary-foreground font-bold"
+                        )}>
+                            {format(day, 'd')}
+                        </div>
+                        {/* Event placeholders will go here */}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
     return (
-       <ResizablePanelGroup direction="horizontal" className="h-[75vh] rounded-lg border">
+       <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-12rem)] min-h-[500px] rounded-lg border">
             <ResizablePanel defaultSize={75}>
                 <div className="h-full flex flex-col">
                     <div className="flex flex-row items-center justify-between border-b p-4">
                          <div className="flex items-center gap-4">
                             <div className="flex items-center gap-1">
-                                <Button variant="outline" size="icon">
+                                <Button variant="outline" size="icon" onClick={handlePrevMonth}>
                                     <ChevronLeft className="h-4 w-4" />
                                 </Button>
-                                <Button variant="outline" size="icon">
+                                <Button variant="outline" size="icon" onClick={handleNextMonth}>
                                      <ChevronRight className="h-4 w-4" />
                                 </Button>
                             </div>
                             <h2 className="text-xl font-bold">
-                                {format(currentDate, 'MMMM yyyy')}
+                                {format(currentMonth, 'MMMM yyyy')}
                             </h2>
                         </div>
                         <div className="flex items-center gap-2 rounded-lg bg-muted p-1">
@@ -66,7 +109,7 @@ export function NexusView() {
                             </Button>
                         </div>
                     </div>
-                    <div className="flex-1 p-6 flex items-center justify-center">
+                    <div className="flex-1 flex items-stretch justify-center">
                         <AnimatePresence mode="wait">
                             <motion.div
                                 key={view}
@@ -74,10 +117,15 @@ export function NexusView() {
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
                                 transition={{ duration: 0.3 }}
-                                className="text-center text-muted-foreground"
+                                className="w-full flex flex-col"
                             >
-                                <p className="font-bold text-lg">Coming Soon!</p>
-                                <p>The <span className="capitalize font-semibold text-primary">{view}</span> view will be built here.</p>
+                                {view === 'month' && renderMonthView()}
+                                {(view === 'week' || view === 'agenda') && (
+                                    <div className="flex-1 flex items-center justify-center text-center text-muted-foreground">
+                                        <p className="font-bold text-lg">Coming Soon!</p>
+                                        <p>The <span className="capitalize font-semibold text-primary">{view}</span> view will be built here.</p>
+                                    </div>
+                                )}
                             </motion.div>
                         </AnimatePresence>
                     </div>
@@ -87,19 +135,13 @@ export function NexusView() {
             <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
                 <div className="h-full flex flex-col">
                     <CardHeader>
-                        <CardTitle>Task Tray</CardTitle>
+                        <CardTitle>Insights Panel</CardTitle>
+                         <CardDescription>
+                            Showing data for: {format(selectedDate, 'MMMM d, yyyy')}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent className="flex-1 overflow-y-auto">
-                        <Card className="mb-4">
-                            <CardContent className="p-4 text-center">
-                                <Target className="mx-auto h-8 w-8 text-muted-foreground mb-2"/>
-                                <p className="text-sm font-semibold">Weekly Goal</p>
-                                <p className="text-xs text-muted-foreground mb-3">Set a target for this week.</p>
-                                <Button size="sm" variant="outline"><Edit className="mr-2 h-4 w-4"/> Set Goal</Button>
-                            </CardContent>
-                        </Card>
-                         <Separator className="mb-4" />
-                        <TodoList />
+                        <InsightsView selectedDate={selectedDate} />
                     </CardContent>
                 </div>
             </ResizablePanel>
