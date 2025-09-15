@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, getDoc, setDoc, Timestamp } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { isToday } from 'date-fns';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 // Game Configuration
 const PLAYER_SIZE = 20;
@@ -304,7 +305,7 @@ export function DimensionShiftGame() {
     ctx.fill();
 
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [getThemeColors, score, gameState]);
+  }, [getThemeColors, score, gameState, user, hasClaimedToday, toast, updateGameHighScore, addCreditsToUser, highScore]);
 
 
   // Initialize and run game loop
@@ -325,6 +326,9 @@ export function DimensionShiftGame() {
   
    // Handle dimension switching and player movement
   useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
     const handleSwitch = (e: MouseEvent | TouchEvent) => {
       if (gameState !== 'playing') return;
       playerRef.current.dimension = playerRef.current.dimension === 'light' ? 'dark' : 'light';
@@ -332,25 +336,29 @@ export function DimensionShiftGame() {
     
     const handleMove = (e: MouseEvent | TouchEvent) => {
         if (gameState !== 'playing') return;
-        const canvas = canvasRef.current;
-        if(!canvas) return;
-
+        
         const rect = canvas.getBoundingClientRect();
         const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
         const newX = clientX - rect.left;
         
         playerRef.current.x = Math.max(PLAYER_SIZE / 2, Math.min(canvas.width - PLAYER_SIZE / 2, newX));
     }
+    
+    const handleTouchMove = (e: TouchEvent) => {
+      if (gameState === 'playing') {
+        e.preventDefault(); // Prevent scrolling on mobile
+        handleMove(e);
+      }
+    }
 
-    const canvas = canvasRef.current;
-    canvas?.addEventListener('click', handleSwitch);
-    canvas?.addEventListener('mousemove', handleMove);
-    canvas?.addEventListener('touchmove', handleMove);
+    canvas.addEventListener('click', handleSwitch);
+    canvas.addEventListener('mousemove', handleMove);
+    canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
 
     return () => {
-        canvas?.removeEventListener('click', handleSwitch);
-        canvas?.removeEventListener('mousemove', handleMove);
-        canvas?.addEventListener('touchmove', handleMove);
+        canvas.removeEventListener('click', handleSwitch);
+        canvas.removeEventListener('mousemove', handleMove);
+        canvas.removeEventListener('touchmove', handleTouchMove);
     }
   }, [gameState]);
 
@@ -360,7 +368,7 @@ export function DimensionShiftGame() {
     const canvas = canvasRef.current;
     if (canvas) {
       canvas.width = canvas.parentElement?.clientWidth || 300;
-      canvas.height = 500;
+      canvas.height = 450; // Made slightly shorter for mobile
       resetGame();
     }
   }, [resetGame]);
@@ -411,31 +419,39 @@ export function DimensionShiftGame() {
       </Card>
 
        <Card className="flex-1 w-full">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><HelpCircle className="text-primary"/> How to Play & Rewards</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4 text-sm text-muted-foreground">
-               <div className="flex items-start gap-3">
-                    <Orbit className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                    <div>
-                        <h4 className="font-bold text-foreground">Game Rules</h4>
-                        <ul className="list-disc pl-4 space-y-1 mt-1">
-                          <li>Dodge obstacles that are the same dimension as you.</li>
-                          <li>Pass through obstacles of the opposite dimension.</li>
-                          <li>Click to switch dimensions.</li>
-                          <li>Move your mouse to move your character.</li>
-                           <li className="text-red-500">Watch out for <span className="font-bold">Trap Obstacles</span> (colored bars)! You must pass through these if you are the SAME dimension.</li>
-                        </ul>
+            <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+              <AccordionItem value="item-1">
+                <AccordionTrigger className="p-6">
+                    <div className="flex items-center gap-2 text-base font-semibold">
+                        <HelpCircle className="text-primary"/> How to Play & Rewards
                     </div>
-                </div>
-                 <div className="flex items-start gap-3">
-                    <Award className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
-                     <div>
-                        <h4 className="font-bold text-foreground">Rewards</h4>
-                         <p>Achieve the legendary score of <span className="font-bold text-primary">{WIN_SCORE}</span> to earn a massive <span className="font-bold text-amber-500">{DAILY_WIN_REWARD} credit</span> prize! This reward can only be claimed once per day.</p>
+                </AccordionTrigger>
+                <AccordionContent className="p-6 pt-0">
+                    <div className="space-y-4 text-sm text-muted-foreground">
+                        <div className="flex items-start gap-3">
+                            <Orbit className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
+                            <div>
+                                <h4 className="font-bold text-foreground">Game Rules</h4>
+                                <ul className="list-disc pl-4 space-y-1 mt-1">
+                                  <li>Dodge obstacles that are the same dimension as you.</li>
+                                  <li>Pass through obstacles of the opposite dimension.</li>
+                                  <li>Click to switch dimensions.</li>
+                                  <li>Move your mouse to move your character.</li>
+                                   <li className="text-red-500">Watch out for <span className="font-bold">Trap Obstacles</span> (colored bars)! You must pass through these if you are the SAME dimension.</li>
+                                </ul>
+                            </div>
+                        </div>
+                         <div className="flex items-start gap-3">
+                            <Award className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
+                             <div>
+                                <h4 className="font-bold text-foreground">Rewards</h4>
+                                 <p>Achieve the legendary score of <span className="font-bold text-primary">{WIN_SCORE}</span> to earn a massive <span className="font-bold text-amber-500">{DAILY_WIN_REWARD} credit</span> prize! This reward can only be claimed once per day.</p>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </CardContent>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
         </Card>
     </div>
   );
