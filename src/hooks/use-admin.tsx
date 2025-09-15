@@ -123,6 +123,15 @@ export interface GlobalGift {
     claimedBy?: string[]; // Array of UIDs who have claimed it
 }
 
+export interface SupportTicket {
+    id: string;
+    userId: string;
+    userName: string;
+    message: string;
+    status: 'new' | 'resolved';
+    createdAt: Timestamp;
+}
+
 
 // ============================================================================
 //  CONTEXT DEFINITIONS
@@ -181,6 +190,10 @@ interface AppDataContextType {
     addDailySurprise: (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => Promise<void>;
     deleteDailySurprise: (id: string) => Promise<void>;
 
+    supportTickets: SupportTicket[];
+    updateTicketStatus: (id: string, status: 'new' | 'resolved') => Promise<void>;
+    deleteTicket: (id: string) => Promise<void>;
+
     loading: boolean;
     
     activePoll: Poll | null;
@@ -215,6 +228,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [resources, setResources] = useState<Resource[]>([]);
     const [resourceSections, setResourceSections] = useState<ResourceSection[]>([]);
     const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
+    const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
     const [appTheme, setAppTheme] = useState<AppTheme | null>(null);
     const [activeGlobalGift, setActiveGlobalGift] = useState<GlobalGift | null>(null);
@@ -356,7 +370,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         
     }, [authUser, isClerkLoaded]);
     
-    // EFFECT: Listen for global data (announcements, resources, polls, sections, theme, gifts)
+    // EFFECT: Listen for global data (announcements, resources, polls, sections, theme, gifts, tickets)
     useEffect(() => {
         const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
             return snapshot.docs.map((doc: any) => {
@@ -368,6 +382,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 } as T;
             });
         };
+        const processTicketSnapshot = (snapshot: any): SupportTicket[] => {
+             return snapshot.docs.map((doc: any) => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: data.createdAt, // Keep as Timestamp
+                } as SupportTicket;
+            });
+        };
+
 
         const announcementsQuery = query(collection(db, 'announcements'), orderBy('createdAt', 'desc'));
         const resourcesQuery = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
@@ -376,11 +401,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
         const themeDocRef = doc(db, 'appConfig', 'theme');
         const giftsQuery = query(collection(db, 'globalGifts'), where('isActive', '==', true));
+        const ticketsQuery = query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
         const unsubSections = onSnapshot(resourceSectionsQuery, (snapshot) => setResourceSections(processSnapshot<ResourceSection>(snapshot)));
         const unsubDailySurprises = onSnapshot(dailySurprisesQuery, (snapshot) => setDailySurprises(processSnapshot<DailySurprise>(snapshot)));
+        const unsubTickets = onSnapshot(ticketsQuery, (snapshot) => setSupportTickets(processTicketSnapshot(snapshot)));
         const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
             if (!snapshot.empty) {
                 const pollDoc = snapshot.docs[0];
@@ -411,6 +438,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubSections();
             unsubTheme();
             unsubGifts();
+            unsubTickets();
         };
     }, []);
 
@@ -609,6 +637,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await addDoc(collection(db, 'dailySurprises'), { ...surprise, createdAt: serverTimestamp() });
     }
     const deleteDailySurprise = async (id: string) => await deleteDoc(doc(db, 'dailySurprises', id));
+
+    // Support Ticket Functions
+    const updateTicketStatus = async (id: string, status: 'new' | 'resolved') => {
+        await updateDoc(doc(db, 'supportTickets', id), { status });
+    };
+    const deleteTicket = async (id: string) => {
+        await deleteDoc(doc(db, 'supportTickets', id));
+    };
 
     const updatePoll = async (id: string, data: Partial<Poll>) => {
         const pollDocRef = doc(db, 'polls', id);
@@ -812,6 +848,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         dailySurprises,
         addDailySurprise,
         deleteDailySurprise,
+        supportTickets,
+        updateTicketStatus,
+        deleteTicket,
         loading,
         activePoll,
         updatePoll,

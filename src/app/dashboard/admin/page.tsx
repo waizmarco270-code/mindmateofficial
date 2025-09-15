@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useAdmin, type Resource, type DailySurprise, type ResourceSection } from '@/hooks/use-admin';
+import { useAdmin, type Resource, type DailySurprise, type ResourceSection, type SupportTicket } from '@/hooks/use-admin';
 import {
   Table,
   TableHeader,
@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -27,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { z } from 'zod';
+import { formatDistanceToNow } from 'date-fns';
 
 
 interface QuizQuestion {
@@ -101,6 +102,7 @@ export default function AdminPanelPage() {
     resources: allResources, addResource, updateResource, deleteResource,
     resourceSections, addResourceSection, updateResourceSection, deleteResourceSection,
     dailySurprises, addDailySurprise, deleteDailySurprise,
+    supportTickets, updateTicketStatus, deleteTicket,
   } = useAdmin();
   const { quizzes, deleteQuiz } = useQuizzes();
   const { toast } = useToast();
@@ -885,6 +887,79 @@ export default function AdminPanelPage() {
                   </Card>
                  </div>
               </AccordionContent>
+            </Card>
+        </AccordionItem>
+        
+        {/* Support Tickets */}
+         <AccordionItem value="support-tickets" className="border-b-0">
+            <Card>
+                <AccordionTrigger className="p-6">
+                    <div className="flex items-center gap-3">
+                        <MailQuestion className="h-6 w-6 text-primary" />
+                        <div>
+                            <h3 className="text-lg font-semibold">Support Tickets</h3>
+                            <p className="text-sm text-muted-foreground text-left">View and resolve user support requests.</p>
+                        </div>
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="p-6 pt-0">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Incoming Support Tickets</CardTitle>
+                            <CardDescription>
+                                Total new tickets: {supportTickets.filter(t => t.status === 'new').length}
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>User</TableHead>
+                                        <TableHead>Message</TableHead>
+                                        <TableHead>Received</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {supportTickets.map(ticket => (
+                                        <TableRow key={ticket.id}>
+                                            <TableCell className="font-medium">{ticket.userName}</TableCell>
+                                            <TableCell className="max-w-sm break-words">{ticket.message}</TableCell>
+                                            <TableCell>{formatDistanceToNow(ticket.createdAt.toDate(), { addSuffix: true })}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={ticket.status === 'resolved' ? 'default' : 'secondary'}>
+                                                    {ticket.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right space-x-2">
+                                                {ticket.status === 'new' && (
+                                                    <Button variant="outline" size="sm" onClick={() => updateTicketStatus(ticket.id, 'resolved')}>
+                                                        <CheckCircle className="mr-2 h-4 w-4"/>Mark Resolved
+                                                    </Button>
+                                                )}
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Delete this ticket?</AlertDialogTitle>
+                                                            <AlertDialogDescription>This will permanently remove the ticket. This action cannot be undone.</AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => deleteTicket(ticket.id)}>Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                     {supportTickets.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No support tickets.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </AccordionContent>
             </Card>
         </AccordionItem>
 
