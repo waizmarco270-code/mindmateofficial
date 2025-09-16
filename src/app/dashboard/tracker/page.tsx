@@ -97,7 +97,7 @@ export default function FocusModePage() {
     useBeforeunload(event => {
         if (isSessionActive && !isPaused) {
             applyPenalty();
-            event.preventDefault();
+            // This is a synchronous action, we can't prevent default but can apply penalty before unload.
         }
     });
 
@@ -105,8 +105,6 @@ export default function FocusModePage() {
     useVisibilityChange(() => {
         if (isSessionActive && !isPaused && document.visibilityState === 'hidden') {
             applyPenalty();
-            // Since we can't guarantee a reload will work here, we just apply the penalty.
-            // The toast will be shown if they navigate back to the app via the layout.
         }
     });
     
@@ -141,15 +139,6 @@ export default function FocusModePage() {
         };
     }, [isSessionActive, isPaused, timeLeft, user, activeSlot, addCreditsToUser, incrementFocusSessions, toast]);
     
-     // Logic to handle navigation away from the page
-    useEffect(() => {
-        if (typeof window !== 'undefined' && isSessionActive && !isPaused) {
-            const isActive = sessionStorage.getItem(FOCUS_SESSION_ACTIVE_KEY);
-            if (isActive && pathname !== '/dashboard/tracker') {
-                applyPenalty();
-            }
-        }
-    }, [pathname, isSessionActive, isPaused, applyPenalty]);
     
     // Quote rotation logic
     useEffect(() => {

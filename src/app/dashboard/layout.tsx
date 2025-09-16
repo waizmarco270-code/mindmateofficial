@@ -34,6 +34,16 @@ export default function DashboardLayout({
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Logic to check for penalty on navigation
+      const isSessionMarkedActive = sessionStorage.getItem(FOCUS_SESSION_ACTIVE_KEY) === 'true';
+      if (isSessionMarkedActive && pathname !== '/dashboard/tracker') {
+        // User navigated away from focus mode page while a session was active
+        const penaltyMessage = `You have been penalized 20 credits for leaving an active focus session.`;
+        sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, penaltyMessage);
+        // We can't call the credit deduction hook here, so we'll rely on the penalty being applied
+        // within the tracker page itself before unload. The main purpose here is to ensure the toast appears.
+      }
+
       // Logic to show penalty toast after navigation
       const penaltyMessage = sessionStorage.getItem(FOCUS_PENALTY_SESSION_KEY);
       if (penaltyMessage) {
@@ -44,6 +54,8 @@ export default function DashboardLayout({
           duration: 10000,
         });
         sessionStorage.removeItem(FOCUS_PENALTY_SESSION_KEY);
+        // Also ensure the active key is removed to prevent repeated toasts
+        sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
       }
     }
   }, [pathname, toast]);
