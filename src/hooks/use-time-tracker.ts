@@ -89,33 +89,29 @@ export function useTimeTracker() {
     return () => unsubscribe();
   }, [subjectsDocRef]);
   
-  // Subscribe to all time sessions for the insights page
+  // Subscribe to all time sessions for the current user (for insights page)
   useEffect(() => {
-    if (!user) return;
+    if (!allSessionsColRef) {
+      setSessions([]);
+      return;
+    };
     
-    const usersCol = collection(db, 'users');
-    getDocs(usersCol).then(userSnapshot => {
-      const promises = userSnapshot.docs.map(userDoc => {
-        const userSessionsRef = collection(db, 'users', userDoc.id, 'timeTrackerSessions');
-        return getDocs(userSessionsRef).then(sessionSnapshot => {
-          return sessionSnapshot.docs.map(sessionDoc => {
-            const data = sessionDoc.data();
-            return {
-              ...data,
-              id: sessionDoc.id,
-              subjectId: userDoc.id 
-            } as TimeSession
-          });
-        });
+    const q = query(allSessionsColRef);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const userSessions = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          subjectId: user!.id // Set subjectId to current user's ID
+        } as TimeSession;
       });
-
-      Promise.all(promises).then(usersSessions => {
-        const allSessions = usersSessions.flat();
-        setSessions(allSessions);
-      });
+      setSessions(userSessions);
     });
+    
+    return () => unsubscribe();
+  }, [allSessionsColRef, user]);
 
-  }, [user]);
   
    // Subscribe to today's sessions to calculate totalTimeToday
   useEffect(() => {
