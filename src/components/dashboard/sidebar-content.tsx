@@ -194,7 +194,7 @@ export default function SidebarContent() {
                     isActive('/dashboard/help') 
                         ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
                         : 'hover:text-primary',
-                    'text-amber-400 [text-shadow:0_0_8px_currentColor]',
+                    'text-purple-400 [text-shadow:0_0_8px_currentColor]',
                 )}
             >
                 <div className={cn(
