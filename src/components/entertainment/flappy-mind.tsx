@@ -21,6 +21,7 @@ const JUMP_STRENGTH = -8;
 const BARRIER_WIDTH = 80;
 const BARRIER_GAP = 200; // Vertical gap between barriers
 const BARRIER_SPACING = 350; // Horizontal distance between barriers
+const WIN_SCORE = 100;
 
 const DISTRACTION_WORDS = [
     'PROCRASTINATION', 'DOUBT', 'LAZINESS', 'DISTRACTION',
@@ -28,7 +29,7 @@ const DISTRACTION_WORDS = [
 ];
 
 const MILESTONE_REWARDS: Record<number, number> = {
-  5: 2, 10: 5, 15: 10, 20: 50, 30: 100,
+  5: 3, 10: 3, 15: 3, 20: 15, 30: 3, 50: 3, 100: 100,
 };
 
 interface PlayerState {
@@ -51,7 +52,7 @@ export function FlappyMindGame() {
   const { currentUserData, claimFlappyMindMilestone } = useUsers();
   const { toast } = useToast();
 
-  const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver'>('idle');
+  const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver' | 'won'>('idle');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [claimedMilestones, setClaimedMilestones] = useState<number[]>([]);
@@ -126,6 +127,14 @@ export function FlappyMindGame() {
     setGameState('playing');
   };
 
+  const handleWin = async () => {
+    setGameState('won');
+    if (score >= highScore) {
+      setHighScore(score);
+      if(user) claimFlappyMindMilestone(user.id, WIN_SCORE);
+    }
+  }
+
   const gameOver = () => {
     setGameState('gameOver');
     if (score > highScore) {
@@ -149,7 +158,7 @@ export function FlappyMindGame() {
             .then(success => {
                 if (success) {
                     toast({
-                        title: `Milestone! +${MILESTONE_REWARDS[reachedMilestone]} Credits!`,
+                        title: `Milestone! +${MILESTONE_REWARDS[reachedMilestone as keyof typeof MILESTONE_REWARDS]} Credits!`,
                         description: `You reached a score of ${reachedMilestone}!`,
                         className: "bg-green-500/10 text-green-700 border-green-500/50"
                     });
@@ -157,7 +166,11 @@ export function FlappyMindGame() {
                 }
             });
     }
-  }, [claimedMilestones, user, claimFlappyMindMilestone, toast]);
+
+    if (newScore >= WIN_SCORE) {
+        handleWin();
+    }
+  }, [claimedMilestones, user, claimFlappyMindMilestone, toast, handleWin]);
 
 
   const gameLoop = useCallback(() => {
@@ -177,9 +190,9 @@ export function FlappyMindGame() {
     player.y += player.velocity;
 
     // Difficulty scaling
-    if (score >= 10) gameSpeedRef.current = 4; // Super Hard
-    if (score >= 20) gameSpeedRef.current = 5; // Impossible
-    if (score >= 25) gameSpeedRef.current = 5.5; // No one can cross
+    if (score >= 10) gameSpeedRef.current = 4; // Hard
+    if (score >= 20) gameSpeedRef.current = 5; // Super Hard
+    if (score >= 30) gameSpeedRef.current = 6.5; // Mega Impossible!
 
     // Move barriers
     barriersRef.current.forEach(barrier => {
@@ -309,7 +322,7 @@ export function FlappyMindGame() {
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
           <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
-            <span>Score: {score}</span>
+            <span>Score: {score} / {WIN_SCORE}</span>
             <span>High Score: {highScore}</span>
           </div>
           <div className="w-full rounded-lg overflow-hidden border relative">
@@ -329,6 +342,15 @@ export function FlappyMindGame() {
                         <div className="space-y-4">
                             <h3 className="text-3xl font-bold">Game Over</h3>
                             <p>You scored {score}.</p>
+                            <Button size="lg" onClick={startGame}>
+                                <RotateCw className="mr-2"/> Play Again
+                            </Button>
+                        </div>
+                    )}
+                     {gameState === 'won' && (
+                         <div className="text-center space-y-4">
+                            <h3 className="text-3xl font-bold text-yellow-400">YOU WON!</h3>
+                            <p>You conquered the impossible!</p>
                             <Button size="lg" onClick={startGame}>
                                 <RotateCw className="mr-2"/> Play Again
                             </Button>
