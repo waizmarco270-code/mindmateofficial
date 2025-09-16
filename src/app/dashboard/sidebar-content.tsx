@@ -29,6 +29,7 @@ import {
   LifeBuoy,
   Timer,
   Wrench,
+  Swords,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -40,6 +41,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 
 const mainNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
+  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-orange-400' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
