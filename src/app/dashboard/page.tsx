@@ -211,7 +211,25 @@ export default function DashboardPage() {
                     </motion.div>
                  </div>
              </div>
-
+            
+            <Link href="/dashboard/challenger" className="group block">
+                <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-red-900 via-rose-900 to-red-900 border-red-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                    <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
+                        <div className="p-4 rounded-full bg-red-500/10 border-2 border-red-500/30">
+                            <Swords className="h-10 w-10 text-red-400"/>
+                        </div>
+                        <div className="flex-1 text-center sm:text-left">
+                            <CardTitle className="text-2xl font-bold text-white">Challenger Zone</CardTitle>
+                            <CardDescription className="text-slate-400 mt-1">Take on legendary study challenges to forge discipline and win rewards.</CardDescription>
+                        </div>
+                        <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
+                            View Challenges <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </CardContent>
+                </Card>
+            </Link>
+            
             <Dialog>
                 <DialogTrigger asChild>
                     <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
@@ -245,24 +263,6 @@ export default function DashboardPage() {
                     </div>
                 </DialogContent>
             </Dialog>
-
-            <Link href="/dashboard/challenger" className="group block">
-                <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-red-900 via-rose-900 to-red-900 border-red-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
-                    <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                        <div className="p-4 rounded-full bg-red-500/10 border-2 border-red-500/30">
-                            <Swords className="h-10 w-10 text-red-400"/>
-                        </div>
-                        <div className="flex-1 text-center sm:text-left">
-                            <CardTitle className="text-2xl font-bold text-white">Challenger Zone</CardTitle>
-                            <CardDescription className="text-slate-400 mt-1">Take on legendary study challenges to forge discipline and win rewards.</CardDescription>
-                        </div>
-                        <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                            View Challenges <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                    </CardContent>
-                </Card>
-            </Link>
             
             <AnimatePresence>
                 {!isExploreZoneOpen && (
