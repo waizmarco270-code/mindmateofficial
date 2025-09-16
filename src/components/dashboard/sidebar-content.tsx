@@ -28,6 +28,8 @@ import {
   Gamepad2,
   LifeBuoy,
   Timer,
+  Wrench,
+  Swords,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -39,6 +41,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 
 const mainNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
+  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-orange-400' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
@@ -58,9 +61,8 @@ const studyNav = [
 ];
 
 const otherNav = [
-    { href: '/dashboard/calculator', icon: Percent, label: 'Percentage Calc', glow: 'text-lime-400' },
+    { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
     { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
-    { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
 ];
 
 const adminNav = [
@@ -140,7 +142,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'study-tools', 'other-tools', 'admin-tools']}
+          defaultValue={['study-tools', 'admin-tools']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -183,28 +185,45 @@ export default function SidebarContent() {
           )}
         </Accordion>
       </div>
-
-       <div className="mt-auto p-4 border-t border-sidebar-border">
-          <div className="px-3 mb-2">
-             <h2 className="text-sm font-semibold tracking-tight text-sidebar-foreground/60">Follow Us</h2>
-          </div>
-          <div className="flex items-center justify-around">
-              {socialLinks.map(link => {
-                  let Icon;
-                  if(link.icon === 'instagram') Icon = InstagramIcon;
-                  else if(link.icon === 'whatsapp') Icon = WhatsAppIcon;
-                  else Icon = link.icon;
-                  
-                  return (
-                        <a key={link.name} href={link.href} className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors" target="_blank" rel="noopener noreferrer">
-                          {Icon ? <Icon /> : link.name}
-                          <span className="sr-only">{link.name}</span>
-                      </a>
-                  )
-              })}
+        <div className="mt-auto p-4 border-t border-sidebar-border space-y-4">
+            <Link
+                href="/dashboard/help"
+                prefetch={true}
+                className={cn(
+                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
+                    isActive('/dashboard/help') 
+                        ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
+                        : 'hover:text-primary',
+                    'text-amber-400 [text-shadow:0_0_8px_currentColor]',
+                )}
+            >
+                <div className={cn(
+                    "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
+                    isActive('/dashboard/help') ? "bg-primary/100" : "group-hover:scale-y-50",
+                    isActive('/dashboard/help') && 'bg-current'
+                )}></div>
+                <LifeBuoy className="h-5 w-5" />
+                <span className="flex-1">Help & Support</span>
+            </Link>
+          <div>
+             <h2 className="px-3 mb-2 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Follow Us</h2>
+              <div className="flex items-center justify-around">
+                  {socialLinks.map(link => {
+                      let Icon;
+                      if(link.icon === 'instagram') Icon = InstagramIcon;
+                      else if(link.icon === 'whatsapp') Icon = WhatsAppIcon;
+                      else Icon = link.icon;
+                      
+                      return (
+                            <a key={link.name} href={link.href} className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors p-2" target="_blank" rel="noopener noreferrer">
+                              {Icon ? <Icon /> : link.name}
+                              <span className="sr-only">{link.name}</span>
+                          </a>
+                      )
+                  })}
+              </div>
           </div>
        </div>
-
     </div>
   );
 }
