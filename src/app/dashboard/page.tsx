@@ -246,66 +246,7 @@ export default function DashboardPage() {
                 </DialogContent>
             </Dialog>
             
-            <AnimatePresence>
-                {!isStudyZoneOpen && (
-                    <motion.div
-                        key="study-zone-gateway"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0, height: 0, transition: { duration: 0.3 } }}
-                        onClick={() => setIsStudyZoneOpen(true)}
-                    >
-                         <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900 border-cyan-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
-                             <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                                 <div className="p-4 rounded-full bg-cyan-500/10 border-2 border-cyan-500/30">
-                                    <BrainCircuit className="h-10 w-10 text-cyan-400"/>
-                                </div>
-                                <div className="flex-1 text-center sm:text-left">
-                                    <CardTitle className="text-2xl font-bold text-white">Let's Enter Study Zone</CardTitle>
-                                    <CardDescription className="text-slate-400 mt-1">All your tools for focused and productive learning sessions.</CardDescription>
-                                </div>
-                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                                    Begin <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-            
-            {isStudyZoneOpen && (
-                 <div className="space-y-4">
-                    <h2 className="text-2xl font-bold tracking-tight">Your Study Tools</h2>
-                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {studyTools.map((tool, i) => (
-                            <motion.div key={tool.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
-                                <Link href={tool.href} prefetch={true}>
-                                <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", tool.color)}>
-                                     <CardHeader className="flex-row items-center gap-4 p-4">
-                                        <div className={cn("p-3 rounded-full bg-white/10", tool.textColor)}>
-                                            <tool.icon className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <CardTitle className={cn("text-xl font-bold tracking-tight", tool.textColor)}>{tool.title}</CardTitle>
-                                        </div>
-                                     </CardHeader>
-                                     <CardContent className="p-4 pt-0">
-                                         <CardDescription className={cn("text-sm", tool.textColor, "opacity-80")}>{tool.description}</CardDescription>
-                                     </CardContent>
-                                    <CardFooter className="mt-auto bg-black/10 p-3">
-                                         <p className={cn("text-sm font-semibold flex items-center w-full justify-end", tool.textColor, "opacity-90")}>
-                                             Go to {tool.title} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                         </p>
-                                    </CardFooter>
-                                </Card>
-                                </Link>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
-            )}
-             <Link href="/dashboard/tools" className="group block">
+            <Link href="/dashboard/tools" className="group block">
                 <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-lime-900 via-green-900 to-lime-900 border-lime-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                     <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
                     <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
@@ -322,8 +263,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </Link>
-
-
+            
             <AnimatePresence>
                 {!isExploreZoneOpen && (
                     <motion.div
@@ -374,6 +314,66 @@ export default function DashboardPage() {
                                     <CardFooter className="mt-auto bg-black/10 p-3">
                                          <p className={cn("text-sm font-semibold flex items-center w-full justify-end", feature.textColor, "opacity-90")}>
                                              Explore Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                         </p>
+                                    </CardFooter>
+                                </Card>
+                                </Link>
+                            </motion.div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            
+            <AnimatePresence>
+                {!isStudyZoneOpen && (
+                    <motion.div
+                        key="study-zone-gateway"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0, height: 0, transition: { duration: 0.3 } }}
+                        onClick={() => setIsStudyZoneOpen(true)}
+                    >
+                         <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900 border-cyan-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                             <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
+                                 <div className="p-4 rounded-full bg-cyan-500/10 border-2 border-cyan-500/30">
+                                    <BrainCircuit className="h-10 w-10 text-cyan-400"/>
+                                </div>
+                                <div className="flex-1 text-center sm:text-left">
+                                    <CardTitle className="text-2xl font-bold text-white">Enter Study Zone</CardTitle>
+                                    <CardDescription className="text-slate-400 mt-1">All your tools for focused and productive learning sessions.</CardDescription>
+                                </div>
+                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
+                                    Begin <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+            {isStudyZoneOpen && (
+                 <div className="space-y-4">
+                    <h2 className="text-2xl font-bold tracking-tight">Your Study Tools</h2>
+                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {studyTools.map((tool, i) => (
+                            <motion.div key={tool.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
+                                <Link href={tool.href} prefetch={true}>
+                                <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", tool.color)}>
+                                     <CardHeader className="flex-row items-center gap-4 p-4">
+                                        <div className={cn("p-3 rounded-full bg-white/10", tool.textColor)}>
+                                            <tool.icon className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <CardTitle className={cn("text-xl font-bold tracking-tight", tool.textColor)}>{tool.title}</CardTitle>
+                                        </div>
+                                     </CardHeader>
+                                     <CardContent className="p-4 pt-0">
+                                         <CardDescription className={cn("text-sm", tool.textColor, "opacity-80")}>{tool.description}</CardDescription>
+                                     </CardContent>
+                                    <CardFooter className="mt-auto bg-black/10 p-3">
+                                         <p className={cn("text-sm font-semibold flex items-center w-full justify-end", tool.textColor, "opacity-90")}>
+                                             Go to {tool.title} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                          </p>
                                     </CardFooter>
                                 </Card>
