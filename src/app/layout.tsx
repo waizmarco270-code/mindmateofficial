@@ -20,6 +20,7 @@ export default function RootLayout({
       <html lang="en" suppressHydrationWarning>
         <head>
           <title>MindMate</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
           <meta name="description" content="Your all-in-one study companion to learn smarter, stay focused, and connect with a community of learners." />
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
