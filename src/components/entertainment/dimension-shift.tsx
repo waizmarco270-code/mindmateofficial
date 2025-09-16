@@ -19,13 +19,15 @@ import { LoginWall } from '../ui/login-wall';
 const PLAYER_SIZE = 20;
 const OBSTACLE_WIDTH = 40;
 const OBSTACLE_HEIGHT = 20;
-const WIN_SCORE = 200;
+const WIN_SCORE = 300;
 
 const MILESTONE_REWARDS: Record<number, number> = {
-  50: 30,
-  100: 50,
-  150: 100,
-  200: 200,
+  50: 2,
+  100: 5,
+  150: 10,
+  200: 15,
+  250: 20,
+  300: 200,
 };
 
 // Player state
@@ -192,19 +194,22 @@ export function DimensionShiftGame() {
     frameCountRef.current++;
     
     // Difficulty scaling based on score
-    let spawnRate = 80;
-    if (score > 15) spawnRate = 60; // Insane
-    if (score > 20) spawnRate = 40; // Impossible
-    if (score > 30) spawnRate = 25; // SUPER CAR
-    if (score > 50) spawnRate = 20; // Super Insane
-    if (score > 100) spawnRate = 12; // Impossible Level
+    let spawnRate = 60; // Start
+    if (score > 20) spawnRate = 50; 
+    if (score > 50) spawnRate = 40; 
+    if (score > 100) spawnRate = 30;
+    if (score > 150) spawnRate = 20;
+    if (score > 200) spawnRate = 10; // ULTRA MEGA IMPOSSIBLE
+    if (score > 250) spawnRate = 5;  // LEGENDARY IMPOSSIBLE
 
     // Speed increases
-    if (score > 15) scrollSpeedRef.current += 0.025;
-    if (score > 20) scrollSpeedRef.current += 0.05;
-    if (score > 30) scrollSpeedRef.current += 0.075;
-    if (score > 50) scrollSpeedRef.current += 0.1;   // Super Insane
-    if (score > 100) scrollSpeedRef.current += 0.15; // Impossible Level
+    if (score > 10) scrollSpeedRef.current += 0.01;
+    if (score > 50) scrollSpeedRef.current += 0.02;
+    if (score > 100) scrollSpeedRef.current += 0.05;
+    if (score > 150) scrollSpeedRef.current += 0.1;
+    if (score > 200) scrollSpeedRef.current += 0.2;
+    if (score > 250) scrollSpeedRef.current += 0.25;
+
 
     // Generate new obstacles
     if (frameCountRef.current % Math.floor(spawnRate) === 0) { 
@@ -212,7 +217,7 @@ export function DimensionShiftGame() {
         const xPosition = Math.random() * (canvas.width - OBSTACLE_WIDTH);
         
         let type: Obstacle['type'] = 'normal';
-        const specialChance = 0.1 + (score * 0.02); // Chance increases with score
+        const specialChance = 0.2 + (score * 0.005); // More special blocks at higher scores
         if (Math.random() < specialChance) {
             type = Math.random() < 0.5 ? 'trap' : 'accelerating';
         }
@@ -227,12 +232,12 @@ export function DimensionShiftGame() {
             speed: scrollSpeedRef.current,
         };
         
-        const movingChance = 0.1 + (score * 0.015);
+        const movingChance = 0.2 + (score * 0.005);
         if(Math.random() < movingChance) {
-            newObstacle.dx = (Math.random() - 0.5) * (2 + score * 0.1); // Speed increases
+            newObstacle.dx = (Math.random() - 0.5) * (2 + score * 0.05); // Faster horizontal speed
         }
         
-        const blinkingChance = score > 10 ? 0.2 : 0; // Starts after score 10
+        const blinkingChance = score > 50 ? 0.3 : 0; // Starts after score 50, higher chance
         if(Math.random() < blinkingChance) {
             newObstacle.isVisible = true;
             newObstacle.blinkCounter = 0;
@@ -245,7 +250,7 @@ export function DimensionShiftGame() {
     let scoreGainedThisFrame = 0;
     obstaclesRef.current.forEach((obstacle, index) => {
         if (obstacle.type === 'accelerating' && obstacle.y > canvas.height / 3) {
-            obstacle.speed += 0.15;
+            obstacle.speed += 0.2; // Faster acceleration
         }
         obstacle.y += obstacle.speed;
 
@@ -257,7 +262,7 @@ export function DimensionShiftGame() {
         }
 
         if (obstacle.blinkCounter !== undefined) {
-            const blinkSpeed = score > 20 ? 30 : 60; // Blinks faster at high scores
+            const blinkSpeed = score > 150 ? 15 : 30; // Blinks much faster at high scores
             obstacle.blinkCounter++;
             if (obstacle.blinkCounter > blinkSpeed) {
                 obstacle.isVisible = !obstacle.isVisible;
