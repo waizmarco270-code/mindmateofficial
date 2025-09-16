@@ -4,10 +4,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek as endOfWeekDateFns, isSameMonth, isSameDay, parseISO } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek as endOfWeekDateFns, isSameMonth, isSameDay, parseISO, addDays } from 'date-fns';
 import { ChevronLeft, ChevronRight, Zap, ListTodo } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
+import { Separator } from '../ui/separator';
 import { useTimeTracker, type TimeSession } from '@/hooks/use-time-tracker';
 import { useUsers } from '@/hooks/use-admin';
 import { db } from '@/lib/firebase';
