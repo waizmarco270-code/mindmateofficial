@@ -28,7 +28,6 @@ import {
   Gamepad2,
   LifeBuoy,
   Timer,
-  LayoutList,
   Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
