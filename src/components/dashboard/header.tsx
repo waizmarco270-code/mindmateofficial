@@ -1,11 +1,11 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '../theme-toggle';
 import { useSidebar } from '@/components/ui/sidebar';
-import { useUsers, useAdmin } from '@/hooks/use-admin';
+import { useUsers, useAdmin, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 import { UserButton, useUser, SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
@@ -15,10 +15,14 @@ export default function Header() {
   const { setOpenMobile } = useSidebar();
   const { user, isLoaded } = useUser();
   const { currentUserData } = useUsers();
-  const { isAdmin } = useAdmin();
   
   const credits = currentUserData?.credits ?? 0;
   const streak = currentUserData?.streak ?? 0;
+  
+  const isSuperAdmin = currentUserData?.uid === SUPER_ADMIN_UID;
+  const isAdmin = currentUserData?.isAdmin;
+  const isVip = currentUserData?.isVip;
+  const isGM = currentUserData?.isGM;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -44,6 +48,16 @@ export default function Header() {
         <SignedIn>
             {isLoaded && user && (
             <>
+                {isSuperAdmin ? (
+                    <span className="dev-badge flex-shrink-0"><Code className="h-3 w-3" /> DEV</span>
+                ) : isAdmin ? (
+                    <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                ) : isVip ? (
+                    <span className="elite-badge flex-shrink-0"><Crown className="h-3 w-3" /> ELITE</span>
+                ) : isGM ? (
+                    <span className="gm-badge">GM</span>
+                ) : null}
+
                 <Popover>
                     <PopoverTrigger asChild>
                          <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
