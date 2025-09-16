@@ -4,13 +4,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlarmClock, AlertTriangle, Award, Zap, X } from 'lucide-react';
+import { AlarmClock, AlertTriangle, Award, Zap, X, Pause, Play, Music, Volume2, VolumeX } from 'lucide-react';
 import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useBeforeunload } from 'react-beforeunload';
 import { LoginWall } from '@/components/ui/login-wall';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface FocusSlot {
     duration: number; // in seconds
@@ -27,6 +28,19 @@ const focusSlots: FocusSlot[] = [
 const PENALTY = 10;
 export const FOCUS_PENALTY_SESSION_KEY = 'focusPenaltyApplied';
 
+const quotes = [
+    "The secret of getting ahead is getting started.",
+    "Jo kal kare so aaj kar, jo aaj kare so ab.",
+    "Don't watch the clock; do what it does. Keep going.",
+    "Padhai ek tapasya hai.",
+    "The only way to do great work is to love what you do.",
+    "Mehnat itni khamoshi se karo ki safalta shor macha de.",
+    "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    "Mushkilein hamesha behtareen logo ke hisse me aati hai, kyunki wo use behtareen tarike se anjaam dene ki taqat rakhte hai.",
+    "Believe you can and you're halfway there.",
+    "Waqt tera hai, chahe to sona bana le, ya sone me guzaar de."
+];
+
 export default function FocusModePage() {
     const { user, isSignedIn } = useUser();
     const { currentUserData, addCreditsToUser, incrementFocusSessions } = useUsers();
@@ -34,24 +48,54 @@ export default function FocusModePage() {
 
     const [activeSlot, setActiveSlot] = useState<FocusSlot | null>(null);
     const [timeLeft, setTimeLeft] = useState(0);
-    const [isActive, setIsActive] = useState(false);
-    
-    const penaltyApplicator = useRef<() => void>();
+    const [isSessionActive, setIsSessionActive] = useState(false);
+    const [isPaused, setIsPaused] = useState(false);
+    const [isMuted, setIsMuted] = useState(false);
+    const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
 
+    const audioRef = useRef<HTMLAudioElement>(null);
+    const penaltyApplicator = useRef<() => void>();
+    
+    // Unload penalty logic
     useBeforeunload(event => {
-        if (isActive && activeSlot) {
+        if (isSessionActive && !isPaused) {
             event.preventDefault();
         }
     });
+     useEffect(() => {
+        penaltyApplicator.current = () => {
+            if (user && isSessionActive && activeSlot) {
+                addCreditsToUser(user.id, -PENALTY);
+                 if (typeof window !== 'undefined') {
+                    sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, `You have been penalized ${PENALTY} credits for leaving an active focus session.`);
+                 }
+            }
+        };
+    });
+    useEffect(() => {
+        const handleBeforeUnload = () => {
+            penaltyApplicator.current?.();
+        };
 
+        if (isSessionActive && !isPaused) {
+            window.addEventListener('beforeunload', handleBeforeUnload);
+        }
+
+        return () => {
+            window.removeEventListener('beforeunload', handleBeforeUnload);
+        };
+    }, [isSessionActive, isPaused]);
+
+
+    // Timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
         
-        if (isActive && timeLeft > 0) {
+        if (isSessionActive && !isPaused && timeLeft > 0) {
             interval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
-        } else if (isActive && timeLeft === 0) {
+        } else if (isSessionActive && !isPaused && timeLeft === 0) {
             if (user && activeSlot) {
                 addCreditsToUser(user.id, activeSlot.reward);
                 incrementFocusSessions(user.id);
@@ -61,31 +105,26 @@ export default function FocusModePage() {
                     className: "bg-green-500/10 text-green-700 border-green-500/50 dark:text-green-300"
                 });
             }
-            setIsActive(false);
+            setIsSessionActive(false);
             setActiveSlot(null);
+            if(audioRef.current) audioRef.current.pause();
         }
 
         return () => {
             if (interval) clearInterval(interval);
         };
-    }, [isActive, timeLeft, user, activeSlot, addCreditsToUser, incrementFocusSessions, toast]);
+    }, [isSessionActive, isPaused, timeLeft, user, activeSlot, addCreditsToUser, incrementFocusSessions, toast]);
     
+    // Quote rotation logic
     useEffect(() => {
-        penaltyApplicator.current = () => {
-            if (user && isActive && activeSlot) {
-                addCreditsToUser(user.id, -PENALTY);
-                 if (typeof window !== 'undefined') {
-                    sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, `You have been penalized ${PENALTY} credits for leaving an active focus session.`);
-                 }
-            }
-        };
-    });
+        if (isSessionActive && !isPaused) {
+            const quoteInterval = setInterval(() => {
+                setCurrentQuoteIndex(prev => (prev + 1) % quotes.length);
+            }, 10000); // Change quote every 10 seconds
+            return () => clearInterval(quoteInterval);
+        }
+    }, [isSessionActive, isPaused]);
 
-    useEffect(() => {
-        return () => {
-            penaltyApplicator.current?.();
-        };
-    }, []);
 
     const handleSelectSlot = (slot: FocusSlot) => {
         if (currentUserData && currentUserData.credits < PENALTY) {
@@ -98,7 +137,11 @@ export default function FocusModePage() {
         }
         setActiveSlot(slot);
         setTimeLeft(slot.duration);
-        setIsActive(true);
+        setIsSessionActive(true);
+        setIsPaused(false);
+        if (audioRef.current && !isMuted) {
+            audioRef.current.play().catch(e => console.error("Audio play failed:", e));
+        }
     };
 
     const handleStopSession = () => {
@@ -110,10 +153,26 @@ export default function FocusModePage() {
                 description: `You have been penalized ${PENALTY} credits.`,
             });
         }
-        setIsActive(false);
+        setIsSessionActive(false);
         setActiveSlot(null);
         setTimeLeft(0);
+        if(audioRef.current) audioRef.current.pause();
     };
+
+    const togglePause = () => {
+        setIsPaused(!isPaused);
+        if(audioRef.current) {
+            isPaused ? audioRef.current.play() : audioRef.current.pause();
+        }
+    }
+    
+    const toggleMute = () => {
+        const shouldMute = !isMuted;
+        setIsMuted(shouldMute);
+        if(audioRef.current) {
+            audioRef.current.muted = shouldMute;
+        }
+    }
 
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600);
@@ -125,21 +184,21 @@ export default function FocusModePage() {
     if (activeSlot) {
         const progress = (timeLeft / activeSlot.duration) * 100;
         return (
-            <div className="flex justify-center items-center h-full">
-                <Card className="w-full max-w-md text-center animate-in fade-in-50">
+             <div className="flex justify-center items-center h-full">
+                 <audio ref={audioRef} src="/audio/ambient-music.mp3" loop muted={isMuted} />
+                 <Card className="w-full max-w-lg text-center animate-in fade-in-50 bg-background/70 backdrop-blur-lg">
                     <CardHeader>
                         <CardTitle className="text-3xl">Focusing: {activeSlot.label}</CardTitle>
                         <CardDescription>Keep this page open. Closing it or navigating away will result in a penalty.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center gap-6">
+                    <CardContent className="flex flex-col items-center gap-8">
                          <div className="relative h-64 w-64">
                             <svg className="h-full w-full" viewBox="0 0 100 100">
                               <circle className="text-muted" strokeWidth="7" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50"/>
-                              <circle
+                              <motion.circle
                                 className="text-primary transition-all duration-1000 ease-linear"
                                 strokeWidth="7"
                                 strokeDasharray="283"
-                                strokeDashoffset={283 * (1 - progress / 100)}
                                 strokeLinecap="round"
                                 stroke="currentColor"
                                 fill="transparent"
@@ -147,18 +206,49 @@ export default function FocusModePage() {
                                 cx="50"
                                 cy="50"
                                 style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
+                                initial={{ strokeDashoffset: 283 }}
+                                animate={{ strokeDashoffset: 283 * (1 - progress / 100) }}
+                                transition={{ duration: 1, ease: 'linear'}}
                               />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
                                 <span className="text-5xl font-bold font-mono tabular-nums tracking-tighter">
                                     {formatTime(timeLeft)}
                                 </span>
-                                <p className="text-sm text-muted-foreground mt-1">Time Remaining</p>
+                                 <motion.button onClick={togglePause} className="text-sm font-semibold text-primary mt-1 px-4 py-2 rounded-full hover:bg-primary/10">
+                                    {isPaused ? 'Resume' : 'Pause'}
+                                </motion.button>
                             </div>
                         </div>
-                        <Button variant="destructive" size="lg" onClick={handleStopSession}>
-                           <X className="mr-2 h-4 w-4"/> Stop Session & Accept Penalty
-                        </Button>
+
+                        <div className="min-h-[4rem] flex items-center justify-center">
+                            <AnimatePresence mode="wait">
+                                <motion.p 
+                                    key={currentQuoteIndex}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ duration: 0.5 }}
+                                    className="text-lg italic text-muted-foreground text-center"
+                                >
+                                    "{quotes[currentQuoteIndex]}"
+                                </motion.p>
+                            </AnimatePresence>
+                        </div>
+                        
+                        <div className="w-full flex justify-between items-center">
+                             <Button variant="destructive" onClick={handleStopSession}>
+                                <X className="mr-2 h-4 w-4"/> Stop Session
+                            </Button>
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="icon" onClick={togglePause}>
+                                    {isPaused ? <Play /> : <Pause />}
+                                </Button>
+                                <Button variant="outline" size="icon" onClick={toggleMute}>
+                                    {isMuted ? <VolumeX /> : <Volume2 />}
+                                </Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -219,3 +309,4 @@ export default function FocusModePage() {
         </div>
     );
 }
+
