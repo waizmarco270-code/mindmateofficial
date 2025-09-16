@@ -41,7 +41,7 @@ interface TimeTrackerState {
   currentSessionStart: string | null; // ISO string
 }
 
-const ONE_HOUR = 3600 * 1000; // in milliseconds
+const THIRTY_MINUTES = 30 * 60 * 1000; // in milliseconds
 
 export function useTimeTracker() {
   const { user } = useUser();
@@ -224,8 +224,8 @@ export function useTimeTracker() {
       const handleVisibilityReturn = async () => {
         if (document.visibilityState === 'visible') {
             const visibleTimestamp = Date.now();
-            if(visibleTimestamp - hiddenTimestamp > ONE_HOUR) {
-                // Time in background exceeded 1 hour, pause the timer
+            if(visibleTimestamp - hiddenTimestamp > THIRTY_MINUTES) {
+                // Time in background exceeded 30 minutes, pause the timer
                 await handlePlayPause(state.activeSubjectId!);
             }
             window.removeEventListener('visibilitychange', handleVisibilityReturn);
