@@ -11,7 +11,7 @@ import { useTheme } from 'next-themes';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
-import { isThisWeek, startOfWeek } from 'date-fns';
+import { isThisWeek, startOfWeek, format } from 'date-fns';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { LoginWall } from '../ui/login-wall';
 
