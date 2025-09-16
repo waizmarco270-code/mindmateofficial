@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
-import { Gift, Copy, Check, Users, ShieldCheck, AlertTriangle, Send } from 'lucide-react';
+import { Gift, Copy, Check, Users, ShieldCheck, AlertTriangle, Send, Share2 } from 'lucide-react';
 import { useReferrals } from '@/hooks/use-referrals';
 
 const REFERRAL_REWARD = 50;
@@ -21,7 +21,7 @@ export default function ReferralsPage() {
     const { toast } = useToast();
 
     const [isCodeCopied, setIsCodeCopied] = useState(false);
-    const [isInviteCopied, setIsInviteCopied] = useState(false);
+    const [isInviteShared, setIsInviteShared] = useState(false);
     const [referralCodeInput, setReferralCodeInput] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,13 +40,31 @@ export default function ReferralsPage() {
         setTimeout(() => setIsCodeCopied(false), 2000);
     };
 
-    const handleShareInvite = () => {
+    const handleShareInvite = async () => {
         const appUrl = window.location.origin;
         const inviteMessage = `Hey! I'm using MindMate to supercharge my studies. It has an AI tutor, focus modes, and tons of resources. Sign up for free and use my referral code to get started: ${userReferralCode}\n\nJoin me here: ${appUrl}`;
-        navigator.clipboard.writeText(inviteMessage);
-        setIsInviteCopied(true);
-        toast({ title: "Invite message copied!" });
-        setTimeout(() => setIsInviteCopied(false), 2000);
+        const shareData = {
+            title: 'Join me on MindMate!',
+            text: inviteMessage,
+            url: appUrl,
+        };
+
+        if (navigator.share && navigator.canShare(shareData)) {
+            try {
+                await navigator.share(shareData);
+                toast({ title: "Invite Shared!" });
+            } catch (error) {
+                console.error('Error sharing:', error);
+                toast({ variant: 'destructive', title: "Could not share", description: "Your browser may have blocked the share attempt." });
+            }
+        } else {
+            // Fallback for desktop or unsupported browsers
+            navigator.clipboard.writeText(inviteMessage);
+            toast({ title: "Invite message copied!" });
+        }
+        
+        setIsInviteShared(true);
+        setTimeout(() => setIsInviteShared(false), 2000);
     }
     
     const handleSubmitCode = async (e: React.FormEvent) => {
@@ -95,8 +113,8 @@ export default function ReferralsPage() {
                                 {isCodeCopied ? 'Code Copied!' : 'Copy Code'}
                             </Button>
                             <Button onClick={handleShareInvite} className="w-full">
-                                {isInviteCopied ? <Check className="mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4" />}
-                                {isInviteCopied ? 'Invite Copied!' : 'Share Invite'}
+                                {isInviteShared ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+                                {isInviteShared ? 'Shared!' : 'Share Invite'}
                             </Button>
                         </div>
                     </CardContent>
