@@ -37,6 +37,7 @@ export interface User {
   totalStudyTime?: number; // in seconds
   lastRewardDate?: string; // For scratch card
   lastGiftBoxDate?: string; // For gift box game
+  lastRpsDate?: string; // For RPS Game
   freeRewards?: number; // Extra scratch cards
   freeGuesses?: number; // Extra gift box guesses
   rewardHistory?: { reward: number | string, date: Timestamp, source: string }[];
@@ -782,15 +783,21 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const weekStart = startOfWeek(today, { weekStartsOn: 1 }).toISOString();
         const weekEnd = endOfWeek(today, { weekStartsOn: 1 }).toISOString();
 
-        const timeSessionsGroup = collectionGroup(db, 'timeTrackerSessions');
-        const q = query(timeSessionsGroup, where('startTime', '>=', weekStart), where('startTime', '<=', weekEnd));
-        
-        const sessionsSnapshot = await getDocs(q);
-        const batch = writeBatch(db);
-        sessionsSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        await batch.commit();
+        const allUsersSnapshot = await getDocs(collection(db, 'users'));
+
+        for (const userDoc of allUsersSnapshot.docs) {
+            const timeSessionsColRef = collection(db, 'users', userDoc.id, 'timeTrackerSessions');
+            const q = query(timeSessionsColRef, where('startTime', '>=', weekStart), where('startTime', '<=', weekEnd));
+            
+            const sessionsSnapshot = await getDocs(q);
+            if (!sessionsSnapshot.empty) {
+                const batch = writeBatch(db);
+                sessionsSnapshot.forEach(sessionDoc => {
+                    batch.delete(sessionDoc.ref);
+                });
+                await batch.commit();
+            }
+        }
     }, []);
     
     const resetGameZoneLeaderboard = useCallback(async () => {
