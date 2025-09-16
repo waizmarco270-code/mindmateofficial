@@ -29,6 +29,7 @@ import {
   LifeBuoy,
   Timer,
   LayoutList,
+  Wrench,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -59,8 +60,7 @@ const studyNav = [
 ];
 
 const otherNav = [
-    { href: '/dashboard/timetable-generator', icon: LayoutList, label: 'Timetable Generator', glow: 'text-lime-400' },
-    { href: '/dashboard/calculator', icon: Percent, label: 'Percentage Calc', glow: 'text-lime-400' },
+    { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
     { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
 ];
