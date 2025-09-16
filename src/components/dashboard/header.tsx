@@ -47,7 +47,7 @@ export default function Header() {
                 <Popover>
                     <PopoverTrigger asChild>
                          <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-                            <Flame className="h-5 w-5 text-orange-500 animate-pulse [text-shadow:0_0_8px_#f97316]" />
+                            <Flame className="h-5 w-5 text-orange-500 animate-flicker" />
                             <span>{streak} <span className="hidden sm:inline">Day Streak</span></span>
                         </div>
                     </PopoverTrigger>
@@ -73,7 +73,7 @@ export default function Header() {
                 <Popover>
                     <PopoverTrigger asChild>
                         <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-                            <Medal className="h-5 w-5 text-amber-500 [text-shadow:0_0_8px_#f59e0b]" />
+                            <Medal className="h-5 w-5 text-amber-500 animate-gold-shine" />
                             <span>{credits} <span className="hidden sm:inline">Credits</span></span>
                         </div>
                     </PopoverTrigger>

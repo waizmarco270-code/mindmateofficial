@@ -133,6 +133,20 @@
       background-position: 0% 50%;
     }
   }
+
+  @keyframes flicker {
+    0%, 100% { text-shadow: 0 0 5px #f97316, 0 0 10px #f97316, 0 0 15px #f97316; }
+    20% { text-shadow: 0 0 6px #ea580c, 0 0 12px #ea580c, 0 0 18px #ea580c; }
+    40% { text-shadow: 0 0 4px #f97316, 0 0 8px #f97316; }
+    60% { text-shadow: 0 0 7px #ea580c, 0 0 14px #ea580c; }
+    80% { text-shadow: 0 0 5px #f97316, 0 0 10px #f97316, 0 0 20px #f97316; }
+  }
+
+  @keyframes gold-shine {
+    0% { filter: drop-shadow(0 0 2px #f59e0b); }
+    50% { filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 12px #f59e0b); }
+    100% { filter: drop-shadow(0 0 2px #f59e0b); }
+  }
 }
 
 @layer components {
@@ -233,5 +247,13 @@
     position: absolute;
     inset: 0;
     z-index: 0;
+  }
+
+  .animate-flicker {
+    animation: flicker 1.5s infinite;
+  }
+
+  .animate-gold-shine {
+      animation: gold-shine 3s ease-in-out infinite;
   }
 }
