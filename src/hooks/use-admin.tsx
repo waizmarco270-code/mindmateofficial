@@ -5,7 +5,7 @@ import { useState, useEffect, createContext, useContext, ReactNode, useCallback 
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup } from 'firebase/firestore';
-import { isToday, isYesterday, format, startOfWeek, endOfWeek } from 'date-fns';
+import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { LucideIcon } from 'lucide-react';
 
 
@@ -305,6 +305,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     const currentStreak = data.streak || 0;
                     
                     if (lastCheckDate && isYesterday(lastCheckDate)) {
+                        // Continued streak
                         const newStreak = currentStreak + 1;
                         updates.streak = newStreak;
                         if (newStreak > (data.longestStreak || 0)) {
@@ -316,9 +317,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                         } else if (newStreak > 0 && newStreak % 5 === 0) {
                             updates.credits = increment(50); // 5-day bonus
                         }
-
-                    } else if (!lastCheckDate || !isToday(lastCheckDate)) {
-                        // Streak is broken or first login
+                    } else {
+                        // Streak is broken or first login ever
                         updates.streak = 1;
                     }
                     updates.lastStreakCheck = todayStr;
@@ -779,11 +779,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const resetWeeklyStudyTime = useCallback(async () => {
+        const allUsersSnapshot = await getDocs(collection(db, 'users'));
         const today = new Date();
         const weekStart = startOfWeek(today, { weekStartsOn: 1 }).toISOString();
         const weekEnd = endOfWeek(today, { weekStartsOn: 1 }).toISOString();
-
-        const allUsersSnapshot = await getDocs(collection(db, 'users'));
 
         for (const userDoc of allUsersSnapshot.docs) {
             const timeSessionsColRef = collection(db, 'users', userDoc.id, 'timeTrackerSessions');
@@ -996,3 +995,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    
