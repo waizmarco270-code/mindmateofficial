@@ -4,7 +4,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from 'firebase/firestore';
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
@@ -157,4 +157,3 @@ export const useChallenges = () => {
     }
     return context;
 };
-
