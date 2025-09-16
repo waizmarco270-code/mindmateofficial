@@ -51,7 +51,6 @@ const mainNav = [
 
 const studyNav = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
-  { href: '/dashboard/timetable-generator', icon: LayoutList, label: 'Timetable Generator', glow: 'text-lime-400' },
   { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro', glow: 'text-green-400' },
   { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-green-400' },
   { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker', glow: 'text-blue-400' },
@@ -60,6 +59,7 @@ const studyNav = [
 ];
 
 const otherNav = [
+    { href: '/dashboard/timetable-generator', icon: LayoutList, label: 'Timetable Generator', glow: 'text-lime-400' },
     { href: '/dashboard/calculator', icon: Percent, label: 'Percentage Calc', glow: 'text-lime-400' },
     { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
