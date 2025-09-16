@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -305,6 +305,24 @@ export default function DashboardPage() {
                     </div>
                 </div>
             )}
+             <Link href="/dashboard/tools" className="group block">
+                <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-lime-900 via-green-900 to-lime-900 border-lime-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                    <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
+                        <div className="p-4 rounded-full bg-lime-500/10 border-2 border-lime-500/30">
+                            <Wrench className="h-10 w-10 text-lime-400"/>
+                        </div>
+                        <div className="flex-1 text-center sm:text-left">
+                            <CardTitle className="text-2xl font-bold text-white">Student Tools</CardTitle>
+                            <CardDescription className="text-slate-400 mt-1">Access utilities like the Percentage Calculator and Timetable Generator.</CardDescription>
+                        </div>
+                        <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
+                            Open Tools <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </CardContent>
+                </Card>
+            </Link>
+
 
             <AnimatePresence>
                 {!isExploreZoneOpen && (
