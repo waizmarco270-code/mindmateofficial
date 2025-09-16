@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -29,6 +29,7 @@ type UserWithStats = User & {
     memoryGameHighScore: number;
     dimensionShiftHighScore: number;
     subjectSprintHighScore: number;
+    flappyMindHighScore: number;
     prevWeekEntertainmentTotalScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
 };
@@ -127,12 +128,13 @@ export default function LeaderboardPage() {
                 const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
                 const dimensionShiftHighScore = user.gameHighScores?.dimensionShift || 0;
                 const subjectSprintHighScore = user.gameHighScores?.subjectSprint || 0;
+                const flappyMindHighScore = user.gameHighScores?.flappyMind || 0;
                 
                  // New logic for Entertainment Total Score: slightly weight different games
-                const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5) + (subjectSprintHighScore * 1.1);
+                const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5) + (subjectSprintHighScore * 1.1) + flappyMindHighScore;
 
                 // Use a snapshot of scores for previous week winner calculation
-                const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0);
+                const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0);
 
 
                 return { 
@@ -146,6 +148,7 @@ export default function LeaderboardPage() {
                     memoryGameHighScore,
                     dimensionShiftHighScore,
                     subjectSprintHighScore,
+                    flappyMindHighScore,
                     prevWeekEntertainmentTotalScore: Math.round(prevWeekEntertainmentTotalScore)
                 };
             });
@@ -197,6 +200,10 @@ export default function LeaderboardPage() {
                     <div className="flex items-center gap-1.5">
                         <BookCheckIcon className="h-3 w-3 text-teal-500" />
                         <span className="font-semibold">{user.subjectSprintHighScore || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Bird className="h-3 w-3 text-sky-500" />
+                        <span className="font-semibold">{user.flappyMindHighScore || 0}</span>
                     </div>
                 </div>
             )
