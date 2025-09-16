@@ -3,15 +3,13 @@
 
 import { useEffect, useRef } from 'react';
 
-export function useVisibilityChange(onHidden: () => void) {
-  const onHiddenRef = useRef(onHidden);
-  onHiddenRef.current = onHidden;
+export function useVisibilityChange(onVisibilityChange: () => void) {
+  const callbackRef = useRef(onVisibilityChange);
+  callbackRef.current = onVisibilityChange;
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden') {
-        onHiddenRef.current();
-      }
+      callbackRef.current();
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);

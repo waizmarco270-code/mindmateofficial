@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { useBeforeunload } from 'react-beforeunload';
 import { LoginWall } from '@/components/ui/login-wall';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useVisibilityChange } from '@/hooks/use-visibility-change';
 
 interface FocusSlot {
     duration: number; // in seconds
@@ -20,12 +21,12 @@ interface FocusSlot {
 }
 
 const focusSlots: FocusSlot[] = [
-    { duration: 3600, label: '1 Hour', reward: 2 },
-    { duration: 7200, label: '2 Hours', reward: 5 },
-    { duration: 10800, label: '3 Hours', reward: 10 },
+    { duration: 3600, label: '1 Hour', reward: 5 },
+    { duration: 7200, label: '2 Hours', reward: 20 },
+    { duration: 10800, label: '3 Hours', reward: 30 },
 ];
 
-const PENALTY = 10;
+const PENALTY = 20;
 export const FOCUS_PENALTY_SESSION_KEY = 'focusPenaltyApplied';
 
 const quotes = [
@@ -54,39 +55,52 @@ export default function FocusModePage() {
     const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
 
     const audioRef = useRef<HTMLAudioElement>(null);
-    const penaltyApplicator = useRef<() => void>();
-    
+    const penaltyAppliedRef = useRef(false);
+
+    const handleStopSession = (isAutoPenalty = false) => {
+        if (!user || penaltyAppliedRef.current) return;
+        
+        penaltyAppliedRef.current = true; // Prevent multiple penalties
+        addCreditsToUser(user.id, -PENALTY);
+        
+        const penaltyMessage = `You have been penalized ${PENALTY} credits for leaving an active focus session.`;
+
+        if (isAutoPenalty) {
+             if (typeof window !== 'undefined') {
+                sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, penaltyMessage);
+                // We need to reload to show the toast on another page, as this component will unmount.
+                window.location.reload(); 
+             }
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Session Stopped Early',
+                description: penaltyMessage,
+            });
+        }
+
+        setIsSessionActive(false);
+        setActiveSlot(null);
+        setTimeLeft(0);
+        if(audioRef.current) audioRef.current.pause();
+    };
+
     // Unload penalty logic
     useBeforeunload(event => {
         if (isSessionActive && !isPaused) {
+            // This will show the browser's native "Are you sure you want to leave?" prompt.
+            // The actual penalty is handled by useVisibilityChange for reliability.
             event.preventDefault();
         }
     });
-     useEffect(() => {
-        penaltyApplicator.current = () => {
-            if (user && isSessionActive && activeSlot) {
-                addCreditsToUser(user.id, -PENALTY);
-                 if (typeof window !== 'undefined') {
-                    sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, `You have been penalized ${PENALTY} credits for leaving an active focus session.`);
-                 }
-            }
-        };
-    });
-    useEffect(() => {
-        const handleBeforeUnload = () => {
-            penaltyApplicator.current?.();
-        };
 
-        if (isSessionActive && !isPaused) {
-            window.addEventListener('beforeunload', handleBeforeUnload);
+    // More reliable penalty system for tab switching or backgrounding
+    useVisibilityChange(() => {
+        if (isSessionActive && !isPaused && document.visibilityState === 'hidden') {
+            handleStopSession(true);
         }
-
-        return () => {
-            window.removeEventListener('beforeunload', handleBeforeUnload);
-        };
-    }, [isSessionActive, isPaused]);
-
-
+    });
+    
     // Timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
@@ -139,24 +153,10 @@ export default function FocusModePage() {
         setTimeLeft(slot.duration);
         setIsSessionActive(true);
         setIsPaused(false);
+        penaltyAppliedRef.current = false; // Reset penalty lock
         if (audioRef.current && !isMuted) {
             audioRef.current.play().catch(e => console.error("Audio play failed:", e));
         }
-    };
-
-    const handleStopSession = () => {
-        if (user) {
-            addCreditsToUser(user.id, -PENALTY);
-            toast({
-                variant: 'destructive',
-                title: 'Session Stopped Early',
-                description: `You have been penalized ${PENALTY} credits.`,
-            });
-        }
-        setIsSessionActive(false);
-        setActiveSlot(null);
-        setTimeLeft(0);
-        if(audioRef.current) audioRef.current.pause();
     };
 
     const togglePause = () => {
@@ -237,7 +237,7 @@ export default function FocusModePage() {
                         </div>
                         
                         <div className="w-full flex justify-between items-center">
-                             <Button variant="destructive" onClick={handleStopSession}>
+                             <Button variant="destructive" onClick={() => handleStopSession(false)}>
                                 <X className="mr-2 h-4 w-4"/> Stop Session
                             </Button>
                             <div className="flex items-center gap-2">
@@ -309,4 +309,3 @@ export default function FocusModePage() {
         </div>
     );
 }
-
