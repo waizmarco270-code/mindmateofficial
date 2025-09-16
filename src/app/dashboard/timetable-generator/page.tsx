@@ -212,17 +212,17 @@ export default function TimetableGeneratorPage() {
              <div className="space-y-6">
                 <div className="space-y-3">
                     <Label className="text-base">Are you a regular school/college student or a dummy school student?</Label>
-                    <RadioGroup value={studentType} onValueChange={(v: any) => setStudentType(v)} className="flex gap-4">
-                        <Label htmlFor="s-regular" className="flex-1 p-4 border rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary"><RadioGroupItem value="regular" id="s-regular" className="sr-only"/>Regular Student</Label>
-                        <Label htmlFor="s-dummy" className="flex-1 p-4 border rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary"><RadioGroupItem value="dummy" id="s-dummy" className="sr-only"/>Dummy School</Label>
+                    <RadioGroup value={studentType} onValueChange={(v: any) => setStudentType(v)} className="flex flex-col sm:flex-row gap-4">
+                        <Label htmlFor="s-regular" className="flex-1 p-4 border-2 rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-all"><RadioGroupItem value="regular" id="s-regular" className="sr-only"/>Regular Student</Label>
+                        <Label htmlFor="s-dummy" className="flex-1 p-4 border-2 rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-all"><RadioGroupItem value="dummy" id="s-dummy" className="sr-only"/>Dummy School</Label>
                     </RadioGroup>
                 </div>
                  <div className="space-y-3">
                     <Label className="text-base">Which class are you in?</Label>
-                    <RadioGroup value={classType} onValueChange={(v: any) => setClassType(v)} className="grid grid-cols-3 gap-4">
-                        <Label htmlFor="c-9-10" className="p-4 border rounded-lg cursor-pointer text-center has-[:checked]:bg-primary/10 has-[:checked]:border-primary"><RadioGroupItem value="9-10" id="c-9-10" className="sr-only"/>Class 9-10</Label>
-                        <Label htmlFor="c-11-12" className="p-4 border rounded-lg cursor-pointer text-center has-[:checked]:bg-primary/10 has-[:checked]:border-primary"><RadioGroupItem value="11-12" id="c-11-12" className="sr-only"/>Class 11-12</Label>
-                        <Label htmlFor="c-dropper" className="p-4 border rounded-lg cursor-pointer text-center has-[:checked]:bg-primary/10 has-[:checked]:border-primary"><RadioGroupItem value="dropper" id="c-dropper" className="sr-only"/>Dropper</Label>
+                    <RadioGroup value={classType} onValueChange={(v: any) => setClassType(v)} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <Label htmlFor="c-9-10" className="p-4 border-2 rounded-lg cursor-pointer text-center has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-all"><RadioGroupItem value="9-10" id="c-9-10" className="sr-only"/>Class 9-10</Label>
+                        <Label htmlFor="c-11-12" className="p-4 border-2 rounded-lg cursor-pointer text-center has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-all"><RadioGroupItem value="11-12" id="c-11-12" className="sr-only"/>Class 11-12</Label>
+                        <Label htmlFor="c-dropper" className="p-4 border-2 rounded-lg cursor-pointer text-center has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-all"><RadioGroupItem value="dropper" id="c-dropper" className="sr-only"/>Dropper</Label>
                     </RadioGroup>
                 </div>
             </div>
@@ -235,7 +235,7 @@ export default function TimetableGeneratorPage() {
                 <h3 className="text-2xl font-bold">Your Daily Routine</h3>
             </div>
             <div className="space-y-6">
-                <div className="grid grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                     <div className="space-y-2"><Label htmlFor="wake-up">Wake Up Time</Label><Input id="wake-up" type="time" value={wakeUp} onChange={e => setWakeUp(e.target.value)}/></div>
                     <div className="space-y-2"><Label htmlFor="sleep">Sleep Time</Label><Input id="sleep" type="time" value={sleep} onChange={e => setSleep(e.target.value)}/></div>
                 </div>
@@ -266,17 +266,17 @@ export default function TimetableGeneratorPage() {
             </div>
             <div className="space-y-4">
                 {subjects.map((s, i) => (
-                    <div key={i} className="grid grid-cols-12 gap-2 items-center">
-                        <Input className="col-span-6" placeholder={`Subject ${i+1}`} value={s.name} onChange={e => handleSubjectChange(i, 'name', e.target.value)} />
-                        <RadioGroup value={s.difficulty} onValueChange={(v: any) => handleSubjectChange(i, 'difficulty', v)} className="col-span-5 flex gap-1">
-                            <Label htmlFor={`d-${i}-e`} className="text-xs p-2 border rounded-md cursor-pointer has-[:checked]:bg-green-500/20 has-[:checked]:border-green-500">
+                    <div key={i} className="grid grid-cols-1 md:grid-cols-12 gap-2 items-center">
+                        <Input className="md:col-span-6" placeholder={`Subject ${i+1}`} value={s.name} onChange={e => handleSubjectChange(i, 'name', e.target.value)} />
+                        <RadioGroup value={s.difficulty} onValueChange={(v: any) => handleSubjectChange(i, 'difficulty', v)} className="md:col-span-5 flex gap-1 justify-center md:justify-start mt-2 md:mt-0">
+                            <Label htmlFor={`d-${i}-e`} className="text-xs px-3 py-2 border rounded-md cursor-pointer has-[:checked]:bg-green-500/20 has-[:checked]:border-green-500 has-[:checked]:text-green-700 dark:has-[:checked]:text-green-300">
                                 <RadioGroupItem value="easy" id={`d-${i}-e`} className="sr-only"/>Easy</Label>
-                             <Label htmlFor={`d-${i}-m`} className="text-xs p-2 border rounded-md cursor-pointer has-[:checked]:bg-yellow-500/20 has-[:checked]:border-yellow-500">
+                             <Label htmlFor={`d-${i}-m`} className="text-xs px-3 py-2 border rounded-md cursor-pointer has-[:checked]:bg-yellow-500/20 has-[:checked]:border-yellow-500 has-[:checked]:text-yellow-700 dark:has-[:checked]:text-yellow-300">
                                 <RadioGroupItem value="medium" id={`d-${i}-m`} className="sr-only"/>Medium</Label>
-                             <Label htmlFor={`d-${i}-h`} className="text-xs p-2 border rounded-md cursor-pointer has-[:checked]:bg-red-500/20 has-[:checked]:border-red-500">
+                             <Label htmlFor={`d-${i}-h`} className="text-xs px-3 py-2 border rounded-md cursor-pointer has-[:checked]:bg-red-500/20 has-[:checked]:border-red-500 has-[:checked]:text-red-700 dark:has-[:checked]:text-red-300">
                                 <RadioGroupItem value="hard" id={`d-${i}-h`} className="sr-only"/>Hard</Label>
                         </RadioGroup>
-                        <Button variant="ghost" size="icon" onClick={() => removeSubject(i)} className="col-span-1"><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                        <Button variant="ghost" size="icon" onClick={() => removeSubject(i)} className="md:col-span-1 ml-auto"><Trash2 className="h-4 w-4 text-destructive"/></Button>
                     </div>
                 ))}
             </div>
@@ -297,9 +297,9 @@ export default function TimetableGeneratorPage() {
                 </div>
                  <div className="space-y-3">
                     <Label className="text-base">Are you a morning person or a night owl?</Label>
-                    <RadioGroup value={studyHabit} onValueChange={(v:any) => setStudyHabit(v)} className="grid grid-cols-2 gap-4">
-                        <Label htmlFor="h-morning" className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary"><Sun/><RadioGroupItem value="morning" id="h-morning" className="sr-only"/>Morning Person</Label>
-                        <Label htmlFor="h-night" className="flex items-center gap-3 p-4 border rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary"><Moon/><RadioGroupItem value="night" id="h-night" className="sr-only"/>Night Owl</Label>
+                    <RadioGroup value={studyHabit} onValueChange={(v:any) => setStudyHabit(v)} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <Label htmlFor="h-morning" className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-all"><Sun/><RadioGroupItem value="morning" id="h-morning" className="sr-only"/>Morning Person</Label>
+                        <Label htmlFor="h-night" className="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-all"><Moon/><RadioGroupItem value="night" id="h-night" className="sr-only"/>Night Owl</Label>
                     </RadioGroup>
                 </div>
                 <div className="space-y-3">
