@@ -135,11 +135,11 @@
   }
 
   @keyframes flicker {
-    0%, 100% { text-shadow: 0 0 5px #f97316, 0 0 10px #f97316, 0 0 15px #f97316; }
-    20% { text-shadow: 0 0 6px #ea580c, 0 0 12px #ea580c, 0 0 18px #ea580c; }
-    40% { text-shadow: 0 0 4px #f97316, 0 0 8px #f97316; }
-    60% { text-shadow: 0 0 7px #ea580c, 0 0 14px #ea580c; }
-    80% { text-shadow: 0 0 5px #f97316, 0 0 10px #f97316, 0 0 20px #f97316; }
+    0%, 100% { filter: drop-shadow(0 0 3px #fb923c) drop-shadow(0 0 6px #f97316); }
+    20% { filter: drop-shadow(0 0 4px #fdba74) drop-shadow(0 0 8px #ea580c); }
+    40% { filter: drop-shadow(0 0 2px #fb923c) drop-shadow(0 0 5px #f97316); }
+    60% { filter: drop-shadow(0 0 5px #fdba74) drop-shadow(0 0 10px #ea580c); }
+    80% { filter: drop-shadow(0 0 3px #fb923c) drop-shadow(0 0 7px #f97316); }
   }
 
   @keyframes gold-shine {
