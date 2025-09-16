@@ -9,7 +9,7 @@ import SidebarContent from '@/components/dashboard/sidebar-content';
 import MobileNav from '@/components/dashboard/mobile-nav';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { FOCUS_PENALTY_SESSION_KEY } from './tracker/page';
+import { FOCUS_SESSION_ACTIVE_KEY, FOCUS_PENALTY_SESSION_KEY } from './tracker/page';
 import { useToast } from '@/hooks/use-toast';
 import { AppDataProvider } from '@/hooks/use-admin';
 import { UnreadMessagesProvider } from '@/hooks/use-unread';
@@ -33,17 +33,19 @@ export default function DashboardLayout({
   }, [isMobile]);
 
   React.useEffect(() => {
-      if (typeof window !== 'undefined') {
-          const penaltyMessage = sessionStorage.getItem(FOCUS_PENALTY_SESSION_KEY);
-          if (penaltyMessage) {
-              toast({
-                  variant: 'destructive',
-                  title: 'Session Stopped Early',
-                  description: penaltyMessage,
-              });
-              sessionStorage.removeItem(FOCUS_PENALTY_SESSION_KEY);
-          }
+    if (typeof window !== 'undefined') {
+      // Logic to show penalty toast after navigation
+      const penaltyMessage = sessionStorage.getItem(FOCUS_PENALTY_SESSION_KEY);
+      if (penaltyMessage) {
+        toast({
+          variant: 'destructive',
+          title: 'Session Stopped Early',
+          description: penaltyMessage,
+          duration: 10000,
+        });
+        sessionStorage.removeItem(FOCUS_PENALTY_SESSION_KEY);
       }
+    }
   }, [pathname, toast]);
 
   return (

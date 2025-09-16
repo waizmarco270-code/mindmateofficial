@@ -13,6 +13,7 @@ import { useBeforeunload } from 'react-beforeunload';
 import { LoginWall } from '@/components/ui/login-wall';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useVisibilityChange } from '@/hooks/use-visibility-change';
+import { usePathname } from 'next/navigation';
 
 interface FocusSlot {
     duration: number; // in seconds
@@ -28,6 +29,8 @@ const focusSlots: FocusSlot[] = [
 
 const PENALTY = 20;
 export const FOCUS_PENALTY_SESSION_KEY = 'focusPenaltyApplied';
+export const FOCUS_SESSION_ACTIVE_KEY = 'focusSessionActive';
+
 
 const quotes = [
     "The secret of getting ahead is getting started.",
@@ -46,6 +49,7 @@ export default function FocusModePage() {
     const { user, isSignedIn } = useUser();
     const { currentUserData, addCreditsToUser, incrementFocusSessions } = useUsers();
     const { toast } = useToast();
+    const pathname = usePathname();
 
     const [activeSlot, setActiveSlot] = useState<FocusSlot | null>(null);
     const [timeLeft, setTimeLeft] = useState(0);
@@ -57,39 +61,42 @@ export default function FocusModePage() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const penaltyAppliedRef = useRef(false);
 
-    const handleStopSession = (isAutoPenalty = false) => {
+    const applyPenalty = useCallback(() => {
         if (!user || penaltyAppliedRef.current) return;
         
-        penaltyAppliedRef.current = true; // Prevent multiple penalties
+        penaltyAppliedRef.current = true; 
         addCreditsToUser(user.id, -PENALTY);
         
         const penaltyMessage = `You have been penalized ${PENALTY} credits for leaving an active focus session.`;
 
-        if (isAutoPenalty) {
-             if (typeof window !== 'undefined') {
-                sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, penaltyMessage);
-                // We need to reload to show the toast on another page, as this component will unmount.
-                window.location.reload(); 
-             }
-        } else {
-            toast({
-                variant: 'destructive',
-                title: 'Session Stopped Early',
-                description: penaltyMessage,
-            });
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, penaltyMessage);
+            sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
         }
 
+    }, [user, addCreditsToUser]);
+
+
+    const handleStopSession = () => {
+        applyPenalty();
         setIsSessionActive(false);
         setActiveSlot(null);
         setTimeLeft(0);
         if(audioRef.current) audioRef.current.pause();
+        if (typeof window !== 'undefined') {
+            sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
+        }
+        toast({
+            variant: 'destructive',
+            title: 'Session Stopped Early',
+            description: `You have been penalized ${PENALTY} credits.`,
+        });
     };
 
-    // Unload penalty logic
+    // Unload penalty logic (for closing tab/browser)
     useBeforeunload(event => {
         if (isSessionActive && !isPaused) {
-            // This will show the browser's native "Are you sure you want to leave?" prompt.
-            // The actual penalty is handled by useVisibilityChange for reliability.
+            applyPenalty();
             event.preventDefault();
         }
     });
@@ -97,7 +104,9 @@ export default function FocusModePage() {
     // More reliable penalty system for tab switching or backgrounding
     useVisibilityChange(() => {
         if (isSessionActive && !isPaused && document.visibilityState === 'hidden') {
-            handleStopSession(true);
+            applyPenalty();
+            // Since we can't guarantee a reload will work here, we just apply the penalty.
+            // The toast will be shown if they navigate back to the app via the layout.
         }
     });
     
@@ -122,12 +131,25 @@ export default function FocusModePage() {
             setIsSessionActive(false);
             setActiveSlot(null);
             if(audioRef.current) audioRef.current.pause();
+            if (typeof window !== 'undefined') {
+                sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
+            }
         }
 
         return () => {
             if (interval) clearInterval(interval);
         };
     }, [isSessionActive, isPaused, timeLeft, user, activeSlot, addCreditsToUser, incrementFocusSessions, toast]);
+    
+     // Logic to handle navigation away from the page
+    useEffect(() => {
+        if (typeof window !== 'undefined' && isSessionActive && !isPaused) {
+            const isActive = sessionStorage.getItem(FOCUS_SESSION_ACTIVE_KEY);
+            if (isActive && pathname !== '/dashboard/tracker') {
+                applyPenalty();
+            }
+        }
+    }, [pathname, isSessionActive, isPaused, applyPenalty]);
     
     // Quote rotation logic
     useEffect(() => {
@@ -157,12 +179,24 @@ export default function FocusModePage() {
         if (audioRef.current && !isMuted) {
             audioRef.current.play().catch(e => console.error("Audio play failed:", e));
         }
+        if (typeof window !== 'undefined') {
+            sessionStorage.setItem(FOCUS_SESSION_ACTIVE_KEY, 'true');
+        }
     };
 
     const togglePause = () => {
-        setIsPaused(!isPaused);
+        const newPausedState = !isPaused;
+        setIsPaused(newPausedState);
         if(audioRef.current) {
-            isPaused ? audioRef.current.play() : audioRef.current.pause();
+            newPausedState ? audioRef.current.pause() : audioRef.current.play();
+        }
+        // Update session storage based on pause state
+        if (typeof window !== 'undefined') {
+            if (newPausedState) {
+                sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
+            } else {
+                sessionStorage.setItem(FOCUS_SESSION_ACTIVE_KEY, 'true');
+            }
         }
     }
     
@@ -237,7 +271,7 @@ export default function FocusModePage() {
                         </div>
                         
                         <div className="w-full flex justify-between items-center">
-                             <Button variant="destructive" onClick={() => handleStopSession(false)}>
+                             <Button variant="destructive" onClick={handleStopSession}>
                                 <X className="mr-2 h-4 w-4"/> Stop Session
                             </Button>
                             <div className="flex items-center gap-2">
@@ -301,7 +335,7 @@ export default function FocusModePage() {
                     <div>
                         <h4 className="font-bold text-destructive">Important: The Penalty Rule</h4>
                         <p className="text-sm text-destructive/80">
-                            If you start a session and decide to stop it before the timer is complete, or if you leave this page, you will be penalized <span className="font-bold">{PENALTY} credits.</span> This is to encourage disciplined study habits.
+                            If you start a session and decide to stop it before the timer is complete, or if you navigate to another page or browser tab, you will be penalized <span className="font-bold">{PENALTY} credits.</span> This is to encourage disciplined study habits.
                         </p>
                     </div>
                 </div>
