@@ -47,7 +47,7 @@ export default function Header() {
                 <Popover>
                     <PopoverTrigger asChild>
                          <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-                            <Flame className="h-5 w-5 text-orange-500" />
+                            <Flame className="h-5 w-5 text-orange-500 animate-pulse [text-shadow:0_0_8px_#f97316]" />
                             <span>{streak} <span className="hidden sm:inline">Day Streak</span></span>
                         </div>
                     </PopoverTrigger>
@@ -73,7 +73,7 @@ export default function Header() {
                 <Popover>
                     <PopoverTrigger asChild>
                         <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-                            <Medal className="h-5 w-5 text-yellow-500" />
+                            <Medal className="h-5 w-5 text-amber-500 [text-shadow:0_0_8px_#f59e0b]" />
                             <span>{credits} <span className="hidden sm:inline">Credits</span></span>
                         </div>
                     </PopoverTrigger>
@@ -91,7 +91,7 @@ export default function Header() {
                                     <li><span className="font-semibold text-foreground">+1 Credit</span> for completing all daily tasks.</li>
                                     <li><span className="font-semibold text-foreground">+5 Credits</span> for a perfect quiz score.</li>
                                     <li><span className="font-semibold text-foreground">Up to +10 Credits</span> for completing focus sessions.</li>
-                                    <li><span className="font-semibold text-foreground">Spin the Wheel</span> for a chance to win big!</li>
+                                    <li><span className="font-semibold text-foreground">Play games</span> in the Reward Zone for a chance to win big!</li>
                                 </ul>
                             </div>
                             <p className="text-xs text-amber-500 font-semibold text-center pt-2">Use them wisely!</p>
