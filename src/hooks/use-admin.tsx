@@ -401,11 +401,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             return snapshot.docs.map((doc: any) => {
                 const data = doc.data();
                 const createdAt = data.createdAt;
-                return {
-                    id: doc.id,
-                    ...data,
-                    createdAt: createdAt?.toDate ? createdAt.toDate() : (createdAt ? new Date(createdAt) : new Date()),
-                } as T;
+                const date = (createdAt?.toDate) ? createdAt.toDate() : (createdAt ? new Date(createdAt) : new Date());
+                return { id: doc.id, ...data, createdAt: date } as T;
             });
         };
         const processTicketSnapshot = (snapshot: any): SupportTicket[] => {
@@ -440,7 +437,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 const pollDoc = snapshot.docs[0];
                 const data = pollDoc.data();
                 const createdAt = data.createdAt;
-                setActivePoll({ id: pollDoc.id, ...data, createdAt: createdAt?.toDate ? createdAt.toDate() : new Date() } as Poll);
+                const date = (createdAt?.toDate) ? createdAt.toDate() : (createdAt ? new Date(createdAt) : new Date());
+                setActivePoll({ id: pollDoc.id, ...data, createdAt: date } as Poll);
             } else {
                 setActivePoll(null);
             }

@@ -30,6 +30,7 @@ import {
   Timer,
   Wrench,
   Swords,
+  Crown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -66,6 +67,10 @@ const otherNav = [
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
 ];
 
+const premiumNav = [
+    { href: '/dashboard/premium/elite-lounge', icon: Crown, label: 'Elite Lounge', glow: 'text-yellow-400' },
+];
+
 const adminNav = [
     { href: '/dashboard/admin', icon: Shield, label: 'Admin Panel' },
 ]
@@ -93,7 +98,10 @@ export default function SidebarContent() {
   const pathname = usePathname();
   const { hasUnread, hasGlobalUnread } = useUnreadMessages();
   const { hasNewQuiz } = useNewQuiz();
-  const { isAdmin, isSuperAdmin } = useAdmin();
+  const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
+  const isVip = currentUserData?.isVip;
+  const isGM = currentUserData?.isGM;
+
 
   const isActive = (href: string) => {
     return (href === '/dashboard' && pathname === href) || (href !== '/dashboard' && pathname.startsWith(href));
@@ -143,7 +151,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'study-tools', 'other-tools', 'admin-tools']}
+          defaultValue={['main-tools', 'study-tools', 'other-tools', 'admin-tools', 'premium-tools']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -173,6 +181,17 @@ export default function SidebarContent() {
             </AccordionContent>
           </AccordionItem>
           
+          {(isVip || isGM || isAdmin || isSuperAdmin) && (
+             <AccordionItem value="premium-tools" className="border-b-0">
+               <AccordionTrigger className="px-4 py-2 hover:no-underline text-yellow-400/80 text-sm font-semibold tracking-tight">
+                Premium
+              </AccordionTrigger>
+              <AccordionContent className="px-4 pb-2">
+                {renderNavLinks(premiumNav as any)}
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
           {(isAdmin || isSuperAdmin) && (
             <AccordionItem value="admin-tools" className="border-b-0">
                <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
