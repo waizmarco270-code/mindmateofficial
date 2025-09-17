@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, TestTube } from 'lucide-react';
+import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,14 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { useTimeTracker, PomodoroSessionData } from '@/hooks/use-time-tracker';
+import { useUser } from '@clerk/nextjs';
+import { useUsers } from '@/hooks/use-admin';
+import { useToast } from '@/hooks/use-toast';
+import { useBeforeunload } from 'react-beforeunload';
+import { useVisibilityChange } from '@/hooks/use-visibility-change';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -47,16 +55,24 @@ const defaultSettings: PomodoroSettings = {
   sound: 'beep',
 };
 
+const POMODORO_PENALTY = 10;
+export const POMODORO_PENALTY_SESSION_KEY = 'pomodoroPenaltyApplied';
+export const POMODORO_SESSION_ACTIVE_KEY = 'pomodoroSessionActive';
+
 export function PomodoroTimer() {
   const [settings, setSettings] = useLocalStorage<PomodoroSettings>('pomodoroSettings', defaultSettings);
   const [mode, setMode] = useState<TimerMode>('focus');
   const [timeLeft, setTimeLeft] = useState(settings.focus * 60);
   const [isActive, setIsActive] = useState(false);
   const [isMuted, setIsMuted] = useLocalStorage('pomodoroMuted', false);
-  const [sessionsCompleted, setSessionsCompleted] = useState(0);
+  const [sessionsCompleted, setSessionsCompleted] = useLocalStorage('pomodoroSessionsCompleted', 0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
   const [isMusicSheetOpen, setIsMusicSheetOpen] = useState(false);
+  const { user } = useUser();
+  const { addPomodoroSession } = useTimeTracker();
+  const { addCreditsToUser, currentUserData } = useUsers();
+  const { toast } = useToast();
   
   const [tempSettings, setTempSettings] = useState(settings);
   
@@ -64,11 +80,47 @@ export function PomodoroTimer() {
   const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroSelectedTheme', pomodoroThemes.nature[0]);
   const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0]>('pomodoroSelectedMusic', musicTracks[0]);
 
-
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
-  
+  const penaltyAppliedRef = useRef(false);
+
+  const applyPenalty = useCallback(() => {
+    if (!user || penaltyAppliedRef.current || !isActive) return;
+
+    penaltyAppliedRef.current = true;
+    addCreditsToUser(user.id, -POMODORO_PENALTY);
+    const penaltyMessage = `You have been penalized ${POMODORO_PENALTY} credits for leaving an active Pomodoro session.`;
+
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem(POMODORO_PENALTY_SESSION_KEY, penaltyMessage);
+      sessionStorage.removeItem(POMODORO_SESSION_ACTIVE_KEY);
+    }
+    
+    toast({
+      variant: 'destructive',
+      title: 'Session Interrupted',
+      description: penaltyMessage,
+    });
+    
+    // Immediately stop the timer locally
+    setIsActive(false);
+    setTimeLeft(settings[mode] * 60);
+    if(musicAudioRef.current) musicAudioRef.current.pause();
+
+  }, [user, addCreditsToUser, toast, isActive, settings, mode]);
+
+  useBeforeunload(event => {
+    if (isActive) applyPenalty();
+  });
+
+  useVisibilityChange(() => {
+    if (isActive && document.visibilityState === 'hidden') {
+      applyPenalty();
+    }
+  });
+
+
   const playSound = useCallback((type: 'tick' | 'notification', soundOverride?: PomodoroSettings['sound']) => {
     if (isMuted || typeof window === 'undefined') return;
     if (!audioContextRef.current) {
@@ -87,22 +139,20 @@ export function PomodoroTimer() {
     
     const soundToPlay = soundOverride || settings.sound;
 
-    if (type === 'tick') {
-        // Tick sound is disabled as it's often too much. Kept for potential future use.
-    } else { // notification
+    if (type === 'notification') {
         oscillator.type = 'sine';
         const now = audioContextRef.current.currentTime;
         if (soundToPlay === 'beep') {
-            oscillator.frequency.setValueAtTime(659.25, now); // E5
-            oscillator.frequency.linearRampToValueAtTime(440, now + 0.1); // A4
+            oscillator.frequency.setValueAtTime(659.25, now);
+            oscillator.frequency.linearRampToValueAtTime(440, now + 0.1);
             gainNode.gain.setValueAtTime(0.3, now);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
         } else if (soundToPlay === 'chime') {
-            oscillator.frequency.setValueAtTime(523.25, now); // C5
+            oscillator.frequency.setValueAtTime(523.25, now);
             gainNode.gain.setValueAtTime(0.4, now);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
         } else { // bell
-            oscillator.frequency.setValueAtTime(783.99, now); // G5
+            oscillator.frequency.setValueAtTime(783.99, now);
             gainNode.gain.setValueAtTime(0.35, now);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1);
         }
@@ -111,10 +161,13 @@ export function PomodoroTimer() {
     }
   }, [isMuted, settings.sound]);
 
-
   const resetTimer = useCallback((isManualReset = false) => {
     setIsActive(false);
     if (timerRef.current) clearInterval(timerRef.current);
+     if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(POMODORO_SESSION_ACTIVE_KEY);
+    }
+    if (musicAudioRef.current) musicAudioRef.current.pause();
     
     if (isManualReset) {
       setTimeLeft(settings[mode] * 60);
@@ -138,7 +191,7 @@ export function PomodoroTimer() {
     
     setMode(nextMode);
     setTimeLeft(nextTime);
-  }, [mode, sessionsCompleted, settings]);
+  }, [mode, sessionsCompleted, setSessionsCompleted, settings]);
 
 
   useEffect(() => {
@@ -149,8 +202,16 @@ export function PomodoroTimer() {
         }, 1000);
       }
     } else if (isActive && timeLeft === 0) {
-      playSound('notification');
-      resetTimer();
+        playSound('notification');
+        
+        // Save the completed session
+        const sessionData: PomodoroSessionData = {
+            type: mode,
+            duration: settings[mode] * 60,
+        };
+        addPomodoroSession(sessionData);
+
+        resetTimer();
     } else if (!isActive && timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
@@ -158,7 +219,7 @@ export function PomodoroTimer() {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isActive, timeLeft, resetTimer, playSound]);
+  }, [isActive, timeLeft, resetTimer, playSound, addPomodoroSession, mode, settings]);
   
   useEffect(() => {
     if (!isActive) {
@@ -167,6 +228,20 @@ export function PomodoroTimer() {
   }, [settings, mode, isActive]);
 
   const handleToggle = () => {
+    if (isActive) { // User is trying to stop it
+      applyPenalty();
+      return;
+    }
+    // Starting a new session
+    if (currentUserData && currentUserData.credits < POMODORO_PENALTY) {
+        toast({
+            variant: 'destructive',
+            title: 'Insufficient Credits for Penalty',
+            description: `You need at least ${POMODORO_PENALTY} credits to start a session in case of a penalty.`
+        });
+        return;
+    }
+
     if (typeof window !== 'undefined' && !audioContextRef.current) {
         try {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -175,7 +250,12 @@ export function PomodoroTimer() {
     if(audioContextRef.current?.state === 'suspended') {
         audioContextRef.current.resume();
     }
-    setIsActive(prev => !prev);
+    
+    setIsActive(true);
+    penaltyAppliedRef.current = false;
+    if (typeof window !== 'undefined') {
+        sessionStorage.setItem(POMODORO_SESSION_ACTIVE_KEY, 'true');
+    }
   };
   
    // Music playback control
@@ -248,6 +328,29 @@ export function PomodoroTimer() {
                 </motion.div>
             )}
         </AnimatePresence>
+        
+        <div className="absolute top-4 right-4 z-20">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="text-amber-400 hover:text-amber-300 relative">
+                        <AlertTriangle className="h-6 w-6 animate-pulse"/>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-50"></span>
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                   <div className="space-y-4">
+                       <h4 className="font-bold text-base flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> Penalty Rules</h4>
+                       <p className="text-sm text-muted-foreground">To encourage deep focus, a penalty system is in place.</p>
+                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
+                           <li><span className="font-bold text-destructive">No Pausing:</span> Once started, a session must be completed.</li>
+                           <li><span className="font-bold text-destructive">Navigation Penalty:</span> Navigating away from this page, switching tabs, or closing the browser during an active session will result in a <span className="font-bold">-10 credit penalty</span>.</li>
+                       </ul>
+                   </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+
+
         <div className="flex-1 flex flex-col items-center justify-between p-4 sm:p-6 lg:p-8">
             <AnimatePresence mode="wait">
                 <motion.div
@@ -258,6 +361,9 @@ export function PomodoroTimer() {
                 className="text-center z-10 pt-16 sm:pt-0"
                 >
                     <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
+                     <div className="mt-2 text-sm font-semibold bg-black/20 rounded-full px-3 py-1 inline-block">
+                        Sessions Completed: {sessionsCompleted}
+                    </div>
                 </motion.div>
             </AnimatePresence>
             <motion.div 
@@ -303,10 +409,13 @@ export function PomodoroTimer() {
                 </Button>
 
                 <Button 
-                    className="h-20 w-40 sm:w-48 rounded-full text-2xl font-bold shadow-lg bg-white/90 text-gray-900 hover:bg-white"
+                    className={cn(
+                        "h-20 w-40 sm:w-48 rounded-full text-2xl font-bold shadow-lg text-gray-900",
+                        isActive ? "bg-red-400/90 hover:bg-red-400" : "bg-white/90 hover:bg-white"
+                    )}
                     onClick={handleToggle}
                 >
-                    {isActive ? <Pause className="h-8 w-8"/> : <Play className="h-8 w-8"/>}
+                    {isActive ? "STOP" : "START"}
                 </Button>
                 
                 <div className="flex items-center gap-2">
@@ -409,10 +518,6 @@ export function PomodoroTimer() {
                             </Button>
                         ))}
                     </div>
-                     <Button variant="secondary" size="icon" onClick={() => playSound('notification', tempSettings.sound)}>
-                        <TestTube className="h-5 w-5"/>
-                        <span className="sr-only">Test Sound</span>
-                    </Button>
                 </div>
               </div>
           </div>

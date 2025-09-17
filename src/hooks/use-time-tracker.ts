@@ -30,11 +30,22 @@ export interface Subject {
 
 export interface TimeSession {
     id: string; // doc id
-    subjectId: string;
+    userId: string;
     subjectName: string;
     startTime: string; // ISO string
     endTime: string; // ISO string
 }
+
+export interface PomodoroSession {
+  id: string;
+  userId: string;
+  type: 'focus' | 'shortBreak' | 'longBreak';
+  duration: number; // in seconds
+  completedAt: string; // ISO string
+}
+
+export type PomodoroSessionData = Omit<PomodoroSession, 'id' | 'userId' | 'completedAt'>;
+
 
 interface TimeTrackerState {
   subjects: Subject[];
@@ -55,6 +66,7 @@ export function useTimeTracker() {
     currentSessionStart: null
   });
   const [sessions, setSessions] = useState<TimeSession[]>([]);
+  const [pomodoroSessions, setPomodoroSessions] = useState<PomodoroSession[]>([]);
   const [loading, setLoading] = useState(true);
 
   const subjectsDocRef = useMemo(() => {
@@ -63,8 +75,11 @@ export function useTimeTracker() {
   }, [user]);
   
   const allSessionsColGroupRef = useMemo(() => {
-    // We need to query the collection group to get sessions from ALL users for the leaderboard
     return collectionGroup(db, 'timeTrackerSessions');
+  }, []);
+  
+  const allPomodoroSessionsColGroupRef = useMemo(() => {
+    return collectionGroup(db, 'pomodoroSessions');
   }, []);
 
   // Subscribe to subjects for the current user
@@ -106,20 +121,35 @@ export function useTimeTracker() {
     return () => unsubscribe();
   }, [allSessionsColGroupRef]);
 
-  
-   // Calculate today's time for the current user's subjects
+  // Subscribe to all pomodoro sessions from all users (for leaderboard)
+  useEffect(() => {
+    const q = query(allPomodoroSessionsColGroupRef);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const allPomSessions = snapshot.docs.map(doc => {
+            return {
+                ...doc.data(),
+                id: doc.id,
+            } as PomodoroSession;
+        });
+        setPomodoroSessions(allPomSessions);
+    });
+    return () => unsubscribe();
+  }, [allPomodoroSessionsColGroupRef]);
+
+
+  // Calculate today's time for the current user's subjects
   useEffect(() => {
     if (!user) return;
     
     const todaySessions = sessions.filter(s => 
-        s.subjectId === user.id && 
+        s.userId === user.id && 
         s.startTime.startsWith(todayString)
     );
       
     setState(prev => {
       const newSubjects = prev.subjects.map(s => {
         const subjectTime = todaySessions
-          .filter(ts => ts.subjectId === user.id) // This seems redundant but is safe
+          .filter(ts => ts.subjectName === s.name)
           .reduce((acc, ts) => acc + ((new Date(ts.endTime).getTime() - new Date(ts.startTime).getTime()) / 1000), 0);
         return {...s, timeTracked: subjectTime};
       });
@@ -154,6 +184,22 @@ export function useTimeTracker() {
     return () => clearInterval(interval);
   }, [state.activeSubjectId, state.currentSessionStart, state.subjects]);
   
+  const addPomodoroSession = useCallback(async (sessionData: PomodoroSessionData) => {
+    if (!user) return;
+    const sessionRef = collection(db, 'users', user.id, 'pomodoroSessions');
+    const completedAt = new Date().toISOString();
+    
+    const newSession: Omit<PomodoroSession, 'id'> = {
+        userId: user.id,
+        completedAt,
+        ...sessionData
+    };
+    await addDoc(sessionRef, newSession);
+    
+    const newTotalStudyTime = (currentUserData?.totalStudyTime || 0) + sessionData.duration;
+    await updateStudyTime(user.id, newTotalStudyTime);
+
+  }, [user, currentUserData, updateStudyTime]);
 
   const finishSession = useCallback(async (subjectId: string, startTime: string, endTimeOverride?: Date): Promise<number> => {
     if (!user) return 0;
@@ -168,7 +214,7 @@ export function useTimeTracker() {
     if (duration < 1) return subject.timeTracked; // Ignore very short sessions, return existing time
     
     const newSession: Omit<TimeSession, 'id'> = {
-        subjectId: user.id, // The subjectId is the ID of the user tracking time.
+        userId: user.id,
         subjectName: subject.name,
         startTime: startTime,
         endTime: endTime.toISOString()
@@ -214,7 +260,6 @@ export function useTimeTracker() {
         if (document.visibilityState === 'visible') {
             const visibleTimestamp = Date.now();
             if(visibleTimestamp - hiddenTimestamp > THIRTY_MINUTES) {
-                // Time in background exceeded 30 minutes, pause the timer
                 await handlePlayPause(state.activeSubjectId!);
             }
             window.removeEventListener('visibilitychange', handleVisibilityReturn);
@@ -262,6 +307,7 @@ export function useTimeTracker() {
   return {
     subjects: state.subjects,
     sessions,
+    pomodoroSessions,
     loading,
     activeSubjectId: state.activeSubjectId,
     activeSubjectTime,
@@ -269,6 +315,7 @@ export function useTimeTracker() {
     handlePlayPause,
     addSubject,
     updateSubject,
-    deleteSubject
+    deleteSubject,
+    addPomodoroSession
   };
 }
