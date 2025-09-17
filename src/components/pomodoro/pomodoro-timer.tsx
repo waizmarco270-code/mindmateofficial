@@ -82,6 +82,10 @@ export function PomodoroTimer() {
   const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroSelectedTheme', pomodoroThemes.nature[0]);
   const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0]>('pomodoroSelectedMusic', musicTracks[0]);
   const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('pomodoroWatchFace', 'default');
+  
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => setIsMounted(true), []);
+
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -318,6 +322,15 @@ export function PomodoroTimer() {
     digital: 'font-code text-5xl md:text-6xl font-black',
     elegant: 'font-serif text-6xl md:text-7xl font-normal'
   };
+
+
+  if (!isMounted) {
+    return (
+        <div className="absolute inset-0 z-0 flex items-center justify-center h-full w-full bg-gray-900">
+            <Loader2 className="h-10 w-10 animate-spin text-white" />
+        </div>
+    );
+  }
 
 
   return (
