@@ -14,7 +14,8 @@ import {
   increment,
   writeBatch,
   addDoc,
-  getDocs
+  getDocs,
+  collectionGroup
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { useUsers } from './use-admin';
@@ -61,12 +62,12 @@ export function useTimeTracker() {
     return doc(db, 'users', user.id, 'timeTracker', 'subjects');
   }, [user]);
   
-  const allSessionsColRef = useMemo(() => {
-    if (!user) return null;
-    return collection(db, 'users', user.id, 'timeTrackerSessions');
-  },[user])
+  const allSessionsColGroupRef = useMemo(() => {
+    // We need to query the collection group to get sessions from ALL users for the leaderboard
+    return collectionGroup(db, 'timeTrackerSessions');
+  }, []);
 
-  // Subscribe to subjects
+  // Subscribe to subjects for the current user
   useEffect(() => {
     if (!subjectsDocRef) {
       setLoading(false);
@@ -89,52 +90,43 @@ export function useTimeTracker() {
     return () => unsubscribe();
   }, [subjectsDocRef]);
   
-  // Subscribe to all time sessions for the current user (for insights page)
+  // Subscribe to all time sessions from all users (for leaderboard)
   useEffect(() => {
-    if (!allSessionsColRef) {
-      setSessions([]);
-      return;
-    };
-    
-    const q = query(allSessionsColRef);
+    const q = query(allSessionsColGroupRef);
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const userSessions = snapshot.docs.map(doc => {
-        const data = doc.data();
+      const allUserSessions = snapshot.docs.map(doc => {
         return {
-          ...data,
+          ...doc.data(),
           id: doc.id,
-          subjectId: user!.id // Set subjectId to current user's ID
         } as TimeSession;
       });
-      setSessions(userSessions);
+      setSessions(allUserSessions);
     });
     
     return () => unsubscribe();
-  }, [allSessionsColRef, user]);
+  }, [allSessionsColGroupRef]);
 
   
-   // Subscribe to today's sessions to calculate totalTimeToday
+   // Calculate today's time for the current user's subjects
   useEffect(() => {
-    if (!allSessionsColRef) return;
-    const q = query(allSessionsColRef);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allSessions = snapshot.docs.map(doc => doc.data() as TimeSession);
-      const todaySessions = allSessions.filter(s => s.startTime.startsWith(todayString));
+    if (!user) return;
+    
+    const todaySessions = sessions.filter(s => 
+        s.subjectId === user.id && 
+        s.startTime.startsWith(todayString)
+    );
       
-      setState(prev => {
-        const newSubjects = prev.subjects.map(s => {
-          const subjectTime = todaySessions
-            .filter(ts => ts.subjectId === s.id)
-            .reduce((acc, ts) => acc + ((new Date(ts.endTime).getTime() - new Date(ts.startTime).getTime()) / 1000), 0);
-          return {...s, timeTracked: subjectTime};
-        });
-        return {...prev, subjects: newSubjects};
+    setState(prev => {
+      const newSubjects = prev.subjects.map(s => {
+        const subjectTime = todaySessions
+          .filter(ts => ts.subjectId === user.id) // This seems redundant but is safe
+          .reduce((acc, ts) => acc + ((new Date(ts.endTime).getTime() - new Date(ts.startTime).getTime()) / 1000), 0);
+        return {...s, timeTracked: subjectTime};
       });
-    }, (error) => {
-        console.error("Error fetching today's sessions: ", error);
+      return {...prev, subjects: newSubjects};
     });
-    return () => unsubscribe();
-  }, [allSessionsColRef, todayString]);
+
+  }, [sessions, todayString, user]);
   
 
   const [activeSubjectTime, setActiveSubjectTime] = useState(0);
@@ -164,7 +156,8 @@ export function useTimeTracker() {
   
 
   const finishSession = useCallback(async (subjectId: string, startTime: string, endTimeOverride?: Date): Promise<number> => {
-    if (!user || !allSessionsColRef) return 0;
+    if (!user) return 0;
+    const allSessionsColRef = collection(db, 'users', user.id, 'timeTrackerSessions');
 
     const subject = state.subjects.find(s => s.id === subjectId);
     if (!subject) return 0;
@@ -175,7 +168,7 @@ export function useTimeTracker() {
     if (duration < 1) return subject.timeTracked; // Ignore very short sessions, return existing time
     
     const newSession: Omit<TimeSession, 'id'> = {
-        subjectId: subject.id,
+        subjectId: user.id, // The subjectId is the ID of the user tracking time.
         subjectName: subject.name,
         startTime: startTime,
         endTime: endTime.toISOString()
@@ -188,7 +181,7 @@ export function useTimeTracker() {
 
     return subject.timeTracked + duration;
 
-  }, [user, allSessionsColRef, state.subjects, currentUserData, updateStudyTime]);
+  }, [user, state.subjects, currentUserData, updateStudyTime]);
 
   const handlePlayPause = useCallback(async (subjectId: string) => {
     const nowISO = new Date().toISOString();
