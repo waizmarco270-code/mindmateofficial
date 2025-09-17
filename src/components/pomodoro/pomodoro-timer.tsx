@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info, SwatchBook } from 'lucide-react';
+import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info, SwatchBook, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -200,31 +200,25 @@ export function PomodoroTimer() {
 
 
   useEffect(() => {
-    let timerId: NodeJS.Timeout | null = null;
+    if (!isActive) return;
 
-    if (isActive) {
-      timerId = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            playSound('notification');
-            const sessionData: PomodoroSessionData = {
-              type: mode,
-              duration: settings[mode] * 60,
-            };
-            addPomodoroSession(sessionData);
-            resetTimer();
-            return settings.focus * 60;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          playSound('notification');
+          const sessionData: PomodoroSessionData = {
+            type: mode,
+            duration: settings[mode] * 60,
+          };
+          addPomodoroSession(sessionData);
+          resetTimer();
+          return settings.focus * 60; // Reset to a default, resetTimer will set the correct one
+        }
+        return prev - 1;
+      });
+    }, 1000);
 
-    return () => {
-      if (timerId) {
-        clearInterval(timerId);
-      }
-    };
+    return () => clearInterval(timerId);
   }, [isActive, addPomodoroSession, mode, playSound, resetTimer, settings]);
   
   useEffect(() => {
@@ -335,7 +329,7 @@ export function PomodoroTimer() {
 
   return (
     <div className="absolute inset-0 z-0 flex flex-col h-full w-full text-white overflow-hidden bg-gray-900">
-        {selectedMusic.src && <audio ref={musicAudioRef} src={selectedMusic.src} loop muted={isMuted} />}
+        {selectedMusic?.src && <audio ref={musicAudioRef} src={selectedMusic.src} loop muted={isMuted} />}
         <AnimatePresence>
             {selectedTheme && (
                 <motion.div
