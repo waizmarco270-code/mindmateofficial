@@ -78,16 +78,13 @@ export function PomodoroTimer() {
   const [tempSettings, setTempSettings] = useState(settings);
   
   const { pomodoroThemes } = placeholderData;
-  const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>(null);
-  const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0] | null>(null);
-  const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('default');
+  const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroTheme', pomodoroThemes.nature[0]);
+  const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0] | null>('pomodoroMusic', musicTracks[0]);
+  const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('pomodoroWatchFace', 'default');
   
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
     setIsClient(true);
-    // Initialize default values on client side to avoid hydration mismatch
-    if (selectedTheme === null) setSelectedTheme(pomodoroThemes.nature[0]);
-    if (selectedMusic === null) setSelectedMusic(musicTracks[0]);
   }, []);
 
   const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
@@ -433,9 +430,9 @@ export function PomodoroTimer() {
                 </div>
             </motion.div>
             
-             <div className="z-10 w-full flex justify-center px-4 sm:relative sm:bottom-auto">
-                 <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                    <div className="flex items-center gap-2 sm:gap-4 p-2 bg-black/30 backdrop-blur-lg rounded-full shadow-2xl w-max">
+             <div className="z-10 w-full flex flex-col items-center px-4 sm:relative sm:bottom-auto">
+                 <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] w-full max-w-sm sm:max-w-none sm:w-auto">
+                    <div className="flex items-center gap-2 sm:gap-4 p-2 bg-black/30 backdrop-blur-lg rounded-full shadow-2xl w-max mx-auto">
                         <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white" onClick={handleReset}>
                             <RotateCcw className="h-6 w-6" />
                         </Button>
@@ -468,11 +465,11 @@ export function PomodoroTimer() {
                             </Sheet>
                             <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
                                 <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Palette className="h-6 w-6" /></Button></SheetTrigger>
-                                <SheetContent side="bottom" className="max-h-[80dvh]"><SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
+                                <SheetContent side="bottom" className="max-h-[80dvh] flex flex-col"><SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
                                     <div className="py-4 space-y-6 overflow-y-auto">
                                         <div><h3 className="mb-4 font-semibold">Nature</h3>
                                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                                                {pomodoroThemes.nature.map((theme) => (<button key={theme.id} onClick={() => {setSelectedTheme(theme); setIsThemeSheetOpen(false);}} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                                {pomodoroThemes.nature.map((theme) => (<button key={theme.id} onClick={() => {setSelectedTheme(theme); setIsThemeSheetOpen(false);}} className="relative aspect-square w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
                                                     <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
                                                     {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
                                                 </button>))}
@@ -480,7 +477,7 @@ export function PomodoroTimer() {
                                         </div>
                                         <div><h3 className="mb-4 font-semibold">Lofi</h3>
                                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                                                {pomodoroThemes.lofi.map((theme) => (<button key={theme.id} onClick={() => {setSelectedTheme(theme); setIsThemeSheetOpen(false);}} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                                {pomodoroThemes.lofi.map((theme) => (<button key={theme.id} onClick={() => {setSelectedTheme(theme); setIsThemeSheetOpen(false);}} className="relative aspect-square w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
                                                     <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
                                                     {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
                                                 </button>))}
@@ -521,6 +518,7 @@ export function PomodoroTimer() {
                         </div>
                     </div>
                 </div>
+                 <p className="sm:hidden text-xs text-center text-white/50 mt-2">Scroll for more options &rarr;</p>
             </div>
         </div>
        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -577,3 +575,4 @@ export function PomodoroTimer() {
     </div>
   );
 }
+
