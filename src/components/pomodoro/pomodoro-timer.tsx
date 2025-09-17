@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music } from 'lucide-react';
+import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, TestTube } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 
@@ -26,15 +27,24 @@ interface PomodoroSettings {
   shortBreak: number;
   longBreak: number;
   sessions: number;
-  sound: 'digital' | 'chime' | 'bell';
+  sound: 'beep' | 'chime' | 'bell';
 }
+
+const musicTracks = [
+    { id: 'none', name: 'No Music', src: '' },
+    { id: 'irreplaceable', name: 'The Irreplaceable', src: '/audio/irreplaceable.mp3' },
+    { id: 'hans-zimmer', name: 'Hans Zimmer Mix', src: '/audio/hans-zimmer.mp3' },
+    { id: 'interstellar', name: 'Interstellar', src: '/audio/interstellar.mp3' },
+    { id: 'max-focus', name: 'Max Focus', src: '/audio/max-focus.mp3' },
+    { id: 'soothing', name: 'Soothing Piano', src: '/audio/soothing.mp3' },
+];
 
 const defaultSettings: PomodoroSettings = {
   focus: 25,
   shortBreak: 5,
   longBreak: 15,
   sessions: 4,
-  sound: 'digital',
+  sound: 'beep',
 };
 
 export function PomodoroTimer() {
@@ -46,14 +56,18 @@ export function PomodoroTimer() {
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
+  const [isMusicSheetOpen, setIsMusicSheetOpen] = useState(false);
   
   const [tempSettings, setTempSettings] = useState(settings);
   
   const { pomodoroThemes } = placeholderData;
   const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroSelectedTheme', pomodoroThemes.nature[0]);
+  const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0]>('pomodoroSelectedMusic', musicTracks[0]);
+
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const musicAudioRef = useRef<HTMLAudioElement | null>(null);
   
   const playSound = useCallback((type: 'tick' | 'notification', soundOverride?: PomodoroSettings['sound']) => {
     if (isMuted || typeof window === 'undefined') return;
@@ -78,7 +92,7 @@ export function PomodoroTimer() {
     } else { // notification
         oscillator.type = 'sine';
         const now = audioContextRef.current.currentTime;
-        if (soundToPlay === 'digital') {
+        if (soundToPlay === 'beep') {
             oscillator.frequency.setValueAtTime(659.25, now); // E5
             oscillator.frequency.linearRampToValueAtTime(440, now + 0.1); // A4
             gainNode.gain.setValueAtTime(0.3, now);
@@ -129,12 +143,17 @@ export function PomodoroTimer() {
 
   useEffect(() => {
     if (isActive && timeLeft > 0) {
-      timerRef.current = setInterval(() => {
-        setTimeLeft((prev) => prev - 1);
-      }, 1000);
+      if (!timerRef.current) {
+        timerRef.current = setInterval(() => {
+          setTimeLeft((prev) => prev - 1);
+        }, 1000);
+      }
     } else if (isActive && timeLeft === 0) {
       playSound('notification');
       resetTimer();
+    } else if (!isActive && timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
     }
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
@@ -158,6 +177,23 @@ export function PomodoroTimer() {
     }
     setIsActive(prev => !prev);
   };
+  
+   // Music playback control
+    useEffect(() => {
+        const audioEl = musicAudioRef.current;
+        if (!audioEl) return;
+
+        if (isActive && selectedMusic.src) {
+            audioEl.play().catch(e => console.error("Audio play failed:", e));
+        } else {
+            audioEl.pause();
+        }
+    }, [isActive, selectedMusic]);
+
+    useEffect(() => {
+        const audioEl = musicAudioRef.current;
+        if(audioEl) audioEl.muted = isMuted;
+    }, [isMuted]);
   
   const handleReset = () => {
     resetTimer(true);
@@ -189,6 +225,7 @@ export function PomodoroTimer() {
 
   return (
     <div className="absolute inset-0 z-0 flex flex-col h-full w-full text-white overflow-hidden bg-gray-900">
+        <audio ref={musicAudioRef} src={selectedMusic.src} loop muted={isMuted} />
         <AnimatePresence>
             {selectedTheme && (
                 <motion.div
@@ -272,43 +309,63 @@ export function PomodoroTimer() {
                     {isActive ? <Pause className="h-8 w-8"/> : <Play className="h-8 w-8"/>}
                 </Button>
                 
-                <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
-                    <SheetTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
-                            <Palette className="h-8 w-8" />
-                        </Button>
-                    </SheetTrigger>
-                    <SheetContent side="bottom" className="max-h-[80dvh]">
-                        <SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
-                        <div className="py-4 space-y-6 overflow-y-auto">
-                            <div>
-                                <h3 className="mb-4 font-semibold">Nature</h3>
-                                <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
-                                    {pomodoroThemes.nature.map((theme) => (
-                                        <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
-                                            {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
-                                        </button>
-                                    ))}
+                <div className="flex items-center gap-2">
+                     <Sheet open={isMusicSheetOpen} onOpenChange={setIsMusicSheetOpen}>
+                        <SheetTrigger asChild>
+                           <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
+                                <Music className="h-8 w-8" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent>
+                            <SheetHeader><SheetTitle>Ambient Music</SheetTitle></SheetHeader>
+                            <RadioGroup value={selectedMusic.id} onValueChange={(val) => setSelectedMusic(musicTracks.find(t => t.id === val) || musicTracks[0])} className="py-4">
+                                {musicTracks.map(track => (
+                                    <div key={track.id} className="flex items-center space-x-2">
+                                        <RadioGroupItem value={track.id} id={track.id} />
+                                        <Label htmlFor={track.id} className="text-base">{track.name}</Label>
+                                    </div>
+                                ))}
+                            </RadioGroup>
+                        </SheetContent>
+                    </Sheet>
+                    <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white">
+                                <Palette className="h-8 w-8" />
+                            </Button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="max-h-[80dvh]">
+                            <SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
+                            <div className="py-4 space-y-6 overflow-y-auto">
+                                <div>
+                                    <h3 className="mb-4 font-semibold">Nature</h3>
+                                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
+                                        {pomodoroThemes.nature.map((theme) => (
+                                            <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                                <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
+                                                {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h3 className="mb-4 font-semibold">Lofi</h3>
+                                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
+                                        {pomodoroThemes.lofi.map((theme) => (
+                                            <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                                <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
+                                                {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
-                             <div>
-                                <h3 className="mb-4 font-semibold">Lofi</h3>
-                                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
-                                    {pomodoroThemes.lofi.map((theme) => (
-                                        <button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
-                                            {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </SheetContent>
-                </Sheet>
-                 <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white" onClick={() => setIsMuted(m => !m)}>
-                    {isMuted ? <VolumeX className="h-8 w-8" /> : <Volume2 className="h-8 w-8" />}
-                </Button>
+                        </SheetContent>
+                    </Sheet>
+                     <Button variant="ghost" size="icon" className="h-16 w-16 text-white/70 hover:text-white" onClick={() => setIsMuted(m => !m)}>
+                        {isMuted ? <VolumeX className="h-8 w-8" /> : <Volume2 className="h-8 w-8" />}
+                    </Button>
+                </div>
             </div>
         </div>
        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
@@ -337,20 +394,25 @@ export function PomodoroTimer() {
               </div>
               <div className="space-y-3">
                 <Label>Alarm Sound</Label>
-                <div className="grid grid-cols-3 gap-2">
-                    {(['digital', 'chime', 'bell'] as const).map(sound => (
-                        <Button 
-                            key={sound}
-                            variant={tempSettings.sound === sound ? 'default' : 'outline'}
-                            onClick={() => {
-                                setTempSettings(s => ({...s, sound}));
-                                playSound('notification', sound);
-                            }}
-                            className="capitalize"
-                        >
-                            {sound}
-                        </Button>
-                    ))}
+                <div className="flex items-center gap-2">
+                    <div className="grid grid-cols-3 gap-2 flex-1">
+                        {(['beep', 'chime', 'bell'] as const).map(sound => (
+                            <Button 
+                                key={sound}
+                                variant={tempSettings.sound === sound ? 'default' : 'outline'}
+                                onClick={() => {
+                                    setTempSettings(s => ({...s, sound}));
+                                }}
+                                className="capitalize"
+                            >
+                                {sound}
+                            </Button>
+                        ))}
+                    </div>
+                     <Button variant="secondary" size="icon" onClick={() => playSound('notification', tempSettings.sound)}>
+                        <TestTube className="h-5 w-5"/>
+                        <span className="sr-only">Test Sound</span>
+                    </Button>
                 </div>
               </div>
           </div>
@@ -363,5 +425,3 @@ export function PomodoroTimer() {
     </div>
   );
 }
-
-    
