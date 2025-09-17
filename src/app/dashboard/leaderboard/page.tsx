@@ -7,18 +7,26 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useTimeTracker } from '@/hooks/use-time-tracker';
+import { useTimeTracker, type TimeSession } from '@/hooks/use-time-tracker';
 import { startOfWeek, endOfWeek, parseISO, isWithinInterval, subWeeks, format as formatDate } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { motion } from 'framer-motion';
+
+interface PomodoroSession {
+  id: string;
+  userId: string;
+  type: 'focus' | 'shortBreak' | 'longBreak';
+  duration: number; // in seconds
+  completedAt: string; // ISO string
+}
 
 type UserWithStats = User & { 
     totalScore: number; 
@@ -32,6 +40,12 @@ type UserWithStats = User & {
     flappyMindHighScore: number;
     prevWeekEntertainmentTotalScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
+    weeklyPomodoroBreakdown: {
+      focus: number;
+      shortBreak: number;
+      longBreak: number;
+      total: number;
+    };
 };
 
 
@@ -48,7 +62,7 @@ const SCORE_WEIGHTS = {
 export default function LeaderboardPage() {
     const { user: currentUser } = useUser();
     const { users } = useUsers();
-    const { sessions: allSessions } = useTimeTracker();
+    const { sessions: allSessions, pomodoroSessions } = useTimeTracker(); // Get pomodoro sessions
     const [activeTab, setActiveTab] = useState('all-time');
     const [timeLeft, setTimeLeft] = useState('');
     const [selectedUserForDetails, setSelectedUserForDetails] = useState<UserWithStats | null>(null);
@@ -82,31 +96,56 @@ export default function LeaderboardPage() {
         const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
         const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
         
-        const stats: { [uid: string]: { thisWeek: { totalTime: number; subjects: { [name: string]: number } }, lastWeek: { totalTime: number } } } = {};
+        type Stats = {
+            thisWeek: { totalTime: number; subjects: { [name: string]: number }; pomodoro: { focus: number; shortBreak: number; longBreak: number; total: number; } },
+            lastWeek: { totalTime: number }
+        };
 
-        allSessions.forEach(session => {
-            const userId = session.subjectId;
-            const sessionDate = parseISO(session.startTime);
-
-             if (!stats[userId]) {
-                stats[userId] = { thisWeek: { totalTime: 0, subjects: {} }, lastWeek: { totalTime: 0 } };
+        const stats: { [uid: string]: Stats } = {};
+        
+        const initializeUserStats = (userId: string) => {
+            if (!stats[userId]) {
+                stats[userId] = { thisWeek: { totalTime: 0, subjects: {}, pomodoro: { focus: 0, shortBreak: 0, longBreak: 0, total: 0 } }, lastWeek: { totalTime: 0 } };
             }
+        };
+
+        // Process Time Tracker Sessions
+        allSessions.forEach(session => {
+            const userId = session.subjectId; // In time tracker, subjectId is userId
+            initializeUserStats(userId);
+            const sessionDate = parseISO(session.startTime);
 
             const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
 
             if (isWithinInterval(sessionDate, { start: thisWeekStart, end: thisWeekEnd })) {
                 stats[userId].thisWeek.totalTime += duration;
-
-                if (!stats[userId].thisWeek.subjects[session.subjectName]) {
-                    stats[userId].thisWeek.subjects[session.subjectName] = 0;
-                }
-                stats[userId].thisWeek.subjects[session.subjectName] += duration;
+                stats[userId].thisWeek.subjects[session.subjectName] = (stats[userId].thisWeek.subjects[session.subjectName] || 0) + duration;
             } else if (isWithinInterval(sessionDate, { start: lastWeekStart, end: lastWeekEnd })) {
                  stats[userId].lastWeek.totalTime += duration;
             }
         });
+        
+        // Process Pomodoro Sessions
+        pomodoroSessions.forEach(session => {
+            const userId = session.userId;
+            initializeUserStats(userId);
+            const sessionDate = parseISO(session.completedAt);
+            const duration = session.duration;
+            
+            if (isWithinInterval(sessionDate, { start: thisWeekStart, end: thisWeekEnd })) {
+                stats[userId].thisWeek.totalTime += duration; // Add pomodoro time to total weekly time
+                stats[userId].thisWeek.pomodoro.total += duration;
+                if(session.type === 'focus') stats[userId].thisWeek.pomodoro.focus += duration;
+                if(session.type === 'shortBreak') stats[userId].thisWeek.pomodoro.shortBreak += duration;
+                if(session.type === 'longBreak') stats[userId].thisWeek.pomodoro.longBreak += duration;
+            } else if (isWithinInterval(sessionDate, { start: lastWeekStart, end: lastWeekEnd })) {
+                 stats[userId].lastWeek.totalTime += duration;
+            }
+        });
+
+
         return stats;
-    }, [allSessions]);
+    }, [allSessions, pomodoroSessions]);
     
 
     const { sortedUsers, lastWeekWeeklyWinner, lastWeekEntertainmentWinner } = useMemo(() => {
@@ -123,7 +162,7 @@ export default function LeaderboardPage() {
                                    (dailyTasks * SCORE_WEIGHTS.dailyTasksCompleted) +
                                    (studyTime * SCORE_WEIGHTS.totalStudyTime);
                                    
-                const userWeeklyStats = weeklyStats[user.uid] || { thisWeek: { totalTime: 0, subjects: {} }, lastWeek: { totalTime: 0 } };
+                const userWeeklyStats = weeklyStats[user.uid] || { thisWeek: { totalTime: 0, subjects: {}, pomodoro: { focus: 0, shortBreak: 0, longBreak: 0, total: 0 } }, lastWeek: { totalTime: 0 } };
                 const emojiQuizHighScore = user.gameHighScores?.emojiQuiz || 0;
                 const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
                 const dimensionShiftHighScore = user.gameHighScores?.dimensionShift || 0;
@@ -143,6 +182,7 @@ export default function LeaderboardPage() {
                     weeklyTime: userWeeklyStats.thisWeek.totalTime,
                     prevWeeklyTime: userWeeklyStats.lastWeek.totalTime,
                     weeklySubjectBreakdown: userWeeklyStats.thisWeek.subjects,
+                    weeklyPomodoroBreakdown: userWeeklyStats.thisWeek.pomodoro,
                     entertainmentTotalScore: Math.round(entertainmentTotalScore),
                     emojiQuizHighScore,
                     memoryGameHighScore,
@@ -520,7 +560,7 @@ export default function LeaderboardPage() {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Weekly Study Breakdown</DialogTitle>
-                        <DialogDescription>Time spent on each subject by {selectedUserForDetails?.displayName} this week.</DialogDescription>
+                        <DialogDescription>Time spent on each activity by {selectedUserForDetails?.displayName} this week.</DialogDescription>
                     </DialogHeader>
                     {selectedUserForDetails && (
                         <div className="py-4 space-y-4">
@@ -534,20 +574,36 @@ export default function LeaderboardPage() {
                                     <p className="text-sm text-muted-foreground">Total This Week: <span className="font-bold text-primary">{formatTime(selectedUserForDetails.weeklyTime)}</span></p>
                                 </div>
                             </div>
-                             <ul className="space-y-2 rounded-md border p-4 max-h-64 overflow-y-auto">
-                                {Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length > 0 ? (
-                                    Object.entries(selectedUserForDetails.weeklySubjectBreakdown)
-                                    .sort(([, a], [, b]) => b - a)
-                                    .map(([subject, time]) => (
-                                         <li key={subject} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
-                                            <span className="font-medium">{subject}</span>
-                                            <span className="font-mono text-muted-foreground">{formatTime(time)}</span>
-                                        </li>
-                                    ))
-                                ) : (
-                                    <p className="text-center text-muted-foreground py-4">No specific subjects tracked this week.</p>
+                            <div className="space-y-4 max-h-64 overflow-y-auto pr-4">
+                                 {Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length > 0 && (
+                                     <div>
+                                        <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><Clock className="h-4 w-4"/> Time Tracker Subjects</h4>
+                                         <ul className="space-y-2 rounded-md border p-4">
+                                            {Object.entries(selectedUserForDetails.weeklySubjectBreakdown)
+                                            .sort(([, a], [, b]) => b - a)
+                                            .map(([subject, time]) => (
+                                                 <li key={subject} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
+                                                    <span className="font-medium">{subject}</span>
+                                                    <span className="font-mono text-muted-foreground">{formatTime(time)}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                 )}
+                                {selectedUserForDetails.weeklyPomodoroBreakdown.total > 0 && (
+                                    <div>
+                                        <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><TimerIcon className="h-4 w-4"/> Pomodoro Sessions</h4>
+                                        <ul className="space-y-2 rounded-md border p-4">
+                                            <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Focus Time</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.focus)}</span></li>
+                                            <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Short Breaks</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.shortBreak)}</span></li>
+                                            <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Long Breaks</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.longBreak)}</span></li>
+                                        </ul>
+                                    </div>
                                 )}
-                            </ul>
+                                {(Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length === 0 && selectedUserForDetails.weeklyPomodoroBreakdown.total === 0) && (
+                                     <p className="text-center text-muted-foreground py-4">No specific study sessions tracked this week.</p>
+                                )}
+                            </div>
                         </div>
                     )}
                 </DialogContent>
