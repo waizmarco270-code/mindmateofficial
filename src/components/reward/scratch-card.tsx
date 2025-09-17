@@ -8,7 +8,7 @@ import { Gift, RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
 
 export function ScratchCard() {
-    const { canClaimReward, claimDailyReward, availableRewards } = useRewards();
+    const { canClaimReward: canClaimScratchCard, claimDailyReward, availableScratchCards: availableRewards } = useRewards();
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [isScratched, setIsScratched] = useState(false);
     const [prize, setPrize] = useState<number | string | null>(null);
@@ -41,10 +41,10 @@ export function ScratchCard() {
     }, []);
 
     useEffect(() => {
-        if (canClaimReward && !prize) {
+        if (canClaimScratchCard && !prize) {
             setupCanvas();
         }
-    }, [canClaimReward, prize, setupCanvas]);
+    }, [canClaimScratchCard, prize, setupCanvas]);
 
     const getPoint = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
         const canvas = canvasRef.current;
@@ -58,7 +58,7 @@ export function ScratchCard() {
     };
 
     const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
-        if (!canClaimReward || prize) return;
+        if (!canClaimScratchCard || prize) return;
         setIsDrawing(true);
         lastPointRef.current = getPoint(e);
     };
@@ -145,7 +145,7 @@ export function ScratchCard() {
     return (
         <div className="w-full max-w-md mx-auto space-y-4">
              <div className="relative aspect-[1.618] w-full rounded-2xl bg-muted overflow-hidden border-4 border-dashed flex items-center justify-center p-8">
-                {canClaimReward && prize === null ? (
+                {canClaimScratchCard && prize === null ? (
                     <>
                         <div className="absolute inset-0 z-0 flex flex-col items-center justify-center text-center">
                             <Gift className="h-16 w-16 text-muted-foreground/30 animate-pulse" />
@@ -163,7 +163,7 @@ export function ScratchCard() {
                             onTouchMove={handleScratch}
                         />
                     </>
-                ) : !canClaimReward ? (
+                ) : !canClaimScratchCard ? (
                     <div className="text-center">
                         <h3 className="text-2xl font-bold">All Scratched Out!</h3>
                         <p className="text-muted-foreground mt-2">You've used all your cards for today. Come back tomorrow for a new one!</p>
