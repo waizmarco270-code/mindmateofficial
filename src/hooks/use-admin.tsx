@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup } from 'firebase/firestore';
@@ -892,27 +892,27 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
     };
 
-    const lockFeature = async (featureId: LockableFeature['id'], cost: number) => {
+    const lockFeature = useCallback(async (featureId: LockableFeature['id'], cost: number) => {
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
-        await updateDoc(featureLocksRef, {
+        await setDoc(featureLocksRef, {
             [featureId]: {
                 id: featureId,
                 isLocked: true,
                 cost: cost,
             }
-        });
-    };
+        }, { merge: true });
+    }, []);
 
-    const unlockFeature = async (featureId: LockableFeature['id']) => {
+    const unlockFeature = useCallback(async (featureId: LockableFeature['id']) => {
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
-        await updateDoc(featureLocksRef, {
+        await setDoc(featureLocksRef, {
             [featureId]: {
                 id: featureId,
                 isLocked: false,
-                cost: 0, // Or keep the cost, depends on desired behavior
+                cost: 0,
             }
-        });
-    };
+        }, { merge: true });
+    }, []);
 
     // CONTEXT VALUE
     const value: AppDataContextType = {
