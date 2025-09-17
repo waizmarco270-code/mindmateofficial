@@ -68,9 +68,7 @@ export function PomodoroTimer() {
   const [isMuted, setIsMuted] = useLocalStorage('pomodoroMuted', false);
   const [sessionsCompleted, setSessionsCompleted] = useLocalStorage('pomodoroSessionsCompleted', 0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
-  const [isMusicSheetOpen, setIsMusicSheetOpen] = useState(false);
-  const [isFaceSheetOpen, setIsFaceSheetOpen] = useState(false);
+  
   const { user } = useUser();
   const { addPomodoroSession } = useTimeTracker();
   const { addCreditsToUser, currentUserData } = useUsers();
@@ -432,7 +430,7 @@ export function PomodoroTimer() {
                 </div>
             </motion.div>
             
-             <div className="z-10 flex items-center justify-center w-full px-4 sm:relative sm:bottom-auto">
+             <div className="z-10 flex items-center justify-center w-auto px-4 sm:relative sm:bottom-auto">
                 <div className="flex items-center gap-2 sm:gap-4 p-2 bg-black/30 backdrop-blur-lg rounded-full shadow-2xl">
                     <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white" onClick={handleReset}>
                         <RotateCcw className="h-6 w-6" />
@@ -449,7 +447,7 @@ export function PomodoroTimer() {
                     </Button>
                     
                     <div className="flex items-center gap-0">
-                         <Sheet open={isMusicSheetOpen} onOpenChange={setIsMusicSheetOpen}>
+                         <Sheet>
                             <SheetTrigger asChild>
                                <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Music className="h-6 w-6" /></Button>
                             </SheetTrigger>
@@ -464,13 +462,13 @@ export function PomodoroTimer() {
                                 </RadioGroup>
                             </SheetContent>
                         </Sheet>
-                        <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
+                        <Sheet>
                             <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Palette className="h-6 w-6" /></Button></SheetTrigger>
                             <SheetContent side="bottom" className="max-h-[80dvh]"><SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
                                 <div className="py-4 space-y-6 overflow-y-auto">
                                     <div><h3 className="mb-4 font-semibold">Nature</h3>
                                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                                            {pomodoroThemes.nature.map((theme) => (<button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                            {pomodoroThemes.nature.map((theme) => (<button key={theme.id} onClick={() => setSelectedTheme(theme)} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
                                                 <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
                                                 {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
                                             </button>))}
@@ -478,7 +476,7 @@ export function PomodoroTimer() {
                                     </div>
                                     <div><h3 className="mb-4 font-semibold">Lofi</h3>
                                         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                                            {pomodoroThemes.lofi.map((theme) => (<button key={theme.id} onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                            {pomodoroThemes.lofi.map((theme) => (<button key={theme.id} onClick={() => setSelectedTheme(theme)} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
                                                 <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
                                                 {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
                                             </button>))}
@@ -487,7 +485,7 @@ export function PomodoroTimer() {
                                 </div>
                             </SheetContent>
                         </Sheet>
-                         <Sheet open={isFaceSheetOpen} onOpenChange={setIsFaceSheetOpen}>
+                         <Sheet>
                             <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><SwatchBook className="h-6 w-6" /></Button></SheetTrigger>
                             <SheetContent side="right"><SheetHeader><SheetTitle>Watch Faces</SheetTitle></SheetHeader>
                                 <RadioGroup value={selectedWatchFace} onValueChange={(v: WatchFace) => setSelectedWatchFace(v)} className="py-4 space-y-2">
@@ -572,4 +570,3 @@ export function PomodoroTimer() {
   );
 }
 
-    
