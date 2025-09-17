@@ -199,26 +199,28 @@ export function PomodoroTimer() {
   }, [mode, sessionsCompleted, setSessionsCompleted, settings]);
 
 
-  useEffect(() => {
-    if (!isActive) return;
-
-    const timerId = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          playSound('notification');
-          const sessionData: PomodoroSessionData = {
-            type: mode,
-            duration: settings[mode] * 60,
-          };
-          addPomodoroSession(sessionData);
-          resetTimer();
-          return settings.focus * 60; // Reset to a default, resetTimer will set the correct one
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timerId);
+ useEffect(() => {
+    let timerId: NodeJS.Timeout | null = null;
+    if (isActive) {
+      timerId = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            playSound('notification');
+            const sessionData: PomodoroSessionData = {
+              type: mode,
+              duration: settings[mode] * 60,
+            };
+            addPomodoroSession(sessionData);
+            resetTimer();
+            return settings.focus * 60; 
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => {
+      if (timerId) clearInterval(timerId);
+    };
   }, [isActive, addPomodoroSession, mode, playSound, resetTimer, settings]);
   
   useEffect(() => {
@@ -320,7 +322,7 @@ export function PomodoroTimer() {
 
   if (!isMounted) {
     return (
-        <div className="absolute inset-0 z-0 flex items-center justify-center h-full w-full bg-gray-900">
+        <div className="absolute inset-0 flex items-center justify-center h-full w-full bg-gray-900">
             <Loader2 className="h-10 w-10 animate-spin text-white" />
         </div>
     );
@@ -328,7 +330,7 @@ export function PomodoroTimer() {
 
 
   return (
-    <div className="absolute inset-0 z-0 flex flex-col h-full w-full text-white overflow-hidden bg-gray-900">
+    <div className="relative z-0 flex flex-col h-full w-full text-white overflow-hidden bg-gray-900 pb-16 sm:pb-0">
         {selectedMusic?.src && <audio ref={musicAudioRef} src={selectedMusic.src} loop muted={isMuted} />}
         <AnimatePresence>
             {selectedTheme && (
@@ -430,7 +432,7 @@ export function PomodoroTimer() {
                 </div>
             </motion.div>
             
-             <div className="z-10 flex items-center justify-center w-full px-4 fixed bottom-8 sm:relative sm:bottom-auto">
+             <div className="z-10 flex items-center justify-center w-full px-4 sm:relative sm:bottom-auto">
                 <div className="flex items-center gap-2 sm:gap-4 p-2 bg-black/30 backdrop-blur-lg rounded-full shadow-2xl">
                     <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white" onClick={handleReset}>
                         <RotateCcw className="h-6 w-6" />
@@ -569,3 +571,5 @@ export function PomodoroTimer() {
     </div>
   );
 }
+
+    
