@@ -64,7 +64,7 @@ export interface Announcement {
     id: string;
     title: string;
     description: string;
-    createdAt: string;
+    createdAt: Date;
 }
 
 export interface ResourceSection {
@@ -73,7 +73,7 @@ export interface ResourceSection {
     description: string;
     unlockCost: number;
     parentCategory: 'class-10' | 'class-12' | 'jee' | 'neet' | 'class-6-9' | 'general';
-    createdAt: Timestamp;
+    createdAt: Date;
 }
 
 export interface Resource {
@@ -82,7 +82,7 @@ export interface Resource {
     description: string;
     url: string;
     sectionId: string; // ID from ResourceSection
-    createdAt: string;
+    createdAt: Date;
 }
 
 export interface Poll {
@@ -91,7 +91,7 @@ export interface Poll {
     options: string[];
     results: Record<string, number>;
     isActive: boolean;
-    createdAt: string;
+    createdAt: Date;
 }
 
 export interface DailySurprise {
@@ -103,7 +103,7 @@ export interface DailySurprise {
     quizQuestion?: string;
     quizOptions?: string[];
     quizCorrectAnswer?: string;
-    createdAt: string;
+    createdAt: Date;
     // For new-feature type
     featureTitle?: string;
     featureDescription?: string;
@@ -127,7 +127,7 @@ export interface GlobalGift {
         flip: number;
     };
     target: 'all' | string; // 'all' or a specific UID
-    createdAt: Timestamp;
+    createdAt: Date;
     isActive: boolean;
     claimedBy?: string[]; // Array of UIDs who have claimed it
 }
@@ -437,7 +437,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
             if (!snapshot.empty) {
                 const pollDoc = snapshot.docs[0];
-                setActivePoll({ id: pollDoc.id, ...pollDoc.data() } as Poll);
+                setActivePoll({ id: pollDoc.id, ...pollDoc.data(), createdAt: pollDoc.data().createdAt?.toDate() || new Date() } as Poll);
             } else {
                 setActivePoll(null);
             }
