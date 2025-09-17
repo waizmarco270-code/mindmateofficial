@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -42,7 +42,7 @@ type EditableSection = ResourceSection;
 const availableIcons = {
     "Award": Award,
     "Zap": Zap,
-    "Gamepad2": Gamepad2,
+    "Gamepad2": Gamepad2Icon,
     "Gift": Gift,
     "BrainCircuit": BrainCircuit,
     "Trophy": Trophy,
@@ -97,6 +97,7 @@ const QuizImportSchema = z.object({
 export default function AdminPanelPage() {
   const { 
     isAdmin, 
+    users,
     announcements, updateAnnouncement, 
     activePoll, updatePoll,
     resources: allResources, addResource, updateResource, deleteResource,
@@ -511,6 +512,20 @@ export default function AdminPanelPage() {
         <h1 className="text-3xl font-bold tracking-tight">Admin Panel</h1>
         <p className="text-muted-foreground">Manage application content and settings.</p>
       </div>
+      
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>App Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+             <div className="flex items-center gap-2 text-lg">
+                <Users className="h-5 w-5 text-muted-foreground" />
+                <span className="font-bold">Total Users:</span>
+                <span>{users.length}</span>
+            </div>
+        </CardContent>
+      </Card>
+
 
       <Accordion type="multiple" defaultValue={['content-management']} className="w-full space-y-4">
         
