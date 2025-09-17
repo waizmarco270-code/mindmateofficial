@@ -39,6 +39,7 @@ import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
 import { Separator } from '../ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { useEffect, useState } from 'react';
 
 const mainNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
@@ -99,8 +100,15 @@ export default function SidebarContent() {
   const { hasUnread, hasGlobalUnread } = useUnreadMessages();
   const { hasNewQuiz } = useNewQuiz();
   const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
-  const isVip = currentUserData?.isVip;
-  const isGM = currentUserData?.isGM;
+  const [isVip, setIsVip] = useState(false);
+  const [isGM, setIsGM] = useState(false);
+  
+  useEffect(() => {
+    if(currentUserData){
+        setIsVip(currentUserData.isVip || false);
+        setIsGM(currentUserData.isGM || false);
+    }
+  }, [currentUserData])
 
 
   const isActive = (href: string) => {
@@ -151,7 +159,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'study-tools', 'other-tools', 'admin-tools', 'premium-tools']}
+          defaultValue={['main-tools', 'study-tools', 'other-tools', 'premium-tools', 'admin-tools']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
