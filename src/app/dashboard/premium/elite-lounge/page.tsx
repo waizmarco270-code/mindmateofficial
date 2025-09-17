@@ -2,11 +2,51 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Crown, Construction } from 'lucide-react';
+import { Crown, Construction, Loader2, ShieldX } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { useAdmin } from '@/hooks/use-admin';
 
 export default function EliteLoungePage() {
+  const { currentUserData, isAdmin, isSuperAdmin, loading } = useAdmin();
+
+  const isVip = currentUserData?.isVip ?? false;
+  const isGM = currentUserData?.isGM ?? false;
+  const hasAccess = isVip || isGM || isAdmin || isSuperAdmin;
+
+  if (loading) {
+      return (
+        <div className="flex h-full items-center justify-center">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
+  }
+
+  if (!hasAccess) {
+      return (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <Card className="w-full max-w-md border-destructive/50">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-center gap-2 text-destructive">
+                    <ShieldX className="h-8 w-8"/> Access Denied
+                </CardTitle>
+                <CardDescription>
+                    You do not have the necessary permissions to view this page. This is an exclusive area for Elite members, GMs, and Admins.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button asChild>
+                    <Link href="/dashboard">
+                       &larr; Back to Dashboard
+                    </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+      );
+  }
+
+
   return (
     <div className="flex flex-col items-center justify-center h-full text-center">
       <Card className="w-full max-w-lg border-yellow-400/50 bg-gradient-to-br from-yellow-950/30 to-background">
