@@ -47,31 +47,18 @@ export default function MobileNav({ isCollapsed, onToggleCollapse }: MobileNavPr
                         (item.href === '/dashboard' && pathname === '/dashboard') ||
                         (item.href !== '/dashboard' && pathname.startsWith(item.href));
 
-                    if (item.href === '/dashboard') {
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                prefetch={true}
-                                className="relative z-10 -top-5"
-                            >
-                                <div className="h-16 w-16 flex items-center justify-center rounded-full bg-destructive shadow-lg shadow-destructive/30">
-                                    <item.icon className="h-7 w-7 text-white" />
-                                </div>
-                            </Link>
-                        )
-                    }
                     return (
                         <Link
                         key={item.href}
                         href={item.href}
                         prefetch={true}
                         className={cn(
-                            'relative z-10 flex flex-col items-center justify-center w-16 h-full text-xs font-medium transition-colors',
+                            'relative z-10 flex flex-col items-center justify-center w-16 h-full text-xs font-medium transition-colors gap-1',
                             isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                         )}
                         >
-                        <item.icon className="h-5 w-5" />
+                            <item.icon className="h-5 w-5" />
+                            <span>{item.label}</span>
                         </Link>
                     );
                     })}
