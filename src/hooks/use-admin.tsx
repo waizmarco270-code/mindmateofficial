@@ -121,12 +121,17 @@ export interface AppTheme {
 export interface GlobalGift {
     id: string;
     message: string;
-    type: 'credits' | 'scratch' | 'flip';
-    amount: number;
+    rewards: {
+        credits: number;
+        scratch: number;
+        flip: number;
+    };
+    target: 'all' | string; // 'all' or a specific UID
     createdAt: Timestamp;
     isActive: boolean;
     claimedBy?: string[]; // Array of UIDs who have claimed it
 }
+
 
 export interface SupportTicket {
     id: string;
@@ -217,6 +222,7 @@ interface AppDataContextType {
     globalGifts: GlobalGift[];
     activeGlobalGift: GlobalGift | null;
     sendGlobalGift: (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => Promise<void>;
+    deactivateGift: (giftId: string) => Promise<void>;
     claimGlobalGift: (giftId: string, userId: string) => Promise<void>;
 
     featureLocks: Record<LockableFeature['id'], FeatureLock> | null;
@@ -397,7 +403,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 return {
                     id: doc.id,
                     ...data,
-                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
                 } as T;
             });
         };
@@ -842,26 +848,19 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
     
     const sendGlobalGift = async (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => {
-        // Deactivate all other gifts first
-        const giftsRef = collection(db, 'globalGifts');
-        const q = query(giftsRef, where('isActive', '==', true));
-        const activeGiftsSnapshot = await getDocs(q);
-        
-        const batch = writeBatch(db);
-        activeGiftsSnapshot.forEach(doc => {
-            batch.update(doc.ref, { isActive: false });
-        });
-
         const newGiftRef = doc(collection(db, 'globalGifts'));
-        batch.set(newGiftRef, {
+        await setDoc(newGiftRef, {
             ...gift,
             id: newGiftRef.id,
             createdAt: serverTimestamp(),
             isActive: true,
             claimedBy: []
         });
+    };
 
-        await batch.commit();
+     const deactivateGift = async (giftId: string) => {
+        const giftRef = doc(db, 'globalGifts', giftId);
+        await updateDoc(giftRef, { isActive: false });
     };
 
     const claimGlobalGift = async (giftId: string, userId: string) => {
@@ -872,25 +871,20 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (!giftDoc.exists()) throw new Error("Gift not found.");
         const gift = giftDoc.data() as GlobalGift;
 
+        if (gift.claimedBy?.includes(userId)) return;
+
         const batch = writeBatch(db);
         
         batch.update(giftRef, { claimedBy: arrayUnion(userId) });
-        batch.update(userRef, { claimedGlobalGifts: arrayUnion(giftId) });
         
-        switch(gift.type) {
-            case 'credits':
-                batch.update(userRef, { credits: increment(gift.amount) });
-                break;
-            case 'scratch':
-                batch.update(userRef, { freeRewards: increment(gift.amount) });
-                break;
-            case 'flip':
-                 batch.update(userRef, { freeGuesses: increment(gift.amount) });
-                break;
-        }
-
+        const { credits, scratch, flip } = gift.rewards;
+        if (credits > 0) batch.update(userRef, { credits: increment(credits) });
+        if (scratch > 0) batch.update(userRef, { freeRewards: increment(scratch) });
+        if (flip > 0) batch.update(userRef, { freeGuesses: increment(flip) });
+        
         await batch.commit();
     };
+
 
     const lockFeature = useCallback(async (featureId: LockableFeature['id'], cost: number) => {
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
@@ -976,6 +970,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         globalGifts,
         activeGlobalGift,
         sendGlobalGift,
+        deactivateGift,
         claimGlobalGift,
         featureLocks,
         lockFeature,

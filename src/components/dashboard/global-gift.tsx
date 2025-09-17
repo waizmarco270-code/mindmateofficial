@@ -13,16 +13,17 @@ import { cn } from '@/lib/utils';
 export function GlobalGiftCard() {
     const { user } = useUser();
     const { activeGlobalGift, claimGlobalGift } = useAdmin();
-    const [isClaimed, setIsClaimed] = useState(false);
     const [isVisible, setIsVisible] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
 
+    const isGift = activeGlobalGift?.rewards && (activeGlobalGift.rewards.credits > 0 || activeGlobalGift.rewards.scratch > 0 || activeGlobalGift.rewards.flip > 0);
+
     useEffect(() => {
         if (activeGlobalGift && user) {
-            // Check if the current user has already claimed this specific gift
+            const isForThisUser = activeGlobalGift.target === 'all' || activeGlobalGift.target === user.id;
             const hasClaimedThisGift = activeGlobalGift.claimedBy?.includes(user.id);
-            setIsClaimed(hasClaimedThisGift);
-            setIsVisible(!hasClaimedThisGift);
+            
+            setIsVisible(isForThisUser && !hasClaimedThisGift);
         } else {
             setIsVisible(false);
         }
@@ -33,32 +34,21 @@ export function GlobalGiftCard() {
         
         setIsClaiming(true);
         await claimGlobalGift(activeGlobalGift.id, user.id);
-        setIsClaimed(true);
-        setIsClaiming(false);
-
-        // Hide the card after a short delay to show the "Claimed" state
+        
+        // Hide the card after a short delay
         setTimeout(() => {
             setIsVisible(false);
-        }, 2000);
+        }, 1500);
     };
 
-    const getIcon = () => {
-        if (!activeGlobalGift) return <Gift className="h-10 w-10 text-yellow-400" />;
-        switch (activeGlobalGift.type) {
-            case 'credits': return <DollarSign className="h-10 w-10 text-yellow-400" />;
-            case 'scratch': return <VenetianMask className="h-10 w-10 text-purple-400" />;
-            case 'flip': return <Box className="h-10 w-10 text-blue-400" />;
-            default: return <Gift className="h-10 w-10 text-yellow-400" />;
-        }
-    };
-    
     const getRewardText = () => {
-        if (!activeGlobalGift) return '';
-        const { type, amount } = activeGlobalGift;
-        if (type === 'credits') return `${amount} Credits`;
-        if (type === 'scratch') return `${amount} Scratch Card${amount > 1 ? 's' : ''}`;
-        if (type === 'flip') return `${amount} Card Flip Play${amount > 1 ? 's' : ''}`;
-        return '';
+        if (!activeGlobalGift || !activeGlobalGift.rewards) return '';
+        const { credits, scratch, flip } = activeGlobalGift.rewards;
+        const parts = [];
+        if (credits > 0) parts.push(`${credits} Credits`);
+        if (scratch > 0) parts.push(`${scratch} Scratch Card(s)`);
+        if (flip > 0) parts.push(`${flip} Card Flip(s)`);
+        return parts.join(', ');
     };
 
     return (
@@ -75,25 +65,18 @@ export function GlobalGiftCard() {
                          <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-transparent to-transparent"></div>
                         <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
                              <div className="p-4 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30">
-                                {getIcon()}
+                                <Gift className="h-10 w-10 text-yellow-400" />
                             </div>
                             <div className="flex-1 text-center sm:text-left">
                                 <h3 className="text-xl font-bold text-yellow-400 [text-shadow:0_0_8px_hsl(var(--primary)/50%)]">{activeGlobalGift.message}</h3>
-                                <p className="text-yellow-400/80 mt-1">A gift from the admins!</p>
+                                <p className="text-yellow-400/80 mt-1">A message from the admins!</p>
                             </div>
                             <Button
                                 onClick={handleClaim}
-                                disabled={isClaimed || isClaiming}
-                                className={cn(
-                                    "bg-yellow-400 text-yellow-900 hover:bg-yellow-300 w-full sm:w-auto",
-                                    isClaimed && "bg-green-500 hover:bg-green-500 text-white"
-                                )}
+                                disabled={isClaiming}
+                                className={cn("bg-yellow-400 text-yellow-900 hover:bg-yellow-300 w-full sm:w-auto")}
                             >
-                                {isClaimed ? (
-                                    <>
-                                        <CheckCircle className="mr-2 h-4 w-4"/> Claimed!
-                                    </>
-                                ) : isClaiming ? 'Claiming...' : `Claim ${getRewardText()}`}
+                                {isClaiming ? 'Receiving...' : (isGift ? `Claim ${getRewardText()}` : 'Understood')}
                             </Button>
                         </CardContent>
                     </Card>

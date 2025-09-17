@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -40,6 +40,8 @@ export default function SuperAdminPanelPage() {
     resetWeeklyStudyTime,
     resetGameZoneLeaderboard,
     sendGlobalGift,
+    globalGifts,
+    deactivateGift,
     featureLocks,
     lockFeature,
     unlockFeature,
@@ -55,11 +57,15 @@ export default function SuperAdminPanelPage() {
   const [spinAmount, setSpinAmount] = useState(1);
   const [guessAmount, setGuessAmount] = useState(1);
   
-  // State for Global Gift
-  const [giftMessage, setGiftMessage] = useState('');
-  const [giftType, setGiftType] = useState<'credits' | 'scratch' | 'flip'>('credits');
-  const [giftAmount, setGiftAmount] = useState(5);
-  const [isSendingGift, setIsSendingGift] = useState(false);
+  // State for Personalized Popup
+  const [popupTarget, setPopupTarget] = useState<'all' | 'single'>('all');
+  const [popupSingleUserId, setPopupSingleUserId] = useState<string | null>(null);
+  const [popupMessage, setPopupMessage] = useState('');
+  const [popupCreditAmount, setPopupCreditAmount] = useState(0);
+  const [popupScratchAmount, setPopupScratchAmount] = useState(0);
+  const [popupFlipAmount, setPopupFlipAmount] = useState(0);
+  const [isSendingPopup, setIsSendingPopup] = useState(false);
+
 
   // State for Feature Locks
   const [featureCosts, setFeatureCosts] = useState<Record<string, number>>({});
@@ -200,25 +206,41 @@ export default function SuperAdminPanelPage() {
       }
   }
 
-  const handleSendGlobalGift = async () => {
-      if(!giftMessage.trim() || giftAmount <= 0) {
-          toast({variant: 'destructive', title: 'Invalid Gift', description: 'Please provide a message and a positive gift amount.'});
+  const handleSendPopup = async () => {
+      if(!popupMessage.trim()) {
+          toast({variant: 'destructive', title: 'Invalid Popup', description: 'Please provide a message.'});
           return;
       }
-      setIsSendingGift(true);
+      if(popupTarget === 'single' && !popupSingleUserId) {
+           toast({variant: 'destructive', title: 'No User Selected', description: 'Please select a user to send the popup to.'});
+          return;
+      }
+      setIsSendingPopup(true);
       try {
+          const rewards = {
+              credits: popupCreditAmount,
+              scratch: popupScratchAmount,
+              flip: popupFlipAmount,
+          };
+          const target = popupTarget === 'all' ? 'all' : popupSingleUserId;
+
           await sendGlobalGift({
-              message: giftMessage,
-              type: giftType,
-              amount: giftAmount,
+              message: popupMessage,
+              rewards: rewards,
+              target: target
           });
-          toast({ title: "Global Gift Sent!", description: "The gift is now available for all users to claim."});
-          setGiftMessage('');
-          setGiftAmount(5);
+
+          toast({ title: "Popup Sent!", description: "The message is now active."});
+          setPopupMessage('');
+          setPopupCreditAmount(0);
+          setPopupScratchAmount(0);
+          setPopupFlipAmount(0);
+          setPopupSingleUserId(null);
+
       } catch (error: any) {
-          toast({variant: 'destructive', title: 'Failed to Send Gift', description: error.message });
+          toast({variant: 'destructive', title: 'Failed to Send Popup', description: error.message });
       } finally {
-          setIsSendingGift(false);
+          setIsSendingPopup(false);
       }
   }
 
@@ -437,43 +459,115 @@ export default function SuperAdminPanelPage() {
                <div className="flex items-center gap-3">
                 <Send className="h-6 w-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold">Global Gifts</h3>
-                  <p className="text-sm text-muted-foreground text-left">Send a claimable reward to all users.</p>
+                  <h3 className="text-lg font-semibold">Personalized Popups</h3>
+                  <p className="text-sm text-muted-foreground text-left">Send a targeted popup with a message and optional rewards.</p>
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0">
+            <AccordionContent className="p-6 pt-0 space-y-4">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Create a New Global Gift</CardTitle>
-                        <CardDescription>This gift will appear as a popup on every user's dashboard until they claim it.</CardDescription>
+                        <CardTitle>Create a New Popup</CardTitle>
+                        <CardDescription>Send a message to all users or a specific user. Set reward amounts to 0 for an informational popup.</CardDescription>
                     </CardHeader>
-                  <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="gift-message">Gift Message</Label>
-                        <Input id="gift-message" value={giftMessage} onChange={e => setGiftMessage(e.target.value)} placeholder="e.g., Happy New Year! Here's a gift."/>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="gift-type">Gift Type</Label>
-                            <Select value={giftType} onValueChange={(v: any) => setGiftType(v)}>
-                                <SelectTrigger id="gift-type"><SelectValue/></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="credits"><DollarSign className="mr-2 h-4 w-4"/> Credits</SelectItem>
-                                    <SelectItem value="scratch"><VenetianMask className="mr-2 h-4 w-4"/> Scratch Cards</SelectItem>
-                                    <SelectItem value="flip"><Box className="mr-2 h-4 w-4"/> Card Flip Plays</SelectItem>
-                                </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="gift-amount">Amount</Label>
-                            <Input id="gift-amount" type="number" value={giftAmount} onChange={e => setGiftAmount(Number(e.target.value))} min="1"/>
-                          </div>
-                      </div>
-                      <Button onClick={handleSendGlobalGift} disabled={isSendingGift}>
-                        {isSendingGift ? 'Sending...' : 'Send Global Gift to All Users'}
-                      </Button>
-                  </CardContent>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="popup-message">Message</Label>
+                            <Input id="popup-message" value={popupMessage} onChange={e => setPopupMessage(e.target.value)} placeholder="e.g., Happy New Year! Here's a gift."/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Target User</Label>
+                            <div className="flex gap-4">
+                                <Select value={popupTarget} onValueChange={(v: 'all' | 'single') => setPopupTarget(v)}>
+                                    <SelectTrigger><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Users</SelectItem>
+                                        <SelectItem value="single">Single User</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {popupTarget === 'single' && (
+                                     <Select onValueChange={setPopupSingleUserId} value={popupSingleUserId ?? undefined}>
+                                        <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
+                                        <SelectContent>
+                                            {users.filter(u => !u.isBlocked).map(user => (
+                                                <SelectItem key={user.uid} value={user.uid}>
+                                                    {user.displayName}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                             <Label>Rewards (Optional)</Label>
+                             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-4 border rounded-lg">
+                                <div className="space-y-1">
+                                    <Label htmlFor="popup-credits" className="text-xs flex items-center gap-1"><DollarSign className="h-3 w-3"/> Credits</Label>
+                                    <Input id="popup-credits" type="number" value={popupCreditAmount} onChange={e => setPopupCreditAmount(Number(e.target.value))} min="0"/>
+                                </div>
+                                 <div className="space-y-1">
+                                    <Label htmlFor="popup-scratch" className="text-xs flex items-center gap-1"><VenetianMask className="h-3 w-3"/> Scratch Cards</Label>
+                                    <Input id="popup-scratch" type="number" value={popupScratchAmount} onChange={e => setPopupScratchAmount(Number(e.target.value))} min="0"/>
+                                </div>
+                                <div className="space-y-1">
+                                    <Label htmlFor="popup-flip" className="text-xs flex items-center gap-1"><Box className="h-3 w-3"/> Card Flips</Label>
+                                    <Input id="popup-flip" type="number" value={popupFlipAmount} onChange={e => setPopupFlipAmount(Number(e.target.value))} min="0"/>
+                                </div>
+                             </div>
+                        </div>
+
+                        <Button onClick={handleSendPopup} disabled={isSendingPopup}>
+                            {isSendingPopup ? 'Sending...' : 'Send Popup'}
+                        </Button>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Manage Sent Gifts/Popups</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Message</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Target</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {globalGifts.map(gift => (
+                                    <TableRow key={gift.id}>
+                                        <TableCell className="max-w-xs truncate">{gift.message}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={gift.isActive ? 'default' : 'secondary'}>
+                                                {gift.isActive ? 'Active' : 'Inactive'}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="capitalize">
+                                            {gift.target === 'all' ? 'All Users' : users.find(u => u.uid === gift.target)?.displayName || 'Single User'}
+                                        </TableCell>
+                                        <TableCell>{formatDistanceToNow(gift.createdAt.toDate(), {addSuffix: true})}</TableCell>
+                                        <TableCell className="text-right">
+                                            {gift.isActive && (
+                                                 <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm">Deactivate</Button></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Deactivate this popup?</AlertDialogTitle><AlertDialogDescription>This will prevent any new users from seeing or claiming it. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deactivateGift(gift.id)}>Deactivate</AlertDialogAction></AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {globalGifts.length === 0 && <TableRow><TableCell colSpan={5} className="text-center h-24">No popups sent yet.</TableCell></TableRow>}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
                 </Card>
             </AccordionContent>
           </Card>
