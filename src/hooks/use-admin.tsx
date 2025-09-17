@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -7,6 +6,7 @@ import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup } from 'firebase/firestore';
 import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
 import { LucideIcon } from 'lucide-react';
+import { lockableFeatures, type LockableFeature } from '@/lib/features';
 
 
 // ============================================================================
@@ -25,6 +25,7 @@ export interface User {
   credits: number;
   votedPolls?: Record<string, string>; // { pollId: 'chosen_option' }
   unlockedResourceSections?: string[]; // Array of unlocked section IDs
+  unlockedFeatures?: string[]; // Array of feature IDs
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
@@ -136,6 +137,11 @@ export interface SupportTicket {
     createdAt: Timestamp;
 }
 
+export interface FeatureLock {
+    id: LockableFeature['id'];
+    isLocked: boolean;
+    cost: number;
+}
 
 // ============================================================================
 //  CONTEXT DEFINITIONS
@@ -155,6 +161,7 @@ interface AppDataContextType {
     addFreeGuessesToUser: (uid: string, amount: number) => Promise<void>;
     addGuessesToAllUsers: (amount: number) => Promise<void>;
     unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
+    unlockFeatureForUser: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string) => Promise<void>;
@@ -180,13 +187,11 @@ interface AppDataContextType {
     updateAnnouncement: (id: string, data: Partial<Announcement>) => Promise<void>;
     deleteAnnouncement: (id: string) => Promise<void>;
     
-    // Unified Resource Management
     resources: Resource[];
     addResource: (resource: Omit<Resource, 'id' | 'createdAt'>) => Promise<void>;
     updateResource: (id: string, data: Partial<Omit<Resource, 'id' | 'createdAt'>>) => Promise<void>;
     deleteResource: (id: string) => Promise<void>;
 
-    // Dynamic Resource Section Management
     resourceSections: ResourceSection[];
     addResourceSection: (section: Omit<ResourceSection, 'id'|'createdAt'>) => Promise<void>;
     updateResourceSection: (id: string, data: Partial<Omit<ResourceSection, 'id'|'createdAt'>>) => Promise<void>;
@@ -206,14 +211,17 @@ interface AppDataContextType {
     updatePoll: (id: string, data: Partial<Poll>) => Promise<void>;
     submitPollVote: (pollId: string, option: string) => Promise<void>;
 
-    // Theme Management
     appTheme: AppTheme | null;
     updateAppTheme: (theme: AppTheme) => Promise<void>;
 
-    // Global Gift Management
+    globalGifts: GlobalGift[];
     activeGlobalGift: GlobalGift | null;
     sendGlobalGift: (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => Promise<void>;
     claimGlobalGift: (giftId: string, userId: string) => Promise<void>;
+
+    featureLocks: Record<LockableFeature['id'], FeatureLock> | null;
+    lockFeature: (featureId: LockableFeature['id'], cost: number) => Promise<void>;
+    unlockFeature: (featureId: LockableFeature['id']) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -237,8 +245,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
     const [appTheme, setAppTheme] = useState<AppTheme | null>(null);
-    const [activeGlobalGift, setActiveGlobalGift] = useState<GlobalGift | null>(null);
+    const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
+    const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
     const [loading, setLoading] = useState(true);
+    
+    const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
 
     // EFFECT: Determine if the logged-in user is an admin or super admin
     useEffect(() => {
@@ -347,6 +358,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     isGM: false,
                     friends: [],
                     unlockedResourceSections: [],
+                    unlockedFeatures: [],
                     focusSessionsCompleted: 0,
                     dailyTasksCompleted: 0,
                     totalStudyTime: 0,
@@ -407,8 +419,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc'));
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
         const themeDocRef = doc(db, 'appConfig', 'theme');
-        const giftsQuery = query(collection(db, 'globalGifts'), where('isActive', '==', true));
+        const giftsQuery = query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc'));
         const ticketsQuery = query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'));
+        const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
@@ -428,14 +441,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 setAppTheme(doc.data() as AppTheme);
             }
         });
-        const unsubGifts = onSnapshot(giftsQuery, (snapshot) => {
-             if (!snapshot.empty) {
-                const giftDoc = snapshot.docs[0];
-                setActiveGlobalGift({ id: giftDoc.id, ...giftDoc.data() } as GlobalGift);
-            } else {
-                setActiveGlobalGift(null);
+        const unsubGifts = onSnapshot(giftsQuery, (snapshot) => setGlobalGifts(processSnapshot<GlobalGift>(snapshot)));
+        const unsubLocks = onSnapshot(featureLocksRef, (doc) => {
+            if (doc.exists()) {
+                setFeatureLocks(doc.data() as Record<LockableFeature['id'], FeatureLock>);
             }
         });
+
 
         return () => {
             unsubAnnouncements();
@@ -446,6 +458,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubTheme();
             unsubGifts();
             unsubTickets();
+            unsubLocks();
         };
     }, []);
 
@@ -546,6 +559,15 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { 
             unlockedResourceSections: arrayUnion(sectionId),
             credits: increment(-cost) 
+        });
+    };
+
+    const unlockFeatureForUser = async (uid: string, featureId: LockableFeature['id'], cost: number) => {
+        if (!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, {
+            unlockedFeatures: arrayUnion(featureId),
+            credits: increment(-cost)
         });
     };
 
@@ -680,7 +702,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(doc(db, 'resourceSections', id), data);
     };
     const deleteResourceSection = async (id: string) => {
-        // Also delete all resources within this section
         const q = query(collection(db, "resources"), where("sectionId", "==", id));
         const querySnapshot = await getDocs(q);
         const batch = writeBatch(db);
@@ -708,7 +729,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }
     const deleteDailySurprise = async (id: string) => await deleteDoc(doc(db, 'dailySurprises', id));
 
-    // Support Ticket Functions
     const updateTicketStatus = async (id: string, status: 'new' | 'resolved') => {
         await updateDoc(doc(db, 'supportTickets', id), { status });
     };
@@ -718,7 +738,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const updatePoll = async (id: string, data: Partial<Poll>) => {
         const pollDocRef = doc(db, 'polls', id);
-        // When updating the poll, we also need to reset the votes
         const newResults = data.options?.reduce((acc, option) => {
             acc[option] = 0;
             return acc;
@@ -833,7 +852,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             batch.update(doc.ref, { isActive: false });
         });
 
-        // Add the new gift
         const newGiftRef = doc(collection(db, 'globalGifts'));
         batch.set(newGiftRef, {
             ...gift,
@@ -856,12 +874,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
         const batch = writeBatch(db);
         
-        // Mark as claimed for the gift
         batch.update(giftRef, { claimedBy: arrayUnion(userId) });
-        // Mark as claimed for the user
         batch.update(userRef, { claimedGlobalGifts: arrayUnion(giftId) });
         
-        // Award the prize
         switch(gift.type) {
             case 'credits':
                 batch.update(userRef, { credits: increment(gift.amount) });
@@ -875,6 +890,28 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         }
 
         await batch.commit();
+    };
+
+    const lockFeature = async (featureId: LockableFeature['id'], cost: number) => {
+        const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
+        await updateDoc(featureLocksRef, {
+            [featureId]: {
+                id: featureId,
+                isLocked: true,
+                cost: cost,
+            }
+        });
+    };
+
+    const unlockFeature = async (featureId: LockableFeature['id']) => {
+        const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
+        await updateDoc(featureLocksRef, {
+            [featureId]: {
+                id: featureId,
+                isLocked: false,
+                cost: 0, // Or keep the cost, depends on desired behavior
+            }
+        });
     };
 
     // CONTEXT VALUE
@@ -892,6 +929,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addFreeGuessesToUser,
         addGuessesToAllUsers,
         unlockResourceSection,
+        unlockFeatureForUser,
         addPerfectedQuiz,
         incrementQuizAttempt,
         incrementFocusSessions,
@@ -935,9 +973,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         submitPollVote,
         appTheme,
         updateAppTheme,
+        globalGifts,
         activeGlobalGift,
         sendGlobalGift,
         claimGlobalGift,
+        featureLocks,
+        lockFeature,
+        unlockFeature,
     };
 
     return (
@@ -995,5 +1037,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    

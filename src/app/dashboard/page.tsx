@@ -270,13 +270,18 @@ export default function DashboardPage() {
                         <DialogTitle className="flex items-center gap-2"><Trophy/> Select Leaderboard</DialogTitle>
                     </DialogHeader>
                     <div className="flex flex-col space-y-3 py-4">
-                        {leaderboardOptions.map(option => (
-                            <Link key={option.name} href={option.href}>
-                                <Button variant="outline" className="w-full justify-start h-14 text-base">
-                                    <option.icon className="mr-4 h-5 w-5 text-primary" /> {option.name}
-                                </Button>
-                            </Link>
-                        ))}
+                        {leaderboardOptions.map(option => {
+                            const featureId = 'leaderboard' as LockableFeature['id'];
+                            const isLocked = featureLocks?.[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId);
+                            return (
+                                <Link key={option.name} href={isLocked ? '#' : option.href} onClick={(e) => handleFeatureClick(e, featureId, isLocked)}>
+                                    <Button variant="outline" className="w-full justify-start h-14 text-base">
+                                        <option.icon className="mr-4 h-5 w-5 text-primary" /> {option.name}
+                                        {isLocked && <Lock className="ml-auto h-4 w-4 text-muted-foreground" />}
+                                    </Button>
+                                </Link>
+                            )
+                        })}
                     </div>
                 </DialogContent>
             </Dialog>
@@ -318,7 +323,7 @@ export default function DashboardPage() {
                              const isLocked = featureLocks?.[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId);
                             return (
                                 <motion.div key={feature.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
-                                    <Link href={feature.href} prefetch={true} onClick={(e) => handleFeatureClick(e, featureId, isLocked)}>
+                                    <Link href={isLocked ? '#' : feature.href} prefetch={true} onClick={(e) => handleFeatureClick(e, featureId, isLocked)}>
                                         <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", feature.color, isLocked && "opacity-60 grayscale-[50%]")}>
                                              <CardHeader className="flex-row items-center justify-between p-4">
                                                 <div className="flex items-center gap-4">
