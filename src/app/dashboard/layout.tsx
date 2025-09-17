@@ -15,12 +15,10 @@ import { AppDataProvider } from '@/hooks/use-admin';
 import { UnreadMessagesProvider } from '@/hooks/use-unread';
 import { MotionConfig } from 'framer-motion';
 import { ChallengesProvider } from '@/hooks/use-challenges';
+import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
 
-export default function DashboardLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function AppLayout({ children }: { children: React.ReactNode }) {
+  const { isImmersive } = useImmersive();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
   const { toast } = useToast();
@@ -61,28 +59,42 @@ export default function DashboardLayout({
   }, [pathname, toast]);
 
   return (
+     <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+        {!isImmersive && (
+            <Sidebar className="hidden md:flex md:flex-shrink-0">
+                <SidebarContent />
+            </Sidebar>
+        )}
+        <div className="flex flex-1 w-full flex-col bg-transparent overflow-x-hidden">
+            {!isImmersive && <Header />}
+            <main className="relative flex-1 overflow-y-auto focus:outline-none">
+            <SidebarInset className={cn(
+                "p-4 sm:p-6 lg:p-8",
+                isImmersive ? "!p-0 h-full" : "pb-28 md:pb-8" // Remove padding in immersive mode
+            )}>
+                {children}
+            </SidebarInset>
+            </main>
+        </div>
+        {!isImmersive && isMobile && <MobileNav />}
+    </SidebarProvider>
+  )
+}
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
     <AppDataProvider>
       <UnreadMessagesProvider>
         <ChallengesProvider>
-          <MotionConfig transition={{ duration: 0.5, type: 'spring' }}>
-            <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-              <Sidebar className="hidden md:flex md:flex-shrink-0">
-                <SidebarContent />
-              </Sidebar>
-              <div className="flex flex-1 w-full flex-col bg-transparent overflow-x-hidden">
-                <Header />
-                <main className="relative flex-1 overflow-y-auto focus:outline-none">
-                  <SidebarInset className={cn(
-                    "p-4 sm:p-6 lg:p-8",
-                    "pb-28 md:pb-8" // Add more padding-bottom for mobile nav
-                    )}>
-                      {children}
-                    </SidebarInset>
-                </main>
-              </div>
-              {isMobile && <MobileNav />}
-            </SidebarProvider>
-          </MotionConfig>
+          <ImmersiveProvider>
+            <MotionConfig transition={{ duration: 0.5, type: 'spring' }}>
+              <AppLayout>{children}</AppLayout>
+            </MotionConfig>
+          </ImmersiveProvider>
         </ChallengesProvider>
       </UnreadMessagesProvider>
     </AppDataProvider>

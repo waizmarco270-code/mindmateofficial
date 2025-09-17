@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, Play, Pause, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info, SwatchBook, Loader2 } from 'lucide-react';
+import { Edit, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info, SwatchBook, Loader2, Maximize, Minimize } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useBeforeunload } from 'react-beforeunload';
 import { useVisibilityChange } from '@/hooks/use-visibility-change';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-
+import { useImmersive } from '@/hooks/use-immersive';
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 type WatchFace = 'default' | 'minimal' | 'digital' | 'elegant';
@@ -73,17 +73,24 @@ export function PomodoroTimer() {
   const { addPomodoroSession } = useTimeTracker();
   const { addCreditsToUser, currentUserData } = useUsers();
   const { toast } = useToast();
+  const { isImmersive, setIsImmersive } = useImmersive();
   
   const [tempSettings, setTempSettings] = useState(settings);
   
   const { pomodoroThemes } = placeholderData;
-  const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroSelectedTheme', pomodoroThemes.nature[0]);
-  const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0]>('pomodoroSelectedMusic', musicTracks[0]);
-  const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('pomodoroWatchFace', 'default');
+  const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>(null);
+  const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0] | null>(null);
+  const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('default');
   
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => setIsMounted(true), []);
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+    // Initialize default values on client side to avoid hydration mismatch
+    if (selectedTheme === null) setSelectedTheme(pomodoroThemes.nature[0]);
+    if (selectedMusic === null) setSelectedMusic(musicTracks[0]);
+  }, []);
 
+  const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
 
   const audioContextRef = useRef<AudioContext | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -107,7 +114,6 @@ export function PomodoroTimer() {
       description: penaltyMessage,
     });
     
-    // Immediately stop the timer locally
     setIsActive(false);
     setTimeLeft(settings[mode] * 60);
     if(musicAudioRef.current) musicAudioRef.current.pause();
@@ -198,27 +204,25 @@ export function PomodoroTimer() {
 
 
  useEffect(() => {
-    let timerId: NodeJS.Timeout | null = null;
-    if (isActive) {
-      timerId = setInterval(() => {
-        setTimeLeft((prev) => {
-          if (prev <= 1) {
-            playSound('notification');
-            const sessionData: PomodoroSessionData = {
-              type: mode,
-              duration: settings[mode] * 60,
-            };
-            addPomodoroSession(sessionData);
-            resetTimer();
-            return settings.focus * 60; 
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => {
-      if (timerId) clearInterval(timerId);
-    };
+    if (!isActive) return;
+
+    const timerId = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          playSound('notification');
+          const sessionData: PomodoroSessionData = {
+            type: mode,
+            duration: settings[mode] * 60,
+          };
+          addPomodoroSession(sessionData);
+          resetTimer();
+          return 0; // Will be reset by resetTimer effect
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerId);
   }, [isActive, addPomodoroSession, mode, playSound, resetTimer, settings]);
   
   useEffect(() => {
@@ -232,7 +236,7 @@ export function PomodoroTimer() {
       applyPenalty();
       return;
     }
-    // Starting a new session
+    
     if (currentUserData && currentUserData.credits < POMODORO_PENALTY) {
         toast({
             variant: 'destructive',
@@ -258,12 +262,11 @@ export function PomodoroTimer() {
     }
   };
   
-   // Music playback control
     useEffect(() => {
         const audioEl = musicAudioRef.current;
         if (!audioEl) return;
 
-        if (isActive && selectedMusic.src) {
+        if (isActive && selectedMusic?.src) {
             audioEl.play().catch(e => console.error("Audio play failed:", e));
         } else {
             audioEl.pause();
@@ -282,7 +285,7 @@ export function PomodoroTimer() {
   const handleSaveSettings = () => {
     setSettings(tempSettings);
     if (!isActive) {
-        setMode('focus'); // Reset to focus mode on settings change
+        setMode('focus');
         setTimeLeft(tempSettings.focus * 60);
     }
     setIsEditDialogOpen(false);
@@ -318,7 +321,7 @@ export function PomodoroTimer() {
   };
 
 
-  if (!isMounted) {
+  if (!isClient) {
     return (
         <div className="absolute inset-0 flex items-center justify-center h-full w-full bg-gray-900">
             <Loader2 className="h-10 w-10 animate-spin text-white" />
@@ -328,7 +331,7 @@ export function PomodoroTimer() {
 
 
   return (
-    <div className="relative z-0 flex flex-col h-full w-full text-white overflow-hidden bg-gray-900 pb-16 sm:pb-0">
+    <div className={cn("relative z-0 flex flex-col h-full w-full text-white overflow-hidden bg-gray-900", isImmersive ? "" : "pb-16 sm:pb-0")}>
         {selectedMusic?.src && <audio ref={musicAudioRef} src={selectedMusic.src} loop muted={isMuted} />}
         <AnimatePresence>
             {selectedTheme && (
@@ -382,7 +385,7 @@ export function PomodoroTimer() {
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }}
                 exit={{ opacity: 0, y: 20, transition: { duration: 0.3, ease: 'easeIn' } }}
-                className="text-center z-10 pt-16 sm:pt-0"
+                className={cn("text-center z-10", isImmersive ? "pt-16 sm:pt-0" : "pt-0")}
                 >
                     <p className="text-xl font-medium tracking-wider uppercase text-white/80 [text-shadow:0_1px_4px_rgba(0,0,0,0.5)]">{modeText[mode]}</p>
                      <div className="mt-2 text-sm font-semibold bg-black/20 rounded-full px-3 py-1 inline-block">
@@ -430,87 +433,92 @@ export function PomodoroTimer() {
                 </div>
             </motion.div>
             
-             <div className="z-10 flex items-center justify-center w-auto px-4 sm:relative sm:bottom-auto">
-                <div className="flex items-center gap-2 sm:gap-4 p-2 bg-black/30 backdrop-blur-lg rounded-full shadow-2xl">
-                    <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white" onClick={handleReset}>
-                        <RotateCcw className="h-6 w-6" />
-                    </Button>
-
-                    <Button 
-                        className={cn(
-                            "h-16 w-32 sm:w-40 rounded-full text-2xl font-bold shadow-lg text-gray-900",
-                            isActive ? "bg-red-400/90 hover:bg-red-400" : "bg-white/90 hover:bg-white"
-                        )}
-                        onClick={handleToggle}
-                    >
-                        {isActive ? "STOP" : "START"}
-                    </Button>
-                    
-                    <div className="flex items-center gap-0">
-                         <Sheet>
-                            <SheetTrigger asChild>
-                               <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Music className="h-6 w-6" /></Button>
-                            </SheetTrigger>
-                            <SheetContent><SheetHeader><SheetTitle>Ambient Music</SheetTitle></SheetHeader>
-                                <RadioGroup value={selectedMusic.id} onValueChange={(val) => setSelectedMusic(musicTracks.find(t => t.id === val) || musicTracks[0])} className="py-4">
-                                    {musicTracks.map(track => (
-                                        <div key={track.id} className="flex items-center space-x-2">
-                                            <RadioGroupItem value={track.id} id={track.id} />
-                                            <Label htmlFor={track.id} className="text-base">{track.name}</Label>
-                                        </div>
-                                    ))}
-                                </RadioGroup>
-                            </SheetContent>
-                        </Sheet>
-                        <Sheet>
-                            <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Palette className="h-6 w-6" /></Button></SheetTrigger>
-                            <SheetContent side="bottom" className="max-h-[80dvh]"><SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
-                                <div className="py-4 space-y-6 overflow-y-auto">
-                                    <div><h3 className="mb-4 font-semibold">Nature</h3>
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                                            {pomodoroThemes.nature.map((theme) => (<button key={theme.id} onClick={() => setSelectedTheme(theme)} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                                <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
-                                                {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
-                                            </button>))}
-                                        </div>
-                                    </div>
-                                    <div><h3 className="mb-4 font-semibold">Lofi</h3>
-                                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                                            {pomodoroThemes.lofi.map((theme) => (<button key={theme.id} onClick={() => setSelectedTheme(theme)} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                                <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
-                                                {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
-                                            </button>))}
-                                        </div>
-                                    </div>
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                         <Sheet>
-                            <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><SwatchBook className="h-6 w-6" /></Button></SheetTrigger>
-                            <SheetContent side="right"><SheetHeader><SheetTitle>Watch Faces</SheetTitle></SheetHeader>
-                                <RadioGroup value={selectedWatchFace} onValueChange={(v: WatchFace) => setSelectedWatchFace(v)} className="py-4 space-y-2">
-                                     <Label htmlFor="face-default" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'default' && 'border-primary bg-primary/10')}>
-                                        <RadioGroupItem value="default" id="face-default"/>
-                                        <span className="font-mono text-2xl font-bold">12:34</span>
-                                    </Label>
-                                    <Label htmlFor="face-minimal" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'minimal' && 'border-primary bg-primary/10')}>
-                                        <RadioGroupItem value="minimal" id="face-minimal"/>
-                                        <span className="font-sans text-2xl font-light tracking-widest">12:34</span>
-                                    </Label>
-                                    <Label htmlFor="face-digital" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'digital' && 'border-primary bg-primary/10')}>
-                                        <RadioGroupItem value="digital" id="face-digital"/>
-                                        <span className="font-code text-2xl font-black">12:34</span>
-                                    </Label>
-                                    <Label htmlFor="face-elegant" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'elegant' && 'border-primary bg-primary/10')}>
-                                        <RadioGroupItem value="elegant" id="face-elegant"/>
-                                        <span className="font-serif text-2xl">12:34</span>
-                                    </Label>
-                                </RadioGroup>
-                            </SheetContent>
-                        </Sheet>
-                         <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white" onClick={() => setIsMuted(m => !m)}>
-                            {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
+             <div className="z-10 w-full flex justify-center px-4 sm:relative sm:bottom-auto">
+                 <div className="overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                    <div className="flex items-center gap-2 sm:gap-4 p-2 bg-black/30 backdrop-blur-lg rounded-full shadow-2xl w-max">
+                        <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white" onClick={handleReset}>
+                            <RotateCcw className="h-6 w-6" />
                         </Button>
+
+                        <Button 
+                            className={cn(
+                                "h-16 w-32 sm:w-40 rounded-full text-2xl font-bold shadow-lg text-gray-900",
+                                isActive ? "bg-red-400/90 hover:bg-red-400" : "bg-white/90 hover:bg-white"
+                            )}
+                            onClick={handleToggle}
+                        >
+                            {isActive ? "STOP" : "START"}
+                        </Button>
+                        
+                        <div className="flex items-center gap-0">
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Music className="h-6 w-6" /></Button>
+                                </SheetTrigger>
+                                <SheetContent><SheetHeader><SheetTitle>Ambient Music</SheetTitle></SheetHeader>
+                                    <RadioGroup value={selectedMusic?.id} onValueChange={(val) => setSelectedMusic(musicTracks.find(t => t.id === val) || musicTracks[0])} className="py-4">
+                                        {musicTracks.map(track => (
+                                            <div key={track.id} className="flex items-center space-x-2">
+                                                <RadioGroupItem value={track.id} id={track.id} />
+                                                <Label htmlFor={track.id} className="text-base">{track.name}</Label>
+                                            </div>
+                                        ))}
+                                    </RadioGroup>
+                                </SheetContent>
+                            </Sheet>
+                            <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
+                                <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Palette className="h-6 w-6" /></Button></SheetTrigger>
+                                <SheetContent side="bottom" className="max-h-[80dvh]"><SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
+                                    <div className="py-4 space-y-6 overflow-y-auto">
+                                        <div><h3 className="mb-4 font-semibold">Nature</h3>
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                                                {pomodoroThemes.nature.map((theme) => (<button key={theme.id} onClick={() => {setSelectedTheme(theme); setIsThemeSheetOpen(false);}} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                                    <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
+                                                    {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
+                                                </button>))}
+                                            </div>
+                                        </div>
+                                        <div><h3 className="mb-4 font-semibold">Lofi</h3>
+                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                                                {pomodoroThemes.lofi.map((theme) => (<button key={theme.id} onClick={() => {setSelectedTheme(theme); setIsThemeSheetOpen(false);}} className="relative aspect-square w-full rounded-full overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
+                                                    <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
+                                                    {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
+                                                </button>))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </SheetContent>
+                            </Sheet>
+                            <Sheet>
+                                <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><SwatchBook className="h-6 w-6" /></Button></SheetTrigger>
+                                <SheetContent side="right"><SheetHeader><SheetTitle>Watch Faces</SheetTitle></SheetHeader>
+                                    <RadioGroup value={selectedWatchFace} onValueChange={(v: WatchFace) => setSelectedWatchFace(v)} className="py-4 space-y-2">
+                                        <Label htmlFor="face-default" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'default' && 'border-primary bg-primary/10')}>
+                                            <RadioGroupItem value="default" id="face-default"/>
+                                            <span className="font-mono text-2xl font-bold">12:34</span>
+                                        </Label>
+                                        <Label htmlFor="face-minimal" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'minimal' && 'border-primary bg-primary/10')}>
+                                            <RadioGroupItem value="minimal" id="face-minimal"/>
+                                            <span className="font-sans text-2xl font-light tracking-widest">12:34</span>
+                                        </Label>
+                                        <Label htmlFor="face-digital" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'digital' && 'border-primary bg-primary/10')}>
+                                            <RadioGroupItem value="digital" id="face-digital"/>
+                                            <span className="font-code text-2xl font-black">12:34</span>
+                                        </Label>
+                                        <Label htmlFor="face-elegant" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'elegant' && 'border-primary bg-primary/10')}>
+                                            <RadioGroupItem value="elegant" id="face-elegant"/>
+                                            <span className="font-serif text-2xl">12:34</span>
+                                        </Label>
+                                    </RadioGroup>
+                                </SheetContent>
+                            </Sheet>
+                            <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white" onClick={() => setIsMuted(m => !m)}>
+                                {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white" onClick={() => setIsImmersive(i => !i)}>
+                                {isImmersive ? <Minimize className="h-6 w-6" /> : <Maximize className="h-6 w-6" />}
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -569,4 +577,3 @@ export function PomodoroTimer() {
     </div>
   );
 }
-
