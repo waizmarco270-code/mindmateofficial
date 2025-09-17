@@ -45,6 +45,7 @@ export function PomodoroTimer() {
   const [isMuted, setIsMuted] = useLocalStorage('pomodoroMuted', false);
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
   
   const [tempSettings, setTempSettings] = useState(settings);
   
@@ -74,30 +75,25 @@ export function PomodoroTimer() {
 
     if (type === 'tick') {
         // Tick sound is disabled as it's often too much. Kept for potential future use.
-        // oscillator.type = 'triangle';
-        // oscillator.frequency.setValueAtTime(1000, audioContextRef.current.currentTime);
-        // gainNode.gain.setValueAtTime(0.2, audioContextRef.current.currentTime);
-        // gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContextRef.current.currentTime + 0.1);
-        // oscillator.start(audioContextRef.current.currentTime);
-        // oscillator.stop(audioContextRef.current.currentTime + 0.1);
     } else { // notification
         oscillator.type = 'sine';
         const now = audioContextRef.current.currentTime;
         if (soundToPlay === 'digital') {
-            oscillator.frequency.setValueAtTime(659.25, now);
-            gainNode.gain.setValueAtTime(0.5, now);
-            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
-        } else if (soundToPlay === 'chime') {
-            oscillator.frequency.setValueAtTime(523.25, now);
-            oscillator.frequency.setValueAtTime(659.25, now + 0.1);
-            oscillator.frequency.setValueAtTime(783.99, now + 0.2);
-        } else { // bell
-            oscillator.frequency.setValueAtTime(783.99, now);
+            oscillator.frequency.setValueAtTime(659.25, now); // E5
+            oscillator.frequency.linearRampToValueAtTime(440, now + 0.1); // A4
             gainNode.gain.setValueAtTime(0.3, now);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
+        } else if (soundToPlay === 'chime') {
+            oscillator.frequency.setValueAtTime(523.25, now); // C5
+            gainNode.gain.setValueAtTime(0.4, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.8);
+        } else { // bell
+            oscillator.frequency.setValueAtTime(783.99, now); // G5
+            gainNode.gain.setValueAtTime(0.35, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 1);
         }
         oscillator.start(now);
-        oscillator.stop(now + 0.5);
+        oscillator.stop(now + 1);
     }
   }, [isMuted, settings.sound]);
 
@@ -135,8 +131,6 @@ export function PomodoroTimer() {
     if (isActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
-        // Disabling tick sound as it can be annoying
-        // playSound('tick');
       }, 1000);
     } else if (isActive && timeLeft === 0) {
       playSound('notification');
@@ -172,7 +166,8 @@ export function PomodoroTimer() {
   const handleSaveSettings = () => {
     setSettings(tempSettings);
     if (!isActive) {
-        setTimeLeft(tempSettings[mode] * 60);
+        setMode('focus'); // Reset to focus mode on settings change
+        setTimeLeft(tempSettings.focus * 60);
     }
     setIsEditDialogOpen(false);
   }
@@ -342,16 +337,15 @@ export function PomodoroTimer() {
               </div>
               <div className="space-y-3">
                 <Label>Alarm Sound</Label>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => playSound('notification', tempSettings.sound)}>Test</Button>
-                    <span className="text-xs text-muted-foreground">Preview current alarm</span>
-                </div>
                 <div className="grid grid-cols-3 gap-2">
                     {(['digital', 'chime', 'bell'] as const).map(sound => (
                         <Button 
                             key={sound}
                             variant={tempSettings.sound === sound ? 'default' : 'outline'}
-                            onClick={() => setTempSettings(s => ({...s, sound}))}
+                            onClick={() => {
+                                setTempSettings(s => ({...s, sound}));
+                                playSound('notification', sound);
+                            }}
                             className="capitalize"
                         >
                             {sound}
@@ -369,3 +363,5 @@ export function PomodoroTimer() {
     </div>
   );
 }
+
+    
