@@ -305,6 +305,13 @@ export function PomodoroTimer() {
       longBreak: "Take a Long Break"
   }
 
+  const modeColors: Record<TimerMode, string> = {
+    focus: 'text-primary',
+    shortBreak: 'text-green-400',
+    longBreak: 'text-cyan-400',
+  };
+
+
   const timerFaceClasses: Record<WatchFace, string> = {
     default: 'font-mono text-6xl md:text-7xl font-bold tabular-nums tracking-tighter',
     minimal: 'font-sans text-5xl md:text-6xl font-light tracking-widest',
@@ -387,7 +394,8 @@ export function PomodoroTimer() {
                     <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
                         <circle className="text-white/10" strokeWidth="3" stroke="currentColor" fill="transparent" r="48" cx="50" cy="50"/>
                         <motion.circle
-                            className="text-green-400 [filter:drop-shadow(0_0_4px_currentColor)]"
+                            className={cn("transition-colors duration-500", modeColors[mode])}
+                            style={{ filter: `drop-shadow(0 0 4px currentColor)` }}
                             strokeWidth="3"
                             strokeDasharray="301.59"
                             strokeLinecap="round"
@@ -396,10 +404,12 @@ export function PomodoroTimer() {
                             r="48"
                             cx="50"
                             cy="50"
-                            style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
-                            initial={{ strokeDashoffset: 301.59 }}
+                            initial={{ strokeDashoffset: 301.59, rotate: -90, transformOrigin: 'center' }}
                             animate={{ strokeDashoffset: 301.59 * (1 - progress / 100) }}
-                            transition={{ duration: 1, ease: "linear" }}
+                            transition={{
+                                strokeDashoffset: { duration: 1, ease: 'linear' },
+                                rotate: { duration: 1, ease: 'linear' },
+                            }}
                         />
                     </svg>
                     <div className="relative flex flex-col items-center text-center">
