@@ -1,12 +1,11 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -17,13 +16,14 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { formatDistanceToNow } from 'date-fns';
 import { Slider } from '@/components/ui/slider';
+import { lockableFeatures } from '@/lib/features';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -39,7 +39,10 @@ export default function SuperAdminPanelPage() {
     resetUserCredits, clearGlobalChat, clearQuizLeaderboard,
     resetWeeklyStudyTime,
     resetGameZoneLeaderboard,
-    sendGlobalGift
+    sendGlobalGift,
+    featureLocks,
+    lockFeature,
+    unlockFeature,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -57,6 +60,18 @@ export default function SuperAdminPanelPage() {
   const [giftType, setGiftType] = useState<'credits' | 'scratch' | 'flip'>('credits');
   const [giftAmount, setGiftAmount] = useState(5);
   const [isSendingGift, setIsSendingGift] = useState(false);
+
+  // State for Feature Locks
+  const [featureCosts, setFeatureCosts] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    // Initialize local costs state when featureLocks are loaded
+    const initialCosts = lockableFeatures.reduce((acc, feature) => {
+        acc[feature.id] = featureLocks?.[feature.id]?.cost ?? feature.defaultCost;
+        return acc;
+    }, {} as Record<string, number>);
+    setFeatureCosts(initialCosts);
+  }, [featureLocks]);
   
   
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -207,6 +222,15 @@ export default function SuperAdminPanelPage() {
       }
   }
 
+  const handleCostChange = (featureId: string, cost: number) => {
+    setFeatureCosts(prev => ({ ...prev, [featureId]: cost }));
+  };
+
+  const handleLockFeature = (featureId: string, cost: number) => {
+    lockFeature(featureId, cost);
+    toast({ title: "Feature Locked", description: `Users will now need ${cost} credits to unlock it.`});
+  };
+
   if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -321,6 +345,83 @@ export default function SuperAdminPanelPage() {
                             </TableCell>
                           </TableRow>
                         ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
+         {/* Feature Management */}
+        <AccordionItem value="feature-management" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Lock className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Feature Management</h3>
+                  <p className="text-sm text-muted-foreground text-left">Control access to premium features.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Feature Locks & Costs</CardTitle>
+                        <CardDescription>Set which features require credits to unlock and how much they cost. A cost of 0 means the feature is free.</CardDescription>
+                    </CardHeader>
+                  <CardContent className="pt-2">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Feature</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Unlock Cost</TableHead>
+                          <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {lockableFeatures.map(feature => {
+                            const lockInfo = featureLocks?.[feature.id];
+                            const isLocked = lockInfo?.isLocked ?? false;
+                            const currentCost = featureCosts[feature.id] ?? feature.defaultCost;
+                            return (
+                                <TableRow key={feature.id}>
+                                    <TableCell className="font-medium">
+                                        <p>{feature.name}</p>
+                                        <p className="text-xs text-muted-foreground">{feature.description}</p>
+                                    </TableCell>
+                                    <TableCell>
+                                        <Badge variant={isLocked ? 'destructive' : 'secondary'}>
+                                            {isLocked ? 'Locked' : 'Unlocked'}
+                                        </Badge>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center gap-2">
+                                            <Input 
+                                                type="number" 
+                                                className="w-24 h-8"
+                                                value={currentCost}
+                                                onChange={(e) => handleCostChange(feature.id, Number(e.target.value))}
+                                            />
+                                            <span>credits</span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="text-right space-x-2">
+                                         {isLocked ? (
+                                            <Button variant="outline" size="sm" onClick={() => unlockFeature(feature.id)}>
+                                                <Unlock className="mr-2 h-4 w-4"/>Unlock
+                                            </Button>
+                                        ) : (
+                                            <Button variant="secondary" size="sm" onClick={() => handleLockFeature(feature.id, currentCost)}>
+                                                <Lock className="mr-2 h-4 w-4"/>Lock
+                                            </Button>
+                                        )}
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
                       </TableBody>
                     </Table>
                   </CardContent>

@@ -2,12 +2,12 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
-import { useAnnouncements, useUsers } from '@/hooks/use-admin';
+import { useAnnouncements, useUsers, useAdmin } from '@/hooks/use-admin';
 import { CommunityPoll } from '@/components/dashboard/community-poll';
 import { cn } from '@/lib/utils';
 import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
@@ -16,6 +16,8 @@ import { TypingAnimation } from '@/components/dashboard/typing-animation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { GlobalGiftCard } from '@/components/dashboard/global-gift';
+import { lockableFeatures, type LockableFeature } from '@/lib/features';
+import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
 
 const studyTools = [
     {
@@ -62,6 +64,7 @@ const studyTools = [
 
 const exploreFeatures = [
    {
+    id: 'resources',
     title: 'Resources',
     description: 'Premium study materials.',
     icon: BookOpen,
@@ -70,6 +73,7 @@ const exploreFeatures = [
     textColor: 'text-rose-100',
   },
   {
+    id: 'quiz-zone',
     title: 'Quiz Zone',
     description: 'Test your knowledge & earn.',
     icon: BrainCircuit,
@@ -78,6 +82,7 @@ const exploreFeatures = [
     textColor: 'text-purple-100',
   },
    {
+    id: 'game-zone',
     title: 'Game Zone',
     description: 'Play games, relax, and earn!',
     icon: Gamepad2,
@@ -86,6 +91,7 @@ const exploreFeatures = [
     textColor: 'text-blue-100',
   },
    {
+    id: 'reward-zone',
     title: 'Reward Zone',
     description: 'Claim daily rewards & prizes.',
     icon: Gift,
@@ -104,11 +110,12 @@ const leaderboardOptions = [
 export default function DashboardPage() {
     const { user } = useUser();
     const { announcements } = useAnnouncements();
-    const { currentUserData } = useUsers();
+    const { currentUserData, featureLocks } = useAdmin();
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [isShowingPoll, setIsShowingPoll] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
     const [isExploreZoneOpen, setIsExploreZoneOpen] = useState(false);
+    const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
     
     const credits = currentUserData?.credits ?? 0;
 
@@ -119,6 +126,16 @@ export default function DashboardPage() {
 
     const handleFlip = () => {
         setIsShowingPoll(!isShowingPoll);
+    }
+
+    const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'], isLocked: boolean) => {
+        if (isLocked) {
+            e.preventDefault();
+            const feature = lockableFeatures.find(f => f.id === featureId);
+            if (feature) {
+                setFeatureToUnlock(feature);
+            }
+        }
     }
     
     const cardVariants = {
@@ -296,30 +313,37 @@ export default function DashboardPage() {
                  <div className="space-y-4">
                     <h2 className="text-2xl font-bold tracking-tight">Explore Your Toolkit</h2>
                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {exploreFeatures.map((feature, i) => (
-                           <motion.div key={feature.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
-                                <Link href={feature.href} prefetch={true}>
-                                <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", feature.color)}>
-                                     <CardHeader className="flex-row items-center gap-4 p-4">
-                                        <div className={cn("p-3 rounded-full bg-white/10", feature.textColor)}>
-                                            <feature.icon className="h-6 w-6" />
-                                        </div>
-                                        <div>
-                                            <CardTitle className={cn("text-xl font-bold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
-                                        </div>
-                                     </CardHeader>
-                                     <CardContent className="p-4 pt-0">
-                                         <CardDescription className={cn("text-sm", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
-                                     </CardContent>
-                                    <CardFooter className="mt-auto bg-black/10 p-3">
-                                         <p className={cn("text-sm font-semibold flex items-center w-full justify-end", feature.textColor, "opacity-90")}>
-                                             Explore Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                         </p>
-                                    </CardFooter>
-                                </Card>
-                                </Link>
-                            </motion.div>
-                        ))}
+                        {exploreFeatures.map((feature, i) => {
+                             const featureId = feature.id as LockableFeature['id'];
+                             const isLocked = featureLocks?.[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId);
+                            return (
+                                <motion.div key={feature.title} custom={i} variants={cardVariants} initial="hidden" animate="visible">
+                                    <Link href={feature.href} prefetch={true} onClick={(e) => handleFeatureClick(e, featureId, isLocked)}>
+                                        <Card className={cn("overflow-hidden group hover:-translate-y-1 transition-transform duration-300 ease-in-out h-full flex flex-col bg-gradient-to-br", feature.color, isLocked && "opacity-60 grayscale-[50%]")}>
+                                             <CardHeader className="flex-row items-center justify-between p-4">
+                                                <div className="flex items-center gap-4">
+                                                    <div className={cn("p-3 rounded-full bg-white/10", feature.textColor)}>
+                                                        <feature.icon className="h-6 w-6" />
+                                                    </div>
+                                                    <div>
+                                                        <CardTitle className={cn("text-xl font-bold tracking-tight", feature.textColor)}>{feature.title}</CardTitle>
+                                                    </div>
+                                                </div>
+                                                {isLocked && <Lock className={cn("h-5 w-5", feature.textColor)} />}
+                                             </CardHeader>
+                                             <CardContent className="p-4 pt-0">
+                                                 <CardDescription className={cn("text-sm", feature.textColor, "opacity-80")}>{feature.description}</CardDescription>
+                                             </CardContent>
+                                            <CardFooter className="mt-auto bg-black/10 p-3">
+                                                 <p className={cn("text-sm font-semibold flex items-center w-full justify-end", feature.textColor, "opacity-90")}>
+                                                     {isLocked ? "Unlock Feature" : "Explore Now"} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                                 </p>
+                                            </CardFooter>
+                                        </Card>
+                                    </Link>
+                                </motion.div>
+                            )
+                        })}
                     </div>
                 </div>
             )}
@@ -424,6 +448,14 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      {featureToUnlock && (
+        <FeatureUnlockDialog 
+            feature={featureToUnlock}
+            isOpen={!!featureToUnlock}
+            onOpenChange={(isOpen) => !isOpen && setFeatureToUnlock(null)}
+        />
+      )}
 
     </div>
   );
