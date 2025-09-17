@@ -400,10 +400,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
             return snapshot.docs.map((doc: any) => {
                 const data = doc.data();
+                const createdAt = data.createdAt;
                 return {
                     id: doc.id,
                     ...data,
-                    createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+                    createdAt: createdAt?.toDate ? createdAt.toDate() : (createdAt ? new Date(createdAt) : new Date()),
                 } as T;
             });
         };
@@ -437,7 +438,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
             if (!snapshot.empty) {
                 const pollDoc = snapshot.docs[0];
-                setActivePoll({ id: pollDoc.id, ...pollDoc.data(), createdAt: pollDoc.data().createdAt?.toDate() || new Date() } as Poll);
+                const data = pollDoc.data();
+                const createdAt = data.createdAt;
+                setActivePoll({ id: pollDoc.id, ...data, createdAt: createdAt?.toDate ? createdAt.toDate() : new Date() } as Poll);
             } else {
                 setActivePoll(null);
             }
