@@ -68,10 +68,6 @@ const otherNav = [
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
 ];
 
-const premiumNav = [
-    { href: '/dashboard/premium/elite-lounge', icon: Crown, label: 'Elite Lounge', glow: 'text-yellow-400' },
-];
-
 const adminNav = [
     { href: '/dashboard/admin', icon: Shield, label: 'Admin Panel' },
 ]
@@ -159,7 +155,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'study-tools', 'other-tools', 'premium-tools', 'admin-tools']}
+          defaultValue={['main-tools', 'study-tools', 'other-tools', 'admin-tools']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -189,17 +185,6 @@ export default function SidebarContent() {
             </AccordionContent>
           </AccordionItem>
           
-          {(isVip || isGM || isAdmin || isSuperAdmin) && (
-             <AccordionItem value="premium-tools" className="border-b-0">
-               <AccordionTrigger className="px-4 py-2 hover:no-underline text-yellow-400/80 text-sm font-semibold tracking-tight">
-                Premium
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-2">
-                {renderNavLinks(premiumNav as any)}
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
           {(isAdmin || isSuperAdmin) && (
             <AccordionItem value="admin-tools" className="border-b-0">
                <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
@@ -238,3 +223,5 @@ export default function SidebarContent() {
     </div>
   );
 }
+
+    

@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -110,7 +110,7 @@ const leaderboardOptions = [
 export default function DashboardPage() {
     const { user } = useUser();
     const { announcements } = useAnnouncements();
-    const { currentUserData, featureLocks } = useAdmin();
+    const { currentUserData, featureLocks, isAdmin, isSuperAdmin } = useAdmin();
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [isShowingPoll, setIsShowingPoll] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
@@ -118,6 +118,10 @@ export default function DashboardPage() {
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
     
     const credits = currentUserData?.credits ?? 0;
+    const isVip = currentUserData?.isVip ?? false;
+    const isGM = currentUserData?.isGM ?? false;
+    const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
+
 
     const latestAnnouncement = announcements.length > 0 ? announcements[0] : {
         title: 'Welcome to MindMate!',
@@ -228,6 +232,28 @@ export default function DashboardPage() {
                     </motion.div>
                  </div>
              </div>
+
+            {isSpecialUser && (
+                <Link href="/dashboard/premium/elite-lounge" className="group block">
+                    <div className="relative rounded-xl p-px overflow-hidden before:absolute before:inset-0 before:w-full before:h-full before:bg-gradient-to-br before:from-yellow-400 before:to-amber-600 before:animate-pulse">
+                        <Card className="relative z-10 cursor-pointer overflow-hidden bg-gradient-to-br from-yellow-900/80 via-black to-black border-yellow-700/50 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                             <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                            <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
+                                <div className="p-4 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30">
+                                    <Crown className="h-10 w-10 text-yellow-400 animate-gold-shine"/>
+                                </div>
+                                <div className="flex-1 text-center sm:text-left">
+                                    <CardTitle className="text-2xl font-bold text-yellow-400">Elite Lounge</CardTitle>
+                                    <CardDescription className="text-yellow-400/70 mt-1">Access exclusive features and rewards for our top members.</CardDescription>
+                                </div>
+                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
+                                    Enter Lounge <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </Link>
+            )}
             
             <Link href="/dashboard/challenger" className="group block">
                 <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-red-900 via-rose-900 to-red-900 border-red-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
@@ -465,3 +491,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
