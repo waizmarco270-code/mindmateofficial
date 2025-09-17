@@ -225,7 +225,7 @@ export function PomodoroTimer() {
 
   return (
     <div className="absolute inset-0 z-0 flex flex-col h-full w-full text-white overflow-hidden bg-gray-900">
-        <audio ref={musicAudioRef} src={selectedMusic.src} loop muted={isMuted} />
+        {selectedMusic.src && <audio ref={musicAudioRef} src={selectedMusic.src} loop muted={isMuted} />}
         <AnimatePresence>
             {selectedTheme && (
                 <motion.div
