@@ -25,13 +25,13 @@ export function ScratchCard() {
         canvas.height = canvas.offsetHeight;
         
         const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-        gradient.addColorStop(0, '#a855f7');
-        gradient.addColorStop(1, '#ec4899');
+        gradient.addColorStop(0, '#fde047'); // yellow-300
+        gradient.addColorStop(1, '#f59e0b'); // amber-500
         
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        ctx.fillStyle = '#fff';
+        ctx.fillStyle = '#a16207'; // amber-700
         ctx.font = 'bold 24px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';

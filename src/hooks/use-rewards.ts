@@ -60,12 +60,13 @@ export const useRewards = () => {
             return { prize: 'better luck' };
         }
         
+        // New rebalanced prize pool
         const weightedPrizes = [
-            { value: 'better luck', weight: 40 },
-            { value: 2, weight: 30 },
-            { value: 5, weight: 20 },
-            { value: 10, weight: 9 },
-            { value: 100, weight: 1 }
+            { value: 'better luck', weight: 60 },
+            { value: 2, weight: 25 },
+            { value: 5, weight: 10 },
+            { value: 10, weight: 4.5 },
+            { value: 20, weight: 0.5 } // 0.5% chance for the max prize
         ];
         
         const totalWeight = weightedPrizes.reduce((sum, p) => sum + p.weight, 0);
@@ -114,9 +115,10 @@ export const useRewards = () => {
 
     const generateCardFlipPrize = useCallback(() => {
         const rand = Math.random() * 100;
-        if (rand < 2) return 100; // 2% chance for 100 credits
-        if (rand < 10) return Math.floor(Math.random() * 5) + 5; // 8% chance for 5-9 credits
-        return Math.floor(Math.random() * 4) + 1; // 90% chance for 1-4 credits
+        if (rand < 1) return 20;   // 1% chance for 20 credits
+        if (rand < 5) return 10;   // 4% chance for 10 credits
+        if (rand < 20) return 5;    // 15% chance for 5 credits
+        return Math.floor(Math.random() * 3) + 1; // 80% chance for 1-3 credits
     }, []);
 
     const playCardFlip = useCallback(async (isWin: boolean, prizeAmount: number) => {
