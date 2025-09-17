@@ -35,6 +35,7 @@ export interface User {
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number; // Total count over all time
   lastDailyTasksClaim?: string; // YYYY-MM-DD, for per-day reward claim
+  lastEliteClaim?: string; // YYYY-MM-DD, for elite daily reward
   totalStudyTime?: number; // in seconds
   lastRewardDate?: string; // For scratch card
   lastGiftBoxDate?: string; // For gift box game
@@ -171,6 +172,7 @@ interface AppDataContextType {
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string) => Promise<void>;
     claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
+    claimEliteDailyReward: (uid: string) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
     updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind', score: number) => Promise<void>;
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
@@ -610,6 +612,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }
     
+    const claimEliteDailyReward = useCallback(async (uid: string) => {
+        if (!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, {
+            credits: increment(20),
+            freeRewards: increment(5),
+            freeGuesses: increment(5),
+            lastEliteClaim: format(new Date(), 'yyyy-MM-dd')
+        });
+    }, []);
+    
     const updateStudyTime = async (uid: string, totalSeconds: number) => {
         if(!uid) return;
         const userDocRef = doc(db, 'users', uid);
@@ -929,6 +942,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         incrementQuizAttempt,
         incrementFocusSessions,
         claimDailyTaskReward,
+        claimEliteDailyReward,
         updateStudyTime,
         updateGameHighScore,
         claimDimensionShiftMilestone,

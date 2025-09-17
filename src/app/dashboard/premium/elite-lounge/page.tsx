@@ -1,18 +1,38 @@
 
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Crown, Construction, Loader2, ShieldX } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Crown, Construction, Loader2, ShieldX, Gift, CheckCircle, BarChart, FileCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/use-admin';
+import { useUser } from '@clerk/nextjs';
+import { useToast } from '@/hooks/use-toast';
+import { format, isToday, parseISO } from 'date-fns';
 
 export default function EliteLoungePage() {
-  const { currentUserData, isAdmin, isSuperAdmin, loading } = useAdmin();
+  const { user } = useUser();
+  const { currentUserData, isAdmin, isSuperAdmin, loading, claimEliteDailyReward } = useAdmin();
+  const { toast } = useToast();
+  
+  const hasAccess = currentUserData?.isVip || currentUserData?.isGM || isAdmin || isSuperAdmin;
 
-  const isVip = currentUserData?.isVip ?? false;
-  const isGM = currentUserData?.isGM ?? false;
-  const hasAccess = isVip || isGM || isAdmin || isSuperAdmin;
+  const hasClaimedToday = !!currentUserData?.lastEliteClaim && isToday(parseISO(currentUserData.lastEliteClaim));
+
+  const handleClaim = async () => {
+    if (!user) return;
+    try {
+        await claimEliteDailyReward(user.id);
+        toast({
+            title: "Treasury Claimed!",
+            description: "Your daily elite rewards have been added to your account.",
+            className: "bg-green-500/10 border-green-500/50"
+        });
+    } catch (error: any) {
+        toast({ variant: "destructive", title: "Claim Failed", description: error.message });
+    }
+  };
+
 
   if (loading) {
       return (
@@ -48,38 +68,69 @@ export default function EliteLoungePage() {
 
 
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center">
-      <Card className="w-full max-w-lg border-yellow-400/50 bg-gradient-to-br from-yellow-950/30 to-background">
-        <CardHeader>
-           <div className="flex justify-center mb-4">
-              <div className="p-4 bg-yellow-400/10 rounded-full border-2 border-yellow-400/30 animate-pulse">
-                  <Crown className="h-12 w-12 text-yellow-400 [text-shadow:0_0_8px_currentColor]" />
-              </div>
-          </div>
-          <CardTitle className="text-3xl font-bold text-yellow-400">
-            Welcome to the Elite Lounge
-          </CardTitle>
-          <CardDescription className="text-yellow-400/80">
-            This is an exclusive area for Elite Members, GMs, and Admins.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-            <div className="flex items-center justify-center gap-4 text-amber-300">
-                <Construction className="h-6 w-6"/>
-                <p className="text-lg font-semibold animate-pulse">More Legendary Features Coming Soon!</p>
-            </div>
-            <p className="text-slate-400">
-                This space is currently under construction. We're building amazing new tools and rewards just for you.
-            </p>
-            <div className="pt-4">
-                <Button asChild variant="outline">
-                    <Link href="/dashboard">
-                       &larr; Back to Dashboard
-                    </Link>
+    <div className="space-y-8">
+       <div>
+        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+          <Crown className="h-8 w-8 text-yellow-400 [text-shadow:0_0_8px_currentColor]" />
+          Elite Lounge
+        </h1>
+        <p className="text-muted-foreground">Exclusive benefits and tools for our top members.</p>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card className="border-yellow-400/50 bg-gradient-to-br from-yellow-950/30 to-background flex flex-col justify-between">
+            <CardHeader>
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-yellow-400/10 rounded-lg border border-yellow-400/20">
+                        <Gift className="h-8 w-8 text-yellow-400"/>
+                    </div>
+                    <div>
+                        <CardTitle className="text-2xl text-yellow-400">Elite Daily Treasury</CardTitle>
+                        <CardDescription className="text-yellow-400/80">Claim your exclusive rewards every day.</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="text-center space-y-2">
+                <p className="font-bold text-lg">+20 Credits</p>
+                <p className="font-bold text-lg">+5 Scratch Cards</p>
+                <p className="font-bold text-lg">+5 Card Flip Plays</p>
+            </CardContent>
+            <CardFooter>
+                <Button 
+                    className="w-full"
+                    onClick={handleClaim}
+                    disabled={hasClaimedToday}
+                >
+                    {hasClaimedToday ? <><CheckCircle className="mr-2"/> Claimed for Today</> : 'Claim Daily Reward'}
                 </Button>
-            </div>
-        </CardContent>
-      </Card>
+            </CardFooter>
+        </Card>
+        
+        <Card>
+             <CardHeader>
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
+                        <BarChart className="h-8 w-8 text-primary"/>
+                    </div>
+                    <div>
+                        <CardTitle className="text-2xl">Insider's Circle</CardTitle>
+                        <CardDescription>Your voice matters. Shape the future of MindMate.</CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="p-4 rounded-lg bg-muted flex items-center justify-between">
+                    <p className="font-semibold">Exclusive Polls</p>
+                    <div className="text-sm font-bold text-muted-foreground flex items-center gap-2"><Construction className="h-4 w-4"/> Coming Soon</div>
+                 </div>
+                  <div className="p-4 rounded-lg bg-muted flex items-center justify-between">
+                    <p className="font-semibold">Early Access Features</p>
+                    <div className="text-sm font-bold text-muted-foreground flex items-center gap-2"><Construction className="h-4 w-4"/> Coming Soon</div>
+                 </div>
+            </CardContent>
+        </Card>
+
+      </div>
     </div>
   );
 }
