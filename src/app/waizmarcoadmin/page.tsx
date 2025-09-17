@@ -550,7 +550,7 @@ export default function SuperAdminPanelPage() {
                                         <TableCell className="capitalize">
                                             {gift.target === 'all' ? 'All Users' : users.find(u => u.uid === gift.target)?.displayName || 'Single User'}
                                         </TableCell>
-                                        <TableCell>{formatDistanceToNow(gift.createdAt.toDate(), {addSuffix: true})}</TableCell>
+                                        <TableCell>{(gift.createdAt && typeof gift.createdAt.toDate === 'function') ? formatDistanceToNow(gift.createdAt.toDate(), {addSuffix: true}) : 'Just now'}</TableCell>
                                         <TableCell className="text-right">
                                             {gift.isActive && (
                                                  <AlertDialog>
