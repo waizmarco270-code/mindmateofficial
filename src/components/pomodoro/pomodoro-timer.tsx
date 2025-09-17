@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { cn } from '@/lib/utils';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
@@ -27,7 +26,7 @@ interface PomodoroSettings {
   shortBreak: number;
   longBreak: number;
   sessions: number;
-  sound: 'digital' | 'chime' | 'sweet';
+  sound: 'digital' | 'chime' | 'bell';
 }
 
 const defaultSettings: PomodoroSettings = {
@@ -46,9 +45,7 @@ export function PomodoroTimer() {
   const [isMuted, setIsMuted] = useLocalStorage('pomodoroMuted', false);
   const [sessionsCompleted, setSessionsCompleted] = useState(0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [isThemeSheetOpen, setIsThemeSheetOpen] = useState(false);
-  const [isMusicSheetOpen, setIsMusicSheetOpen] = useState(false);
-
+  
   const [tempSettings, setTempSettings] = useState(settings);
   
   const { pomodoroThemes } = placeholderData;
@@ -57,34 +54,44 @@ export function PomodoroTimer() {
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   
-  const playSound = useCallback((type: 'tick' | 'notification') => {
+  const playSound = useCallback((type: 'tick' | 'notification', soundOverride?: PomodoroSettings['sound']) => {
     if (isMuted || typeof window === 'undefined') return;
-    if (!audioContextRef.current) return;
+    if (!audioContextRef.current) {
+        try {
+            audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        } catch (e) { console.error("Web Audio API is not supported"); return; }
+    }
+    if (audioContextRef.current.state === 'suspended') {
+        audioContextRef.current.resume();
+    }
     
     const oscillator = audioContextRef.current.createOscillator();
     const gainNode = audioContextRef.current.createGain();
     oscillator.connect(gainNode);
     gainNode.connect(audioContextRef.current.destination);
+    
+    const soundToPlay = soundOverride || settings.sound;
 
     if (type === 'tick') {
-        oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(1000, audioContextRef.current.currentTime);
-        gainNode.gain.setValueAtTime(0.2, audioContextRef.current.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContextRef.current.currentTime + 0.1);
-        oscillator.start(audioContextRef.current.currentTime);
-        oscillator.stop(audioContextRef.current.currentTime + 0.1);
+        // Tick sound is disabled as it's often too much. Kept for potential future use.
+        // oscillator.type = 'triangle';
+        // oscillator.frequency.setValueAtTime(1000, audioContextRef.current.currentTime);
+        // gainNode.gain.setValueAtTime(0.2, audioContextRef.current.currentTime);
+        // gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContextRef.current.currentTime + 0.1);
+        // oscillator.start(audioContextRef.current.currentTime);
+        // oscillator.stop(audioContextRef.current.currentTime + 0.1);
     } else { // notification
         oscillator.type = 'sine';
         const now = audioContextRef.current.currentTime;
-        if (settings.sound === 'digital') {
+        if (soundToPlay === 'digital') {
             oscillator.frequency.setValueAtTime(659.25, now);
             gainNode.gain.setValueAtTime(0.5, now);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.2);
-        } else if (settings.sound === 'chime') {
+        } else if (soundToPlay === 'chime') {
             oscillator.frequency.setValueAtTime(523.25, now);
             oscillator.frequency.setValueAtTime(659.25, now + 0.1);
             oscillator.frequency.setValueAtTime(783.99, now + 0.2);
-        } else { // sweet
+        } else { // bell
             oscillator.frequency.setValueAtTime(783.99, now);
             gainNode.gain.setValueAtTime(0.3, now);
             gainNode.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
@@ -128,7 +135,8 @@ export function PomodoroTimer() {
     if (isActive && timeLeft > 0) {
       timerRef.current = setInterval(() => {
         setTimeLeft((prev) => prev - 1);
-        playSound('tick');
+        // Disabling tick sound as it can be annoying
+        // playSound('tick');
       }, 1000);
     } else if (isActive && timeLeft === 0) {
       playSound('notification');
@@ -154,7 +162,7 @@ export function PomodoroTimer() {
     if(audioContextRef.current?.state === 'suspended') {
         audioContextRef.current.resume();
     }
-    setIsActive(!isActive);
+    setIsActive(prev => !prev);
   };
   
   const handleReset = () => {
@@ -310,23 +318,52 @@ export function PomodoroTimer() {
         </div>
        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Edit Pomodoro Settings</DialogTitle><DialogDescription>Customize your focus and break intervals.</DialogDescription></DialogHeader>
-          <div className="grid gap-6 py-4">
-            <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="focus" className="text-right">Focus</Label><Input id="focus" type="number" value={tempSettings.focus} onChange={(e) => setTempSettings(s => ({...s, focus: parseInt(e.target.value)}))} className="col-span-3"/></div>
-            <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="shortBreak" className="text-right">Short Break</Label><Input id="shortBreak" type="number" value={tempSettings.shortBreak} onChange={(e) => setTempSettings(s => ({...s, shortBreak: parseInt(e.target.value)}))} className="col-span-3"/></div>
-            <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="longBreak" className="text-right">Long Break</Label><Input id="longBreak" type="number" value={tempSettings.longBreak} onChange={(e) => setTempSettings(s => ({...s, longBreak: parseInt(e.target.value)}))} className="col-span-3"/></div>
-            <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="sessions" className="text-right">Sessions</Label><Input id="sessions" type="number" value={tempSettings.sessions} onChange={(e) => setTempSettings(s => ({...s, sessions: parseInt(e.target.value)}))} className="col-span-3"/></div>
-            <div className="grid grid-cols-4 items-center gap-4"><Label htmlFor="sound" className="text-right">Sound</Label>
-                <Select value={tempSettings.sound} onValueChange={(v: any) => setTempSettings(s => ({...s, sound: v}))}><SelectTrigger id="sound" className="col-span-3"><SelectValue placeholder="Select a sound" /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="digital">Digital</SelectItem>
-                        <SelectItem value="chime">Chime</SelectItem>
-                        <SelectItem value="sweet">Short & Sweet</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+          <DialogHeader><DialogTitle>Timer Settings</DialogTitle></DialogHeader>
+          <div className="space-y-6 py-4">
+              <div className="space-y-3">
+                  <Label>Quick Presets</Label>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[15, 25, 45, 60].map(min => (
+                        <Button key={min} variant="outline" onClick={() => setTempSettings(s => ({...s, focus: min}))}>
+                            {min} min Focus
+                        </Button>
+                    ))}
+                  </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="focus">Work Duration (minutes)</Label>
+                    <Input id="focus" type="number" value={tempSettings.focus} onChange={(e) => setTempSettings(s => ({...s, focus: parseInt(e.target.value) || 0}))}/>
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="shortBreak">Break Duration (minutes)</Label>
+                    <Input id="shortBreak" type="number" value={tempSettings.shortBreak} onChange={(e) => setTempSettings(s => ({...s, shortBreak: parseInt(e.target.value) || 0}))}/>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Label>Alarm Sound</Label>
+                <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => playSound('notification', tempSettings.sound)}>Test</Button>
+                    <span className="text-xs text-muted-foreground">Preview current alarm</span>
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                    {(['digital', 'chime', 'bell'] as const).map(sound => (
+                        <Button 
+                            key={sound}
+                            variant={tempSettings.sound === sound ? 'default' : 'outline'}
+                            onClick={() => setTempSettings(s => ({...s, sound}))}
+                            className="capitalize"
+                        >
+                            {sound}
+                        </Button>
+                    ))}
+                </div>
+              </div>
           </div>
-          <DialogFooter><Button onClick={handleSaveSettings}>Save Changes</Button></DialogFooter>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveSettings}>Apply Settings</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
