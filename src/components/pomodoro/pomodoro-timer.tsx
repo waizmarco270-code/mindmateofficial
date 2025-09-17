@@ -80,7 +80,6 @@ export function PomodoroTimer() {
   const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroSelectedTheme', pomodoroThemes.nature[0]);
   const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0]>('pomodoroSelectedMusic', musicTracks[0]);
 
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
   const penaltyAppliedRef = useRef(false);
@@ -163,7 +162,6 @@ export function PomodoroTimer() {
 
   const resetTimer = useCallback((isManualReset = false) => {
     setIsActive(false);
-    if (timerRef.current) clearInterval(timerRef.current);
      if (typeof window !== 'undefined') {
         sessionStorage.removeItem(POMODORO_SESSION_ACTIVE_KEY);
     }
@@ -195,31 +193,32 @@ export function PomodoroTimer() {
 
 
   useEffect(() => {
-    if (isActive && timeLeft > 0) {
-      if (!timerRef.current) {
-        timerRef.current = setInterval(() => {
-          setTimeLeft((prev) => prev - 1);
+    let timerId: NodeJS.Timeout | null = null;
+    
+    if (isActive) {
+        timerId = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    playSound('notification');
+                    const sessionData: PomodoroSessionData = {
+                        type: mode,
+                        duration: settings[mode] * 60,
+                    };
+                    addPomodoroSession(sessionData);
+                    resetTimer();
+                    return 0; // The resetTimer will set the new time, returning 0 stops this tick.
+                }
+                return prev - 1;
+            });
         }, 1000);
-      }
-    } else if (isActive && timeLeft === 0) {
-        playSound('notification');
-        
-        // Save the completed session
-        const sessionData: PomodoroSessionData = {
-            type: mode,
-            duration: settings[mode] * 60,
-        };
-        addPomodoroSession(sessionData);
-
-        resetTimer();
-    } else if (!isActive && timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
+    } else if (timerId) {
+        clearInterval(timerId);
     }
+
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
+        if (timerId) clearInterval(timerId);
     };
-  }, [isActive, timeLeft, resetTimer, playSound, addPomodoroSession, mode, settings]);
+  }, [isActive, playSound, addPomodoroSession, mode, settings, resetTimer]);
   
   useEffect(() => {
     if (!isActive) {
