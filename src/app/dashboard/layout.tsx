@@ -21,6 +21,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
   const isMobile = useIsMobile();
   const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
+  const [isMobileNavCollapsed, setIsMobileNavCollapsed] = React.useState(false);
   const { toast } = useToast();
   const pathname = usePathname();
 
@@ -70,13 +71,13 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             <main className="relative flex-1 overflow-y-auto focus:outline-none">
             <SidebarInset className={cn(
                 "p-4 sm:p-6 lg:p-8",
-                isImmersive ? "!p-0 h-full" : "pb-28 md:pb-8" // Remove padding in immersive mode
+                isImmersive ? "!p-0 h-full" : (isMobileNavCollapsed ? 'pb-8' : 'pb-28 md:pb-8') // Adjust padding for collapsed nav
             )}>
                 {children}
             </SidebarInset>
             </main>
         </div>
-        {!isImmersive && isMobile && <MobileNav />}
+        {!isImmersive && isMobile && <MobileNav isCollapsed={isMobileNavCollapsed} onToggleCollapse={setIsMobileNavCollapsed} />}
     </SidebarProvider>
   )
 }
