@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
@@ -23,8 +24,21 @@ export default function RootLayout({
           <link rel="preconnect" href="https://fonts.googleapis.com" />
           <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
           <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@400;700&display=swap"
             rel="stylesheet"
+          />
+           <style
+            dangerouslySetInnerHTML={{
+              __html: `
+                @font-face {
+                  font-family: 'DSEG7-Classic';
+                  src: url('/fonts/DSEG7-Classic-Bold.woff2') format('woff2');
+                  font-weight: bold;
+                  font-style: normal;
+                  font-display: swap;
+                }
+              `,
+            }}
           />
            <meta name="theme-color" content="#000000" />
            <link rel="manifest" href="/manifest.json" />

@@ -14,7 +14,8 @@ export default {
       fontFamily: {
         body: ['Inter', 'sans-serif'],
         headline: ['Inter', 'sans-serif'],
-        code: ['monospace'],
+        code: ['"DSEG7-Classic"', 'monospace'],
+        serif: ['"Playfair Display"', 'serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
@@ -142,5 +143,3 @@ export default {
     }),
   ],
 } satisfies Config;
-
-    

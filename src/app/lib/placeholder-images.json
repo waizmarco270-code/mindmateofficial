@@ -2,20 +2,24 @@
 {
     "pomodoroThemes": {
         "nature": [
-            { "id": "nature-1", "src": "https://picsum.photos/seed/n1/720/1280", "data-ai-hint": "aurora borealis" },
-            { "id": "nature-2", "src": "https://picsum.photos/seed/n2/720/1280", "data-ai-hint": "forest night" },
-            { "id": "nature-3", "src": "https://picsum.photos/seed/n3/720/1280", "data-ai-hint": "starry sky" },
-            { "id": "nature-4", "src": "https://picsum.photos/seed/n4/720/1280", "data-ai-hint": "mountain lake" },
-            { "id": "nature-5", "src": "https://picsum.photos/seed/n5/720/1280", "data-ai-hint": "tropical beach" },
-            { "id": "nature-6", "src": "https://picsum.photos/seed/n6/720/1280", "data-ai-hint": "misty forest" }
+            { "id": "nature-1", "src": "https://picsum.photos/seed/n1/1080/1920", "data-ai-hint": "aurora borealis" },
+            { "id": "nature-2", "src": "https://picsum.photos/seed/n2/1080/1920", "data-ai-hint": "forest night" },
+            { "id": "nature-3", "src": "https://picsum.photos/seed/n3/1080/1920", "data-ai-hint": "starry sky" },
+            { "id": "nature-4", "src": "https://picsum.photos/seed/n4/1080/1920", "data-ai-hint": "mountain lake" },
+            { "id": "nature-5", "src": "https://picsum.photos/seed/n5/1080/1920", "data-ai-hint": "tropical beach" },
+            { "id": "nature-6", "src": "https://picsum.photos/seed/n6/1080/1920", "data-ai-hint": "misty forest" },
+            { "id": "nature-7", "src": "https://picsum.photos/seed/n7/1080/1920", "data-ai-hint": "desert stars" },
+            { "id": "nature-8", "src": "https://picsum.photos/seed/n8/1080/1920", "data-ai-hint": "underwater light" }
         ],
         "lofi": [
-            { "id": "lofi-1", "src": "https://picsum.photos/seed/l1/720/1280", "data-ai-hint": "cozy library" },
-            { "id": "lofi-2", "src": "https://picsum.photos/seed/l2/720/1280", "data-ai-hint": "study room" },
-            { "id": "lofi-3", "src": "https://picsum.photos/seed/l3/720/1280", "data-ai-hint": "library window" },
-            { "id": "lofi-4", "src": "https://picsum.photos/seed/l4/720/1280", "data-ai-hint": "anime workspace" },
-            { "id": "lofi-5", "src": "https://picsum.photos/seed/l5/720/1280", "data-ai-hint": "rainy window" },
-            { "id": "lofi-6", "src": "https://picsum.photos/seed/l6/720/1280", "data-ai-hint": "coffee shop" }
+            { "id": "lofi-1", "src": "https://picsum.photos/seed/l1/1080/1920", "data-ai-hint": "cozy library" },
+            { "id": "lofi-2", "src": "https://picsum.photos/seed/l2/1080/1920", "data-ai-hint": "study room" },
+            { "id": "lofi-3", "src": "https://picsum.photos/seed/l3/1080/1920", "data-ai-hint": "library window" },
+            { "id": "lofi-4", "src": "https://picsum.photos/seed/l4/1080/1920", "data-ai-hint": "anime workspace" },
+            { "id": "lofi-5", "src": "https://picsum.photos/seed/l5/1080/1920", "data-ai-hint": "rainy window" },
+            { "id": "lofi-6", "src": "https://picsum.photos/seed/l6/1080/1920", "data-ai-hint": "coffee shop" },
+            { "id": "lofi-7", "src": "https://picsum.photos/seed/l7/1080/1920", "data-ai-hint": "lofi bedroom" },
+            { "id": "lofi-8", "src": "https://picsum.photos/seed/l8/1080/1920", "data-ai-hint": "bookstore night" }
         ]
     }
 }
