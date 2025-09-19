@@ -47,7 +47,7 @@ const mainNavItems = [
   { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker' },
   { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos' },
   { href: '/dashboard/insights', icon: LineChart, label: 'Insights' },
-  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger' },
+  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: true },
 ];
 
 const communityNav = [
@@ -56,10 +56,10 @@ const communityNav = [
 ];
 
 const competeNav = [
-    { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
-    { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
-    { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone' },
-    { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
+    { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: true },
+    { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: true },
+    { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: true },
+    { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: true },
 ];
 
 const otherNav = [
@@ -117,7 +117,8 @@ export default function SidebarContent() {
               'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
               isActive(item.href)
                   ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                  : 'hover:text-primary'
+                  : 'hover:text-primary',
+              item.glow && !isActive(item.href) && 'text-primary [text-shadow:0_0_8px_hsl(var(--primary)/70%)]'
             )}
           >
             <div className={cn(
@@ -142,7 +143,7 @@ export default function SidebarContent() {
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex h-20 items-center border-b border-sidebar-border px-6">
         <Link href="/dashboard" className="flex items-center gap-3 font-semibold" prefetch={true}>
-          <Logo className="h-8 w-8 text-primary" />
+          <Logo className="h-8 w-8" />
           <span className="text-xl">MindMate</span>
         </Link>
       </div>
@@ -211,8 +212,8 @@ export default function SidebarContent() {
                     Lounge
                   </AccordionTrigger>
                   <AccordionContent className="px-0 pb-2 space-y-1">
-                      <Link href="/dashboard/premium/elite-lounge" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary')}>
-                          <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
+                      <Link href="/dashboard/premium/elite-lounge" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
+                          <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
                           <Crown className="h-5 w-5"/> Elite Lounge
                       </Link>
                       {(isAdmin || isSuperAdmin) && renderNavLinks(adminNav as any)}
