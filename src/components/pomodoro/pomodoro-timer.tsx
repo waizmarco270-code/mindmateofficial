@@ -24,7 +24,7 @@ import { useImmersive } from '@/hooks/use-immersive';
 import { Switch } from '../ui/switch';
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
-type WatchFace = 'default' | 'minimal' | 'digital' | 'elegant';
+type WatchFace = 'default' | 'minimal' | 'digital' | 'elegant' | 'outline' | 'shadow' | 'classic' | 'bold';
 
 export interface PomodoroTheme {
   id: string;
@@ -325,7 +325,11 @@ export function PomodoroTimer() {
     default: 'font-mono text-6xl md:text-7xl font-bold tabular-nums tracking-tighter',
     minimal: 'font-sans text-5xl md:text-6xl font-light tracking-widest',
     digital: 'font-code text-5xl md:text-6xl font-black',
-    elegant: 'font-serif text-6xl md:text-7xl font-normal'
+    elegant: 'font-serif text-6xl md:text-7xl font-normal',
+    outline: 'font-sans text-6xl md:text-7xl font-extrabold text-transparent' ,
+    shadow: 'font-sans text-6xl md:text-7xl font-bold',
+    classic: 'font-serif text-6xl md:text-7xl font-semibold',
+    bold: 'font-sans text-6xl md:text-7xl font-extrabold',
   };
 
   const CIRCLE_RADIUS = 130;
@@ -447,7 +451,7 @@ export function PomodoroTimer() {
                     </svg>
 
                     <div className="relative flex flex-col items-center text-center">
-                        <p className={cn(timerFaceClasses[selectedWatchFace], "[text-shadow:0_2px_8px_rgba(0,0,0,0.7)]")}>
+                        <p className={cn(timerFaceClasses[selectedWatchFace], "[text-shadow:0_2px_8px_rgba(0,0,0,0.7)]", selectedWatchFace === 'outline' && '[--outline-color:white] [text-shadow:0_0_1px_var(--outline-color),_0_0_1px_var(--outline-color),_0_0_1px_var(--outline-color),_0_0_1px_var(--outline-color)]', selectedWatchFace === 'shadow' && '[text-shadow:4px_4px_0_rgba(0,0,0,0.4)]' )}>
                             {formatTime(timeLeft)}
                         </p>
                         <Button variant="ghost" className="mt-4 text-white/70 hover:text-white" onClick={() => { setTempSettings(settings); setIsEditDialogOpen(true); }}>
@@ -530,18 +534,42 @@ export function PomodoroTimer() {
                                         <Label htmlFor="face-default" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'default' && 'border-primary bg-primary/10')}>
                                             <RadioGroupItem value="default" id="face-default"/>
                                             <span className="font-mono text-2xl font-bold">12:34</span>
+                                            <span className="ml-auto text-sm text-muted-foreground">Default</span>
                                         </Label>
                                         <Label htmlFor="face-minimal" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'minimal' && 'border-primary bg-primary/10')}>
                                             <RadioGroupItem value="minimal" id="face-minimal"/>
                                             <span className="font-sans text-2xl font-light tracking-widest">12:34</span>
+                                             <span className="ml-auto text-sm text-muted-foreground">Minimal</span>
                                         </Label>
                                         <Label htmlFor="face-digital" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'digital' && 'border-primary bg-primary/10')}>
                                             <RadioGroupItem value="digital" id="face-digital"/>
                                             <span className="font-code text-2xl font-black">12:34</span>
+                                             <span className="ml-auto text-sm text-muted-foreground">Digital</span>
                                         </Label>
                                         <Label htmlFor="face-elegant" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'elegant' && 'border-primary bg-primary/10')}>
                                             <RadioGroupItem value="elegant" id="face-elegant"/>
                                             <span className="font-serif text-2xl">12:34</span>
+                                             <span className="ml-auto text-sm text-muted-foreground">Elegant</span>
+                                        </Label>
+                                        <Label htmlFor="face-outline" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'outline' && 'border-primary bg-primary/10')}>
+                                            <RadioGroupItem value="outline" id="face-outline"/>
+                                            <span className="font-sans text-2xl font-extrabold text-transparent" style={{WebkitTextStroke: '1px hsl(var(--foreground))'}}>12:34</span>
+                                            <span className="ml-auto text-sm text-muted-foreground">Outline</span>
+                                        </Label>
+                                        <Label htmlFor="face-shadow" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'shadow' && 'border-primary bg-primary/10')}>
+                                            <RadioGroupItem value="shadow" id="face-shadow"/>
+                                            <span className="font-sans text-2xl font-bold" style={{textShadow: '3px 3px 0px hsl(var(--primary) / 0.5)'}}>12:34</span>
+                                            <span className="ml-auto text-sm text-muted-foreground">Shadow</span>
+                                        </Label>
+                                        <Label htmlFor="face-classic" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'classic' && 'border-primary bg-primary/10')}>
+                                            <RadioGroupItem value="classic" id="face-classic"/>
+                                            <span className="font-serif text-2xl font-semibold">12:34</span>
+                                            <span className="ml-auto text-sm text-muted-foreground">Classic</span>
+                                        </Label>
+                                        <Label htmlFor="face-bold" className={cn("flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer", selectedWatchFace === 'bold' && 'border-primary bg-primary/10')}>
+                                            <RadioGroupItem value="bold" id="face-bold"/>
+                                            <span className="font-sans text-2xl font-extrabold">12:34</span>
+                                            <span className="ml-auto text-sm text-muted-foreground">Bold</span>
                                         </Label>
                                     </RadioGroup>
                                 </SheetContent>
