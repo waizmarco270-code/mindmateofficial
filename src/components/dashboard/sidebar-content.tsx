@@ -41,11 +41,6 @@ import { useAdmin } from '@/hooks/use-admin';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
 const mainNavItems = [
-  { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
-  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
-];
-
-const studyNav = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus' },
   { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro' },
   { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode' },
@@ -53,6 +48,11 @@ const studyNav = [
   { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos' },
   { href: '/dashboard/insights', icon: LineChart, label: 'Insights' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger' },
+];
+
+const communityNav = [
+  { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
+  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
 ];
 
 const competeNav = [
@@ -178,18 +178,18 @@ export default function SidebarContent() {
             </AccordionContent>
           </AccordionItem>
         
-          <AccordionItem value="study-tools" className="border-b-0">
+          <AccordionItem value="community-resources" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Study
+              Community &amp; Resources
             </AccordionTrigger>
             <AccordionContent className="px-0 pb-2">
-              {renderNavLinks(studyNav as any)}
+              {renderNavLinks(communityNav as any)}
             </AccordionContent>
           </AccordionItem>
 
           <AccordionItem value="compete-earn" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Compete & Earn
+              Compete &amp; Earn
             </AccordionTrigger>
             <AccordionContent className="px-0 pb-2">
               {renderNavLinks(competeNav as any)}
@@ -239,7 +239,7 @@ export default function SidebarContent() {
                     isActive('/dashboard/refer') ? "bg-primary" : "group-hover:scale-y-50"
                 )}></div>
                 <UserPlus className="h-5 w-5" />
-                <span className="flex-1">Invite & Earn</span>
+                <span className="flex-1">Invite &amp; Earn</span>
             </Link>
           <Link
                 href="/dashboard/help"
@@ -256,7 +256,7 @@ export default function SidebarContent() {
                     isActive('/dashboard/help') ? "bg-primary" : "group-hover:scale-y-50"
                 )}></div>
                 <LifeBuoy className="h-5 w-5" />
-                <span className="flex-1">Help & Support</span>
+                <span className="flex-1">Help &amp; Support</span>
             </Link>
           <div className="px-3 pt-2 mb-2">
              <h2 className="text-sm font-semibold tracking-tight text-sidebar-foreground/60">Follow Us</h2>
