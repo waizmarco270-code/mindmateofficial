@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
-import { Gift, Copy, Check, ShieldCheck, AlertTriangle, Share2 } from 'lucide-react';
+import { Gift, Copy, Check, ShieldCheck, AlertTriangle, Share2, Users } from 'lucide-react';
 import { useReferrals } from '@/hooks/use-referrals';
 
 const REFERRAL_REWARD = 50;
