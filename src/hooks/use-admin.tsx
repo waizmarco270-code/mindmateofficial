@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -27,6 +26,7 @@ export interface User {
   votedPolls?: Record<string, string>; // { pollId: 'chosen_option' }
   unlockedResourceSections?: string[]; // Array of unlocked section IDs
   unlockedFeatures?: string[]; // Array of feature IDs
+  hasAiAccess?: boolean; // For Marco AI
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
@@ -169,6 +169,7 @@ interface AppDataContextType {
     addGuessesToAllUsers: (amount: number) => Promise<void>;
     unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
     unlockFeatureForUser: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
+    generateAiAccessToken: (uid: string) => Promise<string | null>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string) => Promise<void>;
@@ -368,6 +369,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     friends: [],
                     unlockedResourceSections: [],
                     unlockedFeatures: [],
+                    hasAiAccess: false,
                     focusSessionsCompleted: 0,
                     dailyTasksCompleted: 0,
                     totalStudyTime: 0,
@@ -580,6 +582,36 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             credits: increment(-cost)
         });
     };
+
+    const generateAiAccessToken = async (uid: string): Promise<string | null> => {
+        if (!uid) return null;
+
+        const userRef = doc(db, 'users', uid);
+        const tokensRef = collection(db, 'ai_access_tokens');
+        
+        // Generate a random token
+        const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+
+        const batch = writeBatch(db);
+
+        // Deduct credits and mark AI access for user
+        batch.update(userRef, {
+            credits: increment(-1000),
+            hasAiAccess: true
+        });
+
+        // Store the new token
+        batch.set(doc(tokensRef), {
+            userId: uid,
+            token: token,
+            createdAt: serverTimestamp(),
+            isUsed: false
+        });
+
+        await batch.commit();
+        return token;
+    };
+
 
     const addPerfectedQuiz = async (uid: string, quizId: string) => {
         if(!uid || !quizId) return;
@@ -939,6 +971,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addGuessesToAllUsers,
         unlockResourceSection,
         unlockFeatureForUser,
+        generateAiAccessToken,
         addPerfectedQuiz,
         incrementQuizAttempt,
         incrementFocusSessions,
