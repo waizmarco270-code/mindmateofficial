@@ -63,11 +63,6 @@ const competeNav = [
     { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
 ];
 
-const otherNav = [
-    { href: '/dashboard/tools', icon: Wrench, label: 'Tools' },
-    { href: '/dashboard/faq', icon: HelpCircle, label: 'FAQ' },
-    { href: '/dashboard/about', icon: Info, label: 'About' },
-];
 
 const adminNav = [
     { href: '/dashboard/admin', icon: Shield, label: 'Admin Panel' },
@@ -78,9 +73,9 @@ const superAdminNav = [
 ];
 
 const socialLinks = [
-    { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx', icon: 'instagram' },
-    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H', icon: 'whatsapp' },
-    { name: 'Telegram', href: 'https://t.me/EmityGate', icon: Send },
+    { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx' },
+    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H' },
+    { name: 'Telegram', href: 'https://t.me/EmityGate' },
 ];
 
 const InstagramIcon = () => (
@@ -185,15 +180,6 @@ export default function SidebarContent() {
             </AccordionContent>
           </AccordionItem>
 
-          <AccordionItem value="other-tools" className="border-b-0">
-            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Other
-            </AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">
-              {renderNavLinks(otherNav as any)}
-            </AccordionContent>
-          </AccordionItem>
-
           {isSpecialUser && (
               <AccordionItem value="elite-lounge" className="border-b-0">
                   <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
@@ -214,21 +200,21 @@ export default function SidebarContent() {
 
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
           <Link
-                href="/dashboard/refer"
+                href="/dashboard/settings"
                 prefetch={true}
                 className={cn(
                     'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-                    isActive('/dashboard/refer') 
+                    isActive('/dashboard/settings') 
                         ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
                         : 'hover:text-primary',
                 )}
             >
                 <div className={cn(
                     "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-                    isActive('/dashboard/refer') ? "bg-primary" : "group-hover:scale-y-50"
+                    isActive('/dashboard/settings') ? "bg-primary" : "group-hover:scale-y-50"
                 )}></div>
-                <UserPlus className="h-5 w-5" />
-                <span className="flex-1">Invite &amp; Earn</span>
+                <Settings className="h-5 w-5" />
+                <span className="flex-1">Settings</span>
             </Link>
           <Link
                 href="/dashboard/help"
@@ -253,9 +239,9 @@ export default function SidebarContent() {
           <div className="flex items-center justify-around">
               {socialLinks.map(link => {
                   let Icon;
-                  if (link.icon === 'instagram') Icon = InstagramIcon;
-                  else if (link.icon === 'whatsapp') Icon = WhatsAppIcon;
-                  else Icon = link.icon;
+                  if (link.name === 'Instagram') Icon = InstagramIcon;
+                  else if (link.name === 'WhatsApp') Icon = WhatsAppIcon;
+                  else Icon = Send;
                   
                   return (
                         <a 

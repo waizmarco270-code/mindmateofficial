@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,17 +5,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Info, Lightbulb, Heart, Code } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 
-export default function AboutPage() {
+// This is now a component, not a default export page
+export default function AboutContent() {
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <Info className="h-8 w-8 text-primary" />
-          About MindMate
-        </h1>
-        <p className="text-muted-foreground">Learn more about our mission and the team behind the app.</p>
-      </div>
-
+    <div className="space-y-8">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -74,7 +66,6 @@ export default function AboutPage() {
           </p>
         </CardContent>
       </Card>
-
     </div>
   );
 }

@@ -1,9 +1,6 @@
-
 'use client';
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { HelpCircle } from 'lucide-react';
 
 const faqs = [
   {
@@ -32,31 +29,18 @@ const faqs = [
   }
 ];
 
-export default function FAQPage() {
+// This is now a component, not a default export page
+export default function FaqContent() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-          <HelpCircle className="h-8 w-8 text-primary" />
-          Frequently Asked Questions
-        </h1>
-        <p className="text-muted-foreground">Find answers to common questions about MindMate.</p>
-      </div>
-
-      <Card>
-        <CardContent className="p-6">
-          <Accordion type="single" collapsible className="w-full">
-            {faqs.map((faq, index) => (
-              <AccordionItem key={index} value={`item-${index}`}>
-                <AccordionTrigger className="text-lg font-semibold text-left">{faq.question}</AccordionTrigger>
-                <AccordionContent className="text-muted-foreground text-base">
-                  {faq.answer}
-                </AccordionContent>
-              </AccordionItem>
-            ))}
-          </Accordion>
-        </CardContent>
-      </Card>
-    </div>
+    <Accordion type="single" collapsible className="w-full">
+      {faqs.map((faq, index) => (
+        <AccordionItem key={index} value={`item-${index}`}>
+          <AccordionTrigger className="text-lg font-semibold text-left">{faq.question}</AccordionTrigger>
+          <AccordionContent className="text-muted-foreground text-base">
+            {faq.answer}
+          </AccordionContent>
+        </AccordionItem>
+      ))}
+    </Accordion>
   );
 }

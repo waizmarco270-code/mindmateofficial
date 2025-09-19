@@ -1,20 +1,19 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
-import { Gift, Copy, Check, Users, ShieldCheck, AlertTriangle, Send, Share2 } from 'lucide-react';
+import { Gift, Copy, Check, ShieldCheck, AlertTriangle, Share2 } from 'lucide-react';
 import { useReferrals } from '@/hooks/use-referrals';
 
 const REFERRAL_REWARD = 50;
 
-export default function ReferralsPage() {
+// This is now a component, not a default export page
+export default function ReferralsPageContent() {
     const { user } = useUser();
     const { currentUserData } = useUsers();
     const { submitReferralCode } = useReferrals();
@@ -90,64 +89,57 @@ export default function ReferralsPage() {
 
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Invite & Earn</h1>
-                <p className="text-muted-foreground">Share your code with friends and earn credits when they sign up!</p>
-            </div>
+            <Card className="border-primary/20 shadow-lg shadow-primary/10">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/>Your Referral Code</CardTitle>
+                    <CardDescription>Share this code with your friends. When they sign up and use it, you'll get {REFERRAL_REWARD} credits!</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Input 
+                        readOnly
+                        value={userReferralCode}
+                        className="text-2xl font-mono tracking-widest h-14 text-center bg-muted"
+                    />
+                    <div className="flex gap-2">
+                         <Button onClick={handleCopyCode} className="w-full" variant="outline">
+                            {isCodeCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
+                            {isCodeCopied ? 'Code Copied!' : 'Copy Code'}
+                        </Button>
+                        <Button onClick={handleShareInvite} className="w-full">
+                            {isInviteShared ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
+                            {isInviteShared ? 'Shared!' : 'Share Invite'}
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
             
-            <div className="grid lg:grid-cols-2 gap-8">
-                <Card className="border-primary/20 shadow-lg shadow-primary/10">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/>Your Referral Code</CardTitle>
-                        <CardDescription>Share this code with your friends. When they sign up and use it, you'll get {REFERRAL_REWARD} credits!</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <Input 
-                            readOnly
-                            value={userReferralCode}
-                            className="text-2xl font-mono tracking-widest h-14 text-center bg-muted"
-                        />
-                        <div className="flex gap-2">
-                             <Button onClick={handleCopyCode} className="w-full" variant="outline">
-                                {isCodeCopied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                                {isCodeCopied ? 'Code Copied!' : 'Copy Code'}
-                            </Button>
-                            <Button onClick={handleShareInvite} className="w-full">
-                                {isInviteShared ? <Check className="mr-2 h-4 w-4" /> : <Share2 className="mr-2 h-4 w-4" />}
-                                {isInviteShared ? 'Shared!' : 'Share Invite'}
-                            </Button>
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Users />Got a Code?</CardTitle>
+                    <CardDescription>If a friend referred you, enter their code here to help them earn a reward.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {currentUserData?.referralUsed ? (
+                         <div className="flex items-center justify-center gap-2 rounded-lg border border-green-500/50 bg-green-500/10 p-4 text-green-700 dark:text-green-300 h-full">
+                            <ShieldCheck className="h-6 w-6"/>
+                            <p className="font-semibold text-center">You've already used a referral code. Thanks for joining!</p>
                         </div>
-                    </CardContent>
-                </Card>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><Users />Got a Code?</CardTitle>
-                        <CardDescription>If a friend referred you, enter their code here to help them earn a reward.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {currentUserData?.referralUsed ? (
-                             <div className="flex items-center justify-center gap-2 rounded-lg border border-green-500/50 bg-green-500/10 p-4 text-green-700 dark:text-green-300 h-full">
-                                <ShieldCheck className="h-6 w-6"/>
-                                <p className="font-semibold text-center">You've already used a referral code. Thanks for joining!</p>
-                            </div>
-                        ) : (
-                            <form onSubmit={handleSubmitCode} className="flex items-center gap-4">
-                                <Input 
-                                    placeholder="ENTER-CODE-HERE"
-                                    value={referralCodeInput}
-                                    onChange={(e) => setReferralCodeInput(e.target.value)}
-                                    className="h-12"
-                                />
-                                <Button type="submit" disabled={isSubmitting} className="h-12">
-                                    {isSubmitting ? 'Submitting...' : 'Submit Code'}
-                                </Button>
-                            </form>
-                        )}
-                    </CardContent>
-                </Card>
-            </div>
-            
+                    ) : (
+                        <form onSubmit={handleSubmitCode} className="flex items-center gap-4">
+                            <Input 
+                                placeholder="ENTER-CODE-HERE"
+                                value={referralCodeInput}
+                                onChange={(e) => setReferralCodeInput(e.target.value)}
+                                className="h-12"
+                            />
+                            <Button type="submit" disabled={isSubmitting} className="h-12">
+                                {isSubmitting ? 'Submitting...' : 'Submit Code'}
+                            </Button>
+                        </form>
+                    )}
+                </CardContent>
+            </Card>
+        
             <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20">
                 <div className="flex items-start gap-3">
                     <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
