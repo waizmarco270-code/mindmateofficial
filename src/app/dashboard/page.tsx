@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -111,7 +111,7 @@ const leaderboardOptions = [
 export default function DashboardPage() {
     const { user } = useUser();
     const { announcements } = useAnnouncements();
-    const { currentUserData, featureLocks, isAdmin, isSuperAdmin } = useAdmin();
+    const { currentUserData, featureLocks, isAdmin, isSuperAdmin, appSettings } = useAdmin();
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [isShowingPoll, setIsShowingPoll] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
@@ -122,6 +122,8 @@ export default function DashboardPage() {
     const isVip = currentUserData?.isVip ?? false;
     const isGM = currentUserData?.isGM ?? false;
     const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
+
+    const isAiLive = appSettings?.marcoAiLaunchStatus === 'live';
 
 
     const latestAnnouncement = announcements.length > 0 ? announcements[0] : {
@@ -168,7 +170,27 @@ export default function DashboardPage() {
       </div>
 
       <SignedIn>
-        <MarcoAiLaunchCard />
+        {isAiLive ? (
+          <Link href="/dashboard/ai-assistant" className="group block">
+            <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-blue-900 via-indigo-900 to-blue-900 border-blue-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
+                    <div className="p-4 rounded-full bg-blue-500/10 border-2 border-blue-500/30">
+                        <Bot className="h-10 w-10 text-blue-400"/>
+                    </div>
+                    <div className="flex-1 text-center sm:text-left">
+                        <CardTitle className="text-2xl font-bold text-white">Marco AI is Live!</CardTitle>
+                        <CardDescription className="text-slate-400 mt-1">Your personal AI study partner is now available. Click here to access it.</CardDescription>
+                    </div>
+                    <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
+                        Access Marco AI <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </CardContent>
+            </Card>
+          </Link>
+        ) : (
+          <MarcoAiLaunchCard />
+        )}
         <GlobalGiftCard />
         {isSurpriseRevealed ? (
           <DailySurpriseCard />

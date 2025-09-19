@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -45,6 +45,8 @@ export default function SuperAdminPanelPage() {
     featureLocks,
     lockFeature,
     unlockFeature,
+    appSettings,
+    updateAppSettings,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -253,6 +255,12 @@ export default function SuperAdminPanelPage() {
     toast({ title: "Feature Locked", description: `Users will now need ${cost} credits to unlock it.`});
   };
 
+  const handleToggleLaunch = (status: AppSettings['marcoAiLaunchStatus']) => {
+    const newStatus = status === 'live' ? 'countdown' : 'live';
+    updateAppSettings({ marcoAiLaunchStatus: newStatus });
+    toast({ title: `Marco AI is now ${newStatus === 'live' ? 'LIVE' : 'in countdown mode'}.`});
+  };
+
   if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -274,10 +282,67 @@ export default function SuperAdminPanelPage() {
     <div className="space-y-8 max-w-7xl mx-auto">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Super Admin Controls</h1>
-        <p className="text-muted-foreground">Manage user roles, credits, rewards and app theme.</p>
+        <p className="text-muted-foreground">Manage user roles, credits, rewards and app settings.</p>
       </div>
 
       <Accordion type="multiple" defaultValue={['user-management']} className="w-full space-y-4">
+        
+        {/* App Settings */}
+        <AccordionItem value="app-settings" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Rocket className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">App Launch Control</h3>
+                  <p className="text-sm text-muted-foreground text-left">Control global feature launches.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Marco AI Launch Status</CardTitle>
+                        <CardDescription>Toggle the Marco AI feature between countdown and live mode for all users.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4 p-4 rounded-lg bg-muted">
+                        <div className="flex-1">
+                          <p className="font-semibold">Current Status:</p>
+                           <Badge variant={appSettings?.marcoAiLaunchStatus === 'live' ? 'default' : 'secondary'} className="text-base mt-1">
+                              {appSettings?.marcoAiLaunchStatus === 'live' ? 'Live' : 'Countdown'}
+                           </Badge>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant={appSettings?.marcoAiLaunchStatus === 'live' ? 'destructive' : 'default'}>
+                                  {appSettings?.marcoAiLaunchStatus === 'live' ? 'Deactivate (Back to Countdown)' : 'Launch Marco AI!'}
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will change the Marco AI status for all users.
+                                        {appSettings?.marcoAiLaunchStatus === 'live' ? 
+                                        ' Deactivating will hide the AI and show the countdown again.' : 
+                                        ' Launching will make the AI accessible to users who purchase it.'}
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleToggleLaunch(appSettings?.marcoAiLaunchStatus ?? 'countdown')}>
+                                      Confirm
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
         
         {/* User Management */}
         <AccordionItem value="user-management" className="border-b-0">

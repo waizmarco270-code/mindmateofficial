@@ -39,8 +39,9 @@ import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
-const mainNav = [
+const mainNavItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
+  { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-orange-400' },
@@ -91,47 +92,55 @@ export default function SidebarContent() {
   const pathname = usePathname();
   const { hasUnread } = useUnreadMessages();
   const { hasNewQuiz } = useNewQuiz();
-  const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
+  const { isAdmin, isSuperAdmin, currentUserData, appSettings } = useAdmin();
   
   const isVip = currentUserData?.isVip || false;
   const isGM = currentUserData?.isGM || false;
   const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
+  const isAiLive = appSettings?.marcoAiLaunchStatus === 'live';
 
 
   const isActive = (href: string) => {
     return (href === '/dashboard' && pathname === href) || (href !== '/dashboard' && pathname.startsWith(href));
   };
   
-  const renderNavLinks = (navItems: typeof mainNav) => (
+  const renderNavLinks = (navItems: typeof mainNavItems) => (
     <div className="space-y-1">
-      {navItems.map((item) => (
-        <Link
-          key={item.label}
-          href={item.href}
-          prefetch={true}
-          className={cn(
-            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-            isActive(item.href)
-                ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                : 'hover:text-primary',
-            item.glow && !isActive(item.href) && `${item.glow} [text-shadow:0_0_8px_currentColor]`,
-          )}
-        >
-          <div className={cn(
-            "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
-            isActive(item.href) && item.glow && 'bg-current'
-          )}></div>
-          <item.icon className="h-5 w-5" />
-          <span className="flex-1">{item.label}</span>
-          {item.href === '/dashboard/social' && hasUnread && (
-            <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-          )}
-          {item.href === '/dashboard/quiz' && hasNewQuiz && (
-            <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-          )}
-        </Link>
-      ))}
+      {navItems.map((item) => {
+        // Conditionally skip rendering Marco AI link if not live
+        if (item.label === 'Marco AI' && !isAiLive) {
+            return null;
+        }
+
+        return (
+          <Link
+            key={item.label}
+            href={item.href}
+            prefetch={true}
+            className={cn(
+              'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
+              isActive(item.href)
+                  ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
+                  : 'hover:text-primary',
+              item.glow && !isActive(item.href) && `${item.glow} [text-shadow:0_0_8px_currentColor]`,
+            )}
+          >
+            <div className={cn(
+              "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
+              isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
+              isActive(item.href) && item.glow && 'bg-current'
+            )}></div>
+            <item.icon className="h-5 w-5" />
+            <span className="flex-1">{item.label}</span>
+            {item.href === '/dashboard/social' && hasUnread && (
+              <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+            )}
+            {item.href === '/dashboard/quiz' && hasNewQuiz && (
+              <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+            )}
+          </Link>
+        )
+      })}
     </div>
   );
 
@@ -154,7 +163,7 @@ export default function SidebarContent() {
               Main
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-2">
-              {renderNavLinks(mainNav)}
+              {renderNavLinks(mainNavItems)}
             </AccordionContent>
           </AccordionItem>
         

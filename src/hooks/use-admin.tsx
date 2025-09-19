@@ -120,6 +120,10 @@ export interface AppTheme {
     radius: number; // 0 to 1
 }
 
+export interface AppSettings {
+    marcoAiLaunchStatus: 'countdown' | 'live';
+}
+
 export interface GlobalGift {
     id: string;
     message: string;
@@ -222,6 +226,10 @@ interface AppDataContextType {
 
     appTheme: AppTheme | null;
     updateAppTheme: (theme: AppTheme) => Promise<void>;
+    
+    appSettings: AppSettings | null;
+    updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
+
 
     globalGifts: GlobalGift[];
     activeGlobalGift: GlobalGift | null;
@@ -255,6 +263,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [activePoll, setActivePoll] = useState<Poll | null>(null);
     const [appTheme, setAppTheme] = useState<AppTheme | null>(null);
+    const [appSettings, setAppSettings] = useState<AppSettings | null>({ marcoAiLaunchStatus: 'countdown' });
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
     const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
     const [loading, setLoading] = useState(true);
@@ -400,7 +409,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         
     }, [authUser, isClerkLoaded]);
     
-    // EFFECT: Listen for global data (announcements, resources, polls, sections, theme, gifts, tickets)
+    // EFFECT: Listen for global data (announcements, resources, polls, etc.)
     useEffect(() => {
         const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
             return snapshot.docs.map((doc: any) => {
@@ -427,7 +436,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const resourceSectionsQuery = query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc'));
         const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc'));
         const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
-        const themeDocRef = doc(db, 'appConfig', 'theme');
+        const appConfigRef = doc(db, 'appConfig', 'settings');
         const giftsQuery = query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc'));
         const ticketsQuery = query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'));
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
@@ -448,9 +457,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 setActivePoll(null);
             }
         });
-        const unsubTheme = onSnapshot(themeDocRef, (doc) => {
+        const unsubAppSettings = onSnapshot(appConfigRef, (doc) => {
             if (doc.exists()) {
-                setAppTheme(doc.data() as AppTheme);
+                setAppSettings(doc.data() as AppSettings);
             }
         });
         const unsubGifts = onSnapshot(giftsQuery, (snapshot) => setGlobalGifts(processSnapshot<GlobalGift>(snapshot)));
@@ -467,7 +476,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubPolls();
             unsubDailySurprises();
             unsubSections();
-            unsubTheme();
+            unsubAppSettings();
             unsubGifts();
             unsubTickets();
             unsubLocks();
@@ -894,6 +903,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(themeDocRef, theme);
     }
     
+    const updateAppSettings = async (settings: Partial<AppSettings>) => {
+        const settingsDocRef = doc(db, 'appConfig', 'settings');
+        await setDoc(settingsDocRef, settings, { merge: true });
+    };
+    
     const sendGlobalGift = async (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => {
         const newGiftRef = doc(collection(db, 'globalGifts'));
         await setDoc(newGiftRef, {
@@ -1014,8 +1028,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         activePoll,
         updatePoll,
         submitPollVote,
-        appTheme,
-        updateAppTheme,
+        appTheme: null, // This is deprecated
+        updateAppTheme: async () => {}, // Deprecated
+        appSettings,
+        updateAppSettings,
         globalGifts,
         activeGlobalGift,
         sendGlobalGift,
