@@ -7,23 +7,28 @@ import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, Copy, Check, ShieldCheck, ArrowRight } from 'lucide-react';
+import { Loader2, Sparkles, Copy, Check, ShieldCheck, ArrowRight, Bot } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 const AI_ACCESS_COST = 1000;
 
 export default function AiAssistantPage() {
   const { isImmersive, setIsImmersive } = useImmersive();
   const { user } = useUser();
-  const { currentUserData, generateAiAccessToken, loading } = useUsers();
+  const { currentUserData, generateAiAccessToken, loading: usersLoading } = useUsers();
+  const { appSettings, loading: adminLoading } = useAdmin();
   const { toast } = useToast();
 
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
   const [isTokenCopied, setIsTokenCopied] = useState(false);
+  
+  const loading = usersLoading || adminLoading;
 
+  const isAiLive = appSettings?.marcoAiLaunchStatus === 'live';
   const hasAccess = currentUserData?.hasAiAccess ?? false;
 
   const handlePurchase = async () => {
@@ -78,6 +83,32 @@ export default function AiAssistantPage() {
       </div>
     );
   }
+
+  if (!isAiLive) {
+     return (
+        <div className="flex h-full w-full items-center justify-center p-4">
+            <Card className="w-full max-w-md text-center border-amber-500/50">
+                <CardHeader>
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                        <Bot className="h-10 w-10 text-primary" />
+                    </div>
+                    <CardTitle className="text-2xl">Marco AI is Coming Soon!</CardTitle>
+                    <CardDescription>
+                       The AI is not live yet. Check the dashboard for the official launch countdown!
+                    </CardDescription>
+                </CardHeader>
+                <CardFooter>
+                    <Button asChild className="w-full">
+                        <Link href="/dashboard">
+                            &larr; Back to Dashboard
+                        </Link>
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+  }
+
 
   if (!hasAccess && !generatedToken) {
     return (
