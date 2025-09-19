@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -76,7 +77,7 @@ export default function AboutContent() {
         </CardHeader>
         <CardContent>
             <p className="text-sm text-muted-foreground">
-                Established in 2024. © MindMate. All Rights Reserved.
+                Established on October 2nd, 2025. © MindMate. All Rights Reserved.
             </p>
             <p className="text-xs text-muted-foreground mt-2">
                 All trademarks, service marks, and trade names are the property of their respective owners. The content, features, and functionality of MindMate are protected by copyright, trademark, and other intellectual property laws.
