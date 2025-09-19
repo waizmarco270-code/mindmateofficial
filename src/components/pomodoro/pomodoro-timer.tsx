@@ -2,7 +2,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info, SwatchBook, Loader2, Maximize, Minimize } from 'lucide-react';
+import { Edit, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info, SwatchBook, Loader2, Maximize, Minimize, Award } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,13 @@ const defaultSettings: PomodoroSettings = {
   sound: 'beep',
 };
 
+const rewardTiers: Record<number, number> = {
+    15: 1,
+    25: 2,
+    45: 4,
+    60: 8
+};
+
 const POMODORO_PENALTY = 10;
 export const POMODORO_PENALTY_SESSION_KEY = 'pomodoroPenaltyApplied';
 export const POMODORO_SESSION_ACTIVE_KEY = 'pomodoroSessionActive';
@@ -81,7 +88,7 @@ export function PomodoroTimer() {
   const { pomodoroThemes } = placeholderData;
   const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroTheme', pomodoroThemes.motivation[0]);
   const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0] | null>('pomodoroMusic', musicTracks[0]);
-  const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('default');
+  const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('pomodoroWatchFace', 'shadow');
   const [isSlideshowActive, setIsSlideshowActive] = useLocalStorage('pomodoroSlideshow', false);
   
   const [isClient, setIsClient] = useState(false);
@@ -230,6 +237,19 @@ export function PomodoroTimer() {
             duration: settings[mode] * 60,
           };
           addPomodoroSession(sessionData);
+
+          // Reward logic
+          const completedDuration = settings[mode];
+          const reward = rewardTiers[completedDuration];
+          if(mode === 'focus' && reward && user) {
+            addCreditsToUser(user.id, reward);
+            toast({
+                title: `Session Complete! +${reward} Credits`,
+                description: "Great work! Your reward has been added.",
+                className: "bg-green-500/10 text-green-700 border-green-500/50"
+            });
+          }
+
           resetTimer();
           return 0; // Will be reset by resetTimer effect
         }
@@ -238,7 +258,7 @@ export function PomodoroTimer() {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [isActive, addPomodoroSession, mode, playSound, resetTimer, settings]);
+  }, [isActive, addPomodoroSession, mode, playSound, resetTimer, settings, addCreditsToUser, user, toast]);
   
   useEffect(() => {
     if (!isActive) {
@@ -381,12 +401,23 @@ export function PomodoroTimer() {
                 </PopoverTrigger>
                 <PopoverContent className="w-80">
                    <div className="space-y-4">
-                       <h4 className="font-bold text-base flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> Penalty Rules</h4>
-                       <p className="text-sm text-muted-foreground">To encourage deep focus, a penalty system is in place.</p>
-                       <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1">
-                           <li><span className="font-bold text-destructive">No Pausing:</span> This timer cannot be paused. Clicking STOP will incur a penalty.</li>
-                           <li><span className="font-bold text-destructive">Navigation Penalty:</span> Navigating away from this page, switching tabs, or closing the browser during an active session will result in a <span className="font-bold">-10 credit penalty</span>.</li>
-                       </ul>
+                       <h4 className="font-bold text-base flex items-center gap-2"><Info className="h-5 w-5 text-primary" /> Rules & Rewards</h4>
+                       <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground font-semibold">Penalty Rules:</p>
+                            <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
+                                <li>This timer cannot be paused. Clicking STOP will incur a penalty.</li>
+                                <li>Navigating away will result in a <span className="font-bold text-destructive">-10 credit penalty</span>.</li>
+                            </ul>
+                       </div>
+                        <div className="space-y-2">
+                             <p className="text-sm text-muted-foreground font-semibold">Reward System:</p>
+                             <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
+                                <li><span className="font-semibold text-green-500">15 min</span> session: <span className="font-bold">+1 Credit</span></li>
+                                <li><span className="font-semibold text-green-500">25 min</span> session: <span className="font-bold">+2 Credits</span></li>
+                                <li><span className="font-semibold text-green-500">45 min</span> session: <span className="font-bold">+4 Credits</span></li>
+                                <li><span className="font-semibold text-green-500">60 min</span> session: <span className="font-bold">+8 Credits</span></li>
+                             </ul>
+                        </div>
                    </div>
                 </PopoverContent>
             </Popover>
@@ -593,9 +624,9 @@ export function PomodoroTimer() {
               <div className="space-y-3">
                   <Label>Quick Presets</Label>
                   <div className="grid grid-cols-2 gap-2">
-                    {[15, 25, 45, 60].map(min => (
-                        <Button key={min} variant="outline" onClick={() => setTempSettings(s => ({...s, focus: min}))}>
-                            {min} min Focus
+                    {(Object.keys(rewardTiers) as unknown as (keyof typeof rewardTiers)[]).map(min => (
+                        <Button key={min} variant="outline" onClick={() => setTempSettings(s => ({...s, focus: Number(min)}))}>
+                           {min} min / +{rewardTiers[min]} Credits
                         </Button>
                     ))}
                   </div>
