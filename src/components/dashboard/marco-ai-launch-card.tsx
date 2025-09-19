@@ -9,21 +9,32 @@ import Link from 'next/link';
 
 export function MarcoAiLaunchCard() {
     const { isSignedIn } = useUser();
-    const [timeLeft, setTimeLeft] = useState<{
-        days: string; hours: string; minutes: string; seconds: string;
-    } | null>(null);
+    const [timeLeft, setTimeLeft] = useState({
+        days: '00', hours: '00', minutes: '00', seconds: '00'
+    });
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
-        // This function will only run on the client
-        const launchDate = new Date('2024-10-02T00:00:00').getTime();
+        // This ensures the component has mounted on the client
+        // before we start any timer logic.
+        setIsClient(true);
+    }, []);
 
-        const updateTimer = () => {
+    useEffect(() => {
+        if (!isClient) {
+            return; // Don't run timer logic on the server or during hydration
+        }
+
+        const launchDate = new Date('2024-10-02T00:00:00Z').getTime();
+
+        const timer = setInterval(() => {
             const now = new Date().getTime();
             const distance = launchDate - now;
 
             if (distance < 0) {
+                clearInterval(timer);
                 setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
-                return false; // Stop the timer
+                return;
             }
 
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -37,22 +48,12 @@ export function MarcoAiLaunchCard() {
                 minutes: minutes.toString().padStart(2, '0'),
                 seconds: seconds.toString().padStart(2, '0'),
             });
-            return true; // Continue the timer
-        };
-        
-        // Initial call to set the time immediately
-        if(updateTimer()) {
-            const timer = setInterval(() => {
-                if (!updateTimer()) {
-                    clearInterval(timer);
-                }
-            }, 1000);
-    
-            // Cleanup on component unmount
-            return () => clearInterval(timer);
-        }
+        }, 1000);
 
-    }, []); // Empty dependency array ensures this runs only once on mount (client-side)
+        // Cleanup on component unmount
+        return () => clearInterval(timer);
+
+    }, [isClient]); // The effect re-runs only when isClient becomes true
 
     return (
         <Card className="relative group overflow-hidden border-0 bg-transparent mb-8">
@@ -73,10 +74,10 @@ export function MarcoAiLaunchCard() {
                 </div>
                 <div className="flex flex-col items-center">
                     <div className="flex gap-2 sm:gap-4">
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft?.days ?? '00'}</p><p className="text-xs">Days</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft?.hours ?? '00'}</p><p className="text-xs">Hours</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft?.minutes ?? '00'}</p><p className="text-xs">Mins</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft?.seconds ?? '00'}</p><p className="text-xs">Secs</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.days}</p><p className="text-xs">Days</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.hours}</p><p className="text-xs">Hours</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.minutes}</p><p className="text-xs">Mins</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft.seconds}</p><p className="text-xs">Secs</p></div>
                     </div>
                 </div>
             </CardContent>
