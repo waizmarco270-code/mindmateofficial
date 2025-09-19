@@ -71,7 +71,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             <main className="relative flex-1 overflow-y-auto focus:outline-none">
             <SidebarInset className={cn(
                 "p-4 sm:p-6 lg:p-8",
-                isImmersive ? "!p-0 h-full" : (isMobileNavCollapsed ? 'pb-8' : 'pb-28 md:pb-8') // Adjust padding for collapsed nav
+                isImmersive ? "!p-0 h-full" : (isMobile && !isMobileNavCollapsed ? 'pb-28' : 'pb-8')
             )}>
                 {children}
             </SidebarInset>
