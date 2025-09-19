@@ -7,8 +7,7 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default function AiAssistantPage() {
-  // Replace "#" with the link to your external AI when ready
-  const externalAiLink = "#";
+  const externalAiLink = "https://aimindmate.vercel.app/";
 
   return (
     <div className="h-full flex items-center justify-center">
@@ -19,18 +18,18 @@ export default function AiAssistantPage() {
                         <Bot className="h-12 w-12 text-primary" />
                     </div>
                 </div>
-                <CardTitle>Marco AI is Under Maintenance</CardTitle>
+                <CardTitle>Access Marco AI</CardTitle>
                 <CardDescription>
-                    We're working hard to bring you an even better and smarter AI assistant. Stay tuned!
+                   You are about to be redirected to our dedicated AI assistant, powered by Google's Gemini models for an enhanced experience.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <p className="font-bold text-lg text-primary animate-pulse">Coming Soon!</p>
+                <p className="font-bold text-lg text-primary animate-pulse">Ready to Go!</p>
                 <div className="mt-6">
                     <Button asChild variant="outline">
                         <Link href={externalAiLink} target="_blank">
                             <LinkIcon className="mr-2 h-4 w-4" />
-                            Access Alternative AI (Placeholder)
+                            Access Marco AI Now
                         </Link>
                     </Button>
                 </div>

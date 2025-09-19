@@ -64,7 +64,7 @@ const studyNav = [
 
 const otherNav = [
     { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
-    { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
+    { href: 'https://aimindmate.vercel.app/', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400', isExternal: true },
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
 ];
 
@@ -111,16 +111,17 @@ export default function SidebarContent() {
     return (href === '/dashboard' && pathname === href) || (href !== '/dashboard' && pathname.startsWith(href));
   };
   
-  const renderNavLinks = (navItems: typeof mainNav) => (
+  const renderNavLinks = (navItems: typeof mainNav & {isExternal?: boolean}[]) => (
     <div className="space-y-1">
       {navItems.map((item) => (
         <Link
           key={item.label}
           href={item.href}
-          prefetch={true}
+          prefetch={!item.isExternal}
+          target={item.isExternal ? '_blank' : '_self'}
           className={cn(
             'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-            isActive(item.href) 
+            isActive(item.href) && !item.isExternal
                 ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
                 : 'hover:text-primary',
             item.glow && !isActive(item.href) && `${item.glow} [text-shadow:0_0_8px_currentColor]`,
@@ -128,8 +129,8 @@ export default function SidebarContent() {
         >
           <div className={cn(
             "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
-            isActive(item.href) && item.glow && 'bg-current'
+            isActive(item.href) && !item.isExternal ? "bg-primary/100" : "group-hover:scale-y-50",
+            isActive(item.href) && !item.isExternal && item.glow && 'bg-current'
           )}></div>
           <item.icon className="h-5 w-5" />
           <span className="flex-1">{item.label}</span>
@@ -223,5 +224,3 @@ export default function SidebarContent() {
     </div>
   );
 }
-
-    
