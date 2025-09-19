@@ -39,6 +39,7 @@ import { useUnreadMessages } from '@/hooks/use-unread';
 import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+import { Button } from '../ui/button';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus' },
@@ -141,30 +142,18 @@ export default function SidebarContent() {
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      <div className="flex h-20 items-center border-b border-sidebar-border px-6">
+      <div className="flex h-20 items-center justify-between border-b border-sidebar-border px-4">
         <Link href="/dashboard" className="flex items-center gap-3 font-semibold" prefetch={true}>
           <Logo className="h-8 w-8" />
           <span className="text-xl">MindMate</span>
         </Link>
+        <Link href="/dashboard" aria-label="Go to Home">
+            <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} size="icon" className={cn(isActive('/dashboard') && "bg-primary/10 text-primary")}>
+                <Home className="h-5 w-5" />
+            </Button>
+        </Link>
       </div>
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
-         <Link
-            href="/dashboard"
-            prefetch={true}
-            className={cn(
-              'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-              isActive('/dashboard')
-                  ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                  : 'hover:text-primary'
-            )}
-          >
-            <div className={cn(
-              "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-              isActive('/dashboard') ? "bg-primary" : "group-hover:scale-y-50"
-            )}></div>
-            <Home className="h-5 w-5" />
-            <span className="flex-1">Home</span>
-          </Link>
         <Accordion
           type="multiple"
           defaultValue={['main-tools']}
