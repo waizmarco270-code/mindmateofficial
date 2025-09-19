@@ -81,7 +81,7 @@ export function PomodoroTimer() {
   const { pomodoroThemes } = placeholderData;
   const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroTheme', pomodoroThemes.motivation[0]);
   const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0] | null>('pomodoroMusic', musicTracks[0]);
-  const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('pomodoroWatchFace', 'default');
+  const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('default');
   const [isSlideshowActive, setIsSlideshowActive] = useLocalStorage('pomodoroSlideshow', false);
   
   const [isClient, setIsClient] = useState(false);
@@ -414,29 +414,14 @@ export function PomodoroTimer() {
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 className="relative z-10 flex flex-col items-center justify-center p-4"
             >
-                <div className="relative h-64 w-64 sm:h-72 sm:w-72 md:h-80 md:w-80 rounded-full flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40 backdrop-blur-md rounded-full shadow-2xl"/>
-                    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
-                        <circle className="text-white/10" strokeWidth="3" stroke="currentColor" fill="transparent" r="48" cx="50" cy="50"/>
-                        <motion.circle
-                            className={cn("transition-colors duration-500", modeColors[mode])}
-                            style={{ filter: `drop-shadow(0 0 4px currentColor)` }}
-                            strokeWidth="3"
-                            strokeDasharray="301.59"
-                            strokeLinecap="round"
-                            stroke="currentColor"
-                            fill="transparent"
-                            r="48"
-                            cx="50"
-                            cy="50"
-                            initial={{ strokeDashoffset: 301.59, rotate: -90, transformOrigin: 'center' }}
-                            animate={{ strokeDashoffset: 301.59 * (1 - progress / 100) }}
-                            transition={{
-                                strokeDashoffset: { duration: 1, ease: 'linear' },
-                                rotate: { duration: 1, ease: 'linear' },
-                            }}
-                        />
-                    </svg>
+                <div className="relative h-64 w-64 sm:h-72 sm:w-72 md:h-80 md:w-80 rounded-full flex items-center justify-center p-2 rainbow-border-card">
+                    <div 
+                        className="absolute inset-2 bg-black/40 backdrop-blur-md rounded-full shadow-2xl"
+                        style={{
+                            maskImage: `radial-gradient(circle at center, transparent ${progress - 5}%, black ${progress}%)`,
+                            WebkitMaskImage: `radial-gradient(circle at center, transparent ${progress - 5}%, black ${progress}%)`
+                        }}
+                    />
                     <div className="relative flex flex-col items-center text-center">
                         <p className={cn(timerFaceClasses[selectedWatchFace], "[text-shadow:0_2px_8px_rgba(0,0,0,0.7)]")}>
                             {formatTime(timeLeft)}

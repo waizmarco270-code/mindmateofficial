@@ -235,7 +235,7 @@
   .rainbow-border-card {
     --angle: 0deg;
     position: relative;
-    border: 2px solid;
+    border: 4px solid;
     border-image: conic-gradient(from var(--angle), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff, #ff0000) 1;
     animation: rotate-angle 4s linear infinite;
   }
