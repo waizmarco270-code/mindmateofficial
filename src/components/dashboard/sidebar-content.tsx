@@ -4,7 +4,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Bot,
   Home,
   Calendar,
   Settings,
@@ -30,48 +29,48 @@ import {
   Timer,
   Wrench,
   Swords,
+  Crown,
+  Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
 import { useUnreadMessages } from '@/hooks/use-unread';
 import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
-import { Separator } from '../ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 
-const mainNav = [
+const mainNavItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
-  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
-  { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
-  { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-orange-400' },
-  { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
-  { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-red-400' },
-  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-yellow-400' },
-  { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
-  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-red-400' },
+  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger' },
+  { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
+  { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
+  { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
+  { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone' },
+  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
+  { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn' },
+  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
 ];
 
 const studyNav = [
-  { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
-  { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro', glow: 'text-green-400' },
-  { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-lime-400' },
-  { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker', glow: 'text-blue-400' },
-  { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos', glow: 'text-orange-400' },
-  { href: '/dashboard/insights', icon: LineChart, label: 'Insights', glow: 'text-teal-400' },
+  { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus' },
+  { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro' },
+  { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode' },
+  { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker' },
+  { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos' },
+  { href: '/dashboard/insights', icon: LineChart, label: 'Insights' },
 ];
 
 const otherNav = [
-    { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
-    { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
+    { href: '/dashboard/tools', icon: Wrench, label: 'Tools' },
 ];
 
 const adminNav = [
     { href: '/dashboard/admin', icon: Shield, label: 'Admin Panel' },
-]
+];
 
 const superAdminNav = [
     { href: '/dashboard/super-admin', icon: KeyRound, label: 'Super Admin' },
-]
+];
 
 const socialLinks = [
     { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx', icon: 'instagram' },
@@ -90,44 +89,52 @@ const WhatsAppIcon = () => (
 
 export default function SidebarContent() {
   const pathname = usePathname();
-  const { hasUnread, hasGlobalUnread } = useUnreadMessages();
+  const { hasUnread } = useUnreadMessages();
   const { hasNewQuiz } = useNewQuiz();
-  const { isAdmin, isSuperAdmin } = useAdmin();
+  const { isAdmin, isSuperAdmin, currentUserData, appSettings } = useAdmin();
+  
+  const isVip = currentUserData?.isVip || false;
+  const isGM = currentUserData?.isGM || false;
+  const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
+  
+  const isAiLive = appSettings?.marcoAiLaunchStatus === 'live';
+
 
   const isActive = (href: string) => {
     return (href === '/dashboard' && pathname === href) || (href !== '/dashboard' && pathname.startsWith(href));
   };
   
-  const renderNavLinks = (navItems: typeof mainNav) => (
+  const renderNavLinks = (navItems: typeof mainNavItems) => (
     <div className="space-y-1">
-      {navItems.map((item) => (
-        <Link
-          key={item.label}
-          href={item.href}
-          prefetch={true}
-          className={cn(
-            'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-            isActive(item.href) 
-                ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                : 'hover:text-primary',
-            item.glow && !isActive(item.href) && `${item.glow} [text-shadow:0_0_8px_currentColor]`,
-          )}
-        >
-          <div className={cn(
-            "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
-            isActive(item.href) && item.glow && 'bg-current'
-          )}></div>
-          <item.icon className="h-5 w-5" />
-          <span className="flex-1">{item.label}</span>
-          {item.href === '/dashboard/social' && hasUnread && (
-            <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-          )}
-          {item.href === '/dashboard/quiz' && hasNewQuiz && (
-            <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-          )}
-        </Link>
-      ))}
+      {navItems.map((item) => {
+        
+        return (
+          <Link
+            key={item.label}
+            href={item.href}
+            prefetch={true}
+            className={cn(
+              'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
+              isActive(item.href)
+                  ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
+                  : 'hover:text-primary',
+            )}
+          >
+            <div className={cn(
+              "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
+              isActive(item.href) ? "bg-primary" : "group-hover:scale-y-50"
+            )}></div>
+            <item.icon className="h-5 w-5" />
+            <span className="flex-1">{item.label}</span>
+            {item.href === '/dashboard/social' && hasUnread && (
+              <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+            )}
+            {item.href === '/dashboard/quiz' && hasNewQuiz && (
+              <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
+            )}
+          </Link>
+        )
+      })}
     </div>
   );
 
@@ -142,7 +149,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4">
         <Accordion
           type="multiple"
-          defaultValue={['study-tools', 'admin-tools']}
+          defaultValue={['main-tools']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -150,7 +157,7 @@ export default function SidebarContent() {
               Main
             </AccordionTrigger>
             <AccordionContent className="px-4 pb-2">
-              {renderNavLinks(mainNav)}
+              {renderNavLinks(mainNavItems)}
             </AccordionContent>
           </AccordionItem>
         
@@ -171,22 +178,27 @@ export default function SidebarContent() {
               {renderNavLinks(otherNav as any)}
             </AccordionContent>
           </AccordionItem>
-          
-          {(isAdmin || isSuperAdmin) && (
-            <AccordionItem value="admin-tools" className="border-b-0">
-               <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-                Admin
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-2">
-                {renderNavLinks(adminNav as any)}
-                 {isSuperAdmin && renderNavLinks(superAdminNav as any)}
-              </AccordionContent>
-            </AccordionItem>
-          )}
+
+          {isSpecialUser && (
+              <AccordionItem value="elite-lounge" className="border-b-0">
+                  <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+                    Lounge
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-2 space-y-1">
+                      <Link href="/dashboard/premium/elite-lounge" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary')}>
+                          <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
+                          <Crown className="h-5 w-5"/> Elite Lounge
+                      </Link>
+                      {(isAdmin || isSuperAdmin) && renderNavLinks(adminNav as any)}
+                      {isSuperAdmin && renderNavLinks(superAdminNav as any)}
+                  </AccordionContent>
+              </AccordionItem>
+            )}
         </Accordion>
       </div>
-        <div className="mt-auto p-4 border-t border-sidebar-border space-y-4">
-            <Link
+
+       <div className="mt-auto p-4 border-t border-sidebar-border space-y-4">
+          <Link
                 href="/dashboard/help"
                 prefetch={true}
                 className={cn(
@@ -194,36 +206,35 @@ export default function SidebarContent() {
                     isActive('/dashboard/help') 
                         ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
                         : 'hover:text-primary',
-                    'text-purple-400 [text-shadow:0_0_8px_currentColor]',
                 )}
             >
                 <div className={cn(
                     "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-                    isActive('/dashboard/help') ? "bg-primary/100" : "group-hover:scale-y-50",
-                    isActive('/dashboard/help') && 'bg-current'
+                    isActive('/dashboard/help') ? "bg-primary" : "group-hover:scale-y-50"
                 )}></div>
                 <LifeBuoy className="h-5 w-5" />
                 <span className="flex-1">Help & Support</span>
             </Link>
-          <div>
-             <h2 className="px-3 mb-2 text-sm font-semibold tracking-tight text-sidebar-foreground/60">Follow Us</h2>
-              <div className="flex items-center justify-around">
-                  {socialLinks.map(link => {
-                      let Icon;
-                      if(link.icon === 'instagram') Icon = InstagramIcon;
-                      else if(link.icon === 'whatsapp') Icon = WhatsAppIcon;
-                      else Icon = link.icon;
-                      
-                      return (
-                            <a key={link.name} href={link.href} className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors p-2" target="_blank" rel="noopener noreferrer">
-                              {Icon ? <Icon /> : link.name}
-                              <span className="sr-only">{link.name}</span>
-                          </a>
-                      )
-                  })}
-              </div>
+          <div className="px-3 mb-2">
+             <h2 className="text-sm font-semibold tracking-tight text-sidebar-foreground/60">Follow Us</h2>
+          </div>
+          <div className="flex items-center justify-around">
+              {socialLinks.map(link => {
+                  let Icon;
+                  if(link.icon === 'instagram') Icon = InstagramIcon;
+                  else if(link.icon === 'whatsapp') Icon = WhatsAppIcon;
+                  else Icon = link.icon;
+                  
+                  return (
+                        <a key={link.name} href={link.href} className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors" target="_blank" rel="noopener noreferrer">
+                          {Icon ? <Icon /> : link.name}
+                          <span className="sr-only">{link.name}</span>
+                      </a>
+                  )
+              })}
           </div>
        </div>
+
     </div>
   );
 }
