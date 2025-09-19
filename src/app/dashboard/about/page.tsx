@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Info, Lightbulb, Heart, Code } from 'lucide-react';
+import { Info, Lightbulb, Heart, Code, Copyright } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 
 // This is now a component, not a default export page
@@ -66,6 +66,24 @@ export default function AboutContent() {
           </p>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+                <Copyright className="text-slate-500" />
+                Legal Information
+            </CardTitle>
+        </CardHeader>
+        <CardContent>
+            <p className="text-sm text-muted-foreground">
+                Established in 2024. © MindMate. All Rights Reserved.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+                All trademarks, service marks, and trade names are the property of their respective owners. The content, features, and functionality of MindMate are protected by copyright, trademark, and other intellectual property laws.
+            </p>
+        </CardContent>
+      </Card>
+
     </div>
   );
 }
