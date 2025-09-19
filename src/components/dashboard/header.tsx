@@ -3,7 +3,6 @@
 
 import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { ThemeToggle } from '../theme-toggle';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -113,7 +112,6 @@ export default function Header() {
                     </PopoverContent>
                 </Popover>
 
-                <ThemeToggle />
                 <UserButton afterSignOutUrl="/" appearance={{
                     elements: {
                         avatarBox: {
