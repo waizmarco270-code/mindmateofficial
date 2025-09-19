@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -8,24 +9,26 @@ import Link from 'next/link';
 
 export function MarcoAiLaunchCard() {
     const { isSignedIn } = useUser();
-    const [timeLeft, setTimeLeft] = useState({
-        days: '00', hours: '00', minutes: '00', seconds: '00'
-    });
-    const [isClient, setIsClient] = useState(false);
-
+    
+    // This hook ensures the timer logic runs only on the client, avoiding hydration errors.
     useEffect(() => {
-        // This effect runs only on the client, after the component has mounted.
-        setIsClient(true);
-
         const launchDate = new Date('2024-10-02T00:00:00Z').getTime();
 
         const timer = setInterval(() => {
             const now = new Date().getTime();
             const distance = launchDate - now;
 
+            const daysEl = document.getElementById('countdown-days');
+            const hoursEl = document.getElementById('countdown-hours');
+            const minutesEl = document.getElementById('countdown-minutes');
+            const secondsEl = document.getElementById('countdown-seconds');
+
             if (distance < 0) {
                 clearInterval(timer);
-                setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+                if(daysEl) daysEl.innerHTML = '00';
+                if(hoursEl) hoursEl.innerHTML = '00';
+                if(minutesEl) minutesEl.innerHTML = '00';
+                if(secondsEl) secondsEl.innerHTML = '00';
                 return;
             }
 
@@ -34,12 +37,11 @@ export function MarcoAiLaunchCard() {
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            setTimeLeft({
-                days: days.toString().padStart(2, '0'),
-                hours: hours.toString().padStart(2, '0'),
-                minutes: minutes.toString().padStart(2, '0'),
-                seconds: seconds.toString().padStart(2, '0'),
-            });
+            if(daysEl) daysEl.innerHTML = days.toString().padStart(2, '0');
+            if(hoursEl) hoursEl.innerHTML = hours.toString().padStart(2, '0');
+            if(minutesEl) minutesEl.innerHTML = minutes.toString().padStart(2, '0');
+            if(secondsEl) secondsEl.innerHTML = seconds.toString().padStart(2, '0');
+
         }, 1000);
 
         // Cleanup on component unmount
@@ -64,16 +66,14 @@ export function MarcoAiLaunchCard() {
                         The revolutionary AI study partner is launching on 2nd October. Get ready!
                     </CardDescription>
                 </div>
-                {isClient && (
-                    <div className="flex flex-col items-center">
-                        <div className="flex gap-2 sm:gap-4">
-                            <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.days}</p><p className="text-xs">Days</p></div>
-                            <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.hours}</p><p className="text-xs">Hours</p></div>
-                            <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.minutes}</p><p className="text-xs">Mins</p></div>
-                            <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft.seconds}</p><p className="text-xs">Secs</p></div>
-                        </div>
+                <div className="flex flex-col items-center">
+                    <div className="flex gap-2 sm:gap-4">
+                        <div className="text-center"><p id="countdown-days" className="text-4xl font-bold font-code">00</p><p className="text-xs">Days</p></div>
+                        <div className="text-center"><p id="countdown-hours" className="text-4xl font-bold font-code">00</p><p className="text-xs">Hours</p></div>
+                        <div className="text-center"><p id="countdown-minutes" className="text-4xl font-bold font-code">00</p><p className="text-xs">Mins</p></div>
+                        <div className="text-center"><p id="countdown-seconds" className="text-4xl font-bold font-code text-primary animate-pulse">00</p><p className="text-xs">Secs</p></div>
                     </div>
-                )}
+                </div>
             </CardContent>
             {isSignedIn && (
                 <div className="relative z-10 p-4 bg-amber-500/10 border-t border-amber-500/20 text-center text-amber-300 text-sm font-semibold flex items-center justify-center gap-2">

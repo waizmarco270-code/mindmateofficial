@@ -4,7 +4,6 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  Bot,
   Home,
   Calendar,
   Settings,
@@ -31,6 +30,7 @@ import {
   Wrench,
   Swords,
   Crown,
+  Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -41,7 +41,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 
 const mainNavItems = [
   { href: '/dashboard', icon: Home, label: 'Home' },
-  { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
+  // { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-orange-400' },
@@ -97,6 +97,8 @@ export default function SidebarContent() {
   const isVip = currentUserData?.isVip || false;
   const isGM = currentUserData?.isGM || false;
   const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
+  
+  // This value will come from the global context, determining if the AI feature is live
   const isAiLive = appSettings?.marcoAiLaunchStatus === 'live';
 
 
@@ -107,7 +109,8 @@ export default function SidebarContent() {
   const renderNavLinks = (navItems: typeof mainNavItems) => (
     <div className="space-y-1">
       {navItems.map((item) => {
-        // Conditionally skip rendering Marco AI link if not live
+        
+        // This is where we check if the AI is live. If not, this link will not be rendered.
         if (item.label === 'Marco AI' && !isAiLive) {
             return null;
         }
