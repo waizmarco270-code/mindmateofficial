@@ -467,22 +467,24 @@ export function PomodoroTimer() {
                                 <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Palette className="h-6 w-6" /></Button></SheetTrigger>
                                 <SheetContent side="bottom" className="max-h-[80dvh] flex flex-col"><SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
                                     <div className="py-4 space-y-6 overflow-y-auto">
-                                        <div><h3 className="mb-4 font-semibold">Nature</h3>
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                                                {pomodoroThemes.nature.map((theme) => (<button key={theme.id} onClick={() => {setSelectedTheme(theme); setIsThemeSheetOpen(false);}} className="relative aspect-square w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                                    <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
-                                                    {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
-                                                </button>))}
+                                        {(Object.keys(pomodoroThemes) as Array<keyof typeof pomodoroThemes>).map(category => (
+                                            <div key={category}>
+                                                <h3 className="mb-4 font-semibold capitalize">{category}</h3>
+                                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+                                                    {pomodoroThemes[category].map((theme) => (
+                                                        <button 
+                                                            key={theme.id} 
+                                                            onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} 
+                                                            className="relative aspect-square w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all"
+                                                            data-state={selectedTheme?.id === theme.id ? 'selected' : 'unselected'}
+                                                        >
+                                                            <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
+                                                            {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
+                                                        </button>
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                        <div><h3 className="mb-4 font-semibold">Lofi</h3>
-                                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
-                                                {pomodoroThemes.lofi.map((theme) => (<button key={theme.id} onClick={() => {setSelectedTheme(theme); setIsThemeSheetOpen(false);}} className="relative aspect-square w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all">
-                                                    <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
-                                                    {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
-                                                </button>))}
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
                                 </SheetContent>
                             </Sheet>
@@ -575,4 +577,3 @@ export function PomodoroTimer() {
     </div>
   );
 }
-
