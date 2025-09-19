@@ -152,8 +152,13 @@ export default function SidebarContent() {
           <span className="text-xl">MindMate</span>
         </Link>
         <Link href="/dashboard" aria-label="Go to Home">
-            <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} size="icon" className={cn(isActive('/dashboard') && "bg-primary/10 text-primary")}>
-                <Home className="h-5 w-5" />
+            <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} className={cn(
+                "h-11 w-11 rounded-lg",
+                isActive('/dashboard') 
+                ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-lg shadow-red-500/20" 
+                : "text-muted-foreground"
+            )}>
+                <Home className="h-6 w-6" />
             </Button>
         </Link>
       </div>
