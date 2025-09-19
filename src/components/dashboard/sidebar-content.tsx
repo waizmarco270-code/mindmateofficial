@@ -47,6 +47,7 @@ const mainNavItems = [
   { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-yellow-400' },
   { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights', glow: 'text-blue-400' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
+  { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
 ];
 
 const communityNav = [
@@ -58,7 +59,6 @@ const competeNav = [
     { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
     { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
-    { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
 ];
 
 
