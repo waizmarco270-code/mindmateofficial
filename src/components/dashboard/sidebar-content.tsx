@@ -48,7 +48,7 @@ const mainNavItems = [
   { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker' },
   { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos' },
   { href: '/dashboard/insights', icon: LineChart, label: 'Insights' },
-  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: true },
+  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger' },
 ];
 
 const communityNav = [
@@ -57,10 +57,10 @@ const communityNav = [
 ];
 
 const competeNav = [
-    { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: true },
-    { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: true },
-    { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: true },
-    { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: true },
+    { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
+    { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
+    { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone' },
+    { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
 ];
 
 const otherNav = [
@@ -118,8 +118,7 @@ export default function SidebarContent() {
               'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
               isActive(item.href)
                   ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                  : 'hover:text-primary',
-              item.glow && !isActive(item.href) && 'text-primary [text-shadow:0_0_8px_hsl(var(--primary)/70%)]'
+                  : 'hover:text-primary'
             )}
           >
             <div className={cn(
