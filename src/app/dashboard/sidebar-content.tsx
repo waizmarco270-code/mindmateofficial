@@ -44,6 +44,7 @@ import { useEffect, useState } from 'react';
 const mainNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
+  { href: 'https://aimindmate.vercel.app/', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400', isExternal: true },
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-orange-400' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
@@ -64,7 +65,6 @@ const studyNav = [
 
 const otherNav = [
     { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
-    { href: 'https://aimindmate.vercel.app/', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400', isExternal: true },
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
 ];
 

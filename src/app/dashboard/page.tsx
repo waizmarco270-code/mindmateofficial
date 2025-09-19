@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { GlobalGiftCard } from '@/components/dashboard/global-gift';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
+import { MarcoAiLaunchCard } from '@/components/dashboard/marco-ai-launch-card';
 
 const studyTools = [
     {
@@ -167,6 +168,7 @@ export default function DashboardPage() {
       </div>
 
       <SignedIn>
+        <MarcoAiLaunchCard />
         <GlobalGiftCard />
         {isSurpriseRevealed ? (
           <DailySurpriseCard />
@@ -491,5 +493,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
