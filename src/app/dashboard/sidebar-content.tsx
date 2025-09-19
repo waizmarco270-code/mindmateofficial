@@ -37,14 +37,11 @@ import { Logo } from '../ui/logo';
 import { useUnreadMessages } from '@/hooks/use-unread';
 import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
-import { Separator } from '../ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
-import { useEffect, useState } from 'react';
 
 const mainNav = [
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
-  // { href: 'https://aimindmate.vercel.app/', icon: Bot, label: 'Marco AI', glow: 'text-indigo-400', isExternal: true },
   { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
   { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-orange-400' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
@@ -65,16 +62,15 @@ const studyNav = [
 
 const otherNav = [
     { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
-    { href: '/dashboard/help', icon: LifeBuoy, label: 'Help & Support', glow: 'text-amber-400' },
 ];
 
 const adminNav = [
     { href: '/dashboard/admin', icon: Shield, label: 'Admin Panel' },
-]
+];
 
 const superAdminNav = [
     { href: '/dashboard/super-admin', icon: KeyRound, label: 'Super Admin' },
-]
+];
 
 const socialLinks = [
     { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx', icon: 'instagram' },
@@ -93,35 +89,29 @@ const WhatsAppIcon = () => (
 
 export default function SidebarContent() {
   const pathname = usePathname();
-  const { hasUnread, hasGlobalUnread } = useUnreadMessages();
+  const { hasUnread } = useUnreadMessages();
   const { hasNewQuiz } = useNewQuiz();
   const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
-  const [isVip, setIsVip] = useState(false);
-  const [isGM, setIsGM] = useState(false);
   
-  useEffect(() => {
-    if(currentUserData){
-        setIsVip(currentUserData.isVip || false);
-        setIsGM(currentUserData.isGM || false);
-    }
-  }, [currentUserData])
+  const isVip = currentUserData?.isVip || false;
+  const isGM = currentUserData?.isGM || false;
+  const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
 
 
   const isActive = (href: string) => {
     return (href === '/dashboard' && pathname === href) || (href !== '/dashboard' && pathname.startsWith(href));
   };
   
-  const renderNavLinks = (navItems: typeof mainNav & {isExternal?: boolean}[]) => (
+  const renderNavLinks = (navItems: typeof mainNav) => (
     <div className="space-y-1">
       {navItems.map((item) => (
         <Link
           key={item.label}
           href={item.href}
-          prefetch={!item.isExternal}
-          target={item.isExternal ? '_blank' : '_self'}
+          prefetch={true}
           className={cn(
             'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-            isActive(item.href) && !item.isExternal
+            isActive(item.href)
                 ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
                 : 'hover:text-primary',
             item.glow && !isActive(item.href) && `${item.glow} [text-shadow:0_0_8px_currentColor]`,
@@ -129,8 +119,8 @@ export default function SidebarContent() {
         >
           <div className={cn(
             "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-            isActive(item.href) && !item.isExternal ? "bg-primary/100" : "group-hover:scale-y-50",
-            isActive(item.href) && !item.isExternal && item.glow && 'bg-current'
+            isActive(item.href) ? "bg-primary/100" : "group-hover:scale-y-50",
+            isActive(item.href) && item.glow && 'bg-current'
           )}></div>
           <item.icon className="h-5 w-5" />
           <span className="flex-1">{item.label}</span>
@@ -156,7 +146,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'study-tools', 'other-tools', 'admin-tools']}
+          defaultValue={['main-tools']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -185,22 +175,44 @@ export default function SidebarContent() {
               {renderNavLinks(otherNav as any)}
             </AccordionContent>
           </AccordionItem>
-          
-          {(isAdmin || isSuperAdmin) && (
-            <AccordionItem value="admin-tools" className="border-b-0">
-               <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-                Admin
-              </AccordionTrigger>
-              <AccordionContent className="px-4 pb-2">
-                {renderNavLinks(adminNav as any)}
-                 {isSuperAdmin && renderNavLinks(superAdminNav as any)}
-              </AccordionContent>
-            </AccordionItem>
-          )}
+
+          {isSpecialUser && (
+              <AccordionItem value="elite-lounge" className="border-b-0">
+                  <AccordionTrigger className="px-4 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+                    Lounge
+                  </AccordionTrigger>
+                  <AccordionContent className="px-4 pb-2 space-y-1">
+                      <Link href="/dashboard/premium/elite-lounge" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary','text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
+                          <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
+                          <Crown className="h-5 w-5"/> Elite Lounge
+                      </Link>
+                      {(isAdmin || isSuperAdmin) && renderNavLinks(adminNav as any)}
+                      {isSuperAdmin && renderNavLinks(superAdminNav as any)}
+                  </AccordionContent>
+              </AccordionItem>
+            )}
         </Accordion>
       </div>
 
-       <div className="mt-auto p-4 border-t border-sidebar-border">
+       <div className="mt-auto p-4 border-t border-sidebar-border space-y-4">
+          <Link
+                href="/dashboard/help"
+                prefetch={true}
+                className={cn(
+                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
+                    isActive('/dashboard/help') 
+                        ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
+                        : 'hover:text-primary',
+                    'text-amber-400 [text-shadow:0_0_8px_currentColor]',
+                )}
+            >
+                <div className={cn(
+                    "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
+                    isActive('/dashboard/help') ? "bg-current" : "group-hover:scale-y-50"
+                )}></div>
+                <LifeBuoy className="h-5 w-5" />
+                <span className="flex-1">Help & Support</span>
+            </Link>
           <div className="px-3 mb-2">
              <h2 className="text-sm font-semibold tracking-tight text-sidebar-foreground/60">Follow Us</h2>
           </div>
