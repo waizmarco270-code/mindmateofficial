@@ -1,20 +1,26 @@
 
 'use client';
 
-import { InsightsView } from '@/components/insights/insights-view';
-import { ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
+// This page's content has been merged into the new Tracker & Insights page.
+// This file can be removed in the future if no longer needed for routing.
 
-export default function InsightsPage() {
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
+export default function InsightsRedirectPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/dashboard/tracker-insights?tab=insights');
+  }, [router]);
+
   return (
-    <div className="space-y-4">
-       <div className="flex items-center gap-4">
-          <Link href="/dashboard" className="md:hidden">
-            <ArrowLeft className="h-6 w-6" />
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Study Insights</h1>
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p>Redirecting to Tracker & Insights...</p>
       </div>
-      <InsightsView />
     </div>
   );
 }

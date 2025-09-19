@@ -45,9 +45,7 @@ const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus' },
   { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro' },
   { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode' },
-  { href: '/dashboard/time-tracker', icon: Clock, label: 'Time Tracker' },
-  { href: '/dashboard/todos', icon: ListTodo, label: 'To-Dos' },
-  { href: '/dashboard/insights', icon: LineChart, label: 'Insights' },
+  { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger' },
 ];
 
@@ -98,7 +96,19 @@ export default function SidebarContent() {
   const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
   
   const isActive = (href: string) => {
-    return (href === '/dashboard' && pathname === href) || (href !== '/dashboard' && pathname.startsWith(href));
+    // Exact match for dashboard home, startsWith for others
+    if (href === '/dashboard' && pathname === href) return true;
+    if (href !== '/dashboard' && pathname.startsWith(href)) return true;
+    
+    // Special handling for merged routes
+    if (href === '/dashboard/tracker-insights' && (pathname.startsWith('/dashboard/time-tracker') || pathname.startsWith('/dashboard/insights'))) {
+        return true;
+    }
+    if (href === '/dashboard/schedule' && pathname.startsWith('/dashboard/todos')) {
+        return true;
+    }
+
+    return false;
   };
   
   const renderNavLinks = (navItems: typeof mainNavItems) => (
