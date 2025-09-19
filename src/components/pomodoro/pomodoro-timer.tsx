@@ -420,6 +420,11 @@ export function PomodoroTimer() {
                                 <stop offset="75%" stopColor="#FBBF24" />
                                 <stop offset="100%" stopColor="#F43F5E" />
                             </linearGradient>
+                            <linearGradient id="break-rainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#06b6d4" />
+                                <stop offset="50%" stopColor="#3b82f6" />
+                                <stop offset="100%" stopColor="#6d28d9" />
+                            </linearGradient>
                         </defs>
                         <circle
                             cx="150" cy="150" r={CIRCLE_RADIUS}
@@ -430,7 +435,7 @@ export function PomodoroTimer() {
                         <motion.circle
                             cx="150" cy="150" r={CIRCLE_RADIUS}
                             fill="transparent"
-                            stroke="url(#rainbow)"
+                            stroke={mode === 'focus' ? "url(#rainbow)" : "url(#break-rainbow)"}
                             strokeWidth="12"
                             strokeLinecap="round"
                             strokeDasharray={CIRCLE_CIRCUMFERENCE}
