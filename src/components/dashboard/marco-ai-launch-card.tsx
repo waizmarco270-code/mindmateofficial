@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,15 +14,8 @@ export function MarcoAiLaunchCard() {
     const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
-        // This ensures the component has mounted on the client
-        // before we start any timer logic.
+        // This effect runs only on the client, after the component has mounted.
         setIsClient(true);
-    }, []);
-
-    useEffect(() => {
-        if (!isClient) {
-            return; // Don't run timer logic on the server or during hydration
-        }
 
         const launchDate = new Date('2024-10-02T00:00:00Z').getTime();
 
@@ -53,7 +45,7 @@ export function MarcoAiLaunchCard() {
         // Cleanup on component unmount
         return () => clearInterval(timer);
 
-    }, [isClient]); // The effect re-runs only when isClient becomes true
+    }, []); // The empty dependency array ensures this runs only once on mount.
 
     return (
         <Card className="relative group overflow-hidden border-0 bg-transparent mb-8">
@@ -72,14 +64,16 @@ export function MarcoAiLaunchCard() {
                         The revolutionary AI study partner is launching on 2nd October. Get ready!
                     </CardDescription>
                 </div>
-                <div className="flex flex-col items-center">
-                    <div className="flex gap-2 sm:gap-4">
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.days}</p><p className="text-xs">Days</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.hours}</p><p className="text-xs">Hours</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.minutes}</p><p className="text-xs">Mins</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft.seconds}</p><p className="text-xs">Secs</p></div>
+                {isClient && (
+                    <div className="flex flex-col items-center">
+                        <div className="flex gap-2 sm:gap-4">
+                            <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.days}</p><p className="text-xs">Days</p></div>
+                            <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.hours}</p><p className="text-xs">Hours</p></div>
+                            <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.minutes}</p><p className="text-xs">Mins</p></div>
+                            <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft.seconds}</p><p className="text-xs">Secs</p></div>
+                        </div>
                     </div>
-                </div>
+                )}
             </CardContent>
             {isSignedIn && (
                 <div className="relative z-10 p-4 bg-amber-500/10 border-t border-amber-500/20 text-center text-amber-300 text-sm font-semibold flex items-center justify-center gap-2">
