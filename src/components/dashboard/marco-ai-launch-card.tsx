@@ -7,10 +7,17 @@ import { cn } from '@/lib/utils';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 
+interface TimeLeft {
+    days: string;
+    hours: string;
+    minutes: string;
+    seconds: string;
+}
+
 export function MarcoAiLaunchCard() {
     const { isSignedIn } = useUser();
-    
-    // This hook ensures the timer logic runs only on the client, avoiding hydration errors.
+    const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+
     useEffect(() => {
         const launchDate = new Date('2024-10-02T00:00:00Z').getTime();
 
@@ -18,17 +25,9 @@ export function MarcoAiLaunchCard() {
             const now = new Date().getTime();
             const distance = launchDate - now;
 
-            const daysEl = document.getElementById('countdown-days');
-            const hoursEl = document.getElementById('countdown-hours');
-            const minutesEl = document.getElementById('countdown-minutes');
-            const secondsEl = document.getElementById('countdown-seconds');
-
             if (distance < 0) {
                 clearInterval(timer);
-                if(daysEl) daysEl.innerHTML = '00';
-                if(hoursEl) hoursEl.innerHTML = '00';
-                if(minutesEl) minutesEl.innerHTML = '00';
-                if(secondsEl) secondsEl.innerHTML = '00';
+                setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
                 return;
             }
 
@@ -37,17 +36,18 @@ export function MarcoAiLaunchCard() {
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
-            if(daysEl) daysEl.innerHTML = days.toString().padStart(2, '0');
-            if(hoursEl) hoursEl.innerHTML = hours.toString().padStart(2, '0');
-            if(minutesEl) minutesEl.innerHTML = minutes.toString().padStart(2, '0');
-            if(secondsEl) secondsEl.innerHTML = seconds.toString().padStart(2, '0');
+            setTimeLeft({
+                days: days.toString().padStart(2, '0'),
+                hours: hours.toString().padStart(2, '0'),
+                minutes: minutes.toString().padStart(2, '0'),
+                seconds: seconds.toString().padStart(2, '0'),
+            });
 
         }, 1000);
 
         // Cleanup on component unmount
         return () => clearInterval(timer);
-
-    }, []); // The empty dependency array ensures this runs only once on mount.
+    }, []); // The empty dependency array ensures this runs only once on mount, on the client side.
 
     return (
         <Card className="relative group overflow-hidden border-0 bg-transparent mb-8">
@@ -68,10 +68,10 @@ export function MarcoAiLaunchCard() {
                 </div>
                 <div className="flex flex-col items-center">
                     <div className="flex gap-2 sm:gap-4">
-                        <div className="text-center"><p id="countdown-days" className="text-4xl font-bold font-code">00</p><p className="text-xs">Days</p></div>
-                        <div className="text-center"><p id="countdown-hours" className="text-4xl font-bold font-code">00</p><p className="text-xs">Hours</p></div>
-                        <div className="text-center"><p id="countdown-minutes" className="text-4xl font-bold font-code">00</p><p className="text-xs">Mins</p></div>
-                        <div className="text-center"><p id="countdown-seconds" className="text-4xl font-bold font-code text-primary animate-pulse">00</p><p className="text-xs">Secs</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.days}</p><p className="text-xs">Days</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.hours}</p><p className="text-xs">Hours</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.minutes}</p><p className="text-xs">Mins</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft.seconds}</p><p className="text-xs">Secs</p></div>
                     </div>
                 </div>
             </CardContent>
