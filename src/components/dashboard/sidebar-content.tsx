@@ -248,10 +248,10 @@ export default function SidebarContent() {
                             key={link.name} 
                             href={link.href} 
                             className={cn(
-                                "text-sidebar-foreground/70 transition-colors",
-                                link.name === 'Instagram' && 'hover:text-[#E4405F]',
-                                link.name === 'WhatsApp' && 'hover:text-[#25D366]',
-                                link.name === 'Telegram' && 'hover:text-[#0088cc]'
+                                "transition-opacity hover:opacity-80",
+                                link.name === 'Instagram' && 'text-[#E4405F]',
+                                link.name === 'WhatsApp' && 'text-[#25D366]',
+                                link.name === 'Telegram' && 'text-[#0088cc]'
                             )} 
                             target="_blank" 
                             rel="noopener noreferrer"
