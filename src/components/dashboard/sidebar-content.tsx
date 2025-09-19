@@ -30,6 +30,8 @@ import {
   Wrench,
   Swords,
   Crown,
+  HelpCircle,
+  Info
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -62,6 +64,8 @@ const competeNav = [
 
 const otherNav = [
     { href: '/dashboard/tools', icon: Wrench, label: 'Tools' },
+    { href: '/dashboard/faq', icon: HelpCircle, label: 'FAQ' },
+    { href: '/dashboard/about', icon: Info, label: 'About' },
 ];
 
 const adminNav = [
@@ -89,7 +93,7 @@ const WhatsAppIcon = () => (
 
 export default function SidebarContent() {
   const pathname = usePathname();
-  const { hasUnread } = useUnreadMessages();
+  const { hasUnread, hasGlobalUnread } = useUnreadMessages();
   const { hasNewQuiz } = useNewQuiz();
   const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
   
@@ -122,7 +126,7 @@ export default function SidebarContent() {
             )}></div>
             <item.icon className="h-5 w-5" />
             <span className="flex-1">{item.label}</span>
-            {item.href === '/dashboard/social' && hasUnread && (
+            {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && (
               <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
             )}
             {item.href === '/dashboard/quiz' && hasNewQuiz && (
