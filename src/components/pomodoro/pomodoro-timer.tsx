@@ -21,11 +21,12 @@ import { useBeforeunload } from 'react-beforeunload';
 import { useVisibilityChange } from '@/hooks/use-visibility-change';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useImmersive } from '@/hooks/use-immersive';
+import { Switch } from '../ui/switch';
 
 type TimerMode = 'focus' | 'shortBreak' | 'longBreak';
 type WatchFace = 'default' | 'minimal' | 'digital' | 'elegant';
 
-interface PomodoroTheme {
+export interface PomodoroTheme {
   id: string;
   src: string;
   'data-ai-hint': string;
@@ -78,9 +79,10 @@ export function PomodoroTimer() {
   const [tempSettings, setTempSettings] = useState(settings);
   
   const { pomodoroThemes } = placeholderData;
-  const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroTheme', pomodoroThemes.nature[0]);
+  const [selectedTheme, setSelectedTheme] = useLocalStorage<PomodoroTheme | null>('pomodoroTheme', pomodoroThemes.motivation[0]);
   const [selectedMusic, setSelectedMusic] = useLocalStorage<typeof musicTracks[0] | null>('pomodoroMusic', musicTracks[0]);
   const [selectedWatchFace, setSelectedWatchFace] = useLocalStorage<WatchFace>('pomodoroWatchFace', 'default');
+  const [isSlideshowActive, setIsSlideshowActive] = useLocalStorage('pomodoroSlideshow', false);
   
   const [isClient, setIsClient] = useState(false);
   useEffect(() => {
@@ -92,6 +94,22 @@ export function PomodoroTimer() {
   const audioContextRef = useRef<AudioContext | null>(null);
   const musicAudioRef = useRef<HTMLAudioElement | null>(null);
   const penaltyAppliedRef = useRef(false);
+
+  const allThemes = Object.values(pomodoroThemes).flat();
+  
+  // Slideshow effect
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (isSlideshowActive) {
+      interval = setInterval(() => {
+        const randomIndex = Math.floor(Math.random() * allThemes.length);
+        setSelectedTheme(allThemes[randomIndex]);
+      }, 20000); // Change every 20 seconds
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isSlideshowActive, allThemes, setSelectedTheme]);
 
   const applyPenalty = useCallback(() => {
     if (!user || penaltyAppliedRef.current || !isActive) return;
@@ -466,6 +484,14 @@ export function PomodoroTimer() {
                             <Sheet open={isThemeSheetOpen} onOpenChange={setIsThemeSheetOpen}>
                                 <SheetTrigger asChild><Button variant="ghost" size="icon" className="h-12 w-12 text-white/70 hover:text-white"><Palette className="h-6 w-6" /></Button></SheetTrigger>
                                 <SheetContent side="bottom" className="max-h-[80dvh] flex flex-col"><SheetHeader><SheetTitle>Themes</SheetTitle></SheetHeader>
+                                    <div className="flex items-center space-x-2 border-b pb-4">
+                                        <Switch
+                                            id="slideshow-mode"
+                                            checked={isSlideshowActive}
+                                            onCheckedChange={setIsSlideshowActive}
+                                        />
+                                        <Label htmlFor="slideshow-mode">Enable Slideshow Mode</Label>
+                                    </div>
                                     <div className="py-4 space-y-6 overflow-y-auto">
                                         {(Object.keys(pomodoroThemes) as Array<keyof typeof pomodoroThemes>).map(category => (
                                             <div key={category}>
@@ -474,12 +500,12 @@ export function PomodoroTimer() {
                                                     {pomodoroThemes[category].map((theme) => (
                                                         <button 
                                                             key={theme.id} 
-                                                            onClick={() => { setSelectedTheme(theme); setIsThemeSheetOpen(false); }} 
+                                                            onClick={() => { setSelectedTheme(theme); setIsSlideshowActive(false); setIsThemeSheetOpen(false); }} 
                                                             className="relative aspect-square w-full rounded-lg overflow-hidden group border-2 border-transparent data-[state=selected]:border-primary transition-all"
-                                                            data-state={selectedTheme?.id === theme.id ? 'selected' : 'unselected'}
+                                                            data-state={selectedTheme?.id === theme.id && !isSlideshowActive ? 'selected' : 'unselected'}
                                                         >
                                                             <Image src={theme.src} alt={theme['data-ai-hint']} fill sizes="15vw" className="object-cover group-hover:scale-110 transition-transform duration-300"/>
-                                                            {selectedTheme?.id === theme.id && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
+                                                            {selectedTheme?.id === theme.id && !isSlideshowActive && <div className="absolute inset-0 bg-primary/50 flex items-center justify-center"><CheckCircle className="h-6 w-6 text-white"/></div>}
                                                         </button>
                                                     ))}
                                                 </div>
