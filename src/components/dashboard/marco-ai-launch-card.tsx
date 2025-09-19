@@ -7,47 +7,8 @@ import { cn } from '@/lib/utils';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 
-interface TimeLeft {
-    days: string;
-    hours: string;
-    minutes: string;
-    seconds: string;
-}
-
 export function MarcoAiLaunchCard() {
     const { isSignedIn } = useUser();
-    const [timeLeft, setTimeLeft] = useState<TimeLeft>({ days: '00', hours: '00', minutes: '00', seconds: '00' });
-
-    useEffect(() => {
-        const launchDate = new Date('2024-10-02T00:00:00Z').getTime();
-
-        const timer = setInterval(() => {
-            const now = new Date().getTime();
-            const distance = launchDate - now;
-
-            if (distance < 0) {
-                clearInterval(timer);
-                setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
-                return;
-            }
-
-            const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-
-            setTimeLeft({
-                days: days.toString().padStart(2, '0'),
-                hours: hours.toString().padStart(2, '0'),
-                minutes: minutes.toString().padStart(2, '0'),
-                seconds: seconds.toString().padStart(2, '0'),
-            });
-
-        }, 1000);
-
-        // Cleanup on component unmount
-        return () => clearInterval(timer);
-    }, []); // The empty dependency array ensures this runs only once on mount, on the client side.
 
     return (
         <Card className="relative group overflow-hidden border-0 bg-transparent mb-8">
@@ -60,19 +21,15 @@ export function MarcoAiLaunchCard() {
                     <Bot className="h-12 w-12 text-primary" />
                 </div>
                 <div className="flex-1">
-                    <h2 className="text-sm font-bold uppercase tracking-widest text-primary">Coming Soon</h2>
-                    <CardTitle className="text-3xl font-bold mt-1">Marco AI 👑🔥</CardTitle>
-                    <CardDescription className="text-slate-400 mt-1 max-w-lg mx-auto md:mx-0">
-                        The revolutionary AI study partner is launching on 2nd October. Get ready!
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-primary">COMING SOON</h2>
+                    <CardTitle className="text-3xl lg:text-4xl font-bold mt-1">Marco AI 👑🔥</CardTitle>
+                    <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
+                        The revolutionary AI study partner is preparing for launch. Get ready!
                     </CardDescription>
                 </div>
-                <div className="flex flex-col items-center">
-                    <div className="flex gap-2 sm:gap-4">
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.days}</p><p className="text-xs">Days</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.hours}</p><p className="text-xs">Hours</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.minutes}</p><p className="text-xs">Mins</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft.seconds}</p><p className="text-xs">Secs</p></div>
-                    </div>
+                <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10">
+                    <p className="text-lg font-bold font-code text-cyan-300">LAUNCHING ON</p>
+                    <p className="text-4xl font-bold font-serif text-white mt-1">2nd October</p>
                 </div>
             </CardContent>
             {isSignedIn && (
