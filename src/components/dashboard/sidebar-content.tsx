@@ -78,9 +78,9 @@ const superAdminNav = [
 ];
 
 const socialLinks = [
-    { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx', icon: 'instagram' },
-    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H', icon: 'whatsapp' },
-    { name: 'Telegram', href: 'https://t.me/EmityGate', icon: Send },
+    { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx', icon: 'instagram', colorClass: 'hover:text-[#E4405F]' },
+    { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H', icon: 'whatsapp', colorClass: 'hover:text-[#25D366]' },
+    { name: 'Telegram', href: 'https://t.me/EmityGate', icon: Send, colorClass: 'hover:text-[#0088cc]' },
 ];
 
 const InstagramIcon = () => (
@@ -259,7 +259,7 @@ export default function SidebarContent() {
                   else Icon = link.icon;
                   
                   return (
-                        <a key={link.name} href={link.href} className="text-sidebar-foreground/70 hover:text-sidebar-foreground transition-colors" target="_blank" rel="noopener noreferrer">
+                        <a key={link.name} href={link.href} className={cn("text-sidebar-foreground/70 transition-colors", link.colorClass)} target="_blank" rel="noopener noreferrer">
                           {Icon ? <Icon /> : link.name}
                           <span className="sr-only">{link.name}</span>
                       </a>
