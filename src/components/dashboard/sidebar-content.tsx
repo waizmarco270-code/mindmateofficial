@@ -42,23 +42,23 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '..
 import { Button } from '../ui/button';
 
 const mainNavItems = [
-  { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus' },
-  { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro' },
-  { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode' },
-  { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights' },
-  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger' },
+  { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
+  { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro', glow: 'text-green-400' },
+  { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-yellow-400' },
+  { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights', glow: 'text-blue-400' },
+  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
 ];
 
 const communityNav = [
-  { href: '/dashboard/social', icon: Users, label: 'Social Hub' },
-  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
+  { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
+  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
 ];
 
 const competeNav = [
-    { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone' },
-    { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone' },
-    { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone' },
-    { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
+    { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
+    { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
+    { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
+    { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
 ];
 
 
@@ -130,7 +130,7 @@ export default function SidebarContent() {
               "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
               isActive(item.href) ? "bg-primary" : "group-hover:scale-y-50"
             )}></div>
-            <item.icon className="h-5 w-5" />
+            <item.icon className={cn("h-5 w-5", item.glow)} />
             <span className="flex-1">{item.label}</span>
             {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && (
               <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
