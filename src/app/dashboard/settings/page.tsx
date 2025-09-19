@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText } from 'lucide-react';
+import { Settings, User, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText, Monitor } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
@@ -29,7 +30,7 @@ function AppearanceSettings() {
                     <div className="space-y-0.5">
                         <Label>Theme</Label>
                         <p className="text-xs text-muted-foreground">
-                            Switch between light and dark mode.
+                            Switch between light, dark, and system modes.
                         </p>
                     </div>
                     <div className="flex items-center gap-2">
@@ -46,6 +47,13 @@ function AppearanceSettings() {
                             onClick={() => setTheme('dark')}
                         >
                             <Moon className="h-5 w-5" />
+                        </Button>
+                        <Button
+                            variant={theme === 'system' ? 'default' : 'outline'}
+                            size="icon"
+                            onClick={() => setTheme('system')}
+                        >
+                            <Monitor className="h-5 w-5" />
                         </Button>
                     </div>
                 </div>
