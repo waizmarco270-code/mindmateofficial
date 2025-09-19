@@ -14,16 +14,16 @@ export function MarcoAiLaunchCard() {
     } | null>(null);
 
     useEffect(() => {
+        // This function will only run on the client
         const launchDate = new Date('2024-10-02T00:00:00').getTime();
 
-        const timer = setInterval(() => {
+        const updateTimer = () => {
             const now = new Date().getTime();
             const distance = launchDate - now;
 
             if (distance < 0) {
-                clearInterval(timer);
                 setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
-                return;
+                return false; // Stop the timer
             }
 
             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
@@ -37,29 +37,22 @@ export function MarcoAiLaunchCard() {
                 minutes: minutes.toString().padStart(2, '0'),
                 seconds: seconds.toString().padStart(2, '0'),
             });
-        }, 1000);
-
-        // Initial calculation
-        const now = new Date().getTime();
-        const distance = launchDate - now;
-        if (distance > 0) {
-             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
-             setTimeLeft({
-                days: days.toString().padStart(2, '0'),
-                hours: hours.toString().padStart(2, '0'),
-                minutes: minutes.toString().padStart(2, '0'),
-                seconds: seconds.toString().padStart(2, '0'),
-            });
-        } else {
-             setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+            return true; // Continue the timer
+        };
+        
+        // Initial call to set the time immediately
+        if(updateTimer()) {
+            const timer = setInterval(() => {
+                if (!updateTimer()) {
+                    clearInterval(timer);
+                }
+            }, 1000);
+    
+            // Cleanup on component unmount
+            return () => clearInterval(timer);
         }
 
-
-        return () => clearInterval(timer);
-    }, []);
+    }, []); // Empty dependency array ensures this runs only once on mount (client-side)
 
     return (
         <Card className="relative group overflow-hidden border-0 bg-transparent mb-8">
@@ -96,4 +89,3 @@ export function MarcoAiLaunchCard() {
         </Card>
     );
 }
-
