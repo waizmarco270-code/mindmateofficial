@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useImmersive } from '@/hooks/use-immersive';
 import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -30,6 +30,12 @@ export default function AiAssistantPage() {
 
   const isAiLive = appSettings?.marcoAiLaunchStatus === 'live';
   const hasAccess = currentUserData?.hasAiAccess ?? false;
+
+  useEffect(() => {
+    // Only enter immersive mode if the user has access and the AI is live.
+    // This prevents the purchase card from being hidden on mobile.
+    setIsImmersive(hasAccess && isAiLive);
+  }, [hasAccess, isAiLive, setIsImmersive]);
 
   const handlePurchase = async () => {
     if (!user || !currentUserData) return;
