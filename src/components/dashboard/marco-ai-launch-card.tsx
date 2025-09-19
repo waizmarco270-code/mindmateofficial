@@ -42,11 +42,11 @@ export function MarcoAiLaunchCard() {
                 {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
             </div>
             <CardContent className="relative z-10 p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-6">
-                <div className="p-4 bg-primary/20 border-2 border-primary/50 rounded-full animate-pulse">
-                    <AiBrainIcon className="h-12 w-12 text-primary" />
+                <div className="p-4 bg-red-500/10 border-2 border-red-500/30 rounded-full animate-flicker">
+                    <AiBrainIcon className="h-12 w-12 text-red-400" />
                 </div>
                 <div className="flex-1">
-                    <h2 className="text-sm font-bold uppercase tracking-widest text-primary">COMING SOON</h2>
+                    <h2 className="text-sm font-bold uppercase tracking-widest text-red-400">COMING SOON</h2>
                     <CardTitle className="text-3xl lg:text-4xl font-bold mt-1">Marco AI 👑🔥</CardTitle>
                     <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
                         The revolutionary AI study partner is preparing for launch. Get ready!
@@ -66,4 +66,3 @@ export function MarcoAiLaunchCard() {
         </Card>
     );
 }
-
