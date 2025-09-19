@@ -9,9 +9,9 @@ import Link from 'next/link';
 
 export function MarcoAiLaunchCard() {
     const { isSignedIn } = useUser();
-    const [timeLeft, setTimeLeft] = useState({
-        days: '00', hours: '00', minutes: '00', seconds: '00'
-    });
+    const [timeLeft, setTimeLeft] = useState<{
+        days: string; hours: string; minutes: string; seconds: string;
+    } | null>(null);
 
     useEffect(() => {
         const launchDate = new Date('2024-10-02T00:00:00').getTime();
@@ -39,6 +39,25 @@ export function MarcoAiLaunchCard() {
             });
         }, 1000);
 
+        // Initial calculation
+        const now = new Date().getTime();
+        const distance = launchDate - now;
+        if (distance > 0) {
+             const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+             setTimeLeft({
+                days: days.toString().padStart(2, '0'),
+                hours: hours.toString().padStart(2, '0'),
+                minutes: minutes.toString().padStart(2, '0'),
+                seconds: seconds.toString().padStart(2, '0'),
+            });
+        } else {
+             setTimeLeft({ days: '00', hours: '00', minutes: '00', seconds: '00' });
+        }
+
+
         return () => clearInterval(timer);
     }, []);
 
@@ -61,10 +80,10 @@ export function MarcoAiLaunchCard() {
                 </div>
                 <div className="flex flex-col items-center">
                     <div className="flex gap-2 sm:gap-4">
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.days}</p><p className="text-xs">Days</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.hours}</p><p className="text-xs">Hours</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft.minutes}</p><p className="text-xs">Mins</p></div>
-                        <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft.seconds}</p><p className="text-xs">Secs</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft?.days ?? '00'}</p><p className="text-xs">Days</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft?.hours ?? '00'}</p><p className="text-xs">Hours</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code">{timeLeft?.minutes ?? '00'}</p><p className="text-xs">Mins</p></div>
+                        <div className="text-center"><p className="text-4xl font-bold font-code text-primary animate-pulse">{timeLeft?.seconds ?? '00'}</p><p className="text-xs">Secs</p></div>
                     </div>
                 </div>
             </CardContent>
@@ -77,3 +96,4 @@ export function MarcoAiLaunchCard() {
         </Card>
     );
 }
+
