@@ -321,19 +321,15 @@ export function PomodoroTimer() {
       longBreak: "Take a Long Break"
   }
 
-  const modeColors: Record<TimerMode, string> = {
-    focus: 'text-primary',
-    shortBreak: 'text-green-400',
-    longBreak: 'text-cyan-400',
-  };
-
-
   const timerFaceClasses: Record<WatchFace, string> = {
     default: 'font-mono text-6xl md:text-7xl font-bold tabular-nums tracking-tighter',
     minimal: 'font-sans text-5xl md:text-6xl font-light tracking-widest',
     digital: 'font-code text-5xl md:text-6xl font-black',
     elegant: 'font-serif text-6xl md:text-7xl font-normal'
   };
+
+  const CIRCLE_RADIUS = 130;
+  const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
 
 
   if (!isClient) {
@@ -414,14 +410,37 @@ export function PomodoroTimer() {
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
                 className="relative z-10 flex flex-col items-center justify-center p-4"
             >
-                <div className="relative h-64 w-64 sm:h-72 sm:w-72 md:h-80 md:w-80 rounded-full flex items-center justify-center p-2 rainbow-border-card">
-                    <div 
-                        className="absolute inset-2 bg-black/40 backdrop-blur-md rounded-full shadow-2xl"
-                        style={{
-                            maskImage: `radial-gradient(circle at center, transparent ${progress - 5}%, black ${progress}%)`,
-                            WebkitMaskImage: `radial-gradient(circle at center, transparent ${progress - 5}%, black ${progress}%)`
-                        }}
-                    />
+                <div className="relative h-72 w-72 sm:h-80 sm:w-80 md:h-96 md:w-96 rounded-full flex items-center justify-center">
+                    <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 300">
+                        <defs>
+                            <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stopColor="#8B5CF6" />
+                                <stop offset="25%" stopColor="#3B82F6" />
+                                <stop offset="50%" stopColor="#22C55E" />
+                                <stop offset="75%" stopColor="#FBBF24" />
+                                <stop offset="100%" stopColor="#F43F5E" />
+                            </linearGradient>
+                        </defs>
+                        <circle
+                            cx="150" cy="150" r={CIRCLE_RADIUS}
+                            fill="transparent"
+                            stroke="rgba(255,255,255,0.1)"
+                            strokeWidth="12"
+                        />
+                        <motion.circle
+                            cx="150" cy="150" r={CIRCLE_RADIUS}
+                            fill="transparent"
+                            stroke="url(#rainbow)"
+                            strokeWidth="12"
+                            strokeLinecap="round"
+                            strokeDasharray={CIRCLE_CIRCUMFERENCE}
+                            initial={{ strokeDashoffset: 0 }}
+                            animate={{ strokeDashoffset: CIRCLE_CIRCUMFERENCE * (1 - progress / 100) }}
+                            transition={{ duration: 1, ease: 'linear' }}
+                            style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
+                        />
+                    </svg>
+
                     <div className="relative flex flex-col items-center text-center">
                         <p className={cn(timerFaceClasses[selectedWatchFace], "[text-shadow:0_2px_8px_rgba(0,0,0,0.7)]")}>
                             {formatTime(timeLeft)}
