@@ -256,4 +256,8 @@
   .animate-gold-shine {
       animation: gold-shine 3s ease-in-out infinite;
   }
+
+  .text-shadow-glow {
+    text-shadow: 0 0 8px currentColor;
+  }
 }

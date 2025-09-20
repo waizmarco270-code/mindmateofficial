@@ -14,6 +14,9 @@ import { LoginWall } from '@/components/ui/login-wall';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useVisibilityChange } from '@/hooks/use-visibility-change';
 import { usePathname } from 'next/navigation';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay";
+
 
 interface FocusSlot {
     duration: number; // in seconds
@@ -22,13 +25,14 @@ interface FocusSlot {
     icon: React.ElementType;
     color: string;
     shadow: string;
+    shortLabel: string;
 }
 
 const focusSlots: FocusSlot[] = [
-    { duration: 3600, label: '1 Hour', reward: 5, icon: BrainCircuit, color: 'from-blue-500 to-sky-500', shadow: 'shadow-blue-500/30' },
-    { duration: 7200, label: '2 Hours', reward: 20, icon: Swords, color: 'from-green-500 to-emerald-500', shadow: 'shadow-green-500/30' },
-    { duration: 10800, label: '3 Hours', reward: 30, icon: Shield, color: 'from-purple-500 to-indigo-500', shadow: 'shadow-purple-500/30' },
-    { duration: 18000, label: '5 Hours', reward: 40, icon: Star, color: 'from-yellow-500 to-amber-500', shadow: 'shadow-yellow-500/30' },
+    { duration: 3600, label: '1 Hour', reward: 5, icon: BrainCircuit, color: 'from-blue-500 to-sky-500', shadow: 'shadow-blue-500/30', shortLabel: '1 HR' },
+    { duration: 7200, label: '2 Hours', reward: 20, icon: Swords, color: 'from-green-500 to-emerald-500', shadow: 'shadow-green-500/30', shortLabel: '2 HR' },
+    { duration: 10800, label: '3 Hours', reward: 30, icon: Shield, color: 'from-purple-500 to-indigo-500', shadow: 'shadow-purple-500/30', shortLabel: '3 HR' },
+    { duration: 18000, label: '5 Hours', reward: 40, icon: Star, color: 'from-yellow-500 to-amber-500', shadow: 'shadow-yellow-500/30', shortLabel: '5 HR' },
 ];
 
 const PENALTY = 20;
@@ -337,41 +341,72 @@ export default function FocusModePage() {
                 </div>
             </div>
 
-             <Card className="bg-transparent border-0 shadow-none">
+            <Card className="bg-transparent border-0 shadow-none overflow-hidden">
                 <CardHeader>
                     <CardTitle>Select a Focus Slot</CardTitle>
                     <CardDescription>Complete a session to earn credits. Leaving early will result in a penalty.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {focusSlots.map((slot, index) => (
-                        <motion.div
-                          key={slot.label}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.3, delay: index * 0.1 }}
-                        >
-                           <button
-                                className={cn(
-                                    "group relative w-full h-full p-6 border rounded-2xl text-left overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground",
-                                    "bg-gradient-to-br",
-                                    slot.color,
-                                    slot.shadow
-                                )}
-                                onClick={() => handleSelectSlot(slot)}
-                                disabled={!isSignedIn}
-                            >
-                               <div className="relative z-10">
-                                    <div className={cn("p-3 mb-4 rounded-lg bg-white/10 w-fit")}>
-                                       <slot.icon className="h-8 w-8 text-white animate-pulse" style={{animationDuration: `${2 + index}s`}}/>
-                                    </div>
-                                    <h3 className="text-3xl font-bold">{slot.label}</h3>
-                                    <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-3 py-1 text-sm font-semibold bg-white/10 text-white">
-                                        <Award className="h-4 w-4"/> +{slot.reward} Credits
-                                    </div>
-                               </div>
-                            </button>
-                        </motion.div>
-                    ))}
+                <CardContent className="p-0">
+                    <Carousel
+                        opts={{
+                            align: "start",
+                            loop: true,
+                        }}
+                         plugins={[
+                            Autoplay({
+                              delay: 4000,
+                              stopOnInteraction: true,
+                              stopOnMouseEnter: true,
+                            }),
+                        ]}
+                        className="w-full"
+                    >
+                        <CarouselContent className="-ml-4 py-4">
+                           {focusSlots.map((slot, index) => (
+                            <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                                <div className="p-1">
+                                <button
+                                    className={cn(
+                                        "group relative w-full h-full p-6 border-2 rounded-2xl text-left overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed",
+                                        "bg-gradient-to-br",
+                                        slot.color,
+                                        "text-white border-transparent"
+                                    )}
+                                    onClick={() => handleSelectSlot(slot)}
+                                    disabled={!isSignedIn}
+                                >
+                                <div className="relative z-10 flex flex-col justify-between h-56">
+                                     <div className="flex justify-between items-start">
+                                        <div className="p-3 mb-4 rounded-lg bg-white/10 w-fit">
+                                            <slot.icon className="h-8 w-8 text-white animate-pulse" style={{animationDuration: `${2 + index}s`}}/>
+                                        </div>
+                                        {/* 3D Clock */}
+                                        <div className="relative w-24 h-24">
+                                            <div className="absolute inset-0 rounded-full bg-black/10 shadow-inner"></div>
+                                            <div className="absolute inset-2 rounded-full bg-black/20 shadow-md flex items-center justify-center">
+                                                <span className="text-white font-bold text-3xl text-shadow-glow">{slot.shortLabel}</span>
+                                            </div>
+                                             <div className="absolute top-1 left-1/2 -translate-x-1/2 h-2 w-1 bg-white/30 rounded-full"></div>
+                                             <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-2 w-1 bg-white/30 rounded-full"></div>
+                                             <div className="absolute left-1 top-1/2 -translate-y-1/2 h-1 w-2 bg-white/30 rounded-full"></div>
+                                             <div className="absolute right-1 top-1/2 -translate-y-1/2 h-1 w-2 bg-white/30 rounded-full"></div>
+                                        </div>
+                                     </div>
+                                     <div>
+                                        <h3 className="text-4xl font-bold">{slot.label}</h3>
+                                        <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-3 py-1 text-sm font-semibold bg-green-400/80 text-green-900 text-shadow-glow shadow-md">
+                                            <Award className="h-4 w-4"/> +{slot.reward} Credits
+                                        </div>
+                                     </div>
+                                </div>
+                                </button>
+                                </div>
+                            </CarouselItem>
+                        ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="left-2" />
+                        <CarouselNext className="right-2" />
+                    </Carousel>
                 </CardContent>
             </Card>
 
