@@ -8,6 +8,7 @@ import { useUsers, useAdmin, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 import { UserButton, useUser, SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
+import { ThemeToggle } from '../theme-toggle';
 
 
 export default function Header() {
@@ -111,6 +112,8 @@ export default function Header() {
                         </div>
                     </PopoverContent>
                 </Popover>
+                
+                <ThemeToggle />
 
                 <UserButton afterSignOutUrl="/" appearance={{
                     elements: {
