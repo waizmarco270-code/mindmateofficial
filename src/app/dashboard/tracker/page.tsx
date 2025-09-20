@@ -352,19 +352,20 @@ export default function FocusModePage() {
                         >
                            <button
                                 className={cn(
-                                    "group relative w-full h-full p-6 border rounded-2xl text-left overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 disabled:opacity-50 disabled:cursor-not-allowed",
-                                    "bg-card",
+                                    "group relative w-full h-full p-6 border rounded-2xl text-left overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground",
+                                    "bg-gradient-to-br",
+                                    slot.color,
                                     slot.shadow
                                 )}
                                 onClick={() => handleSelectSlot(slot)}
                                 disabled={!isSignedIn}
                             >
-                               <div className="relative z-10 text-foreground">
-                                    <div className={cn("p-3 mb-4 rounded-lg bg-gradient-to-br w-fit", slot.color)}>
+                               <div className="relative z-10">
+                                    <div className={cn("p-3 mb-4 rounded-lg bg-white/10 w-fit")}>
                                        <slot.icon className="h-8 w-8 text-white animate-pulse" style={{animationDuration: `${2 + index}s`}}/>
                                     </div>
                                     <h3 className="text-3xl font-bold">{slot.label}</h3>
-                                    <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-3 py-1 text-sm font-semibold text-green-500 [text-shadow:0_0_8px_currentColor]">
+                                    <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-3 py-1 text-sm font-semibold bg-white/10 text-white">
                                         <Award className="h-4 w-4"/> +{slot.reward} Credits
                                     </div>
                                </div>
