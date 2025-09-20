@@ -174,6 +174,7 @@ interface AppDataContextType {
     unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
     unlockFeatureForUser: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
     generateAiAccessToken: (uid: string) => Promise<string | null>;
+    generateDevAiAccessToken: (uid: string) => Promise<string | null>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string) => Promise<void>;
@@ -601,8 +602,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) return null;
 
-        const isDev = process.env.NODE_ENV === 'development';
-        const cost = isDev ? 0 : 1000;
+        const cost = 1000;
         
         if (userSnap.data().credits < cost) {
             throw new Error("Insufficient credits.");
@@ -613,9 +613,40 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
         const batch = writeBatch(db);
 
-        // Deduct credits (if not in dev mode) and mark AI access for user
+        // Deduct credits and mark AI access for user
         batch.update(userRef, {
             credits: increment(-cost),
+            hasAiAccess: true
+        });
+
+        // Store the new token
+        batch.set(doc(tokensRef), {
+            userId: uid,
+            token: token,
+            createdAt: serverTimestamp(),
+            isUsed: false
+        });
+
+        await batch.commit();
+        return token;
+    }, []);
+
+    const generateDevAiAccessToken = useCallback(async (uid: string) => {
+        if (!uid) return null;
+        
+        const userRef = doc(db, 'users', uid);
+        const tokensRef = collection(db, 'ai_access_tokens');
+        
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) return null;
+
+        // Generate a random token
+        const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+
+        const batch = writeBatch(db);
+
+        // Just mark AI access for user, no credit deduction
+        batch.update(userRef, {
             hasAiAccess: true
         });
 
@@ -996,6 +1027,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         unlockResourceSection,
         unlockFeatureForUser,
         generateAiAccessToken,
+        generateDevAiAccessToken,
         addPerfectedQuiz,
         incrementQuizAttempt,
         incrementFocusSessions,

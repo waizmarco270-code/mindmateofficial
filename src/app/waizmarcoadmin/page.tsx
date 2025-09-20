@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -47,6 +47,7 @@ export default function SuperAdminPanelPage() {
     unlockFeature,
     appSettings,
     updateAppSettings,
+    generateDevAiAccessToken, // New function
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -67,6 +68,11 @@ export default function SuperAdminPanelPage() {
   const [popupScratchAmount, setPopupScratchAmount] = useState(0);
   const [popupFlipAmount, setPopupFlipAmount] = useState(0);
   const [isSendingPopup, setIsSendingPopup] = useState(false);
+
+  // State for dev token generation
+  const [devTokenUser, setDevTokenUser] = useState<string | null>(null);
+  const [generatedDevToken, setGeneratedDevToken] = useState<string | null>(null);
+  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
 
 
   // State for Feature Locks
@@ -261,6 +267,28 @@ export default function SuperAdminPanelPage() {
     toast({ title: `Marco AI is now ${newStatus === 'live' ? 'LIVE' : 'in countdown mode'}.`});
   };
 
+  const handleGenerateDevToken = async () => {
+    if (!devTokenUser) {
+        toast({ variant: 'destructive', title: 'No user selected' });
+        return;
+    }
+    setIsGeneratingToken(true);
+    try {
+        const token = await generateDevAiAccessToken(devTokenUser);
+        if(token) {
+            setGeneratedDevToken(token);
+            toast({ title: "Dev Token Generated" });
+        } else {
+            throw new Error("Token generation failed");
+        }
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message });
+        setGeneratedDevToken(null);
+    } finally {
+        setIsGeneratingToken(false);
+    }
+  };
+
   if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -435,6 +463,54 @@ export default function SuperAdminPanelPage() {
                       </TableBody>
                     </Table>
                   </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
+        {/* Developer Tools */}
+        <AccordionItem value="dev-tools" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <KeyRoundIcon className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Developer Tools</h3>
+                  <p className="text-sm text-muted-foreground text-left">Tools for testing and development.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Generate AI Access Token</CardTitle>
+                        <CardDescription>Generate a one-time access token for Marco AI for any user without deducting credits.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Select User to Generate Token For</Label>
+                        <Select onValueChange={setDevTokenUser} value={devTokenUser ?? undefined}>
+                            <SelectTrigger><SelectValue placeholder="Select a user..." /></SelectTrigger>
+                            <SelectContent>
+                                {users.filter(u => !u.isBlocked).map(user => (
+                                    <SelectItem key={user.uid} value={user.uid}>
+                                        {user.displayName} {user.uid === SUPER_ADMIN_UID && "(You)"}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                      </div>
+                      <Button onClick={handleGenerateDevToken} disabled={isGeneratingToken || !devTokenUser}>
+                          {isGeneratingToken ? "Generating..." : "Generate Token"}
+                      </Button>
+                      {generatedDevToken && (
+                        <div className="space-y-2 pt-4">
+                           <Label>Generated Token</Label>
+                           <Input readOnly value={generatedDevToken} className="font-mono"/>
+                           <p className="text-xs text-muted-foreground">This is a one-time use token. The user's `hasAiAccess` flag has also been set to true.</p>
+                        </div>
+                      )}
+                    </CardContent>
                 </Card>
             </AccordionContent>
           </Card>

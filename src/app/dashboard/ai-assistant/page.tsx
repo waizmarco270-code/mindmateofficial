@@ -37,10 +37,10 @@ export default function AiAssistantPage() {
     setIsImmersive(hasAccess && isAiLive);
   }, [hasAccess, isAiLive, setIsImmersive]);
 
-  const handlePurchase = async (isDev: boolean = false) => {
+  const handlePurchase = async () => {
     if (!user || !currentUserData) return;
 
-    if (!isDev && currentUserData.credits < AI_ACCESS_COST) {
+    if (currentUserData.credits < AI_ACCESS_COST) {
       toast({
         variant: 'destructive',
         title: 'Insufficient Credits',
@@ -51,12 +51,11 @@ export default function AiAssistantPage() {
 
     setIsPurchasing(true);
     try {
-      // Pass `isDev` to the generation function if you modify it to bypass credit deduction on server
       const token = await generateAiAccessToken(user.id);
       if (token) {
         setGeneratedToken(token);
         toast({
-          title: isDev ? 'Dev Token Generated!' : 'Purchase Successful!',
+          title: 'Purchase Successful!',
           description: 'You have unlocked lifetime access to Marco AI.',
         });
       } else {
@@ -144,22 +143,12 @@ export default function AiAssistantPage() {
             <Button
               className="w-full"
               size="lg"
-              onClick={() => handlePurchase(false)}
+              onClick={handlePurchase}
               disabled={isPurchasing || (currentUserData?.credits ?? 0) < AI_ACCESS_COST}
             >
               {isPurchasing ? <Loader2 className="mr-2 animate-spin" /> : <ShieldCheck className="mr-2" />}
               Unlock for {AI_ACCESS_COST} Credits
             </Button>
-            {process.env.NODE_ENV === 'development' && (
-              <Button
-                className="w-full"
-                variant="secondary"
-                onClick={() => handlePurchase(true)}
-                disabled={isPurchasing}
-              >
-                <Code className="mr-2" /> Generate Dev Token
-              </Button>
-            )}
           </CardFooter>
         </Card>
       </div>
