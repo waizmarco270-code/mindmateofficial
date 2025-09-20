@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -602,9 +603,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) return null;
 
+        const userData = userSnap.data() as User;
         const cost = 1000;
         
-        if (userSnap.data().credits < cost) {
+        if (userData.credits < cost) {
             throw new Error("Insufficient credits.");
         }
 
@@ -622,6 +624,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         // Store the new token
         batch.set(doc(tokensRef), {
             userId: uid,
+            userName: userData.displayName,
             token: token,
             createdAt: serverTimestamp(),
             isUsed: false
@@ -640,6 +643,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userSnap = await getDoc(userRef);
         if (!userSnap.exists()) return null;
 
+        const userData = userSnap.data() as User;
+
         // Generate a random token
         const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
 
@@ -653,6 +658,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         // Store the new token
         batch.set(doc(tokensRef), {
             userId: uid,
+            userName: userData.displayName,
             token: token,
             createdAt: serverTimestamp(),
             isUsed: false
@@ -1139,3 +1145,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    
