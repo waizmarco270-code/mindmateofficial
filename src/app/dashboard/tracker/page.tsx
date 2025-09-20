@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlarmClock, AlertTriangle, Award, Zap, X, Pause, Play, Music, Volume2, VolumeX } from 'lucide-react';
+import { AlarmClock, AlertTriangle, Award, Zap, X, Pause, Play, Music, Volume2, VolumeX, Shield, Swords, BrainCircuit, Star } from 'lucide-react';
 import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
@@ -19,12 +19,16 @@ interface FocusSlot {
     duration: number; // in seconds
     label: string;
     reward: number;
+    icon: React.ElementType;
+    color: string;
+    shadow: string;
 }
 
 const focusSlots: FocusSlot[] = [
-    { duration: 3600, label: '1 Hour', reward: 5 },
-    { duration: 7200, label: '2 Hours', reward: 20 },
-    { duration: 10800, label: '3 Hours', reward: 30 },
+    { duration: 3600, label: '1 Hour', reward: 5, icon: BrainCircuit, color: 'from-blue-500 to-sky-500', shadow: 'shadow-blue-500/30' },
+    { duration: 7200, label: '2 Hours', reward: 20, icon: Swords, color: 'from-green-500 to-emerald-500', shadow: 'shadow-green-500/30' },
+    { duration: 10800, label: '3 Hours', reward: 30, icon: Shield, color: 'from-purple-500 to-indigo-500', shadow: 'shadow-purple-500/30' },
+    { duration: 18000, label: '5 Hours', reward: 40, icon: Star, color: 'from-yellow-500 to-amber-500', shadow: 'shadow-yellow-500/30' },
 ];
 
 const PENALTY = 20;
@@ -45,6 +49,15 @@ const quotes = [
     "Waqt tera hai, chahe to sona bana le, ya sone me guzaar de."
 ];
 
+const musicTracks = [
+    { id: 'none', name: 'No Music', src: '' },
+    { id: 'irreplaceable', name: 'The Irreplaceable', src: '/audio/irreplaceable.mp3' },
+    { id: 'hans-zimmer', name: 'Hans Zimmer Mix', src: '/audio/hans-zimmer.mp3' },
+    { id: 'interstellar', name: 'Interstellar', src: '/audio/interstellar.mp3' },
+    { id: 'max-focus', name: 'Max Focus', src: '/audio/max-focus.mp3' },
+    { id: 'soothing', name: 'Soothing Piano', src: '/audio/soothing.mp3' },
+];
+
 export default function FocusModePage() {
     const { user, isSignedIn } = useUser();
     const { currentUserData, addCreditsToUser, incrementFocusSessions } = useUsers();
@@ -57,6 +70,7 @@ export default function FocusModePage() {
     const [isPaused, setIsPaused] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+    const [selectedMusic, setSelectedMusic] = useState(musicTracks[0]);
 
     const audioRef = useRef<HTMLAudioElement>(null);
     const penaltyAppliedRef = useRef(false);
@@ -189,6 +203,22 @@ export default function FocusModePage() {
         }
     }
     
+    useEffect(() => {
+        const audioEl = audioRef.current;
+        if (!audioEl) return;
+
+        if (isActive && selectedMusic?.src) {
+            audioEl.play().catch(e => console.error("Audio play failed:", e));
+        } else {
+            audioEl.pause();
+        }
+    }, [isActive, selectedMusic]);
+
+    useEffect(() => {
+        const audioEl = audioRef.current;
+        if(audioEl) audioEl.muted = isMuted;
+    }, [isMuted]);
+
     const toggleMute = () => {
         const shouldMute = !isMuted;
         setIsMuted(shouldMute);
@@ -203,42 +233,54 @@ export default function FocusModePage() {
         const s = seconds % 60;
         return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     };
+    
+    const CIRCLE_RADIUS = 130;
+    const CIRCLE_CIRCUMFERENCE = 2 * Math.PI * CIRCLE_RADIUS;
+
 
     if (activeSlot) {
         const progress = (timeLeft / activeSlot.duration) * 100;
         return (
              <div className="flex justify-center items-center h-full">
-                 <audio ref={audioRef} src="/audio/ambient-music.mp3" loop muted={isMuted} />
-                 <Card className="w-full max-w-lg text-center animate-in fade-in-50 bg-background/70 backdrop-blur-lg">
-                    <CardHeader>
+                 <audio ref={audioRef} src={selectedMusic.src} loop muted={isMuted} />
+                 <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                    className="w-full max-w-lg text-center bg-background/50 backdrop-blur-xl p-8 rounded-2xl shadow-2xl border border-white/10"
+                >
+                    <CardHeader className="p-0">
                         <CardTitle className="text-3xl">Focusing: {activeSlot.label}</CardTitle>
                         <CardDescription>Keep this page open. Closing it or navigating away will result in a penalty.</CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center gap-8">
-                         <div className="relative h-64 w-64">
-                            <svg className="h-full w-full" viewBox="0 0 100 100">
-                              <circle className="text-muted" strokeWidth="7" stroke="currentColor" fill="transparent" r="45" cx="50" cy="50"/>
-                              <motion.circle
-                                className="text-primary transition-all duration-1000 ease-linear"
-                                strokeWidth="7"
-                                strokeDasharray="283"
-                                strokeLinecap="round"
-                                stroke="currentColor"
-                                fill="transparent"
-                                r="45"
-                                cx="50"
-                                cy="50"
-                                style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
-                                initial={{ strokeDashoffset: 283 }}
-                                animate={{ strokeDashoffset: 283 * (1 - progress / 100) }}
-                                transition={{ duration: 1, ease: 'linear'}}
-                              />
+                    <CardContent className="flex flex-col items-center gap-8 py-8 px-0">
+                        <div className="relative h-72 w-72">
+                             <svg className="absolute inset-0 h-full w-full" viewBox="0 0 300 300">
+                                <defs>
+                                    <linearGradient id="rainbow" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#8B5CF6" />
+                                        <stop offset="100%" stopColor="#22C55E" />
+                                    </linearGradient>
+                                </defs>
+                                <circle cx="150" cy="150" r={CIRCLE_RADIUS} fill="transparent" stroke="rgba(255,255,255,0.1)" strokeWidth="12" />
+                                <motion.circle
+                                    cx="150" cy="150" r={CIRCLE_RADIUS}
+                                    fill="transparent"
+                                    stroke="url(#rainbow)"
+                                    strokeWidth="12"
+                                    strokeLinecap="round"
+                                    strokeDasharray={CIRCLE_CIRCUMFERENCE}
+                                    initial={{ strokeDashoffset: 0 }}
+                                    animate={{ strokeDashoffset: CIRCLE_CIRCUMFERENCE * (1 - progress / 100) }}
+                                    transition={{ duration: 1, ease: 'linear' }}
+                                    style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
+                                />
                             </svg>
                             <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                <span className="text-5xl font-bold font-mono tabular-nums tracking-tighter">
+                                <span className="font-mono text-6xl font-bold tabular-nums tracking-tighter [text-shadow:0_2px_8px_rgba(0,0,0,0.7)]">
                                     {formatTime(timeLeft)}
                                 </span>
-                                 <motion.button onClick={togglePause} className="text-sm font-semibold text-primary mt-1 px-4 py-2 rounded-full hover:bg-primary/10">
+                                 <motion.button onClick={togglePause} className="text-sm font-semibold text-white/80 mt-1 px-4 py-2 rounded-full hover:bg-white/10">
                                     {isPaused ? 'Resume' : 'Pause'}
                                 </motion.button>
                             </div>
@@ -252,7 +294,7 @@ export default function FocusModePage() {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, y: -10 }}
                                     transition={{ duration: 0.5 }}
-                                    className="text-lg italic text-muted-foreground text-center"
+                                    className="text-lg italic text-white/80 text-center"
                                 >
                                     "{quotes[currentQuoteIndex]}"
                                 </motion.p>
@@ -261,7 +303,7 @@ export default function FocusModePage() {
                         
                         <div className="w-full flex justify-between items-center">
                              <Button variant="destructive" onClick={handleStopSession}>
-                                <X className="mr-2 h-4 w-4"/> Stop Session
+                                <X className="mr-2 h-4 w-4"/> Stop
                             </Button>
                             <div className="flex items-center gap-2">
                                 <Button variant="outline" size="icon" onClick={togglePause}>
@@ -273,7 +315,7 @@ export default function FocusModePage() {
                             </div>
                         </div>
                     </CardContent>
-                </Card>
+                </motion.div>
             </div>
         )
     }
@@ -295,25 +337,39 @@ export default function FocusModePage() {
                 </div>
             </div>
 
-            <Card>
+             <Card className="bg-transparent border-0 shadow-none">
                 <CardHeader>
                     <CardTitle>Select a Focus Slot</CardTitle>
                     <CardDescription>Complete a session to earn credits. Leaving early will result in a penalty.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid sm:grid-cols-3 gap-6">
-                    {focusSlots.map(slot => (
-                        <button
-                            key={slot.label}
-                            className="p-6 border rounded-lg text-center hover:shadow-lg hover:-translate-y-1 transition-transform disabled:opacity-50 disabled:cursor-not-allowed"
-                            onClick={() => handleSelectSlot(slot)}
-                            disabled={!isSignedIn}
+                <CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {focusSlots.map((slot, index) => (
+                        <motion.div
+                          key={slot.label}
+                          initial={{ opacity: 0, y: 20 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.3, delay: index * 0.1 }}
                         >
-                            <AlarmClock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                            <h3 className="text-2xl font-bold">{slot.label}</h3>
-                            <div className="inline-flex items-center gap-1.5 mt-2 rounded-full bg-green-100 dark:bg-green-900/50 px-3 py-1 text-sm font-semibold text-green-700 dark:text-green-300">
-                                <Award className="h-4 w-4"/> +{slot.reward} Credits
-                            </div>
-                        </button>
+                            <button
+                                className={cn(
+                                  "group relative w-full h-full p-6 border-2 border-transparent rounded-2xl text-left overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 disabled:opacity-50 disabled:cursor-not-allowed",
+                                  slot.shadow
+                                )}
+                                onClick={() => handleSelectSlot(slot)}
+                                disabled={!isSignedIn}
+                            >
+                               <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-br", slot.color)}></div>
+                               <div className="relative z-10 text-white">
+                                    <div className={cn("p-3 mb-4 rounded-lg bg-gradient-to-br w-fit", slot.color)}>
+                                       <slot.icon className="h-8 w-8 text-white animate-pulse" style={{animationDuration: `${2 + index}s`}}/>
+                                    </div>
+                                    <h3 className="text-3xl font-bold [text-shadow:0_2px_4px_rgba(0,0,0,0.4)]">{slot.label}</h3>
+                                    <div className="inline-flex items-center gap-1.5 mt-2 rounded-full bg-white/10 px-3 py-1 text-sm font-semibold text-white/90">
+                                        <Award className="h-4 w-4"/> +{slot.reward} Credits
+                                    </div>
+                               </div>
+                            </button>
+                        </motion.div>
                     ))}
                 </CardContent>
             </Card>
