@@ -370,7 +370,7 @@ export default function FocusModePage() {
                                         "group relative w-full h-full p-6 border-2 rounded-2xl text-left overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed",
                                         "bg-gradient-to-br",
                                         slot.color,
-                                        "text-white border-transparent"
+                                        "text-primary-foreground border-transparent"
                                     )}
                                     onClick={() => handleSelectSlot(slot)}
                                     disabled={!isSignedIn}
@@ -384,7 +384,7 @@ export default function FocusModePage() {
                                         <div className="relative w-24 h-24">
                                             <div className="absolute inset-0 rounded-full bg-black/10 shadow-inner"></div>
                                             <div className="absolute inset-2 rounded-full bg-black/20 shadow-md flex items-center justify-center">
-                                                <span className="text-white font-bold text-3xl text-shadow-glow">{slot.shortLabel}</span>
+                                                <span className="text-white font-bold text-3xl [text-shadow:0_0_8px_currentColor]">{slot.shortLabel}</span>
                                             </div>
                                              <div className="absolute top-1 left-1/2 -translate-x-1/2 h-2 w-1 bg-white/30 rounded-full"></div>
                                              <div className="absolute bottom-1 left-1/2 -translate-x-1/2 h-2 w-1 bg-white/30 rounded-full"></div>
@@ -394,7 +394,7 @@ export default function FocusModePage() {
                                      </div>
                                      <div>
                                         <h3 className="text-4xl font-bold">{slot.label}</h3>
-                                        <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-3 py-1 text-sm font-semibold bg-green-400/80 text-green-900 text-shadow-glow shadow-md">
+                                        <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-3 py-1 text-sm font-semibold bg-green-400/80 text-green-900 [text-shadow:0_0_8px_currentColor] shadow-md">
                                             <Award className="h-4 w-4"/> +{slot.reward} Credits
                                         </div>
                                      </div>

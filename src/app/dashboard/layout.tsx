@@ -9,7 +9,7 @@ import SidebarContent from '@/components/dashboard/sidebar-content';
 import MobileNav from '@/components/dashboard/mobile-nav';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { FOCUS_SESSION_ACTIVE_KEY, FOCUS_PENALTY_SESSION_KEY } from './tracker/page';
+import { FOCUS_PENALTY_SESSION_KEY } from './tracker/page';
 import { useToast } from '@/hooks/use-toast';
 import { AppDataProvider } from '@/hooks/use-admin';
 import { UnreadMessagesProvider } from '@/hooks/use-unread';
@@ -33,16 +33,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
-      // Logic to check for penalty on navigation
-      const isSessionMarkedActive = sessionStorage.getItem(FOCUS_SESSION_ACTIVE_KEY) === 'true';
-      if (isSessionMarkedActive && pathname !== '/dashboard/tracker') {
-        // User navigated away from focus mode page while a session was active
-        const penaltyMessage = `You have been penalized 20 credits for leaving an active focus session.`;
-        sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, penaltyMessage);
-        // We can't call the credit deduction hook here, so we'll rely on the penalty being applied
-        // within the tracker page itself before unload. The main purpose here is to ensure the toast appears.
-      }
-
       // Logic to show penalty toast after navigation
       const penaltyMessage = sessionStorage.getItem(FOCUS_PENALTY_SESSION_KEY);
       if (penaltyMessage) {
@@ -53,8 +43,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
           duration: 10000,
         });
         sessionStorage.removeItem(FOCUS_PENALTY_SESSION_KEY);
-        // Also ensure the active key is removed to prevent repeated toasts
-        sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
       }
     }
   }, [pathname, toast]);
