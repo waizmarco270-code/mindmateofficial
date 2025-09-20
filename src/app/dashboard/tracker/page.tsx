@@ -207,12 +207,12 @@ export default function FocusModePage() {
         const audioEl = audioRef.current;
         if (!audioEl) return;
 
-        if (isActive && selectedMusic?.src) {
+        if (isSessionActive && selectedMusic?.src) {
             audioEl.play().catch(e => console.error("Audio play failed:", e));
         } else {
             audioEl.pause();
         }
-    }, [isActive, selectedMusic]);
+    }, [isSessionActive, selectedMusic]);
 
     useEffect(() => {
         const audioEl = audioRef.current;
