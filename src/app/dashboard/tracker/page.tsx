@@ -87,11 +87,11 @@ export default function FocusModePage() {
         
         const penaltyMessage = `You have been penalized ${PENALTY} credits for leaving an active focus session.`;
 
+        // This is a reliable way to show the message on the next page load.
         if (typeof window !== 'undefined') {
             sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, penaltyMessage);
             sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
         }
-
     }, [user, addCreditsToUser]);
 
 
@@ -101,9 +101,6 @@ export default function FocusModePage() {
         setActiveSlot(null);
         setTimeLeft(0);
         if(audioRef.current) audioRef.current.pause();
-        if (typeof window !== 'undefined') {
-            sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
-        }
         toast({
             variant: 'destructive',
             title: 'Session Stopped Early',
@@ -111,15 +108,24 @@ export default function FocusModePage() {
         });
     };
 
-    // Unload penalty logic (for closing tab/browser)
-    useBeforeunload(event => {
-        if (isSessionActive && !isPaused) {
-            applyPenalty();
-            // This is a synchronous action, we can't prevent default but can apply penalty before unload.
-        }
-    });
+    // New, more robust penalty logic
+    useEffect(() => {
+        const handleUnload = () => {
+            if (isSessionActive && !isPaused) {
+                applyPenalty();
+            }
+        };
 
-    // More reliable penalty system for tab switching or backgrounding
+        // For in-app navigation (component unmount)
+        return () => {
+            if (isSessionActive && !isPaused) {
+                handleUnload();
+            }
+        };
+    }, [isSessionActive, isPaused, applyPenalty]);
+
+
+    // Visibility change handler for tab switching
     useVisibilityChange(() => {
         if (isSessionActive && !isPaused && document.visibilityState === 'hidden') {
             applyPenalty();
@@ -370,12 +376,12 @@ export default function FocusModePage() {
                                         "group relative w-full h-full p-6 border-2 rounded-2xl text-left overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1 disabled:opacity-50 disabled:cursor-not-allowed",
                                         "bg-gradient-to-br",
                                         slot.color,
-                                        "text-primary-foreground border-transparent"
+                                        "border-transparent"
                                     )}
                                     onClick={() => handleSelectSlot(slot)}
                                     disabled={!isSignedIn}
                                 >
-                                <div className="relative z-10 flex flex-col justify-between h-56">
+                                <div className="relative z-10 flex flex-col justify-between h-56 text-primary-foreground">
                                      <div className="flex justify-between items-start">
                                         <div className="p-3 mb-4 rounded-lg bg-white/10 w-fit">
                                             <slot.icon className="h-8 w-8 text-white animate-pulse" style={{animationDuration: `${2 + index}s`}}/>
@@ -394,7 +400,7 @@ export default function FocusModePage() {
                                      </div>
                                      <div>
                                         <h3 className="text-4xl font-bold">{slot.label}</h3>
-                                        <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-3 py-1 text-sm font-semibold bg-green-400/80 text-green-900 [text-shadow:0_0_8px_currentColor] shadow-md">
+                                        <div className="inline-flex items-center gap-1.5 mt-2 rounded-full px-3 py-1 text-sm font-semibold bg-green-400 text-green-900 [text-shadow:0_0_8px_currentColor] shadow-md">
                                             <Award className="h-4 w-4"/> +{slot.reward} Credits
                                         </div>
                                      </div>
