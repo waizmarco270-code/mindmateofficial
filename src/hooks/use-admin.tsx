@@ -592,20 +592,30 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     };
 
-    const generateAiAccessToken = async (uid: string): Promise<string | null> => {
+    const generateAiAccessToken = useCallback(async (uid: string) => {
         if (!uid) return null;
-
+        
         const userRef = doc(db, 'users', uid);
         const tokensRef = collection(db, 'ai_access_tokens');
         
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) return null;
+
+        const isDev = process.env.NODE_ENV === 'development';
+        const cost = isDev ? 0 : 1000;
+        
+        if (userSnap.data().credits < cost) {
+            throw new Error("Insufficient credits.");
+        }
+
         // Generate a random token
         const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
 
         const batch = writeBatch(db);
 
-        // Deduct credits and mark AI access for user
+        // Deduct credits (if not in dev mode) and mark AI access for user
         batch.update(userRef, {
-            credits: increment(-1000),
+            credits: increment(-cost),
             hasAiAccess: true
         });
 
@@ -619,7 +629,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
         await batch.commit();
         return token;
-    };
+    }, []);
 
 
     const addPerfectedQuiz = async (uid: string, quizId: string) => {

@@ -7,7 +7,7 @@ import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Sparkles, Copy, Check, ShieldCheck, ArrowRight, Bot } from 'lucide-react';
+import { Loader2, Sparkles, Copy, Check, ShieldCheck, ArrowRight, Bot, Code } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -37,10 +37,10 @@ export default function AiAssistantPage() {
     setIsImmersive(hasAccess && isAiLive);
   }, [hasAccess, isAiLive, setIsImmersive]);
 
-  const handlePurchase = async () => {
+  const handlePurchase = async (isDev: boolean = false) => {
     if (!user || !currentUserData) return;
 
-    if (currentUserData.credits < AI_ACCESS_COST) {
+    if (!isDev && currentUserData.credits < AI_ACCESS_COST) {
       toast({
         variant: 'destructive',
         title: 'Insufficient Credits',
@@ -51,11 +51,12 @@ export default function AiAssistantPage() {
 
     setIsPurchasing(true);
     try {
+      // Pass `isDev` to the generation function if you modify it to bypass credit deduction on server
       const token = await generateAiAccessToken(user.id);
       if (token) {
         setGeneratedToken(token);
         toast({
-          title: 'Purchase Successful!',
+          title: isDev ? 'Dev Token Generated!' : 'Purchase Successful!',
           description: 'You have unlocked lifetime access to Marco AI.',
         });
       } else {
@@ -64,13 +65,14 @@ export default function AiAssistantPage() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Purchase Failed',
+        title: 'Operation Failed',
         description: error.message || 'An unknown error occurred.',
       });
     } finally {
       setIsPurchasing(false);
     }
   };
+
 
   const handleCopyToClipboardAndRedirect = () => {
     if (!generatedToken) return;
@@ -138,16 +140,26 @@ export default function AiAssistantPage() {
               Your balance: <span className="font-bold text-foreground">{currentUserData?.credits ?? 0}</span> credits
             </div>
           </CardContent>
-          <CardFooter>
+          <CardFooter className="flex-col gap-2">
             <Button
               className="w-full"
               size="lg"
-              onClick={handlePurchase}
+              onClick={() => handlePurchase(false)}
               disabled={isPurchasing || (currentUserData?.credits ?? 0) < AI_ACCESS_COST}
             >
               {isPurchasing ? <Loader2 className="mr-2 animate-spin" /> : <ShieldCheck className="mr-2" />}
               Unlock for {AI_ACCESS_COST} Credits
             </Button>
+            {process.env.NODE_ENV === 'development' && (
+              <Button
+                className="w-full"
+                variant="secondary"
+                onClick={() => handlePurchase(true)}
+                disabled={isPurchasing}
+              >
+                <Code className="mr-2" /> Generate Dev Token
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </div>
