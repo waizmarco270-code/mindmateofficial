@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -24,8 +23,6 @@ export interface UserCrystal {
     harvestValue: number;
 }
 
-const GACHAPON_DAILY_LIMIT = 5;
-
 export const useRewards = () => {
     const { user } = useUser();
     const { currentUserData, addCreditsToUser } = useUsers();
@@ -40,7 +37,6 @@ export const useRewards = () => {
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
     const [userCrystal, setUserCrystal] = useState<UserCrystal | null>(null);
     const [loadingCrystal, setLoadingCrystal] = useState(true);
-    const [gachaponPlaysToday, setGachaponPlaysToday] = useState(0);
 
     useEffect(() => {
         if(currentUserData) {
@@ -54,14 +50,6 @@ export const useRewards = () => {
                 .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date(), source: h.source || 'Unknown' }))
                 .sort((a: RewardRecord, b: RewardRecord) => b.date.getTime() - a.date.getTime())
             );
-
-            // Gachapon plays
-            const todayStr = formatDate(new Date(), 'yyyy-MM-dd');
-            if (currentUserData.gachaponPlays && currentUserData.gachaponPlays[todayStr]) {
-                setGachaponPlaysToday(currentUserData.gachaponPlays[todayStr]);
-            } else {
-                setGachaponPlaysToday(0);
-            }
         }
     }, [currentUserData]);
     
@@ -300,75 +288,6 @@ export const useRewards = () => {
         toast({ title: "Crystal Broken", description: `You recovered ${userCrystal.breakValue} credits.`, variant: "destructive" });
     }, [user, userCrystal, addCreditsToUser, toast]);
 
-    // ===== GACHAPON MACHINE LOGIC =====
-    const playGachapon = useCallback(async () => {
-        if (!user || !currentUserData) throw new Error("User not found");
-
-        const cost = 5;
-        if (currentUserData.credits < cost) throw new Error("Insufficient credits");
-        
-        const todayStr = formatDate(new Date(), 'yyyy-MM-dd');
-        const plays = currentUserData.gachaponPlays?.[todayStr] || 0;
-        if (plays >= GACHAPON_DAILY_LIMIT) {
-            throw new Error("You've reached your daily limit for the Gachapon machine.");
-        }
-
-        const weightedPrizes = [
-            { prize: 1, weight: 40, type: 'credits' },
-            { prize: 5, weight: 25, type: 'credits' }, // Break even
-            { prize: 10, weight: 10, type: 'credits' },
-            { prize: 25, weight: 5, type: 'credits' },
-            { prize: 50, weight: 1, type: 'credits' }, // Jackpot
-            { prize: 1, weight: 10, type: 'scratch' }, // 1 free scratch card
-            { prize: 1, weight: 9, type: 'flip' },    // 1 free card flip play
-        ];
-
-        const totalWeight = weightedPrizes.reduce((sum, p) => sum + p.weight, 0);
-        let random = Math.random() * totalWeight;
-
-        let chosenPrize: typeof weightedPrizes[0] | undefined;
-        for (const prize of weightedPrizes) {
-            if (random < prize.weight) {
-                chosenPrize = prize;
-                break;
-            }
-            random -= prize.weight;
-        }
-        chosenPrize ??= weightedPrizes[0];
-
-        const userDocRef = doc(db, 'users', user.id);
-        const updates: any = {
-            credits: increment(-cost), // Cost to play
-            [`gachaponPlays.${todayStr}`]: increment(1)
-        };
-        let newRecord: any;
-
-        switch(chosenPrize.type) {
-            case 'credits':
-                updates.credits = increment(-cost + chosenPrize.prize);
-                newRecord = { reward: `+${chosenPrize.prize} Credits`, date: new Date(), source: 'Gachapon' };
-                toast({ title: "You Won!", description: `${chosenPrize.prize} credits have been added to your account.`, className: "bg-green-500/10 border-green-500/50" });
-                break;
-            case 'scratch':
-                updates.freeRewards = increment(chosenPrize.prize);
-                newRecord = { reward: `+${chosenPrize.prize} Scratch Card`, date: new Date(), source: 'Gachapon' };
-                toast({ title: "You Won!", description: `+${chosenPrize.prize} Scratch Card!`, className: "bg-green-500/10 border-green-500/50" });
-                break;
-            case 'flip':
-                updates.freeGuesses = increment(chosenPrize.prize);
-                newRecord = { reward: `+${chosenPrize.prize} Card Flip Play`, date: new Date(), source: 'Gachapon' };
-                toast({ title: "You Won!", description: `+${chosenPrize.prize} Card Flip Play!`, className: "bg-green-500/10 border-green-500/50" });
-                break;
-        }
-
-        updates.rewardHistory = arrayUnion(newRecord);
-        await updateDoc(userDocRef, updates);
-
-        return newRecord.reward;
-
-    }, [user, currentUserData, toast]);
-
-
     return { 
         canClaimReward: canClaimScratchCard,
         claimDailyReward, 
@@ -385,7 +304,5 @@ export const useRewards = () => {
         plantCrystal,
         harvestCrystal,
         breakCrystal,
-        playGachapon,
-        gachaponPlaysToday,
     };
 };

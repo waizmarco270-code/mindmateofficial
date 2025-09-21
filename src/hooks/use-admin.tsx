@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -60,7 +59,6 @@ export interface User {
   claimedGlobalGifts?: string[];
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
   flappyMindClaims?: Record<string, number[]>;
-  gachaponPlays?: Record<string, number>; // { 'YYYY-MM-DD': count }
 }
 
 export interface Announcement {
