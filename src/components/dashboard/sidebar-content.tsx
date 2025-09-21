@@ -7,7 +7,7 @@ import {
   Home,
   Calendar,
   Settings,
-  User,
+  User as UserIcon,
   BookOpen,
   Shield,
   ListTodo,
@@ -48,19 +48,18 @@ const mainNavItems = [
   { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights', glow: 'text-blue-400' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
-  { href: '/dashboard/profile', icon: User, label: 'Profile', glow: 'text-teal-400' },
 ];
 
 const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
+  { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
 ];
 
 const competeNav = [
     { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
     { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
-    { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
 ];
 
 const socialLinks = [
@@ -100,10 +99,7 @@ export default function SidebarContent() {
     if (href === '/dashboard/schedule' && pathname.startsWith('/dashboard/todos')) {
         return true;
     }
-    if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/tools') || pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/refer'))) {
-        return true;
-    }
-    if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/super-admin'))) {
+     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/tools') || pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/profile') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/super-admin'))) {
         return true;
     }
 
@@ -164,7 +160,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'compete-earn']}
+          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
