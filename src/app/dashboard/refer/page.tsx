@@ -12,8 +12,7 @@ import { useReferrals } from '@/hooks/use-referrals';
 
 const REFERRAL_REWARD = 50;
 
-// This is now a component, not a default export page
-export default function ReferralsPageContent() {
+export default function ReferralsPage() {
     const { user } = useUser();
     const { currentUserData } = useUsers();
     const { submitReferralCode } = useReferrals();
@@ -89,6 +88,10 @@ export default function ReferralsPageContent() {
 
     return (
         <div className="space-y-8">
+            <div>
+                <h1 className="text-3xl font-bold tracking-tight">Invite & Earn</h1>
+                <p className="text-muted-foreground">Share the love and earn rewards when your friends join MindMate.</p>
+            </div>
             <Card className="border-primary/20 shadow-lg shadow-primary/10">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><Gift className="text-primary"/>Your Referral Code</CardTitle>

@@ -1,20 +1,19 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText, Monitor } from 'lucide-react';
+import { Settings, User, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText, Monitor, Shield, KeyRound } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
 // Re-integrating components that were on separate pages
-import ReferralsPageContent from '../refer/page';
 import FaqContent from '../faq/page';
 import AboutContent from '../about/page';
 import ToolsContent from '../tools/page';
 import RulesContent from '../rules/page';
+import { useAdmin } from '@/hooks/use-admin';
 
 
 function AppearanceSettings() {
@@ -62,14 +61,54 @@ function AppearanceSettings() {
     )
 }
 
+function AdminSettings() {
+    const { isSuperAdmin } = useAdmin();
+    return (
+         <Card>
+            <CardHeader>
+                <CardTitle>Admin Access</CardTitle>
+                <CardDescription>Access administrative panels.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <Link href="/dashboard/admin" className="block">
+                    <Card className="hover:bg-muted transition-colors">
+                        <CardHeader className="flex-row items-center gap-4">
+                            <Shield className="h-8 w-8 text-primary"/>
+                            <div>
+                                <CardTitle className="text-lg">Admin Panel</CardTitle>
+                                <CardDescription>Manage application content and users.</CardDescription>
+                            </div>
+                        </CardHeader>
+                    </Card>
+                </Link>
+                {isSuperAdmin && (
+                    <Link href="/dashboard/super-admin" className="block">
+                        <Card className="hover:bg-muted transition-colors border-amber-500/50">
+                            <CardHeader className="flex-row items-center gap-4">
+                                <KeyRound className="h-8 w-8 text-amber-500"/>
+                                <div>
+                                    <CardTitle className="text-lg">Super Admin Panel</CardTitle>
+                                    <CardDescription>Access root-level application controls.</CardDescription>
+                                </div>
+                            </CardHeader>
+                        </Card>
+                    </Link>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function SettingsPage() {
+    const { isAdmin, isSuperAdmin } = useAdmin();
+    const showAdminTab = isAdmin || isSuperAdmin;
 
     return (
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
                     <Settings className="h-8 w-8 text-primary" />
-                    Settings
+                    Settings & Info
                 </h1>
                 <p className="text-muted-foreground">Manage your account, preferences, and app settings.</p>
             </div>
@@ -78,9 +117,11 @@ export default function SettingsPage() {
                 <TabsList className="md:col-span-1 flex flex-col h-auto bg-transparent p-0 border-r">
                     <TabsTrigger value="appearance" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Palette className="mr-3"/> Appearance</TabsTrigger>
                     <TabsTrigger value="tools" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><FileText className="mr-3"/> Tools</TabsTrigger>
-                    <TabsTrigger value="referrals" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gift className="mr-3"/> Referrals</TabsTrigger>
                     <TabsTrigger value="about" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Info className="mr-3"/> About & FAQ</TabsTrigger>
                     <TabsTrigger value="rules" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gavel className="mr-3"/> Rules & Regulations</TabsTrigger>
+                     {showAdminTab && (
+                        <TabsTrigger value="admin" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Shield className="mr-3"/> Admin</TabsTrigger>
+                    )}
                 </TabsList>
                 
                 <div className="md:col-span-3">
@@ -89,9 +130,6 @@ export default function SettingsPage() {
                     </TabsContent>
                      <TabsContent value="tools">
                         <ToolsContent />
-                    </TabsContent>
-                    <TabsContent value="referrals">
-                        <ReferralsPageContent />
                     </TabsContent>
                     <TabsContent value="about" className="space-y-8">
                          <Card>
@@ -109,6 +147,11 @@ export default function SettingsPage() {
                             <CardContent><RulesContent /></CardContent>
                         </Card>
                     </TabsContent>
+                    {showAdminTab && (
+                        <TabsContent value="admin">
+                            <AdminSettings />
+                        </TabsContent>
+                    )}
                 </div>
             </Tabs>
         </div>
