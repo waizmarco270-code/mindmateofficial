@@ -85,6 +85,21 @@ export function CrystalGrowth() {
 
     if (userCrystal) {
         const tierInfo = CRYSTAL_TIERS[userCrystal.tier];
+
+        // Safety check to prevent crashes if crystal data is invalid
+        if (!tierInfo) {
+            return (
+                <Card className="w-full max-w-md mx-auto">
+                    <CardHeader>
+                        <CardTitle className="text-destructive flex items-center gap-2"><AlertTriangle /> Data Error</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p>There was an issue loading your crystal. Please contact support and ask them to clear your crystal data.</p>
+                    </CardContent>
+                </Card>
+            );
+        }
+
         const maturityDate = userCrystal.maturityDate.toDate();
         const isMature = new Date() >= maturityDate;
 
