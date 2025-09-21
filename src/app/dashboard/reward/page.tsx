@@ -12,10 +12,11 @@ import { useState } from 'react';
 import { SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
 import { CrystalGrowth } from '@/components/reward/crystal-growth';
+import { GachaponMachine } from '@/components/reward/gachapon-machine';
 
 export default function RewardPage() {
     const { rewardHistory, availableScratchCards, availableCardFlipPlays, userCrystal } = useRewards();
-    const [activeTab, setActiveTab] = useState('crystal-growth');
+    const [activeTab, setActiveTab] = useState('gachapon');
 
     const getCardCount = () => {
         if (activeTab === 'scratch-card') return availableScratchCards;
@@ -25,13 +26,15 @@ export default function RewardPage() {
      const getCardLabel = () => {
         if (activeTab === 'scratch-card') return 'Cards Left Today';
         if (activeTab === 'card-flip') return 'Plays Left Today';
-        if (activeTab === 'crystal-growth') return 'Active Crystal';
+        if (activeTab === 'crystal-growth') return userCrystal ? 'Active Crystal' : 'None';
+        if (activeTab === 'gachapon') return 'Cost Per Play';
         return 'Rewards Left';
     }
      const getCardDescription = () => {
         if (activeTab === 'scratch-card') return '1 free daily card + gifted cards.';
         if (activeTab === 'card-flip') return '1 free play per day.';
         if (activeTab === 'crystal-growth') return userCrystal ? 'Growing...' : 'None';
+        if (activeTab === 'gachapon') return 'High risk, high reward!';
         return 'Come back tomorrow!';
     }
 
@@ -51,8 +54,12 @@ export default function RewardPage() {
                             description="Sign up for free to claim daily rewards, play games, and win credits!"
                         />
                     </SignedOut>
-                   <Tabs defaultValue="crystal-growth" className="w-full" onValueChange={setActiveTab}>
-                      <TabsList className="grid w-full grid-cols-3">
+                   <Tabs defaultValue="gachapon" className="w-full" onValueChange={setActiveTab}>
+                      <TabsList className="grid w-full grid-cols-4">
+                         <TabsTrigger value="gachapon">
+                            <Gift className="mr-2 h-4 w-4"/>
+                            Gachapon
+                        </TabsTrigger>
                          <TabsTrigger value="crystal-growth">
                             <Gem className="mr-2 h-4 w-4"/>
                             Crystal Growth
@@ -66,6 +73,9 @@ export default function RewardPage() {
                             Scratch Card
                         </TabsTrigger>
                       </TabsList>
+                       <TabsContent value="gachapon" className="mt-6">
+                        <GachaponMachine />
+                      </TabsContent>
                       <TabsContent value="crystal-growth" className="mt-6">
                         <CrystalGrowth />
                       </TabsContent>

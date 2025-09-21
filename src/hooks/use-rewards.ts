@@ -290,6 +290,65 @@ export const useRewards = () => {
         toast({ title: "Crystal Broken", description: `You recovered ${userCrystal.breakValue} credits.`, variant: "destructive" });
     }, [user, userCrystal, addCreditsToUser, toast]);
 
+    // ===== GACHAPON MACHINE LOGIC =====
+    const playGachapon = useCallback(async () => {
+        if (!user || !currentUserData) throw new Error("User not found");
+        if (currentUserData.credits < 5) throw new Error("Insufficient credits");
+
+        const weightedPrizes = [
+            { prize: 1, weight: 40, type: 'credits' },
+            { prize: 5, weight: 25, type: 'credits' }, // Break even
+            { prize: 10, weight: 10, type: 'credits' },
+            { prize: 25, weight: 5, type: 'credits' },
+            { prize: 50, weight: 1, type: 'credits' }, // Jackpot
+            { prize: 1, weight: 10, type: 'scratch' }, // 1 free scratch card
+            { prize: 1, weight: 9, type: 'flip' },    // 1 free card flip play
+        ];
+
+        const totalWeight = weightedPrizes.reduce((sum, p) => sum + p.weight, 0);
+        let random = Math.random() * totalWeight;
+
+        let chosenPrize: typeof weightedPrizes[0] | undefined;
+        for (const prize of weightedPrizes) {
+            if (random < prize.weight) {
+                chosenPrize = prize;
+                break;
+            }
+            random -= prize.weight;
+        }
+        chosenPrize ??= weightedPrizes[0];
+
+        const userDocRef = doc(db, 'users', user.id);
+        const updates: any = {
+            credits: increment(-5) // Cost to play
+        };
+        let newRecord: any;
+
+        switch(chosenPrize.type) {
+            case 'credits':
+                updates.credits = increment(-5 + chosenPrize.prize);
+                newRecord = { reward: chosenPrize.prize, date: new Date(), source: 'Gachapon' };
+                toast({ title: "You Won!", description: `+${chosenPrize.prize} credits!`, className: "bg-green-500/10 border-green-500/50" });
+                break;
+            case 'scratch':
+                updates.freeRewards = increment(chosenPrize.prize);
+                newRecord = { reward: `+${chosenPrize.prize} Scratch Card`, date: new Date(), source: 'Gachapon' };
+                toast({ title: "You Won!", description: `+${chosenPrize.prize} Scratch Card!`, className: "bg-green-500/10 border-green-500/50" });
+                break;
+            case 'flip':
+                updates.freeGuesses = increment(chosenPrize.prize);
+                newRecord = { reward: `+${chosenPrize.prize} Card Flip Play`, date: new Date(), source: 'Gachapon' };
+                toast({ title: "You Won!", description: `+${chosenPrize.prize} Card Flip Play!`, className: "bg-green-500/10 border-green-500/50" });
+                break;
+        }
+
+        updates.rewardHistory = arrayUnion(newRecord);
+        await updateDoc(userDocRef, updates);
+
+        return newRecord.reward;
+
+    }, [user, currentUserData, toast]);
+
 
     return { 
         canClaimReward: canClaimScratchCard,
@@ -307,5 +366,6 @@ export const useRewards = () => {
         plantCrystal,
         harvestCrystal,
         breakCrystal,
+        playGachapon,
     };
 };
