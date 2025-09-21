@@ -212,7 +212,7 @@ export default function DashboardPage() {
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="rainbow-border-card h-full">
+                <Card className="h-full">
                     <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
                         <div className="p-3 rounded-full bg-primary/10">
                             <Bell className="h-8 w-8 text-primary" />
@@ -231,7 +231,7 @@ export default function DashboardPage() {
                 </Card>
                 <Dialog>
                     <DialogTrigger asChild>
-                        <Card className="relative overflow-hidden cursor-pointer group bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
+                        <Card className="relative overflow-hidden cursor-pointer group bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 h-full">
                              <div className="absolute inset-0 bg-grid-slate-800 opacity-20 group-hover:opacity-30 transition-opacity"></div>
                             <CardContent className="relative p-6 h-full flex flex-col justify-center items-center text-center">
                                 <Vote className="h-12 w-12 mb-4 drop-shadow-lg"/>
@@ -475,13 +475,13 @@ export default function DashboardPage() {
           <SignedIn>
             <Card className="border-amber-500/20 bg-amber-500/5">
                 <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600">
+                    <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600 dark:text-amber-400">
                         <span>Your Credits</span>
                         <Medal className="h-4 w-4" />
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-5xl font-bold text-amber-500">{credits}</div>
+                    <div className="text-5xl font-bold text-amber-600 dark:text-amber-500">{credits}</div>
                     <p className="text-xs text-muted-foreground mt-1">
                     +1 for daily tasks, +5 for perfecting quizzes!
                     </p>
