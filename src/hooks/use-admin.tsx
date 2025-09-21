@@ -901,7 +901,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 userId: authUser.id,
                 userName: currentUserData.displayName,
                 comment: comment,
-                createdAt: serverTimestamp()
+                createdAt: Timestamp.now()
             })
         });
     };

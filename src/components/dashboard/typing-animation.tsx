@@ -1,62 +1,36 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 interface TypingAnimationProps {
   text: string;
   className?: string;
   typingSpeed?: number;
-  deletingSpeed?: number;
-  pauseDuration?: number;
 }
 
 export const TypingAnimation: React.FC<TypingAnimationProps> = ({
   text,
   className,
-  typingSpeed = 50, // Made slightly faster
-  deletingSpeed = 30,
-  pauseDuration = 3000, // Longer pause
+  typingSpeed = 50,
 }) => {
   const [displayedText, setDisplayedText] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-
-    const handleTyping = () => {
-      const fullText = text;
-      const currentLength = displayedText.length;
-
-      if (isDeleting) {
-        if (currentLength > 0) {
-          setDisplayedText(fullText.substring(0, currentLength - 1));
-          timeoutId = setTimeout(handleTyping, deletingSpeed);
-        } else {
-          setIsDeleting(false);
-          // Don't restart typing automatically, wait for next text prop change
-        }
-      } else {
-        if (currentLength < fullText.length) {
-          setDisplayedText(fullText.substring(0, currentLength + 1));
-           timeoutId = setTimeout(handleTyping, typingSpeed);
-        } else {
-            // Once finished, it stays
-        }
-      }
-    };
+    setDisplayedText(''); // Reset on text change
     
-    handleTyping();
+    let i = 0;
+    const intervalId = setInterval(() => {
+      setDisplayedText(prev => prev + text.charAt(i));
+      i++;
+      if (i >= text.length) {
+        clearInterval(intervalId);
+      }
+    }, typingSpeed);
 
-    return () => clearTimeout(timeoutId);
-  }, [text, displayedText, isDeleting, typingSpeed, deletingSpeed, pauseDuration]);
-
-  // Reset animation when text prop changes
-  useEffect(() => {
-    setDisplayedText('');
-    setIsDeleting(false);
-  }, [text]);
+    return () => clearInterval(intervalId);
+  }, [text, typingSpeed]);
 
 
   return (

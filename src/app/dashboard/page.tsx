@@ -214,8 +214,7 @@ export default function DashboardPage() {
         <div className="lg:col-span-2 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                  <div className="relative group">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></div>
-                    <Card className="relative h-full" onClick={() => setIsTypingAnimationDone(true)} >
+                    <Card className="relative h-full cursor-pointer" onClick={() => setIsTypingAnimationDone(true)} >
                         <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
                             <div className="p-3 rounded-full bg-primary/20 animate-pulse">
                                 <Bell className="h-8 w-8 text-primary" />
@@ -231,7 +230,7 @@ export default function DashboardPage() {
                             {isTypingAnimationDone ? (
                                 <p>{latestAnnouncement.description}</p>
                             ) : (
-                                <TypingAnimation text={latestAnnouncement.description} />
+                                <TypingAnimation key={latestAnnouncement.description} text={latestAnnouncement.description} />
                             )}
                             </div>
                         </CardContent>
