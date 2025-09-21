@@ -15,46 +15,49 @@ interface TypingAnimationProps {
 export const TypingAnimation: React.FC<TypingAnimationProps> = ({
   text,
   className,
-  typingSpeed = 100,
-  deletingSpeed = 50,
-  pauseDuration = 2000,
+  typingSpeed = 50, // Made slightly faster
+  deletingSpeed = 30,
+  pauseDuration = 3000, // Longer pause
 }) => {
   const [displayedText, setDisplayedText] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
-  const [loopNum, setLoopNum] = useState(0);
-  const [delta, setDelta] = useState(typingSpeed);
 
   useEffect(() => {
-    let ticker = setInterval(() => {
-      tick();
-    }, delta);
+    let timeoutId: NodeJS.Timeout;
 
-    return () => {
-      clearInterval(ticker);
+    const handleTyping = () => {
+      const fullText = text;
+      const currentLength = displayedText.length;
+
+      if (isDeleting) {
+        if (currentLength > 0) {
+          setDisplayedText(fullText.substring(0, currentLength - 1));
+          timeoutId = setTimeout(handleTyping, deletingSpeed);
+        } else {
+          setIsDeleting(false);
+          // Don't restart typing automatically, wait for next text prop change
+        }
+      } else {
+        if (currentLength < fullText.length) {
+          setDisplayedText(fullText.substring(0, currentLength + 1));
+           timeoutId = setTimeout(handleTyping, typingSpeed);
+        } else {
+            // Once finished, it stays
+        }
+      }
     };
-  }, [displayedText, isDeleting, delta, text]);
+    
+    handleTyping();
 
-  const tick = () => {
-    let fullText = text;
-    let updatedText = isDeleting
-      ? fullText.substring(0, displayedText.length - 1)
-      : fullText.substring(0, displayedText.length + 1);
+    return () => clearTimeout(timeoutId);
+  }, [text, displayedText, isDeleting, typingSpeed, deletingSpeed, pauseDuration]);
 
-    setDisplayedText(updatedText);
+  // Reset animation when text prop changes
+  useEffect(() => {
+    setDisplayedText('');
+    setIsDeleting(false);
+  }, [text]);
 
-    if (isDeleting) {
-      setDelta(deletingSpeed);
-    }
-
-    if (!isDeleting && updatedText === fullText) {
-      setIsDeleting(true);
-      setDelta(pauseDuration);
-    } else if (isDeleting && updatedText === '') {
-      setIsDeleting(false);
-      setLoopNum(loopNum + 1);
-      setDelta(typingSpeed);
-    }
-  };
 
   return (
     <p className={cn(className)}>
