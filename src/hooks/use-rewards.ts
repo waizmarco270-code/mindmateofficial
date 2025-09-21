@@ -3,8 +3,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp } from 'firebase/firestore';
-import { isToday, parseISO } from 'date-fns';
+import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc } from 'firebase/firestore';
+import { isToday, parseISO, addDays } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 
@@ -13,6 +13,14 @@ interface RewardRecord {
     date: Date;
     source: string;
 }
+
+export interface UserCrystal {
+    investment: number;
+    maturityDate: Timestamp;
+    breakValue: number;
+    harvestValue: number;
+}
+
 
 export const useRewards = () => {
     const { user } = useUser();
@@ -26,6 +34,8 @@ export const useRewards = () => {
     const [freeRewards, setFreeRewards] = useState(0); // For scratch cards
     const [freeGuesses, setFreeGuesses] = useState(0); // For Card Flip
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
+    const [userCrystal, setUserCrystal] = useState<UserCrystal | null>(null);
+    const [loadingCrystal, setLoadingCrystal] = useState(true);
 
     useEffect(() => {
         if(currentUserData) {
@@ -42,6 +52,24 @@ export const useRewards = () => {
         }
     }, [currentUserData]);
     
+    // Listen to user's crystal data
+    useEffect(() => {
+        if (!user) {
+            setLoadingCrystal(false);
+            return;
+        };
+        const crystalRef = doc(db, 'users', user.id, 'rewards', 'crystal');
+        const unsubscribe = onSnapshot(crystalRef, (doc) => {
+            if (doc.exists()) {
+                setUserCrystal(doc.data() as UserCrystal);
+            } else {
+                setUserCrystal(null);
+            }
+            setLoadingCrystal(false);
+        });
+        return () => unsubscribe();
+    }, [user]);
+
     // ===== SCRATCH CARD LOGIC =====
     const canClaimScratchCard = useMemo(() => {
         if (freeRewards > 0) return true;
@@ -200,6 +228,64 @@ export const useRewards = () => {
     
     }, [user, hasClaimedRpsWinToday, toast]);
 
+    // ===== CRYSTAL GROWTH LOGIC =====
+    const plantCrystal = useCallback(async () => {
+        const INVESTMENT = 50;
+        if (!user || !currentUserData || currentUserData.credits < INVESTMENT || userCrystal) {
+            if (currentUserData && currentUserData.credits < INVESTMENT) {
+                toast({ title: "Insufficient Credits", description: `You need ${INVESTMENT} credits to plant a crystal.`, variant: "destructive" });
+            }
+            return;
+        }
+
+        const maturityDate = addDays(new Date(), 7);
+        
+        const newCrystal: UserCrystal = {
+            investment: INVESTMENT,
+            maturityDate: Timestamp.fromDate(maturityDate),
+            breakValue: 25,
+            harvestValue: 75,
+        };
+
+        const crystalRef = doc(db, 'users', user.id, 'rewards', 'crystal');
+        const userRef = doc(db, 'users', user.id);
+
+        await addCreditsToUser(user.id, -INVESTMENT);
+        await setDoc(crystalRef, newCrystal);
+
+        toast({ title: "Crystal Seed Planted!", description: "Come back in 7 days to harvest your reward." });
+    }, [user, currentUserData, userCrystal, toast, addCreditsToUser]);
+
+    const harvestCrystal = useCallback(async () => {
+        if (!user || !userCrystal || new Date() < userCrystal.maturityDate.toDate()) return;
+
+        const crystalRef = doc(db, 'users', user.id, 'rewards', 'crystal');
+        
+        await addCreditsToUser(user.id, userCrystal.harvestValue);
+        await deleteDoc(crystalRef);
+        
+        await updateDoc(doc(db, 'users', user.id), {
+            rewardHistory: arrayUnion({ reward: userCrystal.harvestValue, date: new Date(), source: 'Crystal Harvest' })
+        });
+        
+        toast({ title: "Crystal Harvested!", description: `+${userCrystal.harvestValue} credits have been added to your account!`, className: "bg-green-500/10 border-green-500/50" });
+    }, [user, userCrystal, addCreditsToUser, toast]);
+    
+    const breakCrystal = useCallback(async () => {
+        if (!user || !userCrystal) return;
+        
+        const crystalRef = doc(db, 'users', user.id, 'rewards', 'crystal');
+
+        await addCreditsToUser(user.id, userCrystal.breakValue);
+        await deleteDoc(crystalRef);
+        
+        await updateDoc(doc(db, 'users', user.id), {
+            rewardHistory: arrayUnion({ reward: userCrystal.breakValue, date: new Date(), source: 'Crystal Break' })
+        });
+        
+        toast({ title: "Crystal Broken", description: `You recovered ${userCrystal.breakValue} credits.`, variant: "destructive" });
+    }, [user, userCrystal, addCreditsToUser, toast]);
+
 
     return { 
         canClaimReward: canClaimScratchCard,
@@ -212,5 +298,10 @@ export const useRewards = () => {
         playCardFlip,
         playRpsMatch,
         hasClaimedRpsWinToday,
+        userCrystal,
+        loadingCrystal,
+        plantCrystal,
+        harvestCrystal,
+        breakCrystal,
     };
 };

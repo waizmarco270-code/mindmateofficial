@@ -4,17 +4,18 @@
 import { ScratchCard } from '@/components/reward/scratch-card';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useRewards } from '@/hooks/use-rewards';
-import { Gift, History, VenetianMask, Layers } from 'lucide-react';
+import { Gift, History, VenetianMask, Layers, Gem } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CardFlipGame } from '@/components/reward/gift-box-game';
 import { useState } from 'react';
 import { SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
+import { CrystalGrowth } from '@/components/reward/crystal-growth';
 
 export default function RewardPage() {
-    const { rewardHistory, availableScratchCards, availableCardFlipPlays } = useRewards();
-    const [activeTab, setActiveTab] = useState('card-flip');
+    const { rewardHistory, availableScratchCards, availableCardFlipPlays, userCrystal } = useRewards();
+    const [activeTab, setActiveTab] = useState('crystal-growth');
 
     const getCardCount = () => {
         if (activeTab === 'scratch-card') return availableScratchCards;
@@ -24,11 +25,13 @@ export default function RewardPage() {
      const getCardLabel = () => {
         if (activeTab === 'scratch-card') return 'Cards Left Today';
         if (activeTab === 'card-flip') return 'Plays Left Today';
+        if (activeTab === 'crystal-growth') return 'Active Crystal';
         return 'Rewards Left';
     }
      const getCardDescription = () => {
         if (activeTab === 'scratch-card') return '1 free daily card + gifted cards.';
         if (activeTab === 'card-flip') return '1 free play per day.';
+        if (activeTab === 'crystal-growth') return userCrystal ? 'Growing...' : 'None';
         return 'Come back tomorrow!';
     }
 
@@ -48,17 +51,24 @@ export default function RewardPage() {
                             description="Sign up for free to claim daily rewards, play games, and win credits!"
                         />
                     </SignedOut>
-                   <Tabs defaultValue="card-flip" className="w-full" onValueChange={setActiveTab}>
-                      <TabsList className="grid w-full grid-cols-2">
+                   <Tabs defaultValue="crystal-growth" className="w-full" onValueChange={setActiveTab}>
+                      <TabsList className="grid w-full grid-cols-3">
+                         <TabsTrigger value="crystal-growth">
+                            <Gem className="mr-2 h-4 w-4"/>
+                            Crystal Growth
+                        </TabsTrigger>
                          <TabsTrigger value="card-flip">
                             <Layers className="mr-2 h-4 w-4"/>
-                            Card Flip Challenge
+                            Card Flip
                         </TabsTrigger>
                         <TabsTrigger value="scratch-card">
                             <VenetianMask className="mr-2 h-4 w-4"/>
-                            Daily Scratch Card
+                            Scratch Card
                         </TabsTrigger>
                       </TabsList>
+                      <TabsContent value="crystal-growth" className="mt-6">
+                        <CrystalGrowth />
+                      </TabsContent>
                       <TabsContent value="scratch-card" className="mt-6">
                         <ScratchCard />
                       </TabsContent>
@@ -76,7 +86,7 @@ export default function RewardPage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <div className="text-3xl font-bold">{getCardCount()}</div>
+                             <div className="text-3xl font-bold">{getCardCount()}</div>
                             <p className="text-xs text-muted-foreground mt-1">
                                 {getCardDescription()}
                             </p>
