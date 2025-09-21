@@ -79,7 +79,7 @@ const exploreFeatures = [
     description: 'Test your knowledge & earn.',
     icon: BrainCircuit,
     href: '/dashboard/quiz',
-    color: 'from-purple-500 to-indigo-500',
+    color: 'from-purple-500 to-indigo-600',
     textColor: 'text-purple-100',
   },
    {

@@ -109,6 +109,9 @@ export function CommunityPoll() {
           })}
         </div>
       </CardContent>
+       <CardFooter className="pt-4">
+        <p className="text-xs text-muted-foreground">{totalVotes} total votes</p>
+      </CardFooter>
     </Card>
   );
 }

@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -97,6 +96,7 @@ const QuizImportSchema = z.object({
 export default function AdminPanelPage() {
   const { 
     isAdmin, 
+    isSuperAdmin,
     users,
     announcements, updateAnnouncement, 
     activePoll, updatePoll,
@@ -464,7 +464,7 @@ export default function AdminPanelPage() {
   
   const generalResources = allResources.filter(r => r.sectionId === 'general');
 
-  if (!isAdmin) {
+  if (!isAdmin && !isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
         <Card className="w-full max-w-md border-destructive/50">
@@ -1017,7 +1017,3 @@ export default function AdminPanelPage() {
     </div>
   );
 }
-
-    
-
-    
