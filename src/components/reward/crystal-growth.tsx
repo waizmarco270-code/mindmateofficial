@@ -11,6 +11,7 @@ import { motion } from 'framer-motion';
 import { differenceInSeconds } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useUsers } from '@/hooks/use-admin';
+import { Progress } from '../ui/progress';
 
 
 export const CRYSTAL_TIERS = {
@@ -86,7 +87,6 @@ export function CrystalGrowth() {
     if (userCrystal) {
         const tierInfo = CRYSTAL_TIERS[userCrystal.tier];
 
-        // Safety check to prevent crashes if crystal data is invalid
         if (!tierInfo) {
             return (
                 <Card className="w-full max-w-md mx-auto">
@@ -101,22 +101,46 @@ export function CrystalGrowth() {
         }
 
         const maturityDate = userCrystal.maturityDate.toDate();
-        const isMature = new Date() >= maturityDate;
+        const durationInMs = tierInfo.durationDays * 24 * 60 * 60 * 1000;
+        const startDate = new Date(maturityDate.getTime() - durationInMs);
+        const now = new Date();
+        const timeElapsed = now.getTime() - startDate.getTime();
+        const growthProgress = Math.min(100, Math.max(0, (timeElapsed / durationInMs) * 100));
+
+        let crystalSizeClass = 'h-16 w-16';
+        let crystalAnimationClass = '';
+        if (growthProgress >= 99) {
+            crystalSizeClass = 'h-32 w-32';
+            crystalAnimationClass = 'animate-pulse duration-700';
+        } else if (growthProgress > 75) {
+            crystalSizeClass = 'h-28 w-28';
+        } else if (growthProgress > 40) {
+            crystalSizeClass = 'h-24 w-24';
+        } else if (growthProgress > 10) {
+             crystalSizeClass = 'h-20 w-20';
+        }
+
+        const isMature = now >= maturityDate;
 
         return (
             <Card className="w-full max-w-md mx-auto overflow-hidden bg-transparent border-0 shadow-none">
-                <div className="relative p-6 pt-12 flex flex-col items-center justify-center bg-gradient-to-b from-blue-900/50 to-indigo-900/50 rounded-t-xl">
+                <div className="relative p-6 pt-12 flex flex-col items-center justify-center bg-gradient-to-b from-blue-900/50 to-indigo-900/50 rounded-t-xl h-48">
                     <motion.div
                         animate={{ y: [0, -10, 0], scale: [1, 1.05, 1] }}
                         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                     >
-                         <Gem className={cn("h-24 w-24 drop-shadow-[0_0_15px_currentColor]", tierInfo.color)} />
+                         <Gem className={cn("drop-shadow-[0_0_15px_currentColor] transition-all duration-1000 ease-out", tierInfo.color, crystalSizeClass, crystalAnimationClass)} />
                     </motion.div>
                 </div>
                  <CardContent className="p-6 bg-background rounded-b-xl space-y-4">
                     <div className="text-center">
                         <CardTitle className="text-2xl">Your {tierInfo.name} is Growing</CardTitle>
                         <CardDescription>Patience is the key to a greater reward.</CardDescription>
+                    </div>
+                    
+                    <div className="space-y-2">
+                        <Progress value={growthProgress} />
+                        <p className="text-xs text-center text-muted-foreground">{growthProgress.toFixed(1)}% Grown</p>
                     </div>
 
                     {isMature ? (
