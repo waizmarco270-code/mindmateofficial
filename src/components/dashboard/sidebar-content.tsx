@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -47,6 +48,7 @@ const mainNavItems = [
   { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights', glow: 'text-blue-400' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
+  { href: '/dashboard/profile', icon: User, label: 'Profile', glow: 'text-teal-400' },
 ];
 
 const communityNav = [
@@ -99,6 +101,9 @@ export default function SidebarContent() {
         return true;
     }
     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/tools') || pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/refer'))) {
+        return true;
+    }
+    if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/super-admin'))) {
         return true;
     }
 
@@ -173,7 +178,7 @@ export default function SidebarContent() {
         
           <AccordionItem value="community-resources" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Community &amp; Resources
+              Community & Resources
             </AccordionTrigger>
             <AccordionContent className="px-0 pb-2">
               {renderNavLinks(communityNav as any)}
@@ -182,7 +187,7 @@ export default function SidebarContent() {
 
           <AccordionItem value="compete-earn" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Compete &amp; Earn
+              Compete & Earn
             </AccordionTrigger>
             <AccordionContent className="px-0 pb-2">
               {renderNavLinks(competeNav as any)}
