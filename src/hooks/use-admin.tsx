@@ -237,6 +237,7 @@ interface AppDataContextType {
     activeGlobalGift: GlobalGift | null;
     sendGlobalGift: (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => Promise<void>;
     deactivateGift: (giftId: string) => Promise<void>;
+    deleteGlobalGift: (giftId: string) => Promise<void>;
     claimGlobalGift: (giftId: string, userId: string) => Promise<void>;
 
     featureLocks: Record<LockableFeature['id'], FeatureLock> | null;
@@ -971,6 +972,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(giftRef, { isActive: false });
     };
 
+    const deleteGlobalGift = async (giftId: string) => {
+        const giftRef = doc(db, 'globalGifts', giftId);
+        await deleteDoc(giftRef);
+    }
+
     const claimGlobalGift = async (giftId: string, userId: string) => {
         const giftRef = doc(db, 'globalGifts', giftId);
         const userRef = doc(db, 'users', userId);
@@ -1084,6 +1090,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         activeGlobalGift,
         sendGlobalGift,
         deactivateGift,
+        deleteGlobalGift,
         claimGlobalGift,
         featureLocks,
         lockFeature,

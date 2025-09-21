@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -42,6 +43,7 @@ export default function SuperAdminPanelPage() {
     sendGlobalGift,
     globalGifts,
     deactivateGift,
+    deleteGlobalGift,
     featureLocks,
     lockFeature,
     unlockFeature,
@@ -692,7 +694,7 @@ export default function SuperAdminPanelPage() {
                                             {gift.target === 'all' ? 'All Users' : users.find(u => u.uid === gift.target)?.displayName || 'Single User'}
                                         </TableCell>
                                         <TableCell>{(gift.createdAt && typeof gift.createdAt.toDate === 'function') ? formatDistanceToNow(gift.createdAt.toDate(), {addSuffix: true}) : 'Just now'}</TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell className="text-right space-x-2">
                                             {gift.isActive && (
                                                  <AlertDialog>
                                                     <AlertDialogTrigger asChild><Button variant="destructive" size="sm">Deactivate</Button></AlertDialogTrigger>
@@ -702,6 +704,13 @@ export default function SuperAdminPanelPage() {
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                             )}
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader><AlertDialogTitle>Delete this popup history?</AlertDialogTitle><AlertDialogDescription>This will permanently remove this record from the history. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteGlobalGift(gift.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </TableCell>
                                     </TableRow>
                                 ))}
