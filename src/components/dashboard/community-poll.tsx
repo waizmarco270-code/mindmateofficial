@@ -11,6 +11,9 @@ import { useUser } from '@clerk/nextjs';
 import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '../ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { formatDistanceToNow } from 'date-fns';
 
 export function CommunityPoll() {
   const { activePoll, submitPollVote, submitPollComment } = usePolls();
@@ -107,17 +110,42 @@ export function CommunityPoll() {
          <p className="text-xs text-muted-foreground text-center">{totalVotes} total votes</p>
         
         {hasVoted && activePoll.commentsEnabled && (
-            <form onSubmit={handleCommentSubmit} className="pt-4 border-t space-y-3">
-                <h4 className="font-semibold flex items-center gap-2"><MessageSquare className="h-5 w-5"/> Leave a comment</h4>
-                <Textarea 
-                    value={comment}
-                    onChange={(e) => setComment(e.target.value)}
-                    placeholder="Share your thoughts..."
-                />
-                <div className="flex justify-end">
-                    <Button type="submit" disabled={!comment.trim()}>Submit Comment</Button>
+            <div className="pt-4 border-t space-y-4">
+                <form onSubmit={handleCommentSubmit} className="space-y-3">
+                    <h4 className="font-semibold flex items-center gap-2"><MessageSquare className="h-5 w-5"/> Leave a comment</h4>
+                    <Textarea 
+                        value={comment}
+                        onChange={(e) => setComment(e.target.value)}
+                        placeholder="Share your thoughts..."
+                    />
+                    <div className="flex justify-end">
+                        <Button type="submit" disabled={!comment.trim()}>Submit Comment</Button>
+                    </div>
+                </form>
+                
+                <div className="space-y-3">
+                    <h4 className="font-semibold text-sm">Comments</h4>
+                    <ScrollArea className="h-48 rounded-md border p-4">
+                        {(activePoll.comments && activePoll.comments.length > 0) ? (
+                            <div className="space-y-4">
+                                {activePoll.comments.sort((a, b) => b.createdAt.toDate().getTime() - a.createdAt.toDate().getTime()).map((c, i) => (
+                                    <div key={i} className="flex items-start gap-3">
+                                        <div className="flex-1">
+                                            <div className="flex items-center justify-between text-xs">
+                                                <p className="font-bold">{c.userName}</p>
+                                                <p className="text-muted-foreground">{formatDistanceToNow(c.createdAt.toDate(), { addSuffix: true })}</p>
+                                            </div>
+                                            <p className="text-sm mt-1 bg-muted p-2 rounded-md">{c.comment}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-center text-sm text-muted-foreground pt-10">No comments yet. Be the first!</p>
+                        )}
+                    </ScrollArea>
                 </div>
-            </form>
+            </div>
         )}
     </DialogContent>
   );
