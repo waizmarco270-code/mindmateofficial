@@ -8,10 +8,18 @@ import { Gem, Hammer, Sparkles, Loader2, AlertTriangle, ShieldCheck } from 'luci
 import { useRewards } from '@/hooks/use-rewards';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
-import { differenceInDays, differenceInHours, differenceInMinutes, differenceInSeconds } from 'date-fns';
+import { differenceInSeconds } from 'date-fns';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { useUsers } from '@/hooks/use-admin';
 
-const INVESTMENT_COST = 50;
+
+export const CRYSTAL_TIERS = {
+    common: { name: 'Common Crystal', cost: 50, durationDays: 7, harvestValue: 75, breakValue: 25, color: 'text-cyan-400' },
+    radiant: { name: 'Radiant Crystal', cost: 200, durationDays: 14, harvestValue: 350, breakValue: 100, color: 'text-purple-400' },
+    legendary: { name: 'Legendary Crystal', cost: 500, durationDays: 30, harvestValue: 1000, breakValue: 250, color: 'text-yellow-400' },
+};
+export type CrystalTier = keyof typeof CRYSTAL_TIERS;
+
 
 function Countdown({ targetDate }: { targetDate: Date }) {
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -49,26 +57,26 @@ function Countdown({ targetDate }: { targetDate: Date }) {
 
 export function CrystalGrowth() {
     const { userCrystal, loadingCrystal, plantCrystal, harvestCrystal, breakCrystal } = useRewards();
-    const [isPlanting, setIsPlanting] = useState(false);
-    const [isHarvesting, setIsHarvesting] = useState(false);
-    const [isBreaking, setIsBreaking] = useState(false);
+    const { currentUserData } = useUsers();
+    const [isProcessing, setIsProcessing] = useState(false);
 
-    const handlePlant = async () => {
-        setIsPlanting(true);
-        await plantCrystal();
-        setIsPlanting(false);
+
+    const handlePlant = async (tier: CrystalTier) => {
+        setIsProcessing(true);
+        await plantCrystal(tier);
+        setIsProcessing(false);
     }
     
     const handleHarvest = async () => {
-        setIsHarvesting(true);
+        setIsProcessing(true);
         await harvestCrystal();
-        setIsHarvesting(false);
+        setIsProcessing(false);
     }
 
     const handleBreak = async () => {
-        setIsBreaking(true);
+        setIsProcessing(true);
         await breakCrystal();
-        setIsBreaking(false);
+        setIsProcessing(false);
     }
 
     if (loadingCrystal) {
@@ -76,6 +84,7 @@ export function CrystalGrowth() {
     }
 
     if (userCrystal) {
+        const tierInfo = CRYSTAL_TIERS[userCrystal.tier];
         const maturityDate = userCrystal.maturityDate.toDate();
         const isMature = new Date() >= maturityDate;
 
@@ -86,12 +95,12 @@ export function CrystalGrowth() {
                         animate={{ y: [0, -10, 0], scale: [1, 1.05, 1] }}
                         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                     >
-                         <Gem className="h-24 w-24 text-cyan-300 drop-shadow-[0_0_15px_rgba(56,189,248,0.7)]" />
+                         <Gem className={cn("h-24 w-24 drop-shadow-[0_0_15px_currentColor]", tierInfo.color)} />
                     </motion.div>
                 </div>
                  <CardContent className="p-6 bg-background rounded-b-xl space-y-4">
                     <div className="text-center">
-                        <CardTitle className="text-2xl">Crystal is Growing</CardTitle>
+                        <CardTitle className="text-2xl">Your {tierInfo.name} is Growing</CardTitle>
                         <CardDescription>Patience is the key to a greater reward.</CardDescription>
                     </div>
 
@@ -118,8 +127,8 @@ export function CrystalGrowth() {
                  <CardFooter className="grid grid-cols-2 gap-4">
                      <AlertDialog>
                         <AlertDialogTrigger asChild>
-                            <Button variant="destructive" className="w-full" disabled={isBreaking || isHarvesting}>
-                                {isBreaking ? <Loader2 className="animate-spin mr-2"/> : <Hammer className="mr-2 h-4 w-4"/>}
+                            <Button variant="destructive" className="w-full" disabled={isProcessing}>
+                                {isProcessing ? <Loader2 className="animate-spin mr-2"/> : <Hammer className="mr-2 h-4 w-4"/>}
                                 Break Crystal
                             </Button>
                         </AlertDialogTrigger>
@@ -136,8 +145,8 @@ export function CrystalGrowth() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                      </AlertDialog>
-                     <Button className="w-full bg-green-600 hover:bg-green-700" disabled={!isMature || isHarvesting || isBreaking} onClick={handleHarvest}>
-                        {isHarvesting ? <Loader2 className="animate-spin mr-2"/> : <Sparkles className="mr-2 h-4 w-4"/>}
+                     <Button className="w-full bg-green-600 hover:bg-green-700" disabled={!isMature || isProcessing} onClick={handleHarvest}>
+                        {isProcessing ? <Loader2 className="animate-spin mr-2"/> : <Sparkles className="mr-2 h-4 w-4"/>}
                          Harvest
                      </Button>
                  </CardFooter>
@@ -146,42 +155,50 @@ export function CrystalGrowth() {
     }
 
     return (
-        <Card className="w-full max-w-md mx-auto text-center">
-            <CardHeader>
-                <div className="flex justify-center mb-4">
-                     <div className="p-6 rounded-full bg-primary/10 border-4 border-primary/20">
-                        <Gem className="h-16 w-16 text-primary"/>
-                    </div>
-                </div>
+        <Card className="w-full max-w-3xl mx-auto">
+             <CardHeader className="text-center">
                 <CardTitle className="text-2xl">Crystal Growth</CardTitle>
                 <CardDescription>Invest your credits and watch them grow over time. A test of patience for a greater reward.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="grid grid-cols-2 gap-4 text-center">
-                    <div className="p-4 bg-muted rounded-lg border">
-                        <p className="text-sm font-medium">Investment</p>
-                        <p className="text-2xl font-bold">{INVESTMENT_COST} Credits</p>
-                    </div>
-                    <div className="p-4 bg-muted rounded-lg border">
-                        <p className="text-sm font-medium">Matures In</p>
-                        <p className="text-2xl font-bold">7 Days</p>
-                    </div>
-                 </div>
-                 <div className="flex items-start gap-3 p-3 rounded-lg border-2 border-dashed border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-400 text-left">
-                     <ShieldCheck className="h-5 w-5 mt-0.5 flex-shrink-0"/>
-                    <div>
-                        <h4 className="font-bold">Guaranteed Reward</h4>
-                        <p className="text-xs">If you wait 7 days, you are guaranteed to receive <span className="font-bold">75 credits</span> back—a 50% profit!</p>
-                    </div>
-                 </div>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+               {(Object.keys(CRYSTAL_TIERS) as CrystalTier[]).map(tier => {
+                   const details = CRYSTAL_TIERS[tier];
+                   const canAfford = (currentUserData?.credits ?? 0) >= details.cost;
+                   return (
+                    <Card key={tier} className={cn("flex flex-col text-center", !canAfford && "opacity-60")}>
+                        <CardHeader>
+                            <div className="flex justify-center mb-4">
+                                <div className="p-4 rounded-full bg-primary/10 border-4 border-primary/20">
+                                    <Gem className={cn("h-10 w-10", details.color)}/>
+                                </div>
+                            </div>
+                            <CardTitle className="text-xl">{details.name}</CardTitle>
+                            <CardDescription>Matures in {details.durationDays} days</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-1 space-y-4">
+                            <div className="p-4 bg-muted rounded-lg border">
+                                <p className="text-sm font-medium">Investment Cost</p>
+                                <p className="text-2xl font-bold">{details.cost} Credits</p>
+                            </div>
+                             <div className="p-4 bg-green-500/10 rounded-lg border border-green-500/20">
+                                <p className="text-sm font-medium text-green-700 dark:text-green-300">Harvest Value</p>
+                                <p className="text-2xl font-bold text-green-600 dark:text-green-400">{details.harvestValue} Credits</p>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button 
+                                className="w-full"
+                                onClick={() => handlePlant(tier)} 
+                                disabled={isProcessing || !canAfford}
+                            >
+                                {isProcessing ? <Loader2 className="animate-spin mr-2"/> : <Sparkles className="mr-2 h-4 w-4"/>}
+                                Plant Seed
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                   )
+               })}
             </CardContent>
-            <CardFooter>
-                 <Button className="w-full" size="lg" onClick={handlePlant} disabled={isPlanting}>
-                    {isPlanting ? <Loader2 className="animate-spin mr-2"/> : <Sparkles className="mr-2 h-4 w-4"/>}
-                    Plant Seed for {INVESTMENT_COST} Credits
-                </Button>
-            </CardFooter>
         </Card>
     );
 }
-

@@ -7,6 +7,8 @@ import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, d
 import { isToday, parseISO, addDays } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
+import { CRYSTAL_TIERS, type CrystalTier } from '@/components/reward/crystal-growth';
+
 
 interface RewardRecord {
     reward: number | string;
@@ -15,6 +17,7 @@ interface RewardRecord {
 }
 
 export interface UserCrystal {
+    tier: CrystalTier;
     investment: number;
     maturityDate: Timestamp;
     breakValue: number;
@@ -229,32 +232,33 @@ export const useRewards = () => {
     }, [user, hasClaimedRpsWinToday, toast]);
 
     // ===== CRYSTAL GROWTH LOGIC =====
-    const plantCrystal = useCallback(async () => {
-        const INVESTMENT = 50;
-        if (!user || !currentUserData || currentUserData.credits < INVESTMENT || userCrystal) {
-            if (currentUserData && currentUserData.credits < INVESTMENT) {
-                toast({ title: "Insufficient Credits", description: `You need ${INVESTMENT} credits to plant a crystal.`, variant: "destructive" });
+    const plantCrystal = useCallback(async (tier: CrystalTier) => {
+        const tierDetails = CRYSTAL_TIERS[tier];
+        if (!user || !currentUserData || currentUserData.credits < tierDetails.cost || userCrystal) {
+            if (currentUserData && currentUserData.credits < tierDetails.cost) {
+                toast({ title: "Insufficient Credits", description: `You need ${tierDetails.cost} credits to plant this crystal.`, variant: "destructive" });
             }
             return;
         }
 
-        const maturityDate = addDays(new Date(), 7);
+        const maturityDate = addDays(new Date(), tierDetails.durationDays);
         
         const newCrystal: UserCrystal = {
-            investment: INVESTMENT,
+            tier,
+            investment: tierDetails.cost,
             maturityDate: Timestamp.fromDate(maturityDate),
-            breakValue: 25,
-            harvestValue: 75,
+            breakValue: tierDetails.breakValue,
+            harvestValue: tierDetails.harvestValue,
         };
 
         const crystalRef = doc(db, 'users', user.id, 'rewards', 'crystal');
-        const userRef = doc(db, 'users', user.id);
-
-        await addCreditsToUser(user.id, -INVESTMENT);
+        
+        await addCreditsToUser(user.id, -tierDetails.cost);
         await setDoc(crystalRef, newCrystal);
 
-        toast({ title: "Crystal Seed Planted!", description: "Come back in 7 days to harvest your reward." });
+        toast({ title: "Crystal Seed Planted!", description: `Come back in ${tierDetails.durationDays} days to harvest your reward.` });
     }, [user, currentUserData, userCrystal, toast, addCreditsToUser]);
+
 
     const harvestCrystal = useCallback(async () => {
         if (!user || !userCrystal || new Date() < userCrystal.maturityDate.toDate()) return;
