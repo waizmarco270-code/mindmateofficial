@@ -13,28 +13,33 @@ import { SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
 import { CrystalGrowth } from '@/components/reward/crystal-growth';
 import { GachaponMachine } from '@/components/reward/gachapon-machine';
+import { useUsers } from '@/hooks/use-admin';
 
 export default function RewardPage() {
-    const { rewardHistory, availableScratchCards, availableCardFlipPlays, userCrystal } = useRewards();
+    const { rewardHistory, availableScratchCards, availableCardFlipPlays, userCrystal, gachaponPlaysToday } = useRewards();
+    const { currentUserData } = useUsers();
     const [activeTab, setActiveTab] = useState('gachapon');
+    
+    const GACHAPON_DAILY_LIMIT = 5;
 
     const getCardCount = () => {
         if (activeTab === 'scratch-card') return availableScratchCards;
         if (activeTab === 'card-flip') return availableCardFlipPlays;
+        if (activeTab === 'gachapon') return GACHAPON_DAILY_LIMIT - gachaponPlaysToday;
         return 0;
     }
      const getCardLabel = () => {
         if (activeTab === 'scratch-card') return 'Cards Left Today';
         if (activeTab === 'card-flip') return 'Plays Left Today';
         if (activeTab === 'crystal-growth') return userCrystal ? 'Active Crystal' : 'None';
-        if (activeTab === 'gachapon') return 'Cost Per Play';
+        if (activeTab === 'gachapon') return 'Plays Left Today';
         return 'Rewards Left';
     }
      const getCardDescription = () => {
         if (activeTab === 'scratch-card') return '1 free daily card + gifted cards.';
         if (activeTab === 'card-flip') return '1 free play per day.';
         if (activeTab === 'crystal-growth') return userCrystal ? 'Growing...' : 'None';
-        if (activeTab === 'gachapon') return 'High risk, high reward!';
+        if (activeTab === 'gachapon') return `Cost: 5 Credits per play.`;
         return 'Come back tomorrow!';
     }
 
@@ -55,24 +60,26 @@ export default function RewardPage() {
                         />
                     </SignedOut>
                    <Tabs defaultValue="gachapon" className="w-full" onValueChange={setActiveTab}>
-                      <TabsList className="grid w-full grid-cols-4">
-                         <TabsTrigger value="gachapon">
-                            <Gift className="mr-2 h-4 w-4"/>
-                            Gachapon
-                        </TabsTrigger>
-                         <TabsTrigger value="crystal-growth">
-                            <Gem className="mr-2 h-4 w-4"/>
-                            Crystal Growth
-                        </TabsTrigger>
-                         <TabsTrigger value="card-flip">
-                            <Layers className="mr-2 h-4 w-4"/>
-                            Card Flip
-                        </TabsTrigger>
-                        <TabsTrigger value="scratch-card">
-                            <VenetianMask className="mr-2 h-4 w-4"/>
-                            Scratch Card
-                        </TabsTrigger>
-                      </TabsList>
+                      <div className="relative w-full overflow-x-auto pb-1">
+                        <TabsList className="grid w-max grid-cols-4">
+                            <TabsTrigger value="gachapon" className="gap-2">
+                                <Gift className="h-4 w-4"/>
+                                Gachapon
+                            </TabsTrigger>
+                            <TabsTrigger value="crystal-growth" className="gap-2">
+                                <Gem className="h-4 w-4"/>
+                                Crystal Growth
+                            </TabsTrigger>
+                            <TabsTrigger value="card-flip" className="gap-2">
+                                <Layers className="h-4 w-4"/>
+                                Card Flip
+                            </TabsTrigger>
+                            <TabsTrigger value="scratch-card" className="gap-2">
+                                <VenetianMask className="h-4 w-4"/>
+                                Scratch Card
+                            </TabsTrigger>
+                        </TabsList>
+                      </div>
                        <TabsContent value="gachapon" className="mt-6">
                         <GachaponMachine />
                       </TabsContent>

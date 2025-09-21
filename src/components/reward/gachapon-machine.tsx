@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const GACHAPON_COST = 5;
+const GACHAPON_DAILY_LIMIT = 5;
 
 // Simple Gachapon Ball component for animation
 const GachaponBall = () => (
@@ -28,7 +29,7 @@ const GachaponBall = () => (
 );
 
 export function GachaponMachine() {
-    const { playGachapon } = useRewards();
+    const { playGachapon, gachaponPlaysToday } = useRewards();
     const { currentUserData } = useUsers();
     const { toast } = useToast();
     
@@ -62,12 +63,14 @@ export function GachaponMachine() {
         setGameState('idle');
         setPrize(null);
     }
+    
+    const playsLeft = GACHAPON_DAILY_LIMIT - gachaponPlaysToday;
 
     return (
         <Card className="w-full max-w-md mx-auto text-center">
             <CardHeader>
                 <CardTitle className="text-2xl">Gachapon Machine</CardTitle>
-                <CardDescription>Spend 5 credits for a chance to win a surprise prize!</CardDescription>
+                <CardDescription>Cost: 5 credits. {playsLeft > 0 ? `${playsLeft} plays left today.` : "No plays left today."}</CardDescription>
             </CardHeader>
             <CardContent className="min-h-[250px] flex flex-col justify-center items-center">
                 <AnimatePresence mode="wait">
@@ -98,8 +101,8 @@ export function GachaponMachine() {
             </CardContent>
             <CardFooter>
                  {gameState === 'idle' ? (
-                     <Button className="w-full" size="lg" onClick={handlePlay} disabled={!currentUserData || currentUserData.credits < GACHAPON_COST}>
-                        Insert {GACHAPON_COST} Credits & Play
+                     <Button className="w-full" size="lg" onClick={handlePlay} disabled={!currentUserData || currentUserData.credits < GACHAPON_COST || playsLeft <= 0}>
+                        {playsLeft <= 0 ? "No plays left today" : `Insert ${GACHAPON_COST} Credits & Play`}
                     </Button>
                 ) : gameState === 'playing' ? (
                     <Button className="w-full" size="lg" disabled>
