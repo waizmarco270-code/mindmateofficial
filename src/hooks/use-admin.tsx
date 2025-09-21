@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -528,19 +527,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const deleteUserData = useCallback(async (password: string) => {
         if (!clerk.user) throw new Error("User not found");
         
+        // This is a critical check to prevent this function from running in production by accident.
+        if (process.env.NODE_ENV !== 'development') {
+            throw new Error("This action is only available in the development environment.");
+        }
+
         // Re-authenticate with password for security
         await clerk.user.reauthenticateWithPassword(password);
 
-        // This is a placeholder for a Cloud Function trigger.
-        // The actual deletion of subcollections should happen in a secure backend environment.
+        // Mark the document for deletion by a backend process
+        // This prevents the data-reset bug from happening again.
         const userDocRef = doc(db, 'users', clerk.user.id);
         await updateDoc(userDocRef, {
-            isBlocked: true,
-            displayName: "Deleted User",
-            photoURL: "",
-            email: "deleted@deleted.com",
-            credits: 0,
-            // You can add a 'markedForDeletion' flag if you have a backend process
             markedForDeletion: true,
             markedForDeletionAt: serverTimestamp()
         });
@@ -1177,5 +1175,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
