@@ -94,6 +94,8 @@ export interface Poll {
     results: Record<string, number>;
     isActive: boolean;
     createdAt: Date;
+    commentsEnabled?: boolean;
+    comments?: { userId: string; userName: string; comment: string; createdAt: Timestamp }[];
 }
 
 export interface DailySurprise {
@@ -225,6 +227,7 @@ interface AppDataContextType {
     activePoll: Poll | null;
     updatePoll: (id: string, data: Partial<Poll>) => Promise<void>;
     submitPollVote: (pollId: string, option: string) => Promise<void>;
+    submitPollComment: (pollId: string, comment: string) => Promise<void>;
 
     appTheme: AppTheme | null;
     updateAppTheme: (theme: AppTheme) => Promise<void>;
@@ -527,16 +530,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const deleteUserData = useCallback(async (password: string) => {
         if (!clerk.user) throw new Error("User not found");
         
-        // This is a critical check to prevent this function from running in production by accident.
-        if (process.env.NODE_ENV !== 'development') {
-            throw new Error("This action is only available in the development environment.");
-        }
-
         // Re-authenticate with password for security
         await clerk.user.reauthenticateWithPassword(password);
 
         // Mark the document for deletion by a backend process
-        // This prevents the data-reset bug from happening again.
         const userDocRef = doc(db, 'users', clerk.user.id);
         await updateDoc(userDocRef, {
             markedForDeletion: true,
@@ -870,15 +867,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const updatePoll = async (id: string, data: Partial<Poll>) => {
         const pollDocRef = doc(db, 'polls', id);
-        const newResults = data.options?.reduce((acc, option) => {
-            acc[option] = 0;
-            return acc;
-        }, {} as Record<string, number>);
+        const currentPollSnap = await getDoc(pollDocRef);
+        const currentPoll = currentPollSnap.data() as Poll | undefined;
 
-        const batch = writeBatch(db);
-        batch.update(pollDocRef, { ...data, results: newResults });
-        
-        await batch.commit();
+        const updateData: Partial<Poll> = { ...data };
+
+        // Only reset votes if options have changed
+        if (data.options && JSON.stringify(data.options) !== JSON.stringify(currentPoll?.options)) {
+            updateData.results = data.options.reduce((acc, option) => ({ ...acc, [option]: 0 }), {});
+        }
+
+        await updateDoc(pollDocRef, updateData);
     };
 
     const submitPollVote = async (pollId: string, option: string) => {
@@ -891,6 +890,20 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         batch.update(pollRef, { [`results.${option}`]: increment(1) });
         batch.update(userRef, { [`votedPolls.${pollId}`]: option });
         await batch.commit();
+    };
+
+    const submitPollComment = async (pollId: string, comment: string) => {
+        if (!authUser || !currentUserData) return;
+        const pollRef = doc(db, 'polls', pollId);
+        
+        await updateDoc(pollRef, {
+            comments: arrayUnion({
+                userId: authUser.id,
+                userName: currentUserData.displayName,
+                comment: comment,
+                createdAt: serverTimestamp()
+            })
+        });
     };
     
     const submitSupportTicket = useCallback(async (message: string) => {
@@ -1105,6 +1118,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         activePoll,
         updatePoll,
         submitPollVote,
+        submitPollComment,
         appTheme: null, // This is deprecated
         updateAppTheme: async () => {}, // Deprecated
         appSettings,

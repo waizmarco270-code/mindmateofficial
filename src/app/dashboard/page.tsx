@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -113,7 +113,6 @@ export default function DashboardPage() {
     const { announcements } = useAnnouncements();
     const { currentUserData, featureLocks, isAdmin, isSuperAdmin, appSettings } = useAdmin();
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
-    const [isShowingPoll, setIsShowingPoll] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
     const [isExploreZoneOpen, setIsExploreZoneOpen] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
@@ -130,10 +129,6 @@ export default function DashboardPage() {
         title: 'Welcome to MindMate!',
         description: 'New features and updates are coming soon. Stay tuned!'
     };
-
-    const handleFlip = () => {
-        setIsShowingPoll(!isShowingPoll);
-    }
 
     const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'], isLocked: boolean) => {
         if (isLocked) {
@@ -216,46 +211,39 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
-
-             <div className="relative h-[250px] mb-8 overflow-hidden" style={{ perspective: '1000px' }}>
-                 <div 
-                    className="relative w-full h-full cursor-pointer transition-transform duration-700" 
-                    style={{ transformStyle: 'preserve-3d', transform: isShowingPoll ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
-                    onClick={handleFlip}
-                >
-                    <motion.div
-                        key="announcement"
-                        className="absolute w-full h-full"
-                        style={{ backfaceVisibility: 'hidden' }}
-                    >
-                        <Card className="rainbow-border-card h-full">
-                            <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
-                                <div className="p-3 rounded-full bg-primary/10">
-                                    <Bell className="h-8 w-8 text-primary" />
-                                </div>
-                                <div>
-                                    <CardTitle className="text-xl text-primary">Latest Announcement</CardTitle>
-                                    <CardDescription>Don't miss out on important updates.</CardDescription>
-                                </div>
-                                <Button variant="ghost" size="icon" className="absolute top-2 right-2 text-primary/70 hover:text-primary"><RefreshCw className="h-4 w-4" /></Button>
-                            </CardHeader>
-                            <CardContent className="p-4 md:px-6">
-                                <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                                <div className="text-muted-foreground mt-2 min-h-[40px]">
-                                   <TypingAnimation text={latestAnnouncement.description} />
-                                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="rainbow-border-card h-full">
+                    <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
+                        <div className="p-3 rounded-full bg-primary/10">
+                            <Bell className="h-8 w-8 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle className="text-xl text-primary">Latest Announcement</CardTitle>
+                            <CardDescription>Don't miss out on important updates.</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-4 md:px-6">
+                        <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
+                        <div className="text-muted-foreground mt-2 min-h-[40px]">
+                           <TypingAnimation text={latestAnnouncement.description} />
+                        </div>
+                    </CardContent>
+                </Card>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="relative overflow-hidden cursor-pointer group bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300">
+                             <div className="absolute inset-0 bg-grid-slate-800 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                            <CardContent className="relative p-6 h-full flex flex-col justify-center items-center text-center">
+                                <Vote className="h-12 w-12 mb-4 drop-shadow-lg"/>
+                                <h3 className="text-2xl font-bold [text-shadow:0_2px_4px_rgba(0,0,0,0.4)]">Community Poll</h3>
+                                <p className="text-white/80 mt-1">Have your say in new features!</p>
                             </CardContent>
                         </Card>
-                    </motion.div>
-                     <motion.div
-                        key="poll"
-                        className="absolute w-full h-full"
-                         style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-                    >
-                        <CommunityPoll />
-                    </motion.div>
-                 </div>
-             </div>
+                    </DialogTrigger>
+                    <CommunityPoll />
+                </Dialog>
+            </div>
+             
 
             {isSpecialUser && (
                 <Link href="/dashboard/premium/elite-lounge" className="group block">

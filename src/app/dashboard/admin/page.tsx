@@ -27,6 +27,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogC
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { z } from 'zod';
 import { formatDistanceToNow } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
 
 
 interface QuizQuestion {
@@ -116,6 +117,7 @@ export default function AdminPanelPage() {
   // State for Poll
   const [pollQuestion, setPollQuestion] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
+  const [pollCommentsEnabled, setPollCommentsEnabled] = useState(false);
   const [isSavingPoll, setIsSavingPoll] = useState(false);
 
   // State for Daily Surprise
@@ -157,6 +159,7 @@ export default function AdminPanelPage() {
       if(activePoll) {
           setPollQuestion(activePoll.question);
           setPollOptions(activePoll.options);
+          setPollCommentsEnabled(activePoll.commentsEnabled || false);
       }
   }, [activePoll]);
 
@@ -187,7 +190,11 @@ export default function AdminPanelPage() {
       }
       setIsSavingPoll(true);
       try {
-        await updatePoll(activePoll.id, { question: pollQuestion, options: pollOptions });
+        await updatePoll(activePoll.id, { 
+            question: pollQuestion, 
+            options: pollOptions,
+            commentsEnabled: pollCommentsEnabled
+        });
         toast({ title: "Poll Updated!", description: "The active poll has been saved." });
       } catch (error: any) {
         toast({ variant: 'destructive', title: "Error Saving Poll", description: error.message });
@@ -560,7 +567,14 @@ export default function AdminPanelPage() {
                       <div className="space-y-2"><Label>Options</Label>
                         {pollOptions.map((option, index) => (<div key={index} className="flex items-center gap-2"><Input value={option} onChange={e => handlePollOptionChange(index, e.target.value)} placeholder={`Option ${index + 1}`} />{pollOptions.length > 2 && (<Button variant="ghost" size="icon" onClick={() => removePollOption(index)}><MinusCircle className="h-4 w-4 text-destructive" /></Button>)}</div>))}
                       </div>
-                      <div className="flex justify-between"><Button variant="outline" onClick={addPollOption}><PlusCircle className="mr-2 h-4 w-4" /> Add Option</Button><Button onClick={handleSavePoll} disabled={isSavingPoll}><Vote className="mr-2 h-4 w-4" /> {isSavingPoll ? 'Saving...' : 'Save Poll'}</Button></div>
+                       <div className="flex items-center justify-between">
+                         <div className="flex items-center space-x-2">
+                           <Switch id="poll-comments" checked={pollCommentsEnabled} onCheckedChange={setPollCommentsEnabled} />
+                           <Label htmlFor="poll-comments">Enable Comments</Label>
+                         </div>
+                         <Button variant="outline" onClick={addPollOption}><PlusCircle className="mr-2 h-4 w-4" /> Add Option</Button>
+                       </div>
+                      <div className="flex justify-end"><Button onClick={handleSavePoll} disabled={isSavingPoll}><Vote className="mr-2 h-4 w-4" /> {isSavingPoll ? 'Saving...' : 'Save Poll'}</Button></div>
                     </CardContent>
                   </Card>
                 </div>
