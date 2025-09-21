@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText, Monitor, Shield, KeyRound } from 'lucide-react';
+import { Settings, User, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText, Monitor, Shield, KeyRound, Trash2 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
@@ -13,7 +14,11 @@ import FaqContent from '../faq/page';
 import AboutContent from '../about/page';
 import ToolsContent from '../tools/page';
 import RulesContent from '../rules/page';
-import { useAdmin } from '@/hooks/use-admin';
+import { useAdmin, useUsers } from '@/hooks/use-admin';
+import { useUser, useClerk } from '@clerk/nextjs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 
 function AppearanceSettings() {
@@ -59,6 +64,103 @@ function AppearanceSettings() {
             </CardContent>
         </Card>
     )
+}
+
+function AccountSettings() {
+    const { user, signOut } = useUser();
+    const { deleteUserData } = useUsers();
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [deleteStep, setDeleteStep] = useState(0);
+    const [password, setPassword] = useState('');
+    const { toast } = useToast();
+
+    const handleDelete = async () => {
+        if (!user || !password) {
+            toast({ variant: 'destructive', title: "Password is required." });
+            return;
+        }
+
+        setIsDeleting(true);
+        try {
+            await deleteUserData(password);
+            toast({ title: "Account Data Deleted", description: "You will be logged out." });
+            setTimeout(() => {
+                signOut(() => window.location.href = '/');
+            }, 2000);
+        } catch (error: any) {
+             toast({ variant: 'destructive', title: "Deletion Failed", description: error.message || "Please check your password and try again." });
+        } finally {
+            setIsDeleting(false);
+            setDeleteStep(0);
+            setPassword('');
+        }
+    };
+    
+    const renderDeleteDialogContent = () => {
+        switch (deleteStep) {
+            case 1:
+                return (
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>This action cannot be undone. This will permanently delete all your data, including credits, progress, friends, and settings.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setDeleteStep(0)}>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => setDeleteStep(2)}>Continue</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                );
+            case 2:
+                 return (
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Final Confirmation</AlertDialogTitle>
+                            <AlertDialogDescription>To confirm, please enter your password. Your account will be logged out and all data will be erased permanently.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="py-4">
+                            <Label htmlFor="password">Password</Label>
+                            <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Enter your password..." />
+                        </div>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel onClick={() => setDeleteStep(0)}>Cancel</AlertDialogCancel>
+                            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting || !password}>
+                                {isDeleting ? 'Deleting...' : 'Delete My Data Forever'}
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                );
+            default:
+                return null;
+        }
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Account Management</CardTitle>
+                <CardDescription>Manage your account settings and data.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Card className="border-destructive/50 bg-destructive/5">
+                    <CardHeader>
+                        <CardTitle className="text-destructive text-lg">Danger Zone</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <p className="text-sm text-muted-foreground mb-4">Permanently delete your account and all associated data from our servers. This action is irreversible.</p>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" onClick={() => setDeleteStep(1)}>
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete Account Data
+                                </Button>
+                            </AlertDialogTrigger>
+                            {renderDeleteDialogContent()}
+                        </AlertDialog>
+                    </CardContent>
+                </Card>
+            </CardContent>
+        </Card>
+    );
 }
 
 function AdminSettings() {
@@ -113,8 +215,9 @@ export default function SettingsPage() {
                 <p className="text-muted-foreground">Manage your account, preferences, and app settings.</p>
             </div>
             
-            <Tabs defaultValue="appearance" className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <Tabs defaultValue="account" className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <TabsList className="md:col-span-1 flex flex-col h-auto bg-transparent p-0 border-r">
+                    <TabsTrigger value="account" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><User className="mr-3"/> Account</TabsTrigger>
                     <TabsTrigger value="appearance" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Palette className="mr-3"/> Appearance</TabsTrigger>
                     <TabsTrigger value="tools" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><FileText className="mr-3"/> Tools</TabsTrigger>
                     <TabsTrigger value="about" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Info className="mr-3"/> About & FAQ</TabsTrigger>
@@ -125,6 +228,9 @@ export default function SettingsPage() {
                 </TabsList>
                 
                 <div className="md:col-span-3">
+                     <TabsContent value="account">
+                        <AccountSettings />
+                    </TabsContent>
                     <TabsContent value="appearance">
                         <AppearanceSettings />
                     </TabsContent>

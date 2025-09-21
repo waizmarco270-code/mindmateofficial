@@ -2,7 +2,7 @@
 
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { useUser } from '@clerk/nextjs';
+import { useUser, useClerk } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup } from 'firebase/firestore';
 import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
@@ -165,6 +165,7 @@ interface AppDataContextType {
     users: User[];
     currentUserData: User | null;
     toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
+    deleteUserData: (password: string) => Promise<void>;
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
     giftCreditsToAllUsers: (amount: number) => Promise<void>;
     resetUserCredits: (uid: string) => Promise<void>;
@@ -253,6 +254,7 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const { user: authUser, isLoaded: isClerkLoaded } = useUser();
+    const clerk = useClerk();
 
     // STATE MANAGEMENT
     const [isAdmin, setIsAdmin] = useState(false);
@@ -522,6 +524,28 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { isBlocked: !isBlocked });
     };
+    
+    const deleteUserData = useCallback(async (password: string) => {
+        if (!clerk.user) throw new Error("User not found");
+        
+        // Re-authenticate with password for security
+        await clerk.user.reauthenticateWithPassword(password);
+
+        // This is a placeholder for a Cloud Function trigger.
+        // The actual deletion of subcollections should happen in a secure backend environment.
+        const userDocRef = doc(db, 'users', clerk.user.id);
+        await updateDoc(userDocRef, {
+            isBlocked: true,
+            displayName: "Deleted User",
+            photoURL: "",
+            email: "deleted@deleted.com",
+            credits: 0,
+            // You can add a 'markedForDeletion' flag if you have a backend process
+            markedForDeletion: true,
+            markedForDeletionAt: serverTimestamp()
+        });
+
+    }, [clerk.user]);
 
     const addCreditsToUser = async (uid: string, amount: number) => {
         if (!uid) return;
@@ -1029,6 +1053,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         users,
         currentUserData,
         toggleUserBlock,
+        deleteUserData,
         addCreditsToUser,
         giftCreditsToAllUsers,
         resetUserCredits,
