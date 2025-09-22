@@ -208,11 +208,11 @@ export default function DashboardPage() {
       </SignedIn>
 
 
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-                 <Card className="relative group">
+       <div className="flex flex-col lg:flex-row gap-6">
+            <div className="flex-1 lg:flex-[2] min-w-0">
+                <Card className="relative group h-full">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                    <div className="relative rounded-lg bg-background">
+                    <div className="relative rounded-lg bg-background h-full flex flex-col">
                         <CardHeader>
                             <div className="flex items-center gap-3">
                                 <Bell className="h-6 w-6 text-primary" />
@@ -220,7 +220,7 @@ export default function DashboardPage() {
                             </div>
                             <CardDescription>Don't miss out on important updates.</CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="flex-1 flex flex-col justify-center">
                             <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
                             <div className="text-muted-foreground mt-2 min-h-[40px]">
                                 <TypingAnimation text={latestAnnouncement.description} />
@@ -229,7 +229,7 @@ export default function DashboardPage() {
                     </div>
                 </Card>
             </div>
-            <div className="grid grid-cols-2 lg:grid-cols-1 gap-6">
+            <div className="flex-1 grid grid-cols-2 lg:flex lg:flex-col gap-6">
                  <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer relative text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center bg-gradient-to-br from-purple-500 to-indigo-600">
@@ -271,23 +271,21 @@ export default function DashboardPage() {
        <div className="space-y-6">
             {isSpecialUser && (
                 <Link href="/dashboard/premium/elite-lounge" className="group block">
-                    <div className="relative rounded-xl p-px overflow-hidden before:absolute before:inset-0 before:w-full before:h-full before:bg-gradient-to-br before:from-yellow-400 before:to-amber-600 before:animate-pulse">
-                        <Card className="relative z-10 cursor-pointer overflow-hidden bg-gradient-to-br from-yellow-900/80 via-black to-black border-yellow-700/50 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
-                             <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <CardContent className="relative p-4 flex items-center gap-4">
-                                <div className="p-3 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30">
-                                    <Crown className="h-8 w-8 text-yellow-400 animate-gold-shine"/>
-                                </div>
-                                <div className="flex-1">
-                                    <CardTitle className="text-xl font-bold text-yellow-400">Elite Lounge</CardTitle>
-                                    <CardDescription className="text-yellow-400/70 text-sm mt-1">Access exclusive features and rewards.</CardDescription>
-                                </div>
-                                <Button variant="ghost" size="icon" className="text-white">
-                                    <ArrowRight className="h-5 w-5" />
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </div>
+                    <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-yellow-900/80 via-black to-black border-yellow-700/50 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                         <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <CardContent className="relative p-4 flex items-center gap-4">
+                            <div className="p-3 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30">
+                                <Crown className="h-8 w-8 text-yellow-400 animate-gold-shine"/>
+                            </div>
+                            <div className="flex-1">
+                                <CardTitle className="text-xl font-bold text-yellow-400">Elite Lounge</CardTitle>
+                                <CardDescription className="text-yellow-400/70 text-sm mt-1">Access exclusive features and rewards.</CardDescription>
+                            </div>
+                            <Button variant="ghost" size="icon" className="text-white">
+                                <ArrowRight className="h-5 w-5" />
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </Link>
             )}
             
