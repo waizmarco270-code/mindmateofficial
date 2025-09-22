@@ -209,41 +209,57 @@ export default function DashboardPage() {
 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content Column */}
         <div className="lg:col-span-2 space-y-6">
-            <div className="relative group">
-                <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                <Card className="relative">
-                    <CardHeader className="flex flex-row items-start gap-4 p-4 md:p-6">
-                        <div className="p-3 rounded-full bg-primary/20 animate-pulse">
-                            <Bell className="h-8 w-8 text-primary" />
-                        </div>
-                        <div>
-                            <CardTitle className="text-xl text-primary [text-shadow:0_0_8px_hsl(var(--primary)/50%)]">Latest Announcement</CardTitle>
-                            <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 md:p-6 pt-0">
-                        <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                        <div className="text-muted-foreground mt-2 min-h-[40px]">
-                            <TypingAnimation text={latestAnnouncement.description} />
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-            <Dialog>
+            <Card>
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <Bell className="h-6 w-6 text-primary" />
+                        <CardTitle>Latest Announcement</CardTitle>
+                    </div>
+                    <CardDescription>Don't miss out on important updates.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
+                    <div className="text-muted-foreground mt-2 min-h-[40px]">
+                        <TypingAnimation text={latestAnnouncement.description} />
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+
+        <div className="lg:col-span-1 space-y-6">
+          <SignedIn>
+            <Card className="border-amber-500/20 bg-amber-500/5">
+                <CardHeader className="pb-2">
+                    <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600 dark:text-amber-400">
+                        <span>Your Credits</span>
+                        <Medal className="h-4 w-4" />
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="text-5xl font-bold text-amber-600 dark:text-amber-500">{credits}</div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                    +1 for daily tasks, +5 for perfecting quizzes!
+                    </p>
+                </CardContent>
+            </Card>
+          </SignedIn>
+          <Dialog>
                 <DialogTrigger asChild>
-                    <Card className="relative overflow-hidden cursor-pointer group bg-card hover:bg-muted/50 transition-colors h-full">
-                        <CardContent className="relative p-6 h-full flex flex-col justify-center items-center text-center">
-                            <Vote className="h-12 w-12 mb-4 text-primary drop-shadow-lg"/>
-                            <h3 className="text-2xl font-bold">Community Poll</h3>
-                            <p className="text-muted-foreground mt-1">Have your say in new features!</p>
+                    <Card className="cursor-pointer bg-gradient-to-br from-purple-500 to-indigo-600 text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300">
+                        <CardContent className="p-6 text-center">
+                            <Vote className="h-10 w-10 mx-auto mb-3" />
+                            <h3 className="text-xl font-bold">Community Poll</h3>
+                            <p className="text-sm opacity-80">Have your say in new features!</p>
                         </CardContent>
                     </Card>
                 </DialogTrigger>
                 <CommunityPoll />
-            </Dialog>
-            
+          </Dialog>
+        </div>
+      </div>
+
+       <div className="space-y-6">
             {isSpecialUser && (
                 <Link href="/dashboard/premium/elite-lounge" className="group block">
                     <div className="relative rounded-xl p-px overflow-hidden before:absolute before:inset-0 before:w-full before:h-full before:bg-gradient-to-br before:from-yellow-400 before:to-amber-600 before:animate-pulse">
@@ -467,28 +483,6 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </Link>
-        </div>
-
-        {/* Side Column */}
-        <div className="lg:col-span-1 space-y-6">
-          <SignedIn>
-            <Card className="border-amber-500/20 bg-amber-500/5">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600 dark:text-amber-400">
-                        <span>Your Credits</span>
-                        <Medal className="h-4 w-4" />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-5xl font-bold text-amber-600 dark:text-amber-500">{credits}</div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                    +1 for daily tasks, +5 for perfecting quizzes!
-                    </p>
-                </CardContent>
-            </Card>
-          </SignedIn>
-        </div>
-
       </div>
 
       {featureToUnlock && (
