@@ -130,6 +130,16 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
             case 'diamond-pearl': return 'diamond-pearl-bg';
             case 'cyber-grid': return 'cyber-grid-bg';
             case 'oceanic-flow': return 'oceanic-flow-bg';
+            case 'synthwave-sunset': return 'synthwave-sunset-bg';
+            case 'jungle-ruins': return 'jungle-ruins-bg';
+            case 'black-hole': return 'black-hole-bg';
+            case 'anime-speed-lines': return 'anime-speed-lines-bg';
+            case 'blueprint-grid': return 'blueprint-grid-bg';
+            case 'lava-flow': return 'lava-flow-bg';
+            case 'mystic-forest': return 'mystic-forest-bg';
+            case 'digital-glitch': return 'digital-glitch-bg';
+            case 'steampunk-gears': return 'steampunk-gears-bg';
+            case 'lofi-rain': return 'lofi-rain-bg';
             default: return 'bg-slate-900';
         }
     };
@@ -554,3 +564,6 @@ export default function DashboardPage() {
 
 
 
+
+
+    

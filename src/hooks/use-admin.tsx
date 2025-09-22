@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -157,7 +156,14 @@ export interface FeatureLock {
     cost: number;
 }
 
-export type ShowcaseTemplate = 'cosmic-blue' | 'fiery-red' | 'golden-legend' | 'professional-dark' | 'emerald-dream' | 'amethyst-haze' | 'solar-flare' | 'midnight-abyss' | 'rainbow-aurora' | 'diamond-pearl' | 'cyber-grid' | 'oceanic-flow';
+export type ShowcaseTemplate = 
+  | 'cosmic-blue' | 'fiery-red' | 'golden-legend' | 'professional-dark' 
+  | 'emerald-dream' | 'amethyst-haze' | 'solar-flare' | 'midnight-abyss'
+  | 'rainbow-aurora' | 'diamond-pearl' | 'cyber-grid' | 'oceanic-flow'
+  | 'synthwave-sunset' | 'jungle-ruins' | 'black-hole' | 'anime-speed-lines'
+  | 'blueprint-grid' | 'lava-flow' | 'mystic-forest' | 'digital-glitch'
+  | 'steampunk-gears' | 'lofi-rain';
+
 export interface FeatureShowcase {
     id: string;
     title: string;
@@ -1237,3 +1243,6 @@ export const useDailySurprises = () => {
 
 
 
+
+
+    

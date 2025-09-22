@@ -1199,6 +1199,16 @@ export default function SuperAdminPanelPage() {
                                     <SelectItem value="diamond-pearl">Diamond Pearl</SelectItem>
                                     <SelectItem value="cyber-grid">Cyber Grid</SelectItem>
                                     <SelectItem value="oceanic-flow">Oceanic Flow</SelectItem>
+                                    <SelectItem value="synthwave-sunset">Synthwave Sunset</SelectItem>
+                                    <SelectItem value="jungle-ruins">Jungle Ruins</SelectItem>
+                                    <SelectItem value="black-hole">Black Hole</SelectItem>
+                                    <SelectItem value="anime-speed-lines">Anime Speed Lines</SelectItem>
+                                    <SelectItem value="blueprint-grid">Blueprint Grid</SelectItem>
+                                    <SelectItem value="lava-flow">Lava Flow</SelectItem>
+                                    <SelectItem value="mystic-forest">Mystic Forest</SelectItem>
+                                    <SelectItem value="digital-glitch">Digital Glitch</SelectItem>
+                                    <SelectItem value="steampunk-gears">Steampunk Gears</SelectItem>
+                                    <SelectItem value="lofi-rain">Lofi Rain</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -1217,3 +1227,6 @@ export default function SuperAdminPanelPage() {
 
 
 
+
+
+    
