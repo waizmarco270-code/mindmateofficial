@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { UserButton, useUser, SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
 import { ThemeToggle } from '../theme-toggle';
 import { ScrollArea } from '../ui/scroll-area';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Separator } from '../ui/separator';
 
 
