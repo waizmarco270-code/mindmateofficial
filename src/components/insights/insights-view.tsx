@@ -11,8 +11,9 @@ import { Separator } from '../ui/separator';
 import { useTimeTracker, type TimeSession } from '@/hooks/use-time-tracker';
 import { useUsers } from '@/hooks/use-admin';
 import { db } from '@/lib/firebase';
-import { collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, Timestamp, onSnapshot } from 'firebase/firestore';
 import { Skeleton } from '../ui/skeleton';
+import { useUser } from '@clerk/nextjs';
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -45,6 +46,7 @@ interface InsightsViewProps {
 }
 
 export function InsightsView({ selectedDate: initialSelectedDate }: InsightsViewProps) {
+    const { user } = useUser();
     const { sessions, loading: timeTrackerLoading } = useTimeTracker();
     const { currentUserData, loading: userLoading } = useUsers();
 
@@ -64,40 +66,36 @@ export function InsightsView({ selectedDate: initialSelectedDate }: InsightsView
     }, [initialSelectedDate]);
     
     useEffect(() => {
-        const fetchDailyData = async () => {
-            if (!currentUserData) {
-                setStatsLoading(false);
-                return;
-            }
-            setStatsLoading(true);
+        if (!user) {
+            setStatsLoading(false);
+            return;
+        }
 
-            const userFocusSessionsRef = collection(db, 'users', currentUserData.uid, 'focusSessions');
-            const userTasksRef = collection(db, 'users', currentUserData.uid, 'dailyTasks');
+        setStatsLoading(true);
 
-            const [focusSnapshot, tasksSnapshot] = await Promise.all([
-                getDocs(userFocusSessionsRef),
-                getDocs(userTasksRef)
-            ]);
+        const focusSessionsQuery = query(collection(db, 'users', user.id, 'focusSessions'));
+        const tasksQuery = query(collection(db, 'users', user.id, 'dailyTasks'));
+        const timeTrackerQuery = query(collection(db, 'users', user.id, 'timeTrackerSessions'));
 
-            const focusSessionsByDate: Record<string, number> = {};
-            focusSnapshot.forEach(doc => {
-                const session = doc.data();
-                const dateStr = format((session.completedAt as Timestamp).toDate(), 'yyyy-MM-dd');
-                focusSessionsByDate[dateStr] = (focusSessionsByDate[dateStr] || 0) + 1;
-            });
-            
-            const tasksByDate: Record<string, number> = {};
-            tasksSnapshot.forEach(doc => {
-                const task = doc.data();
-                if(task.completed) {
-                   const dateStr = format(parseISO(task.createdAt), 'yyyy-MM-dd');
-                   tasksByDate[dateStr] = (tasksByDate[dateStr] || 0) + 1;
-                }
-            });
+        const unsubFocus = onSnapshot(focusSessionsQuery, (snapshot) => {
+             updateStats('focus', snapshot.docs.map(doc => doc.data()));
+        });
+        const unsubTasks = onSnapshot(tasksQuery, (snapshot) => {
+             updateStats('tasks', snapshot.docs.map(doc => doc.data()));
+        });
+        const unsubTime = onSnapshot(timeTrackerQuery, (snapshot) => {
+            updateStats('time', snapshot.docs.map(doc => doc.data()));
+        });
+
+        const allData: { focus: any[], tasks: any[], time: any[] } = { focus: [], tasks: [], time: [] };
+
+        const updateStats = (type: 'focus' | 'tasks' | 'time', data: any[]) => {
+            allData[type] = data;
             
             const newDailyStats: Record<string, DailyStats> = {};
 
-            sessions.forEach(session => {
+            // Process Time Tracker Sessions
+            allData.time.forEach(session => {
                 const dateStr = format(parseISO(session.startTime), 'yyyy-MM-dd');
                 if (!newDailyStats[dateStr]) {
                     newDailyStats[dateStr] = { totalStudyTime: 0, studySessionCount: 0, maxFocus: 0, subjects: {}, focusSessionsCompleted: 0, tasksCompleted: 0 };
@@ -105,39 +103,47 @@ export function InsightsView({ selectedDate: initialSelectedDate }: InsightsView
                 const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
                 newDailyStats[dateStr].totalStudyTime += duration;
                 newDailyStats[dateStr].studySessionCount += 1;
-                if (duration > newDailyStats[dateStr].maxFocus) {
-                    newDailyStats[dateStr].maxFocus = duration;
-                }
+                 if (duration > newDailyStats[dateStr].maxFocus) newDailyStats[dateStr].maxFocus = duration;
 
                 const sessionStart = parseISO(session.startTime);
                 const sessionEnd = parseISO(session.endTime);
-                if (!newDailyStats[dateStr].firstSessionStart || sessionStart < newDailyStats[dateStr].firstSessionStart!) {
-                    newDailyStats[dateStr].firstSessionStart = sessionStart;
-                }
-                if (!newDailyStats[dateStr].lastSessionEnd || sessionEnd > newDailyStats[dateStr].lastSessionEnd!) {
-                    newDailyStats[dateStr].lastSessionEnd = sessionEnd;
-                }
+                if (!newDailyStats[dateStr].firstSessionStart || sessionStart < newDailyStats[dateStr].firstSessionStart!) newDailyStats[dateStr].firstSessionStart = sessionStart;
+                if (!newDailyStats[dateStr].lastSessionEnd || sessionEnd > newDailyStats[dateStr].lastSessionEnd!) newDailyStats[dateStr].lastSessionEnd = sessionEnd;
                 newDailyStats[dateStr].subjects[session.subjectName] = (newDailyStats[dateStr].subjects[session.subjectName] || 0) + duration;
             });
             
-            // Merge all stats
-            const allDates = new Set([...Object.keys(newDailyStats), ...Object.keys(focusSessionsByDate), ...Object.keys(tasksByDate)]);
-            
-            allDates.forEach(dateStr => {
-                 if (!newDailyStats[dateStr]) {
+            // Process Focus Sessions
+            allData.focus.forEach(session => {
+                const dateStr = format((session.completedAt as Timestamp).toDate(), 'yyyy-MM-dd');
+                if (!newDailyStats[dateStr]) {
                     newDailyStats[dateStr] = { totalStudyTime: 0, studySessionCount: 0, maxFocus: 0, subjects: {}, focusSessionsCompleted: 0, tasksCompleted: 0 };
                 }
-                newDailyStats[dateStr].focusSessionsCompleted = focusSessionsByDate[dateStr] || 0;
-                newDailyStats[dateStr].tasksCompleted = tasksByDate[dateStr] || 0;
+                newDailyStats[dateStr].focusSessionsCompleted += 1;
+            });
+
+            // Process Tasks
+             allData.tasks.forEach(task => {
+                if (task.completed) {
+                    const dateStr = format(parseISO(task.createdAt), 'yyyy-MM-dd');
+                     if (!newDailyStats[dateStr]) {
+                        newDailyStats[dateStr] = { totalStudyTime: 0, studySessionCount: 0, maxFocus: 0, subjects: {}, focusSessionsCompleted: 0, tasksCompleted: 0 };
+                    }
+                    newDailyStats[dateStr].tasksCompleted += 1;
+                }
             });
             
             setDailyStats(newDailyStats);
             setStatsLoading(false);
         };
         
-        fetchDailyData();
 
-    }, [sessions, currentUserData]);
+        return () => {
+            unsubFocus();
+            unsubTasks();
+            unsubTime();
+        };
+
+    }, [user]);
 
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);

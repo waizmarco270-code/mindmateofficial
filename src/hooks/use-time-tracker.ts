@@ -15,7 +15,8 @@ import {
   writeBatch,
   addDoc,
   getDocs,
-  collectionGroup
+  collectionGroup,
+  where
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { useUsers } from './use-admin';
@@ -73,14 +74,6 @@ export function useTimeTracker() {
     if (!user) return null;
     return doc(db, 'users', user.id, 'timeTracker', 'subjects');
   }, [user]);
-  
-  const allSessionsColGroupRef = useMemo(() => {
-    return collectionGroup(db, 'timeTrackerSessions');
-  }, []);
-  
-  const allPomodoroSessionsColGroupRef = useMemo(() => {
-    return collectionGroup(db, 'pomodoroSessions');
-  }, []);
 
   // Subscribe to subjects for the current user
   useEffect(() => {
@@ -105,37 +98,39 @@ export function useTimeTracker() {
     return () => unsubscribe();
   }, [subjectsDocRef]);
   
-  // Subscribe to all time sessions from all users (for leaderboard)
+  // Subscribe to time sessions for ONLY the current user (for insights) AND all users (for leaderboard)
   useEffect(() => {
-    const q = query(allSessionsColGroupRef);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const allUserSessions = snapshot.docs.map(doc => {
-        return {
+    if (!user) {
+        setSessions([]);
+        setPomodoroSessions([]);
+        return;
+    }
+
+    // Fetch ALL sessions for the leaderboard
+    const allSessionsQuery = query(collectionGroup(db, 'timeTrackerSessions'));
+    const allPomodoroQuery = query(collectionGroup(db, 'pomodoroSessions'));
+
+    const unsubAllSessions = onSnapshot(allSessionsQuery, (snapshot) => {
+      const allUserSessions = snapshot.docs.map(doc => ({
           ...doc.data(),
           id: doc.id,
-        } as TimeSession;
-      });
+        } as TimeSession));
       setSessions(allUserSessions);
     });
-    
-    return () => unsubscribe();
-  }, [allSessionsColGroupRef]);
 
-  // Subscribe to all pomodoro sessions from all users (for leaderboard)
-  useEffect(() => {
-    const q = query(allPomodoroSessionsColGroupRef);
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const allPomSessions = snapshot.docs.map(doc => {
-            return {
-                ...doc.data(),
-                id: doc.id,
-            } as PomodoroSession;
-        });
+    const unsubAllPomodoros = onSnapshot(allPomodoroQuery, (snapshot) => {
+        const allPomSessions = snapshot.docs.map(doc => ({
+            ...doc.data(),
+            id: doc.id,
+        } as PomodoroSession));
         setPomodoroSessions(allPomSessions);
     });
-    return () => unsubscribe();
-  }, [allPomodoroSessionsColGroupRef]);
-
+    
+    return () => {
+        unsubAllSessions();
+        unsubAllPomodoros();
+    };
+  }, [user]);
 
   // Calculate today's time for the current user's subjects
   useEffect(() => {
