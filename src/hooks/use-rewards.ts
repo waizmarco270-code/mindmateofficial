@@ -39,7 +39,6 @@ export const useRewards = () => {
     const [lastScratchDate, setLastScratchDate] = useState<Date | null>(null);
     const [lastCardFlipDate, setLastCardFlipDate] = useState<Date | null>(null);
     const [lastRpsDate, setLastRpsDate] = useState<Date | null>(null);
-    const [lastTriviaTowerDate, setLastTriviaTowerDate] = useState<Date | null>(null);
     const [freeRewards, setFreeRewards] = useState(0); // For scratch cards
     const [freeGuesses, setFreeGuesses] = useState(0); // For Card Flip
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
@@ -54,7 +53,6 @@ export const useRewards = () => {
             setLastScratchDate(currentUserData.lastRewardDate ? parseISO(currentUserData.lastRewardDate) : null);
             setLastCardFlipDate(currentUserData.lastGiftBoxDate ? parseISO(currentUserData.lastGiftBoxDate) : null);
             setLastRpsDate(currentUserData.lastRpsDate ? parseISO(currentUserData.lastRpsDate) : null);
-            setLastTriviaTowerDate(currentUserData.lastTriviaTowerDate ? parseISO(currentUserData.lastTriviaTowerDate) : null);
             setFreeRewards(currentUserData.freeRewards || 0);
             setFreeGuesses(currentUserData.freeGuesses || 0);
             setRewardHistory(
@@ -165,32 +163,7 @@ export const useRewards = () => {
         return { isWin, clues: { correctPlace, correctDigit } };
 
     }, [user, codebreakerStatus, addCreditsToUser, toast]);
-
-    // ===== TRIVIA TOWER LOGIC =====
-    const canPlayTriviaTower = useMemo(() => {
-        if (!lastTriviaTowerDate) return true;
-        return !isToday(lastTriviaTowerDate);
-    }, [lastTriviaTowerDate]);
     
-    const playTriviaTower = useCallback(async (reward: number) => {
-        if (!user || !canPlayTriviaTower) return;
-        
-        const userDocRef = doc(db, 'users', user.id);
-        const newRecord = { reward, date: new Date(), source: 'Trivia Tower' };
-        
-        await updateDoc(userDocRef, {
-            credits: increment(reward),
-            lastTriviaTowerDate: new Date().toISOString(),
-            rewardHistory: arrayUnion(newRecord)
-        });
-        
-        if (reward > 0) {
-            toast({ title: `You Won ${reward} credits!`, description: 'They have been added to your account.', className: "bg-green-500/10 border-green-500/50" });
-        } else {
-             toast({ title: "Tower Challenge Over", description: "Better luck next time!", variant: "destructive" });
-        }
-    }, [user, canPlayTriviaTower, addCreditsToUser, toast]);
-
 
     // ===== SCRATCH CARD LOGIC =====
     const canClaimScratchCard = useMemo(() => {
@@ -428,7 +401,5 @@ export const useRewards = () => {
         canPlayCodebreaker: codebreakerStatus.canPlay,
         playCodebreaker,
         codebreakerStatus,
-        canPlayTriviaTower,
-        playTriviaTower,
     };
 };

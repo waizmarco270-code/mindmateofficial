@@ -1,61 +1,61 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Gem, VenetianMask, Layers, Key, TowerControl, Gift } from 'lucide-react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { CrystalGrowth } from '@/components/reward/crystal-growth';
+import { ScratchCard } from '@/components/reward/scratch-card';
+import { CardFlipGame } from '@/components/reward/gift-box-game';
+import { CodebreakerGame } from '@/components/reward/codebreaker';
+import { Gift, History, Gem, Key, Layers, VenetianMask, Award, Loader2 } from 'lucide-react';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useRewards } from '@/hooks/use-rewards';
-import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNow } from 'date-fns';
 
+function RecentWinnings() {
+    const { rewardHistory, loading } = useRewards();
 
-const rewardCategories = [
-    {
-        title: "Crystal Growth",
-        description: "Invest your credits and watch them grow over time. A test of patience.",
-        icon: Gem,
-        href: "/dashboard/reward/crystal-growth",
-        color: "from-blue-500 to-sky-500",
-        shadow: "shadow-blue-500/30"
-    },
-    {
-        title: "Codebreaker",
-        description: "Crack the secret 4-digit code in 6 tries to win a scaling prize.",
-        icon: Key,
-        href: "/dashboard/reward/codebreaker",
-        color: "from-green-500 to-emerald-500",
-        shadow: "shadow-green-500/30",
-        tag: "New"
-    },
-    {
-        title: "Trivia Tower",
-        description: "Climb the tower of questions. Risk it all for the grand prize.",
-        icon: TowerControl,
-        href: "/dashboard/reward/trivia-tower",
-        color: "from-purple-500 to-indigo-500",
-        shadow: "shadow-purple-500/30",
-        tag: "New"
-    },
-    {
-        title: "Card Flip",
-        description: "Find the hidden prize to advance. One loss ends your daily run.",
-        icon: Layers,
-        href: "/dashboard/reward/card-flip",
-        color: "from-red-500 to-rose-500",
-        shadow: "shadow-red-500/30",
-        tag: "Luck"
-    },
-    {
-        title: "Scratch Card",
-        description: "A classic daily chance to scratch and win instant credit prizes.",
-        icon: VenetianMask,
-        href: "/dashboard/reward/scratch-card",
-        color: "from-amber-500 to-orange-500",
-        shadow: "shadow-amber-500/30",
-        tag: "Luck"
-    },
-]
+    const recentWinnings = rewardHistory.slice(0, 5);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <History className="h-5 w-5 text-primary"/>
+                    Recent Winnings
+                </CardTitle>
+                <CardDescription>Your last 5 rewards from the Reward Zone.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {loading ? (
+                    <div className="flex justify-center items-center h-24">
+                        <Loader2 className="h-6 w-6 animate-spin"/>
+                    </div>
+                ) : recentWinnings.length > 0 ? (
+                    <ul className="space-y-3">
+                        {recentWinnings.map((item, index) => (
+                            <li key={index} className="flex justify-between items-center text-sm p-3 rounded-md bg-muted">
+                                <div className="flex flex-col">
+                                    <span className="font-semibold">{item.source}</span>
+                                    <span className="text-xs text-muted-foreground">{formatDistanceToNow(item.date, { addSuffix: true })}</span>
+                                </div>
+                                {typeof item.reward === 'number' ? (
+                                    <span className="font-bold text-green-500">+{item.reward} Credits</span>
+                                ) : (
+                                    <span className="text-xs text-muted-foreground">Better Luck</span>
+                                )}
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <div className="text-center text-muted-foreground py-10">
+                        <p>No recent winnings to show. Play a game to get started!</p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+    )
+}
+
 
 export default function RewardZoneHubPage() {
     
@@ -69,44 +69,30 @@ export default function RewardZoneHubPage() {
                 <p className="text-muted-foreground">Claim your daily rewards and test your luck for a chance to win prizes!</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {rewardCategories.map((category, index) => (
-                    <motion.div
-                        key={category.title}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.5, delay: index * 0.1 }}
-                    >
-                        <Link href={category.href} className="block h-full">
-                           <Card className={cn(
-                               "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2",
-                               category.shadow
-                            )}>
-                               <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-tr", category.color)}></div>
-                               <CardHeader>
-                                   <div className="flex items-center justify-between">
-                                       <div className="flex items-center gap-4">
-                                           <div className={cn("p-3 rounded-lg bg-gradient-to-br", category.color)}>
-                                                <category.icon className="h-6 w-6 text-white"/>
-                                           </div>
-                                           <CardTitle>{category.title}</CardTitle>
-                                       </div>
-                                       {category.tag && <Badge variant="secondary">{category.tag}</Badge>}
-                                   </div>
-                               </CardHeader>
-                               <CardContent>
-                                   <p className="text-muted-foreground">{category.description}</p>
-                               </CardContent>
-                               <CardContent>
-                                    <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors">
-                                       Play Now <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                   </Button>
-                               </CardContent>
-                           </Card>
-                        </Link>
-                    </motion.div>
-                ))}
-            </div>
+            <Tabs defaultValue="crystal-growth" className="w-full">
+                <ScrollArea className="w-full whitespace-nowrap">
+                    <TabsList className="inline-flex h-auto">
+                        <TabsTrigger value="crystal-growth"><Gem className="mr-2"/> Crystal Growth</TabsTrigger>
+                        <TabsTrigger value="codebreaker"><Key className="mr-2"/> Codebreaker</TabsTrigger>
+                        <TabsTrigger value="card-flip"><Layers className="mr-2"/> Card Flip</TabsTrigger>
+                        <TabsTrigger value="scratch-card"><VenetianMask className="mr-2"/> Scratch Card</TabsTrigger>
+                    </TabsList>
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+                    <div className="lg:col-span-2">
+                        <TabsContent value="crystal-growth"><CrystalGrowth /></TabsContent>
+                        <TabsContent value="codebreaker"><CodebreakerGame /></TabsContent>
+                        <TabsContent value="card-flip"><CardFlipGame /></TabsContent>
+                        <TabsContent value="scratch-card"><ScratchCard /></TabsContent>
+                    </div>
+                    <div className="lg:col-span-1">
+                        <RecentWinnings />
+                    </div>
+                </div>
+
+            </Tabs>
 
         </div>
     );

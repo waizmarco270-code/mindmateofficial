@@ -63,14 +63,6 @@ export function CodebreakerGame() {
         }
     };
     
-    const resetGame = () => {
-        // The game state is daily, so a refresh or coming back handles reset.
-        // This button can just refresh the state from the hook.
-        setGuess([]);
-        setPastGuesses([]);
-        setGameState(canPlayCodebreaker ? 'playing' : 'ended');
-    }
-
     const rewardTiers = [25, 15, 10, 5, 3, 1];
     const finalReward = codebreakerStatus.lastResult === 'win' ? rewardTiers[codebreakerStatus.attempts - 1] : 0;
 
@@ -106,7 +98,6 @@ export function CodebreakerGame() {
 
         return (
             <div className="space-y-4">
-                {/* Guess History */}
                 <div className="space-y-2 h-48 overflow-y-auto pr-2">
                     {pastGuesses.map((item, index) => (
                         <div key={index} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
@@ -124,7 +115,6 @@ export function CodebreakerGame() {
                     ))}
                 </div>
                 
-                 {/* Current Guess Input */}
                 <div className="flex justify-center gap-2">
                     {[...Array(CODE_LENGTH)].map((_, i) => (
                         <div key={i} className="h-14 w-12 bg-background border-2 rounded-lg flex items-center justify-center text-3xl font-bold font-mono">
@@ -133,17 +123,21 @@ export function CodebreakerGame() {
                     ))}
                 </div>
 
-                {/* Keypad */}
                 <div className="space-y-2 pt-2">
-                    {'1234567890'.split('').map(row => (
-                        <div key={row} className="flex justify-center gap-2">
-                            {row.split('').map(key => (
-                                <Button key={key} variant="outline" className="h-12 w-12 text-xl" onClick={() => handleKeyClick(key)} disabled={isSubmitting}>
-                                    {key}
-                                </Button>
-                            ))}
-                        </div>
-                    ))}
+                    <div className="grid grid-cols-5 gap-2">
+                         {'12345'.split('').map(key => (
+                            <Button key={key} variant="outline" className="h-12 w-12 text-xl" onClick={() => handleKeyClick(key)} disabled={isSubmitting}>
+                                {key}
+                            </Button>
+                        ))}
+                    </div>
+                     <div className="grid grid-cols-5 gap-2">
+                         {'67890'.split('').map(key => (
+                            <Button key={key} variant="outline" className="h-12 w-12 text-xl" onClick={() => handleKeyClick(key)} disabled={isSubmitting}>
+                                {key}
+                            </Button>
+                        ))}
+                    </div>
                      <div className="flex justify-center gap-2">
                         <Button variant="destructive" className="h-12 w-28" onClick={handleDelete} disabled={isSubmitting}><Delete className="mr-2"/></Button>
                         <Button className="h-12 flex-1" onClick={handleSubmit} disabled={isSubmitting || guess.length !== CODE_LENGTH}>
