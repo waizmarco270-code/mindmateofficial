@@ -209,54 +209,54 @@ export default function DashboardPage() {
 
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center gap-3">
-                        <Bell className="h-6 w-6 text-primary" />
-                        <CardTitle>Latest Announcement</CardTitle>
-                    </div>
-                    <CardDescription>Don't miss out on important updates.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                    <div className="text-muted-foreground mt-2 min-h-[40px]">
-                        <TypingAnimation text={latestAnnouncement.description} />
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+            <div className="lg:col-span-2 space-y-6">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center gap-3">
+                            <Bell className="h-6 w-6 text-primary" />
+                            <CardTitle>Latest Announcement</CardTitle>
+                        </div>
+                        <CardDescription>Don't miss out on important updates.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
+                        <div className="text-muted-foreground mt-2 min-h-[40px]">
+                            <TypingAnimation text={latestAnnouncement.description} />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
-        <div className="lg:col-span-1 space-y-6">
-          <SignedIn>
-            <Card className="border-amber-500/20 bg-amber-500/5">
-                <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600 dark:text-amber-400">
-                        <span>Your Credits</span>
-                        <Medal className="h-4 w-4" />
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-5xl font-bold text-amber-600 dark:text-amber-500">{credits}</div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                    +1 for daily tasks, +5 for perfecting quizzes!
-                    </p>
-                </CardContent>
-            </Card>
-          </SignedIn>
-          <Dialog>
-                <DialogTrigger asChild>
-                    <Card className="cursor-pointer bg-gradient-to-br from-purple-500 to-indigo-600 text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300">
-                        <CardContent className="p-6 text-center">
-                            <Vote className="h-10 w-10 mx-auto mb-3" />
-                            <h3 className="text-xl font-bold">Community Poll</h3>
-                            <p className="text-sm opacity-80">Have your say in new features!</p>
+            <div className="lg:col-span-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Card className="cursor-pointer bg-gradient-to-br from-purple-500 to-indigo-600 text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center">
+                            <CardContent className="p-6 text-center">
+                                <Vote className="h-10 w-10 mx-auto mb-3" />
+                                <h3 className="text-xl font-bold">Community Poll</h3>
+                                <p className="text-sm opacity-80">Have your say!</p>
+                            </CardContent>
+                        </Card>
+                    </DialogTrigger>
+                    <CommunityPoll />
+                </Dialog>
+                <SignedIn>
+                    <Card className="border-amber-500/20 bg-amber-500/5 aspect-square flex flex-col justify-center">
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600 dark:text-amber-400">
+                                <span>Your Credits</span>
+                                <Medal className="h-4 w-4" />
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-5xl font-bold text-amber-600 dark:text-amber-500">{credits}</div>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                +1 for daily tasks, +5 for perfecting quizzes!
+                            </p>
                         </CardContent>
                     </Card>
-                </DialogTrigger>
-                <CommunityPoll />
-          </Dialog>
-        </div>
+                </SignedIn>
+            </div>
       </div>
 
        <div className="space-y-6">
