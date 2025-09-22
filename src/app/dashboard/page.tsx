@@ -293,14 +293,24 @@ export default function DashboardPage() {
                       {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
                   </div>
                   <div className="relative z-10 text-white">
-                      <CardHeader className="flex-row items-center gap-4 p-4">
-                            <div className="p-3 rounded-full bg-white/10">
-                              <Bell className="h-6 w-6 text-white" />
+                      <CardHeader className="flex-row items-center justify-between p-4">
+                          <div className="flex items-center gap-4">
+                              <div className="p-3 rounded-full bg-white/10">
+                                <Bell className="h-6 w-6 text-white" />
+                              </div>
+                              <div>
+                                  <CardTitle className="text-lg text-white text-shadow-glow">Latest Announcement</CardTitle>
+                                  <CardDescription className="text-white/80">Don't miss out on important updates.</CardDescription>
+                              </div>
                           </div>
-                          <div>
-                              <CardTitle className="text-lg text-white text-shadow-glow">Latest Announcement</CardTitle>
-                              <CardDescription className="text-white/80">Don't miss out on important updates.</CardDescription>
-                          </div>
+                          <Dialog>
+                                <DialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full text-white/80 hover:text-white hover:bg-white/10">
+                                        <Vote className="h-6 w-6" />
+                                    </Button>
+                                </DialogTrigger>
+                                <CommunityPoll />
+                            </Dialog>
                       </CardHeader>
                       <CardContent className="flex-1 flex flex-col justify-center p-4 pt-0">
                           <h3 className="text-xl font-bold text-shadow-glow">{latestAnnouncement.title}</h3>
@@ -311,35 +321,17 @@ export default function DashboardPage() {
                   </div>
               </Card>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Dialog>
-                <DialogTrigger asChild>
-                    <Card className="group relative cursor-pointer text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square sm:aspect-auto flex flex-col justify-center">
-                        <div className="absolute inset-0 blue-nebula-bg z-0"></div>
-                        <div id="particle-container">
-                            {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
-                        </div>
-                        <CardContent className="p-4 sm:p-6 text-center relative z-10">
-                            <Vote className="h-8 sm:h-10 w-8 sm:w-10 mx-auto mb-3 drop-shadow-lg"/>
-                            <h3 className="text-lg sm:text-xl font-bold text-shadow-glow">Community Poll</h3>
-                            <p className="text-xs sm:text-sm opacity-80">Have your say in new features!</p>
-                        </CardContent>
-                    </Card>
-                </DialogTrigger>
-                <CommunityPoll />
-            </Dialog>
-              <SignedIn>
-                  <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
-                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
-                    <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <CardContent className="p-4 sm:p-6 text-center relative z-10">
-                        <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
-                        <h3 className="text-lg font-semibold">Your Credits</h3>
-                        <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
-                    </CardContent>
-                </Card>
-            </SignedIn>
-          </div>
+          <SignedIn>
+                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
+                <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardContent className="p-4 sm:p-6 text-center relative z-10">
+                    <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
+                    <h3 className="text-lg font-semibold">Your Credits</h3>
+                    <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
+                </CardContent>
+            </Card>
+        </SignedIn>
       </div>
 
        <div className="space-y-6">
