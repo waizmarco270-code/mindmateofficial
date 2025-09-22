@@ -3,7 +3,8 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 const isPublicRoute = createRouteMatcher(['/', '/dashboard(.*)']);
 
-export default clerkMiddleware((auth, request) => {
+// The function passed to clerkMiddleware must be async
+export default clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     auth().protect();
   }
