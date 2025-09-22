@@ -159,6 +159,15 @@
       transform: rotate(-0.5deg);
     }
   }
+  @keyframes animated-grid {
+      0% { background-position: 0 0; }
+      100% { background-position: 100% 100%; }
+  }
+  @keyframes oceanic-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 }
 
 @layer components {
@@ -299,6 +308,35 @@
     background: linear-gradient(125deg, #0c0a09, #1e293b, #0c0a09, #082f49);
     background-size: 300% 300%;
     animation: nebula-animation 28s ease infinite;
+  }
+  
+  .rainbow-aurora-bg {
+    --angle: 0deg;
+    background: conic-gradient(from var(--angle), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff, #ff0000);
+    animation: rotate-angle 8s linear infinite;
+  }
+  
+  .diamond-pearl-bg {
+    background: linear-gradient(145deg, #e0e0e0, #ffffff, #f0f0f0, #e0e0e0);
+    background-size: 400% 400%;
+    animation: nebula-animation 15s ease infinite;
+  }
+  
+  .cyber-grid-bg {
+    background-color: #0c0a09;
+    background-image:
+        linear-gradient(45deg, #8b5cf6 25%, transparent 25%), 
+        linear-gradient(-45deg, #8b5cf6 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #8b5cf6 75%),
+        linear-gradient(-45deg, transparent 75%, #8b5cf6 75%);
+    background-size: 60px 60px;
+    animation: animated-grid 10s linear infinite;
+  }
+
+  .oceanic-flow-bg {
+    background: linear-gradient(125deg, #0891b2, #0ea5e9, #0284c7, #075985);
+    background-size: 200% 200%;
+    animation: oceanic-flow 18s ease infinite;
   }
 
 

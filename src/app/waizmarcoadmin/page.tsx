@@ -439,7 +439,7 @@ export default function SuperAdminPanelPage() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>{sc.launchDate ? format(parseISO(sc.launchDate), 'PPP') : 'Not set'}</TableCell>
-                                        <TableCell><Badge variant="outline" className="capitalize">{sc.template.replace('-', ' ')}</Badge></TableCell>
+                                        <TableCell><Badge variant="outline" className="capitalize">{sc.template.replace(/-/g, ' ')}</Badge></TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <Button variant="outline" size="sm" onClick={() => openShowcaseDialog(sc)}><Edit className="h-4 w-4 mr-2"/> Edit</Button>
                                             <AlertDialog>
@@ -1195,6 +1195,10 @@ export default function SuperAdminPanelPage() {
                                     <SelectItem value="amethyst-haze">Amethyst Haze</SelectItem>
                                     <SelectItem value="solar-flare">Solar Flare</SelectItem>
                                     <SelectItem value="midnight-abyss">Midnight Abyss</SelectItem>
+                                    <SelectItem value="rainbow-aurora">Rainbow Aurora</SelectItem>
+                                    <SelectItem value="diamond-pearl">Diamond Pearl</SelectItem>
+                                    <SelectItem value="cyber-grid">Cyber Grid</SelectItem>
+                                    <SelectItem value="oceanic-flow">Oceanic Flow</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -1209,6 +1213,7 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
+
 
 
 

@@ -157,7 +157,7 @@ export interface FeatureLock {
     cost: number;
 }
 
-export type ShowcaseTemplate = 'cosmic-blue' | 'fiery-red' | 'golden-legend' | 'professional-dark' | 'emerald-dream' | 'amethyst-haze' | 'solar-flare' | 'midnight-abyss';
+export type ShowcaseTemplate = 'cosmic-blue' | 'fiery-red' | 'golden-legend' | 'professional-dark' | 'emerald-dream' | 'amethyst-haze' | 'solar-flare' | 'midnight-abyss' | 'rainbow-aurora' | 'diamond-pearl' | 'cyber-grid' | 'oceanic-flow';
 export interface FeatureShowcase {
     id: string;
     title: string;
@@ -1234,5 +1234,6 @@ export const useDailySurprises = () => {
     
 
   
+
 
 
