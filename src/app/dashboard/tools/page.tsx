@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, QrCode } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -48,6 +48,15 @@ const toolCategories = [
         href: "/dashboard/tools/unit-converter",
         color: "from-red-500 to-orange-500",
         shadow: "shadow-red-500/30"
+    },
+    {
+        id: 'qr-code-tool',
+        title: "QR Code Suite",
+        description: "Generate custom QR codes and scan them with your camera.",
+        icon: QrCode,
+        href: "/dashboard/tools/qrcode",
+        color: "from-slate-500 to-gray-500",
+        shadow: "shadow-slate-500/30"
     }
 ]
 
@@ -56,8 +65,8 @@ export default function ToolsContent() {
     const { featureLocks, currentUserData } = useAdmin();
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
 
-    const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'] | 'unit-converter', isLocked: boolean) => {
-        if (isLocked && featureId !== 'unit-converter') {
+    const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'] | 'unit-converter' | 'qr-code-tool', isLocked: boolean) => {
+        if (isLocked && featureId !== 'unit-converter' && featureId !== 'qr-code-tool') {
             e.preventDefault();
             const feature = lockableFeatures.find(f => f.id === featureId);
             if (feature) {
@@ -76,7 +85,7 @@ export default function ToolsContent() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {toolCategories.map((category, index) => {
                         const featureId = category.id as LockableFeature['id'];
-                        const isLocked = featureId !== 'unit-converter' && featureLocks?.[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId);
+                        const isLocked = featureId !== 'unit-converter' && featureId !== 'qr-code-tool' && featureLocks?.[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId);
 
                         return (
                             <motion.div
