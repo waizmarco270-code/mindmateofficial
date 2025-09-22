@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon, Rocket, Flame } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -19,6 +19,7 @@ import { GlobalGiftCard } from '@/components/dashboard/global-gift';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Autoplay from "embla-carousel-autoplay"
 import { format, parseISO } from 'date-fns';
 
 
@@ -198,6 +199,65 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
     );
 }
 
+const badgeShowcaseItems = [
+    {
+        name: 'Elite Member',
+        description: 'Awarded by admins to the most dedicated and active users.',
+        badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>
+    },
+    {
+        name: 'Game Master',
+        description: 'Awarded weekly to the #1 player on the Game Zone leaderboard.',
+        badge: <span className="gm-badge">GM</span>
+    },
+    {
+        name: 'Admin',
+        description: 'For the moderators and administrators of MindMate.',
+        badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span>
+    },
+    {
+        name: 'Developer',
+        description: 'The creators and developers of the MindMate platform.',
+        badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>
+    }
+];
+
+function BadgeShowcase() {
+    return (
+        <div className="space-y-4">
+            <h2 className="text-2xl font-bold tracking-tight">App Badges</h2>
+            <Carousel 
+                className="w-full"
+                plugins={[
+                    Autoplay({
+                      delay: 3000,
+                      stopOnInteraction: true,
+                    }),
+                ]}
+                opts={{ loop: true }}
+            >
+                <CarouselContent className="-ml-4">
+                    {badgeShowcaseItems.map((item, index) => (
+                        <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1">
+                                <Card className="h-full">
+                                    <CardContent className="flex flex-col items-center justify-center p-6 text-center gap-4">
+                                        {item.badge}
+                                        <p className="font-bold mt-2">{item.name}</p>
+                                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+                 <CarouselPrevious className="hidden sm:flex" />
+                <CarouselNext className="hidden sm:flex" />
+            </Carousel>
+        </div>
+    );
+}
+
 export default function DashboardPage() {
     const { user } = useUser();
     const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
@@ -339,6 +399,7 @@ export default function DashboardPage() {
             )}
 
             <CommunityPoll />
+            <BadgeShowcase />
         </SignedIn>
 
 
