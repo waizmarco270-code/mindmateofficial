@@ -246,7 +246,7 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 flex flex-col">
       <SignedOut>
         <WelcomeDialog />
       </SignedOut>
@@ -321,17 +321,6 @@ export default function DashboardPage() {
                   </div>
               </Card>
           </div>
-          <SignedIn>
-                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
-                <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <CardContent className="p-4 sm:p-6 text-center relative z-10">
-                    <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
-                    <h3 className="text-lg font-semibold">Your Credits</h3>
-                    <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
-                </CardContent>
-            </Card>
-        </SignedIn>
       </div>
 
        <div className="space-y-6">
@@ -556,6 +545,17 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </Link>
+            <SignedIn>
+                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center order-last">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
+                <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardContent className="p-4 sm:p-6 text-center relative z-10">
+                    <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
+                    <h3 className="text-lg font-semibold">Your Credits</h3>
+                    <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
+                </CardContent>
+            </Card>
+        </SignedIn>
       </div>
     </div>
   );
