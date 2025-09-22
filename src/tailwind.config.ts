@@ -113,8 +113,8 @@ export default {
           },
         },
         shimmer: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' },
+          '0%': { 'background-position': '-200% 0' },
+          '100%': { 'background-position': '200% 0' },
         },
         'zoom-pan': {
           '0%, 100%': { transform: 'scale(1) translate(0, 0)' },
@@ -151,7 +151,7 @@ export default {
         'accordion-up': 'accordion-up 0.2s ease-out',
         'fade-in-up': 'fade-in-up 0.8s ease-out forwards',
         'tilt': 'tilt 10s infinite linear',
-        'shimmer': 'shimmer 2s infinite',
+        'shimmer': 'shimmer 2s infinite linear',
         'zoom-pan': 'zoom-pan 30s ease-in-out infinite',
         'synthwave-scroll': 'synthwave-scroll 10s linear infinite',
         'black-hole-spin': 'black-hole-spin 50s linear infinite',

@@ -270,9 +270,9 @@ export default function DashboardPage() {
                             className="relative group overflow-hidden cursor-pointer bg-gradient-to-tr from-purple-500/20 via-sky-500/20 to-blue-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
                             onClick={() => setIsFeatureShowcaseOpen(true)}
                         >
-                            <div
-                                className="absolute -inset-2 animate-pulse duration-[5000ms] [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)] bg-[linear-gradient(rgba(156,163,175,0.5)_1px,transparent_1px),linear-gradient(to_right,rgba(156,163,175,0.5)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(55,65,81,0.5)_1px,transparent_1px),linear-gradient(to_right,rgba(55,65,81,0.5)_1px,transparent_1px)] bg-[background-size:4rem_4rem] bg-transparent opacity-10"
-                            ></div>
+                             <div className="absolute inset-0 w-full h-full overflow-hidden [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]">
+                                <div className="absolute inset-0 bg-grid-slate-800 animate-shimmer [background-size:4rem_4rem]"></div>
+                            </div>
                             <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center items-center">
                                 <div className="animate-pulse duration-[3000ms] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
                                 <motion.div
