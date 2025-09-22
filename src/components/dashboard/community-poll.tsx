@@ -75,7 +75,7 @@ export function CommunityPoll() {
             </CardHeader>
             <CardContent className="p-0 space-y-4">
                 <div className="bg-black/20 border border-white/10 rounded-lg p-4 text-center">
-                    <p className="text-xl font-bold text-white">{activePoll.question}</p>
+                    <p className="text-xl font-bold text-cyan-300">{activePoll.question}</p>
                 </div>
                 {activePoll.options.map((option, index) => {
                     const votesForOption = activePoll.results[option] || 0;
