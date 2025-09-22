@@ -3,7 +3,6 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+
 
 type UnitCategory = 'length' | 'mass' | 'temperature' | 'time' | 'area' | 'volume' | 'speed' | 'data' | 'chemistry';
 
@@ -124,12 +126,29 @@ const PHYSICAL_QUANTITIES = [
 function ConverterInterface({ category }: { category: UnitCategory }) {
     const { toast } = useToast();
     const units = UNITS[category];
+    
+    const [fromValue, setFromValue] = useState('1');
     const [fromUnit, setFromUnit] = useState(units[0].id);
     const [toUnit, setToUnit] = useState(units[1].id);
-    const [fromValue, setFromValue] = useState('1');
-    const [toValue, setToValue] = useState('');
     const [isSwapped, setIsSwapped] = useState(false);
     const [isCopied, setIsCopied] = useState(false);
+    
+    const toValue = useMemo(() => {
+        const from = units.find(u => u.id === fromUnit);
+        const to = units.find(u => u.id === toUnit);
+        const value = parseFloat(fromValue);
+        
+        if (from && to && !isNaN(value)) {
+            const baseValue = from.toBase(value);
+            const finalValue = to.fromBase(baseValue);
+            
+            const resultString = (finalValue > 0 && finalValue < 0.001) 
+                ? finalValue.toPrecision(4) 
+                : finalValue.toFixed(4).replace(/\.0000$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
+            return resultString;
+        }
+        return '';
+    }, [fromValue, fromUnit, toUnit, units]);
 
     const handleSwap = () => {
         setIsSwapped(s => !s);
@@ -143,25 +162,6 @@ function ConverterInterface({ category }: { category: UnitCategory }) {
         toast({ title: "Copied to clipboard!" });
         setTimeout(() => setIsCopied(false), 2000);
     }
-    
-    useEffect(() => {
-        const from = units.find(u => u.id === fromUnit);
-        const to = units.find(u => u.id === toUnit);
-        const value = parseFloat(fromValue);
-        
-        if (from && to && !isNaN(value)) {
-            const baseValue = from.toBase(value);
-            const finalValue = to.fromBase(baseValue);
-            
-            const resultString = (finalValue > 0 && finalValue < 0.001) 
-                ? finalValue.toPrecision(4) 
-                : finalValue.toFixed(4).replace(/\.0000$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
-
-            setToValue(resultString);
-        } else {
-            setToValue('');
-        }
-    }, [fromValue, fromUnit, toUnit, units]);
 
     const InputCard = ({
         isFrom,
@@ -179,7 +179,7 @@ function ConverterInterface({ category }: { category: UnitCategory }) {
         <Card className="bg-muted/50 p-4">
             <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-muted-foreground">{isFrom ? 'From' : 'To'}</span>
-                {isFrom ? null : (
+                {!isFrom && (
                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy}>
                         {isCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
                     </Button>
@@ -215,7 +215,7 @@ function ConverterInterface({ category }: { category: UnitCategory }) {
                 <InputCard {...firstCard} />
             </motion.div>
 
-            <motion.div layout className="absolute md:relative z-10">
+            <motion.div layout className="absolute md:relative z-10 my-2 md:my-0">
                 <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-background shadow-md hover:bg-primary hover:text-primary-foreground transition-transform hover:rotate-180" onClick={handleSwap}>
                     <ArrowRightLeft className="h-5 w-5"/>
                 </Button>
@@ -272,6 +272,7 @@ function DimensionsInterface() {
 
 export function UnitConverter() {
   const allCategories = [...(Object.keys(UNITS) as UnitCategory[]), 'dimensions'] as const;
+  const [activeTab, setActiveTab] = useState<typeof allCategories[number]>('length');
 
   return (
     <Card className="w-full">
@@ -280,17 +281,28 @@ export function UnitConverter() {
         <CardDescription>A modern, responsive utility to convert units and reference physical dimensions.</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="length" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 h-auto">
-            {allCategories.map(category => {
-                const Icon = CATEGORY_ICONS[category];
-                return (
-                    <TabsTrigger key={category} value={category} className="py-3 text-base gap-2 capitalize">
-                        <Icon className="h-5 w-5"/> {category}
-                    </TabsTrigger>
-                );
-            })}
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+            <Carousel className="w-full mb-4" opts={{ align: "start" }}>
+                <CarouselContent className="-ml-2">
+                    {allCategories.map(category => {
+                        const Icon = CATEGORY_ICONS[category];
+                        return (
+                            <CarouselItem key={category} className="pl-2 basis-auto">
+                                <Button 
+                                    variant={activeTab === category ? 'default' : 'outline'} 
+                                    className="h-auto py-3 px-4 gap-2 capitalize text-base"
+                                    onClick={() => setActiveTab(category)}
+                                >
+                                    <Icon className="h-5 w-5"/> {category}
+                                </Button>
+                            </CarouselItem>
+                        );
+                    })}
+                </CarouselContent>
+                <CarouselPrevious className="hidden sm:flex" />
+                <CarouselNext className="hidden sm:flex" />
+            </Carousel>
+
             {(Object.keys(UNITS) as UnitCategory[]).map(category => (
                 <TabsContent key={category} value={category} className="pt-8">
                      <ConverterInterface category={category} />
@@ -304,3 +316,4 @@ export function UnitConverter() {
     </Card>
   );
 }
+
