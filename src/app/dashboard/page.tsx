@@ -208,11 +208,11 @@ export default function DashboardPage() {
       </SignedIn>
 
 
-       <div className="flex flex-col lg:flex-row gap-6">
-            <div className="flex-1 lg:flex-[2] min-w-0">
-                <Card className="relative group h-full">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2">
+                <Card className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                    <div className="relative rounded-lg bg-background h-full flex flex-col">
+                    <div className="relative rounded-lg bg-background flex flex-col">
                         <CardHeader>
                             <div className="flex items-center gap-3">
                                 <Bell className="h-6 w-6 text-primary" />
@@ -229,7 +229,7 @@ export default function DashboardPage() {
                     </div>
                 </Card>
             </div>
-            <div className="flex-1 grid grid-cols-2 lg:flex lg:flex-col gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
                  <Dialog>
                     <DialogTrigger asChild>
                          <Card className="cursor-pointer relative text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center bg-gradient-to-br from-purple-500 to-indigo-600">
