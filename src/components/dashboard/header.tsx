@@ -30,7 +30,7 @@ function AnnouncementInbox() {
                     <span className="sr-only">Announcements</span>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-80 p-0">
+            <PopoverContent className="w-96 p-0">
                  <div className="p-4">
                     <h4 className="font-bold text-base">Inbox</h4>
                     <p className="text-sm text-muted-foreground">The latest updates and news.</p>
