@@ -1,6 +1,6 @@
 
 export interface LockableFeature {
-    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'flashcard-maker';
+    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'unit-converter';
     name: string;
     description: string;
     defaultCost: number;
@@ -68,9 +68,9 @@ export const lockableFeatures: LockableFeature[] = [
         defaultCost: 0,
     },
     {
-        id: 'flashcard-maker',
-        name: 'Flashcard Maker',
-        description: 'Create and study with digital flashcards.',
-        defaultCost: 15,
+        id: 'unit-converter',
+        name: 'Unit Converter',
+        description: 'Convert between various scientific and general units.',
+        defaultCost: 0,
     }
 ];
