@@ -17,8 +17,7 @@ const rewardCategories = [
         icon: Gem,
         href: "/dashboard/reward/crystal-growth",
         color: "from-blue-500 to-sky-500",
-        shadow: "shadow-blue-500/30",
-        tag: "Investment"
+        shadow: "shadow-blue-500/30"
     },
     {
         title: "Codebreaker",

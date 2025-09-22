@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { isToday, parseISO, addDays, format as formatDate } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
@@ -23,6 +23,13 @@ export interface UserCrystal {
     harvestValue: number;
 }
 
+interface CodebreakerStatus {
+    canPlay: boolean;
+    lastResult: 'win' | 'loss' | null;
+    attempts: number;
+    secretCode?: string;
+}
+
 export const useRewards = () => {
     const { user } = useUser();
     const { currentUserData, addCreditsToUser } = useUsers();
@@ -32,17 +39,22 @@ export const useRewards = () => {
     const [lastScratchDate, setLastScratchDate] = useState<Date | null>(null);
     const [lastCardFlipDate, setLastCardFlipDate] = useState<Date | null>(null);
     const [lastRpsDate, setLastRpsDate] = useState<Date | null>(null);
+    const [lastTriviaTowerDate, setLastTriviaTowerDate] = useState<Date | null>(null);
     const [freeRewards, setFreeRewards] = useState(0); // For scratch cards
     const [freeGuesses, setFreeGuesses] = useState(0); // For Card Flip
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
     const [userCrystal, setUserCrystal] = useState<UserCrystal | null>(null);
     const [loadingCrystal, setLoadingCrystal] = useState(true);
+    const [codebreakerStatus, setCodebreakerStatus] = useState<CodebreakerStatus>({ canPlay: false, lastResult: null, attempts: 0 });
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        setLoading(true);
         if(currentUserData) {
             setLastScratchDate(currentUserData.lastRewardDate ? parseISO(currentUserData.lastRewardDate) : null);
             setLastCardFlipDate(currentUserData.lastGiftBoxDate ? parseISO(currentUserData.lastGiftBoxDate) : null);
             setLastRpsDate(currentUserData.lastRpsDate ? parseISO(currentUserData.lastRpsDate) : null);
+            setLastTriviaTowerDate(currentUserData.lastTriviaTowerDate ? parseISO(currentUserData.lastTriviaTowerDate) : null);
             setFreeRewards(currentUserData.freeRewards || 0);
             setFreeGuesses(currentUserData.freeGuesses || 0);
             setRewardHistory(
@@ -51,6 +63,7 @@ export const useRewards = () => {
                 .sort((a: RewardRecord, b: RewardRecord) => b.date.getTime() - a.date.getTime())
             );
         }
+        setLoading(false);
     }, [currentUserData]);
     
     // Listen to user's crystal data
@@ -71,6 +84,114 @@ export const useRewards = () => {
         return () => unsubscribe();
     }, [user]);
 
+    // ===== CODEBREAKER LOGIC =====
+    useEffect(() => {
+        if (!user) return;
+        setLoading(true);
+        const codebreakerRef = doc(db, 'users', user.id, 'rewards', 'codebreaker');
+        const unsubscribe = onSnapshot(codebreakerRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const lastPlayed = data.lastPlayed?.toDate();
+                if (lastPlayed && isToday(lastPlayed)) {
+                    setCodebreakerStatus({ canPlay: false, lastResult: data.lastResult, attempts: data.attempts, secretCode: data.secretCode });
+                } else {
+                    // New day, reset
+                    const newCode = String(Math.floor(1000 + Math.random() * 9000));
+                    setDoc(codebreakerRef, { secretCode: newCode, attempts: 0, lastResult: null, lastPlayed: null });
+                    setCodebreakerStatus({ canPlay: true, lastResult: null, attempts: 0, secretCode: newCode });
+                }
+            } else {
+                // First time playing
+                const newCode = String(Math.floor(1000 + Math.random() * 9000));
+                setDoc(codebreakerRef, { secretCode: newCode, attempts: 0, lastResult: null, lastPlayed: null });
+                setCodebreakerStatus({ canPlay: true, lastResult: null, attempts: 0, secretCode: newCode });
+            }
+            setLoading(false);
+        });
+        return () => unsubscribe();
+    }, [user]);
+
+    const playCodebreaker = useCallback(async (guess: string) => {
+        if (!user || !codebreakerStatus.canPlay || !codebreakerStatus.secretCode) return null;
+
+        const secretCode = codebreakerStatus.secretCode;
+        const attempts = codebreakerStatus.attempts + 1;
+
+        let correctPlace = 0;
+        let correctDigit = 0;
+        const secretCodeCounts: Record<string, number> = {};
+        const guessCounts: Record<string, number> = {};
+        
+        for (let i = 0; i < secretCode.length; i++) {
+            if (guess[i] === secretCode[i]) {
+                correctPlace++;
+            }
+            secretCodeCounts[secretCode[i]] = (secretCodeCounts[secretCode[i]] || 0) + 1;
+            guessCounts[guess[i]] = (guessCounts[guess[i]] || 0) + 1;
+        }
+
+        for(const digit in guessCounts) {
+            if (secretCodeCounts[digit]) {
+                correctDigit += Math.min(guessCounts[digit], secretCodeCounts[digit]);
+            }
+        }
+        correctDigit -= correctPlace;
+
+        const isWin = correctPlace === 4;
+        const isLoss = !isWin && attempts >= 6;
+        let reward = 0;
+
+        const rewardTiers = [25, 15, 10, 5, 3, 1];
+
+        if (isWin) {
+            reward = rewardTiers[attempts - 1];
+            await addCreditsToUser(user.id, reward);
+            toast({ title: 'You cracked the code!', description: `+${reward} credits have been awarded.`, className: "bg-green-500/10 border-green-500/50" });
+        }
+
+        if (isWin || isLoss) {
+            const codebreakerRef = doc(db, 'users', user.id, 'rewards', 'codebreaker');
+            await updateDoc(codebreakerRef, {
+                lastPlayed: Timestamp.now(),
+                lastResult: isWin ? 'win' : 'loss',
+                attempts: attempts
+            });
+        } else {
+             const codebreakerRef = doc(db, 'users', user.id, 'rewards', 'codebreaker');
+            await updateDoc(codebreakerRef, { attempts });
+        }
+
+        return { isWin, clues: { correctPlace, correctDigit } };
+
+    }, [user, codebreakerStatus, addCreditsToUser, toast]);
+
+    // ===== TRIVIA TOWER LOGIC =====
+    const canPlayTriviaTower = useMemo(() => {
+        if (!lastTriviaTowerDate) return true;
+        return !isToday(lastTriviaTowerDate);
+    }, [lastTriviaTowerDate]);
+    
+    const playTriviaTower = useCallback(async (reward: number) => {
+        if (!user || !canPlayTriviaTower) return;
+        
+        const userDocRef = doc(db, 'users', user.id);
+        const newRecord = { reward, date: new Date(), source: 'Trivia Tower' };
+        
+        await updateDoc(userDocRef, {
+            credits: increment(reward),
+            lastTriviaTowerDate: new Date().toISOString(),
+            rewardHistory: arrayUnion(newRecord)
+        });
+        
+        if (reward > 0) {
+            toast({ title: `You Won ${reward} credits!`, description: 'They have been added to your account.', className: "bg-green-500/10 border-green-500/50" });
+        } else {
+             toast({ title: "Tower Challenge Over", description: "Better luck next time!", variant: "destructive" });
+        }
+    }, [user, canPlayTriviaTower, addCreditsToUser, toast]);
+
+
     // ===== SCRATCH CARD LOGIC =====
     const canClaimScratchCard = useMemo(() => {
         if (freeRewards > 0) return true;
@@ -89,13 +210,12 @@ export const useRewards = () => {
             return { prize: 'better luck' };
         }
         
-        // New rebalanced prize pool
         const weightedPrizes = [
             { value: 'better luck', weight: 60 },
             { value: 2, weight: 25 },
             { value: 5, weight: 10 },
             { value: 10, weight: 4.5 },
-            { value: 20, weight: 0.5 } // 0.5% chance for the max prize
+            { value: 20, weight: 0.5 }
         ];
         
         const totalWeight = weightedPrizes.reduce((sum, p) => sum + p.weight, 0);
@@ -144,10 +264,10 @@ export const useRewards = () => {
 
     const generateCardFlipPrize = useCallback(() => {
         const rand = Math.random() * 100;
-        if (rand < 1) return 20;   // 1% chance for 20 credits
-        if (rand < 5) return 10;   // 4% chance for 10 credits
-        if (rand < 20) return 5;    // 15% chance for 5 credits
-        return Math.floor(Math.random() * 3) + 1; // 80% chance for 1-3 credits
+        if (rand < 1) return 20;   // 1% chance
+        if (rand < 5) return 10;   // 4% chance
+        if (rand < 20) return 5;    // 15% chance
+        return Math.floor(Math.random() * 3) + 1; // 80% chance
     }, []);
 
     const playCardFlip = useCallback(async (isWin: boolean, prizeAmount: number) => {
@@ -289,6 +409,7 @@ export const useRewards = () => {
     }, [user, userCrystal, addCreditsToUser, toast]);
 
     return { 
+        loading,
         canClaimReward: canClaimScratchCard,
         claimDailyReward, 
         availableScratchCards,
@@ -304,5 +425,10 @@ export const useRewards = () => {
         plantCrystal,
         harvestCrystal,
         breakCrystal,
+        canPlayCodebreaker: codebreakerStatus.canPlay,
+        playCodebreaker,
+        codebreakerStatus,
+        canPlayTriviaTower,
+        playTriviaTower,
     };
 };
