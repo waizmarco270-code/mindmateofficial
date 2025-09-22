@@ -271,16 +271,10 @@ export default function DashboardPage() {
                             onClick={() => setIsFeatureShowcaseOpen(true)}
                         >
                             <div
-                                className="absolute -inset-2 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]"
-                                style={{
-                                    backgroundImage: 'linear-gradient(rgba(156, 163, 175, 0.5) 1px, transparent 1px), linear-gradient(to right, rgba(156, 163, 175, 0.5) 1px, transparent 1px)',
-                                    backgroundSize: '4rem 4rem',
-                                    backgroundColor: 'transparent',
-                                    opacity: '0.1'
-                                }}
+                                className="absolute -inset-2 animate-pulse duration-[5000ms] [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)] bg-[linear-gradient(rgba(156,163,175,0.5)_1px,transparent_1px),linear-gradient(to_right,rgba(156,163,175,0.5)_1px,transparent_1px)] dark:bg-[linear-gradient(rgba(55,65,81,0.5)_1px,transparent_1px),linear-gradient(to_right,rgba(55,65,81,0.5)_1px,transparent_1px)] bg-[background-size:4rem_4rem] bg-transparent opacity-10"
                             ></div>
                             <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center items-center">
-                                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
+                                <div className="animate-pulse duration-[3000ms] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
                                 <motion.div
                                     animate={{ y: [0, -10, 0], scale: [1, 1.05, 1] }}
                                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
