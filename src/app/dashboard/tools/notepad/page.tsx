@@ -212,8 +212,8 @@ export default function NotepadPage() {
                         className="h-full w-full border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
                     />
                 </CardContent>
-                <CardFooter className="p-3 bg-muted/50 border-t flex-wrap items-center justify-between gap-4">
-                     <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                <CardFooter className="p-3 bg-muted/50 border-t flex flex-col md:flex-row items-center justify-between gap-4">
+                     <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap justify-center">
                         <span>Words: {wordCount}</span>
                         <span>Chars: {charCount}</span>
                         <span>Lines: {lineCount}</span>
@@ -224,7 +224,7 @@ export default function NotepadPage() {
                            {saveStatus === 'saved' && <><Check className="h-3 w-3 text-green-500"/> Saved</>}
                         </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap justify-center">
                          <Button variant="outline" size="sm" onClick={() => setIsReplaceOpen(true)}><Replace className="mr-2"/> Find & Replace</Button>
 
                         <DropdownMenu>
