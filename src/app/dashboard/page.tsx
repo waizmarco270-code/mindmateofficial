@@ -271,7 +271,7 @@ export default function DashboardPage() {
                             onClick={() => setIsFeatureShowcaseOpen(true)}
                         >
                              <div className="absolute inset-0 w-full h-full overflow-hidden [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]">
-                                <div className="absolute inset-0 bg-grid-slate-800 animate-shimmer [background-size:4rem_4rem]"></div>
+                                <div className="absolute inset-0 bg-grid-slate-800 animate-pulse [background-size:4rem_4rem]"></div>
                             </div>
                             <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center items-center">
                                 <div className="animate-pulse duration-[3000ms] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
@@ -318,7 +318,7 @@ export default function DashboardPage() {
         </SignedIn>
 
         
-        <div className="order-last">
+        <div className="order-first">
              <SignedIn>
                 <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
                     <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
