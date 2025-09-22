@@ -208,9 +208,9 @@ export default function DashboardPage() {
       </SignedIn>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2 space-y-6">
-                <Card className="relative group">
+       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+                 <Card className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                     <div className="relative rounded-lg bg-background">
                         <CardHeader>
@@ -229,11 +229,10 @@ export default function DashboardPage() {
                     </div>
                 </Card>
             </div>
-
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-1 md:col-span-1">
-                <Dialog>
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-6">
+                 <Dialog>
                     <DialogTrigger asChild>
-                        <Card className="cursor-pointer relative text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center bg-gradient-to-br from-purple-500 to-indigo-600">
+                         <Card className="cursor-pointer relative text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center bg-gradient-to-br from-purple-500 to-indigo-600">
                            <div
                                 className="absolute inset-0 opacity-20"
                                 style={{
