@@ -90,39 +90,40 @@ const CATEGORY_ICONS: Record<UnitCategory, React.ElementType> = {
 function ConverterInterface({ category }: { category: UnitCategory }) {
     const units = UNITS[category];
     const [fromUnit, setFromUnit] = useState(units[0].id);
-    const [toUnit, setToUnit] = useState(units[1].id);
     const [fromValue, setFromValue] = useState('1');
 
-    const convertedValue = useMemo(() => {
+    const conversionResults = useMemo(() => {
         const from = units.find(u => u.id === fromUnit);
-        const to = units.find(u => u.id === toUnit);
         const value = parseFloat(fromValue);
 
-        if (!from || !to || isNaN(value)) {
-            return '';
+        if (!from || isNaN(value)) {
+            return [];
         }
 
         const baseValue = from.toBase(value);
-        const finalValue = to.fromBase(baseValue);
-        
-        // Use more precision for smaller numbers
-        if (finalValue > 0 && finalValue < 0.01) {
-            return finalValue.toPrecision(4);
-        }
-        return finalValue.toFixed(2).replace(/\.00$/, ''); // Remove trailing .00
 
-    }, [fromValue, fromUnit, toUnit, units]);
+        return units
+            .filter(u => u.id !== fromUnit)
+            .map(toUnit => {
+                const finalValue = toUnit.fromBase(baseValue);
+                 // Use more precision for smaller numbers
+                const displayValue = (finalValue > 0 && finalValue < 0.001) 
+                    ? finalValue.toPrecision(3) 
+                    : finalValue.toFixed(4).replace(/\.0000$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
+
+                return {
+                    id: toUnit.id,
+                    label: toUnit.label,
+                    value: displayValue,
+                };
+            });
+
+    }, [fromValue, fromUnit, units]);
     
-    const handleSwap = () => {
-        const currentFrom = fromUnit;
-        setFromUnit(toUnit);
-        setToUnit(currentFrom);
-    };
-
     return (
         <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                <div className="md:col-span-2 space-y-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
                     <Select value={fromUnit} onValueChange={setFromUnit}>
                         <SelectTrigger className="h-12 text-base"><SelectValue /></SelectTrigger>
                         <SelectContent>{units.map(u => <SelectItem key={u.id} value={u.id}>{u.label}</SelectItem>)}</SelectContent>
@@ -134,30 +135,25 @@ function ConverterInterface({ category }: { category: UnitCategory }) {
                         className="h-16 text-4xl font-bold tracking-tighter"
                     />
                 </div>
-
-                <div className="flex justify-center">
-                     <Button variant="ghost" size="icon" onClick={handleSwap} className="h-12 w-12 hover:bg-primary/10 group">
-                        <ArrowRightLeft className="h-6 w-6 text-primary group-hover:rotate-180 transition-transform duration-300"/>
-                    </Button>
-                </div>
-                
-                <div className="md:col-span-2 space-y-2">
-                    <Select value={toUnit} onValueChange={setToUnit}>
-                        <SelectTrigger className="h-12 text-base"><SelectValue /></SelectTrigger>
-                        <SelectContent>{units.map(u => <SelectItem key={u.id} value={u.id}>{u.label}</SelectItem>)}</SelectContent>
-                    </Select>
-                     <AnimatePresence mode="wait">
-                        <motion.div
-                            key={convertedValue}
-                            initial={{ y: 10, opacity: 0 }}
-                            animate={{ y: 0, opacity: 1 }}
-                            exit={{ y: -10, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="h-16 text-4xl font-bold tracking-tighter bg-muted rounded-md flex items-center px-4"
-                        >
-                            {convertedValue}
-                        </motion.div>
-                    </AnimatePresence>
+                <div className="md:col-span-1 space-y-2">
+                    <p className="font-semibold text-sm text-muted-foreground mb-3">Converted Values</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+                        <AnimatePresence>
+                        {conversionResults.map((result, index) => (
+                             <motion.div
+                                key={result.id}
+                                layout
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ duration: 0.3, delay: index * 0.05 }}
+                                className="bg-muted p-3 rounded-lg"
+                             >
+                                <p className="text-xs text-muted-foreground">{result.label}</p>
+                                <p className="text-lg font-bold text-primary truncate">{result.value}</p>
+                            </motion.div>
+                        ))}
+                        </AnimatePresence>
+                    </div>
                 </div>
             </div>
         </div>
@@ -193,5 +189,3 @@ export function UnitConverter() {
     </Card>
   );
 }
-
-    
