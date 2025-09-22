@@ -14,19 +14,27 @@ import { ScrollArea } from '../ui/scroll-area';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
+import { useUnreadMessages } from '@/hooks/use-unread';
 
 
 function AnnouncementInbox() {
     const { announcements } = useAnnouncements();
+    const { hasUnreadAnnouncements, markAnnouncementsAsRead } = useUnreadMessages();
     
     const latestAnnouncement = announcements.length > 0 ? announcements[0] : null;
     const previousAnnouncements = announcements.slice(1, 10);
 
     return (
-        <Popover>
+        <Popover onOpenChange={(open) => { if(open) markAnnouncementsAsRead() }}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="relative">
                     <Mail className="h-6 w-6" />
+                    {hasUnreadAnnouncements && (
+                         <span className="absolute top-2 right-2 flex h-3 w-3">
+                            <span className="animate-red-pulse absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                        </span>
+                    )}
                     <span className="sr-only">Announcements</span>
                 </Button>
             </PopoverTrigger>

@@ -148,6 +148,15 @@
       100% { filter: drop-shadow(0 0 2px #f59e0b); }
   }
 
+  @keyframes red-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+  }
+
   @keyframes tilt {
     0%, 50%, 100% {
       transform: rotate(0deg);
@@ -198,7 +207,7 @@
 
 @layer components {
   .glass-card {
-    @apply bg-card backdrop-blur-xl border;
+    @apply bg-card/50 backdrop-blur-lg border;
   }
   
   .elite-badge {
@@ -367,7 +376,7 @@
 
   .synthwave-sunset-bg {
     background-color: #0c0a09;
-    background-image:
+    background-image: 
       linear-gradient(to top, rgba(253, 98, 255, 0.4) 1px, transparent 1px),
       linear-gradient(to right, rgba(253, 98, 255, 0.4) 1px, transparent 1px);
     background-size: 4rem 4rem;
@@ -428,9 +437,11 @@
       animation: gold-shine 3s ease-in-out infinite;
   }
 
+  .animate-red-pulse {
+      animation: red-pulse 1.5s infinite;
+  }
+
   .text-shadow-glow {
     text-shadow: 0 0 8px currentColor;
   }
 }
-
-    

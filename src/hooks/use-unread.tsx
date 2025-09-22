@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
@@ -5,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { useLocalStorage } from './use-local-storage';
+import { useAnnouncements } from './use-admin';
 
 // Private chat interfaces
 interface Chat {
@@ -28,6 +30,7 @@ interface GlobalChat {
 interface LastReadTimestamps {
     [chatId: string]: number; // Store timestamp as number for private chats
     global_chat?: number; // Store timestamp for the global chat
+    announcements_inbox?: number; // For announcements
 }
 
 interface UnreadMessagesContextType {
@@ -37,6 +40,8 @@ interface UnreadMessagesContextType {
   markAsRead: (friendId: string) => void;
   hasGlobalUnread: boolean;
   markGlobalAsRead: () => void;
+  hasUnreadAnnouncements: boolean;
+  markAnnouncementsAsRead: () => void;
 }
 
 const UnreadMessagesContext = createContext<UnreadMessagesContextType | undefined>(undefined);
@@ -47,6 +52,7 @@ const getChatId = (uid1: string, uid2: string) => {
 
 export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
+  const { announcements, loading: announcementsLoading } = useAnnouncements();
   const [chats, setChats] = useState<Chat[]>([]);
   const [globalChat, setGlobalChat] = useState<GlobalChat>({ lastMessage: null });
   const [lastReadTimestamps, setLastReadTimestamps] = useLocalStorage<LastReadTimestamps>('lastReadTimestamps', {});
@@ -127,6 +133,13 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
 
   }, [globalChat, user, lastReadTimestamps]);
 
+  const hasUnreadAnnouncements = useMemo(() => {
+      if (announcementsLoading || announcements.length === 0) return false;
+      const latestAnnouncementTime = announcements[0].createdAt.getTime();
+      const lastInboxCheckTime = lastReadTimestamps['announcements_inbox'] || 0;
+      return latestAnnouncementTime > lastInboxCheckTime;
+  }, [announcements, announcementsLoading, lastReadTimestamps]);
+
 
   const markAsRead = useCallback((friendId: string) => {
     if (!user) return;
@@ -144,6 +157,13 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
       }));
   }, [setLastReadTimestamps]);
 
+  const markAnnouncementsAsRead = useCallback(() => {
+    setLastReadTimestamps(prev => ({
+        ...prev,
+        announcements_inbox: Date.now()
+    }));
+  }, [setLastReadTimestamps]);
+
   const hasUnreadFrom = useCallback((friendId: string) => {
        if (!user) return false;
        const chatId = getChatId(user.id, friendId);
@@ -158,6 +178,8 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
     markAsRead,
     hasGlobalUnread,
     markGlobalAsRead,
+    hasUnreadAnnouncements,
+    markAnnouncementsAsRead,
   };
 
   return (
