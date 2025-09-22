@@ -192,7 +192,7 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                      </>
                 )}
             </Carousel>
-            <p className="text-center text-xs text-muted-foreground mt-2 sm:hidden">
+             <p className="text-center text-xs text-muted-foreground mt-2 sm:hidden">
                 &larr; Scroll for more &rarr;
             </p>
         </div>
@@ -253,69 +253,49 @@ export default function DashboardPage() {
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
       </div>
 
-      <SignedIn>
-        <ShowcaseView showcases={featureShowcases} />
-        <GlobalGiftCard />
-        {isSurpriseRevealed ? (
-          <DailySurpriseCard />
-        ) : (
-           <Card 
-            className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-green-400/20 via-teal-500/20 to-emerald-600/20 border-green-500/20 hover:border-green-500/40 transition-all duration-300"
-            onClick={() => setIsSurpriseRevealed(true)}
-          >
-            <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]"></div>
-            <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center">
-                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-green-500/20 rounded-full blur-3xl"></div>
-                <div className="relative flex flex-col items-center">
-                    <motion.div
-                        animate={{ y: [0, -10, 0], scale: [1, 1.1, 1] }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-                    >
-                        <Gift className="h-10 w-10 text-green-400 [filter:drop-shadow(0_0_8px_currentColor)]"/>
-                    </motion.div>
-                  <h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3>
-                  <p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p>
-                </div>
-            </CardContent>
-          </Card>
-        )}
-      </SignedIn>
-
-
-       <div className="space-y-6">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-900 to-indigo-900 border-indigo-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
-                  <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                  <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
-                    <div className="p-3 sm:p-4 rounded-full bg-indigo-500/10 border-2 border-indigo-500/30">
-                      <Vote className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-400" />
-                    </div>
-                    <div className="flex-1 text-left">
-                      <CardTitle className="text-xl sm:text-2xl font-bold text-white">Community Poll</CardTitle>
-                      <CardDescription className="text-slate-400 mt-1 text-sm sm:text-base">Make your voice heard and shape the future of MindMate.</CardDescription>
-                    </div>
-                    <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
-                      <span className="hidden sm:inline">Vote Now</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              </DialogTrigger>
-              <CommunityPoll />
-            </Dialog>
-      </div>
-      
+       <div className="flex flex-col space-y-8">
         <SignedIn>
-            <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
-            <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
-            <CardContent className="p-4 sm:p-6 text-center relative z-10">
-                <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
-                <h3 className="text-lg font-semibold">Your Credits</h3>
-                <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
-            </CardContent>
-        </Card>
-    </SignedIn>
+            <ShowcaseView showcases={featureShowcases} />
+            <GlobalGiftCard />
+            {isSurpriseRevealed ? (
+            <DailySurpriseCard />
+            ) : (
+            <Card 
+                className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-green-400/20 via-teal-500/20 to-emerald-600/20 border-green-500/20 hover:border-green-500/40 transition-all duration-300"
+                onClick={() => setIsSurpriseRevealed(true)}
+            >
+                <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]"></div>
+                <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center">
+                    <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-green-500/20 rounded-full blur-3xl"></div>
+                    <div className="relative flex flex-col items-center">
+                        <motion.div
+                            animate={{ y: [0, -10, 0], scale: [1, 1.1, 1] }}
+                            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                            <Gift className="h-10 w-10 text-green-400 [filter:drop-shadow(0_0_8px_currentColor)]"/>
+                        </motion.div>
+                    <h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3>
+                    <p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p>
+                    </div>
+                </CardContent>
+            </Card>
+            )}
+
+            <CommunityPoll />
+        </SignedIn>
+
+        
+        <SignedIn>
+            <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center order-last">
+                <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
+                <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <CardContent className="p-4 sm:p-6 text-center relative z-10">
+                    <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
+                    <h3 className="text-lg font-semibold">Your Credits</h3>
+                    <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
+                </CardContent>
+            </Card>
+        </SignedIn>
 
        <div className="space-y-6">
             {isSpecialUser && (
@@ -539,6 +519,7 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </Link>
+        </div>
       </div>
     </div>
   );
