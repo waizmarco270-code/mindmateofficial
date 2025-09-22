@@ -13,19 +13,20 @@ interface TypingAnimationProps {
 export const TypingAnimation: React.FC<TypingAnimationProps> = ({
   text,
   className,
-  typingSpeed = 30, // Made it a bit faster
+  typingSpeed = 30,
 }) => {
   const [displayedText, setDisplayedText] = useState('');
-  const id = useId(); // Unique key for re-triggering animation
+  const id = useId(); 
 
   useEffect(() => {
-    setDisplayedText(''); // Reset on text change
+    setDisplayedText(''); 
     
     let i = 0;
     const intervalId = setInterval(() => {
-      setDisplayedText(prev => prev + text.charAt(i));
-      i++;
-      if (i >= text.length) {
+      if (i < text.length) {
+        setDisplayedText(prev => prev + text.charAt(i));
+        i++;
+      } else {
         clearInterval(intervalId);
       }
     }, typingSpeed);
