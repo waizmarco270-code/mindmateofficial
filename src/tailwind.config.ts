@@ -173,5 +173,3 @@ export default {
     }),
   ],
 } satisfies Config;
-
-    
