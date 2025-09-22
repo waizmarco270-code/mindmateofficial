@@ -145,52 +145,59 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
     };
     
      return (
-        <Carousel className="w-full" opts={{ loop: showcases.length > 1 }}>
-            <CarouselContent>
-                {showcases.map((showcase) => {
-                    const isLive = showcase.status === 'live';
-                    return (
-                        <CarouselItem key={showcase.id}>
-                            <Card className={cn("relative group overflow-hidden border-0", getTemplateClasses(showcase.template))}>
-                                 <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
-                                    {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
-                                </div>
-                                 <div className="relative z-10 p-6">
-                                    <CardContent className="relative z-10 p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-6 rounded-lg bg-black/20 border border-white/10">
-                                        <div className="flex-1">
-                                             <h2 className={cn("text-sm font-bold uppercase tracking-widest", isLive ? "text-green-400" : "text-red-400")}>
-                                                {isLive ? "New Feature" : "Coming Soon"}
-                                            </h2>
-                                             <CardTitle className="text-3xl lg:text-4xl font-bold mt-1 text-white">{showcase.title}</CardTitle>
-                                            <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
-                                                {showcase.description}
-                                            </CardDescription>
-                                             {isLive && showcase.link && (
-                                                <Button asChild className="mt-4 animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
-                                                    <Link href={showcase.link}>Go to Feature <ArrowRight className="ml-2 h-4 w-4"/></Link>
-                                                </Button>
-                                            )}
-                                        </div>
-                                         {!isLive && showcase.launchDate && (
-                                            <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10 w-full sm:w-auto mt-4 md:mt-0">
-                                                <p className="text-lg font-bold font-code text-cyan-300">LAUNCHING ON</p>
-                                                <p className="text-4xl font-bold font-serif text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMMM')}</p>
+        <div>
+            <Carousel className="w-full" opts={{ loop: showcases.length > 1 }}>
+                <CarouselContent>
+                    {showcases.map((showcase) => {
+                        const isLive = showcase.status === 'live';
+                        return (
+                            <CarouselItem key={showcase.id}>
+                                <Card className={cn("relative group overflow-hidden border-0", getTemplateClasses(showcase.template))}>
+                                     <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
+                                        {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
+                                    </div>
+                                     <div className="relative z-10 p-6">
+                                        <CardContent className="relative z-10 p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-6 rounded-lg bg-black/20 border border-white/10">
+                                            <div className="flex-1">
+                                                 <h2 className={cn("text-sm font-bold uppercase tracking-widest", isLive ? "text-green-400" : "text-red-400")}>
+                                                    {isLive ? "New Feature" : "Coming Soon"}
+                                                </h2>
+                                                 <CardTitle className="text-3xl lg:text-4xl font-bold mt-1 text-white">{showcase.title}</CardTitle>
+                                                <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
+                                                    {showcase.description}
+                                                </CardDescription>
+                                                 {isLive && showcase.link && (
+                                                    <Button asChild className="mt-4 animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
+                                                        <Link href={showcase.link}>Go to Feature <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                                                    </Button>
+                                                )}
                                             </div>
-                                         )}
-                                    </CardContent>
-                                </div>
-                            </Card>
-                        </CarouselItem>
-                    )
-                })}
-            </CarouselContent>
+                                             {!isLive && showcase.launchDate && (
+                                                <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10 w-full sm:w-auto mt-4 md:mt-0">
+                                                    <p className="text-lg font-bold font-code text-cyan-300">LAUNCHING ON</p>
+                                                    <p className="text-4xl font-bold font-serif text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMMM')}</p>
+                                                </div>
+                                             )}
+                                        </CardContent>
+                                    </div>
+                                </Card>
+                            </CarouselItem>
+                        )
+                    })}
+                </CarouselContent>
+                {showcases.length > 1 && (
+                     <>
+                        <CarouselPrevious className="left-2 hidden sm:flex" />
+                        <CarouselNext className="right-2 hidden sm:flex" />
+                     </>
+                )}
+            </Carousel>
             {showcases.length > 1 && (
-                 <>
-                    <CarouselPrevious className="left-2 hidden sm:flex" />
-                    <CarouselNext className="right-2 hidden sm:flex" />
-                 </>
+                <p className="text-center text-xs text-muted-foreground mt-2 sm:hidden">
+                    &larr; Scroll for more &rarr;
+                </p>
             )}
-        </Carousel>
+        </div>
     );
 }
 
