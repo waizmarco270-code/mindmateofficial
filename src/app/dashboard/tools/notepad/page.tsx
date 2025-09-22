@@ -5,10 +5,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { FileText, Save, Copy, Check, Download, Trash2 } from 'lucide-react';
+import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 export default function NotepadPage() {
@@ -62,6 +63,26 @@ export default function NotepadPage() {
         setNotes('');
         toast({ title: "Notepad cleared." });
     }
+    
+    const handleCaseChange = (caseType: 'upper' | 'lower' | 'title' | 'sentence') => {
+        let newNotes = '';
+        switch(caseType) {
+            case 'upper':
+                newNotes = notes.toUpperCase();
+                break;
+            case 'lower':
+                newNotes = notes.toLowerCase();
+                break;
+            case 'title':
+                newNotes = notes.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+                break;
+            case 'sentence':
+                newNotes = notes.toLowerCase().replace(/(^\s*\w|[.!?]\s*\w)/g, c => c.toUpperCase());
+                break;
+        }
+        setNotes(newNotes);
+        setSaveStatus('saving');
+    }
 
     return (
         <div className="space-y-8">
@@ -91,6 +112,18 @@ export default function NotepadPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm"><CaseUpper className="mr-2"/> Convert Case</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => handleCaseChange('upper')}><CaseUpper className="mr-2"/> UPPERCASE</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCaseChange('lower')}><CaseLower className="mr-2"/> lowercase</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCaseChange('title')}><Heading className="mr-2"/> Title Case</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleCaseChange('sentence')}><Pilcrow className="mr-2"/> Sentence case</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button variant="destructive" size="sm" disabled={!notes}><Trash2 className="mr-2"/> Clear</Button>
