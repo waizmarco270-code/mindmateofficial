@@ -245,7 +245,11 @@ interface AppDataContextType {
     loading: boolean;
     
     activePoll: Poll | null;
+    allPolls: Poll[];
+    addPoll: (pollData: Omit<Poll, 'id' | 'createdAt' | 'isActive' | 'results'>) => Promise<void>;
     updatePoll: (id: string, data: Partial<Poll>) => Promise<void>;
+    deletePoll: (id: string) => Promise<void>;
+    setActivePoll: (id: string) => Promise<void>;
     submitPollVote: (pollId: string, option: string) => Promise<void>;
     submitPollComment: (pollId: string, comment: string) => Promise<void>;
 
@@ -293,7 +297,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [resourceSections, setResourceSections] = useState<ResourceSection[]>([]);
     const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
-    const [activePoll, setActivePoll] = useState<Poll | null>(null);
+    const [allPolls, setAllPolls] = useState<Poll[]>([]);
     const [appTheme, setAppTheme] = useState<AppTheme | null>(null);
     const [appSettings, setAppSettings] = useState<AppSettings | null>({ marcoAiLaunchStatus: 'countdown' });
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
@@ -302,6 +306,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(true);
     
     const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
+    const activePoll = useMemo(() => allPolls.find(p => p.isActive) || null, [allPolls]);
 
     // EFFECT: Determine if the logged-in user is an admin or super admin
     useEffect(() => {
@@ -468,7 +473,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const resourcesQuery = query(collection(db, 'resources'), orderBy('createdAt', 'desc'));
         const resourceSectionsQuery = query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc'));
         const dailySurprisesQuery = query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc'));
-        const pollsQuery = query(collection(db, 'polls'), where('isActive', '==', true), limit(1));
+        const pollsQuery = query(collection(db, 'polls'), orderBy('createdAt', 'desc'));
         const appConfigRef = doc(db, 'appConfig', 'settings');
         const giftsQuery = query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc'));
         const ticketsQuery = query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'));
@@ -480,17 +485,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubSections = onSnapshot(resourceSectionsQuery, (snapshot) => setResourceSections(processSnapshot<ResourceSection>(snapshot)));
         const unsubDailySurprises = onSnapshot(dailySurprisesQuery, (snapshot) => setDailySurprises(processSnapshot<DailySurprise>(snapshot)));
         const unsubTickets = onSnapshot(ticketsQuery, (snapshot) => setSupportTickets(processTicketSnapshot(snapshot)));
-        const unsubPolls = onSnapshot(pollsQuery, (snapshot) => {
-            if (!snapshot.empty) {
-                const pollDoc = snapshot.docs[0];
-                const data = pollDoc.data();
-                const createdAt = data.createdAt;
-                const date = (createdAt?.toDate) ? createdAt.toDate() : (createdAt ? new Date(createdAt) : new Date());
-                setActivePoll({ id: pollDoc.id, ...data, createdAt: date } as Poll);
-            } else {
-                setActivePoll(null);
-            }
-        });
+        const unsubPolls = onSnapshot(pollsQuery, (snapshot) => setAllPolls(processSnapshot<Poll>(snapshot)));
         const unsubAppSettings = onSnapshot(appConfigRef, (doc) => {
             if (doc.exists()) {
                 setAppSettings(doc.data() as AppSettings);
@@ -894,6 +889,33 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await deleteDoc(doc(db, 'supportTickets', id));
     };
 
+    const addPoll = useCallback(async (pollData: Omit<Poll, 'id' | 'createdAt' | 'isActive' | 'results'>) => {
+        await addDoc(collection(db, 'polls'), {
+            ...pollData,
+            isActive: false,
+            results: pollData.options.reduce((acc, option) => ({ ...acc, [option]: 0 }), {}),
+            createdAt: serverTimestamp(),
+        });
+    }, []);
+
+    const deletePoll = useCallback(async (pollId: string) => {
+        await deleteDoc(doc(db, 'polls', pollId));
+    }, []);
+    
+    const setActivePoll = useCallback(async (pollId: string) => {
+        const batch = writeBatch(db);
+        const pollsSnapshot = await getDocs(query(collection(db, 'polls'), where('isActive', '==', true)));
+        
+        pollsSnapshot.forEach(pollDoc => {
+            batch.update(pollDoc.ref, { isActive: false });
+        });
+        
+        const newActivePollRef = doc(db, 'polls', pollId);
+        batch.update(newActivePollRef, { isActive: true });
+        
+        await batch.commit();
+    }, []);
+
     const updatePoll = async (id: string, data: Partial<Poll>) => {
         const pollDocRef = doc(db, 'polls', id);
         const currentPollSnap = await getDoc(pollDocRef);
@@ -1159,6 +1181,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         deleteTicket,
         loading,
         activePoll,
+        allPolls,
+        addPoll,
+        deletePoll,
+        setActivePoll,
         updatePoll,
         submitPollVote,
         submitPollComment,
@@ -1236,13 +1262,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
-
-  
-
-
-
-
 
     

@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -73,7 +73,7 @@ const availableRoutes = {
 
 const QuizQuestionSchema = z.object({
   text: z.string().min(1, "Question text cannot be empty."),
-  options: z.array(z.string().min(1)).min(2, "Must have at least 2 options.").max(4, "Cannot have more than 4 options."),
+  options: z.array(z.string().min(1)).min(2, "Cannot have more than 4 options.").max(4, "Cannot have more than 4 options."),
   correctAnswer: z.string().min(1, "Correct answer cannot be empty."),
 }).refine(data => data.options.includes(data.correctAnswer), {
   message: "Correct answer must be one of the options.",
@@ -100,7 +100,7 @@ export default function AdminPanelPage() {
     isSuperAdmin,
     users,
     announcements, updateAnnouncement, 
-    activePoll, updatePoll,
+    allPolls, addPoll, deletePoll, setActivePoll,
     resources: allResources, addResource, updateResource, deleteResource,
     resourceSections, addResourceSection, updateResourceSection, deleteResourceSection,
     dailySurprises, addDailySurprise, deleteDailySurprise,
@@ -115,10 +115,10 @@ export default function AdminPanelPage() {
   const [announcementDesc, setAnnouncementDesc] = useState('');
   
   // State for Poll
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptions, setPollOptions] = useState(['', '']);
-  const [pollCommentsEnabled, setPollCommentsEnabled] = useState(false);
-  const [isSavingPoll, setIsSavingPoll] = useState(false);
+  const [newPollQuestion, setNewPollQuestion] = useState('');
+  const [newPollOptions, setNewPollOptions] = useState(['', '']);
+  const [newPollCommentsEnabled, setNewPollCommentsEnabled] = useState(false);
+  const [isCreatingPoll, setIsCreatingPoll] = useState(false);
 
   // State for Daily Surprise
   const [surpriseType, setSurpriseType] = useState<'quote' | 'fact' | 'meme' | 'quiz' | 'new-feature'>('fact');
@@ -154,14 +154,6 @@ export default function AdminPanelPage() {
           setAnnouncementDesc(latestAnnouncement.description);
       }
   }, [latestAnnouncement]);
-  
-  useEffect(() => {
-      if(activePoll) {
-          setPollQuestion(activePoll.question);
-          setPollOptions(activePoll.options);
-          setPollCommentsEnabled(activePoll.commentsEnabled || false);
-      }
-  }, [activePoll]);
 
   // State for Quiz
   const [quizTitle, setQuizTitle] = useState('');
@@ -182,26 +174,29 @@ export default function AdminPanelPage() {
     }
   };
   
-  const handleSavePoll = async () => {
-      if (!activePoll) return;
-      if (!pollQuestion.trim() || pollOptions.some(o => !o.trim())) {
-        toast({ variant: 'destructive', title: "Validation Error", description: "Please fill in the poll question and all options." });
-        return;
-      }
-      setIsSavingPoll(true);
-      try {
-        await updatePoll(activePoll.id, { 
-            question: pollQuestion, 
-            options: pollOptions,
-            commentsEnabled: pollCommentsEnabled
-        });
-        toast({ title: "Poll Updated!", description: "The active poll has been saved." });
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: "Error Saving Poll", description: error.message });
-      } finally {
-        setIsSavingPoll(false);
-      }
-  };
+    const handleAddPoll = async () => {
+        if (!newPollQuestion.trim() || newPollOptions.some(o => !o.trim())) {
+            toast({ variant: 'destructive', title: "Validation Error", description: "Please fill in the poll question and all options." });
+            return;
+        }
+        setIsCreatingPoll(true);
+        try {
+            await addPoll({
+                question: newPollQuestion,
+                options: newPollOptions,
+                commentsEnabled: newPollCommentsEnabled,
+            });
+            toast({ title: "Poll Created!", description: "The new poll is now available to be activated." });
+            setNewPollQuestion('');
+            setNewPollOptions(['', '']);
+            setNewPollCommentsEnabled(false);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Error Creating Poll", description: error.message });
+        } finally {
+            setIsCreatingPoll(false);
+        }
+    };
+
 
     const handleResourceFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -394,19 +389,19 @@ export default function AdminPanelPage() {
   }
 
   const handlePollOptionChange = (index: number, value: string) => {
-    const newOptions = [...pollOptions];
+    const newOptions = [...newPollOptions];
     newOptions[index] = value;
-    setPollOptions(newOptions);
+    setNewPollOptions(newOptions);
   };
 
   const addPollOption = () => {
-    setPollOptions([...pollOptions, '']);
+    setNewPollOptions([...newPollOptions, '']);
   };
 
   const removePollOption = (index: number) => {
-    if (pollOptions.length <= 2) return;
-    const newOptions = pollOptions.filter((_, i) => i !== index);
-    setPollOptions(newOptions);
+    if (newPollOptions.length <= 2) return;
+    const newOptions = newPollOptions.filter((_, i) => i !== index);
+    setNewPollOptions(newOptions);
   };
   
   const handleDeleteQuiz = async (quizId: string) => {
@@ -560,24 +555,79 @@ export default function AdminPanelPage() {
                       </form>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader><CardTitle>Edit Active Community Poll</CardTitle><CardDescription>Update the current poll. This will reset all votes.</CardDescription></CardHeader>
+                   <Card>
+                    <CardHeader><CardTitle>Create New Community Poll</CardTitle><CardDescription>Create a new poll. You can activate it from the list below.</CardDescription></CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="space-y-2"><Label htmlFor="poll-question">Poll Question</Label><Input id="poll-question" value={pollQuestion} onChange={e => setPollQuestion(e.target.value)} placeholder="e.g. What feature should we build next?" /></div>
+                      <div className="space-y-2"><Label htmlFor="poll-question">Poll Question</Label><Input id="poll-question" value={newPollQuestion} onChange={e => setNewPollQuestion(e.target.value)} placeholder="e.g. What feature should we build next?" /></div>
                       <div className="space-y-2"><Label>Options</Label>
-                        {pollOptions.map((option, index) => (<div key={index} className="flex items-center gap-2"><Input value={option} onChange={e => handlePollOptionChange(index, e.target.value)} placeholder={`Option ${index + 1}`} />{pollOptions.length > 2 && (<Button variant="ghost" size="icon" onClick={() => removePollOption(index)}><MinusCircle className="h-4 w-4 text-destructive" /></Button>)}</div>))}
+                        {newPollOptions.map((option, index) => (<div key={index} className="flex items-center gap-2"><Input value={option} onChange={e => handlePollOptionChange(index, e.target.value)} placeholder={`Option ${index + 1}`} />{newPollOptions.length > 2 && (<Button variant="ghost" size="icon" onClick={() => removePollOption(index)}><MinusCircle className="h-4 w-4 text-destructive" /></Button>)}</div>))}
                       </div>
                        <div className="flex items-center justify-between">
                          <div className="flex items-center space-x-2">
-                           <Switch id="poll-comments" checked={pollCommentsEnabled} onCheckedChange={setPollCommentsEnabled} />
+                           <Switch id="poll-comments" checked={newPollCommentsEnabled} onCheckedChange={setNewPollCommentsEnabled} />
                            <Label htmlFor="poll-comments">Enable Comments</Label>
                          </div>
                          <Button variant="outline" onClick={addPollOption}><PlusCircle className="mr-2 h-4 w-4" /> Add Option</Button>
                        </div>
-                      <div className="flex justify-end"><Button onClick={handleSavePoll} disabled={isSavingPoll}><Vote className="mr-2 h-4 w-4" /> {isSavingPoll ? 'Saving...' : 'Save Poll'}</Button></div>
+                      <div className="flex justify-end"><Button onClick={handleAddPoll} disabled={isCreatingPoll}><Vote className="mr-2 h-4 w-4" /> {isCreatingPoll ? 'Saving...' : 'Save New Poll'}</Button></div>
                     </CardContent>
                   </Card>
                 </div>
+                 <div className="grid gap-8 lg:grid-cols-1">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Manage Polls</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Question</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead>Total Votes</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {allPolls.map(poll => (
+                                        <TableRow key={poll.id}>
+                                            <TableCell className="font-medium max-w-sm truncate">{poll.question}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={poll.isActive ? 'default' : 'secondary'}>
+                                                    {poll.isActive ? 'Active' : 'Inactive'}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>
+                                                {Object.values(poll.results).reduce((sum, count) => sum + count, 0)}
+                                            </TableCell>
+                                            <TableCell className="text-right space-x-2">
+                                                {!poll.isActive && (
+                                                    <Button variant="outline" size="sm" onClick={() => setActivePoll(poll.id)}>
+                                                        <Star className="mr-2 h-4 w-4"/>Set Active
+                                                    </Button>
+                                                )}
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Delete this poll?</AlertDialogTitle>
+                                                            <AlertDialogDescription>This will permanently delete the poll and all its associated votes. This cannot be undone.</AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={() => deletePoll(poll.id)}>Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {allPolls.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center">No polls created yet.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                 </div>
                  <div className="grid gap-8 lg:grid-cols-2">
                     <Card>
                       <CardHeader><CardTitle>Add Daily Surprise</CardTitle></CardHeader>
@@ -1031,3 +1081,5 @@ export default function AdminPanelPage() {
     </div>
   );
 }
+
+    
