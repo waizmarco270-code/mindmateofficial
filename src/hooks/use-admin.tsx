@@ -164,6 +164,8 @@ export interface FeatureShowcase {
     description: string;
     launchDate?: string; // Optional launch date as ISO string
     template: ShowcaseTemplate;
+    status: 'upcoming' | 'live';
+    link?: string;
     createdAt: Date;
 }
 
@@ -261,6 +263,7 @@ interface AppDataContextType {
 
     featureShowcases: FeatureShowcase[];
     addFeatureShowcase: (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => Promise<void>;
+    updateFeatureShowcase: (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => Promise<void>;
     deleteFeatureShowcase: (id: string) => Promise<void>;
 }
 
@@ -1082,6 +1085,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await addDoc(collection(db, 'featureShowcases'), { ...showcase, createdAt: serverTimestamp() });
     };
 
+    const updateFeatureShowcase = async (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => {
+        await updateDoc(doc(db, 'featureShowcases', id), data);
+    }
+
     const deleteFeatureShowcase = async (id: string) => {
         await deleteDoc(doc(db, 'featureShowcases', id));
     };
@@ -1164,6 +1171,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         unlockFeature,
         featureShowcases,
         addFeatureShowcase,
+        updateFeatureShowcase,
         deleteFeatureShowcase,
     };
 
@@ -1226,4 +1234,5 @@ export const useDailySurprises = () => {
     
 
   
+
 

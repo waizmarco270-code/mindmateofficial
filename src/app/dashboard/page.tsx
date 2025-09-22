@@ -3,7 +3,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -118,48 +118,57 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
 
     const getTemplateClasses = (template: FeatureShowcase['template']) => {
         switch (template) {
-            case 'cosmic-blue':
-                return 'blue-nebula-bg';
-            case 'fiery-red':
-                return 'red-nebula-bg';
-            case 'golden-legend':
-                return 'golden-legend-bg';
-            case 'professional-dark':
-                return 'professional-dark-bg';
-            default:
-                return 'bg-slate-900';
+            case 'cosmic-blue': return 'blue-nebula-bg';
+            case 'fiery-red': return 'red-nebula-bg';
+            case 'golden-legend': return 'golden-legend-bg';
+            case 'professional-dark': return 'professional-dark-bg';
+            case 'emerald-dream': return 'emerald-dream-bg';
+            case 'amethyst-haze': return 'amethyst-haze-bg';
+            case 'solar-flare': return 'solar-flare-bg';
+            case 'midnight-abyss': return 'midnight-abyss-bg';
+            default: return 'bg-slate-900';
         }
     };
     
      return (
         <Carousel className="w-full" opts={{ loop: showcases.length > 1 }}>
             <CarouselContent>
-                {showcases.map((showcase) => (
-                    <CarouselItem key={showcase.id}>
-                        <Card className={cn("relative group overflow-hidden border-0", getTemplateClasses(showcase.template))}>
-                             <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
-                                {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
-                            </div>
-                             <div className="relative z-10 p-6">
-                                <CardContent className="relative z-10 p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-6 rounded-lg bg-black/20 border border-white/10">
-                                    <div className="flex-1">
-                                         <h2 className="text-sm font-bold uppercase tracking-widest text-red-400">COMING SOON</h2>
-                                         <CardTitle className="text-3xl lg:text-4xl font-bold mt-1 text-white">{showcase.title}</CardTitle>
-                                        <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
-                                            {showcase.description}
-                                        </CardDescription>
-                                    </div>
-                                     {showcase.launchDate && (
-                                        <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10 w-full sm:w-auto mt-4 md:mt-0">
-                                            <p className="text-lg font-bold font-code text-cyan-300">LAUNCHING ON</p>
-                                            <p className="text-4xl font-bold font-serif text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMMM')}</p>
+                {showcases.map((showcase) => {
+                    const isLive = showcase.status === 'live';
+                    return (
+                        <CarouselItem key={showcase.id}>
+                            <Card className={cn("relative group overflow-hidden border-0", getTemplateClasses(showcase.template))}>
+                                 <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
+                                    {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
+                                </div>
+                                 <div className="relative z-10 p-6">
+                                    <CardContent className="relative z-10 p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-6 rounded-lg bg-black/20 border border-white/10">
+                                        <div className="flex-1">
+                                             <h2 className={cn("text-sm font-bold uppercase tracking-widest", isLive ? "text-green-400" : "text-red-400")}>
+                                                {isLive ? "New Feature" : "Coming Soon"}
+                                            </h2>
+                                             <CardTitle className="text-3xl lg:text-4xl font-bold mt-1 text-white">{showcase.title}</CardTitle>
+                                            <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
+                                                {showcase.description}
+                                            </CardDescription>
+                                             {isLive && showcase.link && (
+                                                <Button asChild className="mt-4 animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
+                                                    <Link href={showcase.link}>Go to Feature <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                                                </Button>
+                                            )}
                                         </div>
-                                     )}
-                                </CardContent>
-                            </div>
-                        </Card>
-                    </CarouselItem>
-                ))}
+                                         {!isLive && showcase.launchDate && (
+                                            <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10 w-full sm:w-auto mt-4 md:mt-0">
+                                                <p className="text-lg font-bold font-code text-cyan-300">LAUNCHING ON</p>
+                                                <p className="text-4xl font-bold font-serif text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMMM')}</p>
+                                            </div>
+                                         )}
+                                    </CardContent>
+                                </div>
+                            </Card>
+                        </CarouselItem>
+                    )
+                })}
             </CarouselContent>
             {showcases.length > 1 && (
                  <>
@@ -538,4 +547,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 

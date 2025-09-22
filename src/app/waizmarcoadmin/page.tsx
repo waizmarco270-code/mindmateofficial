@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -26,6 +26,7 @@ import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { Slider } from '@/components/ui/slider';
 import { lockableFeatures } from '@/lib/features';
 import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogContent } from '@/components/ui/dialog';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -53,6 +54,7 @@ export default function SuperAdminPanelPage() {
     generateDevAiAccessToken,
     featureShowcases,
     addFeatureShowcase,
+    updateFeatureShowcase,
     deleteFeatureShowcase,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
@@ -85,6 +87,10 @@ export default function SuperAdminPanelPage() {
   const [showcaseDesc, setShowcaseDesc] = useState('');
   const [showcaseDate, setShowcaseDate] = useState('');
   const [showcaseTemplate, setShowcaseTemplate] = useState<ShowcaseTemplate>('cosmic-blue');
+  const [isEditShowcaseOpen, setIsEditShowcaseOpen] = useState(false);
+  const [editingShowcase, setEditingShowcase] = useState<FeatureShowcase | null>(null);
+  const [showcaseStatus, setShowcaseStatus] = useState<FeatureShowcase['status']>('upcoming');
+  const [showcaseLink, setShowcaseLink] = useState('');
 
 
   // State for Feature Locks
@@ -301,27 +307,69 @@ export default function SuperAdminPanelPage() {
     }
   };
   
-  const handleAddShowcase = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSaveShowcase = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       if (!showcaseTitle.trim() || !showcaseDesc.trim()) {
           toast({ variant: 'destructive', title: 'Title and Description are required.' });
           return;
       }
+      
       try {
-          await addFeatureShowcase({
-              title: showcaseTitle,
-              description: showcaseDesc,
-              launchDate: showcaseDate || undefined,
-              template: showcaseTemplate
-          });
-          toast({ title: "Feature Showcase Added!" });
-          setShowcaseTitle('');
-          setShowcaseDesc('');
-          setShowcaseDate('');
-          setShowcaseTemplate('cosmic-blue');
+        if (editingShowcase) {
+            // Update existing
+            await updateFeatureShowcase(editingShowcase.id, {
+                title: showcaseTitle,
+                description: showcaseDesc,
+                launchDate: showcaseDate || undefined,
+                template: showcaseTemplate,
+                status: showcaseStatus,
+                link: showcaseLink || undefined,
+            });
+            toast({ title: "Feature Showcase Updated!" });
+        } else {
+            // Add new
+            await addFeatureShowcase({
+                title: showcaseTitle,
+                description: showcaseDesc,
+                launchDate: showcaseDate || undefined,
+                template: showcaseTemplate,
+                status: showcaseStatus,
+                link: showcaseLink || undefined,
+            });
+            toast({ title: "Feature Showcase Added!" });
+        }
+        
+        closeShowcaseDialog();
+
       } catch (error: any) {
           toast({ variant: 'destructive', title: 'Error', description: error.message });
       }
+  }
+
+  const openShowcaseDialog = (showcase: FeatureShowcase | null) => {
+    if (showcase) {
+        setEditingShowcase(showcase);
+        setShowcaseTitle(showcase.title);
+        setShowcaseDesc(showcase.description);
+        setShowcaseDate(showcase.launchDate ? showcase.launchDate.split('T')[0] : '');
+        setShowcaseTemplate(showcase.template);
+        setShowcaseStatus(showcase.status);
+        setShowcaseLink(showcase.link || '');
+    } else {
+        setEditingShowcase(null);
+        setShowcaseTitle('');
+        setShowcaseDesc('');
+        setShowcaseDate('');
+        setShowcaseTemplate('cosmic-blue');
+        setShowcaseStatus('upcoming');
+        setShowcaseLink('');
+    }
+    setIsEditShowcaseOpen(true);
+  };
+
+  const closeShowcaseDialog = () => {
+    setIsEditShowcaseOpen(false);
+    setEditingShowcase(null);
   }
 
   if (!isSuperAdmin) {
@@ -363,47 +411,9 @@ export default function SuperAdminPanelPage() {
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0 space-y-4">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Add New Showcase</CardTitle>
-                        <CardDescription>This will appear in a carousel at the top of the user dashboard.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form onSubmit={handleAddShowcase} className="space-y-4">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="sc-title">Title</Label>
-                                    <Input id="sc-title" value={showcaseTitle} onChange={e => setShowcaseTitle(e.target.value)} required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="sc-date">Launch Date (Optional)</Label>
-                                    <Input id="sc-date" type="date" value={showcaseDate} onChange={e => setShowcaseDate(e.target.value)} />
-                                </div>
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="sc-desc">Description</Label>
-                                <Textarea id="sc-desc" value={showcaseDesc} onChange={e => setShowcaseDesc(e.target.value)} required />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="sc-template">Card Template</Label>
-                                <Select value={showcaseTemplate} onValueChange={(v: ShowcaseTemplate) => setShowcaseTemplate(v)}>
-                                    <SelectTrigger id="sc-template"><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="cosmic-blue">Cosmic Blue</SelectItem>
-                                        <SelectItem value="fiery-red">Fiery Red</SelectItem>
-                                        <SelectItem value="golden-legend">Golden Legend</SelectItem>
-                                        <SelectItem value="professional-dark">Professional Dark</SelectItem>
-                                        <SelectItem value="emerald-dream">Emerald Dream</SelectItem>
-                                        <SelectItem value="amethyst-haze">Amethyst Haze</SelectItem>
-                                        <SelectItem value="solar-flare">Solar Flare</SelectItem>
-                                        <SelectItem value="midnight-abyss">Midnight Abyss</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <Button type="submit">Add Showcase</Button>
-                        </form>
-                    </CardContent>
-                </Card>
+                <div className="text-right">
+                    <Button onClick={() => openShowcaseDialog(null)}>Add New Showcase</Button>
+                </div>
                 <Card>
                     <CardHeader>
                         <CardTitle>Existing Showcases</CardTitle>
@@ -413,6 +423,7 @@ export default function SuperAdminPanelPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Title</TableHead>
+                                    <TableHead>Status</TableHead>
                                     <TableHead>Launch Date</TableHead>
                                     <TableHead>Template</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
@@ -422,11 +433,17 @@ export default function SuperAdminPanelPage() {
                                 {featureShowcases.map(sc => (
                                     <TableRow key={sc.id}>
                                         <TableCell>{sc.title}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={sc.status === 'live' ? 'default' : 'secondary'} className="capitalize">
+                                                {sc.status}
+                                            </Badge>
+                                        </TableCell>
                                         <TableCell>{sc.launchDate ? format(parseISO(sc.launchDate), 'PPP') : 'Not set'}</TableCell>
-                                        <TableCell><Badge variant="secondary" className="capitalize">{sc.template.replace('-', ' ')}</Badge></TableCell>
-                                        <TableCell className="text-right">
+                                        <TableCell><Badge variant="outline" className="capitalize">{sc.template.replace('-', ' ')}</Badge></TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                            <Button variant="outline" size="sm" onClick={() => openShowcaseDialog(sc)}><Edit className="h-4 w-4 mr-2"/> Edit</Button>
                                             <AlertDialog>
-                                                <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="h-4 w-4 mr-2"/> Delete</Button></AlertDialogTrigger>
                                                 <AlertDialogContent>
                                                     <AlertDialogHeader><AlertDialogTitle>Delete this showcase?</AlertDialogTitle><AlertDialogDescription>This action is permanent and cannot be undone.</AlertDialogDescription></AlertDialogHeader>
                                                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteFeatureShowcase(sc.id)}>Delete</AlertDialogAction></AlertDialogFooter>
@@ -435,7 +452,7 @@ export default function SuperAdminPanelPage() {
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                {featureShowcases.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center">No showcases created yet.</TableCell></TableRow>}
+                                {featureShowcases.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No showcases created yet.</TableCell></TableRow>}
                             </TableBody>
                         </Table>
                     </CardContent>
@@ -1129,8 +1146,69 @@ export default function SuperAdminPanelPage() {
         </AccordionItem>
 
       </Accordion>
+
+        <Dialog open={isEditShowcaseOpen} onOpenChange={closeShowcaseDialog}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{editingShowcase ? 'Edit' : 'Add'} Feature Showcase</DialogTitle>
+                </DialogHeader>
+                <form id="showcase-form" onSubmit={handleSaveShowcase} className="space-y-4 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="sc-title">Title</Label>
+                            <Input id="sc-title" value={showcaseTitle} onChange={e => setShowcaseTitle(e.target.value)} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="sc-date">Launch Date (Optional)</Label>
+                            <Input id="sc-date" type="date" value={showcaseDate} onChange={e => setShowcaseDate(e.target.value)} />
+                        </div>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="sc-desc">Description</Label>
+                        <Textarea id="sc-desc" value={showcaseDesc} onChange={e => setShowcaseDesc(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="sc-link">Feature Link (Optional)</Label>
+                        <Input id="sc-link" value={showcaseLink} onChange={e => setShowcaseLink(e.target.value)} placeholder="e.g., /dashboard/new-feature" />
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="sc-status">Status</Label>
+                            <Select value={showcaseStatus} onValueChange={(v: FeatureShowcase['status']) => setShowcaseStatus(v)}>
+                                <SelectTrigger id="sc-status"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                                    <SelectItem value="live">Live</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="sc-template">Card Template</Label>
+                            <Select value={showcaseTemplate} onValueChange={(v: ShowcaseTemplate) => setShowcaseTemplate(v)}>
+                                <SelectTrigger id="sc-template"><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="cosmic-blue">Cosmic Blue</SelectItem>
+                                    <SelectItem value="fiery-red">Fiery Red</SelectItem>
+                                    <SelectItem value="golden-legend">Golden Legend</SelectItem>
+                                    <SelectItem value="professional-dark">Professional Dark</SelectItem>
+                                    <SelectItem value="emerald-dream">Emerald Dream</SelectItem>
+                                    <SelectItem value="amethyst-haze">Amethyst Haze</SelectItem>
+                                    <SelectItem value="solar-flare">Solar Flare</SelectItem>
+                                    <SelectItem value="midnight-abyss">Midnight Abyss</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </form>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    <Button type="submit" form="showcase-form">Save Showcase</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
+
 
 
