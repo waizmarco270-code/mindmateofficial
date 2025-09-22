@@ -119,6 +119,31 @@ export default {
         'zoom-pan': {
           '0%, 100%': { transform: 'scale(1) translate(0, 0)' },
           '50%': { transform: 'scale(1.1) translate(2%, -2%)' },
+        },
+        'synthwave-scroll': {
+          from: { backgroundPosition: '0 0' },
+          to: { backgroundPosition: '0 -200%' },
+        },
+        'black-hole-spin': {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
+        'glitch': {
+          '0%': { transform: 'translate(0)' },
+          '10%': { transform: 'translate(-2px, 2px)' },
+          '20%': { transform: 'translate(2px, -2px)' },
+          '30%': { transform: 'translate(-2px, -2px)' },
+          '40%': { transform: 'translate(2px, 2px)' },
+          '50%': { transform: 'translate(0)' },
+          '100%': { transform: 'translate(0)' },
+        },
+        'steampunk-rotate': {
+          from: { transform: 'rotate(0deg)' },
+          to: { transform: 'rotate(360deg)' },
+        },
+        'lofi-rain': {
+          from: { backgroundPosition: '0 0' },
+          to: { backgroundPosition: '20% 40%' },
         }
       },
       animation: {
