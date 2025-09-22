@@ -77,35 +77,44 @@ export function CommunityPoll() {
                 <div className="bg-black/20 border border-white/10 rounded-lg p-4 text-center">
                     <p className="text-xl font-bold text-yellow-400">{activePoll.question}</p>
                 </div>
-                {activePoll.options.map((option, index) => {
-                    const votesForOption = activePoll.results[option] || 0;
-                    const percentage = totalVotes > 0 ? (votesForOption / totalVotes) * 100 : 0;
-                    
-                    if (hasVoted) {
-                        const isUserChoice = userVote === option;
-                        return (
-                            <div key={index} className="space-y-2 group bg-black/20 p-3 rounded-lg border border-white/10">
-                                <div className="flex justify-between items-center text-sm">
-                                    <p className={cn("font-semibold text-slate-200", isUserChoice && "text-cyan-300")}>{option}</p>
-                                    <p className="text-slate-400 font-medium">{percentage.toFixed(0)}% ({votesForOption})</p>
+
+                {!hasVoted ? (
+                    <div className="space-y-3">
+                        {activePoll.options.map((option, index) => (
+                             <Button
+                                key={index}
+                                variant="outline"
+                                className="w-full justify-start h-12 text-base bg-white/5 border-white/20 text-white hover:bg-white/10"
+                                onClick={() => handleVote(option)}
+                                disabled={isSubmitting}
+                            >
+                                {isSubmitting ? 'Voting...' : option}
+                            </Button>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {activePoll.options.map((option, index) => {
+                            const votesForOption = activePoll.results[option] || 0;
+                            const percentage = totalVotes > 0 ? (votesForOption / totalVotes) * 100 : 0;
+                            const isUserChoice = userVote === option;
+                            
+                            return (
+                                <div key={index} className="space-y-2 group bg-black/20 p-3 rounded-lg border border-white/10">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <p className={cn("font-semibold text-slate-200", isUserChoice && "text-cyan-300 flex items-center gap-2")}
+                                        >
+                                            {isUserChoice && <CheckCircle className="h-4 w-4"/>}
+                                            {option}
+                                        </p>
+                                        <p className="text-slate-400 font-medium">{percentage.toFixed(0)}% ({votesForOption})</p>
+                                    </div>
+                                    <Progress value={percentage} className="h-2" />
                                 </div>
-                                <Progress value={percentage} className="h-2" />
-                            </div>
-                        );
-                    }
-                    
-                    return (
-                        <Button
-                            key={index}
-                            variant="outline"
-                            className="w-full justify-start h-12 text-base bg-white/5 border-white/20 text-white hover:bg-white/10"
-                            onClick={() => handleVote(option)}
-                            disabled={isSubmitting}
-                        >
-                            {isSubmitting ? 'Voting...' : option}
-                        </Button>
-                    );
-                })}
+                            );
+                        })}
+                    </div>
+                )}
             </CardContent>
             <p className="text-xs text-slate-400 text-center mt-4">{totalVotes} total votes</p>
             
