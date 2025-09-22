@@ -7,8 +7,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Ruler, Scale, Thermometer, Clock, ArrowRightLeft, Square, Cuboid, Gauge, Database } from 'lucide-react';
+import { Ruler, Scale, Thermometer, Clock, ArrowRightLeft, Square, Cuboid, Gauge, Database, Copy, Check } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 type UnitCategory = 'length' | 'mass' | 'temperature' | 'time' | 'area' | 'volume' | 'speed' | 'data';
 
@@ -88,77 +90,114 @@ const CATEGORY_ICONS: Record<UnitCategory, React.ElementType> = {
 };
 
 function ConverterInterface({ category }: { category: UnitCategory }) {
+    const { toast } = useToast();
     const units = UNITS[category];
     const [fromUnit, setFromUnit] = useState(units[0].id);
+    const [toUnit, setToUnit] = useState(units[1].id);
     const [fromValue, setFromValue] = useState('1');
+    const [toValue, setToValue] = useState('');
+    const [isSwapped, setIsSwapped] = useState(false);
+    const [isCopied, setIsCopied] = useState(false);
 
-    const conversionResults = useMemo(() => {
-        const from = units.find(u => u.id === fromUnit);
-        const value = parseFloat(fromValue);
-
-        if (!from || isNaN(value)) {
-            return [];
-        }
-
-        const baseValue = from.toBase(value);
-
-        return units
-            .filter(u => u.id !== fromUnit)
-            .map(toUnit => {
-                const finalValue = toUnit.fromBase(baseValue);
-                 // Use more precision for smaller numbers
-                const displayValue = (finalValue > 0 && finalValue < 0.001) 
-                    ? finalValue.toPrecision(3) 
-                    : finalValue.toFixed(4).replace(/\.0000$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
-
-                return {
-                    id: toUnit.id,
-                    label: toUnit.label,
-                    value: displayValue,
-                };
-            });
-
-    }, [fromValue, fromUnit, units]);
+    const handleSwap = () => {
+        setIsSwapped(s => !s);
+        setFromUnit(toUnit);
+        setToUnit(fromUnit);
+    }
     
-    return (
-        <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Select value={fromUnit} onValueChange={setFromUnit}>
-                        <SelectTrigger className="h-12 text-base"><SelectValue /></SelectTrigger>
-                        <SelectContent>{units.map(u => <SelectItem key={u.id} value={u.id}>{u.label}</SelectItem>)}</SelectContent>
-                    </Select>
-                    <Input 
-                        type="number" 
-                        value={fromValue}
-                        onChange={e => setFromValue(e.target.value)}
-                        className="h-16 text-4xl font-bold tracking-tighter"
-                    />
-                </div>
-                <div className="md:col-span-1 space-y-2">
-                    <p className="font-semibold text-sm text-muted-foreground mb-3">Converted Values</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-96 overflow-y-auto">
-                        <AnimatePresence>
-                        {conversionResults.map((result, index) => (
-                             <motion.div
-                                key={result.id}
-                                layout
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.3, delay: index * 0.05 }}
-                                className="bg-muted p-3 rounded-lg"
-                             >
-                                <p className="text-xs text-muted-foreground">{result.label}</p>
-                                <p className="text-lg font-bold text-primary truncate">{result.value}</p>
-                            </motion.div>
-                        ))}
-                        </AnimatePresence>
-                    </div>
-                </div>
+    const handleCopy = () => {
+        navigator.clipboard.writeText(toValue);
+        setIsCopied(true);
+        toast({ title: "Copied to clipboard!" });
+        setTimeout(() => setIsCopied(false), 2000);
+    }
+    
+    // Perform conversion whenever inputs change
+    useEffect(() => {
+        const from = units.find(u => u.id === fromUnit);
+        const to = units.find(u => u.id === toUnit);
+        const value = parseFloat(fromValue);
+        
+        if (from && to && !isNaN(value)) {
+            const baseValue = from.toBase(value);
+            const finalValue = to.fromBase(baseValue);
+            
+            // Format result to avoid excessive decimals but keep precision for small numbers
+            const resultString = (finalValue > 0 && finalValue < 0.001) 
+                ? finalValue.toPrecision(4) 
+                : finalValue.toFixed(4).replace(/\.0000$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
+
+            setToValue(resultString);
+        } else {
+            setToValue('');
+        }
+    }, [fromValue, fromUnit, toUnit, units]);
+
+    const InputCard = ({
+        isFrom,
+        unit,
+        setUnit,
+        value,
+        setValue
+    }: {
+        isFrom: boolean;
+        unit: string;
+        setUnit: (u: string) => void;
+        value: string;
+        setValue?: (v: string) => void;
+    }) => (
+        <Card className="bg-muted/50 p-4">
+            <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-muted-foreground">{isFrom ? 'From' : 'To'}</span>
+                {isFrom ? null : (
+                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleCopy}>
+                        {isCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
+                    </Button>
+                )}
             </div>
-        </div>
+             <div className="grid grid-cols-2 gap-2">
+                <Input 
+                    type="number" 
+                    value={value}
+                    onChange={isFrom ? (e) => setValue?.(e.target.value) : undefined}
+                    readOnly={!isFrom}
+                    className="h-14 text-2xl font-bold tracking-tighter border-0 bg-transparent read-only:focus-visible:ring-0 read-only:focus-visible:ring-offset-0"
+                    placeholder="0"
+                />
+                 <Select value={unit} onValueChange={setUnit}>
+                    <SelectTrigger className="h-14 text-base"><SelectValue /></SelectTrigger>
+                    <SelectContent>{units.map(u => <SelectItem key={u.id} value={u.id}>{u.label}</SelectItem>)}</SelectContent>
+                </Select>
+            </div>
+        </Card>
+    );
+
+    const fromProps = { isFrom: true, unit: fromUnit, setUnit: setFromUnit, value: fromValue, setValue: setFromValue };
+    const toProps = { isFrom: false, unit: toUnit, setUnit: setToUnit, value: toValue };
+
+    const firstCard = isSwapped ? toProps : fromProps;
+    const secondCard = isSwapped ? fromProps : toProps;
+
+
+    return (
+       <div className="relative flex flex-col md:flex-row items-center justify-center gap-6">
+            <motion.div layout className="w-full md:w-2/5">
+                <InputCard {...firstCard} />
+            </motion.div>
+
+            <motion.div layout className="absolute md:relative z-10">
+                <Button variant="outline" size="icon" className="rounded-full h-12 w-12 bg-background shadow-md hover:bg-primary hover:text-primary-foreground transition-transform hover:rotate-180" onClick={handleSwap}>
+                    <ArrowRightLeft className="h-5 w-5"/>
+                </Button>
+            </motion.div>
+            
+            <motion.div layout className="w-full md:w-2/5">
+                <InputCard {...secondCard} />
+            </motion.div>
+       </div>
     );
 }
+
 
 export function UnitConverter() {
   return (
