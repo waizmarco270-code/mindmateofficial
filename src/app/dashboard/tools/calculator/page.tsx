@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Calculator } from '@/components/calculator/calculator';
@@ -11,7 +12,7 @@ export default function CalculatorPage() {
         <p className="text-muted-foreground">A modern calculator for your daily needs.</p>
       </div>
       <div className="flex justify-center">
-        <Card className="w-full max-w-sm">
+        <Card className="w-full max-w-md">
             <CardHeader>
                 <CardTitle>Calculator</CardTitle>
             </CardHeader>
