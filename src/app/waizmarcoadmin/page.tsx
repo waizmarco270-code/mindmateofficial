@@ -393,6 +393,10 @@ export default function SuperAdminPanelPage() {
                                         <SelectItem value="fiery-red">Fiery Red</SelectItem>
                                         <SelectItem value="golden-legend">Golden Legend</SelectItem>
                                         <SelectItem value="professional-dark">Professional Dark</SelectItem>
+                                        <SelectItem value="emerald-dream">Emerald Dream</SelectItem>
+                                        <SelectItem value="amethyst-haze">Amethyst Haze</SelectItem>
+                                        <SelectItem value="solar-flare">Solar Flare</SelectItem>
+                                        <SelectItem value="midnight-abyss">Midnight Abyss</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -1128,4 +1132,5 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
+
 

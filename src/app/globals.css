@@ -276,6 +276,30 @@
       background-size: 200% 200%;
       animation: nebula-animation 30s ease infinite;
   }
+  
+  .emerald-dream-bg {
+    background: linear-gradient(125deg, #064e3b, #10b981, #059669, #022c22);
+    background-size: 300% 300%;
+    animation: nebula-animation 22s ease infinite;
+  }
+
+  .amethyst-haze-bg {
+    background: linear-gradient(125deg, #3b0764, #a855f7, #6b21a8, #1e1b4b);
+    background-size: 300% 300%;
+    animation: nebula-animation 24s ease infinite;
+  }
+
+  .solar-flare-bg {
+    background: linear-gradient(125deg, #7f1d1d, #f59e0b, #ef4444, #450a0a);
+    background-size: 300% 300%;
+    animation: nebula-animation 26s ease infinite;
+  }
+  
+  .midnight-abyss-bg {
+    background: linear-gradient(125deg, #0c0a09, #1e293b, #0c0a09, #082f49);
+    background-size: 300% 300%;
+    animation: nebula-animation 28s ease infinite;
+  }
 
 
   .animate-flicker {
