@@ -7,10 +7,11 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Ruler, Scale, Thermometer, Clock, ArrowRightLeft, Square, Cuboid, Gauge, Database, Copy, Check } from 'lucide-react';
+import { Ruler, Scale, Thermometer, Clock, ArrowRightLeft, Square, Cuboid, Gauge, Database, Copy, Check, Variable } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type UnitCategory = 'length' | 'mass' | 'temperature' | 'time' | 'area' | 'volume' | 'speed' | 'data';
 
@@ -78,7 +79,7 @@ const UNITS: Record<UnitCategory, Unit[]> = {
     ]
 };
 
-const CATEGORY_ICONS: Record<UnitCategory, React.ElementType> = {
+const CATEGORY_ICONS: Record<UnitCategory | 'dimensions', React.ElementType> = {
     length: Ruler,
     mass: Scale,
     temperature: Thermometer,
@@ -87,7 +88,29 @@ const CATEGORY_ICONS: Record<UnitCategory, React.ElementType> = {
     volume: Cuboid,
     speed: Gauge,
     data: Database,
+    dimensions: Variable,
 };
+
+const PHYSICAL_QUANTITIES = [
+  { name: 'Velocity', unit: 'm/s', dimension: '[L T⁻¹]' },
+  { name: 'Acceleration', unit: 'm/s²', dimension: '[L T⁻²]' },
+  { name: 'Force', unit: 'Newton (kg·m/s²)', dimension: '[M L T⁻²]' },
+  { name: 'Work / Energy', unit: 'Joule (kg·m²/s²)', dimension: '[M L² T⁻²]' },
+  { name: 'Power', unit: 'Watt (kg·m²/s³)', dimension: '[M L² T⁻³]' },
+  { name: 'Momentum', unit: 'kg·m/s', dimension: '[M L T⁻¹]' },
+  { name: 'Pressure', unit: 'Pascal (N/m²)', dimension: '[M L⁻¹ T⁻²]' },
+  { name: 'Density', unit: 'kg/m³', dimension: '[M L⁻³]' },
+  { name: 'Frequency', unit: 'Hertz (s⁻¹)', dimension: '[T⁻¹]' },
+  { name: 'Charge', unit: 'Coulomb (A·s)', dimension: '[A T]' },
+  { name: 'Voltage', unit: 'Volt (J/C)', dimension: '[M L² T⁻³ A⁻¹]' },
+  { name: 'Resistance', unit: 'Ohm (V/A)', dimension: '[M L² T⁻³ A⁻²]' },
+  { name: 'Capacitance', unit: 'Farad (C/V)', dimension: '[M⁻¹ L⁻² T⁴ A²]' },
+  { name: 'Magnetic Field', unit: 'Tesla (N/A·m)', dimension: '[M T⁻² A⁻¹]' },
+  { name: 'Angular Velocity', unit: 'rad/s', dimension: '[T⁻¹]' },
+  { name: 'Torque', unit: 'N·m', dimension: '[M L² T⁻²]' },
+  { name: 'Surface Tension', unit: 'N/m', dimension: '[M T⁻²]' },
+  { name: 'Viscosity', unit: 'Pa·s', dimension: '[M L⁻¹ T⁻¹]' },
+];
 
 function ConverterInterface({ category }: { category: UnitCategory }) {
     const { toast } = useToast();
@@ -112,7 +135,6 @@ function ConverterInterface({ category }: { category: UnitCategory }) {
         setTimeout(() => setIsCopied(false), 2000);
     }
     
-    // Perform conversion whenever inputs change
     useEffect(() => {
         const from = units.find(u => u.id === fromUnit);
         const to = units.find(u => u.id === toUnit);
@@ -122,7 +144,6 @@ function ConverterInterface({ category }: { category: UnitCategory }) {
             const baseValue = from.toBase(value);
             const finalValue = to.fromBase(baseValue);
             
-            // Format result to avoid excessive decimals but keep precision for small numbers
             const resultString = (finalValue > 0 && finalValue < 0.001) 
                 ? finalValue.toPrecision(4) 
                 : finalValue.toFixed(4).replace(/\.0000$/, '').replace(/(\.\d*?[1-9])0+$/, '$1');
@@ -198,18 +219,61 @@ function ConverterInterface({ category }: { category: UnitCategory }) {
     );
 }
 
+function DimensionsInterface() {
+    const [searchTerm, setSearchTerm] = useState('');
+    const filteredQuantities = useMemo(() =>
+        PHYSICAL_QUANTITIES.filter(q =>
+            q.name.toLowerCase().includes(searchTerm.toLowerCase())
+        ),
+        [searchTerm]
+    );
+
+    return (
+        <div className="space-y-4">
+            <Input
+                placeholder="Search for a physical quantity..."
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="max-w-sm"
+            />
+            <Card className="max-h-[500px] overflow-y-auto">
+                <Table>
+                    <TableHeader className="sticky top-0 bg-muted">
+                        <TableRow>
+                            <TableHead className="w-1/3">Physical Quantity</TableHead>
+                            <TableHead className="w-1/3">SI Unit</TableHead>
+                            <TableHead className="w-1/3">Dimensional Formula</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredQuantities.map((q) => (
+                            <TableRow key={q.name}>
+                                <TableCell className="font-medium">{q.name}</TableCell>
+                                <TableCell>{q.unit}</TableCell>
+                                <TableCell className="font-mono">{q.dimension}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </Card>
+        </div>
+    );
+}
+
 
 export function UnitConverter() {
+  const allCategories = [...(Object.keys(UNITS) as UnitCategory[]), 'dimensions'] as const;
+
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="text-3xl font-bold tracking-tight">Unit Converter</CardTitle>
-        <CardDescription>A modern, responsive utility to convert between various common units.</CardDescription>
+        <CardTitle className="text-3xl font-bold tracking-tight">Unit & Dimension Tool</CardTitle>
+        <CardDescription>A modern, responsive utility to convert units and reference physical dimensions.</CardDescription>
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="length" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto">
-            {(Object.keys(UNITS) as UnitCategory[]).map(category => {
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-9 h-auto">
+            {allCategories.map(category => {
                 const Icon = CATEGORY_ICONS[category];
                 return (
                     <TabsTrigger key={category} value={category} className="py-3 text-base gap-2 capitalize">
@@ -223,6 +287,9 @@ export function UnitConverter() {
                      <ConverterInterface category={category} />
                 </TabsContent>
             ))}
+            <TabsContent value="dimensions" className="pt-8">
+                <DimensionsInterface />
+            </TabsContent>
         </Tabs>
       </CardContent>
     </Card>
