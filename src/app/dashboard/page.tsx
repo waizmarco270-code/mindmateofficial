@@ -123,9 +123,9 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
             case 'fiery-red':
                 return 'red-nebula-bg';
             case 'golden-legend':
-                return 'bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900';
+                return 'golden-legend-bg';
             case 'professional-dark':
-                return 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900';
+                return 'professional-dark-bg';
             default:
                 return 'bg-slate-900';
         }
