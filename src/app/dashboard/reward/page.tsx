@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -71,11 +72,11 @@ export default function RewardZoneHubPage() {
             
             <Tabs defaultValue="crystal-growth" className="w-full">
                 <ScrollArea className="w-full whitespace-nowrap rounded-lg">
-                    <TabsList className="w-full sm:w-auto">
-                        <TabsTrigger value="crystal-growth" className="w-1/2 sm:w-auto"><Gem className="mr-2"/> Crystal Growth</TabsTrigger>
-                        <TabsTrigger value="codebreaker" className="w-1/2 sm:w-auto"><Key className="mr-2"/> Codebreaker</TabsTrigger>
-                        <TabsTrigger value="card-flip" className="w-1/2 sm:w-auto"><Layers className="mr-2"/> Card Flip</TabsTrigger>
-                        <TabsTrigger value="scratch-card" className="w-1/2 sm:w-auto"><VenetianMask className="mr-2"/> Scratch Card</TabsTrigger>
+                    <TabsList className="inline-flex h-auto">
+                        <TabsTrigger value="crystal-growth" className="w-auto"><Gem className="mr-2"/> Crystal Growth</TabsTrigger>
+                        <TabsTrigger value="codebreaker" className="w-auto"><Key className="mr-2"/> Codebreaker</TabsTrigger>
+                        <TabsTrigger value="card-flip" className="w-auto"><Layers className="mr-2"/> Card Flip</TabsTrigger>
+                        <TabsTrigger value="scratch-card" className="w-auto"><VenetianMask className="mr-2"/> Scratch Card</TabsTrigger>
                     </TabsList>
                     <ScrollBar orientation="horizontal" />
                 </ScrollArea>
