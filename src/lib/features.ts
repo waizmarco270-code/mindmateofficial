@@ -1,6 +1,6 @@
 
 export interface LockableFeature {
-    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator';
+    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad';
     name: string;
     description: string;
     defaultCost: number;
@@ -60,5 +60,11 @@ export const lockableFeatures: LockableFeature[] = [
         name: 'Timetable Generator',
         description: 'A tool to create personalized study schedules.',
         defaultCost: 25,
+    },
+    {
+        id: 'quick-notepad',
+        name: 'Quick Notepad',
+        description: 'A simple notepad for quick thoughts and ideas.',
+        defaultCost: 0,
     }
 ];

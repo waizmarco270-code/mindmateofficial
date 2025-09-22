@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,15 @@ const toolCategories = [
         color: "from-sky-500 to-blue-500",
         shadow: "shadow-sky-500/30"
     },
+    {
+        id: 'quick-notepad',
+        title: "Quick Notepad",
+        description: "Jot down thoughts and ideas. Your notes save automatically.",
+        icon: FileText,
+        href: "/dashboard/tools/notepad",
+        color: "from-fuchsia-500 to-purple-500",
+        shadow: "shadow-fuchsia-500/30"
+    }
 ]
 
 // This is now a component, not a default export page
