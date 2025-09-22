@@ -235,15 +235,8 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
                  <Dialog>
                     <DialogTrigger asChild>
-                         <Card className="cursor-pointer relative text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center bg-gradient-to-br from-purple-500 to-indigo-600">
-                           <div
-                                className="absolute inset-0 opacity-20"
-                                style={{
-                                    backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(to right, white 1px, transparent 1px)',
-                                    backgroundSize: '2rem 2rem'
-                                }}
-                            ></div>
-                            <CardContent className="p-4 sm:p-6 text-center relative">
+                         <Card className="group relative cursor-pointer text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center bg-gradient-to-br from-purple-500 to-indigo-600 before:absolute before:w-full before:h-full before:bg-grid-slate-800/50 before:opacity-0 before:transition-opacity before:duration-300 group-hover:before:opacity-100 after:absolute after:w-full after:h-full after:bg-gradient-to-tr after:from-primary/0 after:via-primary/20 after:to-primary/0 after:animate-shimmer after:inset-0 after:rounded-xl after:opacity-0 group-hover:after:opacity-100 after:duration-500">
+                            <CardContent className="p-4 sm:p-6 text-center relative z-10">
                                 <Vote className="h-8 sm:h-10 w-8 sm:w-10 mx-auto mb-3" />
                                 <h3 className="text-lg sm:text-xl font-bold">Community Poll</h3>
                                 <p className="text-xs sm:text-sm opacity-80">Have your say in new features!</p>
