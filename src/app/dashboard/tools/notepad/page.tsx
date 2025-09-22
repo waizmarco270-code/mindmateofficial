@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText, SortAsc, Shuffle, Replace } from 'lucide-react';
+import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText, SortAsc, Shuffle, Replace, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -138,6 +138,12 @@ export default function NotepadPage() {
         toast({ title: "Text Replaced!" });
     };
 
+    const addNoteSlot = () => {
+        setNotesArray(prev => [...prev, '']);
+        setActiveNoteIndex(notesArray.length);
+        toast({title: 'New note slot added!'});
+    }
+
     return (
         <div className="space-y-8">
             <div>
@@ -148,14 +154,17 @@ export default function NotepadPage() {
                 <p className="text-muted-foreground">Jot down quick thoughts and ideas. Your notes are saved automatically to this browser.</p>
             </div>
             <Card className="h-[60vh] flex flex-col">
-                 <CardHeader>
+                 <CardHeader className="flex flex-row items-center gap-2">
                     <Tabs value={String(activeNoteIndex)} onValueChange={(val) => setActiveNoteIndex(Number(val))}>
                         <TabsList>
-                            {Array.from({ length: 5 }).map((_, index) => (
+                            {notesArray.map((_, index) => (
                                 <TabsTrigger key={index} value={String(index)}>Note {index + 1}</TabsTrigger>
                             ))}
                         </TabsList>
                     </Tabs>
+                    <Button variant="ghost" size="icon" onClick={addNoteSlot}>
+                        <Plus className="h-4 w-4"/>
+                    </Button>
                 </CardHeader>
                 <CardContent className="p-0 flex-1">
                     <Textarea 
