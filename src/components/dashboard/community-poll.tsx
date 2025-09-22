@@ -70,11 +70,13 @@ export function CommunityPoll() {
             {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
         </div>
         <div className="relative z-10 p-6">
-            <CardHeader className="p-0 mb-6 text-white">
+            <CardHeader className="p-0 mb-4 text-white">
                 <CardTitle className="flex items-center gap-2 text-2xl"><Vote /> Community Poll</CardTitle>
-                <CardDescription className="text-slate-300">{activePoll.question}</CardDescription>
             </CardHeader>
             <CardContent className="p-0 space-y-4">
+                <div className="bg-black/20 border border-white/10 rounded-lg p-4 text-center">
+                    <p className="text-xl font-bold text-white">{activePoll.question}</p>
+                </div>
                 {activePoll.options.map((option, index) => {
                     const votesForOption = activePoll.results[option] || 0;
                     const percentage = totalVotes > 0 ? (votesForOption / totalVotes) * 100 : 0;
