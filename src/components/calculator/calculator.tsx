@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { X, Divide, Minus, Plus, Equal, Percent, ChevronsUp, SquareRoot } from 'lucide-react';
+import { X, Divide, Minus, Plus, Equal, Percent, SquareRoot } from 'lucide-react';
 
 export function Calculator() {
   const [displayValue, setDisplayValue] = useState('0');
@@ -157,4 +157,3 @@ export function Calculator() {
     </div>
   );
 }
-
