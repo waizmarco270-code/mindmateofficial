@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
-import { useAnnouncements, useUsers, useAdmin } from '@/hooks/use-admin';
+import { useAnnouncements, useUsers, useAdmin, FeatureShowcase } from '@/hooks/use-admin';
 import { CommunityPoll } from '@/components/dashboard/community-poll';
 import { cn } from '@/lib/utils';
 import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
@@ -19,7 +19,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { GlobalGiftCard } from '@/components/dashboard/global-gift';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
-import { MarcoAiLaunchCard } from '@/components/dashboard/marco-ai-launch-card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { format, parseISO } from 'date-fns';
+
 
 const studyTools = [
     {
@@ -109,10 +111,70 @@ const leaderboardOptions = [
     { name: 'Game Zone', href: '/dashboard/leaderboard?tab=game-zone', icon: Gamepad2 }
 ]
 
+function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
+    if (!showcases || showcases.length === 0) {
+        return null;
+    }
+
+    const getTemplateClasses = (template: FeatureShowcase['template']) => {
+        switch (template) {
+            case 'cosmic-blue':
+                return 'blue-nebula-bg';
+            case 'fiery-red':
+                return 'red-nebula-bg';
+            case 'golden-legend':
+                return 'bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900';
+            case 'professional-dark':
+                return 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900';
+            default:
+                return 'bg-slate-900';
+        }
+    };
+    
+     return (
+        <Carousel className="w-full" opts={{ loop: showcases.length > 1 }}>
+            <CarouselContent>
+                {showcases.map((showcase) => (
+                    <CarouselItem key={showcase.id}>
+                        <Card className={cn("relative group overflow-hidden border-0", getTemplateClasses(showcase.template))}>
+                             <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
+                                {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
+                            </div>
+                             <div className="relative z-10 p-6">
+                                <CardContent className="relative z-10 p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-6 rounded-lg bg-black/20 border border-white/10">
+                                    <div className="flex-1">
+                                         <h2 className="text-sm font-bold uppercase tracking-widest text-red-400">COMING SOON</h2>
+                                         <CardTitle className="text-3xl lg:text-4xl font-bold mt-1 text-white">{showcase.title}</CardTitle>
+                                        <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
+                                            {showcase.description}
+                                        </CardDescription>
+                                    </div>
+                                     {showcase.launchDate && (
+                                        <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10 w-full sm:w-auto mt-4 md:mt-0">
+                                            <p className="text-lg font-bold font-code text-cyan-300">LAUNCHING ON</p>
+                                            <p className="text-4xl font-bold font-serif text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMMM')}</p>
+                                        </div>
+                                     )}
+                                </CardContent>
+                            </div>
+                        </Card>
+                    </CarouselItem>
+                ))}
+            </CarouselContent>
+            {showcases.length > 1 && (
+                 <>
+                    <CarouselPrevious className="left-2 hidden sm:flex" />
+                    <CarouselNext className="right-2 hidden sm:flex" />
+                 </>
+            )}
+        </Carousel>
+    );
+}
+
 export default function DashboardPage() {
     const { user } = useUser();
     const { announcements } = useAnnouncements();
-    const { currentUserData, featureLocks, isAdmin, isSuperAdmin, appSettings } = useAdmin();
+    const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
     const [isExploreZoneOpen, setIsExploreZoneOpen] = useState(false);
@@ -123,9 +185,6 @@ export default function DashboardPage() {
     const isVip = currentUserData?.isVip ?? false;
     const isGM = currentUserData?.isGM ?? false;
     const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
-
-    const isAiLive = appSettings?.marcoAiLaunchStatus === 'live';
-
 
     const latestAnnouncement = announcements.length > 0 ? announcements[0] : {
         title: 'Welcome to MindMate!',
@@ -167,40 +226,25 @@ export default function DashboardPage() {
       </div>
 
       <SignedIn>
-        {isAiLive ? (
-          <Link href="/dashboard/ai-assistant" className="group block">
-            <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-blue-900 via-indigo-900 to-blue-900 border-blue-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
-                <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                    <div className="p-4 rounded-full bg-blue-500/10 border-2 border-blue-500/30">
-                        <Bot className="h-10 w-10 text-blue-400"/>
-                    </div>
-                    <div className="flex-1 text-center sm:text-left">
-                        <CardTitle className="text-2xl font-bold text-white">Marco AI is Live!</CardTitle>
-                        <CardDescription className="text-slate-400 mt-1">Your personal AI study partner is now available. Click here to access it.</CardDescription>
-                    </div>
-                    <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                        Access Marco AI <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </CardContent>
-            </Card>
-          </Link>
-        ) : (
-          <MarcoAiLaunchCard />
-        )}
+        <ShowcaseView showcases={featureShowcases} />
         <GlobalGiftCard />
         {isSurpriseRevealed ? (
           <DailySurpriseCard />
         ) : (
-          <Card 
-            className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-yellow-400/20 via-pink-500/20 to-purple-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
+           <Card 
+            className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-green-400/20 via-teal-500/20 to-emerald-600/20 border-green-500/20 hover:border-green-500/40 transition-all duration-300"
             onClick={() => setIsSurpriseRevealed(true)}
           >
-            <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000"></div>
+            <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]"></div>
             <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center">
-                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
+                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-green-500/20 rounded-full blur-3xl"></div>
                 <div className="relative flex flex-col items-center">
-                  <Gift className="h-10 w-10 text-primary animate-bounce"/>
+                    <motion.div
+                        animate={{ y: [0, -10, 0], scale: [1, 1.1, 1] }}
+                        transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+                    >
+                        <Gift className="h-10 w-10 text-green-400 [filter:drop-shadow(0_0_8px_currentColor)]"/>
+                    </motion.div>
                   <h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3>
                   <p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p>
                 </div>
@@ -494,4 +538,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-

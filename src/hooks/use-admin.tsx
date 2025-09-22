@@ -156,6 +156,17 @@ export interface FeatureLock {
     cost: number;
 }
 
+export type ShowcaseTemplate = 'cosmic-blue' | 'fiery-red' | 'golden-legend' | 'professional-dark';
+export interface FeatureShowcase {
+    id: string;
+    title: string;
+    description: string;
+    launchDate?: string; // Optional launch date as ISO string
+    template: ShowcaseTemplate;
+    createdAt: Date;
+}
+
+
 // ============================================================================
 //  CONTEXT DEFINITIONS
 // ============================================================================
@@ -246,6 +257,10 @@ interface AppDataContextType {
     featureLocks: Record<LockableFeature['id'], FeatureLock> | null;
     lockFeature: (featureId: LockableFeature['id'], cost: number) => Promise<void>;
     unlockFeature: (featureId: LockableFeature['id']) => Promise<void>;
+
+    featureShowcases: FeatureShowcase[];
+    addFeatureShowcase: (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => Promise<void>;
+    deleteFeatureShowcase: (id: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -273,6 +288,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [appSettings, setAppSettings] = useState<AppSettings | null>({ marcoAiLaunchStatus: 'countdown' });
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
     const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
+    const [featureShowcases, setFeatureShowcases] = useState<FeatureShowcase[]>([]);
     const [loading, setLoading] = useState(true);
     
     const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
@@ -447,6 +463,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const giftsQuery = query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc'));
         const ticketsQuery = query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'));
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
+        const showcasesQuery = query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc'));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
@@ -475,6 +492,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 setFeatureLocks(doc.data() as Record<LockableFeature['id'], FeatureLock>);
             }
         });
+        const unsubShowcases = onSnapshot(showcasesQuery, (snapshot) => setFeatureShowcases(processSnapshot<FeatureShowcase>(snapshot)));
 
 
         return () => {
@@ -487,6 +505,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubGifts();
             unsubTickets();
             unsubLocks();
+            unsubShowcases();
         };
     }, []);
 
@@ -1056,6 +1075,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             }
         }, { merge: true });
     }, []);
+    
+    // Showcase Functions
+    const addFeatureShowcase = async (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => {
+        await addDoc(collection(db, 'featureShowcases'), { ...showcase, createdAt: serverTimestamp() });
+    };
+
+    const deleteFeatureShowcase = async (id: string) => {
+        await deleteDoc(doc(db, 'featureShowcases', id));
+    };
+
 
     // CONTEXT VALUE
     const value: AppDataContextType = {
@@ -1132,6 +1161,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         featureLocks,
         lockFeature,
         unlockFeature,
+        featureShowcases,
+        addFeatureShowcase,
+        deleteFeatureShowcase,
     };
 
     return (
@@ -1189,3 +1221,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    
