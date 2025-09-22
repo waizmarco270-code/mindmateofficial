@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -39,15 +38,6 @@ const toolCategories = [
         href: "/dashboard/tools/notepad",
         color: "from-fuchsia-500 to-purple-500",
         shadow: "shadow-fuchsia-500/30"
-    },
-    {
-        id: 'flashcard-maker',
-        title: "Flashcard Maker",
-        description: "Create and study digital flashcards for any subject.",
-        icon: LayoutDashboard,
-        href: "/dashboard/tools/flashcards",
-        color: "from-rose-500 to-red-500",
-        shadow: "shadow-rose-500/30"
     }
 ]
 
