@@ -10,10 +10,20 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 export default function NotepadPage() {
-    const [notes, setNotes] = useLocalStorage('quick-notepad-content', '');
+    const [notesArray, setNotesArray] = useLocalStorage<string[]>('quick-notepad-slots', Array(5).fill(''));
+    const [activeNoteIndex, setActiveNoteIndex] = useState(0);
+
+    const notes = notesArray[activeNoteIndex] || '';
+    const setNotes = (newNotes: string) => {
+        const newNotesArray = [...notesArray];
+        newNotesArray[activeNoteIndex] = newNotes;
+        setNotesArray(newNotesArray);
+    };
+    
     const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'idle'>('idle');
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
@@ -29,7 +39,7 @@ export default function NotepadPage() {
             }, 1000); // Save after 1 second of inactivity
             return () => clearTimeout(handler);
         }
-    }, [notes, saveStatus]);
+    }, [notesArray, saveStatus]);
     
     const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setSaveStatus('saving');
@@ -46,7 +56,7 @@ export default function NotepadPage() {
     const handleCopy = () => {
         navigator.clipboard.writeText(notes);
         setIsCopied(true);
-        toast({ title: "Notes copied to clipboard!" });
+        toast({ title: "Note copied to clipboard!" });
         setTimeout(() => setIsCopied(false), 2000);
     }
 
@@ -55,12 +65,12 @@ export default function NotepadPage() {
         const href = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = href;
-        link.download = 'mindmate-notes.txt';
+        link.download = `mindmate-note-${activeNoteIndex + 1}.txt`;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(href);
-        toast({ title: "Notes downloaded!" });
+        toast({ title: "Note downloaded!" });
     }
 
     const handleClear = () => {
@@ -118,11 +128,20 @@ export default function NotepadPage() {
                 <p className="text-muted-foreground">Jot down quick thoughts and ideas. Your notes are saved automatically to this browser.</p>
             </div>
             <Card className="h-[60vh] flex flex-col">
+                 <CardHeader>
+                    <Tabs value={String(activeNoteIndex)} onValueChange={(val) => setActiveNoteIndex(Number(val))}>
+                        <TabsList>
+                            {Array.from({ length: 5 }).map((_, index) => (
+                                <TabsTrigger key={index} value={String(index)}>Note {index + 1}</TabsTrigger>
+                            ))}
+                        </TabsList>
+                    </Tabs>
+                </CardHeader>
                 <CardContent className="p-0 flex-1">
                     <Textarea 
                         value={notes}
                         onChange={handleTextChange}
-                        placeholder="Start typing here..."
+                        placeholder={`Start typing in Note ${activeNoteIndex + 1}...`}
                         className="h-full w-full border-0 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 text-base"
                     />
                 </CardContent>
@@ -170,7 +189,7 @@ export default function NotepadPage() {
                             <AlertDialogContent>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>This will permanently delete all content from your notepad. This action cannot be undone.</AlertDialogDescription>
+                                    <AlertDialogDescription>This will permanently delete all content from the current note. This action cannot be undone.</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
