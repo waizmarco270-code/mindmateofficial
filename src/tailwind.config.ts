@@ -153,6 +153,11 @@ export default {
         'tilt': 'tilt 10s infinite linear',
         'shimmer': 'shimmer 2s infinite',
         'zoom-pan': 'zoom-pan 30s ease-in-out infinite',
+        'synthwave-scroll': 'synthwave-scroll 10s linear infinite',
+        'black-hole-spin': 'black-hole-spin 50s linear infinite',
+        'glitch': 'glitch 1.5s steps(2, jump-none) infinite',
+        'steampunk-rotate': 'steampunk-rotate 10s linear infinite',
+        'lofi-rain': 'lofi-rain 0.2s linear infinite',
       },
     },
   },
@@ -168,3 +173,5 @@ export default {
     }),
   ],
 } satisfies Config;
+
+    

@@ -1,5 +1,4 @@
 
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -433,3 +432,5 @@
     text-shadow: 0 0 8px currentColor;
   }
 }
+
+    
