@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -23,13 +24,6 @@ export interface UserCrystal {
     harvestValue: number;
 }
 
-interface CodebreakerStatus {
-    canPlay: boolean;
-    lastResult: 'win' | 'loss' | null;
-    attempts: number;
-    secretCode?: string;
-}
-
 export const useRewards = () => {
     const { user } = useUser();
     const { currentUserData, addCreditsToUser } = useUsers();
@@ -44,7 +38,6 @@ export const useRewards = () => {
     const [rewardHistory, setRewardHistory] = useState<RewardRecord[]>([]);
     const [userCrystal, setUserCrystal] = useState<UserCrystal | null>(null);
     const [loadingCrystal, setLoadingCrystal] = useState(true);
-    const [codebreakerStatus, setCodebreakerStatus] = useState<CodebreakerStatus>({ canPlay: false, lastResult: null, attempts: 0 });
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -81,89 +74,6 @@ export const useRewards = () => {
         });
         return () => unsubscribe();
     }, [user]);
-
-    // ===== CODEBREAKER LOGIC =====
-    useEffect(() => {
-        if (!user) return;
-        setLoading(true);
-        const codebreakerRef = doc(db, 'users', user.id, 'rewards', 'codebreaker');
-        const unsubscribe = onSnapshot(codebreakerRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                const lastPlayed = data.lastPlayed?.toDate();
-                if (lastPlayed && isToday(lastPlayed)) {
-                    setCodebreakerStatus({ canPlay: false, lastResult: data.lastResult, attempts: data.attempts, secretCode: data.secretCode });
-                } else {
-                    // New day, reset
-                    const newCode = String(Math.floor(1000 + Math.random() * 9000));
-                    setDoc(codebreakerRef, { secretCode: newCode, attempts: 0, lastResult: null, lastPlayed: null });
-                    setCodebreakerStatus({ canPlay: true, lastResult: null, attempts: 0, secretCode: newCode });
-                }
-            } else {
-                // First time playing
-                const newCode = String(Math.floor(1000 + Math.random() * 9000));
-                setDoc(codebreakerRef, { secretCode: newCode, attempts: 0, lastResult: null, lastPlayed: null });
-                setCodebreakerStatus({ canPlay: true, lastResult: null, attempts: 0, secretCode: newCode });
-            }
-            setLoading(false);
-        });
-        return () => unsubscribe();
-    }, [user]);
-
-    const playCodebreaker = useCallback(async (guess: string) => {
-        if (!user || !codebreakerStatus.canPlay || !codebreakerStatus.secretCode) return null;
-
-        const secretCode = codebreakerStatus.secretCode;
-        const attempts = codebreakerStatus.attempts + 1;
-
-        let correctPlace = 0;
-        let correctDigit = 0;
-        const secretCodeCounts: Record<string, number> = {};
-        const guessCounts: Record<string, number> = {};
-        
-        for (let i = 0; i < secretCode.length; i++) {
-            if (guess[i] === secretCode[i]) {
-                correctPlace++;
-            }
-            secretCodeCounts[secretCode[i]] = (secretCodeCounts[secretCode[i]] || 0) + 1;
-            guessCounts[guess[i]] = (guessCounts[guess[i]] || 0) + 1;
-        }
-
-        for(const digit in guessCounts) {
-            if (secretCodeCounts[digit]) {
-                correctDigit += Math.min(guessCounts[digit], secretCodeCounts[digit]);
-            }
-        }
-        correctDigit -= correctPlace;
-
-        const isWin = correctPlace === 4;
-        const isLoss = !isWin && attempts >= 6;
-        let reward = 0;
-
-        const rewardTiers = [25, 15, 10, 5, 3, 1];
-
-        if (isWin) {
-            reward = rewardTiers[attempts - 1];
-            await addCreditsToUser(user.id, reward);
-            toast({ title: 'You cracked the code!', description: `+${reward} credits have been awarded.`, className: "bg-green-500/10 border-green-500/50" });
-        }
-
-        if (isWin || isLoss) {
-            const codebreakerRef = doc(db, 'users', user.id, 'rewards', 'codebreaker');
-            await updateDoc(codebreakerRef, {
-                lastPlayed: Timestamp.now(),
-                lastResult: isWin ? 'win' : 'loss',
-                attempts: attempts
-            });
-        } else {
-             const codebreakerRef = doc(db, 'users', user.id, 'rewards', 'codebreaker');
-            await updateDoc(codebreakerRef, { attempts });
-        }
-
-        return { isWin, clues: { correctPlace, correctDigit } };
-
-    }, [user, codebreakerStatus, addCreditsToUser, toast]);
-    
 
     // ===== SCRATCH CARD LOGIC =====
     const canClaimScratchCard = useMemo(() => {
@@ -398,8 +308,5 @@ export const useRewards = () => {
         plantCrystal,
         harvestCrystal,
         breakCrystal,
-        canPlayCodebreaker: codebreakerStatus.canPlay,
-        playCodebreaker,
-        codebreakerStatus,
     };
 };

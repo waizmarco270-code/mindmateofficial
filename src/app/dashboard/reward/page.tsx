@@ -6,8 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CrystalGrowth } from '@/components/reward/crystal-growth';
 import { ScratchCard } from '@/components/reward/scratch-card';
 import { CardFlipGame } from '@/components/reward/gift-box-game';
-import { CodebreakerGame } from '@/components/reward/codebreaker';
-import { Gift, History, Gem, Key, Layers, VenetianMask, Award, Loader2 } from 'lucide-react';
+import { Gift, History, Gem, Layers, VenetianMask, Award, Loader2 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useRewards } from '@/hooks/use-rewards';
 import { formatDistanceToNow } from 'date-fns';
@@ -59,6 +58,7 @@ function RecentWinnings() {
 
 
 export default function RewardZoneHubPage() {
+    const { availableScratchCards, availableCardFlipPlays } = useRewards();
     
     return (
         <div className="space-y-8">
@@ -74,9 +74,14 @@ export default function RewardZoneHubPage() {
                 <ScrollArea className="w-full whitespace-nowrap rounded-lg">
                     <TabsList className="inline-flex h-auto">
                         <TabsTrigger value="crystal-growth" className="w-auto"><Gem className="mr-2"/> Crystal Growth</TabsTrigger>
-                        <TabsTrigger value="codebreaker" className="w-auto"><Key className="mr-2"/> Codebreaker</TabsTrigger>
-                        <TabsTrigger value="card-flip" className="w-auto"><Layers className="mr-2"/> Card Flip</TabsTrigger>
-                        <TabsTrigger value="scratch-card" className="w-auto"><VenetianMask className="mr-2"/> Scratch Card</TabsTrigger>
+                        <TabsTrigger value="card-flip" className="w-auto flex items-center">
+                            <Layers className="mr-2"/> Card Flip
+                            {availableCardFlipPlays > 0 && <span className="ml-2 h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{availableCardFlipPlays}</span>}
+                        </TabsTrigger>
+                        <TabsTrigger value="scratch-card" className="w-auto flex items-center">
+                            <VenetianMask className="mr-2"/> Scratch Card
+                             {availableScratchCards > 0 && <span className="ml-2 h-5 w-5 flex items-center justify-center rounded-full bg-primary text-primary-foreground text-xs">{availableScratchCards}</span>}
+                        </TabsTrigger>
                     </TabsList>
                     <ScrollBar orientation="horizontal" />
                 </ScrollArea>
@@ -84,7 +89,6 @@ export default function RewardZoneHubPage() {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
                     <div className="lg:col-span-2">
                         <TabsContent value="crystal-growth"><CrystalGrowth /></TabsContent>
-                        <TabsContent value="codebreaker"><CodebreakerGame /></TabsContent>
                         <TabsContent value="card-flip"><CardFlipGame /></TabsContent>
                         <TabsContent value="scratch-card"><ScratchCard /></TabsContent>
                     </div>

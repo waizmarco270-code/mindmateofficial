@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { cn } from '@/lib/utils';
 
 interface TypingAnimationProps {
@@ -13,9 +13,10 @@ interface TypingAnimationProps {
 export const TypingAnimation: React.FC<TypingAnimationProps> = ({
   text,
   className,
-  typingSpeed = 50,
+  typingSpeed = 30, // Made it a bit faster
 }) => {
   const [displayedText, setDisplayedText] = useState('');
+  const id = useId(); // Unique key for re-triggering animation
 
   useEffect(() => {
     setDisplayedText(''); // Reset on text change
@@ -30,7 +31,7 @@ export const TypingAnimation: React.FC<TypingAnimationProps> = ({
     }, typingSpeed);
 
     return () => clearInterval(intervalId);
-  }, [text, typingSpeed]);
+  }, [text, typingSpeed, id]);
 
 
   return (
