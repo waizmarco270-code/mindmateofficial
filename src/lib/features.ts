@@ -1,6 +1,6 @@
 
 export interface LockableFeature {
-    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad';
+    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'flashcard-maker';
     name: string;
     description: string;
     defaultCost: number;
@@ -66,5 +66,11 @@ export const lockableFeatures: LockableFeature[] = [
         name: 'Quick Notepad',
         description: 'A simple notepad for quick thoughts and ideas.',
         defaultCost: 0,
+    },
+    {
+        id: 'flashcard-maker',
+        name: 'Flashcard Maker',
+        description: 'Create and study with digital flashcards.',
+        defaultCost: 15,
     }
 ];

@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, LayoutDashboard } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -39,6 +39,15 @@ const toolCategories = [
         href: "/dashboard/tools/notepad",
         color: "from-fuchsia-500 to-purple-500",
         shadow: "shadow-fuchsia-500/30"
+    },
+    {
+        id: 'flashcard-maker',
+        title: "Flashcard Maker",
+        description: "Create and study digital flashcards for any subject.",
+        icon: LayoutDashboard,
+        href: "/dashboard/tools/flashcards",
+        color: "from-rose-500 to-red-500",
+        shadow: "shadow-rose-500/30"
     }
 ]
 
