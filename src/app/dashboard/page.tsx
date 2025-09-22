@@ -208,26 +208,29 @@ export default function DashboardPage() {
       </SignedIn>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2 space-y-6">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <Bell className="h-6 w-6 text-primary" />
-                            <CardTitle>Latest Announcement</CardTitle>
-                        </div>
-                        <CardDescription>Don't miss out on important updates.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                        <div className="text-muted-foreground mt-2 min-h-[40px]">
-                            <TypingAnimation text={latestAnnouncement.description} />
-                        </div>
-                    </CardContent>
+                <Card className="relative group">
+                    <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+                    <div className="relative rounded-lg bg-background">
+                        <CardHeader>
+                            <div className="flex items-center gap-3">
+                                <Bell className="h-6 w-6 text-primary" />
+                                <CardTitle>Latest Announcement</CardTitle>
+                            </div>
+                            <CardDescription>Don't miss out on important updates.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
+                            <div className="text-muted-foreground mt-2 min-h-[40px]">
+                                <TypingAnimation text={latestAnnouncement.description} />
+                            </div>
+                        </CardContent>
+                    </div>
                 </Card>
             </div>
 
-            <div className="md:col-span-1 grid grid-cols-2 md:grid-cols-1 gap-6">
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-1 md:col-span-1">
                 <Dialog>
                     <DialogTrigger asChild>
                         <Card className="cursor-pointer relative text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center bg-gradient-to-br from-purple-500 to-indigo-600">
@@ -272,16 +275,16 @@ export default function DashboardPage() {
                     <div className="relative rounded-xl p-px overflow-hidden before:absolute before:inset-0 before:w-full before:h-full before:bg-gradient-to-br before:from-yellow-400 before:to-amber-600 before:animate-pulse">
                         <Card className="relative z-10 cursor-pointer overflow-hidden bg-gradient-to-br from-yellow-900/80 via-black to-black border-yellow-700/50 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                              <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                                <div className="p-4 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30">
-                                    <Crown className="h-10 w-10 text-yellow-400 animate-gold-shine"/>
+                            <CardContent className="relative p-4 flex items-center gap-4">
+                                <div className="p-3 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30">
+                                    <Crown className="h-8 w-8 text-yellow-400 animate-gold-shine"/>
                                 </div>
-                                <div className="flex-1 text-center sm:text-left">
-                                    <CardTitle className="text-2xl font-bold text-yellow-400">Elite Lounge</CardTitle>
-                                    <CardDescription className="text-yellow-400/70 mt-1">Access exclusive features and rewards for our top members.</CardDescription>
+                                <div className="flex-1">
+                                    <CardTitle className="text-xl font-bold text-yellow-400">Elite Lounge</CardTitle>
+                                    <CardDescription className="text-yellow-400/70 text-sm mt-1">Access exclusive features and rewards.</CardDescription>
                                 </div>
-                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                                    Enter Lounge <ArrowRight className="ml-2 h-4 w-4" />
+                                <Button variant="ghost" size="icon" className="text-white">
+                                    <ArrowRight className="h-5 w-5" />
                                 </Button>
                             </CardContent>
                         </Card>
@@ -292,16 +295,16 @@ export default function DashboardPage() {
             <Link href="/dashboard/challenger" className="group block">
                 <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-red-900 via-rose-900 to-red-900 border-red-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                     <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                        <div className="p-4 rounded-full bg-red-500/10 border-2 border-red-500/30">
-                            <Swords className="h-10 w-10 text-red-400"/>
+                    <CardContent className="relative p-4 flex items-center gap-4">
+                        <div className="p-3 rounded-full bg-red-500/10 border-2 border-red-500/30">
+                            <Swords className="h-8 w-8 text-red-400"/>
                         </div>
-                        <div className="flex-1 text-center sm:text-left">
-                            <CardTitle className="text-2xl font-bold text-white">Challenger Zone</CardTitle>
-                            <CardDescription className="text-slate-400 mt-1">Take on legendary study challenges to forge discipline and win rewards.</CardDescription>
+                        <div className="flex-1">
+                            <CardTitle className="text-xl font-bold text-white">Challenger Zone</CardTitle>
+                            <CardDescription className="text-slate-400 text-sm mt-1">Forge discipline and win rewards.</CardDescription>
                         </div>
-                        <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                            View Challenges <ArrowRight className="ml-2 h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="text-white">
+                            <ArrowRight className="h-5 w-5" />
                         </Button>
                     </CardContent>
                 </Card>
@@ -311,16 +314,16 @@ export default function DashboardPage() {
                 <DialogTrigger asChild>
                     <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 border-slate-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                          <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                             <div className="p-4 rounded-full bg-amber-500/10 border-2 border-amber-500/30">
-                                <Trophy className="h-10 w-10 text-amber-400"/>
+                        <CardContent className="relative p-4 flex items-center gap-4">
+                             <div className="p-3 rounded-full bg-amber-500/10 border-2 border-amber-500/30">
+                                <Trophy className="h-8 w-8 text-amber-400"/>
                             </div>
-                            <div className="flex-1 text-center sm:text-left">
-                                <CardTitle className="text-2xl font-bold text-white">Top Achievers</CardTitle>
-                                <CardDescription className="text-slate-400 mt-1">See who's dominating the leaderboards and claim your spot at the top!</CardDescription>
+                            <div className="flex-1">
+                                <CardTitle className="text-xl font-bold text-white">Top Achievers</CardTitle>
+                                <CardDescription className="text-slate-400 text-sm mt-1">Claim your spot at the top!</CardDescription>
                             </div>
-                            <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                                View Leaderboards <ArrowRight className="ml-2 h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="text-white">
+                                <ArrowRight className="h-5 w-5" />
                             </Button>
                         </CardContent>
                     </Card>
@@ -357,16 +360,16 @@ export default function DashboardPage() {
                     >
                          <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-rose-900 via-purple-900 to-rose-900 border-rose-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                              <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                                 <div className="p-4 rounded-full bg-rose-500/10 border-2 border-rose-500/30">
-                                    <Gamepad2 className="h-10 w-10 text-rose-400"/>
+                            <CardContent className="relative p-4 flex items-center gap-4">
+                                 <div className="p-3 rounded-full bg-rose-500/10 border-2 border-rose-500/30">
+                                    <Gamepad2 className="h-8 w-8 text-rose-400"/>
                                 </div>
-                                <div className="flex-1 text-center sm:text-left">
-                                    <CardTitle className="text-2xl font-bold text-white">Explore, Compete & Earn</CardTitle>
-                                    <CardDescription className="text-slate-400 mt-1">Dive into quizzes, games, and rewards when you need a break.</CardDescription>
+                                <div className="flex-1">
+                                    <CardTitle className="text-xl font-bold text-white">Explore, Compete & Earn</CardTitle>
+                                    <CardDescription className="text-slate-400 text-sm mt-1">Quizzes, games, and rewards.</CardDescription>
                                 </div>
-                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                                    Explore <ArrowRight className="ml-2 h-4 w-4" />
+                                <Button variant="ghost" size="icon" className="text-white">
+                                    <ArrowRight className="h-5 w-5" />
                                 </Button>
                             </CardContent>
                         </Card>
@@ -424,16 +427,16 @@ export default function DashboardPage() {
                     >
                          <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-cyan-900 via-blue-900 to-cyan-900 border-cyan-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                              <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                            <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                                 <div className="p-4 rounded-full bg-cyan-500/10 border-2 border-cyan-500/30">
-                                    <BrainCircuit className="h-10 w-10 text-cyan-400"/>
+                            <CardContent className="relative p-4 flex items-center gap-4">
+                                 <div className="p-3 rounded-full bg-cyan-500/10 border-2 border-cyan-500/30">
+                                    <BrainCircuit className="h-8 w-8 text-cyan-400"/>
                                 </div>
-                                <div className="flex-1 text-center sm:text-left">
-                                    <CardTitle className="text-2xl font-bold text-white">Enter Study Zone</CardTitle>
-                                    <CardDescription className="text-slate-400 mt-1">All your tools for focused and productive learning sessions.</CardDescription>
+                                <div className="flex-1">
+                                    <CardTitle className="text-xl font-bold text-white">Enter Study Zone</CardTitle>
+                                    <CardDescription className="text-slate-400 text-sm mt-1">Tools for focused learning.</CardDescription>
                                 </div>
-                                <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                                    Begin <ArrowRight className="ml-2 h-4 w-4" />
+                                <Button variant="ghost" size="icon" className="text-white">
+                                    <ArrowRight className="h-5 w-5" />
                                 </Button>
                             </CardContent>
                         </Card>
@@ -476,16 +479,16 @@ export default function DashboardPage() {
             <Link href="/dashboard/tools" className="group block">
                 <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-lime-900 via-green-900 to-lime-900 border-lime-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                     <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                        <div className="p-4 rounded-full bg-lime-500/10 border-2 border-lime-500/30">
-                            <Wrench className="h-10 w-10 text-lime-400"/>
+                    <CardContent className="relative p-4 flex items-center gap-4">
+                        <div className="p-3 rounded-full bg-lime-500/10 border-2 border-lime-500/30">
+                            <Wrench className="h-8 w-8 text-lime-400"/>
                         </div>
-                        <div className="flex-1 text-center sm:text-left">
-                            <CardTitle className="text-2xl font-bold text-white">Student Tools</CardTitle>
-                            <CardDescription className="text-slate-400 mt-1">Access utilities like the Percentage Calculator and Timetable Generator.</CardDescription>
+                        <div className="flex-1">
+                            <CardTitle className="text-xl font-bold text-white">Student Tools</CardTitle>
+                            <CardDescription className="text-slate-400 text-sm mt-1">Calculators and other utilities.</CardDescription>
                         </div>
-                        <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                            Open Tools <ArrowRight className="ml-2 h-4 w-4" />
+                         <Button variant="ghost" size="icon" className="text-white">
+                            <ArrowRight className="h-5 w-5" />
                         </Button>
                     </CardContent>
                 </Card>
