@@ -209,58 +209,44 @@ export default function DashboardPage() {
       </SignedIn>
 
 
-       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-                <Card className="relative group h-full">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                    <div className="relative rounded-lg bg-background flex flex-col h-full">
-                        <CardHeader className="flex-row items-center gap-4 p-4">
-                             <div className="p-3 rounded-full bg-primary/10">
-                                <Bell className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-lg text-primary">Latest Announcement</CardTitle>
-                                <CardDescription>Don't miss out on important updates.</CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col justify-center p-4 pt-0">
-                            <h3 className="text-xl font-bold">{latestAnnouncement.title}</h3>
-                            <div className="text-muted-foreground mt-1 min-h-[40px]">
-                                <TypingAnimation text={latestAnnouncement.description} />
-                            </div>
-                        </CardContent>
-                    </div>
-                </Card>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
-                 <Dialog>
-                    <DialogTrigger asChild>
-                        <Card className="group relative cursor-pointer text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center">
-                            <div className="absolute inset-0 blue-nebula-bg z-0"></div>
-                            <div id="particle-container">
-                                {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
-                            </div>
-                            <CardContent className="p-4 sm:p-6 text-center relative z-10">
-                                <Vote className="h-8 sm:h-10 w-8 sm:w-10 mx-auto mb-3 drop-shadow-lg"/>
-                                <h3 className="text-lg sm:text-xl font-bold text-shadow-glow">Community Poll</h3>
-                                <p className="text-xs sm:text-sm opacity-80">Have your say in new features!</p>
-                            </CardContent>
-                        </Card>
-                    </DialogTrigger>
-                    <CommunityPoll />
-                </Dialog>
-                <SignedIn>
-                     <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center">
-                        <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
-                        <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <CardContent className="p-4 sm:p-6 text-center relative z-10">
-                            <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
-                            <h3 className="text-lg font-semibold">Your Credits</h3>
-                            <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
-                        </CardContent>
-                    </Card>
-                </SignedIn>
-            </div>
+       <div className="space-y-6">
+          <Card className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
+              <div className="relative rounded-lg bg-background flex flex-col h-full">
+                  <CardHeader className="flex-row items-center gap-4 p-4">
+                        <div className="p-3 rounded-full bg-primary/10">
+                          <Bell className="h-6 w-6 text-primary" />
+                      </div>
+                      <div>
+                          <CardTitle className="text-lg text-primary">Latest Announcement</CardTitle>
+                          <CardDescription>Don't miss out on important updates.</CardDescription>
+                      </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col justify-center p-4 pt-0">
+                      <h3 className="text-xl font-bold">{latestAnnouncement.title}</h3>
+                      <div className="text-muted-foreground mt-1 min-h-[40px]">
+                          <TypingAnimation text={latestAnnouncement.description} />
+                      </div>
+                  </CardContent>
+              </div>
+          </Card>
+
+           <Dialog>
+              <DialogTrigger asChild>
+                  <Card className="group relative cursor-pointer text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square sm:aspect-auto flex flex-col justify-center">
+                      <div className="absolute inset-0 blue-nebula-bg z-0"></div>
+                      <div id="particle-container">
+                          {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
+                      </div>
+                      <CardContent className="p-4 sm:p-6 text-center relative z-10">
+                          <Vote className="h-8 sm:h-10 w-8 sm:w-10 mx-auto mb-3 drop-shadow-lg"/>
+                          <h3 className="text-lg sm:text-xl font-bold text-shadow-glow">Community Poll</h3>
+                          <p className="text-xs sm:text-sm opacity-80">Have your say in new features!</p>
+                      </CardContent>
+                  </Card>
+              </DialogTrigger>
+              <CommunityPoll />
+          </Dialog>
       </div>
 
        <div className="space-y-6">
@@ -485,6 +471,18 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </Link>
+
+            <SignedIn>
+                  <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
+                    <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <CardContent className="p-4 sm:p-6 text-center relative z-10">
+                        <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
+                        <h3 className="text-lg font-semibold">Your Credits</h3>
+                        <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
+                    </CardContent>
+                </Card>
+            </SignedIn>
       </div>
 
       {featureToUnlock && (
