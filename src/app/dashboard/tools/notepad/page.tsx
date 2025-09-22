@@ -5,11 +5,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading } from 'lucide-react';
+import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 
 export default function NotepadPage() {
@@ -36,8 +36,12 @@ export default function NotepadPage() {
         setNotes(e.target.value);
     }
     
-    const wordCount = useMemo(() => notes.trim().split(/\s+/).filter(Boolean).length, [notes]);
+    const wordCount = useMemo(() => notes.trim() === '' ? 0 : notes.trim().split(/\s+/).length, [notes]);
     const charCount = useMemo(() => notes.length, [notes]);
+    const lineCount = useMemo(() => notes.split('\n').length, [notes]);
+    const paragraphCount = useMemo(() => notes.split(/\n\s*\n/).filter(p => p.trim() !== '').length, [notes]);
+    const sentenceCount = useMemo(() => (notes.match(/[.!?]+/g) || []).length, [notes]);
+
 
     const handleCopy = () => {
         navigator.clipboard.writeText(notes);
@@ -83,6 +87,16 @@ export default function NotepadPage() {
         setNotes(newNotes);
         setSaveStatus('saving');
     }
+    
+    const handleRemoveExtraSpaces = () => {
+        setNotes(notes.replace(/\s+/g, ' ').trim());
+        setSaveStatus('saving');
+    }
+
+    const handleReverseText = () => {
+        setNotes(notes.split('').reverse().join(''));
+        setSaveStatus('saving');
+    }
 
     return (
         <div className="space-y-8">
@@ -105,7 +119,9 @@ export default function NotepadPage() {
                 <CardFooter className="p-3 bg-muted/50 border-t flex-wrap items-center justify-between gap-4">
                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
                         <span>Words: {wordCount}</span>
-                        <span>Characters: {charCount}</span>
+                        <span>Chars: {charCount}</span>
+                        <span>Lines: {lineCount}</span>
+                        <span>¶: {paragraphCount}</span>
                         <div className="flex items-center gap-1.5 transition-opacity duration-300">
                            {saveStatus === 'saving' && <><Save className="h-3 w-3 animate-pulse"/> Saving...</>}
                            {saveStatus === 'saved' && <><Check className="h-3 w-3 text-green-500"/> Saved</>}
@@ -121,6 +137,16 @@ export default function NotepadPage() {
                                 <DropdownMenuItem onClick={() => handleCaseChange('lower')}><CaseLower className="mr-2"/> lowercase</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleCaseChange('title')}><Heading className="mr-2"/> Title Case</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleCaseChange('sentence')}><Pilcrow className="mr-2"/> Sentence case</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
+                        <DropdownMenu>
+                             <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm"><Wand2 className="mr-2"/> Text Tools</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={handleRemoveExtraSpaces}><WrapText className="mr-2"/> Remove Extra Spaces</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleReverseText}><ArrowLeftRight className="mr-2"/> Reverse Text</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
 
