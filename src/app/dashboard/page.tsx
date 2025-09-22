@@ -194,7 +194,7 @@ export default function DashboardPage() {
             className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-yellow-400/20 via-pink-500/20 to-purple-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
             onClick={() => setIsSurpriseRevealed(true)}
           >
-            <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000"></div>
+            <div className="absolute inset-0 bg-grid-slate-800 animate-pulse duration-1000"></div>
             <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center">
                 <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
                 <div className="relative flex flex-col items-center">
@@ -213,16 +213,18 @@ export default function DashboardPage() {
                 <Card className="relative group">
                     <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
                     <div className="relative rounded-lg bg-background flex flex-col">
-                        <CardHeader>
-                            <div className="flex items-center gap-3">
+                        <CardHeader className="flex-row items-center gap-4 p-4">
+                             <div className="p-3 rounded-full bg-primary/10">
                                 <Bell className="h-6 w-6 text-primary" />
-                                <CardTitle>Latest Announcement</CardTitle>
                             </div>
-                            <CardDescription>Don't miss out on important updates.</CardDescription>
+                            <div>
+                                <CardTitle className="text-lg text-primary">Latest Announcement</CardTitle>
+                                <CardDescription>Don't miss out on important updates.</CardDescription>
+                            </div>
                         </CardHeader>
-                        <CardContent className="flex-1 flex flex-col justify-center">
-                            <h3 className="text-xl md:text-2xl font-bold">{latestAnnouncement.title}</h3>
-                            <div className="text-muted-foreground mt-2 min-h-[40px]">
+                        <CardContent className="flex-1 flex flex-col justify-center p-4 pt-0">
+                            <h3 className="text-xl font-bold">{latestAnnouncement.title}</h3>
+                            <div className="text-muted-foreground mt-1 min-h-[40px]">
                                 <TypingAnimation text={latestAnnouncement.description} />
                             </div>
                         </CardContent>
@@ -243,7 +245,7 @@ export default function DashboardPage() {
                             <CardContent className="p-4 sm:p-6 text-center relative">
                                 <Vote className="h-8 sm:h-10 w-8 sm:w-10 mx-auto mb-3" />
                                 <h3 className="text-lg sm:text-xl font-bold">Community Poll</h3>
-                                <p className="text-xs sm:text-sm opacity-80">Have your say!</p>
+                                <p className="text-xs sm:text-sm opacity-80">Have your say in new features!</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>

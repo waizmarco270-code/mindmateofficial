@@ -36,7 +36,7 @@ export function MarcoAiLaunchCard() {
     const { isSignedIn } = useUser();
 
     return (
-        <Card className="relative group overflow-hidden border-0 bg-transparent mb-8">
+        <Card className="relative group overflow-hidden border-0 bg-transparent">
             <div className="absolute inset-0 blue-nebula-bg z-0"></div>
             <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
                 {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
@@ -52,7 +52,7 @@ export function MarcoAiLaunchCard() {
                         The revolutionary AI study partner is preparing for launch. Get ready!
                     </CardDescription>
                 </div>
-                <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10">
+                <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10 w-full sm:w-auto mt-4 md:mt-0">
                     <p className="text-lg font-bold font-code text-cyan-300">LAUNCHING ON</p>
                     <p className="text-4xl font-bold font-serif text-white mt-1">2nd October</p>
                 </div>
