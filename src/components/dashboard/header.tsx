@@ -1,14 +1,54 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
-import { useUsers, useAdmin, SUPER_ADMIN_UID } from '@/hooks/use-admin';
+import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 import { UserButton, useUser, SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
 import { ThemeToggle } from '../theme-toggle';
+import { ScrollArea } from '../ui/scroll-area';
+import { formatDistanceToNow } from 'date-fns';
+import { Separator } from '../ui/separator';
+
+
+function AnnouncementInbox() {
+    const { announcements } = useAnnouncements();
+    const latestAnnouncements = announcements.slice(0, 10);
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon">
+                    <Mail className="h-6 w-6" />
+                    <span className="sr-only">Announcements</span>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80 p-0">
+                 <div className="p-4">
+                    <h4 className="font-bold text-base">Announcements</h4>
+                    <p className="text-sm text-muted-foreground">The latest updates and news.</p>
+                 </div>
+                 <Separator />
+                <ScrollArea className="h-[400px]">
+                    <div className="p-4 space-y-4">
+                        {latestAnnouncements.length > 0 ? latestAnnouncements.map(announcement => (
+                            <div key={announcement.id} className="space-y-1">
+                                <p className="font-semibold text-sm">{announcement.title}</p>
+                                <p className="text-xs text-muted-foreground">{announcement.description}</p>
+                                <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</p>
+                            </div>
+                        )) : (
+                            <p className="text-sm text-muted-foreground text-center py-10">No announcements yet.</p>
+                        )}
+                    </div>
+                </ScrollArea>
+            </PopoverContent>
+        </Popover>
+    )
+}
 
 
 export default function Header() {
@@ -113,6 +153,7 @@ export default function Header() {
                     </PopoverContent>
                 </Popover>
                 
+                <AnnouncementInbox />
                 <ThemeToggle />
 
                 <UserButton afterSignOutUrl="/" appearance={{
