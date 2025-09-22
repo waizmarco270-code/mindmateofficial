@@ -147,6 +147,18 @@
       50% { filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 12px #f59e0b); }
       100% { filter: drop-shadow(0 0 2px #f59e0b); }
   }
+
+  @keyframes tilt {
+    0%, 50%, 100% {
+      transform: rotate(0deg);
+    }
+    25% {
+      transform: rotate(0.5deg);
+    }
+    75% {
+      transform: rotate(-0.5deg);
+    }
+  }
 }
 
 @layer components {
@@ -249,6 +261,12 @@
     inset: 0;
     z-index: 0;
   }
+  
+  .red-nebula-bg {
+    background: linear-gradient(125deg, #2d0000, #6a0000, #2c0b4d, #000000);
+    background-size: 300% 300%;
+    animation: nebula-animation 25s ease infinite;
+  }
 
   .animate-flicker {
     animation: flicker 1.5s infinite;
@@ -262,3 +280,4 @@
     text-shadow: 0 0 8px currentColor;
   }
 }
+

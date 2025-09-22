@@ -210,25 +210,31 @@ export default function DashboardPage() {
 
 
        <div className="space-y-6">
-           <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-              <div className="relative rounded-lg bg-background flex flex-col h-full">
-                  <CardHeader className="flex-row items-center gap-4 p-4">
-                        <div className="p-3 rounded-full bg-primary/10">
-                          <Bell className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                          <CardTitle className="text-lg text-primary">Latest Announcement</CardTitle>
-                          <CardDescription>Don't miss out on important updates.</CardDescription>
-                      </div>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col justify-center p-4 pt-0">
-                      <h3 className="text-xl font-bold">{latestAnnouncement.title}</h3>
-                      <div className="text-muted-foreground mt-1 min-h-[40px]">
-                          <TypingAnimation text={latestAnnouncement.description} />
-                      </div>
-                  </CardContent>
-              </div>
+           <div className="relative group animate-tilt">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-red-600 to-purple-600 rounded-2xl blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+              <Card className="relative rounded-xl overflow-hidden" onClick={() => setIsTypingAnimationDone(true)} >
+                  <div className="absolute inset-0 red-nebula-bg z-0"></div>
+                  <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
+                      {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
+                  </div>
+                  <div className="relative z-10 text-white">
+                      <CardHeader className="flex-row items-center gap-4 p-4">
+                            <div className="p-3 rounded-full bg-white/10">
+                              <Bell className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                              <CardTitle className="text-lg text-white text-shadow-glow">Latest Announcement</CardTitle>
+                              <CardDescription className="text-white/80">Don't miss out on important updates.</CardDescription>
+                          </div>
+                      </CardHeader>
+                      <CardContent className="flex-1 flex flex-col justify-center p-4 pt-0">
+                          <h3 className="text-xl font-bold text-shadow-glow">{latestAnnouncement.title}</h3>
+                          <div className="text-white/90 mt-1 min-h-[40px]">
+                              <TypingAnimation text={latestAnnouncement.description} />
+                          </div>
+                      </CardContent>
+                  </div>
+              </Card>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Dialog>
@@ -487,3 +493,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
