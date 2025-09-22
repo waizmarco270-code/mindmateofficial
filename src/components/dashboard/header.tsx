@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -13,11 +13,14 @@ import { ThemeToggle } from '../theme-toggle';
 import { ScrollArea } from '../ui/scroll-area';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Separator } from '../ui/separator';
+import { cn } from '@/lib/utils';
 
 
 function AnnouncementInbox() {
     const { announcements } = useAnnouncements();
-    const latestAnnouncements = announcements.slice(0, 10);
+    
+    const latestAnnouncement = announcements.length > 0 ? announcements[0] : null;
+    const previousAnnouncements = announcements.slice(1, 10);
 
     return (
         <Popover>
@@ -29,19 +32,36 @@ function AnnouncementInbox() {
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0">
                  <div className="p-4">
-                    <h4 className="font-bold text-base">Announcements</h4>
+                    <h4 className="font-bold text-base">Inbox</h4>
                     <p className="text-sm text-muted-foreground">The latest updates and news.</p>
                  </div>
                  <Separator />
                 <ScrollArea className="h-[400px]">
                     <div className="p-4 space-y-4">
-                        {latestAnnouncements.length > 0 ? latestAnnouncements.map(announcement => (
-                            <div key={announcement.id} className="space-y-1">
-                                <p className="font-semibold text-sm">{announcement.title}</p>
-                                <p className="text-xs text-muted-foreground">{announcement.description}</p>
-                                <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</p>
+                        {latestAnnouncement && (
+                            <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20">
+                                <p className="font-bold text-primary mb-1">Latest Announcement</p>
+                                <p className="font-semibold text-sm">{latestAnnouncement.title}</p>
+                                <p className="text-xs text-muted-foreground">{latestAnnouncement.description}</p>
+                                <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(latestAnnouncement.createdAt, { addSuffix: true })}</p>
                             </div>
-                        )) : (
+                        )}
+
+                        {previousAnnouncements.length > 0 && (
+                            <>
+                                <Separator/>
+                                 <p className="font-semibold text-sm text-muted-foreground">Previous</p>
+                                {previousAnnouncements.map(announcement => (
+                                    <div key={announcement.id} className="space-y-1 p-2 rounded-md hover:bg-muted">
+                                        <p className="font-semibold text-sm">{announcement.title}</p>
+                                        <p className="text-xs text-muted-foreground">{announcement.description}</p>
+                                        <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</p>
+                                    </div>
+                                ))}
+                            </>
+                        )}
+
+                        {announcements.length === 0 && (
                             <p className="text-sm text-muted-foreground text-center py-10">No announcements yet.</p>
                         )}
                     </div>

@@ -192,11 +192,9 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                      </>
                 )}
             </Carousel>
-            {showcases.length > 1 && (
-                <p className="text-center text-xs text-muted-foreground mt-2 sm:hidden">
-                    &larr; Scroll for more &rarr;
-                </p>
-            )}
+            <p className="text-center text-xs text-muted-foreground mt-2 sm:hidden">
+                &larr; Scroll for more &rarr;
+            </p>
         </div>
     );
 }
@@ -285,38 +283,26 @@ export default function DashboardPage() {
 
 
        <div className="space-y-6">
-            <Card 
-                className="relative rounded-xl overflow-hidden bg-primary/10 backdrop-blur-lg border border-primary/20" 
-                onClick={() => setIsTypingAnimationDone(true)}
-            >
-                <div className="relative z-10 text-primary">
-                    <CardHeader className="flex-row items-center justify-between p-4">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-primary/10">
-                              <Bell className="h-6 w-6 text-primary" />
-                            </div>
-                            <div>
-                                <CardTitle className="text-lg text-primary">Latest Announcement</CardTitle>
-                                <CardDescription className="text-primary/80">Don't miss out on important updates.</CardDescription>
-                            </div>
-                        </div>
-                        <Dialog>
-                              <DialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full text-primary/80 hover:text-primary hover:bg-primary/10">
-                                      <Vote className="h-6 w-6" />
-                                  </Button>
-                              </DialogTrigger>
-                              <CommunityPoll />
-                          </Dialog>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col justify-center p-4 pt-0">
-                        <h3 className="text-xl font-bold text-foreground">{latestAnnouncement.title}</h3>
-                        <div className="text-muted-foreground mt-1 min-h-[40px]">
-                            <TypingAnimation text={latestAnnouncement.description} />
-                        </div>
-                    </CardContent>
-                </div>
-            </Card>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Card className="group cursor-pointer relative overflow-hidden bg-gradient-to-br from-indigo-900 via-blue-900 to-indigo-900 border-indigo-700 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
+                  <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
+                    <div className="p-3 sm:p-4 rounded-full bg-indigo-500/10 border-2 border-indigo-500/30">
+                      <Vote className="h-8 w-8 sm:h-10 sm:w-10 text-indigo-400" />
+                    </div>
+                    <div className="flex-1 text-left">
+                      <CardTitle className="text-xl sm:text-2xl font-bold text-white">Community Poll</CardTitle>
+                      <CardDescription className="text-slate-400 mt-1 text-sm sm:text-base">Make your voice heard and shape the future of MindMate.</CardDescription>
+                    </div>
+                    <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
+                      <span className="hidden sm:inline">Vote Now</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </DialogTrigger>
+              <CommunityPoll />
+            </Dialog>
       </div>
       
         <SignedIn>
@@ -557,9 +543,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
-
-
-
-    
