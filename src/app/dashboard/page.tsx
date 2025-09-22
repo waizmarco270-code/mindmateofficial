@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon, Rocket } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon, Rocket, Flame } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -209,6 +209,7 @@ export default function DashboardPage() {
     const [isTypingAnimationDone, setIsTypingAnimationDone] = useState(false);
     
     const credits = currentUserData?.credits ?? 0;
+    const streak = currentUserData?.streak ?? 0;
     const isVip = currentUserData?.isVip ?? false;
     const isGM = currentUserData?.isGM ?? false;
     const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
@@ -290,6 +291,29 @@ export default function DashboardPage() {
             </AnimatePresence>
 
             <GlobalGiftCard />
+
+             <div className="grid grid-cols-2 gap-4">
+                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
+                    <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <CardContent className="p-4 text-center relative z-10">
+                        <Medal className="h-10 w-10 mx-auto mb-2 text-yellow-400 animate-gold-shine"/>
+                        <h3 className="text-base font-semibold">Your Credits</h3>
+                        <p className="text-4xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
+                    </CardContent>
+                </Card>
+                 <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-orange-500/20 transition-shadow duration-300 flex flex-col justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
+                    <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <CardContent className="p-4 text-center relative z-10">
+                        <Flame className="h-10 w-10 mx-auto mb-2 text-orange-400 animate-flicker"/>
+                        <h3 className="text-base font-semibold">Day Streak</h3>
+                        <p className="text-4xl font-bold text-orange-400 [text-shadow:0_0_8px_currentColor]">{streak}</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+
             {isSurpriseRevealed ? (
             <DailySurpriseCard />
             ) : (
@@ -316,21 +340,6 @@ export default function DashboardPage() {
 
             <CommunityPoll />
         </SignedIn>
-
-        
-        <div className="order-first">
-             <SignedIn>
-                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
-                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
-                    <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <CardContent className="p-4 sm:p-6 text-center relative z-10">
-                        <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
-                        <h3 className="text-lg font-semibold">Your Credits</h3>
-                        <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
-                    </CardContent>
-                </Card>
-            </SignedIn>
-        </div>
 
 
        <div className="space-y-6">
