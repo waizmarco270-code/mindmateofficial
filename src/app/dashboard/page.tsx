@@ -126,6 +126,10 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
             case 'amethyst-haze': return 'amethyst-haze-bg';
             case 'solar-flare': return 'solar-flare-bg';
             case 'midnight-abyss': return 'midnight-abyss-bg';
+            case 'rainbow-aurora': return 'rainbow-aurora-bg';
+            case 'diamond-pearl': return 'diamond-pearl-bg';
+            case 'cyber-grid': return 'cyber-grid-bg';
+            case 'oceanic-flow': return 'oceanic-flow-bg';
             default: return 'bg-slate-900';
         }
     };
@@ -547,5 +551,6 @@ export default function DashboardPage() {
     </div>
   );
 }
+
 
 
