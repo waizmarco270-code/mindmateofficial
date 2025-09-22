@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, LayoutDashboard } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, LayoutDashboard, Calculator } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -38,6 +38,15 @@ const toolCategories = [
         href: "/dashboard/tools/notepad",
         color: "from-fuchsia-500 to-purple-500",
         shadow: "shadow-fuchsia-500/30"
+    },
+    {
+        id: 'scientific-calculator',
+        title: "Scientific Calculator",
+        description: "A modern calculator for all your scientific and mathematical needs.",
+        icon: Calculator,
+        href: "/dashboard/tools/calculator",
+        color: "from-orange-500 to-red-500",
+        shadow: "shadow-orange-500/30"
     }
 ]
 
