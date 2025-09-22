@@ -1,9 +1,8 @@
 
-
 'use client';
 
 import { useState } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon } from 'lucide-react';
+import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon, Rocket } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -201,11 +200,11 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
 
 export default function DashboardPage() {
     const { user } = useUser();
-    const { announcements } = useAnnouncements();
     const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
     const [isExploreZoneOpen, setIsExploreZoneOpen] = useState(false);
+    const [isFeatureShowcaseOpen, setIsFeatureShowcaseOpen] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
     const [isTypingAnimationDone, setIsTypingAnimationDone] = useState(false);
     
@@ -213,11 +212,6 @@ export default function DashboardPage() {
     const isVip = currentUserData?.isVip ?? false;
     const isGM = currentUserData?.isGM ?? false;
     const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
-
-    const latestAnnouncement = announcements.length > 0 ? announcements[0] : {
-        title: 'Welcome to MindMate!',
-        description: 'New features and updates are coming soon. Stay tuned!'
-    };
 
     const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'], isLocked: boolean) => {
         if (isLocked) {
@@ -255,7 +249,44 @@ export default function DashboardPage() {
 
        <div className="flex flex-col space-y-8">
         <SignedIn>
-            <ShowcaseView showcases={featureShowcases} />
+            <AnimatePresence mode="wait">
+                {isFeatureShowcaseOpen ? (
+                    <motion.div
+                        key="showcase-view"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                    >
+                        <ShowcaseView showcases={featureShowcases} />
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="showcase-gateway"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <Card 
+                            className="relative group overflow-hidden cursor-pointer bg-gradient-to-tr from-purple-500/20 via-sky-500/20 to-blue-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
+                            onClick={() => setIsFeatureShowcaseOpen(true)}
+                        >
+                            <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]"></div>
+                            <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center items-center">
+                                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
+                                <motion.div
+                                    animate={{ y: [0, -10, 0], scale: [1, 1.05, 1] }}
+                                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                                >
+                                    <SparklesIcon className="h-10 w-10 text-sky-400 [filter:drop-shadow(0_0_8px_currentColor)]"/>
+                                </motion.div>
+                                <h3 className="text-2xl font-bold mt-2">Tap to See Latest & Upcoming Features</h3>
+                                <p className="text-sm text-muted-foreground">Don't miss out on what's new!</p>
+                            </CardContent>
+                        </Card>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <GlobalGiftCard />
             {isSurpriseRevealed ? (
             <DailySurpriseCard />
@@ -285,17 +316,20 @@ export default function DashboardPage() {
         </SignedIn>
 
         
-        <SignedIn>
-            <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center order-last">
-                <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
-                <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
-                <CardContent className="p-4 sm:p-6 text-center relative z-10">
-                    <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
-                    <h3 className="text-lg font-semibold">Your Credits</h3>
-                    <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
-                </CardContent>
-            </Card>
-        </SignedIn>
+        <div className="order-last">
+             <SignedIn>
+                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
+                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
+                    <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <CardContent className="p-4 sm:p-6 text-center relative z-10">
+                        <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
+                        <h3 className="text-lg font-semibold">Your Credits</h3>
+                        <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
+                    </CardContent>
+                </Card>
+            </SignedIn>
+        </div>
+
 
        <div className="space-y-6">
             {isSpecialUser && (
