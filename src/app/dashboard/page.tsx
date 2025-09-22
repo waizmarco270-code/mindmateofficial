@@ -208,8 +208,8 @@ export default function DashboardPage() {
       </SignedIn>
 
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="md:col-span-2 space-y-6">
                 <Card>
                     <CardHeader>
                         <div className="flex items-center gap-3">
@@ -227,14 +227,21 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            <div className="lg:col-span-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+            <div className="md:col-span-1 grid grid-cols-2 md:grid-cols-1 gap-6">
                 <Dialog>
                     <DialogTrigger asChild>
-                        <Card className="cursor-pointer bg-gradient-to-br from-purple-500 to-indigo-600 text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center">
-                            <CardContent className="p-6 text-center">
-                                <Vote className="h-10 w-10 mx-auto mb-3" />
-                                <h3 className="text-xl font-bold">Community Poll</h3>
-                                <p className="text-sm opacity-80">Have your say!</p>
+                        <Card className="cursor-pointer relative text-white hover:shadow-lg hover:shadow-purple-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center bg-gradient-to-br from-purple-500 to-indigo-600">
+                           <div
+                                className="absolute inset-0 opacity-20"
+                                style={{
+                                    backgroundImage: 'linear-gradient(white 1px, transparent 1px), linear-gradient(to right, white 1px, transparent 1px)',
+                                    backgroundSize: '2rem 2rem'
+                                }}
+                            ></div>
+                            <CardContent className="p-4 sm:p-6 text-center relative">
+                                <Vote className="h-8 sm:h-10 w-8 sm:w-10 mx-auto mb-3" />
+                                <h3 className="text-lg sm:text-xl font-bold">Community Poll</h3>
+                                <p className="text-xs sm:text-sm opacity-80">Have your say!</p>
                             </CardContent>
                         </Card>
                     </DialogTrigger>
@@ -242,14 +249,14 @@ export default function DashboardPage() {
                 </Dialog>
                 <SignedIn>
                     <Card className="border-amber-500/20 bg-amber-500/5 aspect-square flex flex-col justify-center">
-                        <CardHeader className="pb-2">
+                        <CardHeader className="p-4 sm:p-6 pb-2">
                             <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600 dark:text-amber-400">
                                 <span>Your Credits</span>
                                 <Medal className="h-4 w-4" />
                             </CardTitle>
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-5xl font-bold text-amber-600 dark:text-amber-500">{credits}</div>
+                        <CardContent className="p-4 sm:p-6 pt-0">
+                            <div className="text-4xl sm:text-5xl font-bold text-amber-600 dark:text-amber-500">{credits}</div>
                             <p className="text-xs text-muted-foreground mt-1">
                                 +1 for daily tasks, +5 for perfecting quizzes!
                             </p>
