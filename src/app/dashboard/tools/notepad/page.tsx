@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText } from 'lucide-react';
+import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText, SortAsc, Shuffle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -97,6 +97,16 @@ export default function NotepadPage() {
         setNotes(notes.split('').reverse().join(''));
         setSaveStatus('saving');
     }
+    
+    const handleSortLines = () => {
+        setNotes(notes.split('\n').sort().join('\n'));
+        setSaveStatus('saving');
+    };
+    
+    const handleShuffleLines = () => {
+        setNotes(notes.split('\n').sort(() => Math.random() - 0.5).join('\n'));
+        setSaveStatus('saving');
+    };
 
     return (
         <div className="space-y-8">
@@ -147,6 +157,9 @@ export default function NotepadPage() {
                             <DropdownMenuContent>
                                 <DropdownMenuItem onClick={handleRemoveExtraSpaces}><WrapText className="mr-2"/> Remove Extra Spaces</DropdownMenuItem>
                                 <DropdownMenuItem onClick={handleReverseText}><ArrowLeftRight className="mr-2"/> Reverse Text</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handleSortLines}><SortAsc className="mr-2"/> Sort Lines</DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleShuffleLines}><Shuffle className="mr-2"/> Shuffle Lines</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
 
