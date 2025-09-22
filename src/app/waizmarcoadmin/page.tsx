@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -17,14 +17,15 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { Slider } from '@/components/ui/slider';
 import { lockableFeatures } from '@/lib/features';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -49,7 +50,10 @@ export default function SuperAdminPanelPage() {
     unlockFeature,
     appSettings,
     updateAppSettings,
-    generateDevAiAccessToken, // New function
+    generateDevAiAccessToken,
+    featureShowcases,
+    addFeatureShowcase,
+    deleteFeatureShowcase,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -75,6 +79,12 @@ export default function SuperAdminPanelPage() {
   const [devTokenUser, setDevTokenUser] = useState<string | null>(null);
   const [generatedDevToken, setGeneratedDevToken] = useState<string | null>(null);
   const [isGeneratingToken, setIsGeneratingToken] = useState(false);
+  
+  // State for Showcase
+  const [showcaseTitle, setShowcaseTitle] = useState('');
+  const [showcaseDesc, setShowcaseDesc] = useState('');
+  const [showcaseDate, setShowcaseDate] = useState('');
+  const [showcaseTemplate, setShowcaseTemplate] = useState<ShowcaseTemplate>('cosmic-blue');
 
 
   // State for Feature Locks
@@ -290,6 +300,29 @@ export default function SuperAdminPanelPage() {
         setIsGeneratingToken(false);
     }
   };
+  
+  const handleAddShowcase = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!showcaseTitle.trim() || !showcaseDesc.trim()) {
+          toast({ variant: 'destructive', title: 'Title and Description are required.' });
+          return;
+      }
+      try {
+          await addFeatureShowcase({
+              title: showcaseTitle,
+              description: showcaseDesc,
+              launchDate: showcaseDate || undefined,
+              template: showcaseTemplate
+          });
+          toast({ title: "Feature Showcase Added!" });
+          setShowcaseTitle('');
+          setShowcaseDesc('');
+          setShowcaseDate('');
+          setShowcaseTemplate('cosmic-blue');
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
+      }
+  }
 
   if (!isSuperAdmin) {
     return (
@@ -317,6 +350,96 @@ export default function SuperAdminPanelPage() {
 
       <Accordion type="multiple" defaultValue={['user-management']} className="w-full space-y-4">
         
+        {/* Showcase Management */}
+        <AccordionItem value="showcase-management" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Megaphone className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Feature Showcase Management</h3>
+                  <p className="text-sm text-muted-foreground text-left">Create and manage pre-launch announcement banners.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-4">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Add New Showcase</CardTitle>
+                        <CardDescription>This will appear in a carousel at the top of the user dashboard.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form onSubmit={handleAddShowcase} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="sc-title">Title</Label>
+                                    <Input id="sc-title" value={showcaseTitle} onChange={e => setShowcaseTitle(e.target.value)} required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="sc-date">Launch Date (Optional)</Label>
+                                    <Input id="sc-date" type="date" value={showcaseDate} onChange={e => setShowcaseDate(e.target.value)} />
+                                </div>
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="sc-desc">Description</Label>
+                                <Textarea id="sc-desc" value={showcaseDesc} onChange={e => setShowcaseDesc(e.target.value)} required />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="sc-template">Card Template</Label>
+                                <Select value={showcaseTemplate} onValueChange={(v: ShowcaseTemplate) => setShowcaseTemplate(v)}>
+                                    <SelectTrigger id="sc-template"><SelectValue/></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="cosmic-blue">Cosmic Blue</SelectItem>
+                                        <SelectItem value="fiery-red">Fiery Red</SelectItem>
+                                        <SelectItem value="golden-legend">Golden Legend</SelectItem>
+                                        <SelectItem value="professional-dark">Professional Dark</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <Button type="submit">Add Showcase</Button>
+                        </form>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Existing Showcases</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Title</TableHead>
+                                    <TableHead>Launch Date</TableHead>
+                                    <TableHead>Template</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {featureShowcases.map(sc => (
+                                    <TableRow key={sc.id}>
+                                        <TableCell>{sc.title}</TableCell>
+                                        <TableCell>{sc.launchDate ? format(parseISO(sc.launchDate), 'PPP') : 'Not set'}</TableCell>
+                                        <TableCell><Badge variant="secondary" className="capitalize">{sc.template.replace('-', ' ')}</Badge></TableCell>
+                                        <TableCell className="text-right">
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader><AlertDialogTitle>Delete this showcase?</AlertDialogTitle><AlertDialogDescription>This action is permanent and cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteFeatureShowcase(sc.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {featureShowcases.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center">No showcases created yet.</TableCell></TableRow>}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
         {/* App Settings */}
         <AccordionItem value="app-settings" className="border-b-0">
           <Card>
@@ -1005,3 +1128,4 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
+
