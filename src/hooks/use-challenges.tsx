@@ -26,10 +26,10 @@ export interface ChallengeConfig {
     dailyGoals: DailyGoal[];
     rules: string[];
     eliteBadgeDays: number;
+    isCustom?: boolean; // Flag for custom challenges
 }
 
-export interface ActiveChallenge {
-    challengeId: string;
+export interface ActiveChallenge extends ChallengeConfig {
     startDate: string; // ISO string
     currentDay: number;
     status: 'active' | 'completed' | 'failed';
@@ -74,10 +74,6 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
                 const dayDiff = differenceInCalendarDays(today, startDate) + 1;
 
                 if (data.status === 'active' && dayDiff > data.currentDay) {
-                    // It's a new day, update the challenge state
-                    // We need to check if the previous day's goals were met
-                    // This logic would become more complex for auto-failure.
-                    // For now, we just update the day.
                      updateDoc(challengeRef, { currentDay: dayDiff });
                      data.currentDay = dayDiff;
                 }
@@ -103,7 +99,8 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
         const today = new Date().toISOString();
         const newChallenge: ActiveChallenge = {
-            challengeId: config.id,
+            ...config,
+            challengeId: config.id, // Keep a stable ID for pre-made challenges
             startDate: today,
             currentDay: 1,
             status: 'active',

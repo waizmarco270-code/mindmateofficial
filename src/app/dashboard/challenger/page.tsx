@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Swords, Shield, Trophy, Skull } from 'lucide-react';
+import { ArrowRight, Swords, Shield, Trophy, Skull, PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -48,10 +48,24 @@ const challengeCategories = [
         shadow: "shadow-red-500/30",
         tag: "Legendary"
     },
+    {
+        title: "Create Your Own Challenge",
+        description: "Forge your own path. Set custom goals, duration, and difficulty.",
+        icon: PlusCircle,
+        href: "/dashboard/challenger/create",
+        color: "from-amber-500 to-orange-500",
+        shadow: "shadow-amber-500/30",
+        tag: "Custom"
+    },
 ];
 
 export default function ChallengerHubPage() {
     const { activeChallenge } = useChallenges();
+
+    // Dynamically adjust grid columns based on number of items
+    const gridColsClass = challengeCategories.length === 5 
+        ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-3" // Your original for odd numbers might need custom layout
+        : "grid-cols-1 md:grid-cols-2";
 
     return (
         <div className="space-y-8">
@@ -63,10 +77,13 @@ export default function ChallengerHubPage() {
                 <p className="text-muted-foreground">Forge discipline, complete epic study challenges, and earn legendary rewards.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {challengeCategories.map((category, index) => {
-                    const isActive = activeChallenge?.challengeId === category.title;
+                    const isActive = activeChallenge?.challengeId === category.title || (activeChallenge?.isCustom && category.title === "Create Your Own Challenge");
                     const isDisabled = activeChallenge && !isActive;
+
+                    const href = isActive && activeChallenge?.isCustom ? "/dashboard/challenger/custom" : category.href;
+
 
                     return (
                         <motion.div
@@ -74,9 +91,12 @@ export default function ChallengerHubPage() {
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.5, delay: index * 0.1 }}
-                            className={cn(isDisabled && "opacity-50 cursor-not-allowed")}
+                            className={cn(
+                                isDisabled && "opacity-50 cursor-not-allowed",
+                                category.title === "Create Your Own Challenge" && "lg:col-span-1 md:col-span-2"
+                            )}
                         >
-                            <Link href={isDisabled ? '#' : category.href} className={cn("block h-full", isDisabled && "pointer-events-none")}>
+                            <Link href={isDisabled ? '#' : href} className={cn("block h-full", isDisabled && "pointer-events-none")}>
                                <Card className={cn(
                                    "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2",
                                    category.shadow,
@@ -99,7 +119,7 @@ export default function ChallengerHubPage() {
                                    </CardContent>
                                    <CardContent>
                                         <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors">
-                                           {isActive ? "Continue Challenge" : "View Challenge"} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                           {category.title === "Create Your Own Challenge" ? "Create Challenge" : (isActive ? "Continue Challenge" : "View Challenge")} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                        </Button>
                                    </CardContent>
                                </Card>
