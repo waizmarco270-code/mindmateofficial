@@ -233,12 +233,11 @@ export default function DashboardPage() {
             </div>
             <Dialog>
                 <DialogTrigger asChild>
-                    <Card className="relative overflow-hidden cursor-pointer group bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 text-white hover:shadow-2xl hover:shadow-purple-500/20 transition-all duration-300 h-full">
-                         <div className="absolute inset-0 bg-grid-slate-800 opacity-20 group-hover:opacity-30 transition-opacity"></div>
+                    <Card className="relative overflow-hidden cursor-pointer group bg-card hover:bg-muted/50 transition-colors h-full">
                         <CardContent className="relative p-6 h-full flex flex-col justify-center items-center text-center">
-                            <Vote className="h-12 w-12 mb-4 drop-shadow-lg"/>
-                            <h3 className="text-2xl font-bold [text-shadow:0_2px_4px_rgba(0,0,0,0.4)]">Community Poll</h3>
-                            <p className="text-white/80 mt-1">Have your say in new features!</p>
+                            <Vote className="h-12 w-12 mb-4 text-primary drop-shadow-lg"/>
+                            <h3 className="text-2xl font-bold">Community Poll</h3>
+                            <p className="text-muted-foreground mt-1">Have your say in new features!</p>
                         </CardContent>
                     </Card>
                 </DialogTrigger>
