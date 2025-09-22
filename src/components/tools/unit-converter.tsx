@@ -7,10 +7,10 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Ruler, Scale, Thermometer, Clock, ArrowRightLeft } from 'lucide-react';
+import { Ruler, Scale, Thermometer, Clock, ArrowRightLeft, Square, Cuboid, Gauge, Database } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-type UnitCategory = 'length' | 'mass' | 'temperature' | 'time';
+type UnitCategory = 'length' | 'mass' | 'temperature' | 'time' | 'area' | 'volume' | 'speed' | 'data';
 
 interface Unit {
     id: string;
@@ -21,8 +21,8 @@ interface Unit {
 
 const UNITS: Record<UnitCategory, Unit[]> = {
     length: [
-        { id: 'km', label: 'Kilometer', toBase: v => v * 1000, fromBase: v => v / 1000 },
         { id: 'm', label: 'Meter', toBase: v => v, fromBase: v => v },
+        { id: 'km', label: 'Kilometer', toBase: v => v * 1000, fromBase: v => v / 1000 },
         { id: 'cm', label: 'Centimeter', toBase: v => v / 100, fromBase: v => v * 100 },
         { id: 'mm', label: 'Millimeter', toBase: v => v / 1000, fromBase: v => v * 1000 },
         { id: 'mi', label: 'Mile', toBase: v => v * 1609.34, fromBase: v => v / 1609.34 },
@@ -31,8 +31,8 @@ const UNITS: Record<UnitCategory, Unit[]> = {
         { id: 'in', label: 'Inch', toBase: v => v * 0.0254, fromBase: v => v / 0.0254 },
     ],
     mass: [
-        { id: 't', label: 'Tonne', toBase: v => v * 1000, fromBase: v => v / 1000 },
         { id: 'kg', label: 'Kilogram', toBase: v => v, fromBase: v => v },
+        { id: 't', label: 'Tonne', toBase: v => v * 1000, fromBase: v => v / 1000 },
         { id: 'g', label: 'Gram', toBase: v => v / 1000, fromBase: v => v * 1000 },
         { id: 'mg', label: 'Milligram', toBase: v => v / 1e6, fromBase: v => v * 1e6 },
         { id: 'lb', label: 'Pound', toBase: v => v * 0.453592, fromBase: v => v / 0.453592 },
@@ -44,11 +44,36 @@ const UNITS: Record<UnitCategory, Unit[]> = {
         { id: 'k', label: 'Kelvin', toBase: v => v - 273.15, fromBase: v => v + 273.15 },
     ],
     time: [
+        { id: 's', label: 'Second', toBase: v => v, fromBase: v => v },
         { id: 'd', label: 'Day', toBase: v => v * 86400, fromBase: v => v / 86400 },
         { id: 'h', label: 'Hour', toBase: v => v * 3600, fromBase: v => v / 3600 },
         { id: 'min', label: 'Minute', toBase: v => v * 60, fromBase: v => v / 60 },
-        { id: 's', label: 'Second', toBase: v => v, fromBase: v => v },
     ],
+    area: [
+        { id: 'sqm', label: 'Square Meter', toBase: v => v, fromBase: v => v },
+        { id: 'sqkm', label: 'Square Kilometer', toBase: v => v * 1e6, fromBase: v => v / 1e6 },
+        { id: 'sqft', label: 'Square Foot', toBase: v => v / 10.764, fromBase: v => v * 10.764 },
+        { id: 'acre', label: 'Acre', toBase: v => v * 4046.86, fromBase: v => v / 4046.86 },
+        { id: 'ha', label: 'Hectare', toBase: v => v * 10000, fromBase: v => v / 10000 },
+    ],
+    volume: [
+        { id: 'l', label: 'Liter', toBase: v => v, fromBase: v => v },
+        { id: 'ml', label: 'Milliliter', toBase: v => v / 1000, fromBase: v => v * 1000 },
+        { id: 'm3', label: 'Cubic Meter', toBase: v => v * 1000, fromBase: v => v / 1000 },
+        { id: 'gal', label: 'Gallon (US)', toBase: v => v * 3.78541, fromBase: v => v / 3.78541 },
+    ],
+    speed: [
+        { id: 'mps', label: 'Meter/second', toBase: v => v, fromBase: v => v },
+        { id: 'kmh', label: 'Kilometer/hour', toBase: v => v / 3.6, fromBase: v => v * 3.6 },
+        { id: 'mph', label: 'Miles/hour', toBase: v => v / 2.237, fromBase: v => v * 2.237 },
+    ],
+    data: [
+        { id: 'b', label: 'Byte', toBase: v => v, fromBase: v => v },
+        { id: 'kb', label: 'Kilobyte', toBase: v => v * 1024, fromBase: v => v / 1024 },
+        { id: 'mb', label: 'Megabyte', toBase: v => v * 1024**2, fromBase: v => v / 1024**2 },
+        { id: 'gb', label: 'Gigabyte', toBase: v => v * 1024**3, fromBase: v => v / 1024**3 },
+        { id: 'tb', label: 'Terabyte', toBase: v => v * 1024**4, fromBase: v => v / 1024**4 },
+    ]
 };
 
 const CATEGORY_ICONS: Record<UnitCategory, React.ElementType> = {
@@ -56,6 +81,10 @@ const CATEGORY_ICONS: Record<UnitCategory, React.ElementType> = {
     mass: Scale,
     temperature: Thermometer,
     time: Clock,
+    area: Square,
+    volume: Cuboid,
+    speed: Gauge,
+    data: Database,
 };
 
 function ConverterInterface({ category }: { category: UnitCategory }) {
@@ -144,7 +173,7 @@ export function UnitConverter() {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="length" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 h-auto">
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 h-auto">
             {(Object.keys(UNITS) as UnitCategory[]).map(category => {
                 const Icon = CATEGORY_ICONS[category];
                 return (
@@ -165,3 +194,4 @@ export function UnitConverter() {
   );
 }
 
+    
