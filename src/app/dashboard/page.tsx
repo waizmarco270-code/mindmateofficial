@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -249,18 +250,13 @@ export default function DashboardPage() {
                     <CommunityPoll />
                 </Dialog>
                 <SignedIn>
-                    <Card className="border-amber-500/20 bg-amber-500/5 aspect-square flex flex-col justify-center">
-                        <CardHeader className="p-4 sm:p-6 pb-2">
-                            <CardTitle className="text-base font-medium flex items-center justify-between text-amber-600 dark:text-amber-400">
-                                <span>Your Credits</span>
-                                <Medal className="h-4 w-4" />
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 sm:p-6 pt-0">
-                            <div className="text-4xl sm:text-5xl font-bold text-amber-600 dark:text-amber-500">{credits}</div>
-                            <p className="text-xs text-muted-foreground mt-1">
-                                +1 for daily tasks, +5 for perfecting quizzes!
-                            </p>
+                     <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 aspect-square flex flex-col justify-center">
+                        <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
+                        <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <CardContent className="p-4 sm:p-6 text-center relative z-10">
+                            <Medal className="h-12 w-12 mx-auto mb-3 text-yellow-400 animate-gold-shine"/>
+                            <h3 className="text-lg font-semibold">Your Credits</h3>
+                            <p className="text-6xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
                         </CardContent>
                     </Card>
                 </SignedIn>
@@ -272,16 +268,16 @@ export default function DashboardPage() {
                 <Link href="/dashboard/premium/elite-lounge" className="group block">
                     <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-yellow-900/80 via-black to-black border-yellow-700/50 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                          <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <CardContent className="relative p-6 flex flex-col sm:flex-row items-center gap-6">
-                            <div className="p-4 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30">
-                                <Crown className="h-10 w-10 text-yellow-400 animate-gold-shine"/>
+                        <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
+                            <div className="p-3 sm:p-4 rounded-full bg-yellow-500/10 border-2 border-yellow-500/30">
+                                <Crown className="h-8 w-8 sm:h-10 sm:w-10 text-yellow-400 animate-gold-shine"/>
                             </div>
-                            <div className="flex-1 text-center sm:text-left">
-                                <CardTitle className="text-2xl font-bold text-yellow-400">Elite Lounge</CardTitle>
-                                <CardDescription className="text-yellow-400/70 mt-1">Access exclusive features and rewards for our top members.</CardDescription>
+                            <div className="flex-1 text-left">
+                                <CardTitle className="text-xl sm:text-2xl font-bold text-yellow-400">Elite Lounge</CardTitle>
+                                <CardDescription className="text-yellow-400/70 mt-1 text-sm sm:text-base">Access exclusive features and rewards for our top members.</CardDescription>
                             </div>
-                            <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white">
-                                Enter Lounge <ArrowRight className="ml-2 h-4 w-4" />
+                            <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
+                                <span className="hidden sm:inline">Enter</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
                             </Button>
                         </CardContent>
                     </Card>
@@ -300,7 +296,7 @@ export default function DashboardPage() {
                             <CardDescription className="text-slate-400 mt-1 text-sm sm:text-base">Forge discipline and win rewards.</CardDescription>
                         </div>
                         <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
-                            <span className="hidden sm:inline">View Challenges</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
+                            <span className="hidden sm:inline">View</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
                         </Button>
                     </CardContent>
                 </Card>
@@ -319,7 +315,7 @@ export default function DashboardPage() {
                                 <CardDescription className="text-slate-400 mt-1 text-sm sm:text-base">Claim your spot at the top!</CardDescription>
                             </div>
                             <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
-                                <span className="hidden sm:inline">View Leaderboards</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
+                                <span className="hidden sm:inline">View</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
                             </Button>
                         </CardContent>
                     </Card>
@@ -484,7 +480,7 @@ export default function DashboardPage() {
                             <CardDescription className="text-slate-400 mt-1 text-sm sm:text-base">Useful calculators and utilities to help with your studies.</CardDescription>
                         </div>
                          <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
-                            <span className="hidden sm:inline">Open Tools</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
+                            <span className="hidden sm:inline">Open</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
                         </Button>
                     </CardContent>
                 </Card>
