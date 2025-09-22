@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
-import { QrCode, ScanLine, Download, Palette, Link as LinkIcon, Text, Copy, Check, AlertTriangle, VideoOff } from 'lucide-react';
+import { QrCode, ScanLine, Download, Palette, Link as LinkIcon, FileText, Copy, Check, AlertTriangle, VideoOff } from 'lucide-react';
 import { QRCode as QrCodeCanvas } from 'qrcode.react';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
@@ -194,7 +194,7 @@ export function QrCodeTool() {
                                             <LinkIcon className="h-4 w-4"/> {scannedData}
                                         </a>
                                     ) : (
-                                        <p className="flex items-center justify-center gap-2"><Text className="h-4 w-4"/> {scannedData}</p>
+                                        <p className="flex items-center justify-center gap-2"><FileText className="h-4 w-4"/> {scannedData}</p>
                                     )}
                                  </Card>
                                  <div className="flex gap-2 justify-center">
