@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText, SortAsc, Shuffle, Replace, Plus } from 'lucide-react';
+import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText, SortAsc, Shuffle, Replace, Plus, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -14,10 +14,11 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 
 export default function NotepadPage() {
-    const [notesArray, setNotesArray] = useLocalStorage<string[]>('quick-notepad-slots', Array(5).fill(''));
+    const [notesArray, setNotesArray] = useLocalStorage<string[]>('quick-notepad-slots', Array(2).fill(''));
     const [activeNoteIndex, setActiveNoteIndex] = useState(0);
 
     const notes = notesArray[activeNoteIndex] || '';
@@ -144,6 +145,22 @@ export default function NotepadPage() {
         toast({title: 'New note slot added!'});
     }
 
+    const removeNoteSlot = (indexToRemove: number) => {
+        if (notesArray.length <= 1) {
+            toast({ variant: 'destructive', title: "Cannot delete the last note." });
+            return;
+        }
+
+        setNotesArray(prev => prev.filter((_, index) => index !== indexToRemove));
+
+        // Adjust active index if necessary
+        if (activeNoteIndex >= indexToRemove) {
+            setActiveNoteIndex(Math.max(0, activeNoteIndex - 1));
+        }
+        toast({ title: "Note slot removed." });
+    };
+
+
     return (
         <div className="space-y-8">
             <div>
@@ -158,7 +175,28 @@ export default function NotepadPage() {
                     <Tabs value={String(activeNoteIndex)} onValueChange={(val) => setActiveNoteIndex(Number(val))}>
                         <TabsList>
                             {notesArray.map((_, index) => (
-                                <TabsTrigger key={index} value={String(index)}>Note {index + 1}</TabsTrigger>
+                                <TabsTrigger key={index} value={String(index)} className="relative pr-8">
+                                    Note {index + 1}
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); }} 
+                                                className={cn("absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:bg-destructive/20 hover:text-destructive", notesArray.length <= 1 && 'hidden')}>
+                                                <X className="h-3 w-3"/>
+                                            </button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Delete Note {index + 1}?</AlertDialogTitle>
+                                                <AlertDialogDescription>This will permanently delete this note. This action cannot be undone.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => removeNoteSlot(index)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </TabsTrigger>
                             ))}
                         </TabsList>
                     </Tabs>
