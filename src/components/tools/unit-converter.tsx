@@ -7,13 +7,13 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Ruler, Scale, Thermometer, Clock, ArrowRightLeft, Square, Cuboid, Gauge, Database, Copy, Check, Variable } from 'lucide-react';
+import { Ruler, Scale, Thermometer, Clock, ArrowRightLeft, Square, Cuboid, Gauge, Database, Copy, Check, Variable, FlaskConical } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-type UnitCategory = 'length' | 'mass' | 'temperature' | 'time' | 'area' | 'volume' | 'speed' | 'data';
+type UnitCategory = 'length' | 'mass' | 'temperature' | 'time' | 'area' | 'volume' | 'speed' | 'data' | 'chemistry';
 
 interface Unit {
     id: string;
@@ -76,6 +76,14 @@ const UNITS: Record<UnitCategory, Unit[]> = {
         { id: 'mb', label: 'Megabyte', toBase: v => v * 1024**2, fromBase: v => v / 1024**2 },
         { id: 'gb', label: 'Gigabyte', toBase: v => v * 1024**3, fromBase: v => v / 1024**3 },
         { id: 'tb', label: 'Terabyte', toBase: v => v * 1024**4, fromBase: v => v / 1024**4 },
+    ],
+    chemistry: [
+        { id: 'mol', label: 'Mole (mol)', toBase: v => v, fromBase: v => v },
+        { id: 'mmol', label: 'Millimole (mmol)', toBase: v => v / 1000, fromBase: v => v * 1000 },
+        { id: 'molarity', label: 'Molarity (mol/L)', toBase: v => v, fromBase: v => v },
+        { id: 'millimolarity', label: 'Millimolarity (mmol/L)', toBase: v => v / 1000, fromBase: v => v * 1000 },
+        { id: 'l', label: 'Liter (L)', toBase: v => v, fromBase: v => v },
+        { id: 'ml', label: 'Milliliter (mL)', toBase: v => v / 1000, fromBase: v => v * 1000 },
     ]
 };
 
@@ -88,6 +96,7 @@ const CATEGORY_ICONS: Record<UnitCategory | 'dimensions', React.ElementType> = {
     volume: Cuboid,
     speed: Gauge,
     data: Database,
+    chemistry: FlaskConical,
     dimensions: Variable,
 };
 
