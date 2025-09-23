@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { useQuizzes, type Quiz, type QuizCategory, categoryDetails } from '@/hooks/use-quizzes';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BrainCircuit, Trophy, Users, CheckCircle, ClipboardList, AlertTriangle } from 'lucide-react';
+import { BrainCircuit, Trophy, Users, CheckCircle, ClipboardList, AlertTriangle, Search } from 'lucide-react';
 import { QuizStartDialog } from '@/components/quiz/quiz-start-dialog';
 import { useUsers } from '@/hooks/use-admin';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
+import { Input } from '@/components/ui/input';
 
 interface QuizCategoryPageProps {
   params: {
@@ -29,6 +30,7 @@ export default function QuizCategoryPage({ params: { category } }: QuizCategoryP
   const { users, loading: usersLoading } = useUsers();
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const loading = quizzesLoading || usersLoading;
 
@@ -38,8 +40,12 @@ export default function QuizCategoryPage({ params: { category } }: QuizCategoryP
   };
   
   const categoryQuizzes = useMemo(() => {
-    return quizzes.filter(q => q.category === category);
-  }, [quizzes, category]);
+    const filteredQuizzes = quizzes.filter(q => q.category === category);
+    if (!searchTerm) {
+      return filteredQuizzes;
+    }
+    return filteredQuizzes.filter(q => q.title.toLowerCase().includes(searchTerm.toLowerCase()));
+  }, [quizzes, category, searchTerm]);
   
   const topPerformers = useMemo(() => {
       if (!users) return [];
@@ -94,7 +100,15 @@ export default function QuizCategoryPage({ params: { category } }: QuizCategoryP
                     description="Sign up to start taking quizzes, earn credits for perfect scores, and compete on the leaderboard."
                 />
             </SignedOut>
-            <h2 className="text-2xl font-bold">Available Quizzes</h2>
+             <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    placeholder="Search quizzes in this category..."
+                    className="pl-10 h-12"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
             {loading && (
                 <div className="grid gap-6 md:grid-cols-2">
                     {Array.from({ length: 4 }).map((_, j) => (
@@ -105,8 +119,8 @@ export default function QuizCategoryPage({ params: { category } }: QuizCategoryP
             {!loading && categoryQuizzes.length === 0 && (
                 <Card className="flex flex-col items-center justify-center text-center p-8 border-dashed">
                     <BrainCircuit className="h-12 w-12 text-muted-foreground mb-4"/>
-                    <h3 className="font-semibold text-lg">Coming Soon!</h3>
-                    <p className="text-muted-foreground text-sm">No quizzes have been added to this category yet.</p>
+                    <h3 className="font-semibold text-lg">{searchTerm ? "No Quizzes Found" : "Coming Soon!"}</h3>
+                    <p className="text-muted-foreground text-sm">{searchTerm ? "No quizzes matched your search." : "No quizzes have been added to this category yet."}</p>
                 </Card>
             )}
             {!loading && categoryQuizzes.length > 0 && (

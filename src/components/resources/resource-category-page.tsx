@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -5,12 +6,13 @@ import { useResources, useUsers } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Lock, Sparkles, FileText, Download } from 'lucide-react';
+import { Lock, Sparkles, FileText, Download, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@clerk/nextjs';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Input } from '../ui/input';
 
 interface ResourceCategoryPageProps {
   categoryId: string;
@@ -24,20 +26,51 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
     const { toast } = useToast();
 
     const [sectionToUnlock, setSectionToUnlock] = useState<any | null>(null);
+    const [searchTerm, setSearchTerm] = useState('');
     
-    const relevantSections = useMemo(() => {
-        return allSections.filter(s => s.parentCategory === categoryId);
-    }, [allSections, categoryId]);
-    
-    const resourcesBySection = useMemo(() => {
-        return allResources.reduce((acc, resource) => {
+    const { filteredSections, resourcesBySection } = useMemo(() => {
+        const sectionsForCategory = allSections.filter(s => s.parentCategory === categoryId);
+        
+        const resourcesBySect = allResources.reduce((acc, resource) => {
             if (!acc[resource.sectionId]) {
                 acc[resource.sectionId] = [];
             }
             acc[resource.sectionId].push(resource);
             return acc;
         }, {} as Record<string, any[]>);
-    }, [allResources]);
+        
+        if (!searchTerm) {
+            return { filteredSections: sectionsForCategory, resourcesBySection: resourcesBySect };
+        }
+
+        const lowercasedTerm = searchTerm.toLowerCase();
+        const filteredSects = sectionsForCategory.filter(section => {
+            // Include section if its name matches
+            if (section.name.toLowerCase().includes(lowercasedTerm)) {
+                return true;
+            }
+            // Include section if it has at least one resource that matches
+            const resources = resourcesBySect[section.id] || [];
+            return resources.some(res => res.title.toLowerCase().includes(lowercasedTerm));
+        });
+        
+        // Now, filter the resources within the sections that are left
+        const filteredResourcesBySection = { ...resourcesBySect };
+        Object.keys(filteredResourcesBySection).forEach(sectionId => {
+            const section = allSections.find(s => s.id === sectionId);
+            // If the section name itself matches, don't filter its resources
+            if (section && section.name.toLowerCase().includes(lowercasedTerm)) {
+                return;
+            }
+            filteredResourcesBySection[sectionId] = filteredResourcesBySection[sectionId].filter(res => 
+                res.title.toLowerCase().includes(lowercasedTerm)
+            );
+        });
+
+
+        return { filteredSections: filteredSects, resourcesBySection: filteredResourcesBySection };
+
+    }, [allSections, allResources, categoryId, searchTerm]);
 
     const handleUnlock = async () => {
         if (!sectionToUnlock || !user || !currentUserData) return;
@@ -76,17 +109,28 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
     return (
         <div className="space-y-8">
             <div>
+                <Link href="/dashboard/resources" className="text-sm text-muted-foreground hover:text-primary mb-2 inline-block">&larr; Back to Resource Library</Link>
                 <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-                <p className="text-muted-foreground">Browse and unlock exclusive content.</p>
+                <p className="text-muted-foreground">Browse, search, and unlock exclusive content.</p>
+            </div>
+            
+             <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                    placeholder="Search resources..."
+                    className="pl-10 h-12"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
 
-            {relevantSections.length === 0 ? (
+            {filteredSections.length === 0 ? (
                  <div className="text-center text-muted-foreground col-span-full py-16">
-                    <p>No sections have been created for this category yet.</p>
+                     <p>{searchTerm ? "No resources or sections matched your search." : "No sections have been created for this category yet."}</p>
                 </div>
             ) : (
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {relevantSections.map(section => {
+                    {filteredSections.map(section => {
                         const isUnlocked = hasUnlocked(section.id);
                         const resources = resourcesBySection[section.id] || [];
                         
@@ -167,5 +211,3 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
         </div>
     )
 }
-
-    
