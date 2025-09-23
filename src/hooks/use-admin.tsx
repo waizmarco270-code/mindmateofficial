@@ -57,6 +57,7 @@ export interface User {
     dimensionShift?: number;
     subjectSprint?: number;
     flappyMind?: number;
+    astroAscent?: number;
   };
   claimedGlobalGifts?: string[];
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
@@ -205,7 +206,7 @@ interface AppDataContextType {
     claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
     claimEliteDailyReward: (uid: string) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
-    updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind', score: number) => Promise<void>;
+    updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind' | 'astroAscent', score: number) => Promise<void>;
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
@@ -436,6 +437,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                         dimensionShift: 0,
                         subjectSprint: 0,
                         flappyMind: 0,
+                        astroAscent: 0,
                     },
                 };
                 setDoc(userDocRef, newUser).then(() => {
@@ -779,7 +781,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { totalStudyTime: totalSeconds });
     }
 
-    const updateGameHighScore = async (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind', score: number) => {
+    const updateGameHighScore = async (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind' | 'astroAscent', score: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
         // Only update if the new score is higher
@@ -1040,6 +1042,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             dimensionShift: 0,
             subjectSprint: 0,
             flappyMind: 0,
+            astroAscent: 0,
         };
         usersSnapshot.forEach(userDoc => {
             batch.update(userDoc.ref, { 
@@ -1285,4 +1288,5 @@ export const useDailySurprises = () => {
     
 
   
+
 
