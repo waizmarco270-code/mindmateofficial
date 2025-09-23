@@ -241,7 +241,7 @@
     text-shadow: 0 0 6px rgba(127, 219, 255, 0.7);
     animation: gm-shimmer 4s ease infinite;
   }
-
+  
   .challenger-badge {
     @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
     background: linear-gradient(135deg, #ff4e00, #f7971e, #ff4e00);

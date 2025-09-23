@@ -230,11 +230,9 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const currentDayProgress = activeChallenge.progress[activeChallenge.currentDay];
-        const allGoalsMetForToday = currentDayProgress 
-            ? activeChallenge.dailyGoals
+        const allGoalsMetForToday = currentDayProgress && activeChallenge.dailyGoals
                 .filter(g => g.id !== 'checkIn')
-                .every(g => currentDayProgress[g.id]?.completed)
-            : false;
+                .every(g => currentDayProgress[g.id]?.completed);
 
 
         if (!allGoalsMetForToday) {
