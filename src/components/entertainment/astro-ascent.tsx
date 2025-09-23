@@ -15,6 +15,7 @@ import { motion } from 'framer-motion';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useToast } from '@/hooks/use-toast';
 
 
 // Game Configuration
@@ -26,6 +27,13 @@ const ROTATION_SPEED = 0.05;
 const MAX_FUEL = 1000;
 const SAFE_LANDING_VELOCITY = 1.5;
 const ASTEROID_COUNT = 10;
+
+const MILESTONE_REWARDS: Record<number, number> = {
+  1000: 5,
+  2500: 10,
+  5000: 25,
+  7500: 50,
+};
 
 interface GameObject {
   x: number;
@@ -54,7 +62,8 @@ export function AstroAscentGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { resolvedTheme } = useTheme();
   const { user, isSignedIn } = useUser();
-  const { currentUserData, updateGameHighScore } = useUsers();
+  const { currentUserData, updateGameHighScore, claimAstroAscentMilestone } = useUsers();
+  const { toast } = useToast();
 
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver' | 'won'>('idle');
   const [gameOverReason, setGameOverReason] = useState('Mission Failed');
@@ -62,6 +71,7 @@ export function AstroAscentGame() {
   const [highScore, setHighScore] = useState(0);
   const [showControls, setShowControls] = useLocalStorage('astro-ascent-controls', true);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [claimedMilestones, setClaimedMilestones] = useState<number[]>([]);
 
   const playerRef = useRef<GameObject>({ x: 0, y: 0, vx: 0, vy: 0, angle: -Math.PI / 2, fuel: MAX_FUEL });
   const asteroidsRef = useRef<Asteroid[]>([]);
@@ -74,6 +84,23 @@ export function AstroAscentGame() {
         setHighScore(currentUserData.gameHighScores.astroAscent);
     }
   }, [currentUserData]);
+
+  // Check weekly claim status
+  useEffect(() => {
+    if (user && currentUserData?.astroAscentClaims) {
+        const weeklyClaims = currentUserData.astroAscentClaims;
+        const currentWeekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        
+        if (weeklyClaims[currentWeekKey]) {
+            setClaimedMilestones(weeklyClaims[currentWeekKey]);
+        } else {
+            setClaimedMilestones([]);
+        }
+    } else {
+        setClaimedMilestones([]);
+    }
+  }, [user, currentUserData, gameState]);
+
 
   const getThemeColors = useCallback(() => {
     const isDark = resolvedTheme === 'dark';
@@ -138,13 +165,31 @@ export function AstroAscentGame() {
     }
   };
 
-  const handleWin = () => {
-    const finalScore = Math.round(playerRef.current.fuel * 10);
+  const handleWin = (finalScore: number) => {
     setScore(finalScore);
     setGameState('won');
-    if(finalScore > highScore) {
+    
+    if (finalScore > highScore) {
         setHighScore(finalScore);
-        if(user) updateGameHighScore(user.id, 'astroAscent', finalScore);
+        if (user) updateGameHighScore(user.id, 'astroAscent', finalScore);
+    }
+
+    const reachedMilestone = Object.keys(MILESTONE_REWARDS)
+      .map(Number)
+      .reverse() // check from highest to lowest
+      .find(m => finalScore >= m && !claimedMilestones.includes(m));
+
+    if (reachedMilestone && user) {
+        claimAstroAscentMilestone(user.id, reachedMilestone).then(success => {
+            if (success) {
+                toast({
+                    title: `Milestone! +${MILESTONE_REWARDS[reachedMilestone as keyof typeof MILESTONE_REWARDS]} Credits!`,
+                    description: `You reached a score of ${reachedMilestone}!`,
+                    className: "bg-green-500/10 text-green-700 border-green-500/50"
+                });
+                setClaimedMilestones(prev => [...prev, reachedMilestone]);
+            }
+        });
     }
   };
   
@@ -222,7 +267,8 @@ export function AstroAscentGame() {
         if (totalVelocity > SAFE_LANDING_VELOCITY) {
              handleGameOver('Landed too hard! Slow down more.'); return;
         }
-        handleWin(); return;
+        const finalScore = Math.round(player.fuel * 10);
+        handleWin(finalScore); return;
     }
 
     if (player.y > canvas.height || player.y < 0 || player.x < 0 || player.x > canvas.width) { handleGameOver('Lost in space!'); return; }
@@ -304,7 +350,7 @@ export function AstroAscentGame() {
     ctx.restore();
     
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [getThemeColors, score, highScore, user]);
+  }, [getThemeColors, score, highScore, user, claimedMilestones, claimAstroAscentMilestone, toast, updateGameHighScore]);
   
   useEffect(() => {
     if (gameState === 'playing') {
@@ -353,17 +399,13 @@ export function AstroAscentGame() {
   }
   
   return (
-    <Card className="w-full relative">
+     <Card className="w-full relative">
         <SignedOut>
             <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
         </SignedOut>
         <CardHeader>
-            <div className="flex justify-between items-center">
-                <div>
-                    <CardTitle>Astro Ascent</CardTitle>
-                    <CardDescription>Land safely. Watch your fuel.</CardDescription>
-                </div>
-            </div>
+            <CardTitle>Astro Ascent</CardTitle>
+            <CardDescription>Land safely. Watch your fuel.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
             <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
@@ -426,11 +468,23 @@ export function AstroAscentGame() {
                              <div>
                                 <h4 className="font-bold text-foreground">Objective & Scoring</h4>
                                 <ul className="list-disc pl-4 space-y-1 mt-2">
-                                    <li><span className="font-bold">Land on the green platform.</span></li>
+                                    <li>Land on the green platform.</li>
                                     <li><span className="font-bold text-destructive">Land GENTLY!</span> Your speed must be very low.</li>
                                     <li><span className="font-bold text-destructive">Land UPRIGHT!</span> The rocket must be vertical.</li>
                                     <li>Score is based on remaining fuel. More fuel = higher score!</li>
                                     <li>Avoid crashing into asteroids and flying off-screen.</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="flex items-start gap-3">
+                            <Award className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0" />
+                             <div>
+                                <h4 className="font-bold text-foreground">Weekly Milestone Rewards</h4>
+                                <p>Reach score milestones for the first time each week to earn bonus credits!</p>
+                                 <ul className="list-disc pl-4 space-y-1 mt-2">
+                                    {Object.entries(MILESTONE_REWARDS).map(([score, reward]) => (
+                                        <li key={score}><span className="font-bold text-primary">{score} Score</span> = <span className="font-semibold text-green-500">{reward} Credits</span></li>
+                                    ))}
                                 </ul>
                             </div>
                         </div>
