@@ -4,11 +4,10 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot, Timestamp, deleteDoc } from 'firebase/firestore';
 import { differenceInCalendarDays, startOfDay, addDays } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
-import { useTimeTracker } from './use-time-tracker';
 
 export interface DailyGoal {
     id: 'studyTime' | 'focusSession' | 'tasks' | 'checkIn';
@@ -60,13 +59,21 @@ const ChallengesContext = createContext<ChallengesContextType | undefined>(undef
 
 export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
-    const { currentUserData, addCreditsToUser, loading: userLoading } = useUsers();
+    const { currentUserData, addCreditsToUser, loading: userLoading, makeUserChallenger } = useUsers();
     const { toast } = useToast();
     const [activeChallenge, setActiveChallenge] = useState<ActiveChallenge | null>(null);
     const [loading, setLoading] = useState(true);
     
     const PENALTY_ON_FAIL = 50;
     const BAN_LIFT_COST = 100;
+
+    const resetInvalidChallenge = useCallback(async () => {
+        if (!user) return;
+        const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
+        await deleteDoc(challengeRef);
+        setActiveChallenge(null);
+        console.log("Invalid challenge data detected and cleared.");
+    }, [user]);
 
     // Fetch active challenge
     useEffect(() => {
@@ -80,16 +87,26 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onSnapshot(challengeRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data() as ActiveChallenge;
+
+                // FIX: Check for old data structure and reset if necessary
+                if (data.isCustom === undefined) {
+                    resetInvalidChallenge();
+                    setLoading(false);
+                    return;
+                }
                 
                 const today = startOfDay(new Date());
                 const startDate = startOfDay(new Date(data.startDate));
                 const dayDiff = differenceInCalendarDays(today, startDate) + 1;
 
-                if (data.status === 'active' && dayDiff > data.currentDay) {
-                     // User missed a day. Fail the challenge.
+                if (data.status === 'active' && dayDiff > data.currentDay && dayDiff <= data.duration) {
                      failChallenge(true); // silent fail
                 } else {
-                    if (data.status === 'active' && dayDiff > data.currentDay) {
+                     if (data.status === 'active' && dayDiff > data.duration) {
+                        // Challenge period ended, auto-complete
+                        completeChallenge(data);
+                    }
+                    else if (data.status === 'active' && dayDiff > data.currentDay) {
                          updateDoc(challengeRef, { currentDay: dayDiff });
                          data.currentDay = dayDiff;
                     }
@@ -105,7 +122,7 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         });
 
         return () => unsubscribe();
-    }, [user]);
+    }, [user, resetInvalidChallenge]);
 
     const startChallenge = useCallback(async (config: ChallengeConfig) => {
         if (!user || !currentUserData || activeChallenge) return;
@@ -133,6 +150,27 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "Challenge Started!", description: `The ${config.title} has begun!` });
 
     }, [user, currentUserData, activeChallenge, addCreditsToUser, toast]);
+    
+    const completeChallenge = useCallback(async (challenge: ActiveChallenge) => {
+        if (!user) return;
+        
+        const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
+        const refund = challenge.entryFee + challenge.reward;
+        
+        await addCreditsToUser(user.id, refund);
+        await makeUserChallenger(user.id);
+        
+        await updateDoc(challengeRef, {
+            status: 'completed'
+        });
+
+        toast({
+            title: "Challenge Completed!",
+            description: `Congratulations! You have earned ${refund} credits and the 'Challenger' badge!`,
+            className: "bg-green-500/10 border-green-500/50"
+        });
+
+    }, [user, addCreditsToUser, makeUserChallenger, toast]);
 
     const failChallenge = useCallback(async (silent = false) => {
         if (!user || !activeChallenge) return;
@@ -141,7 +179,7 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
         await updateDoc(doc(db, 'users', user.id, 'challenges', 'activeChallenge'), {
             status: 'failed',
-            banUntil: banExpiry
+            banUntil: banExpiry,
         });
         
         await addCreditsToUser(user.id, -PENALTY_ON_FAIL);
@@ -160,19 +198,29 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
     const checkIn = useCallback(async () => {
         if (!user || !activeChallenge || activeChallenge.status !== 'active') return;
 
-        const todayStr = new Date().toISOString().split('T')[0];
+        const today = new Date();
+        const todayStr = today.toISOString().split('T')[0];
+        
         if (activeChallenge.lastCheckedIn.startsWith(todayStr)) {
             toast({ title: "Already Checked In!", description: "You've already checked in for today." });
             return;
         }
 
+        const allGoalsMetForToday = activeChallenge.dailyGoals
+            .filter(g => g.id !== 'checkIn')
+            .every(g => activeChallenge.progress[activeChallenge.currentDay]?.[g.id]?.completed);
+
+        if (!allGoalsMetForToday) {
+             toast({ variant: 'destructive', title: "Goals Not Met", description: "You must complete all other daily goals before checking in." });
+            return;
+        }
+
         if(activeChallenge.checkInTime) {
-            const now = new Date();
             const [hours, minutes] = activeChallenge.checkInTime.split(':').map(Number);
-            const checkInDeadline = new Date();
+            const checkInDeadline = startOfDay(today);
             checkInDeadline.setHours(hours, minutes, 0, 0);
 
-            if (now < checkInDeadline) {
+            if (today < checkInDeadline) {
                 toast({
                     variant: 'destructive',
                     title: "Too Early!",
@@ -187,9 +235,15 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
             [`progress.${activeChallenge.currentDay}.checkIn`]: { current: 1, completed: true },
             lastCheckedIn: new Date().toISOString()
         });
+        
         toast({ title: "Checked In!", description: "Today's check-in is complete.", className: "bg-green-500/10 border-green-500/50" });
+        
+        // If it's the last day and all goals are met, complete the challenge
+        if(activeChallenge.currentDay === activeChallenge.duration) {
+            await completeChallenge(activeChallenge);
+        }
 
-    }, [user, activeChallenge, toast]);
+    }, [user, activeChallenge, toast, completeChallenge]);
 
     const liftChallengeBan = useCallback(async () => {
         if (!user || !currentUserData || !activeChallenge || activeChallenge.status !== 'failed') return;
@@ -201,7 +255,6 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
         await addCreditsToUser(user.id, -BAN_LIFT_COST);
 
-        // Delete the failed challenge document to allow starting a new one.
         const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
         await deleteDoc(challengeRef);
         setActiveChallenge(null);
