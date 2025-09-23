@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 // Game Configuration
 const GRAVITY = 0.05;
