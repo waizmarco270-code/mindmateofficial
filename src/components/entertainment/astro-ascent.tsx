@@ -382,7 +382,6 @@ export function AstroAscentGame() {
           canvas.width = container.clientWidth;
           canvas.height = container.clientHeight;
           if (gameState !== 'playing') {
-            // Re-initialize game pieces based on new size, but don't start the game
             resetGame();
           }
       }
@@ -400,104 +399,103 @@ export function AstroAscentGame() {
   }
   
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <Card className="w-full relative lg:col-span-2">
-            <SignedOut>
-                <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
-            </SignedOut>
-            <CardHeader>
-                <CardTitle>Astro Ascent</CardTitle>
-                <CardDescription>Land safely. Watch your fuel.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-4">
-                <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
-                    <span className="flex items-center gap-1"><Trophy className="h-4 w-4 text-amber-400"/> {highScore}</span>
-                    <span className="text-primary font-bold">SCORE: {gameState === 'won' ? score : 0}</span>
-                    <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
-                </div>
-                <div className="w-full h-[60vh] rounded-lg overflow-hidden border relative bg-slate-900">
-                    <canvas ref={canvasRef} className="w-full h-full" />
-                    {gameState !== 'playing' && (
-                        <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
-                            {gameState === 'idle' && ( <Button size="lg" onClick={startGame} disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button> )}
-                            {gameState === 'gameOver' && ( <div className="space-y-4"> <h3 className="text-3xl font-bold text-destructive">{gameOverReason}</h3> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Try Again</Button> </div> )}
-                            {gameState === 'won' && ( <motion.div initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} className="space-y-4"> <h3 className="text-3xl font-bold text-green-400">Perfect Landing!</h3> <p className="text-xl">Your score: <span className="font-bold">{score}</span></p> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Fly Again</Button> </motion.div> )}
-                        </div>
-                    )}
-                    {/* Touch Controls Overlay */}
-                    {showControls && (
-                        <div className="absolute bottom-4 left-4 right-4 z-10 grid grid-cols-3 gap-2">
-                           <div className="flex flex-col gap-2">
-                              <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('a', true)} onTouchEnd={() => handleTouchControl('a', false)} onMouseDown={() => handleTouchControl('a', true)} onMouseUp={() => handleTouchControl('a', false)}><ChevronsLeft className="h-6 w-6"/></Button>
-                              <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('q', true)} onTouchEnd={() => handleTouchControl('q', false)} onMouseDown={() => handleTouchControl('q', true)} onMouseUp={() => handleTouchControl('q', false)} >LEFT</Button>
-                           </div>
-                            <div className="flex flex-col gap-2">
-                              <Button className="h-20 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('w', true)} onTouchEnd={() => handleTouchControl('w', false)} onMouseDown={() => handleTouchControl('w', true)} onMouseUp={() => handleTouchControl('w', false)}><ThrustIcon className="h-8 w-8"/></Button>
-                              <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl(' ', true)} onTouchEnd={() => handleTouchControl(' ', false)} onMouseDown={() => handleTouchControl(' ', true)} onMouseUp={() => handleTouchControl(' ', false)} > <Hand className="h-6 w-6"/> </Button>
-                           </div>
-                           <div className="flex flex-col gap-2">
-                              <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('d', true)} onTouchEnd={() => handleTouchControl('d', false)} onMouseDown={() => handleTouchControl('d', true)} onMouseUp={() => handleTouchControl('d', false)}><ChevronsRight className="h-6 w-6"/></Button>
-                              <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('e', true)} onTouchEnd={() => handleTouchControl('e', false)} onMouseDown={() => handleTouchControl('e', true)} onMouseUp={() => handleTouchControl('e', false)} >RIGHT</Button>
-                           </div>
-                        </div>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
-         <Card className="w-full lg:col-span-1">
-             <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-              <AccordionItem value="item-1">
-                <AccordionTrigger className="p-6">
-                    <div className="flex items-center gap-2 text-base font-semibold"> <HelpCircle className="text-primary"/> How to Play & Scoring </div>
-                </AccordionTrigger>
-                <AccordionContent className="p-6 pt-0">
-                    <div className="space-y-4 text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-2">
-                            <Switch id="show-controls-switch" checked={showControls} onCheckedChange={setShowControls} />
-                            <Label htmlFor="show-controls-switch">Show On-Screen Controls</Label>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <Rocket className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
-                            <div>
-                                <h4 className="font-bold text-foreground">Controls</h4>
-                                <ul className="list-disc pl-4 space-y-1 mt-1">
-                                  <li><span className="font-bold">W or Up:</span> Main thruster.</li>
-                                  <li><span className="font-bold">A/D or Left/Right:</span> Rotate.</li>
-                                  <li><span className="font-bold">Q / E:</span> Side thrusters for horizontal movement.</li>
-                                  <li><span className="font-bold">Spacebar:</span> Retro thrusters (Brakes).</li>
-                                </ul>
-                            </div>
-                        </div>
-                         <div className="flex items-start gap-3">
-                            <Trophy className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
-                             <div>
-                                <h4 className="font-bold text-foreground">Objective & Scoring</h4>
-                                <ul className="list-disc pl-4 space-y-1 mt-2">
-                                    <li>Land on the green platform.</li>
-                                    <li><span className="font-bold text-destructive">Land GENTLY!</span> Your speed must be very low.</li>
-                                    <li><span className="font-bold text-destructive">Land UPRIGHT!</span> The rocket must be vertical.</li>
-                                    <li>Score is based on remaining fuel. More fuel = higher score!</li>
-                                    <li>Avoid crashing into asteroids and flying off-screen.</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div className="flex items-start gap-3">
-                            <Award className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0" />
-                             <div>
-                                <h4 className="font-bold text-foreground">Weekly Milestone Rewards</h4>
-                                <p>Reach score milestones for the first time each week to earn bonus credits!</p>
-                                 <ul className="list-disc pl-4 space-y-1 mt-2">
-                                    {Object.entries(MILESTONE_REWARDS).map(([score, reward]) => (
-                                        <li key={score}><span className="font-bold text-primary">{score} Score</span> = <span className="font-semibold text-green-500">{reward} Credits</span></li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </AccordionContent>
-              </AccordionItem>
-            </Accordion>
-        </Card>
+    <div className="space-y-8">
+      <Card className="w-full relative">
+          <SignedOut>
+              <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
+          </SignedOut>
+          <CardHeader>
+              <CardTitle>Astro Ascent</CardTitle>
+              <CardDescription>Land safely. Watch your fuel.</CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center gap-4">
+              <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
+                  <span className="flex items-center gap-1"><Trophy className="h-4 w-4 text-amber-400"/> {highScore}</span>
+                  <span className="text-primary font-bold">SCORE: {gameState === 'won' ? score : 0}</span>
+                  <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
+              </div>
+              <div className="w-full h-[60vh] rounded-lg overflow-hidden border relative bg-slate-900">
+                  <canvas ref={canvasRef} className="w-full h-full" />
+                  {gameState !== 'playing' && (
+                      <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
+                          {gameState === 'idle' && ( <Button size="lg" onClick={startGame} disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button> )}
+                          {gameState === 'gameOver' && ( <div className="space-y-4"> <h3 className="text-3xl font-bold text-destructive">{gameOverReason}</h3> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Try Again</Button> </div> )}
+                          {gameState === 'won' && ( <motion.div initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} className="space-y-4"> <h3 className="text-3xl font-bold text-green-400">Perfect Landing!</h3> <p className="text-xl">Your score: <span className="font-bold">{score}</span></p> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Fly Again</Button> </motion.div> )}
+                      </div>
+                  )}
+                  {showControls && (
+                      <div className="absolute bottom-4 left-4 right-4 z-10 grid grid-cols-3 gap-2">
+                          <div className="flex flex-col gap-2">
+                            <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('a', true)} onTouchEnd={() => handleTouchControl('a', false)} onMouseDown={() => handleTouchControl('a', true)} onMouseUp={() => handleTouchControl('a', false)}><ChevronsLeft className="h-6 w-6"/></Button>
+                            <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('q', true)} onTouchEnd={() => handleTouchControl('q', false)} onMouseDown={() => handleTouchControl('q', true)} onMouseUp={() => handleTouchControl('q', false)} >LEFT</Button>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Button className="h-20 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('w', true)} onTouchEnd={() => handleTouchControl('w', false)} onMouseDown={() => handleTouchControl('w', true)} onMouseUp={() => handleTouchControl('w', false)}><ThrustIcon className="h-8 w-8"/></Button>
+                            <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl(' ', true)} onTouchEnd={() => handleTouchControl(' ', false)} onMouseDown={() => handleTouchControl(' ', true)} onMouseUp={() => handleTouchControl(' ', false)} > <Hand className="h-6 w-6"/> </Button>
+                          </div>
+                          <div className="flex flex-col gap-2">
+                            <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('d', true)} onTouchEnd={() => handleTouchControl('d', false)} onMouseDown={() => handleTouchControl('d', true)} onMouseUp={() => handleTouchControl('d', false)}><ChevronsRight className="h-6 w-6"/></Button>
+                            <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('e', true)} onTouchEnd={() => handleTouchControl('e', false)} onMouseDown={() => handleTouchControl('e', true)} onMouseUp={() => handleTouchControl('e', false)} >RIGHT</Button>
+                          </div>
+                      </div>
+                  )}
+              </div>
+          </CardContent>
+      </Card>
+      <Card>
+          <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+            <AccordionItem value="item-1">
+              <AccordionTrigger className="p-6">
+                  <div className="flex items-center gap-2 text-base font-semibold"> <HelpCircle className="text-primary"/> How to Play & Scoring </div>
+              </AccordionTrigger>
+              <AccordionContent className="p-6 pt-0">
+                  <div className="space-y-4 text-sm text-muted-foreground">
+                      <div className="flex items-center space-x-2">
+                          <Switch id="show-controls-switch" checked={showControls} onCheckedChange={setShowControls} />
+                          <Label htmlFor="show-controls-switch">Show On-Screen Controls</Label>
+                      </div>
+                      <div className="flex items-start gap-3">
+                          <Rocket className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
+                          <div>
+                              <h4 className="font-bold text-foreground">Controls</h4>
+                              <ul className="list-disc pl-4 space-y-1 mt-1">
+                                <li><span className="font-bold">W or Up:</span> Main thruster.</li>
+                                <li><span className="font-bold">A/D or Left/Right:</span> Rotate.</li>
+                                <li><span className="font-bold">Q / E:</span> Side thrusters for horizontal movement.</li>
+                                <li><span className="font-bold">Spacebar:</span> Retro thrusters (Brakes).</li>
+                              </ul>
+                          </div>
+                      </div>
+                       <div className="flex items-start gap-3">
+                          <Trophy className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
+                           <div>
+                              <h4 className="font-bold text-foreground">Objective & Scoring</h4>
+                              <ul className="list-disc pl-4 space-y-1 mt-2">
+                                  <li>Land on the green platform.</li>
+                                  <li><span className="font-bold text-destructive">Land GENTLY!</span> Your speed must be very low.</li>
+                                  <li><span className="font-bold text-destructive">Land UPRIGHT!</span> The rocket must be vertical.</li>
+                                  <li>Score is based on remaining fuel. More fuel = higher score!</li>
+                                  <li>Avoid crashing into asteroids and flying off-screen.</li>
+                              </ul>
+                          </div>
+                      </div>
+                      <div className="flex items-start gap-3">
+                          <Award className="h-5 w-5 mt-0.5 text-green-500 flex-shrink-0" />
+                           <div>
+                              <h4 className="font-bold text-foreground">Weekly Milestone Rewards</h4>
+                              <p>Reach score milestones for the first time each week to earn bonus credits!</p>
+                               <ul className="list-disc pl-4 space-y-1 mt-2">
+                                  {Object.entries(MILESTONE_REWARDS).map(([score, reward]) => (
+                                      <li key={score}><span className="font-bold text-primary">{score} Score</span> = <span className="font-semibold text-green-500">{reward} Credits</span></li>
+                                  ))}
+                              </ul>
+                          </div>
+                      </div>
+                  </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
+      </Card>
     </div>
   );
 }
