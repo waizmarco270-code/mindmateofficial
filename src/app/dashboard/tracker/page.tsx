@@ -15,7 +15,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useVisibilityChange } from '@/hooks/use-visibility-change';
 import { usePathname } from 'next/navigation';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import Autoplay from "embla-carousel-autoplay";
+import Autoplay from "embla-carousel-autoplay"
 
 
 interface FocusSlot {
@@ -143,7 +143,7 @@ export default function FocusModePage() {
         } else if (isSessionActive && !isPaused && timeLeft === 0) {
             if (user && activeSlot) {
                 addCreditsToUser(user.id, activeSlot.reward);
-                incrementFocusSessions(user.id);
+                incrementFocusSessions(user.id, activeSlot.duration);
                 toast({
                     title: `Session Complete! +${activeSlot.reward} Credits!`,
                     description: 'Great job on your focused study session!',

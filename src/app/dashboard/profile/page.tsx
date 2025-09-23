@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star } from 'lucide-react';
+import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star, Clock } from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -19,6 +18,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProgressConstellation } from '@/components/analytics/progress-constellation';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+const formatTotalStudyTime = (totalSeconds: number) => {
+    if (totalSeconds < 60) return "0m";
+
+    const days = Math.floor(totalSeconds / (3600 * 24));
+    const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+
+    const parts = [];
+    if (days > 0) parts.push(`${days}d`);
+    if (hours > 0) parts.push(`${hours}h`);
+    if (minutes > 0 || (days === 0 && hours === 0)) parts.push(`${minutes}m`);
+
+    return parts.join(' ');
+}
 
 function ProfileTab() {
     const { user } = useUser();
@@ -50,7 +64,7 @@ function ProfileTab() {
     ].filter(Boolean);
 
     const stats = [
-        { label: 'Total Credits', value: currentUserData.credits, icon: Medal, color: 'text-amber-500' },
+        { label: 'Total Credits', value: currentUserData.credits.toLocaleString(), icon: Medal, color: 'text-amber-500' },
         { label: 'Current Streak', value: currentUserData.streak || 0, icon: Flame, color: 'text-orange-500' },
         { label: 'Longest Streak', value: currentUserData.longestStreak || 0, icon: Trophy, color: 'text-yellow-400' },
         { label: 'Focus Sessions', value: currentUserData.focusSessionsCompleted || 0, icon: Zap, color: 'text-green-500' },
@@ -88,7 +102,7 @@ function ProfileTab() {
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
                 {stats.map(stat => (
                     <Card key={stat.label}>
                         <CardHeader className="p-4 flex-row items-center justify-between">
@@ -96,10 +110,19 @@ function ProfileTab() {
                             <stat.icon className={cn("h-4 w-4 text-muted-foreground", stat.color)} />
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
-                            <div className="text-2xl font-bold">{stat.value.toLocaleString()}</div>
+                            <div className="text-2xl font-bold">{stat.value}</div>
                         </CardContent>
                     </Card>
                 ))}
+                 <Card className="col-span-2 lg:col-span-3">
+                    <CardHeader className="p-4 flex-row items-center justify-between">
+                        <CardTitle className="text-sm font-medium text-cyan-500">Total Study Time</CardTitle>
+                        <Clock className="h-4 w-4 text-cyan-500" />
+                    </CardHeader>
+                    <CardContent className="p-4 pt-0 text-center">
+                        <div className="text-4xl font-bold">{formatTotalStudyTime(currentUserData.totalStudyTime || 0)}</div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     );

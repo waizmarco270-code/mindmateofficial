@@ -201,7 +201,7 @@ interface AppDataContextType {
     generateDevAiAccessToken: (uid: string) => Promise<string | null>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
-    incrementFocusSessions: (uid: string) => Promise<void>;
+    incrementFocusSessions: (uid: string, duration: number) => Promise<void>;
     claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
     claimEliteDailyReward: (uid: string) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
@@ -743,10 +743,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     };
     
-    const incrementFocusSessions = async (uid: string) => {
+    const incrementFocusSessions = async (uid: string, durationInSeconds: number) => {
         if(!uid) return;
         const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, { focusSessionsCompleted: increment(1) });
+        await updateDoc(userDocRef, { 
+            focusSessionsCompleted: increment(1),
+            totalStudyTime: increment(durationInSeconds)
+        });
     }
 
     const claimDailyTaskReward = async (uid: string, amount: number) => {
@@ -1282,3 +1285,4 @@ export const useDailySurprises = () => {
     
 
   
+
