@@ -165,7 +165,7 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
             {plannedTasksForToday.length > 0 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Today's Tasks</CardTitle>
+                        <CardTitle>Day {config.currentDay}'s Tasks</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {plannedTasksForToday.map(task => (
