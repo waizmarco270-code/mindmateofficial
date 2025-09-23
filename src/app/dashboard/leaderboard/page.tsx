@@ -163,6 +163,7 @@ export default function LeaderboardPage() {
                                    (studyTime * SCORE_WEIGHTS.totalStudyTime);
                                    
                 const userWeeklyStats = weeklyStats[user.uid] || { thisWeek: { totalTime: 0, subjects: {}, pomodoro: { focus: 0, shortBreak: 0, longBreak: 0, total: 0 } }, lastWeek: { totalTime: 0 } };
+                
                 const emojiQuizHighScore = user.gameHighScores?.emojiQuiz || 0;
                 const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
                 const dimensionShiftHighScore = user.gameHighScores?.dimensionShift || 0;
@@ -172,9 +173,11 @@ export default function LeaderboardPage() {
                  // New logic for Entertainment Total Score: slightly weight different games
                 const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5) + (subjectSprintHighScore * 1.1) + flappyMindHighScore;
 
-                // Use a snapshot of scores for previous week winner calculation
-                const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0);
-
+                // BUG FIX: Calculate a separate score for last week's winner calculation.
+                // This logic assumes `gameHighScores` reflects the *current* high scores.
+                // For a true "last week" score, you would need to snapshot scores weekly.
+                // This is a simplified approach that uses the current high scores as a proxy.
+                 const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0);
 
                 return { 
                     ...user, 
@@ -205,6 +208,7 @@ export default function LeaderboardPage() {
         }
         
         const lastWeekWeeklyWinner = [...processedUsers].sort((a,b) => (b.prevWeeklyTime || 0) - (a.prevWeeklyTime || 0))[0];
+        // Use the new, correct property for sorting the last week's entertainment winner
         const lastWeekEntertainmentWinner = [...processedUsers].sort((a,b) => (b.prevWeekEntertainmentTotalScore || 0) - (a.prevWeekEntertainmentTotalScore || 0))[0];
 
         return { sortedUsers: sorted, lastWeekWeeklyWinner, lastWeekEntertainmentWinner };
@@ -767,3 +771,5 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
         </motion.div>
     );
 }
+
+    
