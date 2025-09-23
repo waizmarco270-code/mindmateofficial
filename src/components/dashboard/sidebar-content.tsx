@@ -63,6 +63,11 @@ const competeNav = [
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
 ];
 
+const otherNav = [
+    { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
+];
+
+
 const socialLinks = [
     { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx' },
     { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H' },
@@ -100,7 +105,7 @@ export default function SidebarContent() {
     if (href === '/dashboard/schedule' && pathname.startsWith('/dashboard/todos')) {
         return true;
     }
-     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/tools') || pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/profile') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/super-admin'))) {
+     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/super-admin'))) {
         return true;
     }
 
@@ -161,7 +166,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
+          defaultValue={['main-tools', 'compete-earn', 'community-resources', 'other-tools']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -188,6 +193,14 @@ export default function SidebarContent() {
             </AccordionTrigger>
             <AccordionContent className="px-0 pb-2">
               {renderNavLinks(competeNav as any)}
+            </AccordionContent>
+          </AccordionItem>
+           <AccordionItem value="other-tools" className="border-b-0">
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+              Other
+            </AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">
+              {renderNavLinks(otherNav as any)}
             </AccordionContent>
           </AccordionItem>
 

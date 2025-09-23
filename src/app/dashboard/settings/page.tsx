@@ -13,7 +13,6 @@ import Link from 'next/link';
 // Re-integrating components that were on separate pages
 import FaqContent from '../faq/page';
 import AboutContent from '../about/page';
-import ToolsContent from '../tools/page';
 import RulesContent from '../rules/page';
 import { useAdmin, useUsers, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser, useClerk, UserProfile } from '@clerk/nextjs';
@@ -163,7 +162,6 @@ export default function SettingsPage() {
                 <TabsList className="md:col-span-1 flex flex-col h-auto bg-transparent p-0 border-r">
                     <TabsTrigger value="account" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><UserIcon className="mr-3"/> Account</TabsTrigger>
                     <TabsTrigger value="appearance" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Palette className="mr-3"/> Appearance</TabsTrigger>
-                    <TabsTrigger value="tools" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><FileText className="mr-3"/> Tools</TabsTrigger>
                     <TabsTrigger value="about" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Info className="mr-3"/> About & FAQ</TabsTrigger>
                     <TabsTrigger value="rules" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gavel className="mr-3"/> Rules & Regulations</TabsTrigger>
                      {showAdminTab && (
@@ -177,9 +175,6 @@ export default function SettingsPage() {
                     </TabsContent>
                     <TabsContent value="appearance">
                         <AppearanceSettings />
-                    </TabsContent>
-                     <TabsContent value="tools">
-                        <ToolsContent />
                     </TabsContent>
                     <TabsContent value="about" className="space-y-8">
                          <Card>
