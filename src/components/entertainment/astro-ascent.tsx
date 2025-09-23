@@ -4,7 +4,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, Gauge, Mountain } from 'lucide-react';
+import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, Gauge, Mountain, ChevronsLeft, ChevronsRight, Zap as ThrustIcon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
@@ -272,6 +272,11 @@ export function AstroAscentGame() {
       resetGame();
     }
   }, [resetGame]);
+  
+  const handleTouchControl = (key: string, isDown: boolean) => {
+    if (gameState !== 'playing') return;
+    keysRef.current[key] = isDown;
+  }
 
   return (
     <div className="flex flex-col md:flex-row gap-8 items-start">
@@ -281,7 +286,7 @@ export function AstroAscentGame() {
         </SignedOut>
         <CardHeader>
           <CardTitle>Astro Ascent</CardTitle>
-          <CardDescription>Navigate the asteroid field and land safely. Use Arrow Keys or W/A/D.</CardDescription>
+          <CardDescription>Keyboard: W/A/D or Arrow Keys. Touch: Use on-screen controls.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col items-center gap-4">
           <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
@@ -292,7 +297,7 @@ export function AstroAscentGame() {
           <div className="w-full rounded-lg overflow-hidden border relative">
              <canvas ref={canvasRef} />
              {gameState !== 'playing' && (
-                <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-10 p-4 text-center">
+                <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
                     {gameState === 'idle' && (
                         <Button size="lg" onClick={startGame} disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button>
                     )}
@@ -311,6 +316,30 @@ export function AstroAscentGame() {
                     )}
                 </div>
              )}
+             {/* Touch Controls */}
+             <div className="md:hidden absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 gap-2">
+                  <Button 
+                    className="h-20 w-20 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
+                    onTouchStart={() => handleTouchControl('a', true)}
+                    onTouchEnd={() => handleTouchControl('a', false)}
+                  >
+                      <ChevronsLeft className="h-10 w-10"/>
+                  </Button>
+                   <Button 
+                    className="h-24 w-24 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
+                    onTouchStart={() => handleTouchControl('w', true)}
+                    onTouchEnd={() => handleTouchControl('w', false)}
+                  >
+                      <ThrustIcon className="h-12 w-12"/>
+                  </Button>
+                  <Button 
+                    className="h-20 w-20 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
+                    onTouchStart={() => handleTouchControl('d', true)}
+                    onTouchEnd={() => handleTouchControl('d', false)}
+                  >
+                      <ChevronsRight className="h-10 w-10"/>
+                  </Button>
+             </div>
           </div>
         </CardContent>
       </Card>
@@ -329,8 +358,8 @@ export function AstroAscentGame() {
                             <div>
                                 <h4 className="font-bold text-foreground">Controls</h4>
                                 <ul className="list-disc pl-4 space-y-1 mt-1">
-                                  <li><span className="font-bold">W or Up Arrow:</span> Engage main thruster.</li>
-                                  <li><span className="font-bold">A/D or Left/Right Arrows:</span> Rotate the rocket.</li>
+                                  <li><span className="font-bold">W or Up Arrow / Center Button:</span> Engage main thruster.</li>
+                                  <li><span className="font-bold">A/D or Left/Right Arrows / Side Buttons:</span> Rotate the rocket.</li>
                                 </ul>
                             </div>
                         </div>
