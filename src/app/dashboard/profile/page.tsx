@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -16,6 +17,7 @@ import { useQuizzes } from '@/hooks/use-quizzes';
 import { useChallenges } from '@/hooks/use-challenges';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { ProgressConstellation } from '@/components/analytics/progress-constellation';
 
 function ProfileTab() {
     const { user } = useUser();
@@ -130,7 +132,7 @@ function AnalyticsTab() {
                 {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
             </div>
 
-            <div className="relative grid grid-cols-1 md:grid-cols-2 gap-6 text-white">
+            <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-white">
                 <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
                     <CardHeader className="flex-row items-center justify-between">
                         <CardTitle className="text-lg text-sky-300">Leaderboard Ranking</CardTitle>
@@ -159,7 +161,7 @@ function AnalyticsTab() {
                         </div>
                     </CardContent>
                 </Card>
-                 <Card className="md:col-span-2 bg-white/5 border-white/10 backdrop-blur-sm">
+                 <Card className="md:col-span-1 lg:col-span-1 bg-white/5 border-white/10 backdrop-blur-sm">
                     <CardHeader className="flex-row items-center justify-between">
                         <CardTitle className="text-lg text-red-300">Active Challenge</CardTitle>
                         <Compass className="text-red-300"/>
@@ -167,12 +169,20 @@ function AnalyticsTab() {
                     <CardContent className="text-center">
                          {activeChallenge ? (
                             <div>
-                                <p className="text-xl font-bold">{activeChallenge.title}</p>
+                                <p className="text-xl font-bold truncate">{activeChallenge.title}</p>
                                 <p className="text-sm text-muted-foreground">Day {activeChallenge.currentDay} of {activeChallenge.duration}</p>
                             </div>
                          ) : (
                             <p className="text-muted-foreground">No active challenge</p>
                          )}
+                    </CardContent>
+                </Card>
+                 <Card className="md:col-span-2 lg:col-span-3 bg-white/5 border-white/10 backdrop-blur-sm">
+                    <CardHeader>
+                        <CardTitle className="text-lg text-fuchsia-300">Your Progress Constellation</CardTitle>
+                    </CardHeader>
+                    <CardContent className="min-h-[300px] flex items-center justify-center">
+                       <ProgressConstellation user={currentUserData} quizzes={quizzes} />
                     </CardContent>
                 </Card>
             </div>
