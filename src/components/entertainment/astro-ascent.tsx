@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 // Game Configuration
 const GRAVITY = 0.05;
 const THRUST_POWER = 0.15;
+const SIDE_THRUST_POWER = 0.08;
 const ROTATION_SPEED = 0.05;
 const MAX_FUEL = 1000;
 const SAFE_LANDING_VELOCITY = 1.5;
@@ -72,6 +73,7 @@ export function AstroAscentGame() {
       bg: isDark ? '#0c0a09' : '#e0f2fe',
       rocket: isDark ? '#fef08a' : '#b45309',
       flame: isDark ? '#f97316' : '#fb923c',
+      sideFlame: isDark ? '#38bdf8' : '#0ea5e9',
       asteroid: isDark ? '#475569' : '#94a3b8',
       pad: isDark ? '#16a34a' : '#22c55e',
     };
@@ -155,6 +157,18 @@ export function AstroAscentGame() {
             player.fuel -= 2;
         }
     }
+    if (keysRef.current['q']) { // Left side thrust
+        if(player.fuel > 0) {
+            player.vx -= SIDE_THRUST_POWER;
+            player.fuel -= 1;
+        }
+    }
+    if (keysRef.current['e']) { // Right side thrust
+        if(player.fuel > 0) {
+            player.vx += SIDE_THRUST_POWER;
+            player.fuel -= 1;
+        }
+    }
     if (keysRef.current['ArrowLeft'] || keysRef.current['a']) player.angle -= ROTATION_SPEED;
     if (keysRef.current['ArrowRight'] || keysRef.current['d']) player.angle += ROTATION_SPEED;
 
@@ -216,12 +230,38 @@ export function AstroAscentGame() {
     ctx.closePath();
     ctx.fill();
     
+    // Main thruster flame
     if ((keysRef.current['ArrowUp'] || keysRef.current['w']) && player.fuel > 0) {
         ctx.fillStyle = colors.flame;
         ctx.beginPath();
         ctx.moveTo(-10, 0);
         ctx.lineTo(-15 - Math.random() * 10, -5);
         ctx.lineTo(-15 - Math.random() * 10, 5);
+        ctx.closePath();
+        ctx.fill();
+    }
+    ctx.restore();
+
+    // Side thruster flames
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    // Left side thrust flame
+    if (keysRef.current['q'] && player.fuel > 0) {
+        ctx.fillStyle = colors.sideFlame;
+        ctx.beginPath();
+        ctx.moveTo(5, -6);
+        ctx.lineTo(10 + Math.random() * 5, -8);
+        ctx.lineTo(10 + Math.random() * 5, -4);
+        ctx.closePath();
+        ctx.fill();
+    }
+    // Right side thrust flame
+    if (keysRef.current['e'] && player.fuel > 0) {
+        ctx.fillStyle = colors.sideFlame;
+        ctx.beginPath();
+        ctx.moveTo(5, 6);
+        ctx.lineTo(10 + Math.random() * 5, 8);
+        ctx.lineTo(10 + Math.random() * 5, 4);
         ctx.closePath();
         ctx.fill();
     }
@@ -287,7 +327,7 @@ export function AstroAscentGame() {
             </SignedOut>
             <CardHeader>
             <CardTitle>Astro Ascent</CardTitle>
-            <CardDescription>Keyboard: W/A/D or Arrow Keys. Touch: Use on-screen controls.</CardDescription>
+            <CardDescription>Keyboard: W/A/D/Q/E or Arrow Keys. Touch: Use on-screen controls.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-col items-center gap-4">
                 <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
@@ -326,13 +366,31 @@ export function AstroAscentGame() {
                         >
                             <ChevronsLeft className="h-10 w-10"/>
                         </Button>
-                        <Button 
-                            className="h-24 w-24 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
-                            onTouchStart={() => handleTouchControl('w', true)}
-                            onTouchEnd={() => handleTouchControl('w', false)}
-                        >
-                            <ThrustIcon className="h-12 w-12"/>
-                        </Button>
+                        <div className="flex flex-col items-center gap-2">
+                            <Button 
+                                className="h-24 w-24 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
+                                onTouchStart={() => handleTouchControl('w', true)}
+                                onTouchEnd={() => handleTouchControl('w', false)}
+                            >
+                                <ThrustIcon className="h-12 w-12"/>
+                            </Button>
+                            <div className="flex gap-2">
+                                <Button 
+                                    className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20 text-xs font-bold"
+                                    onTouchStart={() => handleTouchControl('q', true)}
+                                    onTouchEnd={() => handleTouchControl('q', false)}
+                                >
+                                    Q
+                                </Button>
+                                <Button 
+                                    className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20 text-xs font-bold"
+                                    onTouchStart={() => handleTouchControl('e', true)}
+                                    onTouchEnd={() => handleTouchControl('e', false)}
+                                >
+                                    E
+                                </Button>
+                            </div>
+                        </div>
                         <Button 
                             className="h-20 w-20 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
                             onTouchStart={() => handleTouchControl('d', true)}
@@ -359,8 +417,10 @@ export function AstroAscentGame() {
                             <div>
                                 <h4 className="font-bold text-foreground">Controls</h4>
                                 <ul className="list-disc pl-4 space-y-1 mt-1">
-                                  <li><span className="font-bold">W or Up Arrow / Center Button:</span> Engage main thruster.</li>
-                                  <li><span className="font-bold">A/D or Left/Right Arrows / Side Buttons:</span> Rotate the rocket.</li>
+                                  <li><span className="font-bold">W or Up Arrow:</span> Engage main thruster.</li>
+                                  <li><span className="font-bold">A/D or Left/Right:</span> Rotate the rocket.</li>
+                                  <li><span className="font-bold">Q / E:</span> Engage side thrusters for horizontal movement without rotation.</li>
+                                  <li><span className="font-bold">Touch:</span> Use on-screen buttons.</li>
                                 </ul>
                             </div>
                         </div>
