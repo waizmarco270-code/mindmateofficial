@@ -100,6 +100,11 @@
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
+  
+  @keyframes challenger-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 
   @keyframes move {
     100% {
@@ -148,6 +153,15 @@
       100% { filter: drop-shadow(0 0 2px #f59e0b); }
   }
 
+  @keyframes red-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+    }
+  }
+
   @keyframes tilt {
     0%, 50%, 100% {
       transform: rotate(0deg);
@@ -168,11 +182,37 @@
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
   }
+  @keyframes synthwave-scroll {
+    from { background-position: 0 0; }
+    to { background-position: 0 -200%; }
+  }
+  @keyframes black-hole-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes glitch {
+    0% { transform: translate(0); }
+    10% { transform: translate(-2px, 2px); }
+    20% { transform: translate(2px, -2px); }
+    30% { transform: translate(-2px, -2px); }
+    40% { transform: translate(2px, 2px); }
+    50% { transform: translate(0); }
+    100% { transform: translate(0); }
+  }
+  @keyframes steampunk-rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  @keyframes lofi-rain {
+    from { background-position: 0 0; }
+    to { background-position: 20% 40%; }
+  }
+
 }
 
 @layer components {
   .glass-card {
-    @apply bg-card backdrop-blur-xl border;
+    @apply bg-card/50 backdrop-blur-lg border;
   }
   
   .elite-badge {
@@ -197,6 +237,19 @@
     text-shadow: 0 0 6px rgba(127, 219, 255, 0.7);
     animation: gm-shimmer 4s ease infinite;
   }
+
+  .challenger-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(135deg, #ff4e00, #f7971e, #ff4e00);
+    background-size: 200% 200%;
+    color: #ffffff;
+    border: 1px solid #f7971e;
+    text-shadow: 0 0 5px rgba(247, 151, 30, 0.8);
+    animation: challenger-shimmer 3s ease-in-out infinite;
+  }
+  .challenger-badge > svg {
+    @apply text-white;
+  }
   
   .dev-badge {
     @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
@@ -218,11 +271,10 @@
    }
 
   .bg-grid-slate-800 {
-    background-image: linear-gradient(white 1px, transparent 1px),
-      linear-gradient(to right, white 1px, transparent 1px);
+    background-image: 
+      linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+      linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
     background-size: 4rem 4rem;
-    background-color: transparent;
-    opacity: 0.1;
   }
 
   #particle-container {
@@ -339,6 +391,60 @@
     animation: oceanic-flow 18s ease infinite;
   }
 
+  .synthwave-sunset-bg {
+    background-color: #0c0a09;
+    background-image: 
+      linear-gradient(to top, rgba(253, 98, 255, 0.4) 1px, transparent 1px),
+      linear-gradient(to right, rgba(253, 98, 255, 0.4) 1px, transparent 1px);
+    background-size: 4rem 4rem;
+    animation: synthwave-scroll 10s linear infinite;
+  }
+  .jungle-ruins-bg {
+    background: linear-gradient(125deg, #223B2F, #3A5F4F, #5D8C6F, #2F4F41);
+    background-size: 200% 200%;
+    animation: nebula-animation 25s ease infinite;
+  }
+  .black-hole-bg {
+    background-color: #000;
+    background-image: radial-gradient(circle, #4c00b0, #2c006e, #000000 70%);
+    animation: black-hole-spin 50s linear infinite;
+  }
+  .anime-speed-lines-bg {
+    background: repeating-linear-gradient(45deg, #1e293b, #1e293b 10px, #334155 10px, #334155 20px);
+  }
+  .blueprint-grid-bg {
+    background-color: #082f49;
+    background-image: 
+        linear-gradient(to right, #38bdf8 1px, transparent 1px),
+        linear-gradient(to bottom, #38bdf8 1px, transparent 1px);
+    background-size: 50px 50px;
+  }
+  .lava-flow-bg {
+    background: linear-gradient(135deg, #ff4800, #ff7e00, #ff4800, #000);
+    background-size: 300% 300%;
+    animation: nebula-animation 8s ease infinite;
+  }
+  .mystic-forest-bg {
+    background: linear-gradient(160deg, #002e18, #004d2e, #002e18);
+    background-size: 200% 200%;
+    animation: nebula-animation 20s ease infinite;
+  }
+  .digital-glitch-bg > * {
+    animation: glitch 1.5s steps(2, jump-none) infinite;
+  }
+  .steampunk-gears-bg {
+    background: #5b3a29;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23b4876b' d='M12,8A4,4,0,1,0,16,12A4,4,0,0,0,12,8ZM12,14A2,2,0,1,1,14,12A2,2,0,0,1,12,14Z'/%3E%3Cpath fill='%23b4876b' opacity='0.5' d='M19.9,12.64l1.35-1.35-1.41-1.41-1.35,1.35A8,8,0,0,0,12,4V2A10,10,0,0,1,22,12.64Z' transform-origin='center' style='animation: steampunk-rotate 10s linear infinite reverse;'/%3E%3Cpath fill='%23b4876b' opacity='0.5' d='M11.36,19.9,9.91,21.26l1.41,1.41,1.45-1.45A8,8,0,0,0,20,12h2A10,10,0,0,1,11.36,19.9Z' transform-origin='center' style='animation: steampunk-rotate 12s linear infinite;'/%3E%3C/svg%3E");
+    background-size: 80px 80px;
+  }
+  .lofi-rain-bg {
+    background: #27272a;
+    background-image: linear-gradient(transparent 99%, rgba(161, 161, 170, 0.5) 1%),
+                      linear-gradient(90deg, rgba(161, 161, 170, 0.5) 1px, transparent 1px);
+    background-size: 100% 5px, 5px 100%;
+    animation: lofi-rain 0.2s linear infinite;
+  }
+
 
   .animate-flicker {
     animation: flicker 1.5s infinite;
@@ -346,6 +452,10 @@
 
   .animate-gold-shine {
       animation: gold-shine 3s ease-in-out infinite;
+  }
+
+  .animate-red-pulse {
+      animation: red-pulse 1.5s infinite;
   }
 
   .text-shadow-glow {

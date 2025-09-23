@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -92,6 +92,7 @@ export default function Header() {
   const isAdmin = currentUserData?.isAdmin;
   const isVip = currentUserData?.isVip;
   const isGM = currentUserData?.isGM;
+  const isChallenger = currentUserData?.isChallenger;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -121,6 +122,8 @@ export default function Header() {
                     <span className="dev-badge flex-shrink-0"><Code className="h-3 w-3" /> DEV</span>
                 ) : isAdmin ? (
                     <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                ) : isChallenger ? (
+                    <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
                 ) : isVip ? (
                     <span className="elite-badge flex-shrink-0"><Crown className="h-3 w-3" /> ELITE</span>
                 ) : isGM ? (

@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText, Monitor, Shield, KeyRound, Trash2, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2 } from 'lucide-react';
+import { Settings, User as UserIcon, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText, Monitor, Shield, KeyRound, Trash2, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
@@ -166,6 +167,7 @@ function AccountSettings() {
     const isAdmin = currentUserData.isAdmin;
     const isVip = currentUserData.isVip;
     const isGM = currentUserData.isGM;
+    const isChallenger = currentUserData.isChallenger;
 
     const stats = [
         { label: 'Current Credits', value: currentUserData.credits || 0, icon: Medal, color: 'text-amber-500' },
@@ -190,6 +192,8 @@ function AccountSettings() {
                             <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>
                         ) : isAdmin ? (
                             <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                        ) : isChallenger ? (
+                            <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
                         ) : isVip ? (
                             <span className="elite-badge"><Crown className="h-3 w-3"/> ELITE</span>
                         ) : isGM ? (

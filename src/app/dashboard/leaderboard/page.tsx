@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -332,6 +332,8 @@ export default function LeaderboardPage() {
                                     </span>
                                 ) : user.isAdmin ? (
                                     <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                ) : user.isChallenger ? (
+                                    <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
                                 ) : user.isVip ? (
                                     <span className="elite-badge flex-shrink-0">
                                         <Crown className="h-3 w-3" /> ELITE
@@ -379,6 +381,8 @@ export default function LeaderboardPage() {
                                         </span>
                                     ) : user.isAdmin ? (
                                         <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                    ) : user.isChallenger ? (
+                                        <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
                                     ) : user.isVip ? (
                                         <span className="elite-badge flex-shrink-0">
                                             <Crown className="h-3 w-3" /> ELITE
@@ -673,6 +677,8 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                                             </span>
                                                         ) : user.isAdmin ? (
                                                             <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                                        ) : user.isChallenger ? (
+                                                            <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
                                                         ) : user.isVip ? (
                                                             <span className="elite-badge flex-shrink-0">
                                                                 <Crown className="h-3 w-3" /> ELITE
