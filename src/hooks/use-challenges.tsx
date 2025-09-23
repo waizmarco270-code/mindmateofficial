@@ -22,6 +22,14 @@ export interface PlannedTask {
     completed: boolean;
 }
 
+export interface PlannedTaskCategory {
+    id: string;
+    title: string;
+    color: string;
+    tasks: PlannedTask[];
+}
+
+
 export interface ChallengeConfig {
     id: string;
     title: string;
@@ -34,7 +42,7 @@ export interface ChallengeConfig {
     eliteBadgeDays: number;
     isCustom?: boolean;
     checkInTime?: string; // HH:mm format
-    plannedTasks?: Record<number, PlannedTask[]>; // { dayNumber: Task[] }
+    plannedTasks?: Record<number, PlannedTaskCategory[]>;
 }
 
 export interface ActiveChallenge extends ChallengeConfig {
@@ -52,7 +60,7 @@ interface ChallengesContextType {
     checkIn: () => Promise<void>;
     failChallenge: (silent?: boolean) => Promise<void>;
     liftChallengeBan: () => Promise<void>;
-    toggleTaskCompletion: (day: number, taskId: string) => Promise<void>;
+    toggleTaskCompletion: (day: number, categoryId: string, taskId: string) => Promise<void>;
     loading: boolean;
     dailyProgress: Record<string, { current: number; completed: boolean }> | null;
 }
@@ -252,8 +260,8 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         if (!user || !activeChallenge || activeChallenge.status !== 'active') return;
 
         const today = new Date();
-        
         const currentDayProgress = activeChallenge.progress[activeChallenge.currentDay];
+        
         if(!currentDayProgress) return;
 
         const allGoalsMetForToday = activeChallenge.dailyGoals
@@ -269,13 +277,13 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         if(activeChallenge.checkInTime) {
             const [hours, minutes] = activeChallenge.checkInTime.split(':').map(Number);
             const checkInStart = set(today, { hours, minutes, seconds: 0, milliseconds: 0 });
-            const checkInEnd = addDays(checkInStart, 10);
+            const checkInEnd = set(today, { hours, minutes: minutes + 10 }); // 10 min window
 
             if (today < checkInStart || today > checkInEnd) {
                 toast({
                     variant: 'destructive',
                     title: "Check-in Window Closed",
-                    description: `You could only check in between ${formatDate(checkInStart, 'HH:mm')} and ${formatDate(checkInEnd, 'HH:mm')}.`
+                    description: `You can only check in between ${formatDate(checkInStart, 'HH:mm')} and ${formatDate(checkInEnd, 'HH:mm')}.`
                 });
                 return;
             }
@@ -313,19 +321,21 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
     }, [user, currentUserData, activeChallenge, addCreditsToUser, toast]);
     
-    const toggleTaskCompletion = useCallback(async (day: number, taskId: string) => {
+    const toggleTaskCompletion = useCallback(async (day: number, categoryId: string, taskId: string) => {
         if (!user || !activeChallenge || activeChallenge.status !== 'active' || day !== activeChallenge.currentDay) return;
 
         const newPlannedTasks = JSON.parse(JSON.stringify(activeChallenge.plannedTasks || {}));
-        const dayTasks = newPlannedTasks[day] || [];
-        const taskIndex = dayTasks.findIndex((t: PlannedTask) => t.id === taskId);
+        const dayCategories = newPlannedTasks[day] || [];
+        const catIndex = dayCategories.findIndex((c: PlannedTaskCategory) => c.id === categoryId);
+        if(catIndex === -1) return;
         
+        const taskIndex = dayCategories[catIndex].tasks.findIndex((t: PlannedTask) => t.id === taskId);
         if (taskIndex === -1) return;
 
-        dayTasks[taskIndex].completed = !dayTasks[taskIndex].completed;
+        dayCategories[catIndex].tasks[taskIndex].completed = !dayCategories[catIndex].tasks[taskIndex].completed;
 
         // Check if all tasks for the day are now complete
-        const allTasksCompleted = dayTasks.every((t: PlannedTask) => t.completed);
+        const allTasksCompleted = dayCategories.every((c: PlannedTaskCategory) => c.tasks.every((t: PlannedTask) => t.completed));
         const tasksGoal = activeChallenge.dailyGoals.find(g => g.id === 'tasks');
 
         const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');

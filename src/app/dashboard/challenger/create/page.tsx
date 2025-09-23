@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ArrowLeft, ArrowRight, Sparkles, AlertTriangle, ShieldCheck, Trophy, CalendarCheck, Clock, ListTodo } from 'lucide-react';
-import { useChallenges, type DailyGoal, type PlannedTask } from '@/hooks/use-challenges';
+import { useChallenges, type DailyGoal, type PlannedTaskCategory } from '@/hooks/use-challenges';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUsers } from '@/hooks/use-admin';
 import Link from 'next/link';
@@ -30,10 +30,8 @@ export default function CreateChallengePage() {
     const [checkInTime, setCheckInTime] = useState('06:00');
     const [studyHours, setStudyHours] = useState(2);
     const [focusSessions, setFocusSessions] = useState(1);
-    const [completeTasks, setCompleteTasks] = useState(true);
     const [prePlanTasks, setPrePlanTasks] = useState(false);
     const [isPlanning, setIsPlanning] = useState(false);
-    const [plannedTasks, setPlannedTasks] = useState<Record<number, PlannedTask[]>>({});
 
 
     const nextStep = () => setStep(s => s + 1);
@@ -44,7 +42,6 @@ export default function CreateChallengePage() {
         difficulty += duration * 1.5; 
         difficulty += studyHours * 3; 
         difficulty += focusSessions * 5; 
-        if (completeTasks) difficulty += 25; 
         
         const baseFee = 25;
         const baseReward = 60;
@@ -53,9 +50,9 @@ export default function CreateChallengePage() {
         const calculatedReward = Math.round(baseReward + (difficulty * 2));
         
         return { entryFee: calculatedFee, reward: calculatedReward };
-    }, [duration, studyHours, focusSessions, completeTasks]);
+    }, [duration, studyHours, focusSessions]);
 
-    const startChallengeFlow = async (finalTasks?: Record<number, PlannedTask[]>) => {
+    const startChallengeFlow = async (finalTasks?: Record<number, PlannedTaskCategory[]>) => {
          if (!challengeName.trim()) {
             toast({ variant: 'destructive', title: "Challenge needs a name!" });
             return;
@@ -64,7 +61,7 @@ export default function CreateChallengePage() {
         const dailyGoals: DailyGoal[] = [];
         if (studyHours > 0) dailyGoals.push({ id: 'studyTime', description: `Study for ${studyHours}+ hours`, target: studyHours * 3600 });
         if (focusSessions > 0) dailyGoals.push({ id: 'focusSession', description: `Complete ${focusSessions}+ Focus Session(s)`, target: focusSessions });
-        if (completeTasks) dailyGoals.push({ id: 'tasks', description: 'Complete all daily tasks', target: 1 });
+        dailyGoals.push({ id: 'tasks', description: 'Complete all daily tasks', target: 1 });
         dailyGoals.push({ id: 'checkIn', description: `Check-in after ${checkInTime}`, target: 1 });
 
         await startChallenge({
@@ -166,19 +163,15 @@ export default function CreateChallengePage() {
                                     <h3 className="text-2xl font-bold text-center">Daily Goals</h3>
                                     <div className="space-y-3">
                                         <Label>Minimum Daily Study Time ({studyHours} hours)</Label>
-                                        <Slider value={[studyHours]} onValueChange={(v) => setStudyHours(v[0])} min={0} max={12} step={1} />
+                                        <Slider value={[studyHours]} onValueChange={(v) => setStudyHours(v[0])} min={1} max={12} step={1} />
                                     </div>
                                      <div className="space-y-3">
                                         <Label>Minimum Daily Focus Sessions ({focusSessions})</Label>
                                         <Slider value={[focusSessions]} onValueChange={(v) => setFocusSessions(v[0])} min={0} max={5} step={1} />
                                     </div>
                                     <div className="flex items-center space-x-2">
-                                        <Checkbox id="complete-tasks" checked={completeTasks} onCheckedChange={(checked) => setCompleteTasks(Boolean(checked))} />
-                                        <Label htmlFor="complete-tasks">Require all daily to-do tasks to be completed?</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
                                         <Checkbox id="pre-plan-tasks" checked={prePlanTasks} onCheckedChange={(checked) => setPrePlanTasks(Boolean(checked))} />
-                                        <Label htmlFor="pre-plan-tasks">Plan daily tasks before starting?</Label>
+                                        <Label htmlFor="pre-plan-tasks">Plan all daily tasks before starting the challenge?</Label>
                                     </div>
                                 </div>
                             )}
@@ -195,7 +188,7 @@ export default function CreateChallengePage() {
                                                     <li>Check-in daily after <span className="font-bold text-primary">{checkInTime}</span>.</li>
                                                     {studyHours > 0 && <li>Study for at least {studyHours} hours.</li>}
                                                     {focusSessions > 0 && <li>Complete {focusSessions} focus session(s).</li>}
-                                                    {completeTasks && <li>Complete all daily tasks.</li>}
+                                                    <li>Complete all planned daily tasks.</li>
                                                 </ul>
                                             </div>
                                             {prePlanTasks && (
