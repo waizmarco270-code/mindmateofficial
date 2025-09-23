@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -864,6 +865,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const claimAstroAscentMilestone = async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
+        const MILESTONE_REWARDS: Record<number, number> = { 25: 5, 50: 10, 75: 25, 100: 50 };
 
         if (!userSnap.exists()) return false;
         
@@ -871,17 +873,24 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const weekClaims = userData.astroAscentClaims?.[weekKey] || [];
 
-        const MILESTONE_REWARDS: Record<number, number> = { 1000: 5, 2500: 10, 5000: 25, 7500: 50 };
         const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
 
-        if (!validMilestone) return false;
+        if (!validMilestone) {
+            // Also update high score if it's a new personal best, even if no reward is given
+            const currentHighScore = userData.gameHighScores?.astroAscent || 0;
+            if (milestone > currentHighScore) {
+                 await updateDoc(userDocRef, { [`gameHighScores.astroAscent`]: milestone });
+            }
+            return false;
+        }
 
         const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
         const newClaims = [...weekClaims, validMilestone];
         
         await updateDoc(userDocRef, {
             credits: increment(reward),
-            [`astroAscentClaims.${weekKey}`]: newClaims
+            [`astroAscentClaims.${weekKey}`]: newClaims,
+            [`gameHighScores.astroAscent`]: Math.max(userData.gameHighScores?.astroAscent || 0, milestone),
         });
         
         return true;
@@ -1317,6 +1326,7 @@ export const useDailySurprises = () => {
     
 
   
+
 
 
 
