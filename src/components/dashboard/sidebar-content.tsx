@@ -49,6 +49,7 @@ const mainNavItems = [
   { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights', glow: 'text-blue-400' },
   { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
+  { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
 ];
 
 const communityNav = [
@@ -63,15 +64,14 @@ const competeNav = [
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
 ];
 
-const otherNav = [
-    { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
-];
+const otherNav = [];
 
 
 const socialLinks = [
     { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx' },
     { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H' },
     { name: 'Telegram', href: 'https://t.me/EmityGate' },
+    { name: 'YouTube', href: 'https://youtube.com/@mindmateofficial21?si=M0klgblbBT0gF37X' },
 ];
 
 const InstagramIcon = () => (
@@ -80,6 +80,10 @@ const InstagramIcon = () => (
 
 const WhatsAppIcon = () => (
      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+)
+
+const YouTubeIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M2.5 17a24.12 24.12 0 0 1 0-10C2.5 6 2.5 4.5 3.5 3.5a2.44 2.44 0 0 1 2-1C7 2 12 2 12 2s5 0 6.5.5a2.44 2.44 0 0 1 2 1c1 1 1 2.5 1 3.5a24.12 24.12 0 0 1 0 10c0 1 0 2.5-1 3.5a2.44 2.44 0 0 1-2 1C17 22 12 22 12 22s-5 0-6.5-.5a2.44 2.44 0 0 1-2-1C2.5 19.5 2.5 18 2.5 17Z"></path><path d="m10 15 5-3-5-3z"></path></svg>
 )
 
 
@@ -256,6 +260,7 @@ export default function SidebarContent() {
                   let Icon;
                   if (link.name === 'Instagram') Icon = InstagramIcon;
                   else if (link.name === 'WhatsApp') Icon = WhatsAppIcon;
+                  else if (link.name === 'YouTube') Icon = YouTubeIcon;
                   else Icon = Send;
                   
                   return (
@@ -266,7 +271,8 @@ export default function SidebarContent() {
                                 "transition-opacity hover:opacity-80",
                                 link.name === 'Instagram' && 'text-[#E4405F]',
                                 link.name === 'WhatsApp' && 'text-[#25D366]',
-                                link.name === 'Telegram' && 'text-[#0088cc]'
+                                link.name === 'Telegram' && 'text-[#0088cc]',
+                                link.name === 'YouTube' && 'text-[#FF0000]'
                             )} 
                             target="_blank" 
                             rel="noopener noreferrer"
