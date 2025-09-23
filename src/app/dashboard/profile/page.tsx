@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star, Clock } from 'lucide-react';
-import { useAdmin, useUsers, SUPER_ADMIN_UID } from '@/hooks/use-admin';
+import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star, Clock, UserPlus, Search, UserCheck } from 'lucide-react';
+import { useAdmin, useUsers, SUPER_ADMIN_UID, User } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,7 +17,9 @@ import { useChallenges } from '@/hooks/use-challenges';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProgressConstellation } from '@/components/analytics/progress-constellation';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useFriends } from '@/hooks/use-friends';
+import { Badge } from '@/components/ui/badge';
 
 const formatTotalStudyTime = (totalSeconds: number) => {
     if (totalSeconds < 60) return "0m";
@@ -34,26 +36,29 @@ const formatTotalStudyTime = (totalSeconds: number) => {
     return parts.join(' ');
 }
 
-function ProfileTab() {
-    const { user } = useUser();
-    const { currentUserData, users } = useUsers();
+function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProfile?: boolean }) {
+    const { user: authUser } = useUser();
+    const { friends, sendFriendRequest, sentRequests } = useFriends();
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
-    if (!currentUserData) return <Loader2 className="mx-auto my-10 animate-spin"/>;
+    if (!user) return <Loader2 className="mx-auto my-10 animate-spin"/>;
     
     const handleCopyId = () => {
-        navigator.clipboard.writeText(user?.id || '');
+        if (!user) return;
+        navigator.clipboard.writeText(user.uid || '');
         setIsCopied(true);
         toast({ title: "User ID copied!" });
         setTimeout(() => setIsCopied(false), 2000);
     }
     
-    const isSuperAdmin = currentUserData.uid === SUPER_ADMIN_UID;
-    const isAdmin = currentUserData.isAdmin;
-    const isVip = currentUserData.isVip;
-    const isGM = currentUserData.isGM;
-    const isChallenger = currentUserData.isChallenger;
+    const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+    const isAdmin = user.isAdmin;
+    const isVip = user.isVip;
+    const isGM = user.isGM;
+    const isChallenger = user.isChallenger;
+    const isFriend = friends.some(f => f.uid === user.uid);
+    const hasSentRequest = sentRequests.some(r => r.receiverId === user.uid);
     
     const badges = [
         isSuperAdmin && { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
@@ -64,11 +69,11 @@ function ProfileTab() {
     ].filter(Boolean);
 
     const stats = [
-        { label: 'Total Credits', value: currentUserData.credits.toLocaleString(), icon: Medal, color: 'text-amber-500' },
-        { label: 'Current Streak', value: currentUserData.streak || 0, icon: Flame, color: 'text-orange-500' },
-        { label: 'Longest Streak', value: currentUserData.longestStreak || 0, icon: Trophy, color: 'text-yellow-400' },
-        { label: 'Focus Sessions', value: currentUserData.focusSessionsCompleted || 0, icon: Zap, color: 'text-green-500' },
-        { label: 'Tasks Completed', value: currentUserData.dailyTasksCompleted || 0, icon: ListChecks, color: 'text-blue-500' },
+        { label: 'Total Credits', value: user.credits.toLocaleString(), icon: Medal, color: 'text-amber-500' },
+        { label: 'Current Streak', value: user.streak || 0, icon: Flame, color: 'text-orange-500' },
+        { label: 'Longest Streak', value: user.longestStreak || 0, icon: Trophy, color: 'text-yellow-400' },
+        { label: 'Focus Sessions', value: user.focusSessionsCompleted || 0, icon: Zap, color: 'text-green-500' },
+        { label: 'Tasks Completed', value: user.dailyTasksCompleted || 0, icon: ListChecks, color: 'text-blue-500' },
     ];
     
     return (
@@ -77,28 +82,40 @@ function ProfileTab() {
                 <CardHeader>
                     <div className="flex items-center gap-4">
                         <Avatar className="h-20 w-20 border-2 border-primary">
-                            <AvatarImage src={currentUserData.photoURL} />
-                            <AvatarFallback>{currentUserData.displayName.charAt(0)}</AvatarFallback>
+                            <AvatarImage src={user.photoURL} />
+                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <CardTitle className="text-3xl">{currentUserData.displayName}</CardTitle>
+                            <CardTitle className="text-3xl">{user.displayName}</CardTitle>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
-                                {badges.map((b) => b && <div key={b.name}>{b.badge}</div>)}
-                                {!badges.length && <Badge variant="outline">Member</Badge>}
+                                {badges.length > 0 ? badges.map((b) => b && <div key={b.name}>{b.badge}</div>) : <Badge variant="outline">Member</Badge>}
                             </div>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-2">
-                        <Label htmlFor="user-id">Your User ID</Label>
+                        <Label htmlFor="user-id">User ID</Label>
                         <div className="flex items-center gap-2">
-                           <Input id="user-id" readOnly value={user?.id || ''} className="font-mono bg-muted"/>
+                           <Input id="user-id" readOnly value={user.uid || ''} className="font-mono bg-muted"/>
                            <Button size="icon" variant="outline" onClick={handleCopyId}>
                                 {isCopied ? <Check className="h-4 w-4"/> : <Copy className="h-4 w-4"/>}
                            </Button>
                         </div>
                     </div>
+                    {!isOwnProfile && authUser && (
+                         <div className="mt-4">
+                            {isFriend ? (
+                                <Button className="w-full" disabled> <UserCheck className="mr-2"/> Already Friends</Button>
+                            ) : hasSentRequest ? (
+                                 <Button className="w-full" disabled> <UserCheck className="mr-2"/> Request Sent</Button>
+                            ) : (
+                                <Button className="w-full" onClick={() => sendFriendRequest(user.uid)}>
+                                    <UserPlus className="mr-2"/> Add Friend
+                                </Button>
+                            )}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -120,13 +137,14 @@ function ProfileTab() {
                         <Clock className="h-4 w-4 text-cyan-500" />
                     </CardHeader>
                     <CardContent className="p-4 pt-0 text-center">
-                        <div className="text-4xl font-bold">{formatTotalStudyTime(currentUserData.totalStudyTime || 0)}</div>
+                        <div className="text-4xl font-bold">{formatTotalStudyTime(user.totalStudyTime || 0)}</div>
                     </CardContent>
                 </Card>
             </div>
         </div>
     );
 }
+
 
 function AnalyticsTab() {
     const { users } = useUsers();
@@ -212,18 +230,88 @@ function AnalyticsTab() {
     )
 }
 
+function SearchUsersTab() {
+    const { user: authUser } = useUser();
+    const { users } = useUsers();
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+    const filteredUsers = useMemo(() => {
+        if (!searchTerm) return [];
+        return users.filter(user => 
+            user.displayName.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            user.uid !== authUser?.id
+        );
+    }, [searchTerm, users, authUser]);
+
+    return (
+        <div className="space-y-6">
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input 
+                    placeholder="Search for other students..." 
+                    className="pl-10 h-12 text-base"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
+            </div>
+
+            <Dialog open={!!selectedUser} onOpenChange={(isOpen) => !isOpen && setSelectedUser(null)}>
+                <div className="space-y-4">
+                    {filteredUsers.map(user => (
+                        <Card key={user.uid} className="hover:bg-muted cursor-pointer" onClick={() => setSelectedUser(user)}>
+                            <CardContent className="p-4 flex items-center gap-4">
+                                <Avatar className="h-12 w-12">
+                                    <AvatarImage src={user.photoURL} />
+                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-bold">{user.displayName}</p>
+                                    <p className="text-sm text-muted-foreground">{user.email}</p>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    ))}
+                    {searchTerm && filteredUsers.length === 0 && (
+                        <p className="text-center text-muted-foreground py-10">No users found.</p>
+                    )}
+                </div>
+                 <DialogContent className="max-w-md">
+                    {selectedUser && (
+                        <>
+                         <DialogHeader>
+                            <DialogTitle>User Profile</DialogTitle>
+                         </DialogHeader>
+                         <div className="max-h-[70vh] overflow-y-auto p-1">
+                            <UserProfileCard user={selectedUser} />
+                         </div>
+                        </>
+                    )}
+                 </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
+
 export default function ProfilePage() {
+    const { currentUserData } = useUsers();
+    if (!currentUserData) return <div className="flex justify-center items-center h-full"><Loader2 className="h-10 w-10 animate-spin"/></div>
+
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold tracking-tight">Profile & Analytics</h1>
 
             <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="profile"><UserIcon className="mr-2"/> Profile</TabsTrigger>
-                    <TabsTrigger value="analytics"><Star className="mr-2"/> Constellation Analytics</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="profile"><UserIcon className="mr-2"/> Your Profile</TabsTrigger>
+                    <TabsTrigger value="search"><Search className="mr-2"/> Search Users</TabsTrigger>
+                    <TabsTrigger value="analytics"><Star className="mr-2"/> Constellation</TabsTrigger>
                 </TabsList>
                 <TabsContent value="profile" className="mt-6">
-                    <ProfileTab />
+                    <UserProfileCard user={currentUserData} isOwnProfile={true} />
+                </TabsContent>
+                <TabsContent value="search" className="mt-6">
+                    <SearchUsersTab />
                 </TabsContent>
                 <TabsContent value="analytics" className="mt-6">
                     <AnalyticsTab />
