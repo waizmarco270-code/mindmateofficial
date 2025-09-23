@@ -79,11 +79,11 @@ export default function DashboardLayout({
   return (
     <ImmersiveProvider>
         <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
-            <AppLayout>
-                <Providers>
+            <Providers>
+                <AppLayout>
                     {children}
-                </Providers>
-            </AppLayout>
+                </AppLayout>
+            </Providers>
         </MotionConfig>
     </ImmersiveProvider>
   );
