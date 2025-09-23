@@ -4,7 +4,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand } from 'lucide-react';
+import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand, Maximize, Minimize } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
@@ -15,6 +15,7 @@ import { motion } from 'framer-motion';
 import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+
 
 // Game Configuration
 const GRAVITY = 0.05;
@@ -60,6 +61,7 @@ export function AstroAscentGame() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [showControls, setShowControls] = useLocalStorage('astro-ascent-controls', true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const playerRef = useRef<GameObject>({ x: 0, y: 0, vx: 0, vy: 0, angle: -Math.PI / 2, fuel: MAX_FUEL });
   const asteroidsRef = useRef<Asteroid[]>([]);
@@ -94,8 +96,8 @@ export function AstroAscentGame() {
     keysRef.current = {};
 
     playerRef.current = {
-      x: canvas.width / 2,
-      y: canvas.height / 2,
+      x: canvas.width / 4 + Math.random() * (canvas.width / 4), // Spawn in top-left quadrant
+      y: canvas.height / 4,
       vx: 0,
       vy: 0,
       angle: -Math.PI / 2,
@@ -103,7 +105,7 @@ export function AstroAscentGame() {
     };
     
     landingPadRef.current = {
-        x: Math.random() * (canvas.width - 200) + 100,
+        x: canvas.width / 2 + Math.random() * (canvas.width / 2 - 100), // Spawn in bottom-right quadrant
         y: canvas.height - 20,
         width: 100,
     };
@@ -333,6 +335,7 @@ export function AstroAscentGame() {
           canvas.width = container.clientWidth;
           canvas.height = container.clientHeight;
           if (gameState !== 'playing') {
+            // Re-initialize game pieces based on new size, but don't start the game
             resetGame();
           }
       }
