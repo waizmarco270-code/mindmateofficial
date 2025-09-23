@@ -85,8 +85,10 @@ export function AstroAscentGame() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    keysRef.current = {}; // ** THE FIX: Reset all active key presses **
+
     playerRef.current = {
-      x: 50,
+      x: canvas.width / 2,
       y: canvas.height / 2,
       vx: 0,
       vy: 0,
@@ -390,9 +392,9 @@ export function AstroAscentGame() {
                     </div>
                 </CardContent>
             </Card>
-             {/* Touch Controls Overlay */}
-             <div className="w-full">
-                <div className="relative p-4 bg-muted rounded-lg grid grid-cols-3 grid-rows-2 gap-2">
+             {/* Touch Controls */}
+             <div className="relative w-full z-30">
+                <div className="p-4 bg-muted rounded-lg grid grid-cols-3 grid-rows-2 gap-2">
                     <Button 
                         className="h-20 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 row-span-2 self-center"
                         onTouchStart={() => handleTouchControl('a', true)} onTouchEnd={() => handleTouchControl('a', false)}
@@ -430,7 +432,6 @@ export function AstroAscentGame() {
                     >
                         <Hand className="h-8 w-8"/>
                     </Button>
-
                 </div>
             </div>
         </div>
