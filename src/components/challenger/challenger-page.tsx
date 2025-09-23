@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect } from 'react';
-import { useChallenges, type ActiveChallenge, type ChallengeConfig } from '@/hooks/use-challenges';
+import { useChallenges, type ActiveChallenge, type ChallengeConfig, type PlannedTask } from '@/hooks/use-challenges';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, ArrowLeft, CheckCircle, XCircle, Zap, Clock, ListTodo, CalendarCheck, ShieldQuestion, Loader2, Trophy, AlertTriangle } from 'lucide-react';
@@ -12,6 +12,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { differenceInMilliseconds } from 'date-fns';
+import { Checkbox } from '../ui/checkbox';
+
 
 interface ChallengerPageProps {
     config: ActiveChallenge;
@@ -84,7 +86,7 @@ function BannedView({ challenge, onLiftBan }: { challenge: ActiveChallenge, onLi
 
 export default function ChallengerPage({ config, isLocked = false }: ChallengerPageProps) {
     const { user } = useUser();
-    const { activeChallenge, checkIn, loading, dailyProgress, failChallenge, liftChallengeBan } = useChallenges();
+    const { activeChallenge, checkIn, loading, dailyProgress, failChallenge, liftChallengeBan, toggleTaskCompletion } = useChallenges();
     
     if (loading) {
         return (
@@ -133,6 +135,8 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
             isCheckInDisabled = false;
         }
     }
+    
+    const plannedTasksForToday = config.plannedTasks?.[config.currentDay] || [];
 
     return (
         <div className="space-y-8">
@@ -157,6 +161,38 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                     )
                 })}
             </div>
+            
+            {plannedTasksForToday.length > 0 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Today's Tasks</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                        {plannedTasksForToday.map(task => (
+                             <div 
+                                key={task.id}
+                                className={cn(
+                                    "flex items-center gap-4 rounded-lg border p-3 pl-4 transition-colors",
+                                    task.completed ? "bg-muted/50" : "hover:bg-muted/50"
+                                )}
+                            >
+                                <Checkbox
+                                    id={task.id}
+                                    checked={task.completed}
+                                    onCheckedChange={() => toggleTaskCompletion(config.currentDay, task.id)}
+                                />
+                                <label
+                                    htmlFor={task.id}
+                                    className={cn("flex-1 cursor-pointer text-sm font-medium", task.completed && "text-muted-foreground line-through")}
+                                >
+                                    {task.text}
+                                </label>
+                            </div>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="flex justify-center items-center flex-col gap-2">
                 <Button size="lg" onClick={checkIn} disabled={isCheckInDisabled || allGoalsMet}>
                     {allGoalsMet ? <CheckCircle className="mr-2"/> : <CalendarCheck className="mr-2"/>}

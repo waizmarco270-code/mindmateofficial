@@ -51,6 +51,7 @@ interface ChallengesContextType {
     checkIn: () => Promise<void>;
     failChallenge: () => Promise<void>;
     liftChallengeBan: () => Promise<void>;
+    toggleTaskCompletion: (day: number, taskId: string) => Promise<void>;
     loading: boolean;
     dailyProgress: Record<string, { current: number; completed: boolean }> | null;
 }
@@ -266,6 +267,23 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "Ban Lifted!", description: "You can now start a new challenge." });
 
     }, [user, currentUserData, activeChallenge, addCreditsToUser, toast]);
+    
+    const toggleTaskCompletion = useCallback(async (day: number, taskId: string) => {
+        if (!user || !activeChallenge || activeChallenge.status !== 'active' || day !== activeChallenge.currentDay) return;
+
+        const newPlannedTasks = JSON.parse(JSON.stringify(activeChallenge.plannedTasks || {}));
+        const dayTasks = newPlannedTasks[day] || [];
+        const taskIndex = dayTasks.findIndex((t: PlannedTask) => t.id === taskId);
+        
+        if (taskIndex === -1) return;
+
+        dayTasks[taskIndex].completed = !dayTasks[taskIndex].completed;
+
+        const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
+        await updateDoc(challengeRef, {
+            plannedTasks: newPlannedTasks
+        });
+    }, [user, activeChallenge]);
 
     const dailyProgress = activeChallenge?.progress[activeChallenge.currentDay] || null;
 
@@ -275,6 +293,7 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         checkIn,
         failChallenge,
         liftChallengeBan,
+        toggleTaskCompletion,
         loading: userLoading || loading,
         dailyProgress
     };
