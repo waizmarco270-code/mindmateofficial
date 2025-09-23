@@ -18,7 +18,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProgressConstellation } from '@/components/analytics/progress-constellation';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useFriends } from '@/hooks/use-friends';
+import { useFriends, FriendsProvider } from '@/hooks/use-friends';
 import { Badge } from '@/components/ui/badge';
 
 const formatTotalStudyTime = (totalSeconds: number) => {
@@ -298,25 +298,27 @@ export default function ProfilePage() {
     if (!currentUserData) return <div className="flex justify-center items-center h-full"><Loader2 className="h-10 w-10 animate-spin"/></div>
 
     return (
-        <div className="space-y-8">
-            <h1 className="text-3xl font-bold tracking-tight">Profile & Analytics</h1>
+        <FriendsProvider>
+            <div className="space-y-8">
+                <h1 className="text-3xl font-bold tracking-tight">Profile & Analytics</h1>
 
-            <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                    <TabsTrigger value="profile"><UserIcon className="mr-2"/> Your Profile</TabsTrigger>
-                    <TabsTrigger value="search"><Search className="mr-2"/> Search Users</TabsTrigger>
-                    <TabsTrigger value="analytics"><Star className="mr-2"/> Constellation</TabsTrigger>
-                </TabsList>
-                <TabsContent value="profile" className="mt-6">
-                    <UserProfileCard user={currentUserData} isOwnProfile={true} />
-                </TabsContent>
-                <TabsContent value="search" className="mt-6">
-                    <SearchUsersTab />
-                </TabsContent>
-                <TabsContent value="analytics" className="mt-6">
-                    <AnalyticsTab />
-                </TabsContent>
-            </Tabs>
-        </div>
+                <Tabs defaultValue="profile" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="profile"><UserIcon className="mr-2"/> Your Profile</TabsTrigger>
+                        <TabsTrigger value="search"><Search className="mr-2"/> Search Users</TabsTrigger>
+                        <TabsTrigger value="analytics"><Star className="mr-2"/> Constellation</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="profile" className="mt-6">
+                        <UserProfileCard user={currentUserData} isOwnProfile={true} />
+                    </TabsContent>
+                    <TabsContent value="search" className="mt-6">
+                        <SearchUsersTab />
+                    </TabsContent>
+                    <TabsContent value="analytics" className="mt-6">
+                        <AnalyticsTab />
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </FriendsProvider>
     )
 }
