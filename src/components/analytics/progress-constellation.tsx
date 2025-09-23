@@ -1,7 +1,6 @@
 
 'use client';
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { User } from '@/hooks/use-admin';
 import { Quiz } from '@/hooks/use-quizzes';
 import { Award, Brain, Clock, Flame, Zap } from 'lucide-react';
@@ -77,32 +76,27 @@ export function ProgressConstellation({ user, quizzes }: ProgressConstellationPr
                 <DialogTrigger key={star.id} asChild>
                     <Tooltip>
                     <TooltipTrigger asChild>
-                        <motion.div
+                        <div
                             style={{
                                 left: `${star.position.x}%`,
                                 top: `${star.position.y}%`,
-                                translateX: '-50%',
-                                translateY: '-50%'
+                                transform: 'translate(-50%, -50%)',
                             }}
-                            initial={{ scale: 0, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ delay: 0.2 * i, type: 'spring' }}
                             className="absolute z-10 cursor-pointer"
                             onClick={() => handleStarClick(star)}
                         >
                             <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-                                <motion.div
+                                <div
                                     className="absolute rounded-full bg-white"
                                     style={{
                                         width: size, height: size,
                                         boxShadow: `0 0 ${glow * 8}px #fff, 0 0 ${glow * 16}px #a78bfa, 0 0 ${glow * 24}px #8b5cf6`,
+                                        opacity: 0.9
                                     }}
-                                    animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
-                                    transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, repeatType: "mirror" }}
                                 />
                                 <star.Icon className="relative text-purple-900" style={{width: iconSize, height: iconSize}}/>
                             </div>
-                        </motion.div>
+                        </div>
                     </TooltipTrigger>
                     <TooltipContent>
                         <div className="flex items-center gap-2">
