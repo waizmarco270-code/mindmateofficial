@@ -341,63 +341,57 @@ export function AstroAscentGame() {
   }
   
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div className="lg:col-span-2">
-            <Card className="w-full relative">
-                <SignedOut>
-                    <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
-                </SignedOut>
-                <CardHeader>
-                    <div className="flex justify-between items-center">
-                        <div>
-                            <CardTitle>Astro Ascent</CardTitle>
-                            <CardDescription>Land safely. Watch your fuel.</CardDescription>
-                        </div>
+    <Card className="w-full relative">
+        <SignedOut>
+            <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
+        </SignedOut>
+        <CardHeader>
+            <div className="flex justify-between items-center">
+                <div>
+                    <CardTitle>Astro Ascent</CardTitle>
+                    <CardDescription>Land safely. Watch your fuel.</CardDescription>
+                </div>
+            </div>
+        </CardHeader>
+        <CardContent className="flex flex-col items-center gap-4">
+            <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
+                <span className="flex items-center gap-1"><Trophy className="h-4 w-4 text-amber-400"/> {highScore}</span>
+                <span className="text-primary font-bold">SCORE: {score}</span>
+                <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
+            </div>
+            <div className="w-full rounded-lg overflow-hidden border relative bg-slate-900 h-[60vh]">
+                <canvas ref={canvasRef} className="w-full h-full" />
+                {gameState !== 'playing' && (
+                    <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
+                        {gameState === 'idle' && ( <Button size="lg" onClick={startGame} disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button> )}
+                        {gameState === 'gameOver' && ( <div className="space-y-4"> <h3 className="text-3xl font-bold text-destructive">Mission Failed</h3> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Try Again</Button> </div> )}
+                        {gameState === 'won' && ( <motion.div initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} className="space-y-4"> <h3 className="text-3xl font-bold text-green-400">Perfect Landing!</h3> <p className="text-xl">Your score: <span className="font-bold">{score}</span></p> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Fly Again</Button> </motion.div> )}
                     </div>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center gap-4">
-                    <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
-                        <span className="flex items-center gap-1"><Trophy className="h-4 w-4 text-amber-400"/> {highScore}</span>
-                        <span className="text-primary font-bold">SCORE: {score}</span>
-                        <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
+                )}
+                {/* Touch Controls Overlay */}
+                {showControls && (
+                    <div className="absolute bottom-4 left-4 right-4 z-10 grid grid-cols-3 gap-2">
+                       <div className="flex flex-col gap-2">
+                          <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('a', true)} onTouchEnd={() => handleTouchControl('a', false)} onMouseDown={() => handleTouchControl('a', true)} onMouseUp={() => handleTouchControl('a', false)}><ChevronsLeft className="h-6 w-6"/></Button>
+                          <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('q', true)} onTouchEnd={() => handleTouchControl('q', false)} onMouseDown={() => handleTouchControl('q', true)} onMouseUp={() => handleTouchControl('q', false)} >LEFT</Button>
+                       </div>
+                        <div className="flex flex-col gap-2">
+                          <Button className="h-20 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('w', true)} onTouchEnd={() => handleTouchControl('w', false)} onMouseDown={() => handleTouchControl('w', true)} onMouseUp={() => handleTouchControl('w', false)}><ThrustIcon className="h-8 w-8"/></Button>
+                          <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl(' ', true)} onTouchEnd={() => handleTouchControl(' ', false)} onMouseDown={() => handleTouchControl(' ', true)} onMouseUp={() => handleTouchControl(' ', false)} > <Hand className="h-6 w-6"/> </Button>
+                       </div>
+                       <div className="flex flex-col gap-2">
+                          <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('d', true)} onTouchEnd={() => handleTouchControl('d', false)} onMouseDown={() => handleTouchControl('d', true)} onMouseUp={() => handleTouchControl('d', false)}><ChevronsRight className="h-6 w-6"/></Button>
+                          <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('e', true)} onTouchEnd={() => handleTouchControl('e', false)} onMouseDown={() => handleTouchControl('e', true)} onMouseUp={() => handleTouchControl('e', false)} >RIGHT</Button>
+                       </div>
                     </div>
-                    <div className="w-full rounded-lg overflow-hidden border relative bg-slate-900 aspect-video">
-                        <canvas ref={canvasRef} className="w-full h-full" />
-                        {gameState !== 'playing' && (
-                            <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
-                                {gameState === 'idle' && ( <Button size="lg" onClick={startGame} disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button> )}
-                                {gameState === 'gameOver' && ( <div className="space-y-4"> <h3 className="text-3xl font-bold text-destructive">Mission Failed</h3> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Try Again</Button> </div> )}
-                                {gameState === 'won' && ( <motion.div initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} className="space-y-4"> <h3 className="text-3xl font-bold text-green-400">Perfect Landing!</h3> <p className="text-xl">Your score: <span className="font-bold">{score}</span></p> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Fly Again</Button> </motion.div> )}
-                            </div>
-                        )}
-                        {/* Touch Controls Overlay */}
-                        {showControls && (
-                            <div className="absolute bottom-4 left-4 right-4 z-10 grid grid-cols-3 gap-2">
-                               <div className="flex flex-col gap-2">
-                                  <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('a', true)} onTouchEnd={() => handleTouchControl('a', false)} onMouseDown={() => handleTouchControl('a', true)} onMouseUp={() => handleTouchControl('a', false)}><ChevronsLeft className="h-6 w-6"/></Button>
-                                  <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('q', true)} onTouchEnd={() => handleTouchControl('q', false)} onMouseDown={() => handleTouchControl('q', true)} onMouseUp={() => handleTouchControl('q', false)} >LEFT</Button>
-                               </div>
-                                <div className="flex flex-col gap-2">
-                                  <Button className="h-20 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('w', true)} onTouchEnd={() => handleTouchControl('w', false)} onMouseDown={() => handleTouchControl('w', true)} onMouseUp={() => handleTouchControl('w', false)}><ThrustIcon className="h-8 w-8"/></Button>
-                                  <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl(' ', true)} onTouchEnd={() => handleTouchControl(' ', false)} onMouseDown={() => handleTouchControl(' ', true)} onMouseUp={() => handleTouchControl(' ', false)} > <Hand className="h-6 w-6"/> </Button>
-                               </div>
-                               <div className="flex flex-col gap-2">
-                                  <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('d', true)} onTouchEnd={() => handleTouchControl('d', false)} onMouseDown={() => handleTouchControl('d', true)} onMouseUp={() => handleTouchControl('d', false)}><ChevronsRight className="h-6 w-6"/></Button>
-                                  <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('e', true)} onTouchEnd={() => handleTouchControl('e', false)} onMouseDown={() => handleTouchControl('e', true)} onMouseUp={() => handleTouchControl('e', false)} >RIGHT</Button>
-                               </div>
-                            </div>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-        <Card className="w-full lg:col-span-1">
-            <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+                )}
+            </div>
+            <Accordion type="single" collapsible className="w-full">
               <AccordionItem value="item-1">
-                <AccordionTrigger className="p-6">
+                <AccordionTrigger>
                     <div className="flex items-center gap-2 text-base font-semibold"> <HelpCircle className="text-primary"/> How to Play & Scoring </div>
                 </AccordionTrigger>
-                <AccordionContent className="p-6 pt-0">
+                <AccordionContent className="pt-4">
                     <div className="space-y-4 text-sm text-muted-foreground">
                         <div className="flex items-center space-x-2">
                             <Switch id="show-controls-switch" checked={showControls} onCheckedChange={setShowControls} />
@@ -431,7 +425,7 @@ export function AstroAscentGame() {
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-        </Card>
-    </div>
+        </CardContent>
+    </Card>
   );
 }
