@@ -62,6 +62,7 @@ export interface User {
   claimedGlobalGifts?: string[];
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
   flappyMindClaims?: Record<string, number[]>;
+  astroAscentClaims?: Record<string, number[]>;
 }
 
 export interface Announcement {
@@ -209,6 +210,7 @@ interface AppDataContextType {
     updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind' | 'astroAscent', score: number) => Promise<void>;
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
+    claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -811,7 +813,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         }
         
         const MILESTONE_REWARDS: Record<number, number> = { 50: 30, 100: 50, 150: 100, 200: 200 };
-        const reward = MILESTONE_REWARDS[milestone];
+        const reward = MILESTONE_REWARDS[milestone as keyof typeof MILESTONE_REWARDS];
 
         if (!reward) return false;
 
@@ -847,7 +849,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             return false;
         }
 
-        const reward = MILESTONE_REWARDS[validMilestone];
+        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
         const newClaims = [...weekClaims, validMilestone];
 
         await updateDoc(userDocRef, {
@@ -856,6 +858,32 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
              [`gameHighScores.flappyMind`]: Math.max(userData.gameHighScores?.flappyMind || 0, milestone),
         });
 
+        return true;
+    };
+    
+    const claimAstroAscentMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+
+        if (!userSnap.exists()) return false;
+        
+        const userData = userSnap.data() as User;
+        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const weekClaims = userData.astroAscentClaims?.[weekKey] || [];
+
+        const MILESTONE_REWARDS: Record<number, number> = { 1000: 5, 2500: 10, 5000: 25, 7500: 50 };
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
+
+        if (!validMilestone) return false;
+
+        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
+        const newClaims = [...weekClaims, validMilestone];
+        
+        await updateDoc(userDocRef, {
+            credits: increment(reward),
+            [`astroAscentClaims.${weekKey}`]: newClaims
+        });
+        
         return true;
     };
 
@@ -1170,6 +1198,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateGameHighScore,
         claimDimensionShiftMilestone,
         claimFlappyMindMilestone,
+        claimAstroAscentMilestone,
         makeUserAdmin,
         removeUserAdmin,
         makeUserVip,
@@ -1288,5 +1317,6 @@ export const useDailySurprises = () => {
     
 
   
+
 
 

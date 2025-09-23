@@ -4,7 +4,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand, Maximize, Minimize } from 'lucide-react';
+import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
@@ -71,7 +71,6 @@ export function AstroAscentGame() {
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
   const [showControls, setShowControls] = useLocalStorage('astro-ascent-controls', true);
-  const [isFullScreen, setIsFullScreen] = useState(false);
   const [claimedMilestones, setClaimedMilestones] = useState<number[]>([]);
 
   const playerRef = useRef<GameObject>({ x: 0, y: 0, vx: 0, vy: 0, angle: -Math.PI / 2, fuel: MAX_FUEL });
@@ -411,7 +410,7 @@ export function AstroAscentGame() {
           <CardContent className="flex flex-col items-center gap-4">
               <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
                   <span className="flex items-center gap-1"><Trophy className="h-4 w-4 text-amber-400"/> {highScore}</span>
-                  <span className="text-primary font-bold">SCORE: {gameState === 'won' ? score : 0}</span>
+                  <span className="text-primary font-bold">SCORE: {score}</span>
                   <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
               </div>
               <div className="w-full h-[60vh] rounded-lg overflow-hidden border relative bg-slate-900">
