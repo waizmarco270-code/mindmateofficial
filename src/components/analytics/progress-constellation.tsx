@@ -1,8 +1,7 @@
 
-
 'use client';
-import { useMemo, useRef, useState } from 'react';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import { User } from '@/hooks/use-admin';
 import { Quiz } from '@/hooks/use-quizzes';
 import { Award, Brain, Clock, Flame, Zap } from 'lucide-react';
@@ -27,7 +26,6 @@ interface StarData {
   Icon: React.ElementType;
   position: { x: number; y: number };
   max: number;
-  depth: number;
 }
 
 const normalize = (value: number, max: number) => {
@@ -35,22 +33,7 @@ const normalize = (value: number, max: number) => {
 };
 
 export function ProgressConstellation({ user, quizzes }: ProgressConstellationProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
   const [detailModalContent, setDetailModalContent] = useState<{ title: string; data: any[] } | null>(null);
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-      if (!containerRef.current) return;
-      const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-      mouseX.set(e.clientX - left - width / 2);
-      mouseY.set(e.clientY - top - height / 2);
-  };
-  
-  const handleMouseLeave = () => {
-      mouseX.set(0);
-      mouseY.set(0);
-  }
 
   const stats = useMemo(() => {
     const perfectedQuizzes = user.perfectedQuizzes?.length || 0;
@@ -65,19 +48,11 @@ export function ProgressConstellation({ user, quizzes }: ProgressConstellationPr
   }, [user]);
 
   const stars: StarData[] = [
-    { id: 'studyTime', label: 'Study Time', value: stats.studyTime, Icon: Clock, position: { x: 50, y: 10 }, max: 360000, depth: 0.5 },
-    { id: 'focusSessions', label: 'Focus Sessions', value: stats.focusSessions, Icon: Zap, position: { x: 85, y: 40 }, max: 100, depth: 0.8 },
-    { id: 'quizzes', label: 'Quizzes Perfected', value: stats.quizzes, Icon: Brain, position: { x: 75, y: 85 }, max: 50, depth: 1.2 },
-    { id: 'streak', label: 'Longest Streak', value: stats.streak, Icon: Flame, position: { x: 25, y: 85 }, max: 100, depth: 1 },
-    { id: 'credits', label: 'Credits Earned', value: stats.credits, Icon: Award, position: { x: 15, y: 40 }, max: 5000, depth: 0.6 },
-  ];
-
-  const connections = [
-    { from: 'studyTime', to: 'focusSessions' },
-    { from: 'focusSessions', to: 'quizzes' },
-    { from: 'quizzes', to: 'streak' },
-    { from: 'streak', to: 'credits' },
-    { from: 'credits', to: 'studyTime' },
+    { id: 'studyTime', label: 'Study Time', value: stats.studyTime, Icon: Clock, position: { x: 50, y: 10 }, max: 360000 },
+    { id: 'focusSessions', label: 'Focus Sessions', value: stats.focusSessions, Icon: Zap, position: { x: 85, y: 40 }, max: 100 },
+    { id: 'quizzes', label: 'Quizzes Perfected', value: stats.quizzes, Icon: Brain, position: { x: 75, y: 85 }, max: 50 },
+    { id: 'streak', label: 'Longest Streak', value: stats.streak, Icon: Flame, position: { x: 25, y: 85 }, max: 100 },
+    { id: 'credits', label: 'Credits Earned', value: stats.credits, Icon: Award, position: { x: 15, y: 40 }, max: 5000 },
   ];
   
    const handleStarClick = (star: StarData) => {
@@ -91,67 +66,21 @@ export function ProgressConstellation({ user, quizzes }: ProgressConstellationPr
   return (
     <Dialog onOpenChange={(isOpen) => !isOpen && setDetailModalContent(null)}>
         <TooltipProvider>
-        <div 
-            ref={containerRef}
-            onMouseMove={handleMouseMove}
-            onMouseLeave={handleMouseLeave}
-            className="relative h-full w-full max-w-lg aspect-square mx-auto cursor-grab"
-        >
-            <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full overflow-visible">
-            <defs>
-                <filter id="glow">
-                <feGaussianBlur stdDeviation="0.5" result="coloredBlur" />
-                <feMerge>
-                    <feMergeNode in="coloredBlur" />
-                    <feMergeNode in="SourceGraphic" />
-                </feMerge>
-                </filter>
-            </defs>
-            {connections.map(({ from, to }) => {
-                const fromStar = stars.find(s => s.id === from)!;
-                const toStar = stars.find(s => s.id === to)!;
-                const fromProgress = normalize(fromStar.value, fromStar.max);
-                const toProgress = normalize(toStar.value, toStar.max);
-                const lineProgress = Math.min(fromProgress, toProgress);
-
-                if (lineProgress === 0) return null;
-                
-                return (
-                <motion.line
-                    key={`${from}-${to}`}
-                    x1={fromStar.position.x}
-                    y1={fromStar.position.y}
-                    x2={toStar.position.x}
-                    y2={toStar.position.y}
-                    stroke="rgba(107, 114, 128, 0.5)"
-                    strokeWidth="0.3"
-                    initial={{ pathLength: 0 }}
-                    animate={{ pathLength: lineProgress }}
-                    transition={{ duration: 1.5, delay: 0.5, ease: "easeInOut" }}
-                />
-                );
-            })}
-            </svg>
-
+        <div className="relative h-full w-full max-w-lg aspect-square mx-auto">
             {stars.map((star, i) => {
             const progress = normalize(star.value, star.max);
             const size = 12 + progress * 24;
             const glow = progress * 1.2;
             const iconSize = 6 + progress * 12;
-
-            const transformX = useTransform(mouseX, [-200, 200], [-8 * star.depth, 8 * star.depth]);
-            const transformY = useTransform(mouseY, [-200, 200], [-8 * star.depth, 8 * star.depth]);
             
             return (
-                <Tooltip key={star.id}>
-                <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
+                <DialogTrigger key={star.id} asChild>
+                    <Tooltip>
+                    <TooltipTrigger asChild>
                         <motion.div
                             style={{
                                 left: `${star.position.x}%`,
                                 top: `${star.position.y}%`,
-                                x: transformX,
-                                y: transformY,
                                 translateX: '-50%',
                                 translateY: '-50%'
                             }}
@@ -174,16 +103,16 @@ export function ProgressConstellation({ user, quizzes }: ProgressConstellationPr
                                 <star.Icon className="relative text-purple-900" style={{width: iconSize, height: iconSize}}/>
                             </div>
                         </motion.div>
-                    </DialogTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <div className="flex items-center gap-2">
-                        <star.Icon className="h-4 w-4"/>
-                        <span className="font-bold">{star.label}:</span>
-                        <span>{star.id === 'studyTime' ? `${(star.value/3600).toFixed(1)}h` : star.value.toLocaleString()}</span>
-                    </div>
-                </TooltipContent>
-                </Tooltip>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <div className="flex items-center gap-2">
+                            <star.Icon className="h-4 w-4"/>
+                            <span className="font-bold">{star.label}:</span>
+                            <span>{star.id === 'studyTime' ? `${(star.value/3600).toFixed(1)}h` : star.value.toLocaleString()}</span>
+                        </div>
+                    </TooltipContent>
+                    </Tooltip>
+                </DialogTrigger>
             );
             })}
         </div>
