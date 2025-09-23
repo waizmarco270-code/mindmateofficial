@@ -32,6 +32,7 @@ export interface User {
   isAdmin?: boolean;
   isVip?: boolean; // For the special recognition badge
   isGM?: boolean; // For the Game Master badge
+  isChallenger?: boolean; // For completing a challenge
   friends?: string[]; // Array of friend UIDs
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number; // Total count over all time
@@ -213,6 +214,8 @@ interface AppDataContextType {
     removeUserVip: (uid: string) => Promise<void>;
     makeUserGM: (uid: string) => Promise<void>;
     removeUserGM: (uid: string) => Promise<void>;
+    makeUserChallenger: (uid: string) => Promise<void>;
+    removeUserChallenger: (uid: string) => Promise<void>;
     clearGlobalChat: () => Promise<void>;
     clearQuizLeaderboard: () => Promise<void>;
     resetWeeklyStudyTime: () => Promise<void>;
@@ -413,6 +416,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     isAdmin: false,
                     isVip: false,
                     isGM: false,
+                    isChallenger: false,
                     friends: [],
                     unlockedResourceSections: [],
                     unlockedFeatures: [],
@@ -544,6 +548,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const removeUserGM = async (uid: string) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { isGM: false });
+    };
+    
+    const makeUserChallenger = async (uid: string) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { isChallenger: true });
+    };
+
+    const removeUserChallenger = async (uid: string) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { isChallenger: false });
     };
 
     const toggleUserBlock = async (uid: string, isBlocked: boolean) => {
@@ -1156,6 +1170,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         removeUserVip,
         makeUserGM,
         removeUserGM,
+        makeUserChallenger,
+        removeUserChallenger,
         clearGlobalChat,
         clearQuizLeaderboard,
         resetWeeklyStudyTime,

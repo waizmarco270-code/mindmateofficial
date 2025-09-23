@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -17,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -36,6 +35,7 @@ export default function SuperAdminPanelPage() {
     isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
     makeUserVip, removeUserVip,
     makeUserGM, removeUserGM,
+    makeUserChallenger, removeUserChallenger,
     addCreditsToUser, giftCreditsToAllUsers,
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
@@ -559,6 +559,8 @@ export default function SuperAdminPanelPage() {
                                         <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>
                                     ) : user.isAdmin ? (
                                         <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
+                                    ) : user.isChallenger ? (
+                                         <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
                                     ) : user.isVip ? (
                                         <span className="elite-badge"><Crown className="h-3 w-3"/> ELITE</span>
                                     ) : user.isGM ? (
@@ -578,6 +580,15 @@ export default function SuperAdminPanelPage() {
                                         ) : (
                                             <Button variant="outline" size="sm" onClick={() => makeUserAdmin(user.uid)}>
                                                 <ShieldCheck className="mr-2 h-4 w-4"/>Make Admin
+                                            </Button>
+                                        )}
+                                        {user.isChallenger ? (
+                                            <Button variant="secondary" size="sm" onClick={() => removeUserChallenger(user.uid)}>
+                                                <Swords className="mr-2 h-4 w-4"/>Remove Challenger
+                                            </Button>
+                                        ) : (
+                                            <Button variant="outline" size="sm" onClick={() => makeUserChallenger(user.uid)}>
+                                                <Swords className="mr-2 h-4 w-4"/>Make Challenger
                                             </Button>
                                         )}
                                         {user.isVip ? (
