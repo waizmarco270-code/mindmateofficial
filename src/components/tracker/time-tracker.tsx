@@ -80,57 +80,50 @@ export function TimeTracker() {
 
     return (
         <>
-            <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-2xl shadow-primary/20">
-                <CardContent className="p-6 text-center">
-                    <div className="flex justify-between items-center text-primary-foreground/80 mb-4">
-                        <p className="font-semibold text-lg">{activeSubject?.name || 'Paused'}</p>
+            <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg shadow-primary/20">
+                <CardContent className="p-4 sm:p-6 text-center">
+                     <div className="flex justify-between items-center text-primary-foreground/80 mb-2">
+                        <p className="font-semibold text-base">{activeSubject?.name || 'Paused'}</p>
                     </div>
-                    <p className="font-mono text-7xl font-bold tracking-tighter">
+                    <p className="font-mono text-5xl sm:text-6xl font-bold tracking-tighter">
                         {formatTime(activeSubjectTime)}
                     </p>
-                    <p className="text-sm text-primary-foreground/80 mt-2">
+                    <p className="text-sm text-primary-foreground/80 mt-1">
                         Total Today: {formatTime(totalTimeToday)}
                     </p>
                 </CardContent>
             </Card>
 
-            <Card>
-                <CardHeader>
-                    <h3 className="font-bold text-lg">Subjects</h3>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        {subjects.map(subject => (
-                            <div key={subject.id} className="flex items-center gap-4 p-2 rounded-lg hover:bg-muted">
-                                <button onClick={() => handlePlayPause(subject.id)} style={{ color: subject.color }} disabled={!isSignedIn}>
-                                    {activeSubjectId === subject.id ? (
-                                        <Pause className="h-8 w-8" fill="currentColor" />
-                                    ) : (
-                                        <Play className="h-8 w-8" fill="currentColor" />
-                                    )}
-                                </button>
-                                <span className="flex-1 font-medium">{subject.name}</span>
-                                <span className="font-mono text-muted-foreground">{formatTime(subject.timeTracked)}</span>
-                                 <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!isSignedIn}>
-                                            <MoreVertical className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onClick={() => handleEditClick(subject)}><Edit className="mr-2 h-4 w-4"/> Edit</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => deleteSubject(subject.id)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                        ))}
-                         {subjects.length === 0 && <p className="text-muted-foreground text-center py-4">No subjects added. Add one to start tracking!</p>}
+            <div className="mt-4 space-y-2">
+                {subjects.map(subject => (
+                    <div key={subject.id} className="flex items-center gap-2 sm:gap-4 p-2 rounded-lg hover:bg-muted">
+                        <button onClick={() => handlePlayPause(subject.id)} style={{ color: subject.color }} disabled={!isSignedIn}>
+                            {activeSubjectId === subject.id ? (
+                                <Pause className="h-7 w-7 sm:h-8 sm:w-8" fill="currentColor" />
+                            ) : (
+                                <Play className="h-7 w-7 sm:h-8 sm:w-8" fill="currentColor" />
+                            )}
+                        </button>
+                        <span className="flex-1 font-medium text-sm sm:text-base">{subject.name}</span>
+                        <span className="font-mono text-muted-foreground text-sm sm:text-base">{formatTime(subject.timeTracked)}</span>
+                         <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!isSignedIn}>
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem onClick={() => handleEditClick(subject)}><Edit className="mr-2 h-4 w-4"/> Edit</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => deleteSubject(subject.id)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/> Delete</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
-                </CardContent>
-                <CardFooter>
-                     <Button variant="outline" onClick={handleAddNewClick} disabled={!isSignedIn}><Plus className="mr-2 h-4 w-4"/> Add Subject</Button>
-                </CardFooter>
-            </Card>
+                ))}
+                 {subjects.length === 0 && <p className="text-muted-foreground text-center py-4">No subjects added. Add one to start tracking!</p>}
+            </div>
+             <div className="mt-4">
+                 <Button variant="outline" className="w-full" onClick={handleAddNewClick} disabled={!isSignedIn}><Plus className="mr-2 h-4 w-4"/> Add Subject</Button>
+            </div>
 
             <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
                 <DialogContent>

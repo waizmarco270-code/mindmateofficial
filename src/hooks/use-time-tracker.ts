@@ -114,6 +114,8 @@ export function useTimeTracker() {
       const allUserSessions = snapshot.docs.map(doc => ({
           ...doc.data(),
           id: doc.id,
+          // This is a workaround for userId sometimes being missing in old data
+          userId: doc.ref.parent.parent?.id || 'unknown'
         } as TimeSession));
       setSessions(allUserSessions);
     });
@@ -122,6 +124,7 @@ export function useTimeTracker() {
         const allPomSessions = snapshot.docs.map(doc => ({
             ...doc.data(),
             id: doc.id,
+            userId: doc.ref.parent.parent?.id || 'unknown'
         } as PomodoroSession));
         setPomodoroSessions(allPomSessions);
     });

@@ -8,6 +8,7 @@ import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot, Timestamp, delet
 import { differenceInCalendarDays, startOfDay, addDays } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
+import { useTimeTracker } from './use-time-tracker';
 
 export interface DailyGoal {
     id: 'studyTime' | 'focusSession' | 'tasks' | 'checkIn';
@@ -61,6 +62,7 @@ const ChallengesContext = createContext<ChallengesContextType | undefined>(undef
 export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
     const { currentUserData, addCreditsToUser, loading: userLoading, makeUserChallenger } = useUsers();
+    const { totalTimeToday } = useTimeTracker(); // Integrate time tracker
     const { toast } = useToast();
     const [activeChallenge, setActiveChallenge] = useState<ActiveChallenge | null>(null);
     const [loading, setLoading] = useState(true);
@@ -124,6 +126,26 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
         return () => unsubscribe();
     }, [user, resetInvalidChallenge]);
+
+    // Effect to sync study time with challenge progress
+    useEffect(() => {
+        if (!user || !activeChallenge || activeChallenge.status !== 'active') return;
+
+        const studyGoal = activeChallenge.dailyGoals.find(g => g.id === 'studyTime');
+        if (!studyGoal) return;
+        
+        const currentProgress = activeChallenge.progress[activeChallenge.currentDay]?.studyTime?.current || 0;
+        
+        if (totalTimeToday > currentProgress) {
+             const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
+             const isCompleted = totalTimeToday >= studyGoal.target;
+             updateDoc(challengeRef, {
+                 [`progress.${activeChallenge.currentDay}.studyTime`]: { current: totalTimeToday, completed: isCompleted }
+             });
+        }
+
+    }, [totalTimeToday, activeChallenge, user]);
+
 
     const startChallenge = useCallback(async (config: ChallengeConfig) => {
         if (!user || !currentUserData || activeChallenge) return;
@@ -279,10 +301,25 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
         dayTasks[taskIndex].completed = !dayTasks[taskIndex].completed;
 
+        // Check if all tasks for the day are now complete
+        const allTasksCompleted = dayTasks.every((t: PlannedTask) => t.completed);
+        const tasksGoal = activeChallenge.dailyGoals.find(g => g.id === 'tasks');
+
         const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
-        await updateDoc(challengeRef, {
+        
+        const updates: any = {
             plannedTasks: newPlannedTasks
-        });
+        };
+        
+        if (tasksGoal) {
+            updates[`progress.${day}.tasks`] = {
+                current: allTasksCompleted ? 1 : 0,
+                completed: allTasksCompleted
+            }
+        }
+        
+        await updateDoc(challengeRef, updates);
+
     }, [user, activeChallenge]);
 
     const dailyProgress = activeChallenge?.progress[activeChallenge.currentDay] || null;

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useChallenges, type ActiveChallenge, type ChallengeConfig, type PlannedTask } from '@/hooks/use-challenges';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, ArrowLeft, CheckCircle, XCircle, Zap, Clock, ListTodo, CalendarCheck, ShieldQuestion, Loader2, Trophy, AlertTriangle } from 'lucide-react';
+import { Lock, ArrowLeft, CheckCircle, XCircle, Zap, Clock, ListTodo, CalendarCheck, ShieldQuestion, Loader2, Trophy, AlertTriangle, Sparkles, Check } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,8 @@ import { useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { differenceInMilliseconds } from 'date-fns';
 import { Checkbox } from '../ui/checkbox';
+import { TimeTracker } from '../tracker/time-tracker';
+import { AnimatePresence, motion } from 'framer-motion';
 
 
 interface ChallengerPageProps {
@@ -84,9 +86,33 @@ function BannedView({ challenge, onLiftBan }: { challenge: ActiveChallenge, onLi
     )
 }
 
+function GoalAchievedPopup() {
+    return (
+        <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.8 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            className="absolute -top-8 right-0 flex items-center gap-2 rounded-full bg-green-500 px-3 py-1 text-xs font-bold text-white shadow-lg"
+        >
+            <Check className="h-4 w-4" />
+            Goal Achieved!
+        </motion.div>
+    )
+}
+
 export default function ChallengerPage({ config, isLocked = false }: ChallengerPageProps) {
     const { user } = useUser();
     const { activeChallenge, checkIn, loading, dailyProgress, failChallenge, liftChallengeBan, toggleTaskCompletion } = useChallenges();
+    const [showStudyGoalPopup, setShowStudyGoalPopup] = useState(false);
+
+    useEffect(() => {
+        const studyGoal = dailyProgress?.['studyTime'];
+        if (studyGoal?.completed) {
+            setShowStudyGoalPopup(true);
+            const timer = setTimeout(() => setShowStudyGoalPopup(false), 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [dailyProgress]);
     
     if (loading) {
         return (
@@ -148,14 +174,18 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                 {config.dailyGoals.map(goal => {
                     const progress = currentDayProgress[goal.id] || { current: 0, completed: false };
                     const progressPercentage = Math.min((progress.current / goal.target) * 100, 100);
+                    const isStudyGoal = goal.id === 'studyTime';
                     return (
-                        <Card key={goal.id} className={cn("flex flex-col", progress.completed && "bg-green-500/10 border-green-500/50")}>
+                        <Card key={goal.id} className={cn("flex flex-col relative", progress.completed && "bg-green-500/10 border-green-500/50")}>
+                             <AnimatePresence>
+                                {isStudyGoal && showStudyGoalPopup && <GoalAchievedPopup />}
+                            </AnimatePresence>
                             <CardHeader className="flex flex-row items-center justify-between pb-2">
                                 <CardTitle className="text-sm font-medium">{goal.description}</CardTitle>
                                 <GoalIcon id={goal.id} />
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col justify-end">
-                                <Progress value={progressPercentage} className="h-2" />
+                                <Progress value={progressPercentage} className="h-2" indicatorClassName={cn(isStudyGoal && "animated-rainbow-progress")} />
                             </CardContent>
                         </Card>
                     )
@@ -193,14 +223,16 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                 </Card>
             )}
 
-            <div className="flex justify-center items-center flex-col gap-2">
-                <Button size="lg" onClick={checkIn} disabled={isCheckInDisabled || allGoalsMet}>
-                    {allGoalsMet ? <CheckCircle className="mr-2"/> : <CalendarCheck className="mr-2"/>}
-                    {allGoalsMet ? 'All Goals Met for Today!' : "Daily Check-in"}
-                </Button>
-                {config.checkInTime && <p className="text-sm text-muted-foreground">Required check-in time: {config.checkInTime}</p>}
-            </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Live Study Tracker</CardTitle>
+                        <CardDescription>Use this tracker to log time towards your study goal.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <TimeTracker />
+                    </CardContent>
+                </Card>
                 <Card>
                     <CardHeader><CardTitle>Challenge Roadmap</CardTitle></CardHeader>
                     <CardContent className="grid grid-cols-7 gap-2">
@@ -221,6 +253,15 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                          })}
                     </CardContent>
                 </Card>
+            </div>
+             <div className="space-y-6">
+                <div className="flex justify-center items-center flex-col gap-2">
+                    <Button size="lg" onClick={checkIn} disabled={isCheckInDisabled || allGoalsMet}>
+                        {allGoalsMet ? <CheckCircle className="mr-2"/> : <CalendarCheck className="mr-2"/>}
+                        {allGoalsMet ? 'All Goals Met for Today!' : "Daily Check-in"}
+                    </Button>
+                    {config.checkInTime && <p className="text-sm text-muted-foreground">Required check-in time: {config.checkInTime}</p>}
+                </div>
                  <Card>
                     <CardHeader><CardTitle>Rules & Info</CardTitle></CardHeader>
                     <CardContent className="space-y-4 text-sm">

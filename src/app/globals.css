@@ -207,6 +207,10 @@
     from { background-position: 0 0; }
     to { background-position: 20% 40%; }
   }
+  @keyframes rainbow-progress {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
 
 }
 
@@ -444,7 +448,20 @@
     background-size: 100% 5px, 5px 100%;
     animation: lofi-rain 0.2s linear infinite;
   }
-
+  .animated-rainbow-progress {
+    background: linear-gradient(
+      -45deg, 
+      #ff79c6, 
+      #bd93f9, 
+      #8be9fd, 
+      #50fa7b, 
+      #f1fa8c, 
+      #ffb86c, 
+      #ff5555
+    );
+    background-size: 400% 400%;
+    animation: rainbow-progress 3s linear infinite;
+  }
 
   .animate-flicker {
     animation: flicker 1.5s infinite;
