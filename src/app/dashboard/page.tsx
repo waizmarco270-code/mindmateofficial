@@ -340,7 +340,7 @@ export default function DashboardPage() {
                                 <div className="absolute inset-0 bg-grid-slate-800 animate-pulse [background-size:4rem_4rem]"></div>
                             </div>
                             <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center items-center">
-                                <div className="animate-pulse duration-[3000ms] absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
+                                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl duration-[3000ms]"></div>
                                 <motion.div
                                     animate={{ y: [0, -10, 0], scale: [1, 1.05, 1] }}
                                     transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
