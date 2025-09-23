@@ -55,9 +55,10 @@ export function AstroAscentGame() {
   const { currentUserData, updateGameHighScore } = useUsers();
 
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver' | 'won'>('idle');
+  const [gameOverReason, setGameOverReason] = useState('Mission Failed');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [showControls, setShowControls] = useState(true);
+  const [showControls, setShowControls] = useLocalStorage('astro-ascent-controls', true);
 
   const playerRef = useRef<GameObject>({ x: 0, y: 0, vx: 0, vy: 0, angle: -Math.PI / 2, fuel: MAX_FUEL });
   const asteroidsRef = useRef<Asteroid[]>([]);
@@ -81,6 +82,7 @@ export function AstroAscentGame() {
       retroFlame: isDark ? '#f43f5e' : '#ef4444',
       asteroid: isDark ? '#475569' : '#94a3b8',
       pad: isDark ? '#16a34a' : '#22c55e',
+      padLight: isDark ? '#4ade80' : '#86efac',
     };
   }, [resolvedTheme]);
 
@@ -125,6 +127,7 @@ export function AstroAscentGame() {
   };
 
   const handleGameOver = (reason: string) => {
+    setGameOverReason(reason);
     setGameState('gameOver');
     if (score > highScore) {
       setHighScore(score);
@@ -210,11 +213,13 @@ export function AstroAscentGame() {
     if (player.y + 10 >= pad.y && player.y + 10 <= pad.y + 10 && player.x > pad.x && player.x < pad.x + pad.width) {
         const totalVelocity = Math.hypot(player.vx, player.vy);
         const isLevel = Math.abs(player.angle - (-Math.PI / 2)) < 0.2; // Angle check
-        if (totalVelocity > SAFE_LANDING_VELOCITY || !isLevel) {
-             handleGameOver('Landed too hard!'); return;
-        } else {
-            handleWin(); return;
+        if (!isLevel) {
+            handleGameOver('Bad angle! Land upright.'); return;
         }
+        if (totalVelocity > SAFE_LANDING_VELOCITY) {
+             handleGameOver('Landed too hard! Slow down more.'); return;
+        }
+        handleWin(); return;
     }
 
     if (player.y > canvas.height || player.y < 0 || player.x < 0 || player.x > canvas.width) { handleGameOver('Lost in space!'); return; }
@@ -237,8 +242,11 @@ export function AstroAscentGame() {
     // Draw landing pad
     ctx.fillStyle = colors.pad;
     ctx.fillRect(pad.x, pad.y, pad.width, 10);
-    ctx.fillStyle = 'rgba(255,255,255,0.2)';
-    ctx.fillRect(pad.x, pad.y+10, pad.width, 10);
+    ctx.fillStyle = colors.padLight;
+    ctx.fillRect(pad.x, pad.y, pad.width, 3);
+    // Landing legs
+    ctx.fillRect(pad.x, pad.y - 10, 5, 10);
+    ctx.fillRect(pad.x + pad.width - 5, pad.y - 10, 5, 10);
 
 
     // Draw player
@@ -359,12 +367,12 @@ export function AstroAscentGame() {
                 <span className="text-primary font-bold">SCORE: {score}</span>
                 <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
             </div>
-            <div className="w-full rounded-lg overflow-hidden border relative bg-slate-900 h-[60vh]">
+            <div className="w-full h-[60vh] rounded-lg overflow-hidden border relative bg-slate-900">
                 <canvas ref={canvasRef} className="w-full h-full" />
                 {gameState !== 'playing' && (
                     <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
                         {gameState === 'idle' && ( <Button size="lg" onClick={startGame} disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button> )}
-                        {gameState === 'gameOver' && ( <div className="space-y-4"> <h3 className="text-3xl font-bold text-destructive">Mission Failed</h3> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Try Again</Button> </div> )}
+                        {gameState === 'gameOver' && ( <div className="space-y-4"> <h3 className="text-3xl font-bold text-destructive">{gameOverReason}</h3> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Try Again</Button> </div> )}
                         {gameState === 'won' && ( <motion.div initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} className="space-y-4"> <h3 className="text-3xl font-bold text-green-400">Perfect Landing!</h3> <p className="text-xl">Your score: <span className="font-bold">{score}</span></p> <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Fly Again</Button> </motion.div> )}
                     </div>
                 )}
@@ -413,11 +421,12 @@ export function AstroAscentGame() {
                             <Trophy className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
                              <div>
                                 <h4 className="font-bold text-foreground">Objective & Scoring</h4>
-                                <p>Safely land on the green platform. Score is based on remaining fuel. More fuel = higher score!</p>
                                 <ul className="list-disc pl-4 space-y-1 mt-2">
-                                    <li>Don't run out of fuel.</li>
-                                    <li>Avoid crashing into asteroids.</li>
-                                    <li>Land gently with low velocity and correct orientation.</li>
+                                    <li><span className="font-bold">Land on the green platform.</span></li>
+                                    <li><span className="font-bold text-destructive">Land GENTLY!</span> Your speed must be very low.</li>
+                                    <li><span className="font-bold text-destructive">Land UPRIGHT!</span> The rocket must be vertical.</li>
+                                    <li>Score is based on remaining fuel. More fuel = higher score!</li>
+                                    <li>Avoid crashing into asteroids and flying off-screen.</li>
                                 </ul>
                             </div>
                         </div>
