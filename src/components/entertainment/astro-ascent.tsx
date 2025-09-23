@@ -17,7 +17,6 @@ import { Label } from '../ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek } from 'date-fns';
-import { useImmersive } from '@/hooks/use-immersive';
 
 
 // Game Configuration
@@ -66,7 +65,6 @@ export function AstroAscentGame() {
   const { user, isSignedIn } = useUser();
   const { currentUserData, updateGameHighScore, claimAstroAscentMilestone } = useUsers();
   const { toast } = useToast();
-  const { isImmersive, setIsImmersive } = useImmersive();
 
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver' | 'won'>('idle');
   const [gameOverReason, setGameOverReason] = useState('Mission Failed');
@@ -246,6 +244,7 @@ export function AstroAscentGame() {
         }
     }
 
+    setScore(Math.round(player.fuel / 10));
 
     player.x += player.vx;
     player.y += player.vy;
@@ -401,22 +400,15 @@ export function AstroAscentGame() {
   
   return (
     <div className="space-y-8">
-      <Card className={cn("w-full relative transition-all duration-500", isImmersive && "fixed inset-0 z-50 h-screen w-screen !m-0 rounded-none border-0")}>
+      <Card className="w-full relative">
           <SignedOut>
               <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
           </SignedOut>
           <CardHeader>
-            <div className="flex justify-between items-center">
-              <div>
-                <CardTitle>Astro Ascent</CardTitle>
-                <CardDescription>Land safely. Watch your fuel.</CardDescription>
-              </div>
-              <Button size="icon" variant="ghost" onClick={() => setIsImmersive(v => !v)}>
-                  {isImmersive ? <Minimize /> : <Maximize />}
-              </Button>
-            </div>
+            <CardTitle>Astro Ascent</CardTitle>
+            <CardDescription>Land safely. Watch your fuel.</CardDescription>
           </CardHeader>
-          <CardContent className={cn("flex flex-col items-center gap-4", isImmersive && "h-[calc(100vh-160px)]")}>
+          <CardContent className="flex flex-col items-center gap-4">
               <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
                   <span className="flex items-center gap-1"><Trophy className="h-4 w-4 text-amber-400"/> {highScore}</span>
                   <span className="text-primary font-bold">SCORE: {score}</span>
