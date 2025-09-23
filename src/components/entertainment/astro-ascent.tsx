@@ -216,7 +216,7 @@ export function AstroAscentGame() {
         }
     }
 
-    if (player.y > canvas.height) { handleGameOver('Lost in space!'); return; }
+    if (player.y > canvas.height || player.y < 0 || player.x < 0 || player.x > canvas.width) { handleGameOver('Lost in space!'); return; }
 
     for(const asteroid of asteroidsRef.current) {
         const dist = Math.hypot(player.x - asteroid.x, player.y - asteroid.y);
@@ -314,13 +314,15 @@ export function AstroAscentGame() {
 
   const resizeCanvas = useCallback(() => {
       const canvas = canvasRef.current;
-      const container = gameContainerRef.current;
+      const container = canvas?.parentElement;
       if (canvas && container) {
           canvas.width = container.clientWidth;
           canvas.height = container.clientHeight;
-          resetGame();
+          if (gameState !== 'playing') {
+            resetGame();
+          }
       }
-  }, [resetGame]);
+  }, [resetGame, gameState]);
 
   useEffect(() => {
     resizeCanvas();
@@ -348,16 +350,19 @@ export function AstroAscentGame() {
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-        setIsFullscreen(!!document.fullscreenElement);
+        const isCurrentlyFullscreen = !!document.fullscreenElement;
+        setIsFullscreen(isCurrentlyFullscreen);
+        // Delay resize to allow DOM to update
+        setTimeout(resizeCanvas, 100);
     };
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
+  }, [resizeCanvas]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div ref={gameContainerRef} className={cn("lg:col-span-2 grid gap-4 transition-all duration-300", isFullscreen && "fixed inset-0 z-50 bg-background p-4")}>
-            <Card className="w-full relative flex flex-col">
+        <div ref={gameContainerRef} className={cn("lg:col-span-2 transition-all duration-300", isFullscreen && "fixed inset-0 z-50 bg-background")}>
+            <Card className={cn("w-full relative flex flex-col", isFullscreen && "h-full")}>
                 <SignedOut>
                     <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
                 </SignedOut>
@@ -378,7 +383,7 @@ export function AstroAscentGame() {
                         <span className="text-primary font-bold">SCORE: {score}</span>
                         <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
                     </div>
-                    <div className="w-full rounded-lg overflow-hidden border relative aspect-[10/9] bg-slate-900 flex-1">
+                    <div className="w-full rounded-lg overflow-hidden border relative bg-slate-900 flex-1">
                         <canvas ref={canvasRef} className="w-full h-full" />
                         {gameState !== 'playing' && (
                             <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
