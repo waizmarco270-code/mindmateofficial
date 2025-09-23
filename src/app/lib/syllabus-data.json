@@ -1,0 +1,205 @@
+
+{
+    "jee": {
+        "physics": [
+            { "chapter": "Rotational Motion", "importance": "high" },
+            { "chapter": "Thermodynamics", "importance": "high" },
+            { "chapter": "Optics", "importance": "high" },
+            { "chapter": "Electrostatics", "importance": "high" },
+            { "chapter": "Modern Physics", "importance": "high" },
+            { "chapter": "Kinematics", "importance": "medium" },
+            { "chapter": "Laws of Motion", "importance": "medium" },
+            { "chapter": "Work, Energy and Power", "importance": "medium" },
+            { "chapter": "Current Electricity", "importance": "medium" },
+            { "chapter": "Magnetism", "importance": "medium" },
+            { "chapter": "Gravitation", "importance": "low" },
+            { "chapter": "SHM & Waves", "importance": "low" },
+            { "chapter": "Properties of Matter", "importance": "low" }
+        ],
+        "chemistry": [
+            { "chapter": "Chemical Bonding", "importance": "high" },
+            { "chapter": "Coordination Compounds", "importance": "high" },
+            { "chapter": "General Organic Chemistry", "importance": "high" },
+            { "chapter": "Thermodynamics & Gaseous State", "importance": "high" },
+            { "chapter": "Aldehydes, Ketones & Carboxylic Acids", "importance": "high" },
+            { "chapter": "p-Block Elements", "importance": "medium" },
+            { "chapter": "Atomic Structure", "importance": "medium" },
+            { "chapter": "Hydrocarbons", "importance": "medium" },
+            { "chapter": "Solutions", "importance": "medium" },
+            { "chapter": "d and f Block Elements", "importance": "medium" },
+            { "chapter": "Biomolecules", "importance": "low" },
+            { "chapter": "Environmental Chemistry", "importance": "low" },
+            { "chapter": "Chemistry in Everyday Life", "importance": "low" }
+        ],
+        "maths": [
+            { "chapter": "3D Geometry", "importance": "high" },
+            { "chapter": "Vectors", "importance": "high" },
+            { "chapter": "Definite Integration & Area", "importance": "high" },
+            { "chapter": "Matrices & Determinants", "importance": "high" },
+            { "chapter": "Sequence & Series", "importance": "high" },
+            { "chapter": "Conic Sections", "importance": "medium" },
+            { "chapter": "Limits, Continuity & Differentiability", "importance": "medium" },
+            { "chapter": "Application of Derivatives", "importance": "medium" },
+            { "chapter": "Probability", "importance": "medium" },
+            { "chapter": "Complex Numbers", "importance": "medium" },
+            { "chapter": "Trigonometry", "importance": "low" },
+            { "chapter": "Sets, Relations & Functions", "importance": "low" },
+            { "chapter": "Statistics", "importance": "low" }
+        ]
+    },
+    "neet": {
+        "physics": [
+            { "chapter": "Mechanics (Kinematics, Laws of Motion, etc.)", "importance": "high" },
+            { "chapter": "Thermodynamics", "importance": "high" },
+            { "chapter": "Optics", "importance": "high" },
+            { "chapter": "Current Electricity & Magnetism", "importance": "high" },
+            { "chapter": "Modern Physics & Semiconductor Devices", "importance": "high" },
+            { "chapter": "Properties of Bulk Matter", "importance": "medium" },
+            { "chapter": "Electrostatics", "importance": "medium" },
+            { "chapter": "SHM & Waves", "importance": "medium" },
+            { "chapter": "Gravitation", "importance": "low" }
+        ],
+        "chemistry": [
+            { "chapter": "Chemical Bonding and Molecular Structure", "importance": "high" },
+            { "chapter": "Equilibrium", "importance": "high" },
+            { "chapter": "Coordination Compounds", "importance": "high" },
+            { "chapter": "General Organic Chemistry", "importance": "high" },
+            { "chapter": "Hydrocarbons", "importance": "high" },
+            { "chapter": "p-Block Elements", "importance": "medium" },
+            { "chapter": "Thermodynamics", "importance": "medium" },
+            { "chapter": "d and f Block Elements", "importance": "medium" },
+            { "chapter": "Solutions", "importance": "medium" },
+            { "chapter": "Biomolecules", "importance": "low" }
+        ],
+        "biology": [
+            { "chapter": "Human Physiology", "importance": "high" },
+            { "chapter": "Genetics and Evolution", "importance": "high" },
+            { "chapter": "Plant Physiology", "importance": "high" },
+            { "chapter": "Diversity in Living World", "importance": "high" },
+            { "chapter": "Biotechnology and its Applications", "importance": "high" },
+            { "chapter": "Cell Structure and Function", "importance": "medium" },
+            { "chapter": "Ecology and Environment", "importance": "medium" },
+            { "chapter": "Reproduction", "importance": "medium" },
+            { "chapter": "Structural Organisation in Animals and Plants", "importance": "medium" },
+            { "chapter": "Biology and Human Welfare", "importance": "low" }
+        ]
+    },
+    "class12": {
+        "physics": [
+            { "chapter": "Electrostatics", "importance": "high" },
+            { "chapter": "Current Electricity", "importance": "high" },
+            { "chapter": "Magnetic Effects of Current & Magnetism", "importance": "high" },
+            { "chapter": "Ray Optics and Optical Instruments", "importance": "high" },
+            { "chapter": "Semiconductor Electronics", "importance": "high" },
+            { "chapter": "Electromagnetic Induction & AC", "importance": "medium" },
+            { "chapter": "Wave Optics", "importance": "medium" },
+            { "chapter": "Dual Nature of Radiation and Matter", "importance": "medium" },
+            { "chapter": "Atoms and Nuclei", "importance": "medium" },
+            { "chapter": "Electromagnetic Waves", "importance": "low" }
+        ],
+        "chemistry": [
+            { "chapter": "Solutions", "importance": "high" },
+            { "chapter": "Electrochemistry", "importance": "high" },
+            { "chapter": "d-and f-Block Elements", "importance": "high" },
+            { "chapter": "Coordination Compounds", "importance": "high" },
+            { "chapter": "Aldehydes, Ketones and Carboxylic Acids", "importance": "high" },
+            { "chapter": "Chemical Kinetics", "importance": "medium" },
+            { "chapter": "Haloalkanes and Haloarenes", "importance": "medium" },
+            { "chapter": "Alcohols, Phenols and Ethers", "importance": "medium" },
+            { "chapter": "Amines", "importance": "medium" },
+            { "chapter": "Biomolecules", "importance": "low" }
+        ],
+        "maths": [
+            { "chapter": "Integrals", "importance": "high" },
+            { "chapter": "Matrices & Determinants", "importance": "high" },
+            { "chapter": "Continuity and Differentiability", "importance": "high" },
+            { "chapter": "Application of Derivatives", "importance": "high" },
+            { "chapter": "3D Geometry", "importance": "high" },
+            { "chapter": "Relations and Functions", "importance": "medium" },
+            { "chapter": "Vector Algebra", "importance": "medium" },
+            { "chapter": "Application of Integrals", "importance": "medium" },
+            { "chapter": "Differential Equations", "importance": "medium" },
+            { "chapter": "Linear Programming", "importance": "low" },
+            { "chapter": "Probability", "importance": "low" }
+        ]
+    },
+    "class11": {
+        "physics": [
+            { "chapter": "Laws of Motion", "importance": "high" },
+            { "chapter": "Work, Energy and Power", "importance": "high" },
+            { "chapter": "System of Particles and Rotational Motion", "importance": "high" },
+            { "chapter": "Thermodynamics", "importance": "high" },
+            { "chapter": "Units and Measurements", "importance": "medium" },
+            { "chapter": "Motion in a Straight Line & Plane", "importance": "medium" },
+            { "chapter": "Gravitation", "importance": "medium" },
+            { "chapter": "Mechanical Properties of Solids & Fluids", "importance": "medium" },
+            { "chapter": "Oscillations and Waves", "importance": "low" }
+        ],
+        "chemistry": [
+            { "chapter": "Some Basic Concepts of Chemistry", "importance": "high" },
+            { "chapter": "Structure of Atom", "importance": "high" },
+            { "chapter": "Chemical Bonding and Molecular Structure", "importance": "high" },
+            { "chapter": "Thermodynamics", "importance": "high" },
+            { "chapter": "Equilibrium", "importance": "high" },
+            { "chapter": "Organic Chemistry – Some Basic Principles and Techniques", "importance": "high" },
+            { "chapter": "Classification of Elements and Periodicity", "importance": "medium" },
+            { "chapter": "States of Matter", "importance": "medium" },
+            { "chapter": "Redox Reactions", "importance": "medium" },
+            { "chapter": "Hydrocarbons", "importance": "medium" },
+            { "chapter": "s-Block & p-Block Elements", "importance": "low" },
+            { "chapter": "Environmental Chemistry", "importance": "low" }
+        ],
+        "maths": [
+            { "chapter": "Trigonometric Functions", "importance": "high" },
+            { "chapter": "Linear Inequalities", "importance": "high" },
+            { "chapter": "Permutations and Combinations", "importance": "high" },
+            { "chapter": "Conic Sections", "importance": "high" },
+            { "chapter": "Limits and Derivatives", "importance": "high" },
+            { "chapter": "Sets, Relations and Functions", "importance": "medium" },
+            { "chapter": "Complex Numbers and Quadratic Equations", "importance": "medium" },
+            { "chapter": "Sequence and Series", "importance": "medium" },
+            { "chapter": "Straight Lines", "importance": "medium" },
+            { "chapter": "Probability", "importance": "low" },
+            { "chapter": "Statistics", "importance": "low" }
+        ]
+    },
+    "class10": {
+        "science": [
+            { "chapter": "Chemical Reactions and Equations", "importance": "high" },
+            { "chapter": "Life Processes", "importance": "high" },
+            { "chapter": "Light – Reflection and Refraction", "importance": "high" },
+            { "chapter": "Electricity", "importance": "high" },
+            { "chapter": "Acids, Bases and Salts", "importance": "medium" },
+            { "chapter": "Metals and Non-metals", "importance": "medium" },
+            { "chapter": "Carbon and its Compounds", "importance": "medium" },
+            { "chapter": "Control and Coordination", "importance": "medium" },
+            { "chapter": "How do Organisms Reproduce?", "importance": "medium" },
+            { "chapter": "Magnetic Effects of Electric Current", "importance": "low" },
+            { "chapter": "Our Environment", "importance": "low" }
+        ],
+        "maths": [
+            { "chapter": "Real Numbers", "importance": "high" },
+            { "chapter": "Triangles", "importance": "high" },
+            { "chapter": "Introduction to Trigonometry", "importance": "high" },
+            { "chapter": "Statistics", "importance": "high" },
+            { "chapter": "Polynomials", "importance": "medium" },
+            { "chapter": "Pair of Linear Equations in Two Variables", "importance": "medium" },
+            { "chapter": "Quadratic Equations", "importance": "medium" },
+            { "chapter": "Arithmetic Progressions", "importance": "medium" },
+            { "chapter": "Coordinate Geometry", "importance": "medium" },
+            { "chapter": "Circles", "importance": "low" },
+            { "chapter": "Probability", "importance": "low" }
+        ],
+        "social_science": [
+            { "chapter": "Nationalism in India", "importance": "high" },
+            { "chapter": "Sectors of the Indian Economy", "importance": "high" },
+            { "chapter": "Power Sharing", "importance": "high" },
+            { "chapter": "The Rise of Nationalism in Europe", "importance": "medium" },
+            { "chapter": "Federalism", "importance": "medium" },
+            { "chapter": "Political Parties", "importance": "medium" },
+            { "chapter": "Money and Credit", "importance": "medium" },
+            { "chapter": "Resources and Development", "importance": "low" },
+            { "chapter": "Agriculture", "importance": "low" }
+        ]
+    }
+}

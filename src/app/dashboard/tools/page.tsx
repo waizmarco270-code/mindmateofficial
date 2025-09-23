@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -48,6 +48,15 @@ const toolCategories = [
         href: "/dashboard/tools/unit-converter",
         color: "from-red-500 to-orange-500",
         shadow: "shadow-red-500/30"
+    },
+    {
+        id: 'syllabus',
+        title: "Syllabus Explorer",
+        description: "View and track syllabus for exams like JEE, NEET, and CBSE boards.",
+        icon: BookCopy,
+        href: "/dashboard/tools/syllabus",
+        color: "from-cyan-500 to-teal-500",
+        shadow: "shadow-cyan-500/30"
     }
 ]
 

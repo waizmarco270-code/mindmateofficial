@@ -1,6 +1,6 @@
 
 export interface LockableFeature {
-    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'unit-converter';
+    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'unit-converter' | 'syllabus';
     name: string;
     description: string;
     defaultCost: number;
@@ -71,6 +71,12 @@ export const lockableFeatures: LockableFeature[] = [
         id: 'unit-converter',
         name: 'Unit Converter',
         description: 'Convert between various scientific and general units.',
+        defaultCost: 0,
+    },
+    {
+        id: 'syllabus',
+        name: 'Syllabus Explorer',
+        description: 'View and track syllabus for exams like JEE, NEET, and CBSE boards.',
         defaultCost: 0,
     }
 ];
