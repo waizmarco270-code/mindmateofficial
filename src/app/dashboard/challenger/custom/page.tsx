@@ -17,8 +17,8 @@ export default function CustomChallengePage() {
         );
     }
     
-    // If there's no active challenge or it's not a custom one, redirect.
-    if (!activeChallenge || !activeChallenge.isCustom) {
+    // If there's no active challenge, redirect.
+    if (!activeChallenge) {
         router.replace('/dashboard/challenger');
         return null;
     }
