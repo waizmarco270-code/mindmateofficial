@@ -1,11 +1,29 @@
 
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Newspaper } from "lucide-react";
-import { WordHuntGame } from "@/components/entertainment/word-hunt";
-import { WordUnscrambleGame } from "@/components/entertainment/word-unscramble";
+import { ArrowLeft, Newspaper, Search, Shuffle } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 
-export default function WordGamesPage() {
+const wordGames = [
+    {
+        title: "Word Hunt",
+        description: "Find the hidden words in a grid of letters.",
+        icon: Search,
+        href: "/dashboard/game-zone/word-games/word-hunt",
+        color: "from-blue-500 to-sky-500",
+    },
+    {
+        title: "Word Unscramble",
+        description: "Unscramble the letters to form a valid word.",
+        icon: Shuffle,
+        href: "/dashboard/game-zone/word-games/word-unscramble",
+        color: "from-fuchsia-500 to-purple-500",
+    }
+];
+
+export default function WordGamesHubPage() {
     return (
         <div className="space-y-8">
             <div>
@@ -16,9 +34,28 @@ export default function WordGamesPage() {
                 </h1>
                 <p className="text-muted-foreground">Test your vocabulary and unscramble words.</p>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <WordHuntGame />
-                <WordUnscrambleGame />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {wordGames.map((game, index) => (
+                    <motion.div
+                        key={game.title}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                    >
+                         <Link href={game.href} className="block h-full group">
+                            <Card className="h-full flex flex-col justify-between items-center text-center p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                                <div>
+                                    <div className={`mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-gradient-to-br ${game.color} mb-4`}>
+                                        <game.icon className="h-10 w-10 text-white" />
+                                    </div>
+                                    <CardTitle>{game.title}</CardTitle>
+                                    <CardDescription className="mt-2">{game.description}</CardDescription>
+                                </div>
+                                <Button variant="outline" className="mt-6 w-full">Play Now</Button>
+                            </Card>
+                         </Link>
+                    </motion.div>
+                ))}
             </div>
         </div>
     )

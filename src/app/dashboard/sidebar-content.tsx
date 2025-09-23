@@ -62,7 +62,7 @@ const studyNav = [
 ];
 
 const otherNav = [
-    { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
+    { href: '/dashboard/tools', icon: Wrench, label: 'Student Tools', glow: 'text-lime-400' },
 ];
 
 const adminNav = [
