@@ -18,6 +18,7 @@ import { useChallenges } from '@/hooks/use-challenges';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProgressConstellation } from '@/components/analytics/progress-constellation';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 function ProfileTab() {
     const { user } = useUser();
@@ -109,84 +110,104 @@ function AnalyticsTab() {
     const { user } = useUser();
     const { quizzes } = useQuizzes();
     const { activeChallenge } = useChallenges();
+    const [detailModalContent, setDetailModalContent] = useState<{ title: string; data: any[] } | null>(null);
+
+    const { currentUserData } = useUsers();
 
     const sortedAllTime = [...users].sort((a,b) => b.totalScore - a.totalScore);
     const sortedWeekly = [...users].sort((a,b) => b.weeklyTime - a.weeklyTime);
     
     const rankAllTime = sortedAllTime.findIndex(u => u.uid === user?.id) + 1;
     const rankWeekly = sortedWeekly.findIndex(u => u.uid === user?.id) + 1;
-
-    const { currentUserData } = useUsers();
     
     const perfectedQuizzes = quizzes.filter(q => user?.id && currentUserData?.perfectedQuizzes?.includes(q.id));
-
 
     if (!currentUserData) {
         return <div className="text-center text-muted-foreground py-10">No analytics data available yet.</div>
     }
 
-
     return (
-        <div className="space-y-8 p-4 rounded-xl bg-gradient-to-br from-slate-900 to-slate-950/80 blue-nebula-bg">
-             <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
-                {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
-            </div>
+        <>
+            <div className="space-y-8 p-4 rounded-xl bg-gradient-to-br from-slate-900 to-slate-950/80 blue-nebula-bg">
+                <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
+                    {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
+                </div>
 
-            <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-white">
-                <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
-                    <CardHeader className="flex-row items-center justify-between">
-                        <CardTitle className="text-lg text-sky-300">Leaderboard Ranking</CardTitle>
-                        <Trophy className="text-sky-300"/>
-                    </CardHeader>
-                    <CardContent className="flex justify-around text-center">
-                        <div>
-                            <p className="text-4xl font-bold">{rankAllTime > 0 ? rankAllTime : 'N/A'}</p>
-                            <p className="text-sm text-muted-foreground">All-Time</p>
-                        </div>
-                        <div>
-                            <p className="text-4xl font-bold">{rankWeekly > 0 ? rankWeekly : 'N/A'}</p>
-                            <p className="text-sm text-muted-foreground">Weekly</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
-                    <CardHeader className="flex-row items-center justify-between">
-                        <CardTitle className="text-lg text-purple-300">Quiz Mastery</CardTitle>
-                        <Brain className="text-purple-300"/>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                         <div>
-                            <p className="text-4xl font-bold">{perfectedQuizzes.length}</p>
-                            <p className="text-sm text-muted-foreground">Quizzes Perfected</p>
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card className="md:col-span-1 lg:col-span-1 bg-white/5 border-white/10 backdrop-blur-sm">
-                    <CardHeader className="flex-row items-center justify-between">
-                        <CardTitle className="text-lg text-red-300">Active Challenge</CardTitle>
-                        <Compass className="text-red-300"/>
-                    </CardHeader>
-                    <CardContent className="text-center">
-                         {activeChallenge ? (
+                <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-white">
+                    <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                        <CardHeader className="flex-row items-center justify-between">
+                            <CardTitle className="text-lg text-sky-300">Leaderboard Ranking</CardTitle>
+                            <Trophy className="text-sky-300"/>
+                        </CardHeader>
+                        <CardContent className="flex justify-around text-center">
                             <div>
-                                <p className="text-xl font-bold truncate">{activeChallenge.title}</p>
-                                <p className="text-sm text-muted-foreground">Day {activeChallenge.currentDay} of {activeChallenge.duration}</p>
+                                <p className="text-4xl font-bold">{rankAllTime > 0 ? rankAllTime : 'N/A'}</p>
+                                <p className="text-sm text-muted-foreground">All-Time</p>
                             </div>
-                         ) : (
-                            <p className="text-muted-foreground">No active challenge</p>
-                         )}
-                    </CardContent>
-                </Card>
-                 <Card className="md:col-span-2 lg:col-span-3 bg-white/5 border-white/10 backdrop-blur-sm">
-                    <CardHeader>
-                        <CardTitle className="text-lg text-fuchsia-300">Your Progress Constellation</CardTitle>
-                    </CardHeader>
-                    <CardContent className="min-h-[300px] flex items-center justify-center">
-                       <ProgressConstellation user={currentUserData} quizzes={quizzes} />
-                    </CardContent>
-                </Card>
+                            <div>
+                                <p className="text-4xl font-bold">{rankWeekly > 0 ? rankWeekly : 'N/A'}</p>
+                                <p className="text-sm text-muted-foreground">Weekly</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-white/5 border-white/10 backdrop-blur-sm">
+                        <CardHeader className="flex-row items-center justify-between">
+                            <CardTitle className="text-lg text-purple-300">Quiz Mastery</CardTitle>
+                            <Brain className="text-purple-300"/>
+                        </CardHeader>
+                        <CardContent className="text-center">
+                            <div>
+                                <p className="text-4xl font-bold">{perfectedQuizzes.length}</p>
+                                <p className="text-sm text-muted-foreground">Quizzes Perfected</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="md:col-span-1 lg:col-span-1 bg-white/5 border-white/10 backdrop-blur-sm">
+                        <CardHeader className="flex-row items-center justify-between">
+                            <CardTitle className="text-lg text-red-300">Active Challenge</CardTitle>
+                            <Compass className="text-red-300"/>
+                        </CardHeader>
+                        <CardContent className="text-center">
+                            {activeChallenge ? (
+                                <div>
+                                    <p className="text-xl font-bold truncate">{activeChallenge.title}</p>
+                                    <p className="text-sm text-muted-foreground">Day {activeChallenge.currentDay} of {activeChallenge.duration}</p>
+                                </div>
+                            ) : (
+                                <p className="text-muted-foreground">No active challenge</p>
+                            )}
+                        </CardContent>
+                    </Card>
+                    <Card className="md:col-span-2 lg:col-span-3 bg-white/5 border-white/10 backdrop-blur-sm">
+                        <CardHeader>
+                            <CardTitle className="text-lg text-fuchsia-300">Your Progress Constellation</CardTitle>
+                        </CardHeader>
+                        <CardContent className="min-h-[300px] flex items-center justify-center">
+                        <ProgressConstellation user={currentUserData} quizzes={perfectedQuizzes} onStarClick={setDetailModalContent}/>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
-        </div>
+             <Dialog open={!!detailModalContent} onOpenChange={(isOpen) => !isOpen && setDetailModalContent(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{detailModalContent?.title}</DialogTitle>
+                        <DialogDescription>A detailed breakdown of this achievement.</DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto p-1">
+                        {detailModalContent?.data.length === 0 ? (
+                            <p className="text-muted-foreground text-center py-10">No data to display yet.</p>
+                        ) : (
+                            <ul className="space-y-2">
+                                {detailModalContent?.data.map((item, index) => (
+                                    <li key={index} className="p-3 rounded-md border bg-muted">{item.title}</li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }
 
