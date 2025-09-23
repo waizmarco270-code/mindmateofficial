@@ -83,7 +83,7 @@ export default function DashboardLayout({
       <UnreadMessagesProvider>
         <ChallengesProvider>
           <ImmersiveProvider>
-            <MotionConfig transition={{ duration: 0.5, type: 'spring' }}>
+            <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
               <AppLayout>{children}</AppLayout>
             </MotionConfig>
           </ImmersiveProvider>

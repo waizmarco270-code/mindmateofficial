@@ -146,7 +146,7 @@ export default function SidebarContent() {
           <Logo className="h-8 w-8" />
           <span className="text-xl">MindMate</span>
         </Link>
-        <Link href="/dashboard" aria-label="Go to Home">
+        <Link href="/dashboard" aria-label="Go to Home" prefetch={true}>
             <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} className={cn(
                 "h-11 w-11 rounded-lg",
                 isActive('/dashboard') 
@@ -192,7 +192,7 @@ export default function SidebarContent() {
 
         </Accordion>
          {isSpecialUser && (
-            <Link href="/dashboard/premium/elite-lounge" className={cn('group mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
+            <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
                 <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
                 <Crown className="h-5 w-5"/> Elite Lounge
             </Link>

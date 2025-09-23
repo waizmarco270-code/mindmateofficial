@@ -32,7 +32,7 @@ export default function MobileNav({ isCollapsed, onToggleCollapse }: MobileNavPr
                 initial={{ y: "100%" }}
                 animate={{ y: 0 }}
                 exit={{ y: "100%" }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
                 className="fixed bottom-0 left-0 right-0 h-20 border-t bg-background/80 backdrop-blur-lg z-40 md:hidden"
             >
                 <button 
@@ -70,7 +70,7 @@ export default function MobileNav({ isCollapsed, onToggleCollapse }: MobileNavPr
                 initial={{ y: "200%" }}
                 animate={{ y: 0 }}
                 exit={{ y: "200%" }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}
+                transition={{ duration: 0.2, ease: 'easeOut', delay: 0.1 }}
                 onClick={() => onToggleCollapse(false)}
                 className="fixed bottom-2 left-1/2 -translate-x-1/2 h-10 w-10 bg-muted/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border z-40 md:hidden"
             >
