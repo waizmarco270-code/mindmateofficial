@@ -11,11 +11,9 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { FOCUS_PENALTY_SESSION_KEY, FOCUS_SESSION_ACTIVE_KEY } from './tracker/page';
 import { useToast } from '@/hooks/use-toast';
-import { AppDataProvider } from '@/hooks/use-admin';
-import { UnreadMessagesProvider } from '@/hooks/use-unread';
 import { MotionConfig } from 'framer-motion';
-import { ChallengesProvider } from '@/hooks/use-challenges';
 import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
+import { Providers } from './providers';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
@@ -79,16 +77,14 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AppDataProvider>
-      <UnreadMessagesProvider>
-        <ChallengesProvider>
-          <ImmersiveProvider>
-            <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
-              <AppLayout>{children}</AppLayout>
-            </MotionConfig>
-          </ImmersiveProvider>
-        </ChallengesProvider>
-      </UnreadMessagesProvider>
-    </AppDataProvider>
+    <ImmersiveProvider>
+        <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
+            <AppLayout>
+                <Providers>
+                    {children}
+                </Providers>
+            </AppLayout>
+        </MotionConfig>
+    </ImmersiveProvider>
   );
 }
