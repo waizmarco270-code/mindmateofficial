@@ -14,6 +14,8 @@ import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useQuizzes } from '@/hooks/use-quizzes';
 import { useChallenges } from '@/hooks/use-challenges';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 function ProfileTab() {
     const { user } = useUser();
@@ -112,9 +114,10 @@ function AnalyticsTab() {
     const rankAllTime = sortedAllTime.findIndex(u => u.uid === user?.id) + 1;
     const rankWeekly = sortedWeekly.findIndex(u => u.uid === user?.id) + 1;
 
+    const { currentUserData } = useUsers();
+    
     const perfectedQuizzes = quizzes.filter(q => user?.id && currentUserData?.perfectedQuizzes?.includes(q.id));
 
-    const { currentUserData } = useUsers();
 
     if (!currentUserData) {
         return <div className="text-center text-muted-foreground py-10">No analytics data available yet.</div>
