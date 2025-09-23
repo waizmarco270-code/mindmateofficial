@@ -4,8 +4,8 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot } from 'firebase/firestore';
-import { differenceInCalendarDays, startOfDay } from 'date-fns';
+import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot, Timestamp } from 'firebase/firestore';
+import { differenceInCalendarDays, startOfDay, addDays } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { useTimeTracker } from './use-time-tracker';
@@ -14,6 +14,12 @@ export interface DailyGoal {
     id: 'studyTime' | 'focusSession' | 'tasks' | 'checkIn';
     description: string;
     target: number;
+}
+
+export interface PlannedTask {
+    id: string;
+    text: string;
+    completed: boolean;
 }
 
 export interface ChallengeConfig {
@@ -26,21 +32,26 @@ export interface ChallengeConfig {
     dailyGoals: DailyGoal[];
     rules: string[];
     eliteBadgeDays: number;
-    isCustom?: boolean; // Flag for custom challenges
+    isCustom?: boolean;
+    checkInTime?: string; // HH:mm format
+    plannedTasks?: Record<number, PlannedTask[]>; // { dayNumber: Task[] }
 }
 
 export interface ActiveChallenge extends ChallengeConfig {
     startDate: string; // ISO string
     currentDay: number;
     status: 'active' | 'completed' | 'failed';
-    progress: Record<number, Record<string, { current: number; completed: boolean }>>; // { day: { goalId: { current: value, completed: bool } } }
+    progress: Record<number, Record<string, { current: number; completed: boolean }>>;
     lastCheckedIn: string; // ISO string for the date
+    banUntil?: string; // ISO string for ban expiry
 }
 
 interface ChallengesContextType {
     activeChallenge: ActiveChallenge | null;
     startChallenge: (config: ChallengeConfig) => Promise<void>;
     checkIn: () => Promise<void>;
+    failChallenge: () => Promise<void>;
+    liftChallengeBan: () => Promise<void>;
     loading: boolean;
     dailyProgress: Record<string, { current: number; completed: boolean }> | null;
 }
@@ -50,10 +61,12 @@ const ChallengesContext = createContext<ChallengesContextType | undefined>(undef
 export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
     const { currentUserData, addCreditsToUser, loading: userLoading } = useUsers();
-    const { sessions } = useTimeTracker();
     const { toast } = useToast();
     const [activeChallenge, setActiveChallenge] = useState<ActiveChallenge | null>(null);
     const [loading, setLoading] = useState(true);
+    
+    const PENALTY_ON_FAIL = 50;
+    const BAN_LIFT_COST = 100;
 
     // Fetch active challenge
     useEffect(() => {
@@ -68,19 +81,26 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
             if (docSnap.exists()) {
                 const data = docSnap.data() as ActiveChallenge;
                 
-                // Update current day based on start date
                 const today = startOfDay(new Date());
                 const startDate = startOfDay(new Date(data.startDate));
                 const dayDiff = differenceInCalendarDays(today, startDate) + 1;
 
                 if (data.status === 'active' && dayDiff > data.currentDay) {
-                     updateDoc(challengeRef, { currentDay: dayDiff });
-                     data.currentDay = dayDiff;
+                     // User missed a day. Fail the challenge.
+                     failChallenge(true); // silent fail
+                } else {
+                    if (data.status === 'active' && dayDiff > data.currentDay) {
+                         updateDoc(challengeRef, { currentDay: dayDiff });
+                         data.currentDay = dayDiff;
+                    }
+                    setActiveChallenge(data);
                 }
-                setActiveChallenge(data);
             } else {
                 setActiveChallenge(null);
             }
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching challenge:", error);
             setLoading(false);
         });
 
@@ -100,12 +120,11 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         const today = new Date().toISOString();
         const newChallenge: ActiveChallenge = {
             ...config,
-            challengeId: config.id, // Keep a stable ID for pre-made challenges
             startDate: today,
             currentDay: 1,
             status: 'active',
             progress: {},
-            lastCheckedIn: new Date(0).toISOString() // Epoch time
+            lastCheckedIn: new Date(0).toISOString()
         };
 
         const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
@@ -115,6 +134,29 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
     }, [user, currentUserData, activeChallenge, addCreditsToUser, toast]);
 
+    const failChallenge = useCallback(async (silent = false) => {
+        if (!user || !activeChallenge) return;
+        
+        const banExpiry = addDays(new Date(), 3).toISOString();
+
+        await updateDoc(doc(db, 'users', user.id, 'challenges', 'activeChallenge'), {
+            status: 'failed',
+            banUntil: banExpiry
+        });
+        
+        await addCreditsToUser(user.id, -PENALTY_ON_FAIL);
+
+        if (!silent) {
+             toast({
+                variant: "destructive",
+                title: "Challenge Failed!",
+                description: `You have been penalized ${PENALTY_ON_FAIL} credits and banned from challenges for 3 days.`,
+                duration: 10000,
+            });
+        }
+
+    }, [user, activeChallenge, addCreditsToUser, toast]);
+
     const checkIn = useCallback(async () => {
         if (!user || !activeChallenge || activeChallenge.status !== 'active') return;
 
@@ -122,6 +164,22 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         if (activeChallenge.lastCheckedIn.startsWith(todayStr)) {
             toast({ title: "Already Checked In!", description: "You've already checked in for today." });
             return;
+        }
+
+        if(activeChallenge.checkInTime) {
+            const now = new Date();
+            const [hours, minutes] = activeChallenge.checkInTime.split(':').map(Number);
+            const checkInDeadline = new Date();
+            checkInDeadline.setHours(hours, minutes, 0, 0);
+
+            if (now < checkInDeadline) {
+                toast({
+                    variant: 'destructive',
+                    title: "Too Early!",
+                    description: `You can only check in at or after ${activeChallenge.checkInTime}.`
+                });
+                return;
+            }
         }
         
         const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
@@ -133,13 +191,33 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
     }, [user, activeChallenge, toast]);
 
-    const dailyProgress = activeChallenge?.progress[activeChallenge.currentDay] || null;
+    const liftChallengeBan = useCallback(async () => {
+        if (!user || !currentUserData || !activeChallenge || activeChallenge.status !== 'failed') return;
+        
+        if (currentUserData.credits < BAN_LIFT_COST) {
+            toast({ variant: 'destructive', title: "Insufficient Credits", description: `You need ${BAN_LIFT_COST} credits to lift the ban.` });
+            return;
+        }
 
+        await addCreditsToUser(user.id, -BAN_LIFT_COST);
+
+        // Delete the failed challenge document to allow starting a new one.
+        const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
+        await deleteDoc(challengeRef);
+        setActiveChallenge(null);
+
+        toast({ title: "Ban Lifted!", description: "You can now start a new challenge." });
+
+    }, [user, currentUserData, activeChallenge, addCreditsToUser, toast]);
+
+    const dailyProgress = activeChallenge?.progress[activeChallenge.currentDay] || null;
 
     const value: ChallengesContextType = {
         activeChallenge,
         startChallenge,
         checkIn,
+        failChallenge,
+        liftChallengeBan,
         loading: userLoading || loading,
         dailyProgress
     };
