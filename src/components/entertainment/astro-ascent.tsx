@@ -267,8 +267,10 @@ export function AstroAscentGame() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
-      canvas.width = canvas.parentElement?.clientWidth || 500;
-      canvas.height = 500;
+      // Use a fixed aspect ratio for stability
+      const parentWidth = canvas.parentElement?.clientWidth || 500;
+      canvas.width = parentWidth;
+      canvas.height = parentWidth * 0.9; // Example aspect ratio
       resetGame();
     }
   }, [resetGame]);
@@ -279,8 +281,8 @@ export function AstroAscentGame() {
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-8 items-start">
-        <Card className="w-full md:max-w-xl mx-auto relative">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <Card className="w-full lg:col-span-2 relative">
             <SignedOut>
                 <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
             </SignedOut>
@@ -294,8 +296,8 @@ export function AstroAscentGame() {
                     <span>High Score: {highScore}</span>
                     <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
                 </div>
-                <div className="w-full rounded-lg overflow-hidden border relative">
-                    <canvas ref={canvasRef} />
+                <div className="w-full rounded-lg overflow-hidden border relative aspect-[10/9] bg-slate-900">
+                    <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
                     {gameState !== 'playing' && (
                         <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
                             {gameState === 'idle' && (
@@ -317,7 +319,7 @@ export function AstroAscentGame() {
                         </div>
                     )}
                     {/* Touch Controls */}
-                    <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 gap-2">
+                     <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 gap-2">
                         <Button 
                             className="h-20 w-20 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
                             onTouchStart={() => handleTouchControl('a', true)}
@@ -343,7 +345,7 @@ export function AstroAscentGame() {
                 </div>
             </CardContent>
         </Card>
-        <Card className="flex-1 w-full">
+        <Card className="w-full lg:col-span-1">
             <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
               <AccordionItem value="item-1">
                 <AccordionTrigger className="p-6">
