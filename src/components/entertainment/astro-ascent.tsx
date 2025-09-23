@@ -4,7 +4,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, Gauge, Mountain, ChevronsLeft, ChevronsRight, Zap as ThrustIcon } from 'lucide-react';
+import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, Gauge, Mountain, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
@@ -17,6 +17,7 @@ import { motion } from 'framer-motion';
 const GRAVITY = 0.05;
 const THRUST_POWER = 0.15;
 const SIDE_THRUST_POWER = 0.08;
+const RETRO_THRUST_POWER = 0.04; // Gentle braking force
 const ROTATION_SPEED = 0.05;
 const MAX_FUEL = 1000;
 const SAFE_LANDING_VELOCITY = 1.5;
@@ -74,6 +75,7 @@ export function AstroAscentGame() {
       rocket: isDark ? '#fef08a' : '#b45309',
       flame: isDark ? '#f97316' : '#fb923c',
       sideFlame: isDark ? '#38bdf8' : '#0ea5e9',
+      retroFlame: isDark ? '#f43f5e' : '#ef4444',
       asteroid: isDark ? '#475569' : '#94a3b8',
       pad: isDark ? '#16a34a' : '#22c55e',
     };
@@ -150,27 +152,44 @@ export function AstroAscentGame() {
     // --- Update Logic ---
     player.vy += GRAVITY;
 
-    if (keysRef.current['ArrowUp'] || keysRef.current['w']) {
+    if (keysRef.current['w'] || keysRef.current['ArrowUp']) {
         if(player.fuel > 0) {
             player.vx += Math.cos(player.angle) * THRUST_POWER;
             player.vy += Math.sin(player.angle) * THRUST_POWER;
             player.fuel -= 2;
         }
     }
-    if (keysRef.current['q']) { // Left side thrust
+    if (keysRef.current['a'] || keysRef.current['ArrowLeft']) player.angle -= ROTATION_SPEED;
+    if (keysRef.current['d'] || keysRef.current['ArrowRight']) player.angle += ROTATION_SPEED;
+
+    if (keysRef.current['q']) {
         if(player.fuel > 0) {
             player.vx -= SIDE_THRUST_POWER;
             player.fuel -= 1;
         }
     }
-    if (keysRef.current['e']) { // Right side thrust
+    if (keysRef.current['e']) {
         if(player.fuel > 0) {
             player.vx += SIDE_THRUST_POWER;
             player.fuel -= 1;
         }
     }
-    if (keysRef.current['ArrowLeft'] || keysRef.current['a']) player.angle -= ROTATION_SPEED;
-    if (keysRef.current['ArrowRight'] || keysRef.current['d']) player.angle += ROTATION_SPEED;
+     if (keysRef.current[' '] || keysRef.current['Spacebar']) { // Spacebar for brakes
+        if(player.fuel > 0) {
+            const velocityMagnitude = Math.hypot(player.vx, player.vy);
+            if (velocityMagnitude > 0.01) {
+                 const brakeVx = (-player.vx / velocityMagnitude) * RETRO_THRUST_POWER;
+                 const brakeVy = (-player.vy / velocityMagnitude) * RETRO_THRUST_POWER;
+                 player.vx += brakeVx;
+                 player.vy += brakeVy;
+                 player.fuel -= 1.5;
+            } else {
+                player.vx = 0;
+                player.vy = 0;
+            }
+        }
+    }
+
 
     player.x += player.vx;
     player.y += player.vy;
@@ -231,7 +250,7 @@ export function AstroAscentGame() {
     ctx.fill();
     
     // Main thruster flame
-    if ((keysRef.current['ArrowUp'] || keysRef.current['w']) && player.fuel > 0) {
+    if ((keysRef.current['w'] || keysRef.current['ArrowUp']) && player.fuel > 0) {
         ctx.fillStyle = colors.flame;
         ctx.beginPath();
         ctx.moveTo(-10, 0);
@@ -240,12 +259,29 @@ export function AstroAscentGame() {
         ctx.closePath();
         ctx.fill();
     }
+
+    // Retro thruster flames
+     if ((keysRef.current[' '] || keysRef.current['Spacebar']) && player.fuel > 0 && Math.hypot(player.vx, player.vy) > 0.1) {
+        ctx.fillStyle = colors.retroFlame;
+        ctx.beginPath();
+        ctx.moveTo(10, 5);
+        ctx.lineTo(15 + Math.random() * 5, 3);
+        ctx.lineTo(15 + Math.random() * 5, 7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(10, -5);
+        ctx.lineTo(15 + Math.random() * 5, -3);
+        ctx.lineTo(15 + Math.random() * 5, -7);
+        ctx.closePath();
+        ctx.fill();
+    }
+    
     ctx.restore();
 
     // Side thruster flames
     ctx.save();
     ctx.translate(player.x, player.y);
-    // Left side thrust flame
     if (keysRef.current['q'] && player.fuel > 0) {
         ctx.fillStyle = colors.sideFlame;
         ctx.beginPath();
@@ -255,7 +291,6 @@ export function AstroAscentGame() {
         ctx.closePath();
         ctx.fill();
     }
-    // Right side thrust flame
     if (keysRef.current['e'] && player.fuel > 0) {
         ctx.fillStyle = colors.sideFlame;
         ctx.beginPath();
@@ -276,7 +311,6 @@ export function AstroAscentGame() {
     gameLoopRef.current = requestAnimationFrame(gameLoop);
   }, [getThemeColors, score, highScore, user]);
   
-  // Game loop management
   useEffect(() => {
     if (gameState === 'playing') {
       gameLoopRef.current = requestAnimationFrame(gameLoop);
@@ -288,22 +322,17 @@ export function AstroAscentGame() {
     };
   }, [gameState, gameLoop]);
   
-  // Controls listener
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent, isDown: boolean) => {
-        keysRef.current[e.key] = isDown;
-    };
-    const downListener = (e: KeyboardEvent) => handleKey(e, true);
-    const upListener = (e: KeyboardEvent) => handleKey(e, false);
-    window.addEventListener('keydown', downListener);
-    window.addEventListener('keyup', upListener);
+    const handleKeyDown = (e: KeyboardEvent) => { keysRef.current[e.key] = true; };
+    const handleKeyUp = (e: KeyboardEvent) => { keysRef.current[e.key] = false; };
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
     return () => {
-        window.removeEventListener('keydown', downListener);
-        window.removeEventListener('keyup', upListener);
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
     };
   }, []);
 
-  // Canvas setup
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
@@ -321,87 +350,90 @@ export function AstroAscentGame() {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <Card className="w-full lg:col-span-2 relative">
-            <SignedOut>
-                <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
-            </SignedOut>
-            <CardHeader>
-            <CardTitle>Astro Ascent</CardTitle>
-            <CardDescription>Keyboard: W/A/D/Q/E or Arrow Keys. Touch: Use on-screen controls.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center gap-4">
-                <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
-                    <span>Score: {score}</span>
-                    <span>High Score: {highScore}</span>
-                    <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
-                </div>
-                <div className="w-full rounded-lg overflow-hidden border relative aspect-[10/9] bg-slate-900">
-                    <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" />
-                    {gameState !== 'playing' && (
-                        <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
-                            {gameState === 'idle' && (
-                                <Button size="lg" onClick={startGame} disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button>
-                            )}
-                            {gameState === 'gameOver' && (
-                                <div className="space-y-4">
-                                    <h3 className="text-3xl font-bold text-destructive">Mission Failed</h3>
-                                    <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Try Again</Button>
-                                </div>
-                            )}
-                            {gameState === 'won' && (
-                                <motion.div initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} className="space-y-4">
-                                    <h3 className="text-3xl font-bold text-green-400">Perfect Landing!</h3>
-                                    <p className="text-xl">Your score: <span className="font-bold">{score}</span></p>
-                                    <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Fly Again</Button>
-                                </motion.div>
-                            )}
-                        </div>
-                    )}
-                    {/* Touch Controls */}
-                     <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 gap-2">
-                        <Button 
-                            className="h-20 w-20 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
-                            onTouchStart={() => handleTouchControl('a', true)}
-                            onTouchEnd={() => handleTouchControl('a', false)}
-                        >
-                            <ChevronsLeft className="h-10 w-10"/>
-                        </Button>
-                        <div className="flex flex-col items-center gap-2">
-                            <Button 
-                                className="h-24 w-24 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
-                                onTouchStart={() => handleTouchControl('w', true)}
-                                onTouchEnd={() => handleTouchControl('w', false)}
-                            >
-                                <ThrustIcon className="h-12 w-12"/>
-                            </Button>
-                            <div className="flex gap-2">
-                                <Button 
-                                    className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20 text-xs font-bold"
-                                    onTouchStart={() => handleTouchControl('q', true)}
-                                    onTouchEnd={() => handleTouchControl('q', false)}
-                                >
-                                    Q
-                                </Button>
-                                <Button 
-                                    className="h-12 w-12 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20 text-xs font-bold"
-                                    onTouchStart={() => handleTouchControl('e', true)}
-                                    onTouchEnd={() => handleTouchControl('e', false)}
-                                >
-                                    E
-                                </Button>
-                            </div>
-                        </div>
-                        <Button 
-                            className="h-20 w-20 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
-                            onTouchStart={() => handleTouchControl('d', true)}
-                            onTouchEnd={() => handleTouchControl('d', false)}
-                        >
-                            <ChevronsRight className="h-10 w-10"/>
-                        </Button>
+        <div className="lg:col-span-2 grid gap-4">
+            <Card className="w-full relative">
+                <SignedOut>
+                    <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
+                </SignedOut>
+                <CardHeader>
+                <CardTitle>Astro Ascent</CardTitle>
+                <CardDescription>Keyboard: W/A/D, Q/E, Space. Touch: Use on-screen controls.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-4">
+                    <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
+                        <span>Score: {score}</span>
+                        <span>High Score: {highScore}</span>
+                        <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
                     </div>
+                    <div className="w-full rounded-lg overflow-hidden border relative aspect-[10/9] bg-slate-900">
+                        <canvas ref={canvasRef} />
+                        {gameState !== 'playing' && (
+                            <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
+                                {gameState === 'idle' && (
+                                    <Button size="lg" onClick={startGame} disabled={!isSignedIn}><Play className="mr-2"/> Start Game</Button>
+                                )}
+                                {gameState === 'gameOver' && (
+                                    <div className="space-y-4">
+                                        <h3 className="text-3xl font-bold text-destructive">Mission Failed</h3>
+                                        <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Try Again</Button>
+                                    </div>
+                                )}
+                                {gameState === 'won' && (
+                                    <motion.div initial={{scale:0.8, opacity:0}} animate={{scale:1, opacity:1}} className="space-y-4">
+                                        <h3 className="text-3xl font-bold text-green-400">Perfect Landing!</h3>
+                                        <p className="text-xl">Your score: <span className="font-bold">{score}</span></p>
+                                        <Button size="lg" onClick={startGame}><RotateCw className="mr-2"/> Fly Again</Button>
+                                    </motion.div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+             {/* Touch Controls Overlay */}
+             <div className="w-full">
+                <div className="relative p-4 bg-muted rounded-lg grid grid-cols-3 grid-rows-2 gap-2">
+                    <Button 
+                        className="h-20 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 row-span-2 self-center"
+                        onTouchStart={() => handleTouchControl('a', true)} onTouchEnd={() => handleTouchControl('a', false)}
+                        onMouseDown={() => handleTouchControl('a', true)} onMouseUp={() => handleTouchControl('a', false)}
+                    ><ChevronsLeft className="h-10 w-10"/></Button>
+
+                    <Button 
+                        className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold"
+                        onTouchStart={() => handleTouchControl('q', true)} onTouchEnd={() => handleTouchControl('q', false)}
+                        onMouseDown={() => handleTouchControl('q', true)} onMouseUp={() => handleTouchControl('q', false)}
+                    >Q</Button>
+
+                    <Button 
+                        className="h-20 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 row-start-1 col-start-2 row-span-2 self-center"
+                        onTouchStart={() => handleTouchControl('w', true)} onTouchEnd={() => handleTouchControl('w', false)}
+                        onMouseDown={() => handleTouchControl('w', true)} onMouseUp={() => handleTouchControl('w', false)}
+                    ><ThrustIcon className="h-12 w-12"/></Button>
+                     
+                    <Button 
+                        className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold"
+                        onTouchStart={() => handleTouchControl('e', true)} onTouchEnd={() => handleTouchControl('e', false)}
+                        onMouseDown={() => handleTouchControl('e', true)} onMouseUp={() => handleTouchControl('e', false)}
+                    >E</Button>
+
+                    <Button 
+                        className="h-20 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 row-span-2 self-center"
+                        onTouchStart={() => handleTouchControl('d', true)} onTouchEnd={() => handleTouchControl('d', false)}
+                        onMouseDown={() => handleTouchControl('d', true)} onMouseUp={() => handleTouchControl('d', false)}
+                    ><ChevronsRight className="h-10 w-10"/></Button>
+
+                    <Button
+                        className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 col-span-3 mt-2"
+                        onTouchStart={() => handleTouchControl(' ', true)} onTouchEnd={() => handleTouchControl(' ', false)}
+                        onMouseDown={() => handleTouchControl(' ', true)} onMouseUp={() => handleTouchControl(' ', false)}
+                    >
+                        <Hand className="h-8 w-8"/>
+                    </Button>
+
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
         <Card className="w-full lg:col-span-1">
             <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
               <AccordionItem value="item-1">
@@ -417,10 +449,10 @@ export function AstroAscentGame() {
                             <div>
                                 <h4 className="font-bold text-foreground">Controls</h4>
                                 <ul className="list-disc pl-4 space-y-1 mt-1">
-                                  <li><span className="font-bold">W or Up Arrow:</span> Engage main thruster.</li>
-                                  <li><span className="font-bold">A/D or Left/Right:</span> Rotate the rocket.</li>
-                                  <li><span className="font-bold">Q / E:</span> Engage side thrusters for horizontal movement without rotation.</li>
-                                  <li><span className="font-bold">Touch:</span> Use on-screen buttons.</li>
+                                  <li><span className="font-bold">W or Up:</span> Main thruster.</li>
+                                  <li><span className="font-bold">A/D or Left/Right:</span> Rotate.</li>
+                                  <li><span className="font-bold">Q / E:</span> Side thrusters.</li>
+                                   <li><span className="font-bold">Spacebar:</span> Retro thrusters (Brakes).</li>
                                 </ul>
                             </div>
                         </div>
@@ -428,7 +460,7 @@ export function AstroAscentGame() {
                             <Trophy className="h-5 w-5 mt-0.5 text-amber-500 flex-shrink-0" />
                              <div>
                                 <h4 className="font-bold text-foreground">Objective & Scoring</h4>
-                                <p>Safely land your rocket on the green platform. Your score is based on how much fuel you have left. More fuel = higher score!</p>
+                                <p>Safely land on the green platform. Score is based on remaining fuel. More fuel = higher score!</p>
                                 <ul className="list-disc pl-4 space-y-1 mt-2">
                                     <li>Don't run out of fuel.</li>
                                     <li>Avoid crashing into asteroids.</li>
@@ -444,3 +476,5 @@ export function AstroAscentGame() {
     </div>
   );
 }
+
+    
