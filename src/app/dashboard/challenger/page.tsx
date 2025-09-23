@@ -47,15 +47,15 @@ export default function ChallengerHubPage() {
                         >
                             <Link href={href} className="block h-full group">
                                <Card className={cn(
-                                   "h-full relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 challenger-shimmer border-red-500/30",
+                                   "h-full relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 bg-gradient-to-br from-red-500 via-rose-500 to-red-600",
                                    isActive && "ring-4 ring-primary"
                                 )}>
                                    <div className="absolute inset-0 opacity-10 group-hover:opacity-20 transition-opacity duration-300 bg-grid-slate-800"></div>
                                    <CardHeader>
                                        <div className="flex items-center justify-between">
                                             <div className="flex items-center gap-4">
-                                               <div className={cn("p-3 rounded-lg bg-red-500/10 border border-red-500/20")}>
-                                                    <category.icon className="h-8 w-8 text-red-400 group-hover:animate-pulse [filter:drop-shadow(0_0_8px_currentColor)]"/>
+                                               <div className={cn("p-3 rounded-lg bg-white/10 border border-white/20")}>
+                                                    <category.icon className="h-8 w-8 text-white group-hover:animate-pulse [filter:drop-shadow(0_0_8px_currentColor)]"/>
                                                </div>
                                                <CardTitle className="text-2xl text-white">{category.title}</CardTitle>
                                            </div>
@@ -63,7 +63,7 @@ export default function ChallengerHubPage() {
                                        </div>
                                    </CardHeader>
                                    <CardContent>
-                                       <p className="text-slate-400">{category.description}</p>
+                                       <p className="text-red-100/90">{category.description}</p>
                                    </CardContent>
                                    <CardContent>
                                         <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors text-base font-bold">

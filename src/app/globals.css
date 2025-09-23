@@ -255,25 +255,6 @@
     @apply text-white;
   }
 
-  .challenger-shimmer {
-    @apply relative bg-slate-900;
-  }
-  .challenger-shimmer::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      padding: 1px; /* border thickness */
-      background: linear-gradient(135deg, #ff4e00, #f7971e, #ff4e00, #f7971e);
-      background-size: 400% 400%;
-      -webkit-mask: 
-          linear-gradient(#fff 0 0) content-box, 
-          linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask-composite: exclude;
-      animation: challenger-shimmer 4s ease-in-out infinite;
-  }
-  
   .dev-badge {
     @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
     background-color: #ef4444; /* red-500 */
