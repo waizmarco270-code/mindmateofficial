@@ -99,7 +99,7 @@ export default function AdminPanelPage() {
     isAdmin, 
     isSuperAdmin,
     users,
-    announcements, updateAnnouncement, 
+    announcements, addAnnouncement, deleteAnnouncement, 
     allPolls, addPoll, deletePoll, setActivePoll,
     resources: allResources, addResource, updateResource, deleteResource,
     resourceSections, addResourceSection, updateResourceSection, deleteResourceSection,
@@ -110,9 +110,9 @@ export default function AdminPanelPage() {
   const { toast } = useToast();
 
   // State for Announcement
-  const latestAnnouncement = announcements.length > 0 ? announcements[0] : null;
-  const [announcementTitle, setAnnouncementTitle] = useState('');
-  const [announcementDesc, setAnnouncementDesc] = useState('');
+  const [newAnnouncementTitle, setNewAnnouncementTitle] = useState('');
+  const [newAnnouncementDesc, setNewAnnouncementDesc] = useState('');
+  const [isCreatingAnnouncement, setIsCreatingAnnouncement] = useState(false);
   
   // State for Poll
   const [newPollQuestion, setNewPollQuestion] = useState('');
@@ -147,14 +147,6 @@ export default function AdminPanelPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
 
-
-  useEffect(() => {
-      if(latestAnnouncement) {
-          setAnnouncementTitle(latestAnnouncement.title);
-          setAnnouncementDesc(latestAnnouncement.description);
-      }
-  }, [latestAnnouncement]);
-
   // State for Quiz
   const [quizTitle, setQuizTitle] = useState('');
   const [quizCategory, setQuizCategory] = useState<QuizCategory>('general');
@@ -166,11 +158,24 @@ export default function AdminPanelPage() {
   ]);
   const [isSavingQuiz, setIsSavingQuiz] = useState(false);
 
-  const handleSubmitAnnouncement = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (latestAnnouncement && announcementTitle && announcementDesc) {
-        await updateAnnouncement(latestAnnouncement.id, { title: announcementTitle, description: announcementDesc });
-        toast({ title: "Success", description: "Announcement has been updated." });
+  const handleAddAnnouncement = async () => {
+    if (!newAnnouncementTitle.trim() || !newAnnouncementDesc.trim()) {
+        toast({ variant: 'destructive', title: "Validation Error", description: "Please fill in both title and description for the announcement." });
+        return;
+    }
+    setIsCreatingAnnouncement(true);
+    try {
+        await addAnnouncement({
+            title: newAnnouncementTitle,
+            description: newAnnouncementDesc,
+        });
+        toast({ title: "Announcement Created!", description: "The new announcement is now live." });
+        setNewAnnouncementTitle('');
+        setNewAnnouncementDesc('');
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: "Error Creating Announcement", description: error.message });
+    } finally {
+        setIsCreatingAnnouncement(false);
     }
   };
   
@@ -546,13 +551,13 @@ export default function AdminPanelPage() {
             <AccordionContent className="p-6 pt-0 space-y-8">
               <div className="grid gap-8 lg:grid-cols-2">
                   <Card>
-                    <CardHeader><CardTitle>Edit Latest Announcement</CardTitle><CardDescription>Update the announcement that appears on the dashboard.</CardDescription></CardHeader>
+                    <CardHeader><CardTitle>Create New Announcement</CardTitle><CardDescription>Post a new announcement. It will appear at the top of the list.</CardDescription></CardHeader>
                     <CardContent>
-                      <form onSubmit={handleSubmitAnnouncement} className="space-y-4">
-                        <div className="space-y-2"><Label htmlFor="announcement-title">Title</Label><Input id="announcement-title" name="title" value={announcementTitle} onChange={(e) => setAnnouncementTitle(e.target.value)} required /></div>
-                        <div className="space-y-2"><Label htmlFor="announcement-description">Description</Label><Textarea id="announcement-description" name="description" value={announcementDesc} onChange={(e) => setAnnouncementDesc(e.target.value)} required /></div>
-                        <Button type="submit"><Send className="mr-2 h-4 w-4" /> Save Announcement</Button>
-                      </form>
+                      <div className="space-y-4">
+                        <div className="space-y-2"><Label htmlFor="announcement-title">Title</Label><Input id="announcement-title" name="title" value={newAnnouncementTitle} onChange={(e) => setNewAnnouncementTitle(e.target.value)} required /></div>
+                        <div className="space-y-2"><Label htmlFor="announcement-description">Description</Label><Textarea id="announcement-description" name="description" value={newAnnouncementDesc} onChange={(e) => setNewAnnouncementDesc(e.target.value)} required /></div>
+                        <Button onClick={handleAddAnnouncement} disabled={isCreatingAnnouncement}><Send className="mr-2 h-4 w-4" /> {isCreatingAnnouncement ? 'Publishing...' : 'Publish Announcement'}</Button>
+                      </div>
                     </CardContent>
                   </Card>
                    <Card>
@@ -573,7 +578,33 @@ export default function AdminPanelPage() {
                     </CardContent>
                   </Card>
                 </div>
-                 <div className="grid gap-8 lg:grid-cols-1">
+                 <div className="grid gap-8 lg:grid-cols-2">
+                    <Card>
+                        <CardHeader><CardTitle>Manage Announcements</CardTitle></CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                <TableBody>
+                                    {announcements.map(ann => (
+                                        <TableRow key={ann.id}>
+                                            <TableCell className="font-medium max-w-sm truncate">{ann.title}</TableCell>
+                                            <TableCell>{formatDistanceToNow(ann.createdAt, { addSuffix: true })}</TableCell>
+                                            <TableCell className="text-right">
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader><AlertDialogTitle>Delete this announcement?</AlertDialogTitle><AlertDialogDescription>This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteAnnouncement(ann.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                    {announcements.length === 0 && <TableRow><TableCell colSpan={3} className="h-24 text-center">No announcements posted.</TableCell></TableRow>}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
                      <Card>
                         <CardHeader>
                             <CardTitle>Manage Polls</CardTitle>
@@ -584,7 +615,7 @@ export default function AdminPanelPage() {
                                     <TableRow>
                                         <TableHead>Question</TableHead>
                                         <TableHead>Status</TableHead>
-                                        <TableHead>Total Votes</TableHead>
+                                        <TableHead>Votes</TableHead>
                                         <TableHead className="text-right">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -597,7 +628,7 @@ export default function AdminPanelPage() {
                                                     {poll.isActive ? 'Active' : 'Inactive'}
                                                 </Badge>
                                             </TableCell>
-                                            <TableCell>
+                                             <TableCell>
                                                 {Object.values(poll.results).reduce((sum, count) => sum + count, 0)}
                                             </TableCell>
                                             <TableCell className="text-right space-x-2">
@@ -1026,8 +1057,7 @@ export default function AdminPanelPage() {
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => deleteTicket(ticket.id)}>Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
+                                                            <AlertDialogAction onClick={() => deleteTicket(ticket.id)}>Delete</AlertDialogAction></AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                             </TableCell>
@@ -1083,3 +1113,5 @@ export default function AdminPanelPage() {
 }
 
     
+
+  
