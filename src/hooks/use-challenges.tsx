@@ -5,7 +5,7 @@ import { useState, useEffect, createContext, useContext, ReactNode, useCallback 
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot, Timestamp, deleteDoc } from 'firebase/firestore';
-import { differenceInCalendarDays, startOfDay, addDays } from 'date-fns';
+import { differenceInCalendarDays, startOfDay, addDays, format as formatDate } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { useTimeTracker } from './use-time-tracker';
@@ -50,7 +50,7 @@ interface ChallengesContextType {
     activeChallenge: ActiveChallenge | null;
     startChallenge: (config: ChallengeConfig) => Promise<void>;
     checkIn: () => Promise<void>;
-    failChallenge: () => Promise<void>;
+    failChallenge: (silent?: boolean) => Promise<void>;
     liftChallengeBan: () => Promise<void>;
     toggleTaskCompletion: (day: number, taskId: string) => Promise<void>;
     loading: boolean;
@@ -78,6 +78,50 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         console.log("Invalid challenge data detected and cleared.");
     }, [user]);
 
+     const failChallenge = useCallback(async (silent = false) => {
+        if (!user || !activeChallenge) return;
+        
+        const banExpiry = addDays(new Date(), 3).toISOString();
+
+        await updateDoc(doc(db, 'users', user.id, 'challenges', 'activeChallenge'), {
+            status: 'failed',
+            banUntil: banExpiry,
+        });
+        
+        await addCreditsToUser(user.id, -PENALTY_ON_FAIL);
+
+        if (!silent) {
+             toast({
+                variant: "destructive",
+                title: "Challenge Failed!",
+                description: `You have been penalized ${PENALTY_ON_FAIL} credits and banned from challenges for 3 days.`,
+                duration: 10000,
+            });
+        }
+
+    }, [user, activeChallenge, addCreditsToUser, toast]);
+    
+    const completeChallenge = useCallback(async (challenge: ActiveChallenge) => {
+        if (!user) return;
+        
+        const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
+        const refund = challenge.entryFee + challenge.reward;
+        
+        await addCreditsToUser(user.id, refund);
+        await makeUserChallenger(user.id);
+        
+        await updateDoc(challengeRef, {
+            status: 'completed'
+        });
+
+        toast({
+            title: "Challenge Completed!",
+            description: `Congratulations! You have earned ${refund} credits and the 'Challenger' badge!`,
+            className: "bg-green-500/10 border-green-500/50"
+        });
+
+    }, [user, addCreditsToUser, makeUserChallenger, toast]);
+
     // Fetch active challenge
     useEffect(() => {
         if (!user) {
@@ -91,7 +135,6 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
             if (docSnap.exists()) {
                 const data = docSnap.data() as ActiveChallenge;
 
-                // FIX: Check for old data structure and reset if necessary
                 if (data.isCustom === undefined) {
                     resetInvalidChallenge();
                     setLoading(false);
@@ -101,11 +144,14 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
                 const today = startOfDay(new Date());
                 const startDate = startOfDay(new Date(data.startDate));
                 const dayDiff = differenceInCalendarDays(today, startDate) + 1;
+                
+                const currentDayGoals = data.progress[data.currentDay] || {};
+                const goalsAreMet = data.dailyGoals.every(g => currentDayGoals[g.id]?.completed);
 
-                if (data.status === 'active' && dayDiff > data.currentDay && dayDiff <= data.duration) {
+                if (data.status === 'active' && dayDiff > data.currentDay && !goalsAreMet) {
                      failChallenge(true); // silent fail
                 } else {
-                     if (data.status === 'active' && dayDiff > data.duration) {
+                     if (data.status === 'active' && dayDiff > data.duration && goalsAreMet) {
                         // Challenge period ended, auto-complete
                         completeChallenge(data);
                     }
@@ -125,7 +171,7 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         });
 
         return () => unsubscribe();
-    }, [user, resetInvalidChallenge]);
+    }, [user, resetInvalidChallenge, failChallenge, completeChallenge]);
 
     // Effect to sync study time with challenge progress
     useEffect(() => {
@@ -174,49 +220,6 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
     }, [user, currentUserData, activeChallenge, addCreditsToUser, toast]);
     
-    const completeChallenge = useCallback(async (challenge: ActiveChallenge) => {
-        if (!user) return;
-        
-        const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
-        const refund = challenge.entryFee + challenge.reward;
-        
-        await addCreditsToUser(user.id, refund);
-        await makeUserChallenger(user.id);
-        
-        await updateDoc(challengeRef, {
-            status: 'completed'
-        });
-
-        toast({
-            title: "Challenge Completed!",
-            description: `Congratulations! You have earned ${refund} credits and the 'Challenger' badge!`,
-            className: "bg-green-500/10 border-green-500/50"
-        });
-
-    }, [user, addCreditsToUser, makeUserChallenger, toast]);
-
-    const failChallenge = useCallback(async (silent = false) => {
-        if (!user || !activeChallenge) return;
-        
-        const banExpiry = addDays(new Date(), 3).toISOString();
-
-        await updateDoc(doc(db, 'users', user.id, 'challenges', 'activeChallenge'), {
-            status: 'failed',
-            banUntil: banExpiry,
-        });
-        
-        await addCreditsToUser(user.id, -PENALTY_ON_FAIL);
-
-        if (!silent) {
-             toast({
-                variant: "destructive",
-                title: "Challenge Failed!",
-                description: `You have been penalized ${PENALTY_ON_FAIL} credits and banned from challenges for 3 days.`,
-                duration: 10000,
-            });
-        }
-
-    }, [user, activeChallenge, addCreditsToUser, toast]);
 
     const checkIn = useCallback(async () => {
         if (!user || !activeChallenge || activeChallenge.status !== 'active') return;

@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
-import { differenceInMilliseconds } from 'date-fns';
+import { differenceInMilliseconds, format as formatDate, addDays } from 'date-fns';
 import { Checkbox } from '../ui/checkbox';
 import { TimeTracker } from '../tracker/time-tracker';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -132,15 +132,17 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
              <div className="flex flex-col items-center justify-center h-full text-center">
                 <Card className="w-full max-w-md border-green-500/50">
                     <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2 text-green-500">
-                            <Trophy className="h-8 w-8"/> Challenge Completed!
+                        <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4 animate-pulse"/>
+                        <CardTitle className="text-3xl font-bold text-green-500">
+                           Challenge Complete!
                         </CardTitle>
-                        <CardDescription>
-                            Congratulations! You have successfully completed the "{config.title}". Your reward has been added.
+                        <CardDescription className="text-base">
+                            Congratulations! You have conquered the "{config.title}".
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                         <Button asChild>
+                    <CardContent className="space-y-4">
+                        <p className="text-muted-foreground">Your reward of <span className="font-bold text-primary">{config.reward + config.entryFee} credits</span> has been added to your account, and you have earned the prestigious <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> badge!</p>
+                         <Button asChild size="lg">
                             <Link href="/dashboard/challenger">&larr; Back to Challenger Zone</Link>
                         </Button>
                     </CardContent>
@@ -164,12 +166,18 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
     }
     
     const plannedTasksForDay = config.plannedTasks?.[viewingDay] || [];
+    const startDate = new Date(config.startDate);
+    const endDate = addDays(startDate, config.duration - 1);
 
     return (
         <div className="space-y-8">
-            <div>
+            <div className="space-y-2">
                 <h1 className="text-3xl font-bold tracking-tight">{config.title}</h1>
                 <p className="text-muted-foreground">Day {config.currentDay} of {config.duration}</p>
+                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
+                    <span>Start: <span className="font-semibold text-foreground">{formatDate(startDate, 'EEE, d MMM yyyy')}</span></span>
+                    <span>End: <span className="font-semibold text-foreground">{formatDate(endDate, 'EEE, d MMM yyyy')}</span></span>
+                 </div>
             </div>
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {config.dailyGoals.map(goal => {
@@ -237,9 +245,10 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                 </Card>
                 <Card>
                     <CardHeader><CardTitle>Challenge Roadmap</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-7 gap-2">
+                    <CardContent className="grid grid-cols-4 lg:grid-cols-7 gap-2">
                          {Array.from({ length: config.duration }).map((_, i) => {
                             const day = i + 1;
+                            const dayDate = addDays(startDate, i);
                             const isCompleted = !!config.progress[day] && config.dailyGoals.every(g => config.progress[day]?.[g.id]?.completed);
                             const isCurrent = day === config.currentDay;
                             const isViewing = day === viewingDay;
@@ -250,7 +259,7 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                                     onClick={() => day <= config.currentDay && setViewingDay(day)}
                                     disabled={day > config.currentDay}
                                     className={cn(
-                                        "h-12 w-12 flex flex-col items-center justify-center rounded-lg border-2 text-xs font-bold transition-all",
+                                        "h-20 w-full flex flex-col items-center justify-center rounded-lg border-2 text-xs font-bold transition-all p-1",
                                         isCurrent && "border-primary",
                                         isViewing && "ring-2 ring-primary/80 scale-110",
                                         isCompleted && "bg-green-500/20 border-green-500 text-green-500",
@@ -258,7 +267,9 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                                         day > config.currentDay && "bg-muted/50 opacity-60 cursor-not-allowed"
                                     )}
                                 >
-                                   <span> DAY</span><span>{day}</span>
+                                   <span className="font-bold text-lg">{day}</span>
+                                   <span className="text-xs text-muted-foreground">{formatDate(dayDate, 'd MMM')}</span>
+                                   <span className="text-xs text-muted-foreground">{formatDate(dayDate, 'EEE')}</span>
                                 </button>
                             )
                          })}
