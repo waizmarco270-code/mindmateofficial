@@ -79,7 +79,6 @@ export default function CreateChallengePage() {
             plannedTasks: finalTasks,
         });
         
-        router.push('/dashboard/challenger/custom');
     }
     
     const handleConfirmation = () => {
@@ -95,29 +94,9 @@ export default function CreateChallengePage() {
     }
 
     if (activeChallenge) {
-        let redirectPath = '/dashboard/challenger';
-        if (activeChallenge.isCustom) {
-            redirectPath = '/dashboard/challenger/custom';
-        }
-        return (
-             <div className="flex flex-col items-center justify-center h-full text-center">
-                <Card className="w-full max-w-md border-amber-500/50">
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-center gap-2 text-amber-500">
-                            <ShieldCheck className="h-8 w-8"/> Challenge in Progress
-                        </CardTitle>
-                        <CardDescription>
-                            You already have an active challenge. You can only create a new one after your current challenge ends.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Button asChild>
-                            <Link href={redirectPath}>&larr; Back to Your Challenge</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
-            </div>
-        );
+        // This logic will be handled by the hook, but as a safeguard:
+        router.replace('/dashboard/challenger/custom');
+        return null;
     }
 
     return (

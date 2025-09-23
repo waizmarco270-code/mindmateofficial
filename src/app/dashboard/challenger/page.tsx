@@ -15,7 +15,7 @@ const challengeCategories = [
     {
         title: "Create Your Own Challenge",
         description: "Forge your own path. Set custom goals, duration, and difficulty.",
-        icon: Swords, // Changed from PlusCircle
+        icon: Swords,
     },
 ];
 
@@ -34,7 +34,7 @@ export default function ChallengerHubPage() {
             
             <div className="flex justify-center">
                 {challengeCategories.map((category, index) => {
-                    const isActive = activeChallenge?.isCustom;
+                    const isActive = !!activeChallenge;
                     const href = isActive ? "/dashboard/challenger/custom" : "/dashboard/challenger/create";
 
                     return (

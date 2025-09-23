@@ -9,6 +9,7 @@ import { differenceInCalendarDays, startOfDay, addDays, format as formatDate, se
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { useTimeTracker } from './use-time-tracker';
+import { useRouter } from 'next/navigation';
 
 export interface DailyGoal {
     id: 'studyTime' | 'focusSession' | 'tasks' | 'checkIn';
@@ -60,7 +61,7 @@ interface ChallengesContextType {
     checkIn: () => Promise<void>;
     failChallenge: (silent?: boolean) => Promise<void>;
     liftChallengeBan: () => Promise<void>;
-    toggleTaskCompletion: (day: number, categoryId: string, taskId: string) => Promise<void>;
+    toggleTaskCompletion: (day: number, taskId: string) => Promise<void>;
     loading: boolean;
     dailyProgress: Record<string, { current: number; completed: boolean }> | null;
 }
@@ -69,6 +70,7 @@ const ChallengesContext = createContext<ChallengesContextType | undefined>(undef
 
 export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
+    const router = useRouter();
     const { currentUserData, addCreditsToUser, loading: userLoading, makeUserChallenger } = useUsers();
     const { totalTimeToday } = useTimeTracker(); // Integrate time tracker
     const { toast } = useToast();
@@ -250,10 +252,12 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
         const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
         await setDoc(challengeRef, newChallenge);
-        setActiveChallenge(newChallenge);
+        
+        // This will trigger the onSnapshot listener, which will update state and cause redirection.
         toast({ title: "Challenge Started!", description: `The ${config.title} has begun!` });
+        router.push('/dashboard/challenger/custom');
 
-    }, [user, currentUserData, activeChallenge, addCreditsToUser, toast]);
+    }, [user, currentUserData, activeChallenge, addCreditsToUser, toast, router]);
     
 
     const checkIn = useCallback(async () => {
@@ -262,7 +266,10 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         const today = new Date();
         const currentDayProgress = activeChallenge.progress[activeChallenge.currentDay];
         
-        if(!currentDayProgress) return;
+        if(!currentDayProgress) {
+             toast({ variant: 'destructive', title: "Goals Not Met", description: "You must complete all other daily goals before checking in." });
+            return;
+        }
 
         const allGoalsMetForToday = activeChallenge.dailyGoals
                 .filter(g => g.id !== 'checkIn')
@@ -321,18 +328,24 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
     }, [user, currentUserData, activeChallenge, addCreditsToUser, toast]);
     
-    const toggleTaskCompletion = useCallback(async (day: number, categoryId: string, taskId: string) => {
+    const toggleTaskCompletion = useCallback(async (day: number, taskId: string) => {
         if (!user || !activeChallenge || activeChallenge.status !== 'active' || day !== activeChallenge.currentDay) return;
 
         const newPlannedTasks = JSON.parse(JSON.stringify(activeChallenge.plannedTasks || {}));
-        const dayCategories = newPlannedTasks[day] || [];
-        const catIndex = dayCategories.findIndex((c: PlannedTaskCategory) => c.id === categoryId);
-        if(catIndex === -1) return;
-        
-        const taskIndex = dayCategories[catIndex].tasks.findIndex((t: PlannedTask) => t.id === taskId);
-        if (taskIndex === -1) return;
+        const dayCategories: PlannedTaskCategory[] | undefined = newPlannedTasks[day];
+        if(!dayCategories) return;
 
-        dayCategories[catIndex].tasks[taskIndex].completed = !dayCategories[catIndex].tasks[taskIndex].completed;
+        let taskFound = false;
+        for (const category of dayCategories) {
+            const taskIndex = category.tasks.findIndex(t => t.id === taskId);
+            if (taskIndex !== -1) {
+                category.tasks[taskIndex].completed = !category.tasks[taskIndex].completed;
+                taskFound = true;
+                break;
+            }
+        }
+
+        if (!taskFound) return;
 
         // Check if all tasks for the day are now complete
         const allTasksCompleted = dayCategories.every((c: PlannedTaskCategory) => c.tasks.every((t: PlannedTask) => t.completed));
