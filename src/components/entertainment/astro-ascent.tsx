@@ -4,7 +4,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand } from 'lucide-react';
+import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand, Maximize, Minimize } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
@@ -17,6 +17,7 @@ import { Label } from '../ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useToast } from '@/hooks/use-toast';
 import { format, startOfWeek } from 'date-fns';
+import { useImmersive } from '@/hooks/use-immersive';
 
 
 // Game Configuration
@@ -30,10 +31,10 @@ const SAFE_LANDING_VELOCITY = 1.5;
 const ASTEROID_COUNT = 10;
 
 const MILESTONE_REWARDS: Record<number, number> = {
-  1000: 5,
-  2500: 10,
-  5000: 25,
-  7500: 50,
+  25: 5,
+  50: 10,
+  75: 25,
+  100: 50,
 };
 
 interface GameObject {
@@ -65,6 +66,7 @@ export function AstroAscentGame() {
   const { user, isSignedIn } = useUser();
   const { currentUserData, updateGameHighScore, claimAstroAscentMilestone } = useUsers();
   const { toast } = useToast();
+  const { isImmersive, setIsImmersive } = useImmersive();
 
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver' | 'won'>('idle');
   const [gameOverReason, setGameOverReason] = useState('Mission Failed');
@@ -267,7 +269,7 @@ export function AstroAscentGame() {
         if (totalVelocity > SAFE_LANDING_VELOCITY) {
              handleGameOver('Landed too hard! Slow down more.'); return;
         }
-        const finalScore = Math.round(player.fuel * 10);
+        const finalScore = Math.round(player.fuel / 10);
         handleWin(finalScore); return;
     }
 
@@ -399,15 +401,22 @@ export function AstroAscentGame() {
   
   return (
     <div className="space-y-8">
-      <Card className="w-full relative">
+      <Card className={cn("w-full relative transition-all duration-500", isImmersive && "fixed inset-0 z-50 h-screen w-screen !m-0 rounded-none border-0")}>
           <SignedOut>
               <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
           </SignedOut>
           <CardHeader>
-              <CardTitle>Astro Ascent</CardTitle>
-              <CardDescription>Land safely. Watch your fuel.</CardDescription>
+            <div className="flex justify-between items-center">
+              <div>
+                <CardTitle>Astro Ascent</CardTitle>
+                <CardDescription>Land safely. Watch your fuel.</CardDescription>
+              </div>
+              <Button size="icon" variant="ghost" onClick={() => setIsImmersive(v => !v)}>
+                  {isImmersive ? <Minimize /> : <Maximize />}
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="flex flex-col items-center gap-4">
+          <CardContent className={cn("flex flex-col items-center gap-4", isImmersive && "h-[calc(100vh-160px)]")}>
               <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
                   <span className="flex items-center gap-1"><Trophy className="h-4 w-4 text-amber-400"/> {highScore}</span>
                   <span className="text-primary font-bold">SCORE: {score}</span>
