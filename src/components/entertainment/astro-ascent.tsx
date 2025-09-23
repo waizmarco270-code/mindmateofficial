@@ -83,7 +83,7 @@ export function AstroAscentGame() {
 
     playerRef.current = {
       x: 50,
-      y: 50,
+      y: canvas.height / 2,
       vx: 0,
       vy: 0,
       angle: -Math.PI / 2,
@@ -267,10 +267,9 @@ export function AstroAscentGame() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (canvas) {
-      // Use a fixed aspect ratio for stability
       const parentWidth = canvas.parentElement?.clientWidth || 500;
       canvas.width = parentWidth;
-      canvas.height = parentWidth * 0.9; // Example aspect ratio
+      canvas.height = parentWidth * 0.9;
       resetGame();
     }
   }, [resetGame]);
