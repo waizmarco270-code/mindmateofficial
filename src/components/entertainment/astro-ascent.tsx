@@ -4,7 +4,7 @@
 import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand, Maximize, Minimize, Gamepad2 } from 'lucide-react';
+import { Rocket, Play, RotateCw, HelpCircle, Award, Trophy, Fuel, ChevronsLeft, ChevronsRight, Zap as ThrustIcon, Hand } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
@@ -50,7 +50,6 @@ interface LandingPad {
 
 export function AstroAscentGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gameContainerRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
   const { user, isSignedIn } = useUser();
   const { currentUserData, updateGameHighScore } = useUsers();
@@ -58,7 +57,6 @@ export function AstroAscentGame() {
   const [gameState, setGameState] = useState<'idle' | 'playing' | 'gameOver' | 'won'>('idle');
   const [score, setScore] = useState(0);
   const [highScore, setHighScore] = useState(0);
-  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
 
   const playerRef = useRef<GameObject>({ x: 0, y: 0, vx: 0, vy: 0, angle: -Math.PI / 2, fuel: MAX_FUEL });
@@ -269,17 +267,21 @@ export function AstroAscentGame() {
     // Side thruster flames
     ctx.save();
     ctx.translate(player.x, player.y);
-    ctx.rotate(player.angle);
     if (keysRef.current['q'] && player.fuel > 0) {
+        ctx.rotate(Math.PI / 2); // Rotate to point right
         ctx.fillStyle = colors.sideFlame;
         ctx.beginPath();
-        ctx.moveTo(5, -6);
-        ctx.lineTo(0 - Math.random() * 5, -8);
-        ctx.lineTo(0 - Math.random() * 5, -4);
+        ctx.moveTo(5, 6);
+        ctx.lineTo(0 - Math.random() * 5, 8);
+        ctx.lineTo(0 - Math.random() * 5, 4);
         ctx.closePath();
         ctx.fill();
     }
+    ctx.restore();
+    ctx.save();
+    ctx.translate(player.x, player.y);
     if (keysRef.current['e'] && player.fuel > 0) {
+        ctx.rotate(-Math.PI / 2); // Rotate to point left
         ctx.fillStyle = colors.sideFlame;
         ctx.beginPath();
         ctx.moveTo(5, 6);
@@ -338,34 +340,10 @@ export function AstroAscentGame() {
     keysRef.current[key] = isDown;
   }
   
-  const toggleFullscreen = () => {
-      const elem = gameContainerRef.current;
-      if (!elem) return;
-
-      if (!document.fullscreenElement) {
-          elem.requestFullscreen().catch(err => {
-              alert(`Error attempting to enable full-screen mode: ${err.message} (${err.name})`);
-          });
-      } else {
-          document.exitFullscreen();
-      }
-  };
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-        const isCurrentlyFullscreen = !!document.fullscreenElement;
-        setIsFullscreen(isCurrentlyFullscreen);
-        // Delay resize to allow DOM to update
-        setTimeout(resizeCanvas, 100);
-    };
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, [resizeCanvas]);
-
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        <div ref={gameContainerRef} className={cn("lg:col-span-2 transition-all duration-300", isFullscreen && "fixed inset-0 z-50 bg-background")}>
-            <Card className={cn("w-full relative flex flex-col", isFullscreen && "h-full")}>
+        <div className="lg:col-span-2">
+            <Card className="w-full relative">
                 <SignedOut>
                     <LoginWall title="Unlock Astro Ascent" description="Sign up to play this physics-based arcade game, master your landing, and set high scores!" />
                 </SignedOut>
@@ -375,18 +353,15 @@ export function AstroAscentGame() {
                             <CardTitle>Astro Ascent</CardTitle>
                             <CardDescription>Land safely. Watch your fuel.</CardDescription>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
-                            {isFullscreen ? <Minimize/> : <Maximize/>}
-                        </Button>
                     </div>
                 </CardHeader>
-                <CardContent className="flex-1 flex flex-col items-center gap-4">
+                <CardContent className="flex flex-col items-center gap-4">
                     <div className="w-full flex justify-between items-center bg-muted p-2 rounded-lg text-sm font-semibold">
                         <span className="flex items-center gap-1"><Trophy className="h-4 w-4 text-amber-400"/> {highScore}</span>
                         <span className="text-primary font-bold">SCORE: {score}</span>
                         <span className="flex items-center gap-1"><Fuel className="h-4 w-4"/> {Math.max(0, playerRef.current.fuel).toFixed(0)}</span>
                     </div>
-                    <div className="w-full rounded-lg overflow-hidden border relative bg-slate-900 flex-1 aspect-video">
+                    <div className="w-full rounded-lg overflow-hidden border relative bg-slate-900 aspect-video">
                         <canvas ref={canvasRef} className="w-full h-full" />
                         {gameState !== 'playing' && (
                             <div className="absolute inset-0 bg-black/70 flex flex-col justify-center items-center text-white z-20 p-4 text-center">
@@ -397,7 +372,7 @@ export function AstroAscentGame() {
                         )}
                         {/* Touch Controls Overlay */}
                         {showControls && (
-                            <div className="absolute bottom-4 left-4 right-4 z-10 grid grid-cols-3 gap-2 pointer-events-auto">
+                            <div className="absolute bottom-4 left-4 right-4 z-10 grid grid-cols-3 gap-2">
                                <div className="flex flex-col gap-2">
                                   <Button className="h-14 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20" onTouchStart={() => handleTouchControl('a', true)} onTouchEnd={() => handleTouchControl('a', false)} onMouseDown={() => handleTouchControl('a', true)} onMouseUp={() => handleTouchControl('a', false)}><ChevronsLeft className="h-6 w-6"/></Button>
                                   <Button className="h-12 w-full rounded-lg bg-black/20 text-white/80 active:bg-white/20 text-xs font-bold" onTouchStart={() => handleTouchControl('q', true)} onTouchEnd={() => handleTouchControl('q', false)} onMouseDown={() => handleTouchControl('q', true)} onMouseUp={() => handleTouchControl('q', false)} >LEFT</Button>
@@ -416,7 +391,7 @@ export function AstroAscentGame() {
                 </CardContent>
             </Card>
         </div>
-        <Card className={cn("w-full lg:col-span-1", isFullscreen && "hidden")}>
+        <Card className="w-full lg:col-span-1">
             <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
               <AccordionItem value="item-1">
                 <AccordionTrigger className="p-6">
