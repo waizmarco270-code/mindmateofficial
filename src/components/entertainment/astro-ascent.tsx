@@ -317,7 +317,7 @@ export function AstroAscentGame() {
                         </div>
                     )}
                     {/* Touch Controls */}
-                    <div className="md:hidden absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 gap-2">
+                    <div className="absolute bottom-4 left-4 right-4 flex justify-between items-center z-10 gap-2">
                         <Button 
                             className="h-20 w-20 rounded-full bg-black/30 backdrop-blur-sm text-white/80 active:bg-white/20"
                             onTouchStart={() => handleTouchControl('a', true)}
