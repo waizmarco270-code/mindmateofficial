@@ -101,8 +101,9 @@ export function ProgressConstellation({ user, quizzes }: ProgressConstellationPr
 
         {stars.map((star, i) => {
           const progress = normalize(star.value, star.max);
-          const size = 4 + progress * 8; // Size from 4 to 12
-          const glow = progress * 0.8;
+          const size = 12 + progress * 24; // Size from 12 to 36
+          const glow = progress * 1.2;
+          const iconSize = 6 + progress * 12;
           
           return (
              <Tooltip key={star.id}>
@@ -123,11 +124,12 @@ export function ProgressConstellation({ user, quizzes }: ProgressConstellationPr
                             className="absolute rounded-full bg-white"
                              style={{
                                 width: size, height: size,
-                                boxShadow: `0 0 ${glow * 8}px #fff, 0 0 ${glow * 16}px #fff, 0 0 ${glow * 24}px #60a5fa`,
+                                boxShadow: `0 0 ${glow * 8}px #fff, 0 0 ${glow * 16}px #a78bfa, 0 0 ${glow * 24}px #8b5cf6`,
                             }}
-                            animate={{ scale: [1, 1.1, 1], opacity: [0.8, 1, 0.8] }}
-                            transition={{ duration: 2 + Math.random() * 2, repeat: Infinity }}
+                            animate={{ scale: [1, 1.05, 1], opacity: [0.8, 1, 0.8] }}
+                            transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, repeatType: "mirror" }}
                         />
+                        <star.Icon className="relative text-purple-900" style={{width: iconSize, height: iconSize}}/>
                     </div>
                 </motion.div>
              </TooltipTrigger>
