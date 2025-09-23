@@ -9,7 +9,6 @@ import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/u
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 import { UserButton, useUser, SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
-import { ThemeToggle } from '../theme-toggle';
 import { ScrollArea } from '../ui/scroll-area';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Separator } from '../ui/separator';
@@ -186,7 +185,6 @@ export default function Header() {
                 </Popover>
                 
                 <AnnouncementInbox />
-                <ThemeToggle />
 
                 <UserButton afterSignOutUrl="/" appearance={{
                     elements: {
