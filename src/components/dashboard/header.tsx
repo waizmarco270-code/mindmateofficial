@@ -26,21 +26,28 @@ function AnnouncementInbox() {
     return (
         <Popover onOpenChange={(open) => { if(open) markAnnouncementsAsRead() }}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
+                <Button 
+                    variant="outline" 
+                    className={cn(
+                        "relative h-12 w-12 rounded-full p-0 transition-all duration-300 ease-in-out",
+                        hasUnreadAnnouncements 
+                            ? "bg-gradient-to-br from-purple-500 to-pink-500 text-white border-purple-400 animate-pulse shadow-lg shadow-primary/30"
+                            : "bg-secondary"
+                    )}
+                >
                     <Mail className="h-6 w-6" />
                     {hasUnreadAnnouncements && (
-                         <span className="absolute top-2 right-2 flex h-3 w-3">
-                            <span className="animate-red-pulse absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                         <span className="absolute top-1 right-1 flex h-3 w-3">
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
                         </span>
                     )}
                     <span className="sr-only">Announcements</span>
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-96 p-0">
-                 <div className="p-4">
-                    <h4 className="font-bold text-base">Inbox</h4>
-                    <p className="text-sm text-muted-foreground">The latest updates and news.</p>
+                 <div className="p-4 bg-muted/50 rounded-t-lg">
+                    <h4 className="font-bold text-base flex items-center gap-2"><Mail className="h-5 w-5 text-primary"/> Inbox</h4>
+                    <p className="text-sm text-muted-foreground">The latest updates and news from the admins.</p>
                  </div>
                  <Separator />
                 <ScrollArea className="h-[400px]">
@@ -57,9 +64,9 @@ function AnnouncementInbox() {
                         {previousAnnouncements.length > 0 && (
                             <>
                                 <Separator/>
-                                 <p className="font-semibold text-sm text-muted-foreground">Previous</p>
+                                 <p className="font-semibold text-sm text-muted-foreground px-2">Previous Announcements</p>
                                 {previousAnnouncements.map(announcement => (
-                                    <div key={announcement.id} className="space-y-1 p-2 rounded-md hover:bg-muted">
+                                    <div key={announcement.id} className="space-y-1 p-3 rounded-md hover:bg-muted cursor-pointer">
                                         <p className="font-semibold text-sm">{announcement.title}</p>
                                         <p className="text-xs text-muted-foreground">{announcement.description}</p>
                                         <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</p>
