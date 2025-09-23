@@ -206,9 +206,13 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
-        const allGoalsMetForToday = activeChallenge.dailyGoals
-            .filter(g => g.id !== 'checkIn')
-            .every(g => activeChallenge.progress[activeChallenge.currentDay]?.[g.id]?.completed);
+        const currentDayProgress = activeChallenge.progress[activeChallenge.currentDay];
+        const allGoalsMetForToday = currentDayProgress 
+            ? activeChallenge.dailyGoals
+                .filter(g => g.id !== 'checkIn')
+                .every(g => currentDayProgress[g.id]?.completed)
+            : false;
+
 
         if (!allGoalsMetForToday) {
              toast({ variant: 'destructive', title: "Goals Not Met", description: "You must complete all other daily goals before checking in." });
