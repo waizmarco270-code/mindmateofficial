@@ -201,6 +201,11 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
 
 const badgeShowcaseItems = [
     {
+        name: 'Challenger',
+        description: 'Awarded to users who successfully complete an official study challenge.',
+        badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
+    },
+    {
         name: 'Elite Member',
         description: 'Awarded by admins to the most dedicated and active users.',
         badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>
