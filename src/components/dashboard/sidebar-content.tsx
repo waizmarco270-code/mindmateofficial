@@ -64,9 +64,6 @@ const competeNav = [
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
 ];
 
-const otherNav = [];
-
-
 const socialLinks = [
     { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx' },
     { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H' },
@@ -83,7 +80,7 @@ const WhatsAppIcon = () => (
 )
 
 const YouTubeIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M2.5 17a24.12 24.12 0 0 1 0-10C2.5 6 2.5 4.5 3.5 3.5a2.44 2.44 0 0 1 2-1C7 2 12 2 12 2s5 0 6.5.5a2.44 2.44 0 0 1 2 1c1 1 1 2.5 1 3.5a24.12 24.12 0 0 1 0 10c0 1 0 2.5-1 3.5a2.44 2.44 0 0 1-2 1C17 22 12 22 12 22s-5 0-6.5-.5a2.44 2.44 0 0 1-2-1C2.5 19.5 2.5 18 2.5 17Z"></path><path d="m10 15 5-3-5-3z"></path></svg>
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5"><path d="M2.5 17a24.12 24.12 0 0 1 0-10C2.5 6 2.5 4.5 3.5 3.5a2.44 2.44 0 0 1 2-1C7 2 12 2 12 2s5 0 6.5.5a2.44 2.44 0 0 1 2 1c1 1 1 2.5 1 3.5a24.12 24.12 0 0 1 0 10c0 1 0 2.5-1 3.5a2.44 2.44 0 0 1-2-1C17 22 12 22 12 22s-5 0-6.5-.5a2.44 2.44 0 0 1-2-1C2.5 19.5 2.5 18 2.5 17Z"></path><path d="m10 15 5-3-5-3z"></path></svg>
 )
 
 
@@ -170,7 +167,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'compete-earn', 'community-resources', 'other-tools']}
+          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -199,15 +196,6 @@ export default function SidebarContent() {
               {renderNavLinks(competeNav as any)}
             </AccordionContent>
           </AccordionItem>
-           <AccordionItem value="other-tools" className="border-b-0">
-            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Other
-            </AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">
-              {renderNavLinks(otherNav as any)}
-            </AccordionContent>
-          </AccordionItem>
-
         </Accordion>
          {isSpecialUser && (
             <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
