@@ -123,7 +123,7 @@ export function AstroAscentGame() {
     keysRef.current = {};
 
     playerRef.current = {
-      x: canvas.width / 4 + Math.random() * (canvas.width / 4), // Spawn in top-left quadrant
+      x: Math.random() * (canvas.width / 4), // Spawn in top-left quadrant
       y: canvas.height / 4,
       vx: 0,
       vy: 0,
@@ -180,7 +180,7 @@ export function AstroAscentGame() {
       .find(m => finalScore >= m && !claimedMilestones.includes(m));
 
     if (reachedMilestone && user) {
-        claimAstroAscentMilestone(user.id, reachedMilestone).then(success => {
+        claimAstroAscentMilestone(user.id, finalScore).then(success => {
             if (success) {
                 toast({
                     title: `Milestone! +${MILESTONE_REWARDS[reachedMilestone as keyof typeof MILESTONE_REWARDS]} Credits!`,
@@ -243,9 +243,7 @@ export function AstroAscentGame() {
             }
         }
     }
-
-    setScore(Math.round(player.fuel / 10));
-
+    
     player.x += player.vx;
     player.y += player.vy;
     
@@ -351,7 +349,7 @@ export function AstroAscentGame() {
     ctx.restore();
     
     gameLoopRef.current = requestAnimationFrame(gameLoop);
-  }, [getThemeColors, score, highScore, user, claimedMilestones, claimAstroAscentMilestone, toast, updateGameHighScore]);
+  }, [getThemeColors, score, highScore, user, claimedMilestones, toast, updateGameHighScore, claimAstroAscentMilestone]);
   
   useEffect(() => {
     if (gameState === 'playing') {
