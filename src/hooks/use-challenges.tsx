@@ -5,7 +5,7 @@ import { useState, useEffect, createContext, useContext, ReactNode, useCallback 
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, onSnapshot, Timestamp, deleteDoc } from 'firebase/firestore';
-import { differenceInCalendarDays, startOfDay, addDays, format as formatDate } from 'date-fns';
+import { differenceInCalendarDays, startOfDay, addDays, format as formatDate, set } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { useTimeTracker } from './use-time-tracker';
@@ -82,8 +82,9 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         if (!user || !activeChallenge) return;
         
         const banExpiry = addDays(new Date(), 3).toISOString();
+        const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
 
-        await updateDoc(doc(db, 'users', user.id, 'challenges', 'activeChallenge'), {
+        await updateDoc(challengeRef, {
             status: 'failed',
             banUntil: banExpiry,
         });
@@ -122,7 +123,7 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
     }, [user, addCreditsToUser, makeUserChallenger, toast]);
 
-    // Fetch active challenge
+    // Main challenge state and auto-fail logic
     useEffect(() => {
         if (!user) {
             setLoading(false);
@@ -140,27 +141,53 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
                     setLoading(false);
                     return;
                 }
-                
-                const today = startOfDay(new Date());
-                const startDate = startOfDay(new Date(data.startDate));
-                const dayDiff = differenceInCalendarDays(today, startDate) + 1;
-                
-                const currentDayGoals = data.progress[data.currentDay] || {};
-                const goalsAreMet = data.dailyGoals.every(g => currentDayGoals[g.id]?.completed);
 
-                if (data.status === 'active' && dayDiff > data.currentDay && !goalsAreMet) {
-                     failChallenge(true); // silent fail
-                } else {
-                     if (data.status === 'active' && dayDiff > data.duration && goalsAreMet) {
-                        // Challenge period ended, auto-complete
-                        completeChallenge(data);
-                    }
-                    else if (data.status === 'active' && dayDiff > data.currentDay) {
-                         updateDoc(challengeRef, { currentDay: dayDiff });
-                         data.currentDay = dayDiff;
-                    }
+                if (data.status !== 'active') {
                     setActiveChallenge(data);
+                    setLoading(false);
+                    return;
                 }
+                
+                const today = new Date();
+                const startDate = new Date(data.startDate);
+                const currentDayNumber = differenceInCalendarDays(today, startDate) + 1;
+
+                // Auto-fail logic for missing check-in
+                if (data.checkInTime) {
+                    const lastDayToCheck = currentDayNumber -1;
+                    if(lastDayToCheck > 0 && lastDayToCheck <= data.duration) {
+                        const previousDayProgress = data.progress[lastDayToCheck];
+                        const checkInGoal = data.dailyGoals.find(g => g.id === 'checkIn');
+                        if(checkInGoal && !previousDayProgress?.checkIn?.completed) {
+                            const lastDayDate = addDays(startDate, lastDayToCheck - 1);
+                            const [hours, minutes] = data.checkInTime.split(':').map(Number);
+                            const checkInEnd = set(lastDayDate, { hours, minutes: minutes + 10 }); // 10 min window
+                             if (new Date() > checkInEnd) {
+                                failChallenge(true); // silent fail
+                                return;
+                            }
+                        }
+                    }
+                }
+                
+                if (currentDayNumber > data.currentDay) {
+                     const prevDayProgress = data.progress[data.currentDay] || {};
+                     const allGoalsMet = data.dailyGoals.every(g => prevDayProgress[g.id]?.completed);
+                    if (!allGoalsMet) {
+                        failChallenge(true); // silent fail
+                        return;
+                    }
+                     updateDoc(challengeRef, { currentDay: currentDayNumber });
+                     data.currentDay = currentDayNumber;
+                }
+
+                if (currentDayNumber > data.duration) {
+                    completeChallenge(data);
+                    return;
+                }
+                
+                setActiveChallenge(data);
+
             } else {
                 setActiveChallenge(null);
             }
@@ -225,15 +252,11 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         if (!user || !activeChallenge || activeChallenge.status !== 'active') return;
 
         const today = new Date();
-        const todayStr = today.toISOString().split('T')[0];
         
-        if (activeChallenge.lastCheckedIn.startsWith(todayStr)) {
-            toast({ title: "Already Checked In!", description: "You've already checked in for today." });
-            return;
-        }
-
         const currentDayProgress = activeChallenge.progress[activeChallenge.currentDay];
-        const allGoalsMetForToday = currentDayProgress && activeChallenge.dailyGoals
+        if(!currentDayProgress) return;
+
+        const allGoalsMetForToday = activeChallenge.dailyGoals
                 .filter(g => g.id !== 'checkIn')
                 .every(g => currentDayProgress[g.id]?.completed);
 
@@ -245,14 +268,14 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
 
         if(activeChallenge.checkInTime) {
             const [hours, minutes] = activeChallenge.checkInTime.split(':').map(Number);
-            const checkInDeadline = startOfDay(today);
-            checkInDeadline.setHours(hours, minutes, 0, 0);
+            const checkInStart = set(today, { hours, minutes, seconds: 0, milliseconds: 0 });
+            const checkInEnd = addDays(checkInStart, 10);
 
-            if (today < checkInDeadline) {
+            if (today < checkInStart || today > checkInEnd) {
                 toast({
                     variant: 'destructive',
-                    title: "Too Early!",
-                    description: `You can only check in at or after ${activeChallenge.checkInTime}.`
+                    title: "Check-in Window Closed",
+                    description: `You could only check in between ${formatDate(checkInStart, 'HH:mm')} and ${formatDate(checkInEnd, 'HH:mm')}.`
                 });
                 return;
             }
@@ -261,7 +284,6 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         const challengeRef = doc(db, 'users', user.id, 'challenges', 'activeChallenge');
         await updateDoc(challengeRef, {
             [`progress.${activeChallenge.currentDay}.checkIn`]: { current: 1, completed: true },
-            lastCheckedIn: new Date().toISOString()
         });
         
         toast({ title: "Checked In!", description: "Today's check-in is complete.", className: "bg-green-500/10 border-green-500/50" });

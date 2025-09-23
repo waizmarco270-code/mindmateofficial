@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
-import { differenceInMilliseconds, format as formatDate, addDays } from 'date-fns';
+import { differenceInMilliseconds, format as formatDate, addDays, set } from 'date-fns';
 import { Checkbox } from '../ui/checkbox';
 import { TimeTracker } from '../tracker/time-tracker';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -105,6 +105,7 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
     const { activeChallenge, checkIn, loading, dailyProgress, failChallenge, liftChallengeBan, toggleTaskCompletion } = useChallenges();
     const [showStudyGoalPopup, setShowStudyGoalPopup] = useState(false);
     const [viewingDay, setViewingDay] = useState(config.currentDay);
+    const [checkInStatus, setCheckInStatus] = useState<{ enabled: boolean, message: string }>({ enabled: false, message: "Loading..." });
 
     useEffect(() => {
         const studyGoal = dailyProgress?.['studyTime'];
@@ -114,6 +115,37 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
             return () => clearTimeout(timer);
         }
     }, [dailyProgress]);
+
+    // Check-in timer logic
+    useEffect(() => {
+        if (!config.checkInTime) return;
+
+        const interval = setInterval(() => {
+            const now = new Date();
+            const [hours, minutes] = config.checkInTime!.split(':').map(Number);
+            
+            const checkInStart = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
+            const checkInEnd = addDays(checkInStart, 10); // Check-in window is 10 minutes
+            
+            if (now < checkInStart) {
+                const diff = differenceInMilliseconds(checkInStart, now);
+                const h = Math.floor(diff / 3600000);
+                const m = Math.floor((diff % 3600000) / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                setCheckInStatus({ enabled: false, message: `Opens in ${h}h ${m}m ${s}s` });
+            } else if (now >= checkInStart && now <= checkInEnd) {
+                const diff = differenceInMilliseconds(checkInEnd, now);
+                const m = Math.floor(diff / 60000);
+                const s = Math.floor((diff % 60000) / 1000);
+                setCheckInStatus({ enabled: true, message: `Closes in ${m}m ${s}s` });
+            } else {
+                setCheckInStatus({ enabled: false, message: "Window Closed" });
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+
+    }, [config.checkInTime]);
     
     if (loading) {
         return (
@@ -153,17 +185,6 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
 
     const currentDayProgress = config.progress[config.currentDay] || {};
     const allGoalsMet = config.dailyGoals.every(g => currentDayProgress[g.id]?.completed);
-    
-    let isCheckInDisabled = true;
-    if(config.checkInTime) {
-        const now = new Date();
-        const [hours, minutes] = config.checkInTime.split(':').map(Number);
-        const checkInDeadline = new Date();
-        checkInDeadline.setHours(hours, minutes, 0, 0);
-        if (now >= checkInDeadline) {
-            isCheckInDisabled = false;
-        }
-    }
     
     const plannedTasksForDay = config.plannedTasks?.[viewingDay] || [];
     const startDate = new Date(config.startDate);
@@ -278,11 +299,11 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
             </div>
              <div className="space-y-6">
                 <div className="flex justify-center items-center flex-col gap-2">
-                    <Button size="lg" onClick={checkIn} disabled={isCheckInDisabled || allGoalsMet}>
+                    <Button size="lg" onClick={checkIn} disabled={!checkInStatus.enabled || allGoalsMet}>
                         {allGoalsMet ? <CheckCircle className="mr-2"/> : <CalendarCheck className="mr-2"/>}
                         {allGoalsMet ? 'All Goals Met for Today!' : "Daily Check-in"}
                     </Button>
-                    {config.checkInTime && <p className="text-sm text-muted-foreground">Required check-in time: {config.checkInTime}</p>}
+                    <p className="text-sm text-muted-foreground font-mono">{checkInStatus.message}</p>
                 </div>
                  <Card>
                     <CardHeader><CardTitle>Rules & Info</CardTitle></CardHeader>
