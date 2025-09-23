@@ -75,6 +75,7 @@ function AccountSettings() {
         <Card>
             <CardContent className="p-0">
                  <UserProfile
+                    routing="hash"
                     appearance={{
                         variables: {
                             colorBackground: 'hsl(var(--background))',
