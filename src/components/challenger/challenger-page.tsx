@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect } from 'react';
-import { useChallenges, type ActiveChallenge, type ChallengeConfig, type PlannedTask } from '@/hooks/use-challenges';
+import { useChallenges, type ActiveChallenge, type PlannedTask } from '@/hooks/use-challenges';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Lock, ArrowLeft, CheckCircle, XCircle, Zap, Clock, ListTodo, CalendarCheck, ShieldQuestion, Loader2, Trophy, AlertTriangle, Sparkles, Check, Swords } from 'lucide-react';
@@ -104,6 +104,7 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
     const { user } = useUser();
     const { activeChallenge, checkIn, loading, dailyProgress, failChallenge, liftChallengeBan, toggleTaskCompletion } = useChallenges();
     const [showStudyGoalPopup, setShowStudyGoalPopup] = useState(false);
+    const [viewingDay, setViewingDay] = useState(config.currentDay);
 
     useEffect(() => {
         const studyGoal = dailyProgress?.['studyTime'];
@@ -116,8 +117,8 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
     
     if (loading) {
         return (
-            <div className="flex h-full items-center justify-center">
-                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <div className="flex h-full w-full items-center justify-center">
+                <Loader2 className="h-10 w-10 animate-spin" />
             </div>
         );
     }
@@ -162,7 +163,7 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
         }
     }
     
-    const plannedTasksForToday = config.plannedTasks?.[config.currentDay] || [];
+    const plannedTasksForDay = config.plannedTasks?.[viewingDay] || [];
 
     return (
         <div className="space-y-8">
@@ -192,28 +193,29 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                 })}
             </div>
             
-            {plannedTasksForToday.length > 0 && (
+            {plannedTasksForDay.length > 0 && (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Day {config.currentDay}'s Tasks</CardTitle>
+                        <CardTitle>Day {viewingDay}'s Tasks</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        {plannedTasksForToday.map(task => (
+                        {plannedTasksForDay.map(task => (
                              <div 
                                 key={task.id}
                                 className={cn(
                                     "flex items-center gap-4 rounded-lg border p-3 pl-4 transition-colors",
-                                    task.completed ? "bg-muted/50" : "hover:bg-muted/50"
+                                    task.completed ? "bg-muted/50" : ""
                                 )}
                             >
                                 <Checkbox
                                     id={task.id}
                                     checked={task.completed}
                                     onCheckedChange={() => toggleTaskCompletion(config.currentDay, task.id)}
+                                    disabled={viewingDay !== config.currentDay}
                                 />
                                 <label
                                     htmlFor={task.id}
-                                    className={cn("flex-1 cursor-pointer text-sm font-medium", task.completed && "text-muted-foreground line-through")}
+                                    className={cn("flex-1 text-sm font-medium", task.completed && "text-muted-foreground line-through", viewingDay === config.currentDay && 'cursor-pointer')}
                                 >
                                     {task.text}
                                 </label>
@@ -240,15 +242,24 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                             const day = i + 1;
                             const isCompleted = !!config.progress[day] && config.dailyGoals.every(g => config.progress[day]?.[g.id]?.completed);
                             const isCurrent = day === config.currentDay;
+                            const isViewing = day === viewingDay;
+
                             return (
-                                <div key={day} className={cn(
-                                    "h-12 w-12 flex flex-col items-center justify-center rounded-lg border-2 text-xs font-bold",
-                                    isCurrent && "border-primary ring-2 ring-primary/50 animate-pulse",
-                                    isCompleted && "bg-green-500/20 border-green-500 text-green-500",
-                                    day < config.currentDay && !isCompleted && "bg-destructive/20 border-destructive text-destructive",
-                                )}>
+                                <button
+                                    key={day}
+                                    onClick={() => day <= config.currentDay && setViewingDay(day)}
+                                    disabled={day > config.currentDay}
+                                    className={cn(
+                                        "h-12 w-12 flex flex-col items-center justify-center rounded-lg border-2 text-xs font-bold transition-all",
+                                        isCurrent && "border-primary",
+                                        isViewing && "ring-2 ring-primary/80 scale-110",
+                                        isCompleted && "bg-green-500/20 border-green-500 text-green-500",
+                                        day < config.currentDay && !isCompleted && "bg-destructive/20 border-destructive text-destructive",
+                                        day > config.currentDay && "bg-muted/50 opacity-60 cursor-not-allowed"
+                                    )}
+                                >
                                    <span> DAY</span><span>{day}</span>
-                                </div>
+                                </button>
                             )
                          })}
                     </CardContent>
@@ -279,7 +290,7 @@ export default function ChallengerPage({ config, isLocked = false }: ChallengerP
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => failChallenge()}>Yes, Forfeit</AlertDialogAction>
+                                    <AlertDialogAction onClick={() => failChallenge(false)}>Yes, Forfeit</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
