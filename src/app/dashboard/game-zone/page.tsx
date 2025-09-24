@@ -1,15 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2, Crown, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAdmin } from '@/hooks/use-admin';
-import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
-import { lockableFeatures, type LockableFeature } from '@/lib/features';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { useRouter } from 'next/navigation';
 
 
 const gameCategories = [
@@ -60,25 +63,42 @@ const gameCategories = [
     },
 ];
 
-export default function GameZoneHubPage() {
-    const { featureLocks, currentUserData } = useAdmin();
-    const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
+const PREMIUM_PASSWORD = "freebydev";
 
-    const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'], href: string) => {
-        const isLocked = featureLocks?.[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId);
-        if (isLocked) {
-            e.preventDefault();
-            const feature = lockableFeatures.find(f => f.id === featureId);
-            if (feature) {
-                setFeatureToUnlock(feature);
-            }
+export default function GameZoneHubPage() {
+    const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
+    const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+    const [passwordInput, setPasswordInput] = useState('');
+    const { toast } = useToast();
+    const router = useRouter();
+    
+    const handlePremiumClick = (e: React.MouseEvent) => {
+        if (isPremiumUnlocked) {
+            router.push('/dashboard/game-zone/premium');
         } else {
-            // Allow navigation if not locked
+            e.preventDefault();
+            setIsPasswordDialogOpen(true);
         }
     };
     
-    const premiumGamesFeatureId = 'premium-games' as LockableFeature['id'];
-    const isPremiumLocked = featureLocks?.[premiumGamesFeatureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(premiumGamesFeatureId);
+    const handlePasswordSubmit = () => {
+        if (passwordInput.toLowerCase() === PREMIUM_PASSWORD) {
+            setIsPremiumUnlocked(true);
+            setIsPasswordDialogOpen(false);
+            setPasswordInput('');
+            toast({
+                title: "Access Granted!",
+                description: "Redirecting you to the Premium Games section...",
+            });
+            router.push('/dashboard/game-zone/premium');
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Incorrect Password',
+                description: 'Please try again.',
+            });
+        }
+    };
     
     return (
         <div className="space-y-8">
@@ -92,7 +112,7 @@ export default function GameZoneHubPage() {
             
             <div className="space-y-8">
                 {/* Premium Game Card */}
-                <Link href={isPremiumLocked ? '#' : "/dashboard/game-zone/premium"} className="group block" onClick={(e) => handleFeatureClick(e, premiumGamesFeatureId, "/dashboard/game-zone/premium")}>
+                <Link href={'/dashboard/game-zone/premium'} className="group block" onClick={handlePremiumClick}>
                     <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-yellow-900/80 via-black to-black border-yellow-700/50 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                         <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
                         <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
@@ -104,8 +124,8 @@ export default function GameZoneHubPage() {
                                 <p className="text-yellow-400/70 mt-1 text-sm sm:text-base">Exclusive games with unique challenges and legendary rewards.</p>
                             </div>
                             <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
-                                {isPremiumLocked ? <Lock className="sm:mr-2 h-4 w-4" /> : <ArrowRight className="sm:ml-2 h-4 w-4" />}
-                                <span className="hidden sm:inline ml-2">{isPremiumLocked ? 'Unlock' : 'Explore'}</span> 
+                                {isPremiumUnlocked ? <ArrowRight className="sm:ml-2 h-4 w-4" /> : <Lock className="sm:mr-2 h-4 w-4" />}
+                                <span className="hidden sm:inline ml-2">{isPremiumUnlocked ? 'Explore' : 'Unlock'}</span> 
                             </Button>
                         </CardContent>
                     </Card>
@@ -128,13 +148,38 @@ export default function GameZoneHubPage() {
                 </div>
             </div>
             
-            {featureToUnlock && (
-                <FeatureUnlockDialog 
-                    feature={featureToUnlock}
-                    isOpen={!!featureToUnlock}
-                    onOpenChange={(isOpen) => !isOpen && setFeatureToUnlock(null)}
-                />
-            )}
+            <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Unlock Premium Games</DialogTitle>
+                        <DialogDescription>
+                            Enter the password to access the premium section.
+                        </DialogDescription>
+                    </DialogHeader>
+                     <div className="py-4 space-y-4">
+                        <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">For now, premium access is free for all users. Use the password below:</p>
+                            <p className="font-mono font-bold text-lg text-blue-600 dark:text-blue-200 mt-2 bg-black/20 py-1 px-2 rounded-md inline-block">{PREMIUM_PASSWORD}</p>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="password">Password</Label>
+                            <Input
+                                id="password"
+                                type="password"
+                                value={passwordInput}
+                                onChange={(e) => setPasswordInput(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                            />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button onClick={handlePasswordSubmit}>Unlock</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
         </div>
     );
