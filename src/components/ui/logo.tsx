@@ -8,7 +8,7 @@ export function Logo({ className, ...props }: { className?: string }) {
       className={cn("relative h-10 w-10", className)} {...props}
     >
       <Image
-        src="/logo.png"
+        src="/logo.jpg"
         alt="MindMate Logo"
         fill
         sizes="(max-width: 768px) 10vw, (max-width: 1200px) 5vw, 5vw"
