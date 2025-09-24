@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2, Crown, Lock } from 'lucide-react';
+import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2, Crown, Lock, KeyRound } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -13,6 +13,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { lockableFeatures } from '@/lib/features';
+import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
+import { Separator } from '@/components/ui/separator';
 
 
 const gameCategories = [
@@ -64,30 +67,37 @@ const gameCategories = [
 ];
 
 const PREMIUM_PASSWORD = "freebydev";
+const PREMIUM_FEATURE_ID = 'premium-games';
 
 export default function GameZoneHubPage() {
-    const [isPremiumUnlocked, setIsPremiumUnlocked] = useState(false);
-    const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
+    const { currentUserData, featureLocks } = useAdmin();
+    const [isSessionUnlocked, setIsSessionUnlocked] = useState(false);
+    const [isUnlockDialogOpen, setIsUnlockDialogOpen] = useState(false);
     const [passwordInput, setPasswordInput] = useState('');
+    const [featureToUnlock, setFeatureToUnlock] = useState(false);
+
     const { toast } = useToast();
     const router = useRouter();
+
+    const isPermanentlyUnlocked = currentUserData?.unlockedFeatures?.includes(PREMIUM_FEATURE_ID);
+    const isLocked = !isPermanentlyUnlocked && !isSessionUnlocked;
     
     const handlePremiumClick = (e: React.MouseEvent) => {
-        if (isPremiumUnlocked) {
+        if (!isLocked) {
             router.push('/dashboard/game-zone/premium');
         } else {
             e.preventDefault();
-            setIsPasswordDialogOpen(true);
+            setIsUnlockDialogOpen(true);
         }
     };
     
     const handlePasswordSubmit = () => {
         if (passwordInput.toLowerCase() === PREMIUM_PASSWORD) {
-            setIsPremiumUnlocked(true);
-            setIsPasswordDialogOpen(false);
+            setIsSessionUnlocked(true);
+            setIsUnlockDialogOpen(false);
             setPasswordInput('');
             toast({
-                title: "Access Granted!",
+                title: "Temporary Access Granted!",
                 description: "Redirecting you to the Premium Games section...",
             });
             router.push('/dashboard/game-zone/premium');
@@ -99,7 +109,14 @@ export default function GameZoneHubPage() {
             });
         }
     };
+
+    const handlePurchaseClick = () => {
+        setIsUnlockDialogOpen(false);
+        setFeatureToUnlock(true);
+    };
     
+    const premiumFeatureDetails = lockableFeatures.find(f => f.id === PREMIUM_FEATURE_ID);
+
     return (
         <div className="space-y-8">
             <div>
@@ -124,8 +141,8 @@ export default function GameZoneHubPage() {
                                 <p className="text-yellow-400/70 mt-1 text-sm sm:text-base">Exclusive games with unique challenges and legendary rewards.</p>
                             </div>
                             <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
-                                {isPremiumUnlocked ? <ArrowRight className="sm:ml-2 h-4 w-4" /> : <Lock className="sm:mr-2 h-4 w-4" />}
-                                <span className="hidden sm:inline ml-2">{isPremiumUnlocked ? 'Explore' : 'Unlock'}</span> 
+                                {isLocked ? <Lock className="sm:mr-2 h-4 w-4" /> : <ArrowRight className="sm:ml-2 h-4 w-4" />}
+                                <span className="hidden sm:inline ml-2">{isLocked ? 'Unlock' : 'Explore'}</span> 
                             </Button>
                         </CardContent>
                     </Card>
@@ -148,38 +165,55 @@ export default function GameZoneHubPage() {
                 </div>
             </div>
             
-            <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+            <Dialog open={isUnlockDialogOpen} onOpenChange={setIsUnlockDialogOpen}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Unlock Premium Games</DialogTitle>
                         <DialogDescription>
-                            Enter the password to access the premium section.
+                            Choose how you want to access the premium section.
                         </DialogDescription>
                     </DialogHeader>
-                     <div className="py-4 space-y-4">
-                        <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
-                            <p className="text-sm text-blue-700 dark:text-blue-300">For now, premium access is free for all users. Use the password below:</p>
-                            <p className="font-mono font-bold text-lg text-blue-600 dark:text-blue-200 mt-2 bg-black/20 py-1 px-2 rounded-md inline-block">{PREMIUM_PASSWORD}</p>
+                     <div className="py-4 space-y-6">
+                        <div className="text-center">
+                            <Button onClick={handlePurchaseClick} className="w-full h-16 text-lg">Unlock Permanently (100 Credits)</Button>
+                             <p className="text-xs text-muted-foreground mt-2">This is a one-time purchase for lifetime access.</p>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                value={passwordInput}
-                                onChange={(e) => setPasswordInput(e.target.value)}
-                                onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-                            />
+                        
+                        <div className="relative">
+                            <Separator />
+                            <span className="absolute left-1/2 -translate-x-1/2 -top-3 bg-background px-2 text-sm text-muted-foreground">OR</span>
+                        </div>
+
+                        <div className="space-y-4">
+                             <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 text-center">
+                                <p className="text-sm text-blue-700 dark:text-blue-300">For a temporary trial, use the password below:</p>
+                                <p className="font-mono font-bold text-lg text-blue-600 dark:text-blue-200 mt-2 bg-black/20 py-1 px-2 rounded-md inline-block">{PREMIUM_PASSWORD}</p>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Temporary Password</Label>
+                                <Input
+                                    id="password"
+                                    type="password"
+                                    value={passwordInput}
+                                    onChange={(e) => setPasswordInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                                />
+                            </div>
+                             <Button onClick={handlePasswordSubmit} variant="secondary" className="w-full">
+                                <KeyRound className="mr-2 h-4 w-4"/> Enter for this Session
+                             </Button>
                         </div>
                     </div>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
-                        </DialogClose>
-                        <Button onClick={handlePasswordSubmit}>Unlock</Button>
-                    </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+             {premiumFeatureDetails && (
+                <FeatureUnlockDialog
+                    feature={premiumFeatureDetails}
+                    isOpen={featureToUnlock}
+                    onOpenChange={setFeatureToUnlock}
+                />
+            )}
 
         </div>
     );

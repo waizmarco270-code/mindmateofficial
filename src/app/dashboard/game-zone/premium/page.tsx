@@ -1,4 +1,3 @@
-
 'use client';
 import Link from "next/link";
 import { ArrowLeft, Crown, Atom, Book, Brain, Sparkles, ArrowRight } from "lucide-react";
@@ -9,7 +8,6 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { cn } from "@/lib/utils";
 
 // Dummy icons to prevent errors since they are used in the dialog content
-// Moved to the top to fix initialization error
 const BookIcon = (props: any) => <Book {...props} />;
 const BrainIcon = (props: any) => <Brain {...props} />;
 const SparklesIcon = (props: any) => <Sparkles {...props} />;
