@@ -170,7 +170,7 @@ export default function ElementQuestChallengeHubPage() {
                                     )}>
                                         <div>
                                             <p className={cn("font-bold", hasClaimed && "text-muted-foreground")}>Score {milestone}</p>
-                                            <p className={cn("text-sm font-semibold", hasClaimed ? "text-green-600" : "text-primary")}>+{reward} Credits</p>
+                                            <p className={cn("text-sm font-semibold text-green-500")}>+{reward} Credits</p>
                                         </div>
                                         {hasClaimed ? (
                                             <div className="flex items-center gap-2 text-sm font-semibold text-green-600"><CheckCircle className="h-4 w-4"/> Claimed</div>
