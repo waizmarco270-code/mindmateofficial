@@ -23,16 +23,7 @@ interface Element {
 
 const allElements = periodicTableData.elements as Element[];
 const MAX_LIVES = 3;
-const TIME_LIMITS: Record<Element['block'], number> = { s: 30, p: 45, d: 60, f: 60 };
-
-const getGridClassForBlock = (block: Element['block']) => {
-    switch(block) {
-        case 's': return 'grid-cols-2';
-        case 'p': return 'grid-cols-6';
-        case 'd': return 'grid-cols-10';
-        default: return 'grid-cols-18';
-    }
-}
+const TIME_LIMITS: Record<Element['block'], number> = { s: 30, p: 45, d: 60, f: 90 };
 
 export function PeriodicTableGame() {
     const { isSignedIn } = useUser();
@@ -69,10 +60,14 @@ export function PeriodicTableGame() {
         setGameState('playing');
     };
 
-    const handleCellClick = (period: number, group: number) => {
+    const handleCellClick = (period: number, group: number, isFBlock = false, fBlockIndex = 0) => {
         if (!currentElement) return;
 
-        if (currentElement.period === period && currentElement.group === group) {
+        const isCorrectFBlockPlacement = isFBlock &&
+            currentElement.period === period &&
+            (currentElement.atomicNumber - (currentElement.period === 6 ? 57 : 89)) === fBlockIndex;
+
+        if ((!isFBlock && currentElement.period === period && currentElement.group === group) || isCorrectFBlockPlacement) {
             const newPlaced = { ...placedElements, [currentElement.atomicNumber]: currentElement };
             setPlacedElements(newPlaced);
             
@@ -146,6 +141,43 @@ export function PeriodicTableGame() {
         )
     };
 
+    const renderFBlock = () => {
+        const lanthanides = allElements.filter(e => e.atomicNumber >= 57 && e.atomicNumber <= 70);
+        const actinides = allElements.filter(e => e.atomicNumber >= 89 && e.atomicNumber <= 102);
+        
+        const renderRow = (elements: Element[], period: number) => elements.map((element, index) => {
+            const isPlaced = placedElements[element.atomicNumber];
+            return (
+                 <button
+                    key={element.atomicNumber}
+                    onClick={() => handleCellClick(period, 3, true, index)}
+                    disabled={isPlaced || gameState !== 'playing'}
+                    className={cn(
+                        "aspect-square border rounded-md flex flex-col items-center justify-center text-xs transition-all duration-200",
+                        "bg-muted/30 hover:bg-muted/70 disabled:cursor-not-allowed",
+                        isPlaced ? "bg-primary/20 border-primary" : ""
+                    )}
+                >
+                    {isPlaced ? (
+                        <>
+                            <div className="font-bold text-lg">{element.symbol}</div>
+                            <div className="text-[10px] hidden sm:block">{element.name}</div>
+                        </>
+                    ) : (
+                        <div className="text-muted-foreground/50">{element.atomicNumber}</div>
+                    )}
+                </button>
+            )
+        });
+
+        return (
+            <div className="space-y-2">
+                <div className="grid grid-cols-14 gap-1">{renderRow(lanthanides, 6)}</div>
+                <div className="grid grid-cols-14 gap-1">{renderRow(actinides, 7)}</div>
+            </div>
+        )
+    }
+
     return (
         <Card className="relative">
             <SignedOut>
@@ -164,7 +196,7 @@ export function PeriodicTableGame() {
                                 <TabsTrigger value="s" onClick={() => startGame('s')}>S-Block</TabsTrigger>
                                 <TabsTrigger value="p" onClick={() => startGame('p')}>P-Block</TabsTrigger>
                                 <TabsTrigger value="d" onClick={() => startGame('d')}>D-Block</TabsTrigger>
-                                <TabsTrigger value="f" disabled>F-Block</TabsTrigger>
+                                <TabsTrigger value="f" onClick={() => startGame('f')}>F-Block</TabsTrigger>
                             </TabsList>
                         </Tabs>
                     </div>
@@ -188,12 +220,14 @@ export function PeriodicTableGame() {
                             </div>
                         </div>
 
-                         <div className="grid grid-cols-[2fr_1fr_10fr_1fr_5fr] gap-1">
-                            <div>{selectedBlock === 's' && renderBlock('s')}</div>
-                            <div></div>
-                            <div>{selectedBlock === 'd' && renderBlock('d')}</div>
-                            <div></div>
-                            <div>{selectedBlock === 'p' && renderBlock('p')}</div>
+                         <div className="space-y-2">
+                            {selectedBlock === 'f' ? renderFBlock() : (
+                                <div className="grid grid-cols-[2fr,10fr,6fr] gap-1">
+                                    <div>{selectedBlock === 's' && renderBlock('s')}</div>
+                                    <div>{selectedBlock === 'd' && renderBlock('d')}</div>
+                                    <div>{selectedBlock === 'p' && renderBlock('p')}</div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
@@ -201,3 +235,5 @@ export function PeriodicTableGame() {
         </Card>
     );
 }
+
+    
