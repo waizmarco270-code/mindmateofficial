@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useUser } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Atom, Award, Brain, Check, Clock, Heart, Loader2, Play, RotateCw, X, ArrowLeft, Trophy, Maximize, Minimize } from 'lucide-react';
@@ -27,17 +27,17 @@ const MAX_LIVES = 3;
 const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 180, d: 240, f: 300 };
 
 const categoryColors: Record<string, string> = {
-    'alkali metal': 'bg-gradient-to-br from-red-500 to-orange-500 border-red-400',
-    'alkaline earth metal': 'bg-gradient-to-br from-orange-500 to-amber-500 border-orange-400',
-    'lanthanide': 'bg-gradient-to-br from-amber-400 to-yellow-500 border-amber-300',
-    'actinide': 'bg-gradient-to-br from-fuchsia-500 to-pink-500 border-fuchsia-400',
-    'transition metal': 'bg-gradient-to-br from-green-500 to-teal-500 border-green-400',
-    'post-transition metal': 'bg-gradient-to-br from-teal-500 to-cyan-500 border-teal-400',
-    'metalloid': 'bg-gradient-to-br from-cyan-500 to-sky-500 border-cyan-400',
-    'polyatomic nonmetal': 'bg-gradient-to-br from-blue-500 to-indigo-500 border-blue-400',
-    'diatomic nonmetal': 'bg-gradient-to-br from-sky-500 to-blue-500 border-sky-400',
-    'noble gas': 'bg-gradient-to-br from-indigo-500 to-violet-500 border-indigo-400',
-    'unknown': 'bg-gradient-to-br from-slate-500 to-gray-500 border-slate-400',
+    'alkali metal': 'bg-red-500 border-red-400',
+    'alkaline earth metal': 'bg-orange-500 border-orange-400',
+    'lanthanide': 'bg-amber-400 border-amber-300 text-gray-800',
+    'actinide': 'bg-fuchsia-500 border-fuchsia-400',
+    'transition metal': 'bg-green-500 border-green-400',
+    'post-transition metal': 'bg-teal-500 border-teal-400',
+    'metalloid': 'bg-cyan-500 border-cyan-400',
+    'polyatomic nonmetal': 'bg-blue-500 border-blue-400',
+    'diatomic nonmetal': 'bg-sky-500 border-sky-400',
+    'noble gas': 'bg-indigo-500 border-indigo-400',
+    'unknown': 'bg-slate-500 border-slate-400',
 };
 
 
@@ -198,8 +198,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 disabled={!element || isPlaced || gameState !== 'playing'}
                 className={cn(
                     "relative aspect-square rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 shadow-md",
-                    "sm:h-24 sm:w-24 h-20 w-full", // Base size
-                    "lg:h-28 lg:w-28", // Larger on large screens
+                    "sm:h-24 sm:w-24 h-full w-full",
                     !element && "border-transparent bg-transparent shadow-none",
                     element && !isPlaced && "bg-slate-100 dark:bg-slate-800/80 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
                     isPlaced ? 'text-white' : 'border-border'
@@ -211,11 +210,11 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                      <motion.div 
                         initial={{scale: 0.5, opacity: 0}} 
                         animate={{scale: 1, opacity: 1}} 
-                        className={cn("text-center w-full h-full flex flex-col items-center justify-center rounded-md bg-gradient-to-br p-1", categoryClass)}
+                        className={cn("text-center w-full h-full flex flex-col items-center justify-center rounded-md bg-gradient-to-br p-1 border-2", categoryClass)}
                     >
-                        <div className="absolute top-1 right-1.5 text-[10px] font-bold opacity-80">{element.atomicNumber}</div>
-                        <div className="font-black text-xl sm:text-2xl drop-shadow-md">{element.symbol}</div>
-                        <div className="text-[10px] font-bold truncate px-1">{element.name}</div>
+                        <div className="absolute top-1 right-1.5 text-[9px] font-bold opacity-80">{element.atomicNumber}</div>
+                        <div className="font-black text-lg sm:text-xl drop-shadow-md">{element.symbol}</div>
+                        <div className="text-[9px] font-bold truncate px-0.5">{element.name}</div>
                     </motion.div>
                 ) : element ? (
                     <div className="text-muted-foreground/30 text-xs">{element.atomicNumber}</div>
@@ -277,7 +276,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                     </Card>
                     
                     <div className="flex justify-center overflow-x-auto">
-                        <div className="grid gap-1 p-1" style={gridStyles}>
+                        <div className="grid gap-2 p-1" style={gridStyles}>
                              {gridTemplate.flat().map((el, index) => renderGridCell(el, index))}
                         </div>
                     </div>
