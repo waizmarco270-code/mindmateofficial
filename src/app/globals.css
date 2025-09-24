@@ -448,19 +448,9 @@
     background-size: 100% 5px, 5px 100%;
     animation: lofi-rain 0.2s linear infinite;
   }
-  .animated-rainbow-progress {
-    background: linear-gradient(
-      -45deg, 
-      #ff79c6, 
-      #bd93f9, 
-      #8be9fd, 
-      #50fa7b, 
-      #f1fa8c, 
-      #ffb86c, 
-      #ff5555
-    );
-    background-size: 400% 400%;
-    animation: rainbow-progress 3s linear infinite;
+  @keyframes rainbow-progress {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
   }
 
   .animate-flicker {
@@ -477,5 +467,12 @@
 
   .text-shadow-glow {
     text-shadow: 0 0 8px currentColor;
+  }
+
+  .hexagon-clipper {
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  }
+  .triangle-clipper {
+      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
   }
 }

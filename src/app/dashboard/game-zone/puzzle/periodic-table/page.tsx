@@ -14,32 +14,47 @@ const gameModes = [
     {
         id: 'learn',
         title: 'Learn Mode',
-        description: 'Explore the periodic table blocks. Click on elements to see their details. No timer, no pressure.',
+        description: 'Explore the periodic table. No timer, no pressure.',
         icon: Book,
         href: '/dashboard/game-zone/puzzle/periodic-table/learn',
+        shape: 'hexagon',
         color: 'from-blue-500 to-sky-500',
         shadow: 'shadow-blue-500/30'
     },
     {
+        id: 'challenge',
+        title: 'Challenge Mode',
+        description: 'Race against the clock to place elements correctly.',
+        icon: Sparkles,
+        href: '/dashboard/game-zone/puzzle/periodic-table/challenge',
+        shape: 'triangle',
+        color: 'from-red-500 to-rose-500',
+        shadow: 'shadow-red-500/30'
+    },
+     {
         id: 'practice',
         title: 'Practice Mode',
-        description: 'Test your knowledge with hints and a relaxed pace. (Coming Soon!)',
+        description: 'Test your knowledge with hints and a relaxed pace.',
         icon: Brain,
         href: '#',
+        shape: 'circle',
         color: 'from-amber-500 to-yellow-500',
         shadow: 'shadow-amber-500/30',
         disabled: true
     },
-    {
-        id: 'challenge',
-        title: 'Challenge Mode',
-        description: 'Race against the clock to place elements correctly. A true test of your memory and speed.',
-        icon: Sparkles,
-        href: '/dashboard/game-zone/puzzle/periodic-table/challenge',
-        color: 'from-red-500 to-rose-500',
-        shadow: 'shadow-red-500/30'
-    },
 ];
+
+const Shape = ({ shape, className }: { shape: string, className?: string }) => {
+    switch (shape) {
+        case 'hexagon':
+            return <div className={cn("hexagon-clipper", className)}><div className={cn("h-full w-full bg-gradient-to-br", className)}></div></div>;
+        case 'triangle':
+            return <div className={cn("triangle-clipper", className)}></div>;
+        case 'circle':
+        default:
+            return <div className={cn("rounded-full", className)}></div>;
+    }
+}
 
 export default function ElementQuestHubPage() {
     return (
@@ -53,38 +68,41 @@ export default function ElementQuestHubPage() {
                 <p className="text-muted-foreground">Learn, practice, and challenge your knowledge of the periodic table.</p>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 pt-10">
                 {gameModes.map((mode, index) => (
                     <motion.div
                         key={mode.id}
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 50 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: index * 0.1 }}
-                        className={cn(mode.disabled && "opacity-50 cursor-not-allowed")}
+                        className={cn("relative flex flex-col items-center text-center group", mode.disabled && "opacity-50 cursor-not-allowed")}
                     >
-                         <Link href={mode.href} className={cn("block h-full", mode.disabled && "pointer-events-none")}>
-                           <Card className={cn(
-                               "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2",
-                               mode.shadow
-                            )}>
-                               <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-tr", mode.color)}></div>
-                               <CardHeader>
-                                   <div className="flex items-center gap-4">
-                                       <div className={cn("p-3 rounded-lg bg-gradient-to-br", mode.color)}>
-                                            <mode.icon className="h-6 w-6 text-white"/>
-                                       </div>
-                                       <CardTitle>{mode.title}</CardTitle>
-                                   </div>
-                               </CardHeader>
-                               <CardContent>
-                                   <p className="text-muted-foreground">{mode.description}</p>
-                               </CardContent>
-                               <CardContent>
-                                    <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors">
-                                       {mode.disabled ? 'Coming Soon' : `Start ${mode.title}`} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                   </Button>
-                               </CardContent>
-                           </Card>
+                         <Link href={mode.href} className={cn("block h-full w-full", mode.disabled && "pointer-events-none")}>
+                           <motion.div
+                             animate={{ y: [-5, 5] }}
+                             transition={{
+                                repeat: Infinity,
+                                repeatType: "reverse",
+                                duration: 2.5,
+                                delay: index * 0.2,
+                                ease: "easeInOut"
+                             }}
+                             className={cn("relative h-48 w-48 flex items-center justify-center transition-all duration-300 ease-in-out group-hover:scale-110", mode.shadow, 'hover:shadow-2xl')}
+                           >
+                              <Shape shape={mode.shape} className={cn("h-full w-full absolute", mode.color)} />
+                              <div className="absolute inset-0 bg-grid-slate-800/30 opacity-50 group-hover:opacity-100 transition-opacity"></div>
+                               <div className="relative z-10 flex flex-col items-center justify-center p-4 text-white">
+                                 <mode.icon className="h-16 w-16 mb-2 text-shadow-glow" />
+                               </div>
+                           </motion.div>
+
+                            <div className="mt-6">
+                                <h3 className="text-2xl font-bold">{mode.title}</h3>
+                                <p className="text-muted-foreground mt-1 h-12">{mode.description}</p>
+                                 <Button variant="outline" className="mt-4 bg-background/50 group-hover:bg-background transition-colors">
+                                   {mode.disabled ? 'Coming Soon' : `Start ${mode.title}`} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                               </Button>
+                            </div>
                         </Link>
                     </motion.div>
                 ))}
@@ -92,4 +110,3 @@ export default function ElementQuestHubPage() {
         </div>
     );
 }
-
