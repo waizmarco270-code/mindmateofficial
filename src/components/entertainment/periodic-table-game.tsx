@@ -128,7 +128,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
 
         if (!document.fullscreenElement) {
             elem.requestFullscreen().catch(err => {
-                toast({ variant: 'destructive', title: `Error entering fullscreen: ${err.message}` });
+                toast({ variant: 'destructive', title: `Error entering fullscreen: ${'${err.message}'}` });
             });
         } else {
             document.exitFullscreen();
@@ -185,7 +185,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
             const remaining = elementsToPlace.filter(e => e.atomicNumber !== currentElement.atomicNumber);
             setElementsToPlace(remaining);
             setScore(prev => prev + 10);
-            toast({ title: 'Correct!', description: `+10 points for placing ${currentElement.name}.`, className: "bg-green-500/10 text-green-700 dark:text-green-300" });
+            toast({ title: 'Correct!', description: `+10 points for placing ${'${currentElement.name}'}.`, className: "bg-green-500/10 text-green-700 dark:text-green-300" });
 
             if (remaining.length === 0) {
                 setGameState('gameOver');
@@ -207,7 +207,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
 
         return (
             <motion.button
-                key={element ? element.atomicNumber : `empty-${cellIndex}`}
+                key={element ? element.atomicNumber : `empty-${'${cellIndex}'}`}
                 onClick={() => handleCellClick(element)}
                 disabled={!element || (isPlaced && mode !== 'learn') || (gameState !== 'playing' && mode !== 'learn')}
                 className={cn(
@@ -251,7 +251,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                         <>
                             <DialogHeader>
                                 <DialogTitle className="text-3xl font-bold flex items-center gap-4">
-                                     <span className={cn("text-5xl font-black", categoryColors[selectedElement.category]?.replace(/bg-gradient-to-br|border-\w+-\d+/g, ''))}>{selectedElement.symbol}</span>
+                                     <span className={cn("text-5xl font-black", categoryColors[selectedElement.category]?.replace(/bg-gradient-to-br|border-\\w+-\\d+/g, ''))}>{selectedElement.symbol}</span>
                                      <span>{selectedElement.name} (#{selectedElement.atomicNumber})</span>
                                 </DialogTitle>
                                 <DialogDescription className="capitalize">{selectedElement.category}</DialogDescription>
@@ -260,7 +260,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                                <p><strong>Atomic Mass:</strong> {selectedElement.atomicMass}</p>
                                <p><strong>Electron Config:</strong> {selectedElement.electronConfiguration}</p>
                                <p><strong>Electronegativity:</strong> {selectedElement.electronegativity ?? 'N/A'}</p>
-                               <p><strong>Density:</strong> {selectedElement.density ? `${selectedElement.density} g/cm³` : 'N/A'}</p>
+                               <p><strong>Density:</strong> {selectedElement.density ? `${'${selectedElement.density}'} g/cm³` : 'N/A'}</p>
                                <p className="pt-2 text-muted-foreground">{selectedElement.summary}</p>
                             </div>
                         </>
@@ -277,8 +277,8 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                         <div className="flex items-center gap-1" title="Time Left"><Clock className="h-4 w-4"/> {timeLeft}s</div>
                         <div className="flex items-center gap-1" title="Score"><Award className="h-4 w-4 text-green-500"/> {score}</div>
                         <div className="flex items-center gap-0.5">
-                            {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-5 w-5 text-red-500 fill-red-500"/>)}
-                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-5 w-5 text-muted-foreground/30"/>)}
+                            {[...Array(lives)].map((_, i) => <Heart key={`life-${'${i}'}`} className="h-5 w-5 text-red-500 fill-red-500"/>)}
+                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${'${i}'}`} className="h-5 w-5 text-muted-foreground/30"/>)}
                         </div>
                     </div>
                 )}
@@ -311,7 +311,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                                         transition={{duration: 0.3}}
                                     >
                                         <h2 className="text-4xl font-extrabold tracking-tight text-foreground">
-                                            {currentElement?.name} ({currentElement?.atomicNumber})
+                                            {currentElement?.name}
                                         </h2>
                                     </motion.div>
                                 </AnimatePresence>
