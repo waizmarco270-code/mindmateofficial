@@ -49,10 +49,10 @@ const Shape = ({ shape, className }: { shape: string, className?: string }) => {
         case 'hexagon':
             return <div className={cn("hexagon-clipper", className)}><div className={cn("h-full w-full bg-gradient-to-br", className)}></div></div>;
         case 'triangle':
-             return <div className={cn("triangle-clipper w-full h-full", className)}></div>;
+             return <div className={cn("triangle-clipper", className)}><div className={cn("h-full w-full bg-gradient-to-br", className)}></div></div>;
         case 'circle':
         default:
-            return <div className={cn("rounded-full h-full w-full", className)}></div>;
+            return <div className={cn("rounded-full", className)}><div className={cn("h-full w-full rounded-full bg-gradient-to-br", className)}></div></div>;
     }
 }
 
