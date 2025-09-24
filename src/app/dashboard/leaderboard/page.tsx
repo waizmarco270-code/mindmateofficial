@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -39,6 +39,7 @@ type UserWithStats = User & {
     subjectSprintHighScore: number;
     flappyMindHighScore: number;
     astroAscentHighScore: number;
+    elementQuestTotalScore: number;
     prevWeekEntertainmentTotalScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
     weeklyPomodoroBreakdown: {
@@ -171,15 +172,17 @@ export default function LeaderboardPage() {
                 const subjectSprintHighScore = user.gameHighScores?.subjectSprint || 0;
                 const flappyMindHighScore = user.gameHighScores?.flappyMind || 0;
                 const astroAscentHighScore = user.gameHighScores?.astroAscent || 0;
+                const { s = 0, p = 0, d = 0, f = 0 } = user.elementQuestScores || {};
+                const elementQuestTotalScore = s + p + d + f;
                 
                  // New logic for Entertainment Total Score: slightly weight different games
-                const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5) + (subjectSprintHighScore * 1.1) + flappyMindHighScore + (astroAscentHighScore * 1.3);
+                const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5) + (subjectSprintHighScore * 1.1) + flappyMindHighScore + (astroAscentHighScore * 1.3) + (elementQuestTotalScore * 0.5);
 
                 // BUG FIX: Calculate a separate score for last week's winner calculation.
                 // This logic assumes `gameHighScores` reflects the *current* high scores.
                 // For a true "last week" score, you would need to snapshot scores weekly.
                 // This is a simplified approach that uses the current high scores as a proxy.
-                 const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0) + (user.gameHighScores?.astroAscent || 0);
+                 const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0) + (user.gameHighScores?.astroAscent || 0) + elementQuestTotalScore;
 
                 return { 
                     ...user, 
@@ -195,6 +198,7 @@ export default function LeaderboardPage() {
                     subjectSprintHighScore,
                     flappyMindHighScore,
                     astroAscentHighScore,
+                    elementQuestTotalScore,
                     prevWeekEntertainmentTotalScore: Math.round(prevWeekEntertainmentTotalScore)
                 };
             });
@@ -255,6 +259,10 @@ export default function LeaderboardPage() {
                     <div className="flex items-center gap-1.5">
                         <Rocket className="h-3 w-3 text-lime-500" />
                         <span className="font-semibold">{user.astroAscentHighScore || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Atom className="h-3 w-3 text-cyan-500" />
+                        <span className="font-semibold">{user.elementQuestTotalScore || 0}</span>
                     </div>
                 </div>
             )
@@ -780,3 +788,4 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
 }
 
     
+
