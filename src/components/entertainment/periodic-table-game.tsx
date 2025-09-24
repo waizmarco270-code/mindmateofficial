@@ -25,6 +25,14 @@ const allElements = periodicTableData.elements as Element[];
 const MAX_LIVES = 3;
 const TIME_LIMITS: Record<Element['block'], number> = { s: 30, p: 45, d: 60, f: 90 };
 
+const blockColors: Record<Element['block'], { bg: string, border: string, text: string }> = {
+    s: { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400' },
+    p: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
+    d: { bg: 'bg-sky-500/10', border: 'border-sky-500/30', text: 'text-sky-400' },
+    f: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+};
+
+
 export function PeriodicTableGame() {
     const { isSignedIn } = useUser();
     const { toast } = useToast();
@@ -92,6 +100,8 @@ export function PeriodicTableGame() {
 
      const renderBlock = (block: 's' | 'p' | 'd') => {
         const blockElements = allElements.filter(e => e.block === block);
+        if (blockElements.length === 0) return null;
+        
         const minPeriod = Math.min(...blockElements.map(e => e.period));
         const maxPeriod = Math.max(...blockElements.map(e => e.period));
         const minGroup = Math.min(...blockElements.map(e => e.group));
@@ -110,18 +120,18 @@ export function PeriodicTableGame() {
                             onClick={() => handleCellClick(p, g)}
                             disabled={isPlaced || gameState !== 'playing'}
                             className={cn(
-                                "aspect-square border rounded-md flex flex-col items-center justify-center text-xs transition-all duration-200",
-                                "bg-muted/30 hover:bg-muted/70 disabled:cursor-not-allowed",
-                                isPlaced ? "bg-primary/20 border-primary" : ""
+                                "aspect-square border rounded-lg flex flex-col items-center justify-center text-xs transition-all duration-200",
+                                "bg-card hover:bg-muted disabled:cursor-not-allowed",
+                                isPlaced ? cn(blockColors[element.block].bg, blockColors[element.block].border) : "border-border"
                             )}
                         >
                             {isPlaced ? (
-                                <>
-                                    <div className="font-bold text-lg">{element.symbol}</div>
-                                    <div className="text-[10px] hidden sm:block">{element.name}</div>
-                                </>
+                                <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}}>
+                                    <div className={cn("font-bold text-lg sm:text-xl", blockColors[element.block].text)}>{element.symbol}</div>
+                                    <div className="text-[9px] hidden sm:block">{element.name}</div>
+                                </motion.div>
                             ) : (
-                                <div className="text-muted-foreground/50">{element.atomicNumber}</div>
+                                <div className="text-muted-foreground/30">{element.atomicNumber}</div>
                             )}
                         </button>
                     );
@@ -153,18 +163,18 @@ export function PeriodicTableGame() {
                     onClick={() => handleCellClick(period, 3, true, index)}
                     disabled={isPlaced || gameState !== 'playing'}
                     className={cn(
-                        "aspect-square border rounded-md flex flex-col items-center justify-center text-xs transition-all duration-200",
-                        "bg-muted/30 hover:bg-muted/70 disabled:cursor-not-allowed",
-                        isPlaced ? "bg-primary/20 border-primary" : ""
+                         "aspect-square border rounded-lg flex flex-col items-center justify-center text-xs transition-all duration-200",
+                        "bg-card hover:bg-muted disabled:cursor-not-allowed",
+                        isPlaced ? cn(blockColors.f.bg, blockColors.f.border) : "border-border"
                     )}
                 >
                     {isPlaced ? (
-                        <>
-                            <div className="font-bold text-lg">{element.symbol}</div>
-                            <div className="text-[10px] hidden sm:block">{element.name}</div>
-                        </>
+                        <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}}>
+                            <div className={cn("font-bold text-lg sm:text-xl", blockColors.f.text)}>{element.symbol}</div>
+                            <div className="text-[9px] hidden sm:block">{element.name}</div>
+                        </motion.div>
                     ) : (
-                        <div className="text-muted-foreground/50">{element.atomicNumber}</div>
+                        <div className="text-muted-foreground/30">{element.atomicNumber}</div>
                     )}
                 </button>
             )
@@ -223,9 +233,9 @@ export function PeriodicTableGame() {
                          <div className="space-y-2">
                             {selectedBlock === 'f' ? renderFBlock() : (
                                 <div className="grid grid-cols-[2fr,10fr,6fr] gap-1">
-                                    <div>{selectedBlock === 's' && renderBlock('s')}</div>
-                                    <div>{selectedBlock === 'd' && renderBlock('d')}</div>
-                                    <div>{selectedBlock === 'p' && renderBlock('p')}</div>
+                                    <div className={cn(selectedBlock !== 's' && 'opacity-20 pointer-events-none')}>{renderBlock('s')}</div>
+                                    <div className={cn(selectedBlock !== 'd' && 'opacity-20 pointer-events-none')}>{renderBlock('d')}</div>
+                                    <div className={cn(selectedBlock !== 'p' && 'opacity-20 pointer-events-none')}>{renderBlock('p')}</div>
                                 </div>
                             )}
                         </div>
@@ -236,4 +246,3 @@ export function PeriodicTableGame() {
     );
 }
 
-    
