@@ -8,9 +8,9 @@ import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { LoginWall } from '../ui/login-wall';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { Atom, Award, Brain, Check, Clock, Heart, Loader2, Play, RotateCw, X } from 'lucide-react';
+import { Atom, Award, Brain, Check, Clock, Heart, Loader2, Play, RotateCw, X, ArrowLeft } from 'lucide-react';
 import periodicTableData from '@/app/lib/periodic-table-data.json';
+import Link from 'next/link';
 
 interface Element {
     atomicNumber: number;
@@ -19,32 +19,42 @@ interface Element {
     group: number;
     period: number;
     block: 's' | 'p' | 'd' | 'f';
+    category: string;
 }
 
 const allElements = periodicTableData.elements as Element[];
 const MAX_LIVES = 3;
-const TIME_LIMITS: Record<Element['block'], number> = { s: 30, p: 45, d: 60, f: 90 };
+const TIME_LIMITS: Record<Element['block'], number> = { s: 30, p: 60, d: 90, f: 120 };
 
-const blockColors: Record<Element['block'], { bg: string, border: string, text: string }> = {
-    s: { bg: 'bg-rose-500/10', border: 'border-rose-500/30', text: 'text-rose-400' },
-    p: { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
-    d: { bg: 'bg-sky-500/10', border: 'border-sky-500/30', text: 'text-sky-400' },
-    f: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+const categoryColors: Record<string, string> = {
+    'alkali metal': 'bg-red-500/80 border-red-400',
+    'alkaline earth metal': 'bg-orange-500/80 border-orange-400',
+    'lanthanide': 'bg-yellow-500/80 border-yellow-400',
+    'actinide': 'bg-lime-500/80 border-lime-400',
+    'transition metal': 'bg-green-500/80 border-green-400',
+    'post-transition metal': 'bg-teal-500/80 border-teal-400',
+    'metalloid': 'bg-cyan-500/80 border-cyan-400',
+    'polyatomic nonmetal': 'bg-sky-500/80 border-sky-400',
+    'diatomic nonmetal': 'bg-blue-500/80 border-blue-400',
+    'noble gas': 'bg-indigo-500/80 border-indigo-400',
+    'unknown': 'bg-slate-500/80 border-slate-400',
 };
 
+interface GameProps {
+    blockToPlay: Element['block'];
+}
 
-export function PeriodicTableGame() {
+export function PeriodicTableGame({ blockToPlay }: GameProps) {
     const { isSignedIn } = useUser();
     const { toast } = useToast();
     
-    const [gameState, setGameState] = useState<'selecting' | 'playing' | 'gameOver'>('selecting');
-    const [selectedBlock, setSelectedBlock] = useState<Element['block']>('s');
+    const [gameState, setGameState] = useState<'playing' | 'gameOver'>('playing');
     const [elementsToPlace, setElementsToPlace] = useState<Element[]>([]);
     const [currentElement, setCurrentElement] = useState<Element | null>(null);
     const [placedElements, setPlacedElements] = useState<Record<number, Element>>({});
     const [lives, setLives] = useState(MAX_LIVES);
     const [score, setScore] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(TIME_LIMITS[selectedBlock]);
+    const [timeLeft, setTimeLeft] = useState(TIME_LIMITS[blockToPlay]);
 
     useEffect(() => {
         if (gameState === 'playing' && timeLeft > 0) {
@@ -56,30 +66,29 @@ export function PeriodicTableGame() {
         }
     }, [gameState, timeLeft, toast]);
 
-    const startGame = (block: Element['block']) => {
-        setSelectedBlock(block);
-        const blockElements = [...allElements].filter(e => e.block === block).sort(() => Math.random() - 0.5);
+    const startGame = useCallback(() => {
+        const blockElements = [...allElements].filter(e => e.block === blockToPlay).sort(() => Math.random() - 0.5);
         setElementsToPlace(blockElements);
         setCurrentElement(blockElements[0]);
         setPlacedElements({});
         setLives(MAX_LIVES);
         setScore(0);
-        setTimeLeft(TIME_LIMITS[block]);
+        setTimeLeft(TIME_LIMITS[blockToPlay]);
         setGameState('playing');
-    };
+    }, [blockToPlay]);
+    
+    useEffect(() => {
+        startGame();
+    }, [startGame]);
 
-    const handleCellClick = (period: number, group: number, isFBlock = false, fBlockIndex = 0) => {
-        if (!currentElement) return;
+    const handleCellClick = (period: number, group: number) => {
+        if (!currentElement || gameState !== 'playing') return;
 
-        const isCorrectFBlockPlacement = isFBlock &&
-            currentElement.period === period &&
-            (currentElement.atomicNumber - (currentElement.period === 6 ? 57 : 89)) === fBlockIndex;
-
-        if ((!isFBlock && currentElement.period === period && currentElement.group === group) || isCorrectFBlockPlacement) {
+        if (currentElement.period === period && currentElement.group === group) {
             const newPlaced = { ...placedElements, [currentElement.atomicNumber]: currentElement };
             setPlacedElements(newPlaced);
             
-            const remaining = elementsToPlace.filter(e => !newPlaced[e.atomicNumber]);
+            const remaining = elementsToPlace.filter(e => e.atomicNumber !== currentElement.atomicNumber);
             setElementsToPlace(remaining);
             setScore(prev => prev + 10);
             toast({ title: 'Correct!', description: `+10 points for placing ${currentElement.name}.`, className: "bg-green-500/10 text-green-700" });
@@ -98,151 +107,134 @@ export function PeriodicTableGame() {
         }
     };
 
-     const renderBlock = (block: 's' | 'p' | 'd') => {
-        const blockElements = allElements.filter(e => e.block === block);
-        if (blockElements.length === 0) return null;
-        
-        const minPeriod = Math.min(...blockElements.map(e => e.period));
-        const maxPeriod = Math.max(...blockElements.map(e => e.period));
-        const minGroup = Math.min(...blockElements.map(e => e.group));
-        const maxGroup = Math.max(...blockElements.map(e => e.group));
-        const numCols = maxGroup - minGroup + 1;
-        
-        const gridCells = [];
-        for (let p = minPeriod; p <= maxPeriod; p++) {
-            for (let g = minGroup; g <= maxGroup; g++) {
-                const element = blockElements.find(e => e.period === p && e.group === g);
-                if (element) {
+    const renderTable = () => {
+        return (
+            <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))' }}>
+                {Array.from({ length: 7 * 18 }).map((_, i) => {
+                    const period = Math.floor(i / 18) + 1;
+                    const group = (i % 18) + 1;
+                    
+                    const element = allElements.find(e => e.period === period && e.group === group);
+                    
+                    if (!element || element.block !== blockToPlay) {
+                        // Render a placeholder for non-target blocks, but only if it's a valid element position
+                         if (element) {
+                            return <div key={`${period}-${group}`} className="aspect-square border border-dashed border-muted-foreground/20 rounded-md" />
+                         }
+                         return <div key={`${period}-${group}`} />;
+                    }
+
                     const isPlaced = placedElements[element.atomicNumber];
-                    gridCells.push(
+                    const categoryClass = isPlaced ? categoryColors[element.category] || categoryColors.unknown : '';
+
+                    return (
                         <button
-                            key={`${p}-${g}`}
-                            onClick={() => handleCellClick(p, g)}
+                            key={element.atomicNumber}
+                            onClick={() => handleCellClick(period, group)}
                             disabled={isPlaced || gameState !== 'playing'}
                             className={cn(
-                                "aspect-square border rounded-lg flex flex-col items-center justify-center text-xs transition-all duration-200",
+                                "aspect-square border rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
                                 "bg-card hover:bg-muted disabled:cursor-not-allowed",
-                                isPlaced ? cn(blockColors[element.block].bg, blockColors[element.block].border) : "border-border"
+                                isPlaced ? cn(categoryClass, "text-white") : "border-border"
                             )}
                         >
                             {isPlaced ? (
-                                <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}}>
-                                    <div className={cn("font-bold text-lg sm:text-xl", blockColors[element.block].text)}>{element.symbol}</div>
-                                    <div className="text-[9px] hidden sm:block">{element.name}</div>
+                                <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}} className="text-center">
+                                    <div className="font-bold text-base sm:text-lg">{element.symbol}</div>
+                                    <div className="text-[8px] sm:text-[10px] hidden md:block">{element.name}</div>
+                                    <div className="text-[8px] sm:text-[10px] md:hidden">{element.atomicNumber}</div>
                                 </motion.div>
                             ) : (
-                                <div className="text-muted-foreground/30">{element.atomicNumber}</div>
+                                <div className="text-muted-foreground/50 text-xs">{element.atomicNumber}</div>
                             )}
                         </button>
-                    );
-                } else {
-                    gridCells.push(<div key={`${p}-${g}`} className="border-none" />);
-                }
-            }
-        }
-
-        return (
-            <div
-                className={`grid gap-1`}
-                style={{ gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))` }}
-            >
-                {gridCells}
+                    )
+                })}
             </div>
         )
     };
-
-    const renderFBlock = () => {
-        const lanthanides = allElements.filter(e => e.atomicNumber >= 57 && e.atomicNumber <= 70);
-        const actinides = allElements.filter(e => e.atomicNumber >= 89 && e.atomicNumber <= 102);
+    
+    const renderFBlockTable = () => {
+         const lanthanides = allElements.filter(e => e.atomicNumber >= 57 && e.atomicNumber <= 71);
+         const actinides = allElements.filter(e => e.atomicNumber >= 89 && e.atomicNumber <= 103);
         
-        const renderRow = (elements: Element[], period: number) => elements.map((element, index) => {
+        const renderRow = (elements: Element[]) => elements.map(element => {
             const isPlaced = placedElements[element.atomicNumber];
+             const categoryClass = isPlaced ? categoryColors[element.category] || categoryColors.unknown : '';
             return (
                  <button
                     key={element.atomicNumber}
-                    onClick={() => handleCellClick(period, 3, true, index)}
+                     onClick={() => handleCellClick(element.period, element.group)}
                     disabled={isPlaced || gameState !== 'playing'}
                     className={cn(
-                         "aspect-square border rounded-lg flex flex-col items-center justify-center text-xs transition-all duration-200",
+                         "aspect-square border rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
                         "bg-card hover:bg-muted disabled:cursor-not-allowed",
-                        isPlaced ? cn(blockColors.f.bg, blockColors.f.border) : "border-border"
+                        isPlaced ? cn(categoryClass, "text-white") : "border-border"
                     )}
                 >
                     {isPlaced ? (
-                        <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}}>
-                            <div className={cn("font-bold text-lg sm:text-xl", blockColors.f.text)}>{element.symbol}</div>
-                            <div className="text-[9px] hidden sm:block">{element.name}</div>
+                        <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}} className="text-center">
+                            <div className="font-bold text-base sm:text-lg">{element.symbol}</div>
+                            <div className="text-[8px] sm:text-[10px] hidden md:block">{element.name}</div>
+                             <div className="text-[8px] sm:text-[10px] md:hidden">{element.atomicNumber}</div>
                         </motion.div>
                     ) : (
-                        <div className="text-muted-foreground/30">{element.atomicNumber}</div>
+                        <div className="text-muted-foreground/50 text-xs">{element.atomicNumber}</div>
                     )}
                 </button>
             )
         });
 
         return (
-            <div className="space-y-2">
-                <div className="grid grid-cols-14 gap-1">{renderRow(lanthanides, 6)}</div>
-                <div className="grid grid-cols-14 gap-1">{renderRow(actinides, 7)}</div>
+            <div className="space-y-2 max-w-4xl mx-auto">
+                <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }}>{renderRow(lanthanides)}</div>
+                <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }}>{renderRow(actinides)}</div>
             </div>
         )
     }
 
     return (
-        <Card className="relative">
-            <SignedOut>
-                <LoginWall title="Unlock Element Quest" description="Sign up to play this periodic table game, test your chemistry knowledge, and master the elements." />
-            </SignedOut>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Atom /> Element Quest</CardTitle>
-                <CardDescription>Place the elements in their correct positions on the periodic table before time runs out!</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {gameState === 'selecting' ? (
-                    <div className="text-center space-y-6 py-10">
-                        <h2 className="text-2xl font-bold">Select a Block to Begin</h2>
-                        <Tabs defaultValue="s" className="w-full max-w-md mx-auto">
-                            <TabsList className="grid w-full grid-cols-4">
-                                <TabsTrigger value="s" onClick={() => startGame('s')}>S-Block</TabsTrigger>
-                                <TabsTrigger value="p" onClick={() => startGame('p')}>P-Block</TabsTrigger>
-                                <TabsTrigger value="d" onClick={() => startGame('d')}>D-Block</TabsTrigger>
-                                <TabsTrigger value="f" onClick={() => startGame('f')}>F-Block</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                    </div>
-                ) : gameState === 'gameOver' ? (
-                     <div className="text-center space-y-6 py-10">
-                        <h2 className="text-2xl font-bold">{lives > 0 ? "Block Completed!" : "Game Over!"}</h2>
-                        <p className="text-muted-foreground">Your final score is <span className="font-bold text-primary">{score}</span>.</p>
-                        <Button onClick={() => setGameState('selecting')}><RotateCw className="mr-2"/> Play Again</Button>
-                    </div>
+        <div className="space-y-4">
+             <Link href="/dashboard/game-zone/puzzle/periodic-table" className="text-sm text-muted-foreground hover:text-primary mb-2 inline-block"><ArrowLeft className="inline mr-1 h-4 w-4"/> Back to Block Selection</Link>
+            <Card className="relative">
+                <SignedOut>
+                    <LoginWall title="Unlock Element Quest" description="Sign up to play this periodic table game, test your chemistry knowledge, and master the elements." />
+                </SignedOut>
+                
+                {gameState === 'gameOver' ? (
+                     <CardContent className="text-center py-10 space-y-6">
+                        <h2 className="text-3xl font-bold">{lives > 0 ? "Block Completed!" : "Game Over!"}</h2>
+                        <p className="text-muted-foreground">Your final score is <span className="font-bold text-primary text-xl">{score}</span>.</p>
+                        <Button onClick={startGame}><RotateCw className="mr-2"/> Play Again</Button>
+                    </CardContent>
                 ) : (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center bg-muted p-3 rounded-lg">
-                            <div className="font-bold text-lg">Place: <span className="text-primary">{currentElement?.name} ({currentElement?.atomicNumber})</span></div>
-                            <div className="flex items-center gap-6">
-                                <div className="flex items-center gap-2 font-bold"><Clock className="h-5 w-5"/> {timeLeft}s</div>
-                                <div className="flex items-center gap-2 font-bold"><Award className="h-5 w-5 text-green-500"/> {score}</div>
-                                <div className="flex items-center gap-2">
-                                    {[...Array(lives)].map((_, i) => <Heart key={i} className="h-5 w-5 text-red-500 fill-red-500"/>)}
-                                    {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={i} className="h-5 w-5 text-muted-foreground/50"/>)}
+                    <>
+                        <CardHeader>
+                            <div className="flex justify-between items-center bg-muted p-3 rounded-lg flex-wrap gap-4">
+                                <div className="font-bold text-lg">Place: 
+                                    <motion.span key={currentElement?.name} initial={{opacity: 0}} animate={{opacity: 1}} className="text-primary text-2xl ml-2">
+                                        {currentElement?.name} ({currentElement?.atomicNumber})
+                                    </motion.span>
+                                </div>
+                                <div className="flex items-center gap-4 sm:gap-6">
+                                    <div className="flex items-center gap-2 font-bold"><Clock className="h-5 w-5"/> {timeLeft}s</div>
+                                    <div className="flex items-center gap-2 font-bold"><Award className="h-5 w-5 text-green-500"/> {score}</div>
+                                    <div className="flex items-center gap-2">
+                                        {[...Array(lives)].map((_, i) => <Heart key={i} className="h-5 w-5 text-red-500 fill-red-500"/>)}
+                                        {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={i} className="h-5 w-5 text-muted-foreground/50"/>)}
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                         <div className="space-y-2">
-                            {selectedBlock === 'f' ? renderFBlock() : (
-                                <div className="grid grid-cols-[2fr,10fr,6fr] gap-1">
-                                    <div className={cn(selectedBlock !== 's' && 'opacity-20 pointer-events-none')}>{renderBlock('s')}</div>
-                                    <div className={cn(selectedBlock !== 'd' && 'opacity-20 pointer-events-none')}>{renderBlock('d')}</div>
-                                    <div className={cn(selectedBlock !== 'p' && 'opacity-20 pointer-events-none')}>{renderBlock('p')}</div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="overflow-x-auto p-1">
+                                {blockToPlay === 'f' ? renderFBlockTable() : renderTable()}
+                            </div>
+                        </CardContent>
+                    </>
                 )}
-            </CardContent>
-        </Card>
+            </Card>
+        </div>
     );
 }
 
