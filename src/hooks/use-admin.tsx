@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -60,6 +59,13 @@ export interface User {
     flappyMind?: number;
     astroAscent?: number;
   };
+  elementQuestScores?: {
+    s?: number;
+    p?: number;
+    d?: number;
+    f?: number;
+  };
+  elementQuestMilestonesClaimed?: number[];
   claimedGlobalGifts?: string[];
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
   flappyMindClaims?: Record<string, number[]>;
@@ -209,6 +215,8 @@ interface AppDataContextType {
     claimEliteDailyReward: (uid: string) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
     updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind' | 'astroAscent', score: number) => Promise<void>;
+    updateElementQuestScore: (uid: string, block: 's' | 'p' | 'd' | 'f', score: number) => Promise<void>;
+    claimElementQuestMilestone: (uid: string, milestone: 100 | 200 | 300 | 400) => Promise<void>;
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
@@ -442,6 +450,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                         flappyMind: 0,
                         astroAscent: 0,
                     },
+                    elementQuestScores: { s: 0, p: 0, d: 0, f: 0 },
+                    elementQuestMilestonesClaimed: [],
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -799,6 +809,55 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         }
     };
     
+    const updateElementQuestScore = useCallback(async (uid: string, block: 's' | 'p' | 'd' | 'f', score: number) => {
+        if (!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+        if (userSnap.exists()) {
+            const currentHighScore = userSnap.data().elementQuestScores?.[block] || 0;
+            if (score > currentHighScore) {
+                await updateDoc(userDocRef, {
+                    [`elementQuestScores.${block}`]: score
+                });
+            }
+        }
+    }, []);
+
+    const claimElementQuestMilestone = useCallback(async (uid: string, milestone: 100 | 200 | 300 | 400) => {
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+        if (!userSnap.exists()) {
+            throw new Error("User not found.");
+        }
+        
+        const userData = userSnap.data() as User;
+        const { s = 0, p = 0, d = 0, f = 0 } = userData.elementQuestScores || {};
+        const totalScore = s + p + d + f;
+        
+        if (totalScore < milestone) {
+            throw new Error("Score not high enough to claim this milestone.");
+        }
+
+        const claimedMilestones = userData.elementQuestMilestonesClaimed || [];
+        if (claimedMilestones.includes(milestone)) {
+            throw new Error("You have already claimed this milestone reward.");
+        }
+
+        const MILESTONE_REWARDS = { 100: 50, 200: 100, 300: 150, 400: 200 };
+        const reward = MILESTONE_REWARDS[milestone];
+
+        if (!reward) {
+            throw new Error("Invalid milestone.");
+        }
+
+        await updateDoc(userDocRef, {
+            credits: increment(reward),
+            elementQuestMilestonesClaimed: arrayUnion(milestone)
+        });
+
+    }, []);
+
+
     const claimDimensionShiftMilestone = async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
@@ -1205,6 +1264,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         claimEliteDailyReward,
         updateStudyTime,
         updateGameHighScore,
+        updateElementQuestScore,
+        claimElementQuestMilestone,
         claimDimensionShiftMilestone,
         claimFlappyMindMilestone,
         claimAstroAscentMilestone,
@@ -1326,6 +1387,7 @@ export const useDailySurprises = () => {
     
 
   
+
 
 
 
