@@ -145,56 +145,6 @@ export const ChallengesProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onSnapshot(challengeRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data() as ActiveChallenge;
-
-                if (data.isCustom === undefined) {
-                    resetInvalidChallenge();
-                    setLoading(false);
-                    return;
-                }
-
-                if (data.status !== 'active') {
-                    setActiveChallenge(data);
-                    setLoading(false);
-                    return;
-                }
-                
-                const today = new Date();
-                const startDate = new Date(data.startDate);
-                const currentDayNumber = differenceInCalendarDays(today, startDate) + 1;
-
-                // Auto-fail logic for missing check-in
-                if (data.checkInTime) {
-                    const lastDayToCheck = currentDayNumber -1;
-                    if(lastDayToCheck > 0 && lastDayToCheck <= data.duration) {
-                        const previousDayProgress = data.progress[lastDayToCheck];
-                        const checkInGoal = data.dailyGoals.find(g => g.id === 'checkIn');
-                        if(checkInGoal && !previousDayProgress?.checkIn?.completed) {
-                            const lastDayDate = addDays(startDate, lastDayToCheck - 1);
-                            const [hours, minutes] = data.checkInTime.split(':').map(Number);
-                            const checkInEnd = set(lastDayDate, { hours, minutes: minutes + 10 }); // 10 min window
-                             if (new Date() > checkInEnd) {
-                                failChallenge(true); // silent fail
-                                return;
-                            }
-                        }
-                    }
-                }
-                
-                if (currentDayNumber > data.currentDay) {
-                     const prevDayProgress = data.progress[data.currentDay] || {};
-                     const allGoalsMet = data.dailyGoals.every(g => prevDayProgress[g.id]?.completed);
-                    if (!allGoalsMet) {
-                        failChallenge(true); // silent fail
-                        return;
-                    }
-                     updateDoc(challengeRef, { currentDay: currentDayNumber });
-                     data.currentDay = currentDayNumber;
-                }
-
-                if (currentDayNumber > data.duration) {
-                    completeChallenge(data);
-                    return;
-                }
                 
                 setActiveChallenge(data);
 
