@@ -1,14 +1,16 @@
+
 'use client';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Atom, Award, Brain, Check, Clock, Heart, Loader2, Play, RotateCw, X, ArrowLeft, Trophy } from 'lucide-react';
+import { Atom, Award, Brain, Check, Clock, Heart, Loader2, Play, RotateCw, X, ArrowLeft, Trophy, Maximize, Minimize } from 'lucide-react';
 import periodicTableData from '@/app/lib/periodic-table-data.json';
 import Link from 'next/link';
+import { useImmersive } from '@/hooks/use-immersive';
 
 interface Element {
     atomicNumber: number;
@@ -45,7 +47,9 @@ interface GameProps {
 
 export function PeriodicTableGame({ blockToPlay }: GameProps) {
     const { toast } = useToast();
-    
+    const { setIsImmersive } = useImmersive();
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     const [gameState, setGameState] = useState<'playing' | 'gameOver'>('playing');
     const [elementsToPlace, setElementsToPlace] = useState<Element[]>([]);
     const [currentElement, setCurrentElement] = useState<Element | null>(null);
@@ -54,6 +58,8 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     const [score, setScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState(TIME_LIMITS[blockToPlay]);
     
+    const gameContainerRef = useRef<HTMLDivElement>(null);
+
     const { blockElements, gridTemplate, gridStyles } = useMemo(() => {
         const elements = allElements.filter(e => {
             if (blockToPlay === 'f') return e.category === 'lanthanide' || e.category === 'actinide';
@@ -105,6 +111,27 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
         
         return { blockElements: elements, gridTemplate: gridRows, gridStyles: styles };
     }, [blockToPlay]);
+    
+     const toggleFullscreen = () => {
+        const elem = gameContainerRef.current;
+        if (!elem) return;
+
+        if (!document.fullscreenElement) {
+            elem.requestFullscreen().catch(err => {
+                toast({ variant: 'destructive', title: `Error entering fullscreen: ${err.message}` });
+            });
+        } else {
+            document.exitFullscreen();
+        }
+    };
+    
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
 
     useEffect(() => {
         if (gameState === 'playing' && timeLeft > 0) {
@@ -167,19 +194,22 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 onClick={() => handleCellClick(element)}
                 disabled={!element || isPlaced || gameState !== 'playing'}
                 className={cn(
-                    "relative aspect-square border-2 rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
-                    "sm:h-20 sm:w-20 h-16 w-16", // Adjusted size
-                    !element && "border-transparent bg-transparent",
+                    "relative aspect-square border-2 rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 shadow-md",
+                    "sm:h-20 sm:w-20 h-16 w-16",
+                    !element && "border-transparent bg-transparent shadow-none",
                     element && !isPlaced && "bg-muted/50 border-dashed hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
-                    isPlaced && "shadow-lg",
                     isPlaced ? categoryClass : 'border-border'
                 )}
                 whileHover={{ scale: element && !isPlaced ? 1.05 : 1 }}
                 whileTap={{ scale: element && !isPlaced ? 0.95 : 1 }}
             >
                 {isPlaced ? (
-                    <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}} className="text-center w-full">
-                         <div className="absolute top-0.5 right-1 text-[9px] font-bold opacity-70">{element.atomicNumber}</div>
+                     <motion.div 
+                        initial={{scale: 0.5, opacity: 0}} 
+                        animate={{scale: 1, opacity: 1}} 
+                        className="text-center w-full flex flex-col items-center justify-center"
+                    >
+                        <div className="absolute top-0.5 right-1 text-[9px] font-bold opacity-70">{element.atomicNumber}</div>
                         <div className="font-bold text-lg sm:text-xl">{element.symbol}</div>
                         <div className="text-[9px] truncate px-0.5">{element.name}</div>
                     </motion.div>
@@ -192,32 +222,37 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
 
 
     return (
-        <div className="space-y-4">
+        <div ref={gameContainerRef} className="space-y-2 sm:space-y-4 p-2 sm:p-4 bg-background">
              <div className="flex justify-between items-center px-2">
-                 <Button asChild variant="ghost" size="sm">
+                <Button asChild variant="ghost" size="sm">
                     <Link href="/dashboard/game-zone/puzzle/periodic-table"><ArrowLeft className="mr-2 h-4 w-4"/> Back</Link>
                 </Button>
                 {gameState === 'playing' && (
-                     <div className="flex items-center gap-4 sm:gap-6 text-sm font-medium bg-muted/50 px-3 py-1.5 rounded-lg">
-                        <div className="flex items-center gap-1.5" title="Time Left"><Clock className="h-4 w-4"/> {timeLeft}s</div>
-                        <div className="flex items-center gap-1.5" title="Score"><Award className="h-4 w-4 text-green-500"/> {score}</div>
-                        <div className="flex items-center gap-1">
-                            {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-5 w-5 text-red-500 fill-red-500"/>)}
-                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-5 w-5 text-muted-foreground/30"/>)}
+                     <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium bg-muted/50 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg">
+                        <div className="flex items-center gap-1" title="Time Left"><Clock className="h-4 w-4"/> {timeLeft}s</div>
+                        <div className="flex items-center gap-1" title="Score"><Award className="h-4 w-4 text-green-500"/> {score}</div>
+                        <div className="flex items-center gap-0.5">
+                            {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-4 sm:h-5 w-4 sm:w-5 text-red-500 fill-red-500"/>)}
+                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground/30"/>)}
                         </div>
                     </div>
                 )}
+                 <Button variant="ghost" size="icon" onClick={toggleFullscreen}>
+                    {isFullscreen ? <Minimize className="h-5 w-5"/> : <Maximize className="h-5 w-5"/>}
+                 </Button>
             </div>
             
             {gameState === 'gameOver' ? (
-                <Card className="w-full max-w-md mx-auto text-center p-6 mt-10">
-                    <Trophy className={cn("h-20 w-20 mx-auto", lives > 0 ? "text-yellow-400" : "text-muted-foreground")}/>
-                    <h2 className="text-3xl font-bold mt-4">{lives > 0 ? "Block Completed!" : "Game Over!"}</h2>
-                    <p className="text-muted-foreground mt-2">Your final score is <span className="font-bold text-primary text-xl">{score}</span>.</p>
-                    <Button onClick={startGame} className="mt-6"><RotateCw className="mr-2"/> Play Again</Button>
-                </Card>
+                <div className="min-h-[60vh] flex flex-col items-center justify-center">
+                    <Card className="w-full max-w-md mx-auto text-center p-6">
+                        <Trophy className={cn("h-20 w-20 mx-auto", lives > 0 ? "text-yellow-400" : "text-muted-foreground")}/>
+                        <h2 className="text-3xl font-bold mt-4">{lives > 0 ? "Block Completed!" : "Game Over!"}</h2>
+                        <p className="text-muted-foreground mt-2">Your final score is <span className="font-bold text-primary text-xl">{score}</span>.</p>
+                        <Button onClick={startGame} className="mt-6"><RotateCw className="mr-2"/> Play Again</Button>
+                    </Card>
+                </div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                      <Card className="p-4 sm:p-6 bg-green-500/10 border-green-500/50 shadow-inner">
                         <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="text-center">
                             <p className="text-sm font-semibold text-green-700 dark:text-green-300">Place this Element:</p>
@@ -237,8 +272,8 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                         </motion.div>
                     </Card>
                     
-                    <div className="flex justify-center">
-                        <div className="grid gap-1" style={gridStyles}>
+                    <div className="flex justify-center overflow-x-auto">
+                        <div className="grid gap-1 p-1" style={gridStyles}>
                              {gridTemplate.flat().map((el, index) => renderGridCell(el, index))}
                         </div>
                     </div>
