@@ -49,10 +49,10 @@ const Shape = ({ shape, className }: { shape: string, className?: string }) => {
         case 'hexagon':
             return <div className={cn("hexagon-clipper", className)}><div className={cn("h-full w-full bg-gradient-to-br", className)}></div></div>;
         case 'triangle':
-            return <div className={cn("triangle-clipper", className)}></div>;
+             return <div className={cn("triangle-clipper w-full h-full", className)}></div>;
         case 'circle':
         default:
-            return <div className={cn("rounded-full", className)}></div>;
+            return <div className={cn("rounded-full h-full w-full", className)}></div>;
     }
 }
 
@@ -87,7 +87,10 @@ export default function ElementQuestHubPage() {
                                 delay: index * 0.2,
                                 ease: "easeInOut"
                              }}
-                             className={cn("relative h-48 w-48 flex items-center justify-center transition-all duration-300 ease-in-out group-hover:scale-110", mode.shadow, 'hover:shadow-2xl')}
+                             className={cn(
+                               "relative h-48 w-48 flex items-center justify-center transition-all duration-300 ease-in-out group-hover:scale-110", 
+                               mode.shadow, 'hover:shadow-2xl'
+                             )}
                            >
                               <Shape shape={mode.shape} className={cn("h-full w-full absolute", mode.color)} />
                               <div className="absolute inset-0 bg-grid-slate-800/30 opacity-50 group-hover:opacity-100 transition-opacity"></div>
