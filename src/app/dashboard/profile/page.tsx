@@ -13,7 +13,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 import { useQuizzes } from '@/hooks/use-quizzes';
-import { useChallenges } from '@/hooks/use-challenges';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProgressConstellation } from '@/components/analytics/progress-constellation';
@@ -150,7 +149,6 @@ function AnalyticsTab() {
     const { users } = useUsers();
     const { user } = useUser();
     const { quizzes } = useQuizzes();
-    const { activeChallenge } = useChallenges();
 
     const { currentUserData } = useUsers();
 
@@ -207,14 +205,7 @@ function AnalyticsTab() {
                         <Compass className="text-red-300"/>
                     </CardHeader>
                     <CardContent className="text-center">
-                        {activeChallenge ? (
-                            <div>
-                                <p className="text-xl font-bold truncate">{activeChallenge.title}</p>
-                                <p className="text-sm text-muted-foreground">Day {activeChallenge.currentDay} of {activeChallenge.duration}</p>
-                            </div>
-                        ) : (
-                            <p className="text-muted-foreground">No active challenge</p>
-                        )}
+                        <p className="text-muted-foreground">Coming Soon</p>
                     </CardContent>
                 </Card>
                 <Card className="md:col-span-2 lg:col-span-3 bg-white/5 border-white/10 backdrop-blur-sm">

@@ -1,27 +1,23 @@
 
 'use client';
-import ChallengerPage from '@/components/challenger/challenger-page';
-import { useChallenges } from '@/hooks/use-challenges';
-import { Loader2 } from 'lucide-react';
+
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
-export default function CustomChallengePage() {
-    const { activeChallenge, loading } = useChallenges();
-    const router = useRouter();
+export default function ChallengerRedirectPage() {
+  const router = useRouter();
 
-    if (loading) {
-        return (
-            <div className="flex h-full w-full items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin" />
-            </div>
-        );
-    }
-    
-    // If there's no active challenge, redirect.
-    if (!activeChallenge) {
-        router.replace('/dashboard/challenger');
-        return null;
-    }
+  useEffect(() => {
+    router.replace('/dashboard/challenger');
+  }, [router]);
 
-    return <ChallengerPage config={activeChallenge} />;
+  return (
+    <div className="flex h-full w-full items-center justify-center">
+      <div className="flex flex-col items-center gap-2 text-muted-foreground">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p>Redirecting...</p>
+      </div>
+    </div>
+  );
 }
