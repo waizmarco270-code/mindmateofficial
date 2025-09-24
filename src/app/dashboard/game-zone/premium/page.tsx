@@ -1,19 +1,25 @@
 
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Crown, Atom } from "lucide-react";
+import { ArrowLeft, Crown, Atom, Book, Brain, Sparkles, ArrowRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
+// Dummy icons to prevent errors since they are used in the dialog content
+// Moved to the top to fix initialization error
+const BookIcon = (props: any) => <Book {...props} />;
+const BrainIcon = (props: any) => <Brain {...props} />;
+const SparklesIcon = (props: any) => <Sparkles {...props} />;
+
 const elementQuestModes = [
     {
         id: 'learn',
         title: 'Learn Mode',
         description: 'Explore the table with no pressure.',
-        icon: Book,
+        icon: BookIcon,
         href: '/dashboard/game-zone/puzzle/periodic-table/learn',
         color: 'from-blue-500 to-sky-500',
     },
@@ -21,7 +27,7 @@ const elementQuestModes = [
         id: 'challenge',
         title: 'Challenge Mode',
         description: 'Race against the clock.',
-        icon: Sparkles,
+        icon: SparklesIcon,
         href: '/dashboard/game-zone/puzzle/periodic-table/challenge',
          color: 'from-red-500 to-rose-500',
     },
@@ -29,7 +35,7 @@ const elementQuestModes = [
         id: 'practice',
         title: 'Practice Mode',
         description: 'Test your knowledge with hints.',
-        icon: Brain,
+        icon: BrainIcon,
         href: '#',
         color: 'from-amber-500 to-yellow-500',
         disabled: true
@@ -124,8 +130,3 @@ export default function PremiumGamesHubPage() {
         </div>
     )
 }
-// Dummy icons to prevent errors since they are used in the dialog content
-const Book = (props: any) => <svg {...props}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>;
-const Brain = (props: any) => <svg {...props}><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15A2.5 2.5 0 0 1 9.5 22h-3A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2h3Z" /><path d="M14.5 2A2.5 2.5 0 0 1 17 4.5v15a2.5 2.5 0 0 1-2.5 2.5h-3A2.5 2.5 0 0 1 9 19.5v-15A2.5 2.5 0 0 1 11.5 2h3Z" /></svg>;
-const Sparkles = (props: any) => <svg {...props}><path d="m12 3-1.9 4.8-4.8 1.9 4.8 1.9 1.9 4.8 1.9-4.8 4.8-1.9-4.8-1.9L12 3Z" /></svg>;
-const ArrowRight = (props: any) => <svg {...props}><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>;
