@@ -258,7 +258,6 @@ function SearchUsersTab() {
                                 </Avatar>
                                 <div>
                                     <p className="font-bold">{user.displayName}</p>
-                                    <p className="text-sm text-muted-foreground">{user.email}</p>
                                 </div>
                             </CardContent>
                         </Card>
