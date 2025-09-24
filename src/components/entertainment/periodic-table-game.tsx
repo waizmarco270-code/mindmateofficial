@@ -27,17 +27,17 @@ const MAX_LIVES = 3;
 const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 180, d: 240, f: 300 };
 
 const categoryColors: Record<string, string> = {
-    'alkali metal': 'from-red-500 to-red-700 border-red-400',
-    'alkaline earth metal': 'from-orange-500 to-orange-700 border-orange-400',
-    'lanthanide': 'from-amber-400 to-amber-600 border-amber-300 text-gray-800',
-    'actinide': 'from-fuchsia-500 to-fuchsia-700 border-fuchsia-400',
-    'transition metal': 'from-green-500 to-green-700 border-green-400',
-    'post-transition metal': 'from-teal-500 to-teal-700 border-teal-400',
-    'metalloid': 'from-cyan-500 to-cyan-700 border-cyan-400',
-    'polyatomic nonmetal': 'from-blue-500 to-blue-700 border-blue-400',
-    'diatomic nonmetal': 'from-sky-500 to-sky-700 border-sky-400',
-    'noble gas': 'from-indigo-500 to-indigo-700 border-indigo-400',
-    'unknown': 'from-slate-500 to-slate-700 border-slate-400',
+    'alkali metal': 'bg-gradient-to-br from-red-500 to-red-700 border-red-400',
+    'alkaline earth metal': 'bg-gradient-to-br from-orange-500 to-orange-700 border-orange-400',
+    'lanthanide': 'bg-gradient-to-br from-amber-400 to-amber-600 border-amber-300 text-gray-800',
+    'actinide': 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-700 border-fuchsia-400',
+    'transition metal': 'bg-gradient-to-br from-green-500 to-green-700 border-green-400',
+    'post-transition metal': 'bg-gradient-to-br from-teal-500 to-teal-700 border-teal-400',
+    'metalloid': 'bg-gradient-to-br from-cyan-500 to-cyan-700 border-cyan-400',
+    'polyatomic nonmetal': 'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400',
+    'diatomic nonmetal': 'bg-gradient-to-br from-sky-500 to-sky-700 border-sky-400',
+    'noble gas': 'bg-gradient-to-br from-indigo-500 to-indigo-700 border-indigo-400',
+    'unknown': 'bg-gradient-to-br from-slate-500 to-slate-700 border-slate-400',
 };
 
 
@@ -197,7 +197,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 onClick={() => handleCellClick(element)}
                 disabled={!element || isPlaced || gameState !== 'playing'}
                 className={cn(
-                    "relative aspect-square rounded-md flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
+                    "relative aspect-square rounded-md flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 h-16 w-16 sm:h-20 sm:w-20", // Size classes
                     !element && "border-transparent bg-transparent",
                     element && !isPlaced && "bg-slate-100 dark:bg-slate-800/50 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
                     isPlaced ? 'text-white' : 'border-border'
@@ -220,7 +220,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                         <div className="text-[7px] sm:text-[9px] font-bold truncate px-0.5">{element.name}</div>
                     </motion.div>
                 ) : element ? (
-                    <div className="text-muted-foreground/30 text-sm font-semibold">{element.atomicNumber}</div>
+                    <div className="text-muted-foreground/30 text-lg font-semibold">{element.atomicNumber}</div>
                 ) : null}
             </motion.button>
         )
