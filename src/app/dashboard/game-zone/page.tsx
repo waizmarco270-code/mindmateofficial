@@ -64,7 +64,7 @@ export default function GameZoneHubPage() {
                 <p className="text-muted-foreground">Relax, play some games, and earn credits!</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {gameCategories.map((category, index) => (
                     <motion.div
                         key={category.title}
@@ -101,27 +101,28 @@ export default function GameZoneHubPage() {
                  <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.5, delay: 0.6 }}
-                    className="lg:col-span-3"
+                    transition={{ duration: 0.5, delay: 0.5 }}
                  >
                      <Link href="/dashboard/game-zone/premium" className="block h-full">
-                        <Card className="group relative overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 shadow-yellow-500/30 border-yellow-500/50">
+                        <Card className="h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 shadow-yellow-500/30 border-yellow-500/50">
                              <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-tr from-yellow-400 to-amber-600"></div>
                              <div className="absolute inset-0 w-full h-full animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent bg-[length:400%_100%]"></div>
-                             <CardContent className="p-6">
-                                <div className="flex flex-col md:flex-row items-center md:gap-6 text-center md:text-left">
-                                    <div className="p-4 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 mb-4 md:mb-0">
-                                        <Crown className="h-8 w-8 text-white animate-gold-shine"/>
-                                    </div>
-                                    <div className="flex-1">
-                                        <h3 className="text-2xl font-bold text-white [text-shadow:0_0_10px_#f59e0b]">Premium Games</h3>
-                                        <p className="text-amber-100/80 mt-1">Exclusive games with unique challenges and legendary rewards.</p>
-                                    </div>
-                                     <Button variant="outline" className="w-full md:w-auto mt-4 md:mt-0 bg-background/50 group-hover:bg-background transition-colors">
+                             <CardHeader>
+                                   <div className="flex items-center gap-4">
+                                       <div className="p-3 rounded-lg bg-gradient-to-br from-yellow-400 to-amber-500">
+                                            <Crown className="h-6 w-6 text-white animate-gold-shine"/>
+                                       </div>
+                                       <CardTitle className="text-white [text-shadow:0_0_10px_#f59e0b]">Premium Games</CardTitle>
+                                   </div>
+                               </CardHeader>
+                               <CardContent>
+                                   <p className="text-amber-100/80">Exclusive games with unique challenges and legendary rewards.</p>
+                               </CardContent>
+                               <CardContent>
+                                    <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors">
                                        Explore <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                    </Button>
-                                </div>
-                             </CardContent>
+                               </CardContent>
                         </Card>
                      </Link>
                  </motion.div>
