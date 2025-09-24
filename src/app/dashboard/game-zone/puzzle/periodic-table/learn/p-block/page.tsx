@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { PeriodicTableGame } from "@/components/entertainment/periodic-table-game";
 import { useImmersive } from '@/hooks/use-immersive';
 
-export default function FBlockChallengePage() {
+export default function PBlockLearnPage() {
     const { setIsImmersive } = useImmersive();
 
     useEffect(() => {
@@ -12,5 +12,5 @@ export default function FBlockChallengePage() {
         return () => setIsImmersive(false);
     }, [setIsImmersive]);
 
-    return <PeriodicTableGame blockToPlay="f" mode="challenge" />;
+    return <PeriodicTableGame blockToPlay="p" mode="learn" />;
 }

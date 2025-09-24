@@ -12,5 +12,5 @@ export default function SBlockChallengePage() {
         return () => setIsImmersive(false);
     }, [setIsImmersive]);
 
-    return <PeriodicTableGame blockToPlay="s" />;
+    return <PeriodicTableGame blockToPlay="s" mode="challenge" />;
 }

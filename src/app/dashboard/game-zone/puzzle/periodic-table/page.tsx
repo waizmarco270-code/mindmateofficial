@@ -3,25 +3,42 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Atom, ArrowRight } from 'lucide-react';
+import { Atom, ArrowRight, Book, Sparkles, Brain } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
 
-interface BlockInfo {
-    id: 's' | 'p' | 'd' | 'f';
-    name: string;
-    description: string;
-    color: string;
-}
-
-const blocks: BlockInfo[] = [
-    { id: 's', name: 'S-Block', description: 'Master the alkali and alkaline earth metals.', color: 'from-rose-500 to-red-500' },
-    { id: 'p', name: 'P-Block', description: 'Explore the diverse p-block elements.', color: 'from-amber-500 to-yellow-500' },
-    { id: 'd', name: 'D-Block', description: 'Dive into the transition metals.', color: 'from-sky-500 to-blue-500' },
-    { id: 'f', name: 'F-Block', description: 'Challenge yourself with the lanthanides and actinides.', color: 'from-emerald-500 to-green-500' },
+const gameModes = [
+    {
+        id: 'learn',
+        title: 'Learn Mode',
+        description: 'Explore the periodic table blocks. Click on elements to see their details. No timer, no pressure.',
+        icon: Book,
+        href: '/dashboard/game-zone/puzzle/periodic-table/learn',
+        color: 'from-blue-500 to-sky-500',
+        shadow: 'shadow-blue-500/30'
+    },
+    {
+        id: 'practice',
+        title: 'Practice Mode',
+        description: 'Test your knowledge with hints and a relaxed pace. (Coming Soon!)',
+        icon: Brain,
+        href: '#',
+        color: 'from-amber-500 to-yellow-500',
+        shadow: 'shadow-amber-500/30',
+        disabled: true
+    },
+    {
+        id: 'challenge',
+        title: 'Challenge Mode',
+        description: 'Race against the clock to place elements correctly. A true test of your memory and speed.',
+        icon: Sparkles,
+        href: '/dashboard/game-zone/puzzle/periodic-table/challenge',
+        color: 'from-red-500 to-rose-500',
+        shadow: 'shadow-red-500/30'
+    },
 ];
 
 export default function ElementQuestHubPage() {
@@ -33,44 +50,45 @@ export default function ElementQuestHubPage() {
                   <Atom className="h-8 w-8 text-primary" />
                   Element Quest
                 </h1>
-                <p className="text-muted-foreground">Select a block to begin your mission to master the periodic table.</p>
+                <p className="text-muted-foreground">Learn, practice, and challenge your knowledge of the periodic table.</p>
             </div>
 
-            <Card className="relative">
-                 <SignedOut>
-                    <LoginWall title="Unlock Element Quest" description="Sign up to play this periodic table game, test your chemistry knowledge, and master the elements." />
-                </SignedOut>
-                <CardHeader className="text-center">
-                    <CardTitle className="text-2xl font-bold">Choose Your Challenge</CardTitle>
-                    <CardDescription>Which block of the periodic table will you conquer today?</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 p-6">
-                    {blocks.map((block, index) => (
-                        <motion.div
-                            key={block.id}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
-                        >
-                             <Link href={`/dashboard/game-zone/puzzle/periodic-table/${block.id}-block`} className="block h-full group">
-                               <Card className={cn(
-                                   "h-full flex flex-col justify-between text-center p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 bg-gradient-to-br",
-                                   block.color
-                                )}>
-                                    <div>
-                                        <h3 className="text-2xl font-bold text-white">{block.name}</h3>
-                                        <p className="text-sm text-white/80 mt-2">{block.description}</p>
-                                    </div>
-                                    <Button variant="secondary" className="mt-6 w-full">
-                                       Start Challenge <ArrowRight className="ml-2 h-4 w-4" />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {gameModes.map((mode, index) => (
+                    <motion.div
+                        key={mode.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className={cn(mode.disabled && "opacity-50 cursor-not-allowed")}
+                    >
+                         <Link href={mode.href} className={cn("block h-full", mode.disabled && "pointer-events-none")}>
+                           <Card className={cn(
+                               "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2",
+                               mode.shadow
+                            )}>
+                               <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-tr", mode.color)}></div>
+                               <CardHeader>
+                                   <div className="flex items-center gap-4">
+                                       <div className={cn("p-3 rounded-lg bg-gradient-to-br", mode.color)}>
+                                            <mode.icon className="h-6 w-6 text-white"/>
+                                       </div>
+                                       <CardTitle>{mode.title}</CardTitle>
+                                   </div>
+                               </CardHeader>
+                               <CardContent>
+                                   <p className="text-muted-foreground">{mode.description}</p>
+                               </CardContent>
+                               <CardContent>
+                                    <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors">
+                                       {mode.disabled ? 'Coming Soon' : `Start ${mode.title}`} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                    </Button>
-                                </Card>
-                            </Link>
-                        </motion.div>
-                    ))}
-                </CardContent>
-            </Card>
+                               </CardContent>
+                           </Card>
+                        </Link>
+                    </motion.div>
+                ))}
+            </div>
         </div>
     );
 }
-

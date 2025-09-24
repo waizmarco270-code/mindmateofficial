@@ -7,10 +7,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { Atom, Award, Brain, Check, Clock, Heart, Loader2, Play, RotateCw, X, ArrowLeft, Trophy, Maximize, Minimize } from 'lucide-react';
+import { Atom, Award, Brain, Check, Clock, Heart, Loader2, Play, RotateCw, X, ArrowLeft, Trophy, Maximize, Minimize, Book, BookOpen } from 'lucide-react';
 import periodicTableData from '@/app/lib/periodic-table-data.json';
 import Link from 'next/link';
 import { useImmersive } from '@/hooks/use-immersive';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 
 interface Element {
     atomicNumber: number;
@@ -27,28 +28,31 @@ const MAX_LIVES = 3;
 const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 180, d: 240, f: 300 };
 
 const categoryColors: Record<string, string> = {
-    'alkali metal': 'bg-gradient-to-br from-red-500 to-red-700 border-red-400',
-    'alkaline earth metal': 'bg-gradient-to-br from-orange-500 to-orange-700 border-orange-400',
-    'lanthanide': 'bg-gradient-to-br from-amber-400 to-amber-600 border-amber-300 text-gray-800',
-    'actinide': 'bg-gradient-to-br from-fuchsia-500 to-fuchsia-700 border-fuchsia-400',
-    'transition metal': 'bg-gradient-to-br from-green-500 to-green-700 border-green-400',
-    'post-transition metal': 'bg-gradient-to-br from-teal-500 to-teal-700 border-teal-400',
-    'metalloid': 'bg-gradient-to-br from-cyan-500 to-cyan-700 border-cyan-400',
-    'polyatomic nonmetal': 'bg-gradient-to-br from-blue-500 to-blue-700 border-blue-400',
-    'diatomic nonmetal': 'bg-gradient-to-br from-sky-500 to-sky-700 border-sky-400',
-    'noble gas': 'bg-gradient-to-br from-indigo-500 to-indigo-700 border-indigo-400',
-    'unknown': 'bg-gradient-to-br from-slate-500 to-slate-700 border-slate-400',
+    'alkali metal': 'from-red-500 to-red-700 border-red-400',
+    'alkaline earth metal': 'from-orange-500 to-orange-700 border-orange-400',
+    'lanthanide': 'from-amber-400 to-amber-600 border-amber-300 text-gray-800',
+    'actinide': 'from-fuchsia-500 to-fuchsia-700 border-fuchsia-400',
+    'transition metal': 'from-green-500 to-green-700 border-green-400',
+    'post-transition metal': 'from-teal-500 to-teal-700 border-teal-400',
+    'metalloid': 'from-cyan-500 to-cyan-700 border-cyan-400',
+    'polyatomic nonmetal': 'from-blue-500 to-blue-700 border-blue-400',
+    'diatomic nonmetal': 'from-sky-500 to-sky-700 border-sky-400',
+    'noble gas': 'from-indigo-500 to-indigo-700 border-indigo-400',
+    'unknown': 'from-slate-500 to-slate-700 border-slate-400',
 };
 
 
 interface GameProps {
     blockToPlay: Element['block'];
+    mode: 'challenge' | 'learn' | 'practice';
 }
 
-export function PeriodicTableGame({ blockToPlay }: GameProps) {
+export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
     const { toast } = useToast();
     const { setIsImmersive } = useImmersive();
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [selectedElement, setSelectedElement] = useState<Element | null>(null);
+
 
     const [gameState, setGameState] = useState<'playing' | 'gameOver'>('playing');
     const [elementsToPlace, setElementsToPlace] = useState<Element[]>([]);
@@ -137,14 +141,14 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     }, []);
 
     useEffect(() => {
-        if (gameState === 'playing' && timeLeft > 0) {
+        if (gameState === 'playing' && timeLeft > 0 && mode === 'challenge') {
             const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
             return () => clearTimeout(timer);
-        } else if (gameState === 'playing' && timeLeft === 0) {
+        } else if (gameState === 'playing' && timeLeft === 0 && mode === 'challenge') {
             toast({ title: "Time's up!", variant: 'destructive' });
             setGameState('gameOver');
         }
-    }, [gameState, timeLeft, toast]);
+    }, [gameState, timeLeft, toast, mode]);
 
     const startGame = useCallback(() => {
         const shuffled = [...blockElements].sort(() => Math.random() - 0.5);
@@ -162,6 +166,11 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     }, [startGame]);
 
     const handleCellClick = (element: Element | null) => {
+        if (mode === 'learn') {
+            if(element) setSelectedElement(element);
+            return;
+        }
+
         if (!element || !currentElement || gameState !== 'playing') return;
 
         if (currentElement.atomicNumber === element.atomicNumber) {
@@ -188,16 +197,16 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     };
     
     const renderGridCell = (element: Element | null, cellIndex: number) => {
-        const isPlaced = element && placedElements[element.atomicNumber];
+        const isPlaced = element && (placedElements[element.atomicNumber] || mode === 'learn');
         const categoryClass = isPlaced ? categoryColors[element.category] || categoryColors.unknown : '';
 
         return (
             <motion.button
                 key={element ? element.atomicNumber : `empty-${cellIndex}`}
                 onClick={() => handleCellClick(element)}
-                disabled={!element || isPlaced || gameState !== 'playing'}
+                disabled={!element || (isPlaced && mode !== 'learn') || (gameState !== 'playing' && mode !== 'learn')}
                 className={cn(
-                    "relative aspect-square rounded-md flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 h-16 w-16 sm:h-20 sm:w-20", // Size classes
+                    "relative aspect-square rounded-md flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 h-20 w-20",
                     !element && "border-transparent bg-transparent",
                     element && !isPlaced && "bg-slate-100 dark:bg-slate-800/50 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
                     isPlaced ? 'text-white' : 'border-border'
@@ -215,9 +224,9 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                         )}
                         style={{textShadow: '0 1px 2px rgba(0,0,0,0.4)'}}
                     >
-                         <div className="absolute top-0.5 right-1 text-[8px] sm:text-[10px] font-bold opacity-80">{element.atomicNumber}</div>
-                        <div className="font-black text-base sm:text-xl drop-shadow-md">{element.symbol}</div>
-                        <div className="text-[7px] sm:text-[9px] font-bold truncate px-0.5">{element.name}</div>
+                         <div className="absolute top-0.5 right-1 text-[10px] font-bold opacity-80">{element.atomicNumber}</div>
+                        <div className="font-black text-xl drop-shadow-md">{element.symbol}</div>
+                        <div className="text-[9px] font-bold truncate px-0.5">{element.name}</div>
                     </motion.div>
                 ) : element ? (
                     <div className="text-muted-foreground/30 text-lg font-semibold">{element.atomicNumber}</div>
@@ -226,20 +235,43 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
         )
     }
 
+    const backUrl = mode === 'learn' ? '/dashboard/game-zone/puzzle/periodic-table/learn' : '/dashboard/game-zone/puzzle/periodic-table/challenge';
+
 
     return (
-        <div ref={gameContainerRef} className="space-y-2 sm:space-y-4 p-2 sm:p-4 bg-background">
+        <div ref={gameContainerRef} className="space-y-4 p-4 bg-background">
+            <Dialog open={!!selectedElement} onOpenChange={() => setSelectedElement(null)}>
+                <DialogContent>
+                    {selectedElement && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle className="text-3xl font-bold flex items-center gap-4">
+                                     <span className={cn("text-5xl font-black", categoryColors[selectedElement.category]?.replace(/bg-gradient-to-br|border-\w+-\d+/g, ''))}>{selectedElement.symbol}</span>
+                                     <span>{selectedElement.name} (#{selectedElement.atomicNumber})</span>
+                                </DialogTitle>
+                            </DialogHeader>
+                            <div className="py-4 space-y-2">
+                                <p className="text-lg"><strong>Category:</strong> <span className="capitalize">{selectedElement.category}</span></p>
+                                <p className="text-lg"><strong>Period:</strong> {selectedElement.period}</p>
+                                <p className="text-lg"><strong>Group:</strong> {selectedElement.group}</p>
+                                <p className="text-lg"><strong>Block:</strong> <span className="uppercase">{selectedElement.block}</span>-block</p>
+                            </div>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
+
              <div className="flex justify-between items-center px-2">
                 <Button asChild variant="ghost" size="sm">
-                    <Link href="/dashboard/game-zone/puzzle/periodic-table"><ArrowLeft className="mr-2 h-4 w-4"/> Back</Link>
+                    <Link href={backUrl}><ArrowLeft className="mr-2 h-4 w-4"/> Back</Link>
                 </Button>
-                {gameState === 'playing' && (
-                     <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm font-medium bg-muted/50 px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg">
+                {mode === 'challenge' && gameState === 'playing' && (
+                     <div className="flex items-center gap-4 text-sm font-medium bg-muted/50 px-3 py-1.5 rounded-lg">
                         <div className="flex items-center gap-1" title="Time Left"><Clock className="h-4 w-4"/> {timeLeft}s</div>
                         <div className="flex items-center gap-1" title="Score"><Award className="h-4 w-4 text-green-500"/> {score}</div>
                         <div className="flex items-center gap-0.5">
-                            {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-4 sm:h-5 w-4 sm:w-5 text-red-500 fill-red-500"/>)}
-                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-4 sm:h-5 w-4 sm:w-5 text-muted-foreground/30"/>)}
+                            {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-5 w-5 text-red-500 fill-red-500"/>)}
+                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-5 w-5 text-muted-foreground/30"/>)}
                         </div>
                     </div>
                 )}
@@ -248,7 +280,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                  </Button>
             </div>
             
-            {gameState === 'gameOver' ? (
+            {gameState === 'gameOver' && mode === 'challenge' ? (
                 <div className="min-h-[60vh] flex flex-col items-center justify-center">
                     <Card className="w-full max-w-md mx-auto text-center p-6">
                         <Trophy className={cn("h-20 w-20 mx-auto", lives > 0 ? "text-yellow-400" : "text-muted-foreground")}/>
@@ -258,28 +290,40 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                     </Card>
                 </div>
             ) : (
-                <div className="space-y-4 sm:space-y-6">
-                     <Card className="p-4 sm:p-6 bg-green-500/10 border-green-500/50 shadow-inner">
-                        <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="text-center">
-                            <p className="text-sm font-semibold text-green-700 dark:text-green-300">Place this Element:</p>
-                             <AnimatePresence mode="wait">
-                                <motion.div 
-                                    key={currentElement?.name} 
-                                    initial={{opacity:0, y:20}} 
-                                    animate={{opacity:1, y:0}} 
-                                    exit={{opacity:0, y:-20}} 
-                                    transition={{duration: 0.3}}
-                                >
-                                    <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
-                                        {currentElement?.name} ({currentElement?.atomicNumber})
-                                    </h2>
-                                </motion.div>
-                             </AnimatePresence>
-                        </motion.div>
-                    </Card>
+                <div className="space-y-6">
+                     {mode === 'challenge' && (
+                        <Card className="p-6 bg-green-500/10 border-green-500/50 shadow-inner">
+                            <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="text-center">
+                                <p className="text-sm font-semibold text-green-700 dark:text-green-300">Place this Element:</p>
+                                <AnimatePresence mode="wait">
+                                    <motion.div 
+                                        key={currentElement?.name} 
+                                        initial={{opacity:0, y:20}} 
+                                        animate={{opacity:1, y:0}} 
+                                        exit={{opacity:0, y:-20}} 
+                                        transition={{duration: 0.3}}
+                                    >
+                                        <h2 className="text-4xl font-extrabold tracking-tight text-foreground">
+                                            {currentElement?.name} ({currentElement?.atomicNumber})
+                                        </h2>
+                                    </motion.div>
+                                </AnimatePresence>
+                            </motion.div>
+                        </Card>
+                     )}
+                     {mode === 'learn' && (
+                         <Card className="p-6 bg-blue-500/10 border-blue-500/50 shadow-inner">
+                            <div className="text-center">
+                                <p className="text-sm font-semibold text-blue-700 dark:text-blue-300 flex items-center justify-center gap-2"><BookOpen/> Learn Mode</p>
+                                <h2 className="text-2xl font-bold tracking-tight text-foreground">
+                                    Click any element to see its details.
+                                </h2>
+                            </div>
+                        </Card>
+                     )}
                     
                     <div className="flex justify-center overflow-x-auto">
-                        <div className="grid gap-1 sm:gap-2 p-1" style={gridStyles}>
+                        <div className="grid gap-2 p-1" style={gridStyles}>
                              {gridTemplate.flat().map((el, index) => renderGridCell(el, index))}
                         </div>
                     </div>

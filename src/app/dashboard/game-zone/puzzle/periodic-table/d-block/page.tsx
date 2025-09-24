@@ -12,5 +12,5 @@ export default function DBlockChallengePage() {
         return () => setIsImmersive(false);
     }, [setIsImmersive]);
 
-    return <PeriodicTableGame blockToPlay="d" />;
+    return <PeriodicTableGame blockToPlay="d" mode="challenge" />;
 }
