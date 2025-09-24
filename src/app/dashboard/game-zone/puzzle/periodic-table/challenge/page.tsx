@@ -75,7 +75,7 @@ export default function ElementQuestChallengeHubPage() {
                 <p className="text-muted-foreground">Select a block to begin your mission to master the periodic table.</p>
             </div>
             
-            <Accordion type="single" collapsible defaultValue="item-1">
+            <Accordion type="single" collapsible>
                 <AccordionItem value="item-1">
                     <AccordionTrigger>
                         <h3 className="text-lg font-semibold flex items-center gap-2">
