@@ -1,15 +1,20 @@
 'use client';
 
+import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2, Crown } from 'lucide-react';
+import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2, Crown, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { useAdmin } from '@/hooks/use-admin';
+import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
+import { lockableFeatures, type LockableFeature } from '@/lib/features';
 
 
 const gameCategories = [
     {
+        id: 'arcade',
         title: "Arcade",
         description: "Test your reflexes in fast-paced action games.",
         icon: Orbit,
@@ -18,6 +23,7 @@ const gameCategories = [
         shadow: "shadow-rose-500/30"
     },
     {
+        id: 'strategy',
         title: "Strategy",
         description: "Challenge your mind with classic strategy games.",
         icon: Swords,
@@ -26,6 +32,7 @@ const gameCategories = [
         shadow: "shadow-amber-500/30"
     },
     {
+        id: 'puzzle',
         title: "Puzzle",
         description: "Solve clever puzzles and subject-based sprints.",
         icon: Brain,
@@ -34,6 +41,7 @@ const gameCategories = [
         shadow: "shadow-purple-500/30"
     },
     {
+        id: 'word-games',
         title: "Word Games",
         description: "Unscramble and hunt for words to test your vocabulary.",
         icon: Newspaper,
@@ -42,6 +50,7 @@ const gameCategories = [
         shadow: "shadow-sky-500/30"
     },
      {
+        id: 'memory',
         title: "Memory",
         description: "Train your brain by remembering complex patterns.",
         icon: Dice5,
@@ -52,6 +61,24 @@ const gameCategories = [
 ];
 
 export default function GameZoneHubPage() {
+    const { featureLocks, currentUserData } = useAdmin();
+    const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
+
+    const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'], href: string) => {
+        const isLocked = featureLocks?.[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId);
+        if (isLocked) {
+            e.preventDefault();
+            const feature = lockableFeatures.find(f => f.id === featureId);
+            if (feature) {
+                setFeatureToUnlock(feature);
+            }
+        } else {
+            // Allow navigation if not locked
+        }
+    };
+    
+    const premiumGamesFeatureId = 'premium-games' as LockableFeature['id'];
+    const isPremiumLocked = featureLocks?.[premiumGamesFeatureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(premiumGamesFeatureId);
     
     return (
         <div className="space-y-8">
@@ -65,7 +92,7 @@ export default function GameZoneHubPage() {
             
             <div className="space-y-8">
                 {/* Premium Game Card */}
-                <Link href="/dashboard/game-zone/premium" className="group block">
+                <Link href={isPremiumLocked ? '#' : "/dashboard/game-zone/premium"} className="group block" onClick={(e) => handleFeatureClick(e, premiumGamesFeatureId, "/dashboard/game-zone/premium")}>
                     <Card className="cursor-pointer relative overflow-hidden bg-gradient-to-br from-yellow-900/80 via-black to-black border-yellow-700/50 hover:-translate-y-1 transition-transform duration-300 ease-in-out">
                         <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)] group-hover:opacity-100 transition-opacity duration-300"></div>
                         <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
@@ -77,7 +104,8 @@ export default function GameZoneHubPage() {
                                 <p className="text-yellow-400/70 mt-1 text-sm sm:text-base">Exclusive games with unique challenges and legendary rewards.</p>
                             </div>
                             <Button variant="outline" className="bg-transparent text-white border-white/50 hover:bg-white/10 hover:text-white shrink-0">
-                                <span className="hidden sm:inline">Explore</span> <ArrowRight className="sm:ml-2 h-4 w-4" />
+                                {isPremiumLocked ? <Lock className="sm:mr-2 h-4 w-4" /> : <ArrowRight className="sm:ml-2 h-4 w-4" />}
+                                <span className="hidden sm:inline ml-2">{isPremiumLocked ? 'Unlock' : 'Explore'}</span> 
                             </Button>
                         </CardContent>
                     </Card>
@@ -85,7 +113,7 @@ export default function GameZoneHubPage() {
                 
                 {/* Other Game Categories */}
                 <div className="grid grid-cols-2 gap-4">
-                    {gameCategories.map((category, index) => (
+                    {gameCategories.map((category) => (
                          <Link href={category.href} className="group block" key={category.title}>
                             <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-center h-full">
                                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 z-0 opacity-80"></div>
@@ -99,6 +127,14 @@ export default function GameZoneHubPage() {
                     ))}
                 </div>
             </div>
+            
+            {featureToUnlock && (
+                <FeatureUnlockDialog 
+                    feature={featureToUnlock}
+                    isOpen={!!featureToUnlock}
+                    onOpenChange={(isOpen) => !isOpen && setFeatureToUnlock(null)}
+                />
+            )}
 
         </div>
     );
