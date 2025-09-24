@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Atom, ArrowRight, ArrowLeft, Trophy, Award, CheckCircle } from 'lucide-react';
+import { Atom, ArrowRight, ArrowLeft, Trophy, Award, CheckCircle, Info } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -12,19 +12,21 @@ import { LoginWall } from '@/components/ui/login-wall';
 import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface BlockInfo {
     id: 's' | 'p' | 'd' | 'f';
     name: string;
     description: string;
     color: string;
+    targetTime: number; // in seconds
 }
 
 const blocks: BlockInfo[] = [
-    { id: 's', name: 'S-Block', description: 'Master the alkali and alkaline earth metals.', color: 'from-rose-500 to-red-500' },
-    { id: 'p', name: 'P-Block', description: 'Explore the diverse p-block elements.', color: 'from-amber-500 to-yellow-500' },
-    { id: 'd', name: 'D-Block', description: 'Dive into the transition metals.', color: 'from-sky-500 to-blue-500' },
-    { id: 'f', name: 'F-Block', description: 'Challenge yourself with the lanthanides and actinides.', color: 'from-emerald-500 to-green-500' },
+    { id: 's', name: 'S-Block', description: 'Master the alkali and alkaline earth metals.', color: 'from-rose-500 to-red-500', targetTime: 60 },
+    { id: 'p', name: 'P-Block', description: 'Explore the diverse p-block elements.', color: 'from-amber-500 to-yellow-500', targetTime: 240 },
+    { id: 'd', name: 'D-Block', description: 'Dive into the transition metals.', color: 'from-sky-500 to-blue-500', targetTime: 300 },
+    { id: 'f', name: 'F-Block', description: 'Challenge yourself with the lanthanides and actinides.', color: 'from-emerald-500 to-green-500', targetTime: 360 },
 ];
 
 const MILESTONE_REWARDS = {
@@ -72,6 +74,27 @@ export default function ElementQuestChallengeHubPage() {
                 </h1>
                 <p className="text-muted-foreground">Select a block to begin your mission to master the periodic table.</p>
             </div>
+            
+            <Accordion type="single" collapsible defaultValue="item-1">
+                <AccordionItem value="item-1">
+                    <AccordionTrigger>
+                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                           <Info className="h-5 w-5 text-primary"/> How Scoring Works
+                        </h3>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <div className="space-y-2 text-muted-foreground text-sm">
+                           <p>Your score is based on how fast you complete each block. The quicker you are, the higher your score!</p>
+                           <ul className="list-disc pl-5 space-y-1">
+                               <li>Finishing almost instantly gives you the maximum score of <span className="font-bold text-foreground">100 points</span>.</li>
+                               <li>Finishing at or after the <span className="font-bold text-foreground">Target Time</span> gives you the minimum score of <span className="font-bold text-foreground">1 point</span>.</li>
+                               <li>Your score decreases as you take more time. Aim to be as fast as possible!</li>
+                           </ul>
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
+
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
@@ -81,7 +104,7 @@ export default function ElementQuestChallengeHubPage() {
                         </SignedOut>
                         <CardHeader className="text-center">
                             <CardTitle className="text-2xl font-bold">Choose Your Challenge</CardTitle>
-                            <CardDescription>Which block of the periodic table will you conquer today?</CardDescription>
+                            <CardDescription>Each block has a target time. Beat it to maximize your score!</CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 p-6">
                             {blocks.map((block, index) => {
@@ -101,6 +124,9 @@ export default function ElementQuestChallengeHubPage() {
                                                 <div className="flex-1 flex flex-col justify-center">
                                                     <h3 className="text-2xl font-bold text-white">{block.name}</h3>
                                                     <p className="text-sm text-white/80 mt-2">{block.description}</p>
+                                                    <div className="mt-4 text-sm font-bold bg-black/30 text-white/90 rounded-full px-3 py-1 self-center">
+                                                       Target: {block.targetTime / 60} min
+                                                    </div>
                                                 </div>
                                                 <div className="mt-4">
                                                     <div className="text-white/80 text-xs font-semibold mb-2">HIGH SCORE: {highScore}</div>
