@@ -27,17 +27,17 @@ const MAX_LIVES = 3;
 const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 180, d: 240, f: 300 };
 
 const categoryColors: Record<string, string> = {
-    'alkali metal': 'from-red-500 to-orange-500 border-red-400',
-    'alkaline earth metal': 'from-orange-500 to-amber-500 border-orange-400',
-    'lanthanide': 'from-amber-400 to-yellow-500 border-amber-300',
-    'actinide': 'from-fuchsia-500 to-pink-500 border-fuchsia-400',
-    'transition metal': 'from-green-500 to-teal-500 border-green-400',
-    'post-transition metal': 'from-teal-500 to-cyan-500 border-teal-400',
-    'metalloid': 'from-cyan-500 to-sky-500 border-cyan-400',
-    'polyatomic nonmetal': 'from-blue-500 to-indigo-500 border-blue-400',
-    'diatomic nonmetal': 'from-sky-500 to-blue-500 border-sky-400',
-    'noble gas': 'from-indigo-500 to-violet-500 border-indigo-400',
-    'unknown': 'from-slate-500 to-gray-500 border-slate-400',
+    'alkali metal': 'bg-gradient-to-br from-red-500 to-orange-500 border-red-400',
+    'alkaline earth metal': 'bg-gradient-to-br from-orange-500 to-amber-500 border-orange-400',
+    'lanthanide': 'bg-gradient-to-br from-amber-400 to-yellow-500 border-amber-300',
+    'actinide': 'bg-gradient-to-br from-fuchsia-500 to-pink-500 border-fuchsia-400',
+    'transition metal': 'bg-gradient-to-br from-green-500 to-teal-500 border-green-400',
+    'post-transition metal': 'bg-gradient-to-br from-teal-500 to-cyan-500 border-teal-400',
+    'metalloid': 'bg-gradient-to-br from-cyan-500 to-sky-500 border-cyan-400',
+    'polyatomic nonmetal': 'bg-gradient-to-br from-blue-500 to-indigo-500 border-blue-400',
+    'diatomic nonmetal': 'bg-gradient-to-br from-sky-500 to-blue-500 border-sky-400',
+    'noble gas': 'bg-gradient-to-br from-indigo-500 to-violet-500 border-indigo-400',
+    'unknown': 'bg-gradient-to-br from-slate-500 to-gray-500 border-slate-400',
 };
 
 
@@ -127,16 +127,14 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     };
     
     useEffect(() => {
-        setIsImmersive(true);
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
         };
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => {
-            setIsImmersive(false);
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
         }
-    }, [setIsImmersive]);
+    }, []);
 
     useEffect(() => {
         if (gameState === 'playing' && timeLeft > 0) {
@@ -200,7 +198,8 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 disabled={!element || isPlaced || gameState !== 'playing'}
                 className={cn(
                     "relative aspect-square rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 shadow-md",
-                    "sm:h-24 sm:w-24 h-20 w-full",
+                    "sm:h-24 sm:w-24 h-20 w-full", // Base size
+                    "lg:h-28 lg:w-28", // Larger on large screens
                     !element && "border-transparent bg-transparent shadow-none",
                     element && !isPlaced && "bg-slate-100 dark:bg-slate-800/80 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
                     isPlaced ? 'text-white' : 'border-border'
@@ -212,7 +211,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                      <motion.div 
                         initial={{scale: 0.5, opacity: 0}} 
                         animate={{scale: 1, opacity: 1}} 
-                        className={cn("text-center w-full h-full flex flex-col items-center justify-center rounded-md bg-gradient-to-br", categoryClass)}
+                        className={cn("text-center w-full h-full flex flex-col items-center justify-center rounded-md bg-gradient-to-br p-1", categoryClass)}
                     >
                         <div className="absolute top-1 right-1.5 text-[10px] font-bold opacity-80">{element.atomicNumber}</div>
                         <div className="font-black text-xl sm:text-2xl drop-shadow-md">{element.symbol}</div>
