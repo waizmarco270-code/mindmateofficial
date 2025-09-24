@@ -12,6 +12,7 @@ import periodicTableData from '@/app/lib/periodic-table-data.json';
 import Link from 'next/link';
 import { useImmersive } from '@/hooks/use-immersive';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { useUsers } from '@/hooks/use-admin';
 
 interface Element {
     atomicNumber: number;
@@ -30,7 +31,9 @@ interface Element {
 
 const allElements = periodicTableData.elements as Element[];
 const MAX_LIVES = 3;
-const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 180, d: 240, f: 300 };
+
+// Max time in seconds for 100% efficient completion. Anything over this gets a diminishing score.
+const MAX_TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 240, d: 300, f: 360 };
 
 const categoryColors: Record<string, string> = {
     'alkali metal': 'from-red-500 to-red-700 border-red-400',
@@ -53,21 +56,26 @@ interface GameProps {
 }
 
 export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
+    const { user } = useUser();
+    const { updateElementQuestScore, currentUserData } = useUsers();
     const { toast } = useToast();
     const { setIsImmersive } = useImmersive();
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [selectedElement, setSelectedElement] = useState<Element | null>(null);
-
 
     const [gameState, setGameState] = useState<'playing' | 'gameOver'>('playing');
     const [elementsToPlace, setElementsToPlace] = useState<Element[]>([]);
     const [currentElement, setCurrentElement] = useState<Element | null>(null);
     const [placedElements, setPlacedElements] = useState<Record<number, Element>>({});
     const [lives, setLives] = useState(MAX_LIVES);
-    const [score, setScore] = useState(0);
-    const [timeLeft, setTimeLeft] = useState(TIME_LIMITS[blockToPlay]);
+    const [finalScore, setFinalScore] = useState(0);
+    const [elapsedTime, setElapsedTime] = useState(0);
     
     const gameContainerRef = useRef<HTMLDivElement>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    
+    const highScore = currentUserData?.elementQuestScores?.[blockToPlay] || 0;
+
 
     const { blockElements, gridTemplate, gridStyles } = useMemo(() => {
         const elements = allElements.filter(e => {
@@ -128,7 +136,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
 
         if (!document.fullscreenElement) {
             elem.requestFullscreen().catch(err => {
-                toast({ variant: 'destructive', title: `Error entering fullscreen: ${'${err.message}'}` });
+                toast({ variant: 'destructive', title: `Error entering fullscreen: ${err.message}` });
             });
         } else {
             document.exitFullscreen();
@@ -145,15 +153,18 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
         }
     }, []);
 
+    const stopTimer = () => {
+        if(timerRef.current) clearInterval(timerRef.current);
+    }
+    
     useEffect(() => {
-        if (gameState === 'playing' && timeLeft > 0 && mode === 'challenge') {
-            const timer = setTimeout(() => setTimeLeft(t => t - 1), 1000);
-            return () => clearTimeout(timer);
-        } else if (gameState === 'playing' && timeLeft === 0 && mode === 'challenge') {
-            toast({ title: "Time's up!", variant: 'destructive' });
-            setGameState('gameOver');
+        if (gameState === 'playing' && mode === 'challenge') {
+            timerRef.current = setInterval(() => setElapsedTime(t => t + 1), 1000);
+        } else {
+            stopTimer();
         }
-    }, [gameState, timeLeft, toast, mode]);
+        return () => stopTimer();
+    }, [gameState, mode]);
 
     const startGame = useCallback(() => {
         const shuffled = [...blockElements].sort(() => Math.random() - 0.5);
@@ -161,8 +172,8 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
         setCurrentElement(shuffled[0]);
         setPlacedElements({});
         setLives(MAX_LIVES);
-        setScore(0);
-        setTimeLeft(TIME_LIMITS[blockToPlay]);
+        setFinalScore(0);
+        setElapsedTime(0);
         setGameState('playing');
     }, [blockToPlay, blockElements]);
     
@@ -184,20 +195,31 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
             
             const remaining = elementsToPlace.filter(e => e.atomicNumber !== currentElement.atomicNumber);
             setElementsToPlace(remaining);
-            setScore(prev => prev + 10);
-            toast({ title: 'Correct!', description: `+10 points for placing ${'${currentElement.name}'}.`, className: "bg-green-500/10 text-green-700 dark:text-green-300" });
+            
+            toast({ title: 'Correct!', description: `Placed ${currentElement.name}.`, className: "bg-green-500/10 text-green-700 dark:text-green-300" });
 
             if (remaining.length === 0) {
-                setGameState('gameOver');
+                 stopTimer();
+                 setGameState('gameOver');
+                 const maxTime = MAX_TIME_LIMITS[blockToPlay];
+                 // Score decreases linearly. Finishes in 0s = 100. Finishes at maxTime = 1. Finishes after maxTime = 1.
+                 const calculatedScore = Math.max(1, Math.round(100 * (1 - (elapsedTime / maxTime))));
+                 setFinalScore(calculatedScore);
+                 if(user) updateElementQuestScore(user.id, blockToPlay, calculatedScore);
             } else {
                 setCurrentElement(remaining[0]);
             }
         } else {
-            setLives(l => l - 1);
+            setLives(l => {
+                const newLives = l - 1;
+                if (newLives <= 0) {
+                    stopTimer();
+                    setGameState('gameOver');
+                    setFinalScore(0);
+                }
+                return newLives;
+            });
             toast({ title: 'Incorrect Placement!', variant: 'destructive' });
-            if (lives - 1 <= 0) {
-                setGameState('gameOver');
-            }
         }
     };
     
@@ -207,7 +229,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
 
         return (
             <motion.button
-                key={element ? element.atomicNumber : `empty-${'${cellIndex}'}`}
+                key={element ? element.atomicNumber : `empty-${cellIndex}`}
                 onClick={() => handleCellClick(element)}
                 disabled={!element || (isPlaced && mode !== 'learn') || (gameState !== 'playing' && mode !== 'learn')}
                 className={cn(
@@ -234,7 +256,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                         <div className="text-[9px] font-bold truncate px-0.5">{element.name}</div>
                     </motion.div>
                 ) : element ? (
-                    <div className="text-muted-foreground/30 text-lg font-semibold">{element.atomicNumber}</div>
+                    <div className="text-muted-foreground/30 text-lg font-semibold"></div>
                 ) : null}
             </motion.button>
         )
@@ -251,7 +273,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                         <>
                             <DialogHeader>
                                 <DialogTitle className="text-3xl font-bold flex items-center gap-4">
-                                     <span className={cn("text-5xl font-black", categoryColors[selectedElement.category]?.replace(/bg-gradient-to-br|border-\\w+-\\d+/g, ''))}>{selectedElement.symbol}</span>
+                                     <span className={cn("text-5xl font-black", categoryColors[selectedElement.category]?.replace(/from-\\w+-\\d+|to-\\w+-\\d+|border-\\w+-\\d+/g, ''))}>{selectedElement.symbol}</span>
                                      <span>{selectedElement.name} (#{selectedElement.atomicNumber})</span>
                                 </DialogTitle>
                                 <DialogDescription className="capitalize">{selectedElement.category}</DialogDescription>
@@ -260,7 +282,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                                <p><strong>Atomic Mass:</strong> {selectedElement.atomicMass}</p>
                                <p><strong>Electron Config:</strong> {selectedElement.electronConfiguration}</p>
                                <p><strong>Electronegativity:</strong> {selectedElement.electronegativity ?? 'N/A'}</p>
-                               <p><strong>Density:</strong> {selectedElement.density ? `${'${selectedElement.density}'} g/cm³` : 'N/A'}</p>
+                               <p><strong>Density:</strong> {selectedElement.density ? `${selectedElement.density} g/cm³` : 'N/A'}</p>
                                <p className="pt-2 text-muted-foreground">{selectedElement.summary}</p>
                             </div>
                         </>
@@ -274,11 +296,11 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                 </Button>
                 {mode === 'challenge' && gameState === 'playing' && (
                      <div className="flex items-center gap-4 text-sm font-medium bg-muted/50 px-3 py-1.5 rounded-lg">
-                        <div className="flex items-center gap-1" title="Time Left"><Clock className="h-4 w-4"/> {timeLeft}s</div>
-                        <div className="flex items-center gap-1" title="Score"><Award className="h-4 w-4 text-green-500"/> {score}</div>
+                        <div className="flex items-center gap-1" title="Time Elapsed"><Clock className="h-4 w-4"/> {elapsedTime}s</div>
+                        <div className="flex items-center gap-1" title="High Score"><Trophy className="h-4 w-4 text-amber-500"/> {highScore}</div>
                         <div className="flex items-center gap-0.5">
-                            {[...Array(lives)].map((_, i) => <Heart key={`life-${'${i}'}`} className="h-5 w-5 text-red-500 fill-red-500"/>)}
-                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${'${i}'}`} className="h-5 w-5 text-muted-foreground/30"/>)}
+                            {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-5 w-5 text-red-500 fill-red-500"/>)}
+                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-5 w-5 text-muted-foreground/30"/>)}
                         </div>
                     </div>
                 )}
@@ -292,7 +314,11 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                     <Card className="w-full max-w-md mx-auto text-center p-6">
                         <Trophy className={cn("h-20 w-20 mx-auto", lives > 0 ? "text-yellow-400" : "text-muted-foreground")}/>
                         <h2 className="text-3xl font-bold mt-4">{lives > 0 ? "Block Completed!" : "Game Over!"}</h2>
-                        <p className="text-muted-foreground mt-2">Your final score is <span className="font-bold text-primary text-xl">{score}</span>.</p>
+                        <p className="text-muted-foreground mt-2">
+                            {lives > 0 ? `You finished in ${elapsedTime} seconds.` : 'You ran out of lives.'}
+                        </p>
+                        <p className="text-muted-foreground mt-2">Your score is <span className="font-bold text-primary text-xl">{finalScore}</span>.</p>
+                         {finalScore > highScore && <p className="font-bold text-green-500">New High Score!</p>}
                         <Button onClick={startGame} className="mt-6"><RotateCw className="mr-2"/> Play Again</Button>
                     </Card>
                 </div>
