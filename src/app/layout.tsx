@@ -42,6 +42,7 @@ export default function RootLayout({
           />
            <meta name="theme-color" content="#000000" />
            <link rel="manifest" href="/manifest.json" />
+           <link rel="icon" href="/logo.png" type="image/png" sizes="any" />
         </head>
         <body className={cn('font-body antialiased', 'min-h-screen bg-background font-sans')}>
           <ThemeProvider
