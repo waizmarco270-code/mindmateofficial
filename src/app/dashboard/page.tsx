@@ -337,7 +337,7 @@ export default function DashboardPage() {
                             onClick={() => setIsFeatureShowcaseOpen(true)}
                         >
                              <div className="absolute inset-0 w-full h-full overflow-hidden [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]">
-                                <div className="absolute inset-0 bg-grid-slate-800 animate-pulse [background-size:4rem_4rem]"></div>
+                                <div className="absolute inset-0 bg-grid-slate-800 animate-pulse duration-[4000ms]"></div>
                             </div>
                             <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center items-center">
                                 <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl duration-[3000ms]"></div>
@@ -386,7 +386,7 @@ export default function DashboardPage() {
                 className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-green-400/20 via-teal-500/20 to-emerald-600/20 border-green-500/20 hover:border-green-500/40 transition-all duration-300"
                 onClick={() => setIsSurpriseRevealed(true)}
             >
-                <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]"></div>
+                <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-[4000ms]"></div>
                 <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center">
                     <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-green-500/20 rounded-full blur-3xl"></div>
                     <div className="relative flex flex-col items-center">
