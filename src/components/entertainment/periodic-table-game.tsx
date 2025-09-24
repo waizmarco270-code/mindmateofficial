@@ -27,17 +27,17 @@ const MAX_LIVES = 3;
 const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 180, d: 240, f: 300 };
 
 const categoryColors: Record<string, string> = {
-    'alkali metal': 'bg-red-500 border-red-400',
-    'alkaline earth metal': 'bg-orange-500 border-orange-400',
-    'lanthanide': 'bg-amber-400 border-amber-300 text-gray-800',
-    'actinide': 'bg-fuchsia-500 border-fuchsia-400',
-    'transition metal': 'bg-green-500 border-green-400',
-    'post-transition metal': 'bg-teal-500 border-teal-400',
-    'metalloid': 'bg-cyan-500 border-cyan-400',
-    'polyatomic nonmetal': 'bg-blue-500 border-blue-400',
-    'diatomic nonmetal': 'bg-sky-500 border-sky-400',
-    'noble gas': 'bg-indigo-500 border-indigo-400',
-    'unknown': 'bg-slate-500 border-slate-400',
+    'alkali metal': 'from-red-500 to-red-700 border-red-400',
+    'alkaline earth metal': 'from-orange-500 to-orange-700 border-orange-400',
+    'lanthanide': 'from-amber-400 to-amber-600 border-amber-300 text-gray-800',
+    'actinide': 'from-fuchsia-500 to-fuchsia-700 border-fuchsia-400',
+    'transition metal': 'from-green-500 to-green-700 border-green-400',
+    'post-transition metal': 'from-teal-500 to-teal-700 border-teal-400',
+    'metalloid': 'from-cyan-500 to-cyan-700 border-cyan-400',
+    'polyatomic nonmetal': 'from-blue-500 to-blue-700 border-blue-400',
+    'diatomic nonmetal': 'from-sky-500 to-sky-700 border-sky-400',
+    'noble gas': 'from-indigo-500 to-indigo-700 border-indigo-400',
+    'unknown': 'from-slate-500 to-slate-700 border-slate-400',
 };
 
 
@@ -197,10 +197,9 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 onClick={() => handleCellClick(element)}
                 disabled={!element || isPlaced || gameState !== 'playing'}
                 className={cn(
-                    "relative aspect-square rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 shadow-md",
-                    "sm:h-24 sm:w-24 h-full w-full",
-                    !element && "border-transparent bg-transparent shadow-none",
-                    element && !isPlaced && "bg-slate-100 dark:bg-slate-800/80 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
+                    "relative aspect-square rounded-md flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
+                    !element && "border-transparent bg-transparent",
+                    element && !isPlaced && "bg-slate-100 dark:bg-slate-800/50 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
                     isPlaced ? 'text-white' : 'border-border'
                 )}
                  whileHover={{ scale: element && !isPlaced ? 1.05 : 1 }}
@@ -210,14 +209,18 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                      <motion.div 
                         initial={{scale: 0.5, opacity: 0}} 
                         animate={{scale: 1, opacity: 1}} 
-                        className={cn("text-center w-full h-full flex flex-col items-center justify-center rounded-md bg-gradient-to-br p-1 border-2", categoryClass)}
+                        className={cn(
+                            "relative text-center w-full h-full flex flex-col items-center justify-center rounded bg-gradient-to-br p-1 border-2 transition-shadow hover:shadow-lg", 
+                            categoryClass
+                        )}
+                        style={{textShadow: '0 1px 2px rgba(0,0,0,0.4)'}}
                     >
-                        <div className="absolute top-1 right-1.5 text-[9px] font-bold opacity-80">{element.atomicNumber}</div>
-                        <div className="font-black text-lg sm:text-xl drop-shadow-md">{element.symbol}</div>
-                        <div className="text-[9px] font-bold truncate px-0.5">{element.name}</div>
+                         <div className="absolute top-0.5 right-1 text-[8px] sm:text-[10px] font-bold opacity-80">{element.atomicNumber}</div>
+                        <div className="font-black text-base sm:text-xl drop-shadow-md">{element.symbol}</div>
+                        <div className="text-[7px] sm:text-[9px] font-bold truncate px-0.5">{element.name}</div>
                     </motion.div>
                 ) : element ? (
-                    <div className="text-muted-foreground/30 text-xs">{element.atomicNumber}</div>
+                    <div className="text-muted-foreground/30 text-sm font-semibold">{element.atomicNumber}</div>
                 ) : null}
             </motion.button>
         )
@@ -276,7 +279,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                     </Card>
                     
                     <div className="flex justify-center overflow-x-auto">
-                        <div className="grid gap-2 p-1" style={gridStyles}>
+                        <div className="grid gap-1 sm:gap-2 p-1" style={gridStyles}>
                              {gridTemplate.flat().map((el, index) => renderGridCell(el, index))}
                         </div>
                     </div>
