@@ -56,49 +56,50 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     const [timeLeft, setTimeLeft] = useState(TIME_LIMITS[blockToPlay]);
     
     const { blockElements, gridTemplate } = useMemo(() => {
-        const elements = allElements.filter(e => e.block === blockToPlay);
-        let template: (Element | null)[][] = [];
+        const elements = allElements.filter(e => {
+            if (blockToPlay === 'f') return e.category === 'lanthanide' || e.category === 'actinide';
+            return e.block === blockToPlay;
+        });
+        
+        let gridRows: (Element | null)[][] = [];
 
         if (blockToPlay === 's') {
-            template = Array(7).fill(null).map(() => Array(2).fill(null));
+            gridRows = Array.from({ length: 7 }, () => Array(2).fill(null));
+            elements.forEach(el => {
+                if(el.period >= 1 && el.period <= 7 && el.group >= 1 && el.group <= 2) {
+                    gridRows[el.period - 1][el.group - 1] = el;
+                }
+            });
+             gridRows[0][1] = allElements.find(e => e.atomicNumber === 2)!; // Helium
         } else if (blockToPlay === 'p') {
-            template = Array(6).fill(null).map(() => Array(6).fill(null));
+            gridRows = Array.from({ length: 6 }, () => Array(6).fill(null));
+            elements.forEach(el => {
+                if(el.period >= 2 && el.period <= 7 && el.group >= 13 && el.group <= 18) {
+                    gridRows[el.period - 2][el.group - 13] = el;
+                }
+            });
         } else if (blockToPlay === 'd') {
-            template = Array(4).fill(null).map(() => Array(10).fill(null));
+            gridRows = Array.from({ length: 4 }, () => Array(10).fill(null));
+            elements.forEach(el => {
+                 if(el.period >= 4 && el.period <= 7 && el.group >= 3 && el.group <= 12) {
+                    gridRows[el.period - 4][el.group - 3] = el;
+                }
+            });
         } else if (blockToPlay === 'f') {
-            template = Array(2).fill(null).map(() => Array(15).fill(null));
+            gridRows = Array.from({ length: 2 }, () => Array(15).fill(null));
+            elements.forEach(el => {
+                let row = el.category === 'lanthanide' ? 0 : 1;
+                let col;
+                if (el.atomicNumber >= 57 && el.atomicNumber <= 71) col = el.atomicNumber - 57;
+                else col = el.atomicNumber - 89;
+                
+                if (gridRows[row] !== undefined && gridRows[row][col] !== undefined) {
+                    gridRows[row][col] = el;
+                }
+            });
         }
         
-        elements.forEach(el => {
-            let row: number, col: number;
-            if (el.block === 's') {
-                row = el.period - 1;
-                col = el.group - 1;
-            } else if (el.block === 'p') {
-                row = el.period - 2;
-                col = el.group - 13;
-            } else if (el.block === 'd') {
-                row = el.period - 4;
-                col = el.group - 3;
-            } else if (el.block === 'f') {
-                row = el.period - 6;
-                col = el.group === 3 ? el.atomicNumber - (el.period === 6 ? 57 : 89) : 0;
-            } else {
-                return;
-            }
-
-            if(template[row] !== undefined && template[row][col] !== undefined) {
-               template[row][col] = el;
-            }
-        });
-
-        // Special case for Helium in s-block view
-        if(blockToPlay === 's'){
-            template[0][1] = allElements.find(e => e.atomicNumber === 2)!;
-        }
-
-
-        return { blockElements: elements, gridTemplate: template };
+        return { blockElements: elements, gridTemplate: gridRows };
     }, [blockToPlay]);
 
     useEffect(() => {
@@ -162,7 +163,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 onClick={() => handleCellClick(element)}
                 disabled={!element || isPlaced || gameState !== 'playing'}
                 className={cn(
-                    "aspect-square border rounded-md flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
+                    "relative aspect-square border rounded-md flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
                     "h-14 w-14 sm:h-16 sm:w-16",
                     !element && "border-transparent bg-transparent",
                     element && !isPlaced && "bg-card hover:bg-muted disabled:cursor-not-allowed",
@@ -170,13 +171,13 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 )}
             >
                 {isPlaced ? (
-                    <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}} className="text-center">
+                    <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}} className="text-center w-full">
+                        <div className="absolute top-0.5 right-1 text-[8px] opacity-70">{element.atomicNumber}</div>
                         <div className="font-bold text-sm sm:text-base">{element.symbol}</div>
-                        <div className="text-[9px] hidden sm:block">{element.name}</div>
-                        <div className="text-[9px] sm:hidden">{element.atomicNumber}</div>
+                        <div className="text-[8px] truncate px-0.5">{element.name}</div>
                     </motion.div>
                 ) : element ? (
-                    <div className="text-muted-foreground/50 text-[9px]">{element.atomicNumber}</div>
+                    <div className="text-muted-foreground/30 text-[9px]">{element.atomicNumber}</div>
                 ) : null}
             </button>
         )
@@ -185,10 +186,22 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
 
     return (
         <div className="space-y-4">
-             <Link href="/dashboard/game-zone/puzzle/periodic-table" className="text-sm text-muted-foreground hover:text-primary mb-2 inline-block"><ArrowLeft className="inline mr-1 h-4 w-4"/> Back to Block Selection</Link>
+            <div className="flex justify-between items-center">
+                 <Link href="/dashboard/game-zone/puzzle/periodic-table" className="text-sm text-muted-foreground hover:text-primary mb-2 inline-block"><ArrowLeft className="inline mr-1 h-4 w-4"/> Back</Link>
+                {gameState === 'playing' && (
+                     <div className="flex items-center gap-4 sm:gap-6 text-sm">
+                        <div className="flex items-center gap-2 font-bold" title="Time Left"><Clock className="h-5 w-5"/> {timeLeft}s</div>
+                        <div className="flex items-center gap-2 font-bold" title="Score"><Award className="h-5 w-5 text-green-500"/> {score}</div>
+                        <div className="flex items-center gap-1">
+                            {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-5 w-5 text-red-500 fill-red-500"/>)}
+                            {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-5 w-5 text-muted-foreground/30"/>)}
+                        </div>
+                    </div>
+                )}
+            </div>
             
             {gameState === 'gameOver' ? (
-                <Card className="w-full max-w-md mx-auto text-center p-6">
+                <Card className="w-full max-w-md mx-auto text-center p-6 mt-10">
                     <Trophy className={cn("h-20 w-20 mx-auto", lives > 0 ? "text-yellow-400" : "text-muted-foreground")}/>
                     <h2 className="text-3xl font-bold mt-4">{lives > 0 ? "Block Completed!" : "Game Over!"}</h2>
                     <p className="text-muted-foreground mt-2">Your final score is <span className="font-bold text-primary text-xl">{score}</span>.</p>
@@ -196,7 +209,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 </Card>
             ) : (
                 <div className="space-y-6">
-                    <Card className="p-4 sm:p-6 sticky top-[4.5rem] z-10 bg-green-500/10 border-green-500/50">
+                    <Card className="p-4 sm:p-6 bg-green-500/10 border-green-500/50">
                         <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="text-center">
                             <p className="text-sm font-semibold text-green-700 dark:text-green-300">Place this Element:</p>
                              <AnimatePresence mode="wait">
@@ -218,27 +231,15 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                     <div className="flex justify-center">
                         <div className="grid gap-1">
                              {gridTemplate.map((row, rowIndex) => (
-                                <div key={rowIndex} className="flex gap-1">
+                                <div key={rowIndex} className="flex gap-1 justify-center">
                                     {row.map((el, colIndex) => renderGridCell(el, rowIndex * row.length + colIndex))}
                                 </div>
                             ))}
                         </div>
                     </div>
-
-                    <Card className="p-4 fixed bottom-4 left-4 right-4 bg-background/80 backdrop-blur-lg z-20">
-                        <div className="flex justify-between items-center">
-                            <div className="flex items-center gap-4 sm:gap-6 text-base sm:text-lg">
-                                <div className="flex items-center gap-2 font-bold" title="Time Left"><Clock className="h-5 w-5"/> {timeLeft}s</div>
-                                <div className="flex items-center gap-2 font-bold" title="Score"><Award className="h-5 w-5 text-green-500"/> {score}</div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-6 w-6 text-red-500 fill-red-500"/>)}
-                                {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-6 w-6 text-muted-foreground/30"/>)}
-                            </div>
-                        </div>
-                    </Card>
                 </div>
             )}
         </div>
     );
 }
+
