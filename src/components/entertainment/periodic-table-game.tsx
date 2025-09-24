@@ -23,18 +23,18 @@ interface Element {
 
 const allElements = periodicTableData.elements as Element[];
 const MAX_LIVES = 3;
-const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 90, d: 120, f: 150 };
+const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 180, d: 240, f: 300 };
 
 const categoryColors: Record<string, string> = {
     'alkali metal': 'bg-red-500/80 border-red-400 text-white',
     'alkaline earth metal': 'bg-orange-500/80 border-orange-400 text-white',
-    'lanthanide': 'bg-yellow-600/80 border-yellow-500 text-white',
-    'actinide': 'bg-lime-600/80 border-lime-500 text-white',
+    'lanthanide': 'bg-yellow-500/80 border-yellow-400 text-white',
+    'actinide': 'bg-lime-500/80 border-lime-400 text-white',
     'transition metal': 'bg-green-500/80 border-green-400 text-white',
     'post-transition metal': 'bg-teal-500/80 border-teal-400 text-white',
     'metalloid': 'bg-cyan-500/80 border-cyan-400 text-white',
-    'polyatomic nonmetal': 'bg-sky-500/80 border-sky-400 text-white',
-    'diatomic nonmetal': 'bg-blue-500/80 border-blue-400 text-white',
+    'polyatomic nonmetal': 'bg-blue-500/80 border-blue-400 text-white',
+    'diatomic nonmetal': 'bg-sky-500/80 border-sky-400 text-white',
     'noble gas': 'bg-indigo-500/80 border-indigo-400 text-white',
     'unknown': 'bg-slate-500/80 border-slate-400 text-white',
 };
@@ -53,6 +53,8 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     const [lives, setLives] = useState(MAX_LIVES);
     const [score, setScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState(TIME_LIMITS[blockToPlay]);
+    
+    const blockElements = useMemo(() => allElements.filter(e => e.block === blockToPlay), [blockToPlay]);
 
     useEffect(() => {
         if (gameState === 'playing' && timeLeft > 0) {
@@ -65,24 +67,24 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     }, [gameState, timeLeft, toast]);
 
     const startGame = useCallback(() => {
-        const blockElements = [...allElements].filter(e => e.block === blockToPlay).sort(() => Math.random() - 0.5);
-        setElementsToPlace(blockElements);
-        setCurrentElement(blockElements[0]);
+        const shuffled = [...blockElements].sort(() => Math.random() - 0.5);
+        setElementsToPlace(shuffled);
+        setCurrentElement(shuffled[0]);
         setPlacedElements({});
         setLives(MAX_LIVES);
         setScore(0);
         setTimeLeft(TIME_LIMITS[blockToPlay]);
         setGameState('playing');
-    }, [blockToPlay]);
+    }, [blockToPlay, blockElements]);
     
     useEffect(() => {
         startGame();
     }, [startGame]);
 
-    const handleCellClick = (period: number, group: number) => {
+    const handleCellClick = (element: Element) => {
         if (!currentElement || gameState !== 'playing') return;
 
-        if (currentElement.period === period && currentElement.group === group) {
+        if (currentElement.atomicNumber === element.atomicNumber) {
             const newPlaced = { ...placedElements, [currentElement.atomicNumber]: currentElement };
             setPlacedElements(newPlaced);
             
@@ -105,27 +107,38 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
         }
     };
 
-    const renderTableCell = (element: Element | undefined, period: number, group: number) => {
-        if (!element || (element.block !== blockToPlay && blockToPlay !== 'f')) {
-            // Render a placeholder for non-target blocks, but only if it's a valid element position
-             if (element) {
-                return <div key={`${period}-${group}`} className="aspect-square border border-dashed border-muted-foreground/20 rounded-md" />
-             }
-             return <div key={`${period}-${group}`} />;
-        }
+    const gridClasses: Record<string, string> = {
+        s: 'grid-cols-2',
+        p: 'grid-cols-6',
+        d: 'grid-cols-10',
+        f: 'grid-cols-15'
+    }
+    
+    const renderFBlockGrid = () => {
+        const lanthanides = blockElements.filter(e => e.period === 6);
+        const actinides = blockElements.filter(e => e.period === 7);
         
+        return (
+             <div className="space-y-4">
+                <div className="grid grid-cols-15 gap-1">{lanthanides.map(el => renderGridCell(el))}</div>
+                <div className="grid grid-cols-15 gap-1">{actinides.map(el => renderGridCell(el))}</div>
+            </div>
+        )
+    }
+
+    const renderGridCell = (element: Element) => {
         const isPlaced = placedElements[element.atomicNumber];
         const categoryClass = isPlaced ? categoryColors[element.category] || categoryColors.unknown : '';
 
         return (
             <button
                 key={element.atomicNumber}
-                onClick={() => handleCellClick(period, group)}
+                onClick={() => handleCellClick(element)}
                 disabled={isPlaced || gameState !== 'playing'}
                 className={cn(
                     "aspect-square border rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
                     "bg-card hover:bg-muted disabled:cursor-not-allowed",
-                    isPlaced ? cn(categoryClass) : "border-border"
+                    isPlaced ? cn(categoryClass, "shadow-lg") : "border-border"
                 )}
             >
                 {isPlaced ? (
@@ -139,32 +152,8 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 )}
             </button>
         )
-    };
-
-    const renderTable = () => (
-        <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(18, minmax(0, 1fr))' }}>
-            {Array.from({ length: 7 * 18 }).map((_, i) => {
-                const period = Math.floor(i / 18) + 1;
-                const group = (i % 18) + 1;
-                const element = allElements.find(e => e.period === period && e.group === group);
-                return renderTableCell(element, period, group);
-            })}
-        </div>
-    );
-    
-    const renderFBlockTable = () => {
-         const lanthanides = allElements.filter(e => e.atomicNumber >= 57 && e.atomicNumber <= 71);
-         const actinides = allElements.filter(e => e.atomicNumber >= 89 && e.atomicNumber <= 103);
-        
-        const renderRow = (elements: Element[]) => elements.map(element => renderTableCell(element, element.period, element.group));
-
-        return (
-            <div className="space-y-2 max-w-4xl mx-auto">
-                <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }}>{renderRow(lanthanides)}</div>
-                <div className="grid gap-1" style={{ gridTemplateColumns: 'repeat(15, minmax(0, 1fr))' }}>{renderRow(actinides)}</div>
-            </div>
-        )
     }
+
 
     return (
         <div className="space-y-4">
@@ -179,9 +168,9 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 </Card>
             ) : (
                 <div className="space-y-6">
-                    <Card className="p-4 sm:p-6 sticky top-[4.5rem] z-10 bg-background/80 backdrop-blur-lg">
-                        <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}}>
-                            <p className="text-sm font-semibold text-muted-foreground">Place:</p>
+                    <Card className="p-4 sm:p-6 sticky top-[4.5rem] z-10 bg-green-500/10 border-green-500/50">
+                        <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} className="text-center">
+                            <p className="text-sm font-semibold text-green-700 dark:text-green-300">Place this Element:</p>
                              <AnimatePresence mode="wait">
                                 <motion.div 
                                     key={currentElement?.name} 
@@ -190,27 +179,30 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                                     exit={{opacity:0, y:-20}} 
                                     transition={{duration: 0.3}}
                                 >
-                                    <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-primary">
+                                    <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-foreground">
                                         {currentElement?.name} ({currentElement?.atomicNumber})
                                     </h2>
                                 </motion.div>
                              </AnimatePresence>
-                            <div className="flex justify-between items-center mt-4 pt-4 border-t">
-                                <div className="flex items-center gap-4 sm:gap-6 text-base sm:text-lg">
-                                    <div className="flex items-center gap-2 font-bold" title="Time Left"><Clock className="h-5 w-5"/> {timeLeft}s</div>
-                                    <div className="flex items-center gap-2 font-bold" title="Score"><Award className="h-5 w-5 text-green-500"/> {score}</div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-6 w-6 text-red-500 fill-red-500"/>)}
-                                    {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-6 w-6 text-muted-foreground/30"/>)}
-                                </div>
-                            </div>
                         </motion.div>
                     </Card>
-
-                    <div className="overflow-x-auto p-1 bg-muted/30 rounded-xl">
-                        {blockToPlay === 'f' ? renderFBlockTable() : renderTable()}
+                    
+                    <div className={cn("grid w-full gap-1", gridClasses[blockToPlay])}>
+                        {blockToPlay === 'f' ? renderFBlockGrid() : blockElements.map(el => renderGridCell(el))}
                     </div>
+
+                    <Card className="p-4 fixed bottom-4 left-4 right-4 bg-background/80 backdrop-blur-lg z-20">
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4 sm:gap-6 text-base sm:text-lg">
+                                <div className="flex items-center gap-2 font-bold" title="Time Left"><Clock className="h-5 w-5"/> {timeLeft}s</div>
+                                <div className="flex items-center gap-2 font-bold" title="Score"><Award className="h-5 w-5 text-green-500"/> {score}</div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {[...Array(lives)].map((_, i) => <Heart key={`life-${i}`} className="h-6 w-6 text-red-500 fill-red-500"/>)}
+                                {[...Array(MAX_LIVES - lives)].map((_, i) => <Heart key={`lost-${i}`} className="h-6 w-6 text-muted-foreground/30"/>)}
+                            </div>
+                        </div>
+                    </Card>
                 </div>
             )}
         </div>
