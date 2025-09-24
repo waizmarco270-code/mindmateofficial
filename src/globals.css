@@ -100,6 +100,11 @@
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
+  
+  @keyframes challenger-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 
   @keyframes move {
     100% {
@@ -202,6 +207,10 @@
     from { background-position: 0 0; }
     to { background-position: 20% 40%; }
   }
+  @keyframes rainbow-progress {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
 
 }
 
@@ -233,6 +242,19 @@
     animation: gm-shimmer 4s ease infinite;
   }
   
+  .challenger-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(135deg, #ff4e00, #f7971e, #ff4e00);
+    background-size: 200% 200%;
+    color: #ffffff;
+    border: 1px solid #f7971e;
+    text-shadow: 0 0 5px rgba(247, 151, 30, 0.8);
+    animation: challenger-shimmer 3s ease-in-out infinite;
+  }
+  .challenger-badge > svg {
+    @apply text-white;
+  }
+
   .dev-badge {
     @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
     background-color: #ef4444; /* red-500 */
@@ -426,7 +448,10 @@
     background-size: 100% 5px, 5px 100%;
     animation: lofi-rain 0.2s linear infinite;
   }
-
+  @keyframes rainbow-progress {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
 
   .animate-flicker {
     animation: flicker 1.5s infinite;

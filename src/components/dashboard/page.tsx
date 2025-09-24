@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -14,6 +13,7 @@ import { cn } from '@/lib/utils';
 import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
 import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 import { TypingAnimation } from './typing-animation';
+import { motion } from 'framer-motion';
 
 const features = [
   {
@@ -106,9 +106,14 @@ export default function DashboardPage() {
             className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-yellow-400/20 via-pink-500/20 to-purple-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
             onClick={() => setIsSurpriseRevealed(true)}
           >
-            <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000"></div>
+            <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse"></div>
             <CardContent className="relative p-6 text-center">
-                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"></div>
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, type: 'spring', stiffness: 100 }}
+                  className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl"
+                ></motion.div>
                 <div className="relative flex flex-col items-center">
                   <Gift className="h-10 w-10 text-primary animate-bounce"/>
                   <h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3>

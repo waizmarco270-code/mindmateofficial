@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle, Star } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle, Star, Swords } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -671,7 +671,7 @@ export default function AdminPanelPage() {
                                     <SelectContent>
                                         <SelectItem value="fact"><Lightbulb className="mr-2 h-4 w-4" /> Fun Fact</SelectItem>
                                         <SelectItem value="quote"><MessageSquare className="mr-2 h-4 w-4" /> Quote</SelectItem>
-                                        <SelectItem value="meme"><Image className="mr-2 h-4 w-4" /> Meme</SelectItem>
+                                        <SelectItem value="meme"><ImageIcon className="mr-2 h-4 w-4" /> Meme</SelectItem>
                                         <SelectItem value="quiz"><Mic className="mr-2 h-4 w-4" /> Micro Quiz</SelectItem>
                                         <SelectItem value="new-feature"><Gift className="mr-2 h-4 w-4"/> New Feature</SelectItem>
                                     </SelectContent>
@@ -1111,7 +1111,3 @@ export default function AdminPanelPage() {
     </div>
   );
 }
-
-    
-
-  
