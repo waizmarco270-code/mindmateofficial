@@ -28,7 +28,7 @@ export default function ElementQuestLearnHubPage() {
     return (
         <div className="space-y-8">
             <div>
-                 <Link href="/dashboard/game-zone/puzzle/periodic-table" className="text-sm text-muted-foreground hover:text-primary mb-2 inline-block"><ArrowLeft className="inline h-4 w-4 mr-1"/>Back to Modes</Link>
+                 <Link href="/dashboard/game-zone/premium" className="text-sm text-muted-foreground hover:text-primary mb-2 inline-block"><ArrowLeft className="inline h-4 w-4 mr-1"/>Back to Premium Games</Link>
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
                   <Atom className="h-8 w-8 text-primary" />
                   Element Quest: Learn Mode

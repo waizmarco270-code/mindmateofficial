@@ -3,7 +3,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2 } from 'lucide-react';
+import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2, Crown } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -50,7 +50,7 @@ const gameCategories = [
         color: "from-green-500 to-emerald-500",
         shadow: "shadow-green-500/30"
     },
-]
+];
 
 export default function GameZoneHubPage() {
     
@@ -98,6 +98,33 @@ export default function GameZoneHubPage() {
                         </Link>
                     </motion.div>
                 ))}
+                 <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5, delay: 0.6 }}
+                    className="lg:col-span-3"
+                 >
+                     <Link href="/dashboard/game-zone/premium" className="block h-full">
+                        <Card className="group relative overflow-hidden transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2 shadow-yellow-500/30 border-yellow-500/50">
+                             <div className="absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-tr from-yellow-400 to-amber-600"></div>
+                             <div className="absolute inset-0 w-full h-full animate-shimmer bg-gradient-to-r from-transparent via-white/20 to-transparent bg-[length:400%_100%]"></div>
+                             <CardContent className="p-6">
+                                <div className="flex flex-col md:flex-row items-center md:gap-6 text-center md:text-left">
+                                    <div className="p-4 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 mb-4 md:mb-0">
+                                        <Crown className="h-8 w-8 text-white animate-gold-shine"/>
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-2xl font-bold text-white [text-shadow:0_0_10px_#f59e0b]">Premium Games</h3>
+                                        <p className="text-amber-100/80 mt-1">Exclusive games with unique challenges and legendary rewards.</p>
+                                    </div>
+                                     <Button variant="outline" className="w-full md:w-auto mt-4 md:mt-0 bg-background/50 group-hover:bg-background transition-colors">
+                                       Explore <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                                   </Button>
+                                </div>
+                             </CardContent>
+                        </Card>
+                     </Link>
+                 </motion.div>
             </div>
 
         </div>
