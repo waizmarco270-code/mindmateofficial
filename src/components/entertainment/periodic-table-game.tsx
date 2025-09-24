@@ -29,7 +29,7 @@ const categoryColors: Record<string, string> = {
     'alkali metal': 'bg-red-500/80 border-red-400 text-white',
     'alkaline earth metal': 'bg-orange-500/80 border-orange-400 text-white',
     'lanthanide': 'bg-yellow-500/80 border-yellow-400 text-white',
-    'actinide': 'bg-lime-500/80 border-lime-400 text-white',
+    'actinide': 'bg-fuchsia-500/80 border-fuchsia-400 text-white',
     'transition metal': 'bg-green-500/80 border-green-400 text-white',
     'post-transition metal': 'bg-teal-500/80 border-teal-400 text-white',
     'metalloid': 'bg-cyan-500/80 border-cyan-400 text-white',
@@ -38,6 +38,7 @@ const categoryColors: Record<string, string> = {
     'noble gas': 'bg-indigo-500/80 border-indigo-400 text-white',
     'unknown': 'bg-slate-500/80 border-slate-400 text-white',
 };
+
 
 interface GameProps {
     blockToPlay: Element['block'];
@@ -54,7 +55,51 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     const [score, setScore] = useState(0);
     const [timeLeft, setTimeLeft] = useState(TIME_LIMITS[blockToPlay]);
     
-    const blockElements = useMemo(() => allElements.filter(e => e.block === blockToPlay), [blockToPlay]);
+    const { blockElements, gridTemplate } = useMemo(() => {
+        const elements = allElements.filter(e => e.block === blockToPlay);
+        let template: (Element | null)[][] = [];
+
+        if (blockToPlay === 's') {
+            template = Array(7).fill(null).map(() => Array(2).fill(null));
+        } else if (blockToPlay === 'p') {
+            template = Array(6).fill(null).map(() => Array(6).fill(null));
+        } else if (blockToPlay === 'd') {
+            template = Array(4).fill(null).map(() => Array(10).fill(null));
+        } else if (blockToPlay === 'f') {
+            template = Array(2).fill(null).map(() => Array(15).fill(null));
+        }
+        
+        elements.forEach(el => {
+            let row: number, col: number;
+            if (el.block === 's') {
+                row = el.period - 1;
+                col = el.group - 1;
+            } else if (el.block === 'p') {
+                row = el.period - 2;
+                col = el.group - 13;
+            } else if (el.block === 'd') {
+                row = el.period - 4;
+                col = el.group - 3;
+            } else if (el.block === 'f') {
+                row = el.period - 6;
+                col = el.group === 3 ? el.atomicNumber - (el.period === 6 ? 57 : 89) : 0;
+            } else {
+                return;
+            }
+
+            if(template[row] !== undefined && template[row][col] !== undefined) {
+               template[row][col] = el;
+            }
+        });
+
+        // Special case for Helium in s-block view
+        if(blockToPlay === 's'){
+            template[0][1] = allElements.find(e => e.atomicNumber === 2)!;
+        }
+
+
+        return { blockElements: elements, gridTemplate: template };
+    }, [blockToPlay]);
 
     useEffect(() => {
         if (gameState === 'playing' && timeLeft > 0) {
@@ -81,8 +126,8 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
         startGame();
     }, [startGame]);
 
-    const handleCellClick = (element: Element) => {
-        if (!currentElement || gameState !== 'playing') return;
+    const handleCellClick = (element: Element | null) => {
+        if (!element || !currentElement || gameState !== 'playing') return;
 
         if (currentElement.atomicNumber === element.atomicNumber) {
             const newPlaced = { ...placedElements, [currentElement.atomicNumber]: currentElement };
@@ -106,50 +151,33 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
             }
         }
     };
-
-    const gridClasses: Record<string, string> = {
-        s: 'grid-cols-2',
-        p: 'grid-cols-6',
-        d: 'grid-cols-10',
-        f: 'grid-cols-15'
-    }
     
-    const renderFBlockGrid = () => {
-        const lanthanides = blockElements.filter(e => e.period === 6);
-        const actinides = blockElements.filter(e => e.period === 7);
-        
-        return (
-             <div className="space-y-4">
-                <div className="grid grid-cols-15 gap-1">{lanthanides.map(el => renderGridCell(el))}</div>
-                <div className="grid grid-cols-15 gap-1">{actinides.map(el => renderGridCell(el))}</div>
-            </div>
-        )
-    }
-
-    const renderGridCell = (element: Element) => {
-        const isPlaced = placedElements[element.atomicNumber];
+    const renderGridCell = (element: Element | null, cellIndex: number) => {
+        const isPlaced = element && placedElements[element.atomicNumber];
         const categoryClass = isPlaced ? categoryColors[element.category] || categoryColors.unknown : '';
 
         return (
             <button
-                key={element.atomicNumber}
+                key={element ? element.atomicNumber : `empty-${cellIndex}`}
                 onClick={() => handleCellClick(element)}
-                disabled={isPlaced || gameState !== 'playing'}
+                disabled={!element || isPlaced || gameState !== 'playing'}
                 className={cn(
-                    "aspect-square border rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
-                    "bg-card hover:bg-muted disabled:cursor-not-allowed",
+                    "aspect-square border rounded-md flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200",
+                    "h-14 w-14 sm:h-16 sm:w-16",
+                    !element && "border-transparent bg-transparent",
+                    element && !isPlaced && "bg-card hover:bg-muted disabled:cursor-not-allowed",
                     isPlaced ? cn(categoryClass, "shadow-lg") : "border-border"
                 )}
             >
                 {isPlaced ? (
                     <motion.div initial={{scale: 0.5, opacity: 0}} animate={{scale: 1, opacity: 1}} className="text-center">
-                        <div className="font-bold text-base sm:text-lg">{element.symbol}</div>
-                        <div className="text-[8px] sm:text-[10px] hidden md:block">{element.name}</div>
-                        <div className="text-[8px] sm:text-[10px] md:hidden">{element.atomicNumber}</div>
+                        <div className="font-bold text-sm sm:text-base">{element.symbol}</div>
+                        <div className="text-[9px] hidden sm:block">{element.name}</div>
+                        <div className="text-[9px] sm:hidden">{element.atomicNumber}</div>
                     </motion.div>
-                ) : (
-                    <div className="text-muted-foreground/50 text-xs">{element.atomicNumber}</div>
-                )}
+                ) : element ? (
+                    <div className="text-muted-foreground/50 text-[9px]">{element.atomicNumber}</div>
+                ) : null}
             </button>
         )
     }
@@ -187,8 +215,14 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                         </motion.div>
                     </Card>
                     
-                    <div className={cn("grid w-full gap-1", gridClasses[blockToPlay])}>
-                        {blockToPlay === 'f' ? renderFBlockGrid() : blockElements.map(el => renderGridCell(el))}
+                    <div className="flex justify-center">
+                        <div className="grid gap-1">
+                             {gridTemplate.map((row, rowIndex) => (
+                                <div key={rowIndex} className="flex gap-1">
+                                    {row.map((el, colIndex) => renderGridCell(el, rowIndex * row.length + colIndex))}
+                                </div>
+                            ))}
+                        </div>
                     </div>
 
                     <Card className="p-4 fixed bottom-4 left-4 right-4 bg-background/80 backdrop-blur-lg z-20">
