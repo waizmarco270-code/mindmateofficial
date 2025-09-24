@@ -25,6 +25,15 @@ const allElements = periodicTableData.elements as Element[];
 const MAX_LIVES = 3;
 const TIME_LIMITS: Record<Element['block'], number> = { s: 30, p: 45, d: 60, f: 60 };
 
+const getGridClassForBlock = (block: Element['block']) => {
+    switch(block) {
+        case 's': return 'grid-cols-2';
+        case 'p': return 'grid-cols-6';
+        case 'd': return 'grid-cols-10';
+        default: return 'grid-cols-18';
+    }
+}
+
 export function PeriodicTableGame() {
     const { isSignedIn } = useUser();
     const { toast } = useToast();
@@ -50,7 +59,7 @@ export function PeriodicTableGame() {
 
     const startGame = (block: Element['block']) => {
         setSelectedBlock(block);
-        const blockElements = allElements.filter(e => e.block === block);
+        const blockElements = [...allElements].filter(e => e.block === block).sort(() => Math.random() - 0.5);
         setElementsToPlace(blockElements);
         setCurrentElement(blockElements[0]);
         setPlacedElements({});
@@ -64,7 +73,6 @@ export function PeriodicTableGame() {
         if (!currentElement) return;
 
         if (currentElement.period === period && currentElement.group === group) {
-            // Correct placement
             const newPlaced = { ...placedElements, [currentElement.atomicNumber]: currentElement };
             setPlacedElements(newPlaced);
             
@@ -74,13 +82,11 @@ export function PeriodicTableGame() {
             toast({ title: 'Correct!', description: `+10 points for placing ${currentElement.name}.`, className: "bg-green-500/10 text-green-700" });
 
             if (remaining.length === 0) {
-                // Won the level
                 setGameState('gameOver');
             } else {
                 setCurrentElement(remaining[0]);
             }
         } else {
-            // Incorrect placement
             setLives(l => l - 1);
             toast({ title: 'Incorrect Placement!', variant: 'destructive' });
             if (lives - 1 <= 0) {
@@ -89,37 +95,55 @@ export function PeriodicTableGame() {
         }
     };
 
-    const renderCell = (period: number, group: number) => {
-        const key = `p${period}-g${group}`;
-        const element = allElements.find(e => e.period === period && e.group === group);
+     const renderBlock = (block: 's' | 'p' | 'd') => {
+        const blockElements = allElements.filter(e => e.block === block);
+        const minPeriod = Math.min(...blockElements.map(e => e.period));
+        const maxPeriod = Math.max(...blockElements.map(e => e.period));
+        const minGroup = Math.min(...blockElements.map(e => e.group));
+        const maxGroup = Math.max(...blockElements.map(e => e.group));
+        const numCols = maxGroup - minGroup + 1;
         
-        if (!element) {
-            return <div key={key} className="border-none" />;
+        const gridCells = [];
+        for (let p = minPeriod; p <= maxPeriod; p++) {
+            for (let g = minGroup; g <= maxGroup; g++) {
+                const element = blockElements.find(e => e.period === p && e.group === g);
+                if (element) {
+                    const isPlaced = placedElements[element.atomicNumber];
+                    gridCells.push(
+                        <button
+                            key={`${p}-${g}`}
+                            onClick={() => handleCellClick(p, g)}
+                            disabled={isPlaced || gameState !== 'playing'}
+                            className={cn(
+                                "aspect-square border rounded-md flex flex-col items-center justify-center text-xs transition-all duration-200",
+                                "bg-muted/30 hover:bg-muted/70 disabled:cursor-not-allowed",
+                                isPlaced ? "bg-primary/20 border-primary" : ""
+                            )}
+                        >
+                            {isPlaced ? (
+                                <>
+                                    <div className="font-bold text-lg">{element.symbol}</div>
+                                    <div className="text-[10px] hidden sm:block">{element.name}</div>
+                                </>
+                            ) : (
+                                <div className="text-muted-foreground/50">{element.atomicNumber}</div>
+                            )}
+                        </button>
+                    );
+                } else {
+                    gridCells.push(<div key={`${p}-${g}`} className="border-none" />);
+                }
+            }
         }
-        
-        const isPlaced = Object.values(placedElements).some(p => p.atomicNumber === element.atomicNumber);
-        
+
         return (
-            <button
-                key={key}
-                onClick={() => handleCellClick(period, group)}
-                disabled={isPlaced}
-                className={cn(
-                    "aspect-square border rounded-md flex flex-col items-center justify-center text-xs transition-all duration-200",
-                    "bg-muted/30 hover:bg-muted/70",
-                    isPlaced ? "bg-primary/20 border-primary" : ""
-                )}
+            <div
+                className={`grid gap-1`}
+                style={{ gridTemplateColumns: `repeat(${numCols}, minmax(0, 1fr))` }}
             >
-                {isPlaced ? (
-                    <>
-                        <div className="font-bold text-lg">{placedElements[element.atomicNumber].symbol}</div>
-                        <div className="text-[10px]">{placedElements[element.atomicNumber].name}</div>
-                    </>
-                ) : (
-                    <div className="text-muted-foreground/50">{element.atomicNumber}</div>
-                )}
-            </button>
-        );
+                {gridCells}
+            </div>
+        )
     };
 
     return (
@@ -164,13 +188,12 @@ export function PeriodicTableGame() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-[repeat(18,minmax(0,1fr))] gap-1">
-                            {/* Create a full 7x18 grid representation */}
-                            {Array.from({ length: 7 * 18 }).map((_, index) => {
-                                const period = Math.floor(index / 18) + 1;
-                                const group = (index % 18) + 1;
-                                return renderCell(period, group);
-                            })}
+                         <div className="grid grid-cols-[2fr_1fr_10fr_1fr_5fr] gap-1">
+                            <div>{selectedBlock === 's' && renderBlock('s')}</div>
+                            <div></div>
+                            <div>{selectedBlock === 'd' && renderBlock('d')}</div>
+                            <div></div>
+                            <div>{selectedBlock === 'p' && renderBlock('p')}</div>
                         </div>
                     </div>
                 )}
