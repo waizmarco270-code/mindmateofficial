@@ -1,7 +1,7 @@
 
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Brain, BookCheck, Smile } from "lucide-react";
+import { ArrowLeft, Brain, BookCheck, Smile, Atom } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -20,6 +20,13 @@ const puzzleGames = [
         icon: BookCheck,
         href: "/dashboard/game-zone/puzzle/subject-sprint",
         color: "from-green-500 to-emerald-500",
+    },
+    {
+        title: "Element Quest",
+        description: "Master the periodic table by placing elements in their correct spots.",
+        icon: Atom,
+        href: "/dashboard/game-zone/puzzle/periodic-table",
+        color: "from-cyan-500 to-blue-500",
     }
 ];
 
