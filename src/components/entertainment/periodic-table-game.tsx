@@ -27,17 +27,17 @@ const MAX_LIVES = 3;
 const TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 180, d: 240, f: 300 };
 
 const categoryColors: Record<string, string> = {
-    'alkali metal': 'bg-red-500/80 border-red-400 text-white shadow-red-500/50',
-    'alkaline earth metal': 'bg-orange-500/80 border-orange-400 text-white shadow-orange-500/50',
-    'lanthanide': 'bg-yellow-500/80 border-yellow-400 text-white shadow-yellow-500/50',
-    'actinide': 'bg-fuchsia-500/80 border-fuchsia-400 text-white shadow-fuchsia-500/50',
-    'transition metal': 'bg-green-500/80 border-green-400 text-white shadow-green-500/50',
-    'post-transition metal': 'bg-teal-500/80 border-teal-400 text-white shadow-teal-500/50',
-    'metalloid': 'bg-cyan-500/80 border-cyan-400 text-white shadow-cyan-500/50',
-    'polyatomic nonmetal': 'bg-blue-500/80 border-blue-400 text-white shadow-blue-500/50',
-    'diatomic nonmetal': 'bg-sky-500/80 border-sky-400 text-white shadow-sky-500/50',
-    'noble gas': 'bg-indigo-500/80 border-indigo-400 text-white shadow-indigo-500/50',
-    'unknown': 'bg-slate-500/80 border-slate-400 text-white shadow-slate-500/50',
+    'alkali metal': 'from-red-500 to-orange-500 border-red-400',
+    'alkaline earth metal': 'from-orange-500 to-amber-500 border-orange-400',
+    'lanthanide': 'from-amber-400 to-yellow-500 border-amber-300',
+    'actinide': 'from-fuchsia-500 to-pink-500 border-fuchsia-400',
+    'transition metal': 'from-green-500 to-teal-500 border-green-400',
+    'post-transition metal': 'from-teal-500 to-cyan-500 border-teal-400',
+    'metalloid': 'from-cyan-500 to-sky-500 border-cyan-400',
+    'polyatomic nonmetal': 'from-blue-500 to-indigo-500 border-blue-400',
+    'diatomic nonmetal': 'from-sky-500 to-blue-500 border-sky-400',
+    'noble gas': 'from-indigo-500 to-violet-500 border-indigo-400',
+    'unknown': 'from-slate-500 to-gray-500 border-slate-400',
 };
 
 
@@ -63,21 +63,22 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     const { blockElements, gridTemplate, gridStyles } = useMemo(() => {
         const elements = allElements.filter(e => {
             if (blockToPlay === 'f') return e.category === 'lanthanide' || e.category === 'actinide';
-            return e.block === blockToPlay;
+            if (e.block === 's' && e.atomicNumber === 2 && blockToPlay === 's') return true; // Include Helium in S-block game
+            return e.block === blockToPlay && e.category !== 'lanthanide' && e.category !== 'actinide';
         });
         
         let gridRows: (Element | null)[][] = [];
         let styles = {};
 
-        if (blockToPlay === 's') {
+         if (blockToPlay === 's') {
             styles = { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' };
             gridRows = Array.from({ length: 7 }, () => Array(2).fill(null));
             elements.forEach(el => {
-                if(el.period >= 1 && el.period <= 7 && el.group >= 1 && el.group <= 2) {
-                    gridRows[el.period - 1][el.group - 1] = el;
+                const groupIndex = el.group === 18 ? 1 : el.group - 1; // Helium case
+                if (el.period >= 1 && el.period <= 7 && groupIndex >= 0 && groupIndex <= 1) {
+                    gridRows[el.period - 1][groupIndex] = el;
                 }
             });
-             gridRows[0][1] = allElements.find(e => e.atomicNumber === 2)!; // Helium
         } else if (blockToPlay === 'p') {
             styles = { gridTemplateColumns: 'repeat(6, minmax(0, 1fr))' };
             gridRows = Array.from({ length: 6 }, () => Array(6).fill(null));
@@ -126,12 +127,16 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
     };
     
     useEffect(() => {
+        setIsImmersive(true);
         const handleFullscreenChange = () => {
             setIsFullscreen(!!document.fullscreenElement);
         };
         document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, []);
+        return () => {
+            setIsImmersive(false);
+            document.removeEventListener('fullscreenchange', handleFullscreenChange);
+        }
+    }, [setIsImmersive]);
 
     useEffect(() => {
         if (gameState === 'playing' && timeLeft > 0) {
@@ -168,7 +173,7 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
             const remaining = elementsToPlace.filter(e => e.atomicNumber !== currentElement.atomicNumber);
             setElementsToPlace(remaining);
             setScore(prev => prev + 10);
-            toast({ title: 'Correct!', description: `+10 points for placing ${currentElement.name}.`, className: "bg-green-500/10 text-green-700" });
+            toast({ title: 'Correct!', description: `+10 points for placing ${currentElement.name}.`, className: "bg-green-500/10 text-green-700 dark:text-green-300" });
 
             if (remaining.length === 0) {
                 setGameState('gameOver');
@@ -194,27 +199,27 @@ export function PeriodicTableGame({ blockToPlay }: GameProps) {
                 onClick={() => handleCellClick(element)}
                 disabled={!element || isPlaced || gameState !== 'playing'}
                 className={cn(
-                    "relative aspect-square border-2 rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 shadow-md",
-                    "sm:h-20 sm:w-20 h-16 w-16",
+                    "relative aspect-square rounded-lg flex flex-col items-center justify-center p-0.5 text-xs transition-all duration-200 shadow-md",
+                    "sm:h-24 sm:w-24 h-20 w-full",
                     !element && "border-transparent bg-transparent shadow-none",
-                    element && !isPlaced && "bg-muted/50 border-dashed hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
-                    isPlaced ? categoryClass : 'border-border'
+                    element && !isPlaced && "bg-slate-100 dark:bg-slate-800/80 border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-primary hover:bg-primary/10 disabled:cursor-not-allowed",
+                    isPlaced ? 'text-white' : 'border-border'
                 )}
-                whileHover={{ scale: element && !isPlaced ? 1.05 : 1 }}
+                 whileHover={{ scale: element && !isPlaced ? 1.05 : 1 }}
                 whileTap={{ scale: element && !isPlaced ? 0.95 : 1 }}
             >
                 {isPlaced ? (
                      <motion.div 
                         initial={{scale: 0.5, opacity: 0}} 
                         animate={{scale: 1, opacity: 1}} 
-                        className="text-center w-full flex flex-col items-center justify-center"
+                        className={cn("text-center w-full h-full flex flex-col items-center justify-center rounded-md bg-gradient-to-br", categoryClass)}
                     >
-                        <div className="absolute top-0.5 right-1 text-[9px] font-bold opacity-70">{element.atomicNumber}</div>
-                        <div className="font-bold text-lg sm:text-xl">{element.symbol}</div>
-                        <div className="text-[9px] truncate px-0.5">{element.name}</div>
+                        <div className="absolute top-1 right-1.5 text-[10px] font-bold opacity-80">{element.atomicNumber}</div>
+                        <div className="font-black text-xl sm:text-2xl drop-shadow-md">{element.symbol}</div>
+                        <div className="text-[10px] font-bold truncate px-1">{element.name}</div>
                     </motion.div>
                 ) : element ? (
-                    <div className="text-muted-foreground/30 text-[9px]">{element.atomicNumber}</div>
+                    <div className="text-muted-foreground/30 text-xs">{element.atomicNumber}</div>
                 ) : null}
             </motion.button>
         )
