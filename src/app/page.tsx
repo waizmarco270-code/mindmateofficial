@@ -89,7 +89,7 @@ function LoadingScreen() {
                   </motion.div>
                 </AnimatePresence>
                 <h1 className="text-2xl font-bold tracking-tight text-slate-100 mt-4 animate-shimmer bg-gradient-to-r from-purple-400 via-sky-400 to-purple-400 bg-[length:200%_100%] bg-clip-text text-transparent">
-                    ⚡ Hustle Never Stop ⚡
+                    ⚡ Hustle Never Stops ⚡
                 </h1>
                 <p className="mt-4 text-sm text-slate-400">Powered By EmityGate</p>
             </motion.div>
