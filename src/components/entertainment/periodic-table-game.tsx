@@ -11,12 +11,17 @@ import { Atom, Award, Brain, Check, Clock, Heart, Loader2, Play, RotateCw, X, Ar
 import periodicTableData from '@/app/lib/periodic-table-data.json';
 import Link from 'next/link';
 import { useImmersive } from '@/hooks/use-immersive';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 
 interface Element {
     atomicNumber: number;
     symbol: string;
     name: string;
+    atomicMass: string;
+    density: number | null;
+    electronConfiguration: string;
+    electronegativity: number | null;
+    summary: string;
     group: number;
     period: number;
     block: 's' | 'p' | 'd' | 'f';
@@ -241,7 +246,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
     return (
         <div ref={gameContainerRef} className="space-y-4 p-4 bg-background">
             <Dialog open={!!selectedElement} onOpenChange={() => setSelectedElement(null)}>
-                <DialogContent>
+                <DialogContent className="max-w-md">
                     {selectedElement && (
                         <>
                             <DialogHeader>
@@ -249,12 +254,14 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                                      <span className={cn("text-5xl font-black", categoryColors[selectedElement.category]?.replace(/bg-gradient-to-br|border-\w+-\d+/g, ''))}>{selectedElement.symbol}</span>
                                      <span>{selectedElement.name} (#{selectedElement.atomicNumber})</span>
                                 </DialogTitle>
+                                <DialogDescription className="capitalize">{selectedElement.category}</DialogDescription>
                             </DialogHeader>
-                            <div className="py-4 space-y-2">
-                                <p className="text-lg"><strong>Category:</strong> <span className="capitalize">{selectedElement.category}</span></p>
-                                <p className="text-lg"><strong>Period:</strong> {selectedElement.period}</p>
-                                <p className="text-lg"><strong>Group:</strong> {selectedElement.group}</p>
-                                <p className="text-lg"><strong>Block:</strong> <span className="uppercase">{selectedElement.block}</span>-block</p>
+                            <div className="py-4 space-y-3 text-sm">
+                               <p><strong>Atomic Mass:</strong> {selectedElement.atomicMass}</p>
+                               <p><strong>Electron Config:</strong> {selectedElement.electronConfiguration}</p>
+                               <p><strong>Electronegativity:</strong> {selectedElement.electronegativity ?? 'N/A'}</p>
+                               <p><strong>Density:</strong> {selectedElement.density ? `${selectedElement.density} g/cm³` : 'N/A'}</p>
+                               <p className="pt-2 text-muted-foreground">{selectedElement.summary}</p>
                             </div>
                         </>
                     )}
