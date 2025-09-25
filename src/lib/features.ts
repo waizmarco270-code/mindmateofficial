@@ -1,3 +1,4 @@
+
 export interface LockableFeature {
     id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'premium-games' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'unit-converter' | 'syllabus';
     name: string;
@@ -40,7 +41,7 @@ export const lockableFeatures: LockableFeature[] = [
         id: 'premium-games',
         name: 'Premium Games',
         description: 'Access exclusive games with better rewards.',
-        defaultCost: 100,
+        defaultCost: 300,
     },
     {
         id: 'resources',

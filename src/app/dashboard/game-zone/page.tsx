@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -175,7 +176,7 @@ export default function GameZoneHubPage() {
                     </DialogHeader>
                      <div className="py-4 space-y-6">
                         <div className="text-center">
-                            <Button onClick={handlePurchaseClick} className="w-full h-16 text-lg">Unlock Permanently (100 Credits)</Button>
+                            <Button onClick={handlePurchaseClick} className="w-full h-16 text-lg">Unlock Permanently (300 Credits)</Button>
                              <p className="text-xs text-muted-foreground mt-2">This is a one-time purchase for lifetime access.</p>
                         </div>
                         
