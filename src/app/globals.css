@@ -357,10 +357,10 @@
    
   .co-dev-badge {
     @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
-    background: linear-gradient(135deg, #4b5563, #1f2937, #4b5563);
+    background: linear-gradient(135deg, #8B0000, #1a1a1a, #8B0000);
     background-size: 200% 200%;
     color: #f9fafb;
-    border: 1px solid #6b7280;
+    border: 1px solid #DC143C;
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
     animation: challenger-shimmer 5s ease-in-out infinite;
   }
