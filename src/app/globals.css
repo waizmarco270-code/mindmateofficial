@@ -357,12 +357,12 @@
    
   .co-dev-badge {
     @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
-    background: linear-gradient(135deg, #6d28d9, #a78bfa, #6d28d9);
+    background: linear-gradient(135deg, #4b5563, #1f2937, #4b5563);
     background-size: 200% 200%;
-    color: #ede9fe;
-    border: 1px solid #8b5cf6;
-    text-shadow: 0 0 5px rgba(139, 92, 246, 0.8);
-    animation: challenger-shimmer 4s ease-in-out infinite;
+    color: #f9fafb;
+    border: 1px solid #6b7280;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    animation: challenger-shimmer 5s ease-in-out infinite;
   }
   .co-dev-badge > svg {
     @apply text-white;
@@ -563,5 +563,3 @@
     text-shadow: 0 0 8px currentColor;
   }
 }
-
-    
