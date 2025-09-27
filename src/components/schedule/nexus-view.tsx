@@ -173,8 +173,8 @@ export function NexusView() {
                      <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1 p-1 bg-muted rounded-md">
                            <Button variant={view === 'month' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('month')}><LayoutGrid className="h-4 w-4"/></Button>
-                           <Button variant={view === 'week' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('week')} disabled><CalendarIcon className="h-4 w-4"/></Button>
-                           <Button variant={view === 'agenda' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('agenda')} disabled><List className="h-4 w-4"/></Button>
+                           <Button variant={view === 'week' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('week')}><CalendarIcon className="h-4 w-4"/></Button>
+                           <Button variant={view === 'agenda' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('agenda')}><List className="h-4 w-4"/></Button>
                         </div>
                         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
                             <DialogTrigger asChild>
