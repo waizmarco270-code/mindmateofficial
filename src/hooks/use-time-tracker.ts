@@ -21,6 +21,7 @@ import {
 import { format } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useVisibilityChange } from './use-visibility-change';
+import { useRoadmaps } from './use-roadmaps';
 
 export interface Subject {
   id: string;
@@ -35,6 +36,7 @@ export interface TimeSession {
     subjectName: string;
     startTime: string; // ISO string
     endTime: string; // ISO string
+    roadmapId?: string; // Link to a roadmap
 }
 
 export interface PomodoroSession {
@@ -52,6 +54,7 @@ interface TimeTrackerState {
   subjects: Subject[];
   activeSubjectId: string | null;
   currentSessionStart: string | null; // ISO string
+  activeRoadmapId: string | null; // Currently selected roadmap for tracking
 }
 
 const THIRTY_MINUTES = 30 * 60 * 1000; // in milliseconds
@@ -59,12 +62,14 @@ const THIRTY_MINUTES = 30 * 60 * 1000; // in milliseconds
 export function useTimeTracker() {
   const { user } = useUser();
   const { currentUserData, updateStudyTime } = useUsers();
+  const { logStudyTime } = useRoadmaps();
   const todayString = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const [state, setState] = useState<TimeTrackerState>({
     subjects: [],
     activeSubjectId: null,
-    currentSessionStart: null
+    currentSessionStart: null,
+    activeRoadmapId: null,
   });
   const [sessions, setSessions] = useState<TimeSession[]>([]);
   const [pomodoroSessions, setPomodoroSessions] = useState<PomodoroSession[]>([]);
@@ -215,19 +220,24 @@ export function useTimeTracker() {
         userId: user.id,
         subjectName: subject.name,
         startTime: startTime,
-        endTime: endTime.toISOString()
+        endTime: endTime.toISOString(),
+        roadmapId: state.activeRoadmapId || undefined
     };
     
     await addDoc(allSessionsColRef, newSession);
     
     const newTotalStudyTime = (currentUserData?.totalStudyTime || 0) + duration;
     await updateStudyTime(user.id, newTotalStudyTime);
+    
+    if (state.activeRoadmapId) {
+        await logStudyTime(state.activeRoadmapId, format(new Date(startTime), 'yyyy-MM-dd'), duration);
+    }
 
     return subject.timeTracked + duration;
 
-  }, [user, state.subjects, currentUserData, updateStudyTime]);
+  }, [user, state.subjects, state.activeRoadmapId, currentUserData, updateStudyTime, logStudyTime]);
 
-  const handlePlayPause = useCallback(async (subjectId: string) => {
+  const handlePlayPause = useCallback(async (subjectId: string, roadmapId?: string | null) => {
     const nowISO = new Date().toISOString();
     let newSubjects = [...state.subjects];
     
@@ -237,7 +247,7 @@ export function useTimeTracker() {
         const newTotalTime = await finishSession(subjectId, state.currentSessionStart);
         newSubjects = newSubjects.map(s => s.id === subjectId ? { ...s, timeTracked: newTotalTime } : s);
       }
-      setState({ subjects: newSubjects, activeSubjectId: null, currentSessionStart: null });
+      setState({ ...state, subjects: newSubjects, activeSubjectId: null, currentSessionStart: null, activeRoadmapId: null });
     } else {
       // Pausing previous and starting new
       if (state.activeSubjectId && state.currentSessionStart) {
@@ -245,7 +255,7 @@ export function useTimeTracker() {
         newSubjects = newSubjects.map(s => s.id === state.activeSubjectId ? { ...s, timeTracked: newTotalTime } : s);
       }
       // Starting a new subject
-      setState({ subjects: newSubjects, activeSubjectId: subjectId, currentSessionStart: nowISO });
+      setState({ subjects: newSubjects, activeSubjectId: subjectId, currentSessionStart: nowISO, activeRoadmapId: roadmapId || null });
     }
   }, [state, finishSession]);
 
