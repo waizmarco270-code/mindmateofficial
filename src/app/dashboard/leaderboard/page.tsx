@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
+import { useUsers, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -59,6 +59,14 @@ const SCORE_WEIGHTS = {
   focusSessionsCompleted: 20, // Each completed focus session is worth 20 points
   dailyTasksCompleted: 10,   // Each day of completed todos is worth 10 points
   totalStudyTime: 0.01,       // Each second of study time is worth 0.01 points
+};
+
+const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
+    dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
+    admin: { name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+    vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+    gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+    challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> }
 };
 
 export default function LeaderboardPage() {
@@ -228,6 +236,29 @@ export default function LeaderboardPage() {
 
     const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
     
+    const getOwnedBadges = (user: UserWithStats) => {
+        const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+        const badges: BadgeType[] = [];
+        if (isSuperAdmin) badges.push('dev');
+        if (user.isAdmin) badges.push('admin');
+        if (user.isVip) badges.push('vip');
+        if (user.isGM) badges.push('gm');
+        if (user.isChallenger) badges.push('challenger');
+        return badges;
+    };
+    
+    const getShowcasedBadge = (user: UserWithStats): JSX.Element | null => {
+        const ownedBadges = getOwnedBadges(user);
+        if (ownedBadges.length === 0) return null;
+        
+        const badgeKey = user.showcasedBadge && ownedBadges.includes(user.showcasedBadge) 
+            ? user.showcasedBadge 
+            : ownedBadges[0];
+            
+        return badgeDetails[badgeKey]?.badge ?? null;
+    };
+
+
     const renderUserStats = (user: UserWithStats) => {
         if (activeTab === 'game-zone') {
              return (
@@ -315,7 +346,7 @@ export default function LeaderboardPage() {
     const renderPodiumCard = (user: UserWithStats, rank: number) => {
         if (!user) return null;
         
-        const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+        const showcasedBadge = getShowcasedBadge(user);
         
         const scoreToDisplay = {
             'all-time': user.totalScore,
@@ -329,11 +360,12 @@ export default function LeaderboardPage() {
             'game-zone': 'Total Score'
         }[activeTab];
         
-        const CardWrapper = activeTab === 'weekly' ? 'button' : 'div';
+        const CardWrapper = activeTab !== 'game-zone' ? 'button' : 'div';
+        const isClickable = activeTab !== 'game-zone';
 
         if (rank === 0) { // First Place
             return (
-                 <CardWrapper onClick={activeTab === 'weekly' ? () => setSelectedUserForDetails(user) : undefined} className={cn(activeTab === 'weekly' && 'cursor-pointer hover:shadow-yellow-500/40 transition-shadow', "w-full text-left rounded-lg")}>
+                 <CardWrapper onClick={isClickable ? () => setSelectedUserForDetails(user) : undefined} className={cn(isClickable && 'cursor-pointer hover:shadow-yellow-500/40 transition-shadow', "w-full text-left rounded-lg")}>
                     <Card className="w-full border-2 border-yellow-400 bg-yellow-500/5 shadow-2xl shadow-yellow-500/20">
                          <CardHeader className="text-center p-6">
                             <div className="relative w-24 h-24 mx-auto">
@@ -345,21 +377,7 @@ export default function LeaderboardPage() {
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-4">
                                 <CardTitle className="text-2xl">{user.displayName}</CardTitle>
-                                 {isSuperAdmin ? (
-                                    <span className="dev-badge flex-shrink-0">
-                                        <Code className="h-3 w-3" /> DEV
-                                    </span>
-                                ) : user.isAdmin ? (
-                                    <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                                ) : user.isChallenger ? (
-                                    <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
-                                ) : user.isVip ? (
-                                    <span className="elite-badge flex-shrink-0">
-                                        <Crown className="h-3 w-3" /> ELITE
-                                    </span>
-                                ) : user.isGM && (
-                                    <span className="gm-badge">GM</span>
-                                )}
+                                {showcasedBadge}
                             </div>
                             <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
                          </CardHeader>
@@ -382,7 +400,7 @@ export default function LeaderboardPage() {
         if (!placeDetails) return null;
 
         return (
-             <CardWrapper onClick={activeTab === 'weekly' ? () => setSelectedUserForDetails(user) : undefined} className={cn(activeTab === 'weekly' && 'cursor-pointer hover:bg-muted transition-colors', "w-full text-left rounded-lg")}>
+             <CardWrapper onClick={isClickable ? () => setSelectedUserForDetails(user) : undefined} className={cn(isClickable && 'cursor-pointer hover:bg-muted transition-colors', "w-full text-left rounded-lg")}>
                 <Card className="w-full">
                      <CardContent className="p-4 flex flex-col gap-2">
                         <div className="flex items-center gap-4">
@@ -394,21 +412,7 @@ export default function LeaderboardPage() {
                             <div className="flex-1">
                                  <div className="flex items-center gap-2">
                                     <p className="font-semibold">{user.displayName}</p>
-                                    {isSuperAdmin ? (
-                                        <span className="dev-badge flex-shrink-0">
-                                            <Code className="h-3 w-3" /> DEV
-                                        </span>
-                                    ) : user.isAdmin ? (
-                                        <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                                    ) : user.isChallenger ? (
-                                        <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
-                                    ) : user.isVip ? (
-                                        <span className="elite-badge flex-shrink-0">
-                                            <Crown className="h-3 w-3" /> ELITE
-                                        </span>
-                                     ) : user.isGM && (
-                                        <span className="gm-badge">GM</span>
-                                    )}
+                                    {showcasedBadge}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
                             </div>
@@ -421,6 +425,13 @@ export default function LeaderboardPage() {
             </CardWrapper>
         )
     }
+    
+    const handleDialogClose = () => {
+        setSelectedUserForDetails(null);
+    }
+    
+    const ownedBadgesForSelectedUser = selectedUserForDetails ? getOwnedBadges(selectedUserForDetails) : [];
+
 
     return (
         <div className="space-y-8">
@@ -579,56 +590,81 @@ export default function LeaderboardPage() {
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="game-zone" onUserClick={setSelectedUserForDetails}/>
                 </TabsContent>
             </Tabs>
-             <Dialog open={!!selectedUserForDetails} onOpenChange={(open) => !open && setSelectedUserForDetails(null)}>
+             <Dialog open={!!selectedUserForDetails} onOpenChange={(open) => !open && handleDialogClose()}>
                 <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Weekly Study Breakdown</DialogTitle>
-                        <DialogDescription>Time spent on each activity by {selectedUserForDetails?.displayName} this week.</DialogDescription>
-                    </DialogHeader>
-                    {selectedUserForDetails && (
-                        <div className="py-4 space-y-4">
-                            <div className="flex items-center gap-4">
-                                <Avatar className="h-16 w-16">
-                                    <AvatarImage src={selectedUserForDetails.photoURL ?? undefined} />
-                                    <AvatarFallback>{selectedUserForDetails.displayName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <h3 className="text-lg font-bold">{selectedUserForDetails.displayName}</h3>
-                                    <p className="text-sm text-muted-foreground">Total This Week: <span className="font-bold text-primary">{formatTime(selectedUserForDetails.weeklyTime)}</span></p>
+                   {selectedUserForDetails && (
+                     <>
+                        {activeTab === 'weekly' ? (
+                            <>
+                                <DialogHeader>
+                                    <DialogTitle>Weekly Study Breakdown</DialogTitle>
+                                    <DialogDescription>Time spent on each activity by {selectedUserForDetails?.displayName} this week.</DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4 space-y-4">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="h-16 w-16">
+                                            <AvatarImage src={selectedUserForDetails.photoURL ?? undefined} />
+                                            <AvatarFallback>{selectedUserForDetails.displayName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h3 className="text-lg font-bold">{selectedUserForDetails.displayName}</h3>
+                                            <p className="text-sm text-muted-foreground">Total This Week: <span className="font-bold text-primary">{formatTime(selectedUserForDetails.weeklyTime)}</span></p>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-4 max-h-64 overflow-y-auto pr-4">
+                                        {Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length > 0 && (
+                                            <div>
+                                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><Clock className="h-4 w-4"/> Time Tracker Subjects</h4>
+                                                <ul className="space-y-2 rounded-md border p-4">
+                                                    {Object.entries(selectedUserForDetails.weeklySubjectBreakdown)
+                                                    .sort(([, a], [, b]) => b - a)
+                                                    .map(([subject, time]) => (
+                                                        <li key={subject} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
+                                                            <span className="font-medium">{subject}</span>
+                                                            <span className="font-mono text-muted-foreground">{formatTime(time)}</span>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {selectedUserForDetails.weeklyPomodoroBreakdown.total > 0 && (
+                                            <div>
+                                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><TimerIcon className="h-4 w-4"/> Pomodoro Sessions</h4>
+                                                <ul className="space-y-2 rounded-md border p-4">
+                                                    <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Focus Time</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.focus)}</span></li>
+                                                    <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Short Breaks</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.shortBreak)}</span></li>
+                                                    <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Long Breaks</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.longBreak)}</span></li>
+                                                </ul>
+                                            </div>
+                                        )}
+                                        {(Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length === 0 && selectedUserForDetails.weeklyPomodoroBreakdown.total === 0) && (
+                                            <p className="text-center text-muted-foreground py-4">No specific study sessions tracked this week.</p>
+                                        )}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="space-y-4 max-h-64 overflow-y-auto pr-4">
-                                 {Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length > 0 && (
-                                     <div>
-                                        <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><Clock className="h-4 w-4"/> Time Tracker Subjects</h4>
-                                         <ul className="space-y-2 rounded-md border p-4">
-                                            {Object.entries(selectedUserForDetails.weeklySubjectBreakdown)
-                                            .sort(([, a], [, b]) => b - a)
-                                            .map(([subject, time]) => (
-                                                 <li key={subject} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
-                                                    <span className="font-medium">{subject}</span>
-                                                    <span className="font-mono text-muted-foreground">{formatTime(time)}</span>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                 )}
-                                {selectedUserForDetails.weeklyPomodoroBreakdown.total > 0 && (
-                                    <div>
-                                        <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><TimerIcon className="h-4 w-4"/> Pomodoro Sessions</h4>
-                                        <ul className="space-y-2 rounded-md border p-4">
-                                            <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Focus Time</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.focus)}</span></li>
-                                            <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Short Breaks</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.shortBreak)}</span></li>
-                                            <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Long Breaks</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.longBreak)}</span></li>
-                                        </ul>
-                                    </div>
-                                )}
-                                {(Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length === 0 && selectedUserForDetails.weeklyPomodoroBreakdown.total === 0) && (
-                                     <p className="text-center text-muted-foreground py-4">No specific study sessions tracked this week.</p>
-                                )}
-                            </div>
-                        </div>
-                    )}
+                             </>
+                        ) : activeTab === 'all-time' ? (
+                             <>
+                                <DialogHeader>
+                                    <DialogTitle>User Badges</DialogTitle>
+                                    <DialogDescription>All badges collected by {selectedUserForDetails.displayName}.</DialogDescription>
+                                </DialogHeader>
+                                <div className="py-4 flex flex-wrap items-center justify-center gap-4">
+                                    {ownedBadgesForSelectedUser.length > 0 ? (
+                                        ownedBadgesForSelectedUser.map(badgeType => (
+                                            <div key={badgeType} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted border">
+                                                {badgeDetails[badgeType].badge}
+                                                <span className="text-sm font-semibold">{badgeDetails[badgeType].name}</span>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-muted-foreground">This user hasn't earned any badges yet.</p>
+                                    )}
+                                </div>
+                            </>
+                        ) : null}
+                    </>
+                   )}
                 </DialogContent>
             </Dialog>
         </div>
@@ -649,6 +685,24 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         const m = Math.floor((seconds % 3600) / 60);
         if (h > 0) return `${h}h ${m}m`;
         return `${m}m`;
+    };
+    
+    const getShowcasedBadge = (user: UserWithStats): JSX.Element | null => {
+        const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+        const ownedBadges: BadgeType[] = [];
+        if (isSuperAdmin) ownedBadges.push('dev');
+        if (user.isAdmin) ownedBadges.push('admin');
+        if (user.isVip) ownedBadges.push('vip');
+        if (user.isGM) ownedBadges.push('gm');
+        if (user.isChallenger) ownedBadges.push('challenger');
+        
+        if (ownedBadges.length === 0) return null;
+        
+        const badgeKey = user.showcasedBadge && ownedBadges.includes(user.showcasedBadge) 
+            ? user.showcasedBadge 
+            : ownedBadges[0];
+            
+        return badgeDetails[badgeKey]?.badge ?? null;
     };
 
     const getScoreToDisplay = (user: any) => ({
@@ -675,10 +729,10 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                     <div className="space-y-4">
                         {restOfUsers.map((user: UserWithStats, index: number) => {
                             const rank = index + 4;
-                            const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
-                            const CardWrapper = activeTab === 'weekly' ? 'button' : 'div';
+                            const CardWrapper = activeTab !== 'game-zone' ? 'button' : 'div';
+                            const isClickable = activeTab !== 'game-zone';
                             return (
-                                <CardWrapper key={user.uid} onClick={activeTab === 'weekly' ? () => onUserClick(user) : undefined} className={cn("overflow-hidden text-left rounded-lg", currentUser?.id === user.uid && 'border border-primary', activeTab === 'weekly' && 'cursor-pointer hover:bg-muted/50 w-full')}>
+                                <CardWrapper key={user.uid} onClick={isClickable ? () => onUserClick(user) : undefined} className={cn("overflow-hidden text-left rounded-lg w-full", currentUser?.id === user.uid && 'border border-primary', isClickable && 'cursor-pointer hover:bg-muted/50')}>
                                     <Card>
                                         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:gap-4">
                                             <div className="flex items-center gap-4 flex-1">
@@ -690,21 +744,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-medium truncate">{user.displayName}</span>
-                                                        {isSuperAdmin ? (
-                                                            <span className="dev-badge flex-shrink-0">
-                                                                <Code className="h-3 w-3" /> DEV
-                                                            </span>
-                                                        ) : user.isAdmin ? (
-                                                            <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                                                        ) : user.isChallenger ? (
-                                                            <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
-                                                        ) : user.isVip ? (
-                                                            <span className="elite-badge flex-shrink-0">
-                                                                <Crown className="h-3 w-3" /> ELITE
-                                                            </span>
-                                                        ) : user.isGM && (
-                                                            <span className="gm-badge">GM</span>
-                                                        )}
+                                                        {getShowcasedBadge(user)}
                                                     </div>
                                                      <p className="text-muted-foreground text-sm">
                                                         {getScoreLabel()}: 
@@ -788,4 +828,5 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
 }
 
     
+
 
