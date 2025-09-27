@@ -21,7 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogClose, DialogFooter } from '@/components/ui/dialog';
 
-const THEME_COST = 200;
+const THEME_COST = 50;
 
 const availableThemes: {id: AppThemeId, name: string, bg: string, primary: string, isDark: boolean}[] = [
     { id: 'light', name: 'Default Light', bg: 'bg-white', primary: 'bg-slate-900', isDark: false },
@@ -91,16 +91,17 @@ function AppearanceSettings() {
                             const isActive = theme === t.id;
 
                             return (
-                                <div key={t.id} className="relative">
+                                <div key={t.id} className="relative group">
                                     <button
                                         onClick={() => {
                                             if (isUnlocked) setTheme(t.id);
                                             else setThemeToUnlock(t);
                                         }}
-                                        className={cn("w-full p-4 border-2 rounded-lg space-y-2 text-left transition-all",
+                                        className={cn("w-full h-full p-4 border-2 rounded-lg space-y-2 text-left transition-all",
                                             isActive ? 'border-primary ring-2 ring-primary/50' : 'border-border hover:border-primary/50',
-                                            !isUnlocked && 'blur-sm'
+                                            !isUnlocked && "cursor-pointer"
                                         )}
+                                        disabled={!isUnlocked && !currentUserData}
                                     >
                                         <div className="flex items-center gap-2">
                                             <div className={cn("h-6 w-10 rounded-md flex items-center justify-end p-1", t.bg)}>
@@ -108,20 +109,15 @@ function AppearanceSettings() {
                                             </div>
                                             <span className="font-semibold text-sm">{t.name}</span>
                                         </div>
-                                    </button>
-                                     {!isUnlocked && (
-                                        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center p-2">
-                                            <Button 
-                                                className="w-full h-full flex flex-col" 
-                                                variant="ghost" 
-                                                onClick={() => setThemeToUnlock(t)}
-                                            >
+                                         {!isUnlocked && (
+                                            <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center p-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <Lock className="h-6 w-6 mb-1 text-muted-foreground"/>
                                                 <p className="text-xs font-bold">Unlock for</p>
                                                 <p className="text-sm font-bold text-primary">{THEME_COST} credits</p>
-                                            </Button>
-                                        </div>
-                                     )}
+                                            </div>
+                                         )}
+                                    </button>
+
                                      {isActive && (
                                          <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-lg">
                                              <CheckCircle className="h-4 w-4"/>
