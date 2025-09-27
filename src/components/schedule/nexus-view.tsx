@@ -109,7 +109,7 @@ export function NexusView() {
          <div className="flex flex-col flex-1">
             <div className="grid grid-cols-7 text-center text-sm font-semibold text-muted-foreground border-b">
                 {weekDays.map(day => (
-                    <div key={day} className="py-2 border-r">{day}</div>
+                    <div key={day} className="py-2 border-r last:border-r-0">{day}</div>
                 ))}
             </div>
             <div className="grid grid-cols-7 grid-rows-6 flex-1">
@@ -123,7 +123,7 @@ export function NexusView() {
                             key={day.toString()}
                             onClick={() => setSelectedDate(day)}
                             className={cn(
-                                "border-r border-b p-2 flex flex-col transition-colors cursor-pointer hover:bg-accent",
+                                "border-r border-b p-2 flex flex-col transition-colors cursor-pointer hover:bg-accent last:border-r-0",
                                 !isSameMonth(day, monthStart) && "bg-muted/30 text-muted-foreground/50",
                                 isSelected && "bg-primary/10 ring-2 ring-primary z-10"
                             )}
@@ -170,58 +170,65 @@ export function NexusView() {
                             {format(currentMonth, 'MMMM yyyy')}
                         </h2>
                     </div>
-                     <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Event</Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Add New Event</DialogTitle>
-                                <DialogDescription>Fill in the details for your new task or event.</DialogDescription>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="event-title">Title</Label>
-                                    <Input id="event-title" value={eventTitle} onChange={e => setEventTitle(e.target.value)} placeholder="e.g., Physics Revision"/>
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="event-desc">Description</Label>
-                                    <Textarea id="event-desc" value={eventDescription} onChange={e => setEventDescription(e.target.value)} placeholder="Add more details..."/>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                     <div className="space-y-2">
-                                        <Label>Date</Label>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}>
-                                                    <CalendarIcon className="mr-2 h-4 w-4" />
-                                                    {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus /></PopoverContent>
-                                        </Popover>
+                     <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 p-1 bg-muted rounded-md">
+                           <Button variant={view === 'month' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('month')}><LayoutGrid className="h-4 w-4"/></Button>
+                           <Button variant={view === 'week' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('week')} disabled><CalendarIcon className="h-4 w-4"/></Button>
+                           <Button variant={view === 'agenda' ? 'secondary' : 'ghost'} size="icon" onClick={() => setView('agenda')} disabled><List className="h-4 w-4"/></Button>
+                        </div>
+                        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button><PlusCircle className="mr-2 h-4 w-4"/> Add Event</Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Add New Event</DialogTitle>
+                                    <DialogDescription>Fill in the details for your new task or event.</DialogDescription>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="event-title">Title</Label>
+                                        <Input id="event-title" value={eventTitle} onChange={e => setEventTitle(e.target.value)} placeholder="e.g., Physics Revision"/>
                                     </div>
                                     <div className="space-y-2">
-                                        <Label>Category</Label>
-                                        <Select value={eventColor} onValueChange={(v: NexusEvent['color']) => setEventColor(v)}>
-                                            <SelectTrigger><SelectValue/></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="blue"><Circle className="mr-2 h-3 w-3 fill-blue-500 text-blue-500"/> Goal</SelectItem>
-                                                <SelectItem value="red"><Circle className="mr-2 h-3 w-3 fill-red-500 text-red-500"/> Deadline</SelectItem>
-                                                <SelectItem value="green"><Circle className="mr-2 h-3 w-3 fill-green-500 text-green-500"/> Revision</SelectItem>
-                                                <SelectItem value="yellow"><Circle className="mr-2 h-3 w-3 fill-yellow-500 text-yellow-500"/> Test</SelectItem>
-                                                <SelectItem value="purple"><Circle className="mr-2 h-3 w-3 fill-purple-500 text-purple-500"/> Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <Label htmlFor="event-desc">Description</Label>
+                                        <Textarea id="event-desc" value={eventDescription} onChange={e => setEventDescription(e.target.value)} placeholder="Add more details..."/>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Date</Label>
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !eventDate && "text-muted-foreground")}>
+                                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                                        {eventDate ? format(eventDate, "PPP") : <span>Pick a date</span>}
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-auto p-0"><Calendar mode="single" selected={eventDate} onSelect={setEventDate} initialFocus /></PopoverContent>
+                                            </Popover>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Category</Label>
+                                            <Select value={eventColor} onValueChange={(v: NexusEvent['color']) => setEventColor(v)}>
+                                                <SelectTrigger><SelectValue/></SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="blue"><Circle className="mr-2 h-3 w-3 fill-blue-500 text-blue-500"/> Goal</SelectItem>
+                                                    <SelectItem value="red"><Circle className="mr-2 h-3 w-3 fill-red-500 text-red-500"/> Deadline</SelectItem>
+                                                    <SelectItem value="green"><Circle className="mr-2 h-3 w-3 fill-green-500 text-green-500"/> Revision</SelectItem>
+                                                    <SelectItem value="yellow"><Circle className="mr-2 h-3 w-3 fill-yellow-500 text-yellow-500"/> Test</SelectItem>
+                                                    <SelectItem value="purple"><Circle className="mr-2 h-3 w-3 fill-purple-500 text-purple-500"/> Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                            <DialogFooter>
-                                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                <Button onClick={handleAddEvent}>Create Event</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                                <DialogFooter>
+                                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                    <Button onClick={handleAddEvent}>Create Event</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                 </div>
                 <div className="flex-1 flex items-stretch justify-center">
                     <AnimatePresence mode="wait">
