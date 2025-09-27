@@ -28,6 +28,8 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
     const [sectionToUnlock, setSectionToUnlock] = useState<any | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
     
+    const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
     const { filteredSections, resourcesBySection } = useMemo(() => {
         const sectionsForCategory = allSections.filter(s => s.parentCategory === categoryId);
         
@@ -74,8 +76,8 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
 
     const handleUnlock = async () => {
         if (!sectionToUnlock || !user || !currentUserData) return;
-
-        if (currentUserData.credits < sectionToUnlock.unlockCost) {
+        
+        if (!hasMasterCard && currentUserData.credits < sectionToUnlock.unlockCost) {
             toast({ variant: 'destructive', title: 'Insufficient Credits' });
             return;
         }
@@ -90,6 +92,7 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
     }
     
     const hasUnlocked = (sectionId: string) => {
+        if (hasMasterCard) return true;
         return currentUserData?.unlockedResourceSections?.includes(sectionId) ?? false;
     }
     
@@ -188,7 +191,7 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
                          <div className="flex items-center justify-around text-center p-4 bg-muted rounded-lg">
                             <div className="space-y-1">
                                 <p className="text-sm text-muted-foreground">Your Balance</p>
-                                <p className="text-2xl font-bold">{currentUserData?.credits ?? 0}</p>
+                                <p className="text-2xl font-bold">{hasMasterCard ? '∞' : currentUserData?.credits ?? 0}</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-sm text-muted-foreground">Unlock Cost</p>
@@ -200,9 +203,9 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
                         <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                         <Button 
                           onClick={handleUnlock}
-                          disabled={(currentUserData?.credits ?? 0) < (sectionToUnlock?.unlockCost ?? Infinity)}
+                          disabled={!hasMasterCard && (currentUserData?.credits ?? 0) < (sectionToUnlock?.unlockCost ?? Infinity)}
                         >
-                          Confirm & Unlock
+                          {hasMasterCard ? 'Unlock for Free' : `Confirm & Unlock`}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -27,20 +27,25 @@ export function QuizStartDialog({ quiz, isOpen, onOpenChange }: QuizStartDialogP
   const alreadyPerfected = currentUserData?.perfectedQuizzes?.includes(quiz.id);
   const attempts = currentUserData?.quizAttempts?.[quiz.id] || 0;
   const canEarnReward = !alreadyPerfected && attempts < 2;
+  const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
 
   const handleStartQuiz = async () => {
       if (!user || !currentUserData) {
           toast({ variant: 'destructive', title: 'Please log in to start the quiz.' });
           return;
       }
-
-      if (currentUserData.credits < quiz.entryFee) {
+      
+      // Master Card bypasses credit check
+      if (!hasMasterCard && currentUserData.credits < quiz.entryFee) {
           toast({ variant: 'destructive', title: 'Insufficient Credits', description: `You need ${quiz.entryFee} credits to take this quiz.` });
           return;
       }
       
-      // Deduct entry fee
-      await addCreditsToUser(user.id, -quiz.entryFee);
+      // Deduct entry fee only if user does not have master card
+      if (!hasMasterCard && quiz.entryFee > 0) {
+        await addCreditsToUser(user.id, -quiz.entryFee);
+      }
 
       setQuizStarted(true);
   };
@@ -79,7 +84,7 @@ export function QuizStartDialog({ quiz, isOpen, onOpenChange }: QuizStartDialogP
                 <CreditCard className="h-6 w-6" />
               </div>
               <p className="font-bold">Entry Fee</p>
-              <p className="text-muted-foreground">{quiz.entryFee} Credits</p>
+              <p className="text-muted-foreground">{hasMasterCard ? <span className="text-green-500 font-bold">FREE</span> : `${quiz.entryFee} Credits`}</p>
             </div>
             <div className="space-y-2">
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-yellow-500/10 text-yellow-600">
@@ -114,7 +119,7 @@ export function QuizStartDialog({ quiz, isOpen, onOpenChange }: QuizStartDialogP
             <Button variant="outline">Cancel</Button>
           </DialogClose>
           <Button onClick={handleStartQuiz}>
-            Pay {quiz.entryFee} credits & Start <ArrowRight className="ml-2 h-4 w-4"/>
+            {hasMasterCard ? 'Start for Free' : `Pay ${quiz.entryFee} credits & Start`} <ArrowRight className="ml-2 h-4 w-4"/>
           </Button>
         </DialogFooter>
       </DialogContent>
