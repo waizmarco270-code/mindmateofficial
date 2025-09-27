@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate, type MasterCardRequest } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingBag, Banknote, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -59,6 +59,9 @@ export default function SuperAdminPanelPage() {
     deleteFeatureShowcase,
     grantMasterCard,
     revokeMasterCard,
+    masterCardRequests,
+    approveMasterCardRequest,
+    declineMasterCardRequest,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -99,6 +102,15 @@ export default function SuperAdminPanelPage() {
   const [isMasterCardDialogOpen, setIsMasterCardDialogOpen] = useState(false);
   const [masterCardUser, setMasterCardUser] = useState<User | null>(null);
   const [masterCardDuration, setMasterCardDuration] = useState(7);
+  
+  // Armoury settings
+  const [upiId, setUpiId] = useState(appSettings?.upiId || '');
+  const [qrCodeUrl, setQrCodeUrl] = useState(appSettings?.qrCodeUrl || '');
+
+  useEffect(() => {
+    setUpiId(appSettings?.upiId || '');
+    setQrCodeUrl(appSettings?.qrCodeUrl || '');
+  }, [appSettings]);
 
 
   // State for Feature Locks
@@ -292,6 +304,11 @@ export default function SuperAdminPanelPage() {
     updateAppSettings({ marcoAiLaunchStatus: newStatus });
     toast({ title: `Marco AI is now ${newStatus === 'live' ? 'LIVE' : 'in countdown mode'}.`});
   };
+  
+  const handleSaveArmourySettings = () => {
+      updateAppSettings({ upiId, qrCodeUrl });
+      toast({ title: "Armoury Settings Saved!" });
+  }
 
   const handleGenerateDevToken = async () => {
     if (!devTokenUser) {
@@ -489,12 +506,12 @@ export default function SuperAdminPanelPage() {
                <div className="flex items-center gap-3">
                 <Rocket className="h-6 w-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold">App Launch Control</h3>
-                  <p className="text-sm text-muted-foreground text-left">Control global feature launches.</p>
+                  <h3 className="text-lg font-semibold">App Launch & Settings</h3>
+                  <p className="text-sm text-muted-foreground text-left">Control global feature launches and payment settings.</p>
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0">
+            <AccordionContent className="p-6 pt-0 grid gap-6 md:grid-cols-2">
                 <Card>
                     <CardHeader>
                         <CardTitle>Marco AI Launch Status</CardTitle>
@@ -533,6 +550,23 @@ export default function SuperAdminPanelPage() {
                             </AlertDialogContent>
                         </AlertDialog>
                       </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Armoury Payment Settings</CardTitle>
+                        <CardDescription>Set your UPI ID and QR code URL for Master Card purchases.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="upi-id">UPI ID</Label>
+                            <Input id="upi-id" value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="yourname@bank"/>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="qr-code">QR Code Image URL</Label>
+                            <Input id="qr-code" type="url" value={qrCodeUrl} onChange={e => setQrCodeUrl(e.target.value)} placeholder="https://example.com/qr.png"/>
+                        </div>
+                        <Button onClick={handleSaveArmourySettings}>Save Armoury Settings</Button>
                     </CardContent>
                 </Card>
             </AccordionContent>
@@ -677,6 +711,68 @@ export default function SuperAdminPanelPage() {
                       </TableBody>
                     </Table>
                   </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+        
+        {/* Master Card Requests */}
+        <AccordionItem value="master-card-requests" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <ShoppingBag className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Master Card Requests</h3>
+                  <p className="text-sm text-muted-foreground text-left">Approve or decline user purchase requests for Master Cards.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Pending Requests</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>User</TableHead>
+                                    <TableHead>Package</TableHead>
+                                    <TableHead>Price</TableHead>
+                                    <TableHead>Transaction ID</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {masterCardRequests.map(req => (
+                                    <TableRow key={req.id}>
+                                        <TableCell>{req.userName}</TableCell>
+                                        <TableCell><Badge variant="secondary">{req.packageName}</Badge></TableCell>
+                                        <TableCell>₹{req.price}</TableCell>
+                                        <TableCell className="font-mono text-xs">{req.transactionId}</TableCell>
+                                        <TableCell>{formatDistanceToNow(req.requestedAt.toDate(), { addSuffix: true })}</TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                             <Button variant="destructive" size="sm" onClick={() => declineMasterCardRequest(req.id)}>
+                                                <XCircle className="mr-2 h-4 w-4"/> Decline
+                                            </Button>
+                                            <Button size="sm" onClick={() => approveMasterCardRequest(req)}>
+                                                <Check className="mr-2 h-4 w-4"/> Approve
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {masterCardRequests.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center h-24">
+                                            No pending Master Card requests.
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
                 </Card>
             </AccordionContent>
           </Card>
