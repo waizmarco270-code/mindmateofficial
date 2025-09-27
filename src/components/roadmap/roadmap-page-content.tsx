@@ -3,19 +3,22 @@
 import { useState } from 'react';
 import { useRoadmaps, Roadmap, RoadmapMilestone } from "@/hooks/use-roadmaps";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Map, Loader2, Sparkles, FilePlus } from "lucide-react";
+import { PlusCircle, Map, Loader2, Sparkles, FilePlus, Trash2 } from "lucide-react";
 import { RoadmapCreation } from "@/components/roadmap/roadmap-creation";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { TaskPlanner } from "@/components/roadmap/task-planner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import roadmapTemplates from '@/app/lib/roadmap-templates.json';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 export function RoadmapPageContent() {
-    const { roadmaps, selectedRoadmap, setSelectedRoadmapId, loading, updateRoadmap, addRoadmap } = useRoadmaps();
+    const { roadmaps, selectedRoadmap, setSelectedRoadmapId, loading, updateRoadmap, addRoadmap, deleteRoadmap } = useRoadmaps();
     const [viewState, setViewState] = useState<'list' | 'create' | 'plan'>('list');
     const [planningRoadmap, setPlanningRoadmap] = useState<Roadmap | null>(null);
     const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+    const { toast } = useToast();
 
     const handleCreationComplete = (newRoadmapData: Parameters<typeof addRoadmap>[0]) => {
         setViewState('list');
@@ -67,6 +70,15 @@ export function RoadmapPageContent() {
         });
         setIsTemplateDialogOpen(false);
     }
+    
+    const handleDelete = async (roadmap: Roadmap) => {
+        try {
+            await deleteRoadmap(roadmap.id);
+            toast({ title: "Roadmap Deleted", description: `"${roadmap.name}" has been permanently removed.` });
+        } catch (error) {
+             toast({ variant: 'destructive', title: "Error", description: "Could not delete the roadmap." });
+        }
+    }
 
     if (loading) {
         return (
@@ -113,9 +125,32 @@ export function RoadmapPageContent() {
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {roadmaps.map(roadmap => (
-                         <div key={roadmap.id} className="p-6 border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors" onClick={() => setSelectedRoadmapId(roadmap.id)}>
-                            <h3 className="font-bold text-lg">{roadmap.name}</h3>
-                            <p className="text-sm text-muted-foreground">{roadmap.duration} days</p>
+                         <div key={roadmap.id} className="p-6 border rounded-lg flex flex-col gap-4 hover:bg-muted/50 transition-colors">
+                            <div className="cursor-pointer flex-1" onClick={() => setSelectedRoadmapId(roadmap.id)}>
+                                <h3 className="font-bold text-lg">{roadmap.name}</h3>
+                                <p className="text-sm text-muted-foreground">{roadmap.duration} days</p>
+                            </div>
+                            <div className="border-t pt-4">
+                                 <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full">
+                                            <Trash2 className="mr-2 h-4 w-4"/> Delete Roadmap
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete this roadmap?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the "{roadmap.name}" roadmap and all of its data.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDelete(roadmap)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
                         </div>
                     ))}
                 </div>
