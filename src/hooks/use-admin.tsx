@@ -1,10 +1,10 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays } from 'date-fns';
 import { LucideIcon } from 'lucide-react';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
@@ -305,6 +305,7 @@ interface AppDataContextType {
     
     appSettings: AppSettings | null;
     updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
+    uploadQrCode: (file: File) => Promise<void>;
 
 
     globalGifts: GlobalGift[];
@@ -1344,6 +1345,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const settingsDocRef = doc(db, 'appConfig', 'settings');
         await setDoc(settingsDocRef, settings, { merge: true });
     };
+
+    const uploadQrCode = useCallback(async (file: File) => {
+        const storageRef = ref(storage, 'app-settings/qr-code.png');
+        await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(storageRef);
+        await updateAppSettings({ qrCodeUrl: downloadURL });
+    }, []);
     
     const sendGlobalGift = async (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => {
         const newGiftRef = doc(collection(db, 'globalGifts'));
@@ -1505,6 +1513,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         submitPollComment,
         appSettings,
         updateAppSettings,
+        uploadQrCode,
         globalGifts,
         activeGlobalGift,
         sendGlobalGift,
@@ -1578,5 +1587,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    

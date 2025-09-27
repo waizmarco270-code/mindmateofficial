@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingBag, Banknote, Check } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingBag, Banknote, Check, Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -52,6 +52,7 @@ export default function SuperAdminPanelPage() {
     unlockFeature,
     appSettings,
     updateAppSettings,
+    uploadQrCode,
     generateDevAiAccessToken,
     featureShowcases,
     addFeatureShowcase,
@@ -105,11 +106,11 @@ export default function SuperAdminPanelPage() {
   
   // Armoury settings
   const [upiId, setUpiId] = useState(appSettings?.upiId || '');
-  const [qrCodeUrl, setQrCodeUrl] = useState(appSettings?.qrCodeUrl || '');
+  const [isUploadingQr, setIsUploadingQr] = useState(false);
+
 
   useEffect(() => {
     setUpiId(appSettings?.upiId || '');
-    setQrCodeUrl(appSettings?.qrCodeUrl || '');
   }, [appSettings]);
 
 
@@ -306,8 +307,28 @@ export default function SuperAdminPanelPage() {
   };
   
   const handleSaveArmourySettings = () => {
-      updateAppSettings({ upiId, qrCodeUrl });
+      updateAppSettings({ upiId });
       toast({ title: "Armoury Settings Saved!" });
+  }
+  
+  const handleQrUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload an image file (PNG, JPG, etc.).' });
+        return;
+    }
+    
+    setIsUploadingQr(true);
+    try {
+        await uploadQrCode(file);
+        toast({ title: 'QR Code Uploaded!', description: 'The new QR code is now live in the Armoury.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+    } finally {
+        setIsUploadingQr(false);
+    }
   }
 
   const handleGenerateDevToken = async () => {
@@ -555,18 +576,29 @@ export default function SuperAdminPanelPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Armoury Payment Settings</CardTitle>
-                        <CardDescription>Set your UPI ID and QR code URL for Master Card purchases.</CardDescription>
+                        <CardDescription>Set your UPI ID and upload a QR code for Master Card purchases.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="upi-id">UPI ID</Label>
-                            <Input id="upi-id" value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="yourname@bank"/>
+                            <div className="flex gap-2">
+                                <Input id="upi-id" value={upiId} onChange={e => setUpiId(e.target.value)} placeholder="yourname@bank"/>
+                                <Button onClick={handleSaveArmourySettings}>Save ID</Button>
+                            </div>
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="qr-code">QR Code Image URL</Label>
-                            <Input id="qr-code" type="url" value={qrCodeUrl} onChange={e => setQrCodeUrl(e.target.value)} placeholder="https://example.com/qr.png"/>
+                            <Label htmlFor="qr-code">Upload QR Code Image</Label>
+                            <div className="flex gap-2 items-center">
+                                <Input id="qr-code" type="file" accept="image/*" onChange={handleQrUpload} disabled={isUploadingQr} />
+                                {isUploadingQr && <Loader2 className="h-5 w-5 animate-spin" />}
+                            </div>
+                             {appSettings?.qrCodeUrl && (
+                                <div className="mt-2 text-center p-2 bg-muted rounded-md">
+                                    <p className="text-xs text-muted-foreground">Current QR Code:</p>
+                                    <img src={appSettings.qrCodeUrl} alt="Current QR Code" className="h-24 w-24 mx-auto mt-1 rounded"/>
+                                </div>
+                            )}
                         </div>
-                        <Button onClick={handleSaveArmourySettings}>Save Armoury Settings</Button>
                     </CardContent>
                 </Card>
             </AccordionContent>
