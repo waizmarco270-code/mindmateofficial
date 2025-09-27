@@ -92,6 +92,13 @@ export function NexusView() {
         }, {} as Record<string, NexusEvent[]>);
     }, [events]);
 
+    const upcomingEvents = useMemo(() => {
+        return Object.entries(eventsByDate)
+            .map(([date, events]) => ({ date: addDays(new Date(date), 1), events })) // Fix for timezone issue
+            .filter(item => item.date >= startOfWeek(new Date(), { weekStartsOn: 1 }))
+            .sort((a, b) => a.date.getTime() - b.date.getTime());
+    }, [eventsByDate]);
+
     const handleAddEvent = () => {
         if (!eventTitle || !eventDate) return;
         
@@ -117,14 +124,6 @@ export function NexusView() {
         const dateKey = format(selectedDate, 'yyyy-MM-dd');
         return eventsByDate[dateKey] || [];
     }, [selectedDate, eventsByDate]);
-
-    // Moved useMemo to top level of the component
-    const upcomingEvents = useMemo(() => {
-        return Object.entries(eventsByDate)
-            .map(([date, events]) => ({ date: addDays(new Date(date), 1), events })) // Fix for timezone issue
-            .filter(item => item.date >= startOfWeek(new Date(), { weekStartsOn: 1 }))
-            .sort((a, b) => a.date.getTime() - b.date.getTime());
-    }, [eventsByDate]);
 
 
     const renderMonthView = () => (
@@ -239,7 +238,7 @@ export function NexusView() {
 
 
     return (
-       <div className="h-[calc(100vh-12rem)] min-h-[700px] grid grid-cols-1 lg:grid-cols-12 gap-6">
+       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:h-[calc(100vh-12rem)] lg:min-h-[700px]">
             <Card className="h-full flex flex-col lg:col-span-8">
                 <div className="flex flex-col sm:flex-row items-center justify-between border-b p-4 gap-4">
                     <div className="flex items-center gap-2">
