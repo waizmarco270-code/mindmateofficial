@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -536,7 +537,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const ticketsQuery = query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'));
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
         const showcasesQuery = query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc'));
-        const masterCardRequestsQuery = query(collection(db, 'masterCardRequests'), where('status', '==', 'pending'), orderBy('requestedAt', 'asc'));
+        // FIX: The query that requires an index. Remove orderBy to fix.
+        const masterCardRequestsQuery = query(collection(db, 'masterCardRequests'), where('status', '==', 'pending'));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
@@ -556,7 +558,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             }
         });
         const unsubShowcases = onSnapshot(showcasesQuery, (snapshot) => setFeatureShowcases(processSnapshot<FeatureShowcase>(snapshot)));
-        const unsubMasterCardRequests = onSnapshot(masterCardRequestsQuery, (snapshot) => setMasterCardRequests(processTimestampedSnapshot(snapshot) as MasterCardRequest[]));
+        // FIX: Sort the results on the client side after fetching
+        const unsubMasterCardRequests = onSnapshot(masterCardRequestsQuery, (snapshot) => {
+            const requests = processTimestampedSnapshot(snapshot) as MasterCardRequest[];
+            requests.sort((a, b) => a.requestedAt.toMillis() - b.requestedAt.toMillis());
+            setMasterCardRequests(requests);
+        });
 
 
         return () => {
@@ -1571,3 +1578,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    
