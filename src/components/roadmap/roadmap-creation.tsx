@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { Roadmap, RoadmapMilestone, RoadmapCategory, RoadmapTask, useRoadmaps } from '@/hooks/use-roadmaps';
@@ -9,10 +8,12 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Slider } from '@/components/ui/slider';
-import { PlusCircle, ArrowLeft, CheckCircle, Loader2, CalendarIcon } from 'lucide-react';
+import { PlusCircle, ArrowLeft, CheckCircle, Loader2, CalendarIcon, Wand2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { Textarea } from '../ui/textarea';
+import { generateRoadmap } from '@/ai/flows/roadmap-flow';
 
 
 interface RoadmapCreationProps {
@@ -24,11 +25,13 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
     const { addRoadmap } = useRoadmaps();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [mode, setMode] = useState<'manual' | 'ai'>('manual');
     
     // Form State
     const [name, setName] = useState('');
     const [examDate, setExamDate] = useState<Date | undefined>(new Date());
     const [duration, setDuration] = useState(90);
+    const [aiGoal, setAiGoal] = useState('');
 
     const handleSubmit = async () => {
         if(!name.trim()) {
@@ -42,21 +45,32 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
 
         setIsSubmitting(true);
         try {
-             const roadmapData = {
+             const roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections'> = {
                 name,
                 examDate: examDate.toISOString(),
                 duration,
                 milestones: []
              };
+             
+             if (mode === 'ai' && aiGoal.trim()) {
+                 const aiGeneratedPlan = await generateRoadmap({
+                     goal: aiGoal,
+                     duration: duration
+                 });
+                 roadmapData.milestones = aiGeneratedPlan.milestones;
+             }
+             
             const newRoadmapId = await addRoadmap(roadmapData);
-            toast({ title: "Roadmap Created!", description: "Now let's plan your tasks." });
+            toast({ title: "Roadmap Created!", description: "Your new roadmap is ready." });
+
             if (newRoadmapId) {
-                onComplete(newRoadmapId);
+                // If using AI, we skip the manual planning step as it's pre-filled
+                 onComplete(newRoadmapId);
             } else {
                 throw new Error("Failed to get new roadmap ID");
             }
         } catch (error) {
-             toast({ variant: 'destructive', title: "Error", description: "Could not create roadmap." });
+             toast({ variant: 'destructive', title: "Error", description: "Could not create roadmap. The AI might be unavailable." });
              setIsSubmitting(false);
         }
     };
@@ -77,7 +91,12 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
             <Card className="max-w-2xl mx-auto">
                 <CardHeader>
                     <CardTitle>Roadmap Details</CardTitle>
-                    <CardDescription>Fill in the basic information for your new roadmap.</CardDescription>
+                     <div className="flex items-center gap-2 pt-2">
+                        <Button variant={mode === 'manual' ? 'default' : 'outline'} onClick={() => setMode('manual')}>Manual Setup</Button>
+                        <Button variant={mode === 'ai' ? 'default' : 'outline'} onClick={() => setMode('ai')} className="flex items-center gap-2">
+                            <Wand2 className="h-4 w-4"/> Generate with AI
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <div className="space-y-2">
@@ -105,6 +124,7 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
                                     selected={examDate}
                                     onSelect={setExamDate}
                                     initialFocus
+                                    disabled={(date) => date < new Date()}
                                 />
                             </PopoverContent>
                         </Popover>
@@ -117,11 +137,26 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
                             <span>1 Year</span>
                         </div>
                     </div>
+                    {mode === 'ai' && (
+                        <div className="space-y-2 pt-4 border-t">
+                            <Label htmlFor="ai-goal">Describe Your Goal</Label>
+                            <p className="text-xs text-muted-foreground">
+                                The AI will generate a plan based on this. Be specific!
+                            </p>
+                            <Textarea 
+                                id="ai-goal" 
+                                value={aiGoal} 
+                                onChange={e => setAiGoal(e.target.value)} 
+                                placeholder="e.g., 'Master calculus for JEE Mains in 60 days' or 'Complete Class 12 Physics syllabus, focusing on important chapters for boards'."
+                                rows={4}
+                            />
+                        </div>
+                    )}
                 </CardContent>
                 <CardFooter>
                     <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
                         {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <CheckCircle className="mr-2 h-4 w-4"/>}
-                        Create & Plan Tasks
+                        {mode === 'ai' ? 'Generate & Create' : 'Create Roadmap'}
                     </Button>
                 </CardFooter>
             </Card>
