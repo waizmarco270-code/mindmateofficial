@@ -1,0 +1,68 @@
+
+[
+    {
+        "id": "template-30-day-sprint",
+        "name": "30-Day Exam Sprint",
+        "description": "An intense, one-month plan focusing on revision and mock tests for final exams.",
+        "duration": 30,
+        "milestones": [
+            {
+                "day": 1,
+                "categories": [
+                    { "id": "cat1", "title": "Physics", "color": "#ef4444", "tasks": [{ "id": "t1", "text": "Revise Chapter 1: Electrostatics", "completed": false }] },
+                    { "id": "cat2", "title": "Chemistry", "color": "#3b82f6", "tasks": [{ "id": "t2", "text": "Revise Chapter 1: Solutions", "completed": false }] }
+                ]
+            },
+            {
+                "day": 7,
+                "categories": [
+                    { "id": "cat3", "title": "Review", "color": "#eab308", "tasks": [{ "id": "t3", "text": "Attempt Weekly Mock Test 1", "completed": false }] }
+                ]
+            },
+            {
+                "day": 15,
+                "categories": [
+                     { "id": "cat4", "title": "Maths", "color": "#22c55e", "tasks": [{ "id": "t4", "text": "Practice Integration Problems", "completed": false }] }
+                ]
+            },
+            {
+                "day": 30,
+                "categories": [
+                     { "id": "cat5", "title": "Final Prep", "color": "#8b5cf6", "tasks": [{ "id": "t5", "text": "Solve 2 Full-Length Previous Year Papers", "completed": false }] }
+                ]
+            }
+        ]
+    },
+    {
+        "id": "template-90-day-foundation",
+        "name": "90-Day Foundation Builder",
+        "description": "A comprehensive 3-month plan to build a strong foundation across all subjects.",
+        "duration": 90,
+        "milestones": [
+             {
+                "day": 1,
+                "categories": [
+                    { "id": "cat1", "title": "Concept Building", "color": "#3b82f6", "tasks": [{ "id": "t1", "text": "Start Chapter 1 of all major subjects", "completed": false }] }
+                ]
+            },
+            {
+                "day": 30,
+                "categories": [
+                    { "id": "cat2", "title": "Milestone 1", "color": "#eab308", "tasks": [{ "id": "t2", "text": "Complete first 1/3 of syllabus", "completed": false }, { "id": "t3", "text": "Take sectional tests", "completed": false }] }
+                ]
+            },
+            {
+                "day": 60,
+                "categories": [
+                    { "id": "cat3", "title": "Milestone 2", "color": "#eab308", "tasks": [{ "id": "t4", "text": "Complete second 1/3 of syllabus", "completed": false }, { "id": "t5", "text": "Focus on weak areas from first milestone", "completed": false }] }
+                ]
+            },
+            {
+                "day": 90,
+                "categories": [
+                    { "id": "cat4", "title": "Final Review", "color": "#ef4444", "tasks": [{ "id": "t6", "text": "Full syllabus mock test", "completed": false }] }
+                ]
+            }
+        ]
+    }
+]

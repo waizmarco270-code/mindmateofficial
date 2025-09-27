@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -41,7 +42,7 @@ interface RoadmapsContextType {
   loading: boolean;
   selectedRoadmap: Roadmap | null;
   setSelectedRoadmapId: (id: string | null) => void;
-  addRoadmap: (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections' | 'targetExam'>) => Promise<string | undefined>;
+  addRoadmap: (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections'>) => Promise<string | undefined>;
   updateRoadmap: (id: string, data: Partial<Roadmap>) => Promise<void>;
   deleteRoadmap: (id: string) => Promise<void>;
   logStudyTime: (roadmapId: string, date: string, seconds: number) => Promise<void>;
@@ -83,7 +84,7 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [user]);
 
-  const addRoadmap = useCallback(async (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections' | 'targetExam'>) => {
+  const addRoadmap = useCallback(async (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections'>) => {
     if (!user) return;
     const roadmapsColRef = collection(db, 'users', user.id, 'roadmaps');
     const newDocRef = doc(roadmapsColRef);
