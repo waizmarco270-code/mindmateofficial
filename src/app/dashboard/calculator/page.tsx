@@ -51,10 +51,10 @@ export default function PercentageCalculatorPage() {
 
   const [subjects, setSubjects] = useState<Subject[]>([
     { id: 1, name: 'English', marks: '', isCompulsory: true },
-    { id: 2, name: '', marks: '', isCompulsory: false },
-    { id: 3, name: '', marks: '', isCompulsory: false },
-    { id: 4, name: '', marks: '', isCompulsory: false },
-    { id: 5, name: '', marks: '', isCompulsory: false },
+    { id: 2, name: 'Physics', marks: '', isCompulsory: false },
+    { id: 3, name: 'Chemistry', marks: '', isCompulsory: false },
+    { id: 4, name: 'Maths', marks: '', isCompulsory: false },
+    { id: 5, name: 'PHE', marks: '', isCompulsory: false },
   ]);
   const [result, setResult] = useState<{ percentage: number; bestSubjects: Subject[] } | null>(null);
   const [isCalculating, setIsCalculating] = useState(false);
@@ -268,4 +268,3 @@ export default function PercentageCalculatorPage() {
     </div>
   );
 }
-
