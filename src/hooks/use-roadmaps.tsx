@@ -49,6 +49,7 @@ interface RoadmapsContextType {
   deleteRoadmap: (id: string) => Promise<void>;
   logStudyTime: (roadmapId: string, date: string, seconds: number) => Promise<void>;
   addWeeklyReflection: (roadmapId: string, weekStartDate: string, reflection: { rating: number; note: string; }) => Promise<void>;
+  toggleTaskCompletion: (roadmapId: string, day: number, categoryId: string, taskId: string) => Promise<void>;
 }
 
 // --- CONTEXT ---
@@ -130,6 +131,38 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
         [`weeklyReflections.${weekStartDate}`]: reflection
     });
   }, [user]);
+
+  const toggleTaskCompletion = useCallback(async (roadmapId: string, day: number, categoryId: string, taskId: string) => {
+    if (!user) return;
+    
+    const roadmap = roadmaps.find(r => r.id === roadmapId);
+    if (!roadmap) return;
+
+    const newMilestones = roadmap.milestones.map(milestone => {
+        if (milestone.day === day) {
+            return {
+                ...milestone,
+                categories: milestone.categories.map(category => {
+                    if (category.id === categoryId) {
+                        return {
+                            ...category,
+                            tasks: category.tasks.map(task => {
+                                if (task.id === taskId) {
+                                    return { ...task, completed: !task.completed };
+                                }
+                                return task;
+                            })
+                        };
+                    }
+                    return category;
+                })
+            };
+        }
+        return milestone;
+    });
+
+    await updateRoadmap(roadmapId, { milestones: newMilestones });
+  }, [user, roadmaps, updateRoadmap]);
   
   const selectedRoadmap = roadmaps.find(r => r.id === selectedRoadmapId) || null;
 
@@ -143,6 +176,7 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     deleteRoadmap,
     logStudyTime,
     addWeeklyReflection,
+    toggleTaskCompletion,
   };
 
   return <RoadmapsContext.Provider value={value}>{children}</RoadmapsContext.Provider>;
