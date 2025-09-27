@@ -201,6 +201,11 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
 
 const badgeShowcaseItems = [
     {
+        name: 'Master Card',
+        description: 'The ultimate reward. Grants temporary unlimited credit access. Awarded by Super Admins to top performers.',
+        badge: <span className="master-card-badge"><CreditCard className="h-3 w-3"/> MASTER</span>
+    },
+    {
         name: 'Challenger',
         description: 'Awarded to users who successfully complete an official study challenge.',
         badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
@@ -283,6 +288,7 @@ export default function DashboardPage() {
     const isVip = currentUserData?.isVip ?? false;
     const isGM = currentUserData?.isGM ?? false;
     const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
+    const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
     const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'], isLocked: boolean) => {
         if (isLocked) {
@@ -369,7 +375,7 @@ export default function DashboardPage() {
                     <CardContent className="p-4 text-center relative z-10">
                         <Medal className="h-10 w-10 mx-auto mb-2 text-yellow-400 animate-gold-shine"/>
                         <h3 className="text-base font-semibold">Your Credits</h3>
-                        <p className="text-4xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{credits}</p>
+                        <p className="text-4xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{hasMasterCard ? '∞' : credits}</p>
                     </CardContent>
                 </Card>
                  <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-orange-500/20 transition-shadow duration-300 flex flex-col justify-center">
