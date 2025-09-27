@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode, ScanText } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -75,15 +75,6 @@ const toolCategories = [
         href: "/dashboard/tools/qr-code-generator",
         color: "from-slate-500 to-gray-500",
         shadow: "shadow-slate-500/30"
-    },
-    {
-        id: 'handwriting-to-text',
-        title: "Handwriting to Text",
-        description: "Convert handwritten notes into digital text using AI.",
-        icon: ScanText,
-        href: "/dashboard/tools/handwriting-to-text",
-        color: "from-purple-500 to-violet-500",
-        shadow: "shadow-purple-500/30"
     }
 ]
 
