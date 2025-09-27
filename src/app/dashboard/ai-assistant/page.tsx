@@ -30,6 +30,7 @@ export default function AiAssistantPage() {
 
   const isAiLive = appSettings?.marcoAiLaunchStatus === 'live';
   const hasAccess = currentUserData?.hasAiAccess ?? false;
+  const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
   useEffect(() => {
     // Only enter immersive mode if the user has access and the AI is live.
@@ -40,7 +41,7 @@ export default function AiAssistantPage() {
   const handlePurchase = async () => {
     if (!user || !currentUserData) return;
 
-    if (currentUserData.credits < AI_ACCESS_COST) {
+    if (!hasMasterCard && currentUserData.credits < AI_ACCESS_COST) {
       toast({
         variant: 'destructive',
         title: 'Insufficient Credits',
@@ -133,10 +134,14 @@ export default function AiAssistantPage() {
           <CardContent>
             <div className="rounded-lg border bg-muted p-6">
               <p className="text-sm text-muted-foreground">Unlock Cost</p>
-              <p className="text-5xl font-bold tracking-tighter">{AI_ACCESS_COST} <span className="text-2xl text-amber-500">credits</span></p>
+               {hasMasterCard ? (
+                <p className="text-5xl font-bold tracking-tighter text-green-500">FREE</p>
+              ) : (
+                <p className="text-5xl font-bold tracking-tighter">{AI_ACCESS_COST} <span className="text-2xl text-amber-500">credits</span></p>
+              )}
             </div>
             <div className="mt-4 text-sm text-muted-foreground">
-              Your balance: <span className="font-bold text-foreground">{currentUserData?.credits ?? 0}</span> credits
+              Your balance: <span className="font-bold text-foreground">{hasMasterCard ? '∞' : (currentUserData?.credits ?? 0)}</span> credits
             </div>
           </CardContent>
           <CardFooter className="flex-col gap-2">
@@ -144,10 +149,10 @@ export default function AiAssistantPage() {
               className="w-full"
               size="lg"
               onClick={handlePurchase}
-              disabled={isPurchasing || (currentUserData?.credits ?? 0) < AI_ACCESS_COST}
+              disabled={isPurchasing || (!hasMasterCard && (currentUserData?.credits ?? 0) < AI_ACCESS_COST)}
             >
               {isPurchasing ? <Loader2 className="mr-2 animate-spin" /> : <ShieldCheck className="mr-2" />}
-              Unlock for {AI_ACCESS_COST} Credits
+              {hasMasterCard ? 'Unlock for Free' : `Unlock for ${AI_ACCESS_COST} Credits`}
             </Button>
           </CardFooter>
         </Card>
@@ -195,3 +200,5 @@ export default function AiAssistantPage() {
     </>
   );
 }
+
+    
