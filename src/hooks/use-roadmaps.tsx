@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -6,8 +5,6 @@ import { db } from '@/lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, addDoc, updateDoc, getDoc, serverTimestamp, increment } from 'firebase/firestore';
 
 // --- TYPE DEFINITIONS ---
-
-export type TargetExam = 'jee-main-jan' | 'jee-main-apr' | 'board-12' | 'board-10' | 'neet';
 
 export interface RoadmapTask {
   id: string;
@@ -31,7 +28,7 @@ export interface Roadmap {
   id: string;
   userId: string;
   name: string;
-  examDate: string; // Changed from targetExam to a specific date
+  examDate: string; // ISO string
   duration: number; // in days
   startDate: string; // ISO string
   milestones: RoadmapMilestone[];
@@ -44,7 +41,7 @@ interface RoadmapsContextType {
   loading: boolean;
   selectedRoadmap: Roadmap | null;
   setSelectedRoadmapId: (id: string | null) => void;
-  addRoadmap: (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections'>) => Promise<string | undefined>;
+  addRoadmap: (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections' | 'targetExam'>) => Promise<string | undefined>;
   updateRoadmap: (id: string, data: Partial<Roadmap>) => Promise<void>;
   deleteRoadmap: (id: string) => Promise<void>;
   logStudyTime: (roadmapId: string, date: string, seconds: number) => Promise<void>;
@@ -86,11 +83,11 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [user]);
 
-  const addRoadmap = useCallback(async (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections'>) => {
+  const addRoadmap = useCallback(async (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections' | 'targetExam'>) => {
     if (!user) return;
     const roadmapsColRef = collection(db, 'users', user.id, 'roadmaps');
     const newDocRef = doc(roadmapsColRef);
-    const newRoadmap: Roadmap = {
+    const newRoadmap: Omit<Roadmap, 'targetExam'> = {
       ...roadmapData,
       id: newDocRef.id,
       userId: user.id,
