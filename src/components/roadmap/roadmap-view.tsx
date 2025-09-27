@@ -153,15 +153,18 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                         </p>
                     </CardContent>
                 </Card>
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Mini Time Tracker</CardTitle>
-                        <CardDescription>Track study time for this roadmap.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <TimeTracker />
-                    </CardContent>
-                </Card>
+                <Dialog>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full"><Clock className="mr-2 h-4 w-4"/> Open Time Tracker</Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                        <DialogHeader>
+                            <DialogTitle>Time Tracker</DialogTitle>
+                            <DialogDescription>Track study time for subjects in this roadmap.</DialogDescription>
+                        </DialogHeader>
+                        <TimeTracker />
+                    </DialogContent>
+                </Dialog>
             </div>
             
             {/* Right Panel - Timeline */}
