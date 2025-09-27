@@ -40,15 +40,6 @@ export function RoadmapView({ roadmap, onBack, onPlan }: RoadmapViewProps) {
 
     const startDate = new Date(roadmap.startDate);
     
-    // This is a proxy for the mini time tracker. We'll pass a special onPlayPause handler to it.
-    const handleRoadmapTimeLog = (subjectId: string) => {
-        // Here we would ideally integrate with a more robust time tracking hook.
-        // For now, we'll just log a fixed duration as an demonstration.
-        const dateKey = format(new Date(), 'yyyy-MM-dd');
-        logStudyTime(roadmap.id, dateKey, 60); // Log 1 minute for demonstration
-    }
-
-
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
             {/* Left Panel - Details and Actions */}
