@@ -1,4 +1,3 @@
-
 'use client';
 import Link from "next/link";
 import { ArrowLeft, Swords, Hand, X } from "lucide-react";
