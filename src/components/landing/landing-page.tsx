@@ -2,7 +2,7 @@
 'use client';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame } from 'lucide-react';
+import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame, Award } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
 import { SignedIn, SignedOut, SignUpButton, useUser } from '@clerk/nextjs';
@@ -175,7 +175,7 @@ export function LandingPage() {
                 <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
                     MindMate is your all-in-one study companion to learn smarter, stay focused, and connect with a community of learners.
                 </p>
-                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
+                 <div className="mt-10 flex flex-col items-center justify-center gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
                     <SignedOut>
                         <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                              <Button size="lg" className="relative group w-full sm:w-auto">
@@ -185,15 +185,9 @@ export function LandingPage() {
                                 </span>
                             </Button>
                         </SignUpButton>
-                        <Link
-                            href="/dashboard"
-                            className={cn(
-                                buttonVariants({ variant: "outline", size: "lg" }),
-                                "w-full sm:w-auto"
-                            )}
-                            >
-                            Explore Demo
-                        </Link>
+                         <p className="text-sm text-amber-300 font-semibold flex items-center gap-2 mt-2">
+                            <Award className="h-5 w-5" /> Sign up now and get 100 free credits!
+                        </p>
                     </SignedOut>
                      <SignedIn>
                         <Link href="/dashboard">
@@ -216,7 +210,7 @@ export function LandingPage() {
                 <div 
                   key={feature.name} 
                   className="flex flex-col rounded-2xl border border-white/10 bg-slate-900/50 p-8 shadow-2xl shadow-slate-950/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/20 animate-fade-in-up"
-                  style={{animationDelay: `${0.8 + i * 0.2}s`}}
+                  style={{animationDelay: `${'0.8' + i * 0.2}s`}}
                 >
                   <div className={cn("flex h-12 w-12 items-center justify-center rounded-lg", feature.bgColor)}>
                     <feature.icon className={cn("h-6 w-6", feature.color)} aria-hidden="true" />
