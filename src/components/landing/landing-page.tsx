@@ -15,6 +15,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { ActivityGlobe } from './ActivityGlobe';
 
 
 const navLinks = [
@@ -231,7 +232,7 @@ export function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
              <SignedOut>
-                <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
+                 <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                     <Button>
                         Get Started <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -272,7 +273,7 @@ export function LandingPage() {
                 </p>
                  <div className="mt-10 flex flex-col items-center justify-center gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
                     <SignedOut>
-                        <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
+                       <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                              <Button size="lg" className="relative group w-full sm:w-auto">
                                 <span className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></span>
                                 <span className="relative flex items-center">
@@ -289,6 +290,19 @@ export function LandingPage() {
                             <Button size="lg">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Button>
                         </Link>
                      </SignedIn>
+                </div>
+            </div>
+        </section>
+
+        {/* Live Universe Section */}
+         <section id="universe" className="py-24 sm:py-32">
+            <div className="container mx-auto px-4">
+                 <div className="mx-auto max-w-2xl text-center">
+                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Join the MindMate Universe</h2>
+                    <p className="mt-4 text-lg text-slate-400">See our global community of learners in action. Every pulse is a student completing a quiz, starting a focus session, or connecting with friends.</p>
+                </div>
+                <div className="mt-16">
+                   <ActivityGlobe />
                 </div>
             </div>
         </section>
@@ -448,5 +462,3 @@ export function LandingPage() {
     </div>
   );
 }
-
-    
