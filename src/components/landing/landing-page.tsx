@@ -8,11 +8,13 @@ import { Logo } from '../ui/logo';
 import { SignedIn, SignedOut, SignUpButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Card, CardContent } from '../ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import Autoplay from "embla-carousel-autoplay"
+import Image from 'next/image';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 
 
 const navLinks = [
@@ -135,6 +137,70 @@ const challengeQuestions = [
         buttonText: "Start My Journey"
     },
 ];
+
+function BeforeAfterSlider() {
+    const [sliderPosition, setSliderPosition] = useState(50);
+    const imageContainerRef = useState<HTMLDivElement | null>(null);
+
+    const handleMove = (clientX: number) => {
+        if (!imageContainerRef.current) return;
+
+        const rect = imageContainerRef.current.getBoundingClientRect();
+        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+        const percent = Math.max(0, Math.min((x / rect.width) * 100, 100));
+
+        setSliderPosition(percent);
+    };
+
+    const handleTouchMove = (event: React.TouchEvent) => {
+        handleMove(event.touches[0].clientX);
+    };
+
+    const handleMouseMove = (event: React.MouseEvent) => {
+        handleMove(event.clientX);
+    };
+    
+    return (
+        <div ref={imageContainerRef} className="relative w-full max-w-4xl mx-auto aspect-[16/9] overflow-hidden rounded-2xl select-none group" onMouseMove={handleMouseMove} onTouchMove={handleTouchMove}>
+            {/* After Image */}
+            <Image 
+                src="https://picsum.photos/seed/after/1280/720"
+                alt="Organized desk with MindMate"
+                layout="fill"
+                objectFit="cover"
+                data-ai-hint="organized study desk laptop"
+            />
+            {/* Before Image (clipped) */}
+            <motion.div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}>
+                 <Image 
+                    src="https://picsum.photos/seed/before/1280/720"
+                    alt="Messy desk with scattered books"
+                    layout="fill"
+                    objectFit="cover"
+                    data-ai-hint="messy study desk books"
+                />
+            </motion.div>
+             {/* Slider Handle */}
+            <motion.div
+                className="absolute inset-y-0 w-1 bg-white/50 cursor-ew-resize flex items-center justify-center"
+                style={{ left: `${sliderPosition}%` }}
+                drag="x"
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0}
+                onDrag={(e, info) => {
+                    if (!imageContainerRef.current) return;
+                    const rect = imageContainerRef.current.getBoundingClientRect();
+                    const newSliderPosition = ((info.point.x - rect.left) / rect.width) * 100;
+                    setSliderPosition(Math.max(0, Math.min(newSliderPosition, 100)));
+                }}
+            >
+                <div className="h-10 w-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-800 shadow-2xl transition-transform group-hover:scale-110">
+                    <ArrowRightLeft className="h-5 w-5" />
+                </div>
+            </motion.div>
+        </div>
+    )
+}
 
 
 export function LandingPage() {
@@ -274,6 +340,40 @@ export function LandingPage() {
                 </div>
             </div>
         </section>
+        
+        {/* Why MindMate Section */}
+        <section id="why-mindmate" className="py-24 sm:py-32">
+            <div className="container mx-auto px-4">
+                 <div className="mx-auto max-w-2xl text-center">
+                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Why MindMate?</h2>
+                    <p className="mt-4 text-lg text-slate-400">We're more than just an app; we're your dedicated study partner.</p>
+                </div>
+                <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
+                    {whyMindMate.map((point, i) => (
+                        <div key={i} className="flex flex-col items-center">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
+                                <Heart className="h-8 w-8 text-primary" />
+                            </div>
+                            <h3 className="text-xl font-semibold text-white">{point.title}</h3>
+                            <p className="mt-2 text-base text-slate-400">{point.description}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
+        
+        {/* Before & After Slider Section */}
+        <section className="py-24 sm:py-32 bg-slate-900/50">
+            <div className="container mx-auto px-4">
+                <div className="mx-auto max-w-2xl text-center">
+                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">From Chaos to Control</h2>
+                    <p className="mt-4 text-lg text-slate-400">See the transformation MindMate brings to your study life.</p>
+                </div>
+                <div className="mt-16">
+                    <BeforeAfterSlider />
+                </div>
+            </div>
+        </section>
 
         {/* Features Section */}
         <section id="features" className="py-24 sm:py-32">
@@ -299,29 +399,8 @@ export function LandingPage() {
           </div>
         </section>
 
-         {/* Why MindMate Section */}
-        <section id="why-mindmate" className="py-24 sm:py-32 bg-slate-900">
-            <div className="container mx-auto px-4">
-                 <div className="mx-auto max-w-2xl text-center">
-                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Why MindMate?</h2>
-                    <p className="mt-4 text-lg text-slate-400">We're more than just an app; we're your dedicated study partner.</p>
-                </div>
-                <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-                    {whyMindMate.map((point, i) => (
-                        <div key={i} className="flex flex-col items-center">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
-                                <Heart className="h-8 w-8 text-primary" />
-                            </div>
-                            <h3 className="text-xl font-semibold text-white">{point.title}</h3>
-                            <p className="mt-2 text-base text-slate-400">{point.description}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-
         {/* Testimonials Section */}
-        <section id="reviews" className="py-24 sm:py-32">
+        <section id="reviews" className="py-24 sm:py-32 bg-slate-900">
              <div className="container mx-auto px-4">
                  <div className="mx-auto max-w-2xl text-center">
                     <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Loved by Students</h2>
@@ -329,7 +408,7 @@ export function LandingPage() {
                 </div>
                 <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {testimonials.map((testimonial, i) => (
-                        <Card key={i} className="bg-slate-900/50 border-white/10">
+                        <Card key={i} className="bg-slate-800/50 border-white/10">
                             <CardContent className="p-6">
                                 <div className="flex items-center gap-4">
                                     <Avatar className="h-12 w-12">
