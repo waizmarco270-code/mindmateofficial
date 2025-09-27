@@ -91,32 +91,39 @@ function AppearanceSettings() {
                             const isActive = theme === t.id;
 
                             return (
-                                <div key={t.id} className="relative group">
-                                     <button
+                                <div key={t.id} className="relative">
+                                    <button
                                         onClick={() => {
                                             if (isUnlocked) setTheme(t.id);
                                             else setThemeToUnlock(t);
                                         }}
-                                        className={cn("w-full p-4 border-2 rounded-lg space-y-2 text-left",
-                                            isActive ? 'border-primary ring-2 ring-primary' : 'border-border'
+                                        className={cn("w-full p-4 border-2 rounded-lg space-y-2 text-left transition-all",
+                                            isActive ? 'border-primary ring-2 ring-primary/50' : 'border-border hover:border-primary/50',
+                                            !isUnlocked && 'blur-sm'
                                         )}
-                                     >
+                                    >
                                         <div className="flex items-center gap-2">
                                             <div className={cn("h-6 w-10 rounded-md flex items-center justify-end p-1", t.bg)}>
                                                 <div className={cn("h-3 w-3 rounded-full", t.primary)}></div>
                                             </div>
                                             <span className="font-semibold text-sm">{t.name}</span>
                                         </div>
-                                     </button>
+                                    </button>
                                      {!isUnlocked && (
-                                        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center p-2">
-                                            <Lock className="h-6 w-6 mb-2 text-muted-foreground"/>
-                                            <p className="text-xs font-bold text-center">Unlock for</p>
-                                            <p className="text-sm font-bold text-primary">{THEME_COST} credits</p>
+                                        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center p-2">
+                                            <Button 
+                                                className="w-full h-full flex flex-col" 
+                                                variant="ghost" 
+                                                onClick={() => setThemeToUnlock(t)}
+                                            >
+                                                <Lock className="h-6 w-6 mb-1 text-muted-foreground"/>
+                                                <p className="text-xs font-bold">Unlock for</p>
+                                                <p className="text-sm font-bold text-primary">{THEME_COST} credits</p>
+                                            </Button>
                                         </div>
                                      )}
                                      {isActive && (
-                                         <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1">
+                                         <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-lg">
                                              <CheckCircle className="h-4 w-4"/>
                                          </div>
                                      )}
