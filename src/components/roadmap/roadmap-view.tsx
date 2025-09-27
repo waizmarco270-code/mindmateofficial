@@ -3,17 +3,19 @@
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare } from 'lucide-react';
-import { addDays, format, isPast, isToday, endOfWeek, startOfWeek } from 'date-fns';
+import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target } from 'lucide-react';
+import { addDays, format, isPast, isToday, endOfWeek, startOfWeek, differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Progress } from '../ui/progress';
 import { ScrollArea } from '../ui/scroll-area';
 import { TimeTracker } from '../tracker/time-tracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import examDates from '@/app/lib/exam-dates.json';
+
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -65,6 +67,45 @@ function WeeklyReflectionForm({ weekStartDate, roadmapId, onSave }: WeeklyReflec
     );
 }
 
+function ExamCountdown({ targetExam }: { targetExam: Roadmap['targetExam'] }) {
+    const targetDate = new Date(examDates[targetExam]);
+    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const totalSeconds = differenceInSeconds(targetDate, new Date());
+            if (totalSeconds <= 0) {
+                setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+                clearInterval(interval);
+                return;
+            }
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            setTimeLeft({ days, hours, minutes, seconds });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [targetDate]);
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                    <Target className="text-destructive h-5 w-5"/> Countdown to {targetExam.replace(/-/g, ' ')}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-4 gap-2 text-center font-mono">
+                <div><p className="text-3xl font-bold">{String(timeLeft.days).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Days</p></div>
+                <div><p className="text-3xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Hours</p></div>
+                <div><p className="text-3xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Mins</p></div>
+                <div><p className="text-3xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Secs</p></div>
+            </CardContent>
+        </Card>
+    );
+}
+
+
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
     const { toggleTaskCompletion } = useRoadmaps();
 
@@ -98,6 +139,9 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                  <Button variant="outline" onClick={onPlan} className="w-full">
                     <Edit className="mr-2 h-4 w-4" /> Plan / Edit Tasks
                 </Button>
+                
+                <ExamCountdown targetExam={roadmap.targetExam} />
+                
                 <Card>
                     <CardHeader>
                         <CardTitle>Overall Progress</CardTitle>
