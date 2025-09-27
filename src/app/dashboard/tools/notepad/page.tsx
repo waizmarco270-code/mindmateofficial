@@ -236,13 +236,17 @@ export default function NotepadPage() {
                     <Tabs value={String(activeNoteIndex)} onValueChange={(val) => setActiveNoteIndex(Number(val))}>
                         <TabsList>
                             {notesArray.map((_, index) => (
-                                <TabsTrigger key={index} value={String(index)} className="relative pr-8">
-                                    Note {index + 1}
+                                <div key={index} className="relative">
+                                    <TabsTrigger value={String(index)} className="pr-8">
+                                        Note {index + 1}
+                                    </TabsTrigger>
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <button 
-                                                onClick={(e) => { e.stopPropagation(); }} 
-                                                className={cn("absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:bg-destructive/20 hover:text-destructive", notesArray.length <= 1 && 'hidden')}>
+                                                className={cn(
+                                                    "absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full flex items-center justify-center text-muted-foreground hover:bg-destructive/20 hover:text-destructive",
+                                                    notesArray.length <= 1 && 'hidden'
+                                                )}>
                                                 <X className="h-3 w-3"/>
                                             </button>
                                         </AlertDialogTrigger>
@@ -257,7 +261,7 @@ export default function NotepadPage() {
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
-                                </TabsTrigger>
+                                </div>
                             ))}
                         </TabsList>
                     </Tabs>
