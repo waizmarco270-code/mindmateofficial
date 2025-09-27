@@ -118,6 +118,15 @@ export function NexusView() {
         return eventsByDate[dateKey] || [];
     }, [selectedDate, eventsByDate]);
 
+    // Moved useMemo to top level of the component
+    const upcomingEvents = useMemo(() => {
+        return Object.entries(eventsByDate)
+            .map(([date, events]) => ({ date: addDays(new Date(date), 1), events })) // Fix for timezone issue
+            .filter(item => item.date >= startOfWeek(new Date(), { weekStartsOn: 1 }))
+            .sort((a, b) => a.date.getTime() - b.date.getTime());
+    }, [eventsByDate]);
+
+
     const renderMonthView = () => (
          <div className="flex flex-col flex-1">
             <div className="grid grid-cols-7 text-center text-sm font-semibold text-muted-foreground border-b">
@@ -198,13 +207,6 @@ export function NexusView() {
     );
     
     const renderAgendaView = () => {
-         const upcomingEvents = useMemo(() => {
-            return Object.entries(eventsByDate)
-                .map(([date, events]) => ({ date: new Date(date), events }))
-                .filter(item => item.date >= startOfWeek(new Date(), { weekStartsOn: 1 }))
-                .sort((a, b) => a.date.getTime() - b.date.getTime());
-        }, [eventsByDate]);
-
         return (
             <div className="p-4 space-y-6">
                 {upcomingEvents.length > 0 ? upcomingEvents.map(({date, events}) => (
