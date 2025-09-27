@@ -221,6 +221,11 @@ const badgeShowcaseItems = [
         badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span>
     },
     {
+        name: 'Co-Developer',
+        description: 'For the co-developers of the MindMate platform.',
+        badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span>
+    },
+    {
         name: 'Developer',
         description: 'The creators and developers of the MindMate platform.',
         badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>

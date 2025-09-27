@@ -36,6 +36,7 @@ export default function SuperAdminPanelPage() {
     makeUserVip, removeUserVip,
     makeUserGM, removeUserGM,
     makeUserChallenger, removeUserChallenger,
+    makeUserCoDev, removeUserCoDev,
     addCreditsToUser, giftCreditsToAllUsers,
     addFreeSpinsToUser, addSpinsToAllUsers,
     addFreeGuessesToUser, addGuessesToAllUsers,
@@ -557,6 +558,8 @@ export default function SuperAdminPanelPage() {
                                 <div className="flex items-center gap-2">
                                     {user.uid === SUPER_ADMIN_UID ? (
                                         <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>
+                                    ) : user.isCoDev ? (
+                                        <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span>
                                     ) : user.isAdmin ? (
                                         <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
                                     ) : user.isChallenger ? (
@@ -580,6 +583,15 @@ export default function SuperAdminPanelPage() {
                                         ) : (
                                             <Button variant="outline" size="sm" onClick={() => makeUserAdmin(user.uid)}>
                                                 <ShieldCheck className="mr-2 h-4 w-4"/>Make Admin
+                                            </Button>
+                                        )}
+                                        {user.isCoDev ? (
+                                            <Button variant="secondary" size="sm" onClick={() => removeUserCoDev(user.uid)}>
+                                                <Code className="mr-2 h-4 w-4"/>Remove Co-Dev
+                                            </Button>
+                                        ) : (
+                                            <Button variant="outline" size="sm" onClick={() => makeUserCoDev(user.uid)}>
+                                                <Code className="mr-2 h-4 w-4"/>Make Co-Dev
                                             </Button>
                                         )}
                                         {user.isChallenger ? (
