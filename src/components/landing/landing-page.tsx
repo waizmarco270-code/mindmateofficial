@@ -2,7 +2,7 @@
 'use client';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame, Award, ShieldQuestion, Swords, Gem, Anchor } from 'lucide-react';
+import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame, Award, ShieldQuestion, Swords, Gem, Anchor, ArrowLeftRight } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
 import { SignedIn, SignedOut, SignUpButton, useUser } from '@clerk/nextjs';
@@ -140,7 +140,7 @@ const challengeQuestions = [
 
 function BeforeAfterSlider() {
     const [sliderPosition, setSliderPosition] = useState(50);
-    const imageContainerRef = useState<HTMLDivElement | null>(null);
+    const imageContainerRef = useRef<HTMLDivElement | null>(null);
 
     const handleMove = (clientX: number) => {
         if (!imageContainerRef.current) return;
@@ -152,11 +152,11 @@ function BeforeAfterSlider() {
         setSliderPosition(percent);
     };
 
-    const handleTouchMove = (event: React.TouchEvent) => {
+    const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
         handleMove(event.touches[0].clientX);
     };
 
-    const handleMouseMove = (event: React.MouseEvent) => {
+    const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
         handleMove(event.clientX);
     };
     
@@ -183,10 +183,10 @@ function BeforeAfterSlider() {
              {/* Slider Handle */}
             <motion.div
                 className="absolute inset-y-0 w-1 bg-white/50 cursor-ew-resize flex items-center justify-center"
-                style={{ left: `${sliderPosition}%` }}
+                style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
                 drag="x"
-                dragConstraints={{ left: 0, right: 0 }}
-                dragElastic={0}
+                dragConstraints={imageContainerRef}
+                dragElastic={0.1}
                 onDrag={(e, info) => {
                     if (!imageContainerRef.current) return;
                     const rect = imageContainerRef.current.getBoundingClientRect();
@@ -195,7 +195,7 @@ function BeforeAfterSlider() {
                 }}
             >
                 <div className="h-10 w-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-800 shadow-2xl transition-transform group-hover:scale-110">
-                    <ArrowRightLeft className="h-5 w-5" />
+                    <ArrowLeftRight className="h-5 w-5" />
                 </div>
             </motion.div>
         </div>
