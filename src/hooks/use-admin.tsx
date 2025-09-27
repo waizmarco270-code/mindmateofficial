@@ -4,7 +4,7 @@ import { useState, useEffect, createContext, useContext, ReactNode, useCallback,
 import { useUser, useClerk } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup } from 'firebase/firestore';
-import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO } from 'date-fns';
+import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays } from 'date-fns';
 import { LucideIcon } from 'lucide-react';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 
@@ -25,6 +25,7 @@ export interface User {
   photoURL?: string;
   isBlocked: boolean;
   credits: number;
+  masterCardExpires?: string; // ISO string for expiration date
   votedPolls?: Record<string, string>; // { pollId: 'chosen_option' }
   unlockedResourceSections?: string[]; // Array of unlocked section IDs
   unlockedFeatures?: string[]; // Array of feature IDs
@@ -213,6 +214,8 @@ interface AppDataContextType {
     unlockThemeForUser: (uid: string, themeId: AppThemeId, cost: number) => Promise<void>;
     generateAiAccessToken: (uid: string) => Promise<string | null>;
     generateDevAiAccessToken: (uid: string) => Promise<string | null>;
+    grantMasterCard: (uid: string, durationDays: number) => Promise<void>;
+    revokeMasterCard: (uid: string) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string, duration: number) => Promise<void>;
@@ -619,6 +622,15 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const addCreditsToUser = async (uid: string, amount: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+        const userData = userSnap.data();
+
+        // Check for active Master Card
+        if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date() && amount < 0) {
+            // If Master Card is active and this is a deduction, do nothing
+            return;
+        }
+
         await updateDoc(userDocRef, { credits: increment(amount) });
     };
     
@@ -673,28 +685,50 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const unlockResourceSection = async (uid: string, sectionId: string, cost: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, { 
-            unlockedResourceSections: arrayUnion(sectionId),
-            credits: increment(-cost) 
-        });
+        const userSnap = await getDoc(userDocRef);
+        const userData = userSnap.data();
+
+        // Bypass cost if Master Card is active
+        if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date()) {
+            await updateDoc(userDocRef, { unlockedResourceSections: arrayUnion(sectionId) });
+        } else {
+             await updateDoc(userDocRef, { 
+                unlockedResourceSections: arrayUnion(sectionId),
+                credits: increment(-cost) 
+            });
+        }
     };
 
     const unlockFeatureForUser = async (uid: string, featureId: LockableFeature['id'], cost: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, {
-            unlockedFeatures: arrayUnion(featureId),
-            credits: increment(-cost)
-        });
+        const userSnap = await getDoc(userDocRef);
+        const userData = userSnap.data();
+
+         if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date()) {
+            await updateDoc(userDocRef, { unlockedFeatures: arrayUnion(featureId) });
+         } else {
+             await updateDoc(userDocRef, {
+                unlockedFeatures: arrayUnion(featureId),
+                credits: increment(-cost)
+            });
+         }
     };
 
     const unlockThemeForUser = async (uid: string, themeId: AppThemeId, cost: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
-        await updateDoc(userDocRef, {
-            unlockedThemes: arrayUnion(themeId),
-            credits: increment(-cost)
-        });
+        const userSnap = await getDoc(userDocRef);
+        const userData = userSnap.data();
+
+        if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date()) {
+             await updateDoc(userDocRef, { unlockedThemes: arrayUnion(themeId) });
+        } else {
+            await updateDoc(userDocRef, {
+                unlockedThemes: arrayUnion(themeId),
+                credits: increment(-cost)
+            });
+        }
     }
 
     const generateAiAccessToken = useCallback(async (uid: string) => {
@@ -709,7 +743,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userData = userSnap.data() as User;
         const cost = 1000;
         
-        if (userData.credits < cost) {
+        const hasMasterCard = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+
+        if (!hasMasterCard && userData.credits < cost) {
             throw new Error("Insufficient credits.");
         }
 
@@ -719,10 +755,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const batch = writeBatch(db);
 
         // Deduct credits and mark AI access for user
-        batch.update(userRef, {
-            credits: increment(-cost),
-            hasAiAccess: true
-        });
+        const updateData: any = { hasAiAccess: true };
+        if (!hasMasterCard) {
+            updateData.credits = increment(-cost);
+        }
+        batch.update(userRef, updateData);
 
         // Store the new token
         batch.set(doc(tokensRef), {
@@ -769,6 +806,23 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
         await batch.commit();
         return token;
+    }, []);
+
+    const grantMasterCard = useCallback(async (uid: string, durationDays: number) => {
+        if (!uid) return;
+        const expirationDate = dateFnsAddDays(new Date(), durationDays);
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, {
+            masterCardExpires: expirationDate.toISOString()
+        });
+    }, []);
+
+    const revokeMasterCard = useCallback(async (uid: string) => {
+        if (!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, {
+            masterCardExpires: null
+        });
     }, []);
 
 
@@ -1283,6 +1337,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         unlockThemeForUser,
         generateAiAccessToken,
         generateDevAiAccessToken,
+        grantMasterCard,
+        revokeMasterCard,
         addPerfectedQuiz,
         incrementQuizAttempt,
         incrementFocusSessions,

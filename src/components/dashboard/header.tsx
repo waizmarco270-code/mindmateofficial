@@ -92,7 +92,8 @@ export default function Header() {
   const { user, isLoaded } = useUser();
   const { currentUserData } = useUsers();
   
-  const credits = currentUserData?.credits ?? 0;
+  const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+  const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
   const streak = currentUserData?.streak ?? 0;
   
   const isSuperAdmin = currentUserData?.uid === SUPER_ADMIN_UID;

@@ -235,10 +235,11 @@ export const useRewards = () => {
     // ===== CRYSTAL GROWTH LOGIC =====
     const plantCrystal = useCallback(async (tier: CrystalTier) => {
         const tierDetails = CRYSTAL_TIERS[tier];
-        if (!user || !currentUserData || currentUserData.credits < tierDetails.cost || userCrystal) {
-            if (currentUserData && currentUserData.credits < tierDetails.cost) {
-                toast({ title: "Insufficient Credits", description: `You need ${tierDetails.cost} credits to plant this crystal.`, variant: "destructive" });
-            }
+        if (!user || !currentUserData || userCrystal) return;
+
+        const hasMasterCard = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+        if (!hasMasterCard && currentUserData.credits < tierDetails.cost) {
+            toast({ title: "Insufficient Credits", description: `You need ${tierDetails.cost} credits to plant this crystal.`, variant: "destructive" });
             return;
         }
 
@@ -254,7 +255,9 @@ export const useRewards = () => {
 
         const crystalRef = doc(db, 'users', user.id, 'rewards', 'crystal');
         
-        await addCreditsToUser(user.id, -tierDetails.cost);
+        if (!hasMasterCard) {
+            await addCreditsToUser(user.id, -tierDetails.cost);
+        }
         await setDoc(crystalRef, newCrystal);
 
         toast({ title: "Crystal Seed Planted!", description: `Come back in ${tierDetails.durationDays} days to harvest your reward.` });
