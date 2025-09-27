@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -65,6 +66,15 @@ const competeNav = [
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
 ];
 
+const adminNav = [
+    { href: '/dashboard/admin', icon: Shield, label: 'Admin Panel' },
+];
+
+const superAdminNav = [
+    { href: '/waizmarcoadmin', icon: KeyRound, label: 'Super Admin' },
+];
+
+
 const socialLinks = [
     { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx' },
     { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H' },
@@ -110,7 +120,7 @@ export default function SidebarContent() {
     if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos') || pathname.startsWith('/dashboard/roadmap'))) {
         return true;
     }
-     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/super-admin'))) {
+     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin'))) {
         return true;
     }
 
@@ -207,6 +217,8 @@ export default function SidebarContent() {
                 <Crown className="h-5 w-5"/> Elite Lounge
             </Link>
         )}
+        {(isAdmin || isSuperAdmin) && renderNavLinks(adminNav as any)}
+        {isSuperAdmin && renderNavLinks(superAdminNav as any)}
       </div>
 
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
@@ -280,3 +292,5 @@ export default function SidebarContent() {
     </div>
   );
 }
+
+    

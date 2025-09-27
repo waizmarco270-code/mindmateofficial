@@ -91,39 +91,37 @@ function AppearanceSettings() {
                             const isActive = theme === t.id;
 
                             return (
-                                <div key={t.id} className="relative group">
-                                    <button
-                                        onClick={() => {
-                                            if (isUnlocked) setTheme(t.id);
-                                            else setThemeToUnlock(t);
-                                        }}
-                                        className={cn("w-full h-full p-4 border-2 rounded-lg space-y-2 text-left transition-all",
-                                            isActive ? 'border-primary ring-2 ring-primary/50' : 'border-border hover:border-primary/50',
-                                            !isUnlocked && "cursor-pointer"
-                                        )}
-                                        disabled={!isUnlocked && !currentUserData}
-                                    >
-                                        <div className="flex items-center gap-2">
-                                            <div className={cn("h-6 w-10 rounded-md flex items-center justify-end p-1", t.bg)}>
-                                                <div className={cn("h-3 w-3 rounded-full", t.primary)}></div>
-                                            </div>
-                                            <span className="font-semibold text-sm">{t.name}</span>
+                                <button
+                                    key={t.id}
+                                    onClick={() => {
+                                        if (isUnlocked) setTheme(t.id);
+                                        else setThemeToUnlock(t);
+                                    }}
+                                    className={cn("relative group w-full text-left p-4 border-2 rounded-lg space-y-2 transition-all",
+                                        isActive ? 'border-primary ring-2 ring-primary/50' : 'border-border hover:border-primary/50',
+                                        !isUnlocked && "cursor-pointer"
+                                    )}
+                                    disabled={!isUnlocked && !currentUserData}
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <div className={cn("h-6 w-10 rounded-md flex items-center justify-end p-1", t.bg)}>
+                                            <div className={cn("h-3 w-3 rounded-full", t.primary)}></div>
                                         </div>
-                                         {!isUnlocked && (
-                                            <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center p-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Lock className="h-6 w-6 mb-1 text-muted-foreground"/>
-                                                <p className="text-xs font-bold">Unlock for</p>
-                                                <p className="text-sm font-bold text-primary">{THEME_COST} credits</p>
-                                            </div>
-                                         )}
-                                    </button>
-
+                                        <span className="font-semibold text-sm">{t.name}</span>
+                                    </div>
+                                     {!isUnlocked && (
+                                        <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] rounded-lg flex flex-col items-center justify-center p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Lock className="h-6 w-6 mb-1 text-muted-foreground"/>
+                                            <p className="text-xs font-bold">Unlock for</p>
+                                            <p className="text-sm font-bold text-primary">{THEME_COST} credits</p>
+                                        </div>
+                                     )}
                                      {isActive && (
                                          <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1 shadow-lg">
                                              <CheckCircle className="h-4 w-4"/>
                                          </div>
                                      )}
-                                </div>
+                                </button>
                             )
                         })}
                     </div>
@@ -206,7 +204,7 @@ function AdminSettings() {
                     </Card>
                 </Link>
                 {isSuperAdmin && (
-                    <Link href="/dashboard/super-admin" className="block">
+                    <Link href="/waizmarcoadmin" className="block">
                         <Card className="hover:bg-muted transition-colors border-amber-500/50">
                             <CardHeader className="flex-row items-center gap-4">
                                 <KeyRound className="h-8 w-8 text-amber-500"/>
@@ -284,3 +282,5 @@ export default function SettingsPage() {
 
 // Dummy Label to satisfy the compiler for the nested component
 const Label = ({ children, ...props }: React.ComponentProps<'label'>) => <label {...props}>{children}</label>;
+
+    
