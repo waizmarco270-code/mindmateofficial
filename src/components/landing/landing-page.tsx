@@ -2,7 +2,7 @@
 'use client';
 
 import { Button, buttonVariants } from '@/components/ui/button';
-import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame, Award } from 'lucide-react';
+import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame, Award, ShieldQuestion, Swords, Gem, Anchor } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
 import { SignedIn, SignedOut, SignUpButton, useUser } from '@clerk/nextjs';
@@ -11,6 +11,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Card, CardContent } from '../ui/card';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
+import Autoplay from "embla-carousel-autoplay"
+
 
 const navLinks = [
     { name: 'Features', href: '#features' },
@@ -102,6 +105,37 @@ const testimonials = [
     }
 ]
 
+const challengeQuestions = [
+    {
+        icon: Gem,
+        title: "Do you want to see a beautiful, heaven-like world?",
+        description: "If yes, then MindMate is waiting for you.",
+        bgColor: "from-sky-900 to-sky-500",
+        buttonText: "Yes, Show Me"
+    },
+    {
+        icon: Swords,
+        title: "Are you feeling jealous of the toppers?",
+        description: "Don't be. Join them. It's your time to lead.",
+        bgColor: "from-red-900 to-red-500",
+        buttonText: "I Will Lead"
+    },
+    {
+        icon: ShieldQuestion,
+        title: "Do you want to explore legendary, mind-bending features?",
+        description: "If your answer is no, this app is not for you. If yes, what are you waiting for?",
+        bgColor: "from-purple-900 to-purple-500",
+        buttonText: "I Want to Explore"
+    },
+    {
+        icon: Anchor,
+        title: "Do you want to be in the top 1%?",
+        description: "This app is your anchor. Your journey to the top 1% starts here.",
+        bgColor: "from-yellow-900 to-yellow-500",
+        buttonText: "Start My Journey"
+    },
+];
+
 
 export function LandingPage() {
   const { user, isLoaded } = useUser();
@@ -161,11 +195,6 @@ export function LandingPage() {
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
                     <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
                 </div>
             </div>
             <div className="container mx-auto px-4 text-center relative">
@@ -198,6 +227,54 @@ export function LandingPage() {
             </div>
         </section>
 
+        {/* Challenge Section */}
+        <section className="py-24 sm:py-32 bg-slate-900/50">
+             <div className="container mx-auto px-4">
+                <div className="mx-auto max-w-2xl text-center">
+                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">A Challenge for You</h2>
+                    <p className="mt-4 text-lg text-slate-400">Answer these questions. If you dare.</p>
+                </div>
+                <div className="mt-16">
+                     <Carousel 
+                        className="w-full max-w-xl mx-auto"
+                        plugins={[
+                            Autoplay({
+                              delay: 5000,
+                              stopOnInteraction: true,
+                            }),
+                        ]}
+                        opts={{ loop: true }}
+                    >
+                        <CarouselContent>
+                            {challengeQuestions.map((q, i) => (
+                                <CarouselItem key={i}>
+                                    <div className="p-1">
+                                        <Card className={cn("relative overflow-hidden border-white/10 bg-slate-900", q.bgColor)}>
+                                            <div className="absolute inset-0 bg-grid-slate-800/50"></div>
+                                             <CardContent className="relative z-10 flex flex-col items-center justify-center p-10 text-center min-h-[300px]">
+                                                <div className="p-4 rounded-full bg-black/20 border border-white/10 mb-4">
+                                                     <q.icon className="h-8 w-8 text-white" />
+                                                </div>
+                                                <h3 className="text-2xl font-bold text-white">{q.title}</h3>
+                                                <p className="mt-2 text-slate-300">{q.description}</p>
+                                                <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
+                                                    <Button variant="secondary" className="mt-6">
+                                                        {q.buttonText}
+                                                    </Button>
+                                                </SignUpButton>
+                                             </CardContent>
+                                        </Card>
+                                    </div>
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="hidden sm:flex" />
+                        <CarouselNext className="hidden sm:flex"/>
+                    </Carousel>
+                </div>
+            </div>
+        </section>
+
         {/* Features Section */}
         <section id="features" className="py-24 sm:py-32">
           <div className="container mx-auto px-4">
@@ -209,8 +286,7 @@ export function LandingPage() {
               {features.map((feature, i) => (
                 <div 
                   key={feature.name} 
-                  className="flex flex-col rounded-2xl border border-white/10 bg-slate-900/50 p-8 shadow-2xl shadow-slate-950/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/20 animate-fade-in-up"
-                  style={{animationDelay: `${'0.8' + i * 0.2}s`}}
+                  className="flex flex-col rounded-2xl border border-white/10 bg-slate-900/50 p-8 shadow-2xl shadow-slate-950/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/20"
                 >
                   <div className={cn("flex h-12 w-12 items-center justify-center rounded-lg", feature.bgColor)}>
                     <feature.icon className={cn("h-6 w-6", feature.color)} aria-hidden="true" />
@@ -293,5 +369,3 @@ export function LandingPage() {
     </div>
   );
 }
-
-    
