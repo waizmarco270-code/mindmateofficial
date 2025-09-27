@@ -29,7 +29,7 @@ export interface User {
   votedPolls?: Record<string, string>; // { pollId: 'chosen_option' }
   unlockedResourceSections?: string[]; // Array of unlocked section IDs
   unlockedFeatures?: string[]; // Array of feature IDs
-  unlockedThemes?: string[]; // Array of theme IDs e.g. ['solar-flare']
+  unlockedThemes?: AppThemeId[];
   hasAiAccess?: boolean; // For Marco AI
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }

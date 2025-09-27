@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -57,6 +57,8 @@ export default function SuperAdminPanelPage() {
     addFeatureShowcase,
     updateFeatureShowcase,
     deleteFeatureShowcase,
+    grantMasterCard,
+    revokeMasterCard,
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { toast } = useToast();
@@ -92,6 +94,11 @@ export default function SuperAdminPanelPage() {
   const [editingShowcase, setEditingShowcase] = useState<FeatureShowcase | null>(null);
   const [showcaseStatus, setShowcaseStatus] = useState<FeatureShowcase['status']>('upcoming');
   const [showcaseLink, setShowcaseLink] = useState('');
+
+  // Master Card
+  const [isMasterCardDialogOpen, setIsMasterCardDialogOpen] = useState(false);
+  const [masterCardUser, setMasterCardUser] = useState<User | null>(null);
+  const [masterCardDuration, setMasterCardDuration] = useState(7);
 
 
   // State for Feature Locks
@@ -371,6 +378,19 @@ export default function SuperAdminPanelPage() {
   const closeShowcaseDialog = () => {
     setIsEditShowcaseOpen(false);
     setEditingShowcase(null);
+  };
+
+  const handleGrantMasterCard = async () => {
+      if (!masterCardUser) return;
+      await grantMasterCard(masterCardUser.uid, masterCardDuration);
+      toast({ title: `Master Card granted to ${masterCardUser.displayName} for ${masterCardDuration} days.`});
+      setIsMasterCardDialogOpen(false);
+      setMasterCardUser(null);
+  };
+
+  const handleRevokeMasterCard = async (user: User) => {
+      await revokeMasterCard(user.uid);
+      toast({ title: `Master Card revoked from ${user.displayName}.`});
   }
 
   if (!isSuperAdmin) {
@@ -545,6 +565,7 @@ export default function SuperAdminPanelPage() {
                           <TableHead>Email</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Role</TableHead>
+                          <TableHead>Master Card</TableHead>
                           <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -573,7 +594,17 @@ export default function SuperAdminPanelPage() {
                                     )}
                                 </div>
                             </TableCell>
+                            <TableCell>
+                                {user.masterCardExpires && new Date(user.masterCardExpires) > new Date() ? (
+                                    <Badge variant="outline" className="border-yellow-500 text-yellow-500">Active until {format(new Date(user.masterCardExpires), 'd MMM')}</Badge>
+                                ) : (
+                                    <Badge variant="secondary">None</Badge>
+                                )}
+                            </TableCell>
                             <TableCell className="text-right space-x-2">
+                                <Button variant="outline" size="sm" onClick={() => { setMasterCardUser(user); setIsMasterCardDialogOpen(true); }}>
+                                    <CreditCard className="mr-2 h-4 w-4"/> Grant Card
+                                </Button>
                                 {user.uid !== SUPER_ADMIN_UID && ( // Prevent super admin from losing their own status
                                     <>
                                         {user.isAdmin ? (
@@ -1240,6 +1271,35 @@ export default function SuperAdminPanelPage() {
                 <DialogFooter>
                     <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                     <Button type="submit" form="showcase-form">Save Showcase</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+         <Dialog open={isMasterCardDialogOpen} onOpenChange={setIsMasterCardDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Grant Master Card to {masterCardUser?.displayName}</DialogTitle>
+                    <DialogDescription>
+                        This will grant the user unlimited credits and bypass all credit costs for a limited time. This action is powerful and should be used wisely.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                    <Label>Select Duration</Label>
+                     <Select onValueChange={(v) => setMasterCardDuration(Number(v))} defaultValue="7">
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select duration..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="1">1 Day</SelectItem>
+                            <SelectItem value="3">3 Days</SelectItem>
+                            <SelectItem value="7">7 Days</SelectItem>
+                            <SelectItem value="15">15 Days</SelectItem>
+                            <SelectItem value="30">30 Days</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    <Button onClick={handleGrantMasterCard}>Grant Card for {masterCardDuration} Days</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { isToday, parseISO, addDays, format as formatDate } from 'date-fns';
+import { isToday, parseISO, addDays } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 import { CRYSTAL_TIERS, type CrystalTier } from '@/components/reward/crystal-growth';
@@ -39,6 +39,12 @@ export const useRewards = () => {
     const [userCrystal, setUserCrystal] = useState<UserCrystal | null>(null);
     const [loadingCrystal, setLoadingCrystal] = useState(true);
     const [loading, setLoading] = useState(true);
+    const [codebreakerStatus, setCodebreakerStatus] = useState({
+        playedToday: false,
+        lastResult: null as 'win' | 'loss' | null,
+        attempts: 0,
+        secretCode: ''
+    });
 
     useEffect(() => {
         setLoading(true);
@@ -294,6 +300,74 @@ export const useRewards = () => {
         toast({ title: "Crystal Broken", description: `You recovered ${userCrystal.breakValue} credits.`, variant: "destructive" });
     }, [user, userCrystal, addCreditsToUser, toast]);
 
+    const canPlayCodebreaker = !codebreakerStatus.playedToday;
+
+    const playCodebreaker = useCallback(async (guess: string) => {
+        if (!user || !canPlayCodebreaker) return null;
+
+        const gameRef = doc(db, 'users', user.id, 'dailyClaims', 'codebreaker');
+        let gameData = codebreakerStatus;
+
+        if (!codebreakerStatus.secretCode) {
+            const newCode = [...Array(4)].map(() => Math.floor(Math.random() * 10)).join('');
+            gameData = { ...gameData, secretCode: newCode };
+        }
+
+        const { secretCode } = gameData;
+        let correctPlace = 0;
+        let correctDigit = 0;
+        const secretCodeCounts: Record<string, number> = {};
+        const guessCounts: Record<string, number> = {};
+
+        for (let i = 0; i < secretCode.length; i++) {
+            if (guess[i] === secretCode[i]) {
+                correctPlace++;
+            } else {
+                secretCodeCounts[secretCode[i]] = (secretCodeCounts[secretCode[i]] || 0) + 1;
+                guessCounts[guess[i]] = (guessCounts[guess[i]] || 0) + 1;
+            }
+        }
+
+        for (const digit in guessCounts) {
+            if (secretCodeCounts[digit]) {
+                correctDigit += Math.min(guessCounts[digit], secretCodeCounts[digit]);
+            }
+        }
+        
+        const newAttempts = codebreakerStatus.attempts + 1;
+        const isWin = correctPlace === 4;
+        const isLoss = !isWin && newAttempts >= 6;
+        
+        const newStatus = {
+            ...gameData,
+            attempts: newAttempts,
+            playedToday: isWin || isLoss,
+            lastResult: isWin ? 'win' : (isLoss ? 'loss' : null)
+        };
+
+        setCodebreakerStatus(newStatus);
+        
+        // Update Firestore
+        await setDoc(gameRef, {
+            ...newStatus,
+            lastPlayed: Timestamp.now(),
+        }, { merge: true });
+
+        // Add reward on win
+        if (isWin) {
+            const rewardTiers = [25, 15, 10, 5, 3, 1];
+            const reward = rewardTiers[newAttempts - 1];
+            await addCreditsToUser(user.id, reward);
+            await updateDoc(doc(db, 'users', user.id), {
+                rewardHistory: arrayUnion({ reward, date: new Date(), source: 'Codebreaker Win' })
+            });
+        }
+        
+        return { clues: { correctPlace, correctDigit }, isWin };
+
+    }, [user, canPlayCodebreaker, codebreakerStatus, addCreditsToUser]);
+    
+
     return { 
         loading,
         canClaimReward: canClaimScratchCard,
@@ -311,5 +385,8 @@ export const useRewards = () => {
         plantCrystal,
         harvestCrystal,
         breakCrystal,
+        canPlayCodebreaker,
+        playCodebreaker,
+        codebreakerStatus,
     };
 };
