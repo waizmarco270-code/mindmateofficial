@@ -14,7 +14,7 @@ import { lockableFeatures, type LockableFeature } from '@/lib/features';
 // ============================================================================
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
-export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev';
+export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev';
 
 
 export interface User {
@@ -35,6 +35,7 @@ export interface User {
   isVip?: boolean; // For the special recognition badge
   isGM?: boolean; // For the Game Master badge
   isChallenger?: boolean; // For completing a challenge
+  isCoDev?: boolean; // For co-developers
   showcasedBadge?: BadgeType; // The badge the user wants to display
   friends?: string[]; // Array of friend UIDs
   focusSessionsCompleted?: number;
@@ -231,6 +232,8 @@ interface AppDataContextType {
     removeUserGM: (uid: string) => Promise<void>;
     makeUserChallenger: (uid: string) => Promise<void>;
     removeUserChallenger: (uid: string) => Promise<void>;
+    makeUserCoDev: (uid: string) => Promise<void>;
+    removeUserCoDev: (uid: string) => Promise<void>;
     setShowcaseBadge: (uid: string, badge: BadgeType | null) => Promise<void>;
     clearGlobalChat: () => Promise<void>;
     clearQuizLeaderboard: () => Promise<void>;
@@ -433,6 +436,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     isVip: false,
                     isGM: false,
                     isChallenger: false,
+                    isCoDev: false,
                     friends: [],
                     unlockedResourceSections: [],
                     unlockedFeatures: [],
@@ -577,6 +581,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const removeUserChallenger = async (uid: string) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { isChallenger: false });
+    };
+
+    const makeUserCoDev = async (uid: string) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { isCoDev: true });
+    };
+
+    const removeUserCoDev = async (uid: string) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { isCoDev: false });
     };
 
      const setShowcaseBadge = async (uid: string, badge: BadgeType | null) => {
@@ -1286,6 +1300,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         removeUserGM,
         makeUserChallenger,
         removeUserChallenger,
+        makeUserCoDev,
+        removeUserCoDev,
         setShowcaseBadge,
         clearGlobalChat,
         clearQuizLeaderboard,
@@ -1393,13 +1409,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
-
-  
-
-
-
-
-
-

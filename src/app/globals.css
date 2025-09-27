@@ -105,6 +105,11 @@
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
+  
+  @keyframes co-dev-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
 
   @keyframes move {
     100% {
@@ -273,6 +278,16 @@
    .admin-badge > svg {
       @apply text-green-300;
    }
+   
+  .co-dev-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(110deg, #0f172a 0%, #1e293b 25%, #475569 50%, #1e293b 75%, #0f172a 100%);
+    background-size: 250% 250%;
+    color: #93c5fd; /* blue-300 */
+    border: 1px solid #38bdf8; /* sky-400 */
+    text-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
+    animation: co-dev-shimmer 5s ease-in-out infinite;
+  }
 
   .bg-grid-slate-800 {
     background-image: 
@@ -467,12 +482,5 @@
 
   .text-shadow-glow {
     text-shadow: 0 0 8px currentColor;
-  }
-
-  .hexagon-clipper {
-    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
-  }
-  .triangle-clipper {
-      clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
   }
 }
