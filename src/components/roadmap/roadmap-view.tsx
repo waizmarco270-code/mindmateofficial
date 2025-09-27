@@ -3,20 +3,17 @@
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock } from 'lucide-react';
-import { addDays, format, isPast, isToday } from 'date-fns';
+import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare } from 'lucide-react';
+import { addDays, format, isPast, isToday, endOfWeek, startOfWeek } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Progress } from '../ui/progress';
 import { ScrollArea } from '../ui/scroll-area';
 import { TimeTracker } from '../tracker/time-tracker';
-
-interface RoadmapViewProps {
-    roadmap: Roadmap;
-    onBack: () => void;
-    onPlan: () => void;
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '../ui/dialog';
+import { Textarea } from '../ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -25,8 +22,51 @@ const formatTime = (seconds: number) => {
     return `${m}m`;
 };
 
-export function RoadmapView({ roadmap, onBack, onPlan }: RoadmapViewProps) {
-    const { toggleTaskCompletion, logStudyTime } = useRoadmaps();
+interface WeeklyReflectionFormProps {
+    weekStartDate: Date;
+    roadmapId: string;
+    onSave: () => void;
+}
+
+function WeeklyReflectionForm({ weekStartDate, roadmapId, onSave }: WeeklyReflectionFormProps) {
+    const [rating, setRating] = useState(0);
+    const [note, setNote] = useState('');
+    const { addWeeklyReflection } = useRoadmaps();
+    const { toast } = useToast();
+
+    const handleSubmit = async () => {
+        if (rating === 0) {
+            toast({ variant: 'destructive', title: 'Please provide a rating.' });
+            return;
+        }
+        await addWeeklyReflection(roadmapId, format(weekStartDate, 'yyyy-MM-dd'), { rating, note });
+        toast({ title: 'Reflection Saved!', description: 'Great job on completing another week.' });
+        onSave();
+    };
+
+    return (
+        <div className="space-y-4">
+            <p className="text-center text-muted-foreground">Rate your progress and productivity for the week.</p>
+            <div className="flex justify-center gap-2">
+                {[1, 2, 3, 4, 5].map(star => (
+                    <button key={star} onClick={() => setRating(star)}>
+                        <Star className={cn("h-8 w-8 transition-colors", rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300")} />
+                    </button>
+                ))}
+            </div>
+            <Textarea 
+                value={note}
+                onChange={e => setNote(e.target.value)}
+                placeholder="What went well? What could be improved? (Optional)"
+                rows={4}
+            />
+            <Button onClick={handleSubmit} className="w-full">Save Reflection</Button>
+        </div>
+    );
+}
+
+export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
+    const { toggleTaskCompletion } = useRoadmaps();
 
     const { totalTasks, completedTasks, progress } = useMemo(() => {
         const allTasks = roadmap.milestones.flatMap(m => m.categories.flatMap(c => c.tasks));
@@ -95,12 +135,15 @@ export function RoadmapView({ roadmap, onBack, onPlan }: RoadmapViewProps) {
                                 const dateKey = format(dayDate, 'yyyy-MM-dd');
                                 const timeTrackedToday = roadmap.dailyStudyTime?.[dateKey] || 0;
                                 
-                                if (!dayMilestone || dayMilestone.categories.length === 0) {
-                                    return null;
-                                }
-                                
                                 const isDayPast = isPast(dayDate) && !isToday(dayDate);
                                 const isDayToday = isToday(dayDate);
+                                
+                                // Weekly Reflection Logic
+                                const isEndOfWeek = dayDate.getDay() === 0; // Sunday
+                                const weekStartDate = startOfWeek(dayDate, { weekStartsOn: 1 });
+                                const weekStartDateKey = format(weekStartDate, 'yyyy-MM-dd');
+                                const reflection = roadmap.weeklyReflections?.[weekStartDateKey];
+                                const showReflectionPrompt = isEndOfWeek && isDayPast && !reflection;
 
                                 return (
                                     <div key={dayNumber} className="flex gap-4 sm:gap-6">
@@ -125,30 +168,62 @@ export function RoadmapView({ roadmap, onBack, onPlan }: RoadmapViewProps) {
                                                  )}
                                             </div>
                                             <div className="space-y-4 mt-2">
-                                                {dayMilestone.categories.map(category => (
-                                                    <Card key={category.id} className="overflow-hidden bg-background">
-                                                        <div className="p-3 border-b flex items-center gap-3" style={{ borderLeft: `4px solid ${category.color}` }}>
-                                                            <h4 className="font-semibold">{category.title}</h4>
-                                                        </div>
-                                                        <div className="p-3 space-y-3">
-                                                            {category.tasks.map(task => (
-                                                                <div key={task.id} className="flex items-center gap-3">
-                                                                    <Checkbox
-                                                                        id={task.id}
-                                                                        checked={task.completed}
-                                                                        onCheckedChange={() => toggleTaskCompletion(roadmap.id, dayNumber, category.id, task.id)}
-                                                                    />
-                                                                    <label
-                                                                        htmlFor={task.id}
-                                                                        className={cn("text-sm", task.completed && "line-through text-muted-foreground")}
-                                                                    >
-                                                                        {task.text}
-                                                                    </label>
-                                                                </div>
-                                                            ))}
-                                                        </div>
+                                                {dayMilestone && dayMilestone.categories.length > 0 ? (
+                                                    dayMilestone.categories.map(category => (
+                                                        <Card key={category.id} className="overflow-hidden bg-background">
+                                                            <div className="p-3 border-b flex items-center gap-3" style={{ borderLeft: `4px solid ${category.color}` }}>
+                                                                <h4 className="font-semibold">{category.title}</h4>
+                                                            </div>
+                                                            <div className="p-3 space-y-3">
+                                                                {category.tasks.map(task => (
+                                                                    <div key={task.id} className="flex items-center gap-3">
+                                                                        <Checkbox
+                                                                            id={task.id}
+                                                                            checked={task.completed}
+                                                                            onCheckedChange={() => toggleTaskCompletion(roadmap.id, dayNumber, category.id, task.id)}
+                                                                        />
+                                                                        <label
+                                                                            htmlFor={task.id}
+                                                                            className={cn("text-sm", task.completed && "line-through text-muted-foreground")}
+                                                                        >
+                                                                            {task.text}
+                                                                        </label>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </Card>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground italic">No tasks planned for this day.</p>
+                                                )}
+                                                {showReflectionPrompt && (
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" className="w-full">
+                                                                <MessageSquare className="mr-2 h-4 w-4" /> Add Weekly Reflection
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogTitle>Reflection for Week Ending {format(dayDate, 'd MMM')}</DialogTitle>
+                                                            </DialogHeader>
+                                                            <WeeklyReflectionForm roadmapId={roadmap.id} weekStartDate={weekStartDate} onSave={() => {}} />
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                )}
+                                                 {reflection && (
+                                                    <Card className="bg-amber-500/10 border-amber-500/20">
+                                                        <CardHeader>
+                                                            <CardTitle className="text-base flex items-center justify-between">
+                                                                <span>Weekly Reflection</span>
+                                                                <div className="flex">{Array.from({length: 5}).map((_, i) => <Star key={i} className={cn("h-4 w-4", i < reflection.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/50")} />)}</div>
+                                                            </CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <p className="text-sm italic text-muted-foreground">"{reflection.note}"</p>
+                                                        </CardContent>
                                                     </Card>
-                                                ))}
+                                                )}
                                             </div>
                                         </div>
                                     </div>
