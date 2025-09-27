@@ -1,14 +1,18 @@
+
 'use client';
 import { useState } from 'react';
-import { Roadmap, RoadmapMilestone, RoadmapCategory, RoadmapTask, TargetExam, useRoadmaps } from '@/hooks/use-roadmaps';
+import { Roadmap, RoadmapMilestone, RoadmapCategory, RoadmapTask, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { Slider } from '@/components/ui/slider';
-import { PlusCircle, ArrowLeft, CheckCircle, Loader2 } from 'lucide-react';
+import { PlusCircle, ArrowLeft, CheckCircle, Loader2, CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 
 interface RoadmapCreationProps {
@@ -23,7 +27,7 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
     
     // Form State
     const [name, setName] = useState('');
-    const [targetExam, setTargetExam] = useState<TargetExam>('jee-main-jan');
+    const [examDate, setExamDate] = useState<Date | undefined>(new Date());
     const [duration, setDuration] = useState(90);
 
     const handleSubmit = async () => {
@@ -31,11 +35,16 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
             toast({ variant: 'destructive', title: "Roadmap name is required."});
             return;
         }
+        if(!examDate) {
+            toast({ variant: 'destructive', title: "Exam date is required."});
+            return;
+        }
+
         setIsSubmitting(true);
         try {
              const roadmapData = {
                 name,
-                targetExam,
+                examDate: examDate.toISOString(),
                 duration,
                 milestones: []
              };
@@ -76,17 +85,29 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
                         <Input id="roadmap-name" value={name} onChange={e => setName(e.target.value)} placeholder="e.g., Mission: IIT Bombay"/>
                     </div>
                      <div className="space-y-2">
-                        <Label htmlFor="target-exam">Target Exam</Label>
-                        <Select value={targetExam} onValueChange={(v: TargetExam) => setTargetExam(v)}>
-                            <SelectTrigger id="target-exam"><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="jee-main-jan">JEE Main - January</SelectItem>
-                                <SelectItem value="jee-main-apr">JEE Main - April</SelectItem>
-                                <SelectItem value="neet">NEET</SelectItem>
-                                <SelectItem value="board-12">Class 12 Boards</SelectItem>
-                                <SelectItem value="board-10">Class 10 Boards</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Label>Target Exam Date</Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-full justify-start text-left font-normal",
+                                        !examDate && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {examDate ? format(examDate, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar
+                                    mode="single"
+                                    selected={examDate}
+                                    onSelect={setExamDate}
+                                    initialFocus
+                                />
+                            </PopoverContent>
+                        </Popover>
                     </div>
                      <div className="space-y-2">
                         <Label>Duration ({duration} days)</Label>

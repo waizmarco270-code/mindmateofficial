@@ -3,7 +3,7 @@
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target } from 'lucide-react';
+import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play } from 'lucide-react';
 import { addDays, format, isPast, isToday, endOfWeek, startOfWeek, differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
@@ -14,7 +14,6 @@ import { TimeTracker } from '../tracker/time-tracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import examDates from '@/app/lib/exam-dates.json';
 
 
 const formatTime = (seconds: number) => {
@@ -67,13 +66,14 @@ function WeeklyReflectionForm({ weekStartDate, roadmapId, onSave }: WeeklyReflec
     );
 }
 
-function ExamCountdown({ targetExam }: { targetExam: Roadmap['targetExam'] }) {
-    const targetDate = new Date(examDates[targetExam]);
+function ExamCountdown({ examDate }: { examDate: Date }) {
     const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
+        setIsClient(true);
         const interval = setInterval(() => {
-            const totalSeconds = differenceInSeconds(targetDate, new Date());
+            const totalSeconds = differenceInSeconds(examDate, new Date());
             if (totalSeconds <= 0) {
                 setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
                 clearInterval(interval);
@@ -86,28 +86,23 @@ function ExamCountdown({ targetExam }: { targetExam: Roadmap['targetExam'] }) {
             setTimeLeft({ days, hours, minutes, seconds });
         }, 1000);
         return () => clearInterval(interval);
-    }, [targetDate]);
+    }, [examDate]);
+
+    if (!isClient) return null;
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                    <Target className="text-destructive h-5 w-5"/> Countdown to {targetExam.replace(/-/g, ' ')}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-4 gap-2 text-center font-mono">
-                <div><p className="text-3xl font-bold">{String(timeLeft.days).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Days</p></div>
-                <div><p className="text-3xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Hours</p></div>
-                <div><p className="text-3xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Mins</p></div>
-                <div><p className="text-3xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Secs</p></div>
-            </CardContent>
-        </Card>
+        <div className="grid grid-cols-4 gap-2 text-center font-mono">
+            <div><p className="text-3xl font-bold">{String(timeLeft.days).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Days</p></div>
+            <div><p className="text-3xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Hours</p></div>
+            <div><p className="text-3xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Mins</p></div>
+            <div><p className="text-3xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Secs</p></div>
+        </div>
     );
 }
 
-
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
     const { toggleTaskCompletion } = useRoadmaps();
+    const [isCountdownActive, setIsCountdownActive] = useState(false);
 
     const { totalTasks, completedTasks, progress } = useMemo(() => {
         const allTasks = roadmap.milestones.flatMap(m => m.categories.flatMap(c => c.tasks));
@@ -120,6 +115,7 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
     }, [roadmap.milestones]);
 
     const startDate = new Date(roadmap.startDate);
+    const examDate = new Date(roadmap.examDate);
     
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
@@ -132,7 +128,7 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">{roadmap.name}</h1>
                         <p className="text-muted-foreground capitalize">
-                            {roadmap.targetExam.replace(/-/g, ' ')} - {roadmap.duration} Day Plan
+                            {roadmap.duration} Day Plan
                         </p>
                     </div>
                 </div>
@@ -140,7 +136,26 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                     <Edit className="mr-2 h-4 w-4" /> Plan / Edit Tasks
                 </Button>
                 
-                <ExamCountdown targetExam={roadmap.targetExam} />
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-base">
+                            <Target className="text-destructive h-5 w-5"/> Countdown to Exam
+                        </CardTitle>
+                        <CardDescription>Target Date: {format(examDate, 'PPP')}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {isCountdownActive ? (
+                            <ExamCountdown examDate={examDate} />
+                        ) : (
+                            <div className="text-center p-4">
+                                <Button onClick={() => setIsCountdownActive(true)}>
+                                    <Play className="mr-2 h-4 w-4"/> Start Countdown
+                                </Button>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
                 
                 <Card>
                     <CardHeader>

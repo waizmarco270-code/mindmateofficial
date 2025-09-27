@@ -3,7 +3,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, addDoc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, addDoc, updateDoc, getDoc, serverTimestamp, increment } from 'firebase/firestore';
 
 // --- TYPE DEFINITIONS ---
 
@@ -31,7 +31,7 @@ export interface Roadmap {
   id: string;
   userId: string;
   name: string;
-  targetExam: TargetExam;
+  examDate: string; // Changed from targetExam to a specific date
   duration: number; // in days
   startDate: string; // ISO string
   milestones: RoadmapMilestone[];
