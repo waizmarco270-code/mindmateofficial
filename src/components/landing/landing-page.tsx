@@ -8,7 +8,7 @@ import { Logo } from '../ui/logo';
 import { SignedIn, SignedOut, SignUpButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Card, CardContent } from '../ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
@@ -231,7 +231,7 @@ export function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
              <SignedOut>
-                 <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
+                <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                     <Button>
                         Get Started <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
@@ -448,3 +448,5 @@ export function LandingPage() {
     </div>
   );
 }
+
+    
