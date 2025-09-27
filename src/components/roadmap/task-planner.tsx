@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Roadmap, RoadmapCategory, RoadmapTask } from '@/hooks/use-roadmaps';
@@ -37,7 +38,7 @@ export function TaskPlanner({ roadmap, onComplete, onCancel }: TaskPlannerProps)
             newMilestones[existingMilestoneIndex].categories = newCategories;
             setMilestones(newMilestones);
         } else {
-            setMilestones([...milestones, { id: `day-${day}`, day, categories: newCategories }]);
+            setMilestones([...milestones, { day, categories: newCategories }]);
         }
     };
 

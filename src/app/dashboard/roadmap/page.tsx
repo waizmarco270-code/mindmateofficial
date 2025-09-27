@@ -1,6 +1,7 @@
+
 'use client';
 import { useState } from 'react';
-import { useRoadmaps } from "@/hooks/use-roadmaps";
+import { useRoadmaps, Roadmap } from "@/hooks/use-roadmaps";
 import { Button } from "@/components/ui/button";
 import { PlusCircle, Map, Loader2 } from "lucide-react";
 import { RoadmapCreation } from "@/components/roadmap/roadmap-creation";
@@ -23,7 +24,7 @@ export default function RoadmapPage() {
         }
     };
     
-    const handlePlanningComplete = (roadmapId: string, milestones: any) => {
+    const handlePlanningComplete = (roadmapId: string, milestones: Roadmap['milestones']) => {
         updateRoadmap(roadmapId, { milestones });
         setIsPlanning(null);
         setSelectedRoadmapId(roadmapId);
