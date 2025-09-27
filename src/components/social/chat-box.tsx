@@ -121,12 +121,17 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
 
     if (!userToShow) return null; // Or a loading/error state
 
-    const isSuperAdmin = userToShow?.uid === SUPER_ADMIN_UID;
-    const isAdmin = userToShow?.isAdmin;
-    const isVip = userToShow?.isVip;
-    const isGM = userToShow?.isGM;
-    const isChallenger = userToShow?.isChallenger;
+    const isSuperAdmin = userToShow.uid === SUPER_ADMIN_UID;
+    const ownedBadges = [
+        (isSuperAdmin || userToShow.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+        userToShow.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+        userToShow.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+        userToShow.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> }
+    ].filter(Boolean);
 
+    if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
+
+    const badgeToShow = ownedBadges.find(b => b.type === userToShow.showcasedBadge) || ownedBadges[0] || null;
 
     return (
         <div className={cn("flex items-end gap-2", isOwn && "justify-end")}>
@@ -140,17 +145,7 @@ function ChatMessage({ message, isOwn, friend }: { message: Message; isOwn: bool
                 {!isOwn && (
                     <div className="flex items-center gap-2 mb-1">
                         <p className="text-xs font-semibold">{friend.displayName}</p>
-                         {isSuperAdmin ? (
-                            <span className="dev-badge flex-shrink-0"><Code className="h-3 w-3" /> DEV</span>
-                        ) : isAdmin ? (
-                            <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                        ) : isChallenger ? (
-                            <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
-                        ) : isVip ? (
-                            <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>
-                        ) : isGM && (
-                             <span className="gm-badge">GM</span>
-                        )}
+                         {badgeToShow && badgeToShow.badge}
                     </div>
                 )}
                 <TooltipProvider delayDuration={100}>

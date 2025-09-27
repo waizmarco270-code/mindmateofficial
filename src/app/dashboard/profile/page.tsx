@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star, Clock, UserPlus, Search, UserCheck } from 'lucide-react';
-import { useAdmin, useUsers, SUPER_ADMIN_UID, User } from '@/hooks/use-admin';
+import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -19,6 +20,7 @@ import { ProgressConstellation } from '@/components/analytics/progress-constella
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useFriends, FriendsProvider } from '@/hooks/use-friends';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 const formatTotalStudyTime = (totalSeconds: number) => {
     if (totalSeconds < 60) return "0m";
@@ -38,6 +40,7 @@ const formatTotalStudyTime = (totalSeconds: number) => {
 function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProfile?: boolean }) {
     const { user: authUser } = useUser();
     const { friends, sendFriendRequest, sentRequests } = useFriends();
+    const { setShowcaseBadge } = useAdmin();
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
@@ -52,20 +55,17 @@ function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProf
     }
     
     const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
-    const isAdmin = user.isAdmin;
-    const isVip = user.isVip;
-    const isGM = user.isGM;
-    const isChallenger = user.isChallenger;
-    const isFriend = friends.some(f => f.uid === user.uid);
-    const hasSentRequest = sentRequests.some(r => r.receiverId === user.uid);
+
+    const ownedBadges = [
+        (isSuperAdmin || user.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+        user.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+        user.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+        user.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> }
+    ].filter(Boolean) as { type: BadgeType, name: string, badge: JSX.Element }[];
     
-    const badges = [
-        isSuperAdmin && { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
-        isAdmin && !isSuperAdmin && { name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
-        isVip && { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
-        isGM && { name: 'Game Master', badge: <span className="gm-badge">GM</span> },
-        isChallenger && { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> }
-    ].filter(Boolean);
+    if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
+
+    const showcasedBadge = ownedBadges.find(b => b.type === user.showcasedBadge) || ownedBadges[0] || null;
 
     const stats = [
         { label: 'Total Credits', value: user.credits.toLocaleString(), icon: Medal, color: 'text-amber-500' },
@@ -87,7 +87,7 @@ function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProf
                         <div>
                             <CardTitle className="text-3xl">{user.displayName}</CardTitle>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
-                                {badges.length > 0 ? badges.map((b) => b && <div key={b.name}>{b.badge}</div>) : <Badge variant="outline">Member</Badge>}
+                                {showcasedBadge ? showcasedBadge.badge : <Badge variant="outline">Member</Badge>}
                             </div>
                         </div>
                     </div>
@@ -104,9 +104,9 @@ function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProf
                     </div>
                     {!isOwnProfile && authUser && (
                          <div className="mt-4">
-                            {isFriend ? (
+                            {friends.some(f => f.uid === user.uid) ? (
                                 <Button className="w-full" disabled> <UserCheck className="mr-2"/> Already Friends</Button>
-                            ) : hasSentRequest ? (
+                            ) : sentRequests.some(r => r.receiverId === user.uid) ? (
                                  <Button className="w-full" disabled> <UserCheck className="mr-2"/> Request Sent</Button>
                             ) : (
                                 <Button className="w-full" onClick={() => sendFriendRequest(user.uid)}>
@@ -117,6 +117,22 @@ function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProf
                     )}
                 </CardContent>
             </Card>
+
+            {isOwnProfile && ownedBadges.length > 1 && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Showcase Your Badges</CardTitle>
+                        <CardDescription>Choose a badge to display next to your name across the app.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex flex-wrap gap-4">
+                        {ownedBadges.map(b => (
+                            <button key={b.type} onClick={() => setShowcaseBadge(user.uid, b.type)} className={cn("p-2 rounded-lg border-2 transition-all", user.showcasedBadge === b.type || (!user.showcasedBadge && b.type === (isSuperAdmin ? 'dev' : 'admin')) ? 'border-primary ring-2 ring-primary/50' : 'border-transparent hover:border-primary/50')}>
+                                {b.badge}
+                            </button>
+                        ))}
+                    </CardContent>
+                </Card>
+            )}
 
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
                 {stats.map(stat => (

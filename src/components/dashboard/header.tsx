@@ -14,6 +14,7 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import { useUnreadMessages } from '@/hooks/use-unread';
+import { Badge } from '../ui/badge';
 
 
 function AnnouncementInbox() {
@@ -95,10 +96,17 @@ export default function Header() {
   const streak = currentUserData?.streak ?? 0;
   
   const isSuperAdmin = currentUserData?.uid === SUPER_ADMIN_UID;
-  const isAdmin = currentUserData?.isAdmin;
-  const isVip = currentUserData?.isVip;
-  const isGM = currentUserData?.isGM;
-  const isChallenger = currentUserData?.isChallenger;
+
+  const ownedBadges = [
+    (isSuperAdmin || currentUserData?.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+    currentUserData?.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+    currentUserData?.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+    currentUserData?.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> }
+  ].filter(Boolean);
+
+  if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
+
+  const badgeToShow = ownedBadges.find(b => b.type === currentUserData?.showcasedBadge) || ownedBadges[0] || null;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -124,17 +132,7 @@ export default function Header() {
         <SignedIn>
             {isLoaded && user && (
             <>
-                {isSuperAdmin ? (
-                    <span className="dev-badge flex-shrink-0"><Code className="h-3 w-3" /> DEV</span>
-                ) : isAdmin ? (
-                    <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> ADMIN</span>
-                ) : isChallenger ? (
-                    <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
-                ) : isVip ? (
-                    <span className="elite-badge flex-shrink-0"><Crown className="h-3 w-3" /> ELITE</span>
-                ) : isGM ? (
-                    <span className="gm-badge">GM</span>
-                ) : null}
+                {badgeToShow && <div className="flex-shrink-0">{badgeToShow.badge}</div>}
 
                 <Popover>
                     <PopoverTrigger asChild>

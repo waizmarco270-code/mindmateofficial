@@ -14,6 +14,8 @@ import { lockableFeatures, type LockableFeature } from '@/lib/features';
 // ============================================================================
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
+export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev';
+
 
 export interface User {
   id: string; // Document ID from Firestore (should be same as Clerk UID)
@@ -33,6 +35,7 @@ export interface User {
   isVip?: boolean; // For the special recognition badge
   isGM?: boolean; // For the Game Master badge
   isChallenger?: boolean; // For completing a challenge
+  showcasedBadge?: BadgeType; // The badge the user wants to display
   friends?: string[]; // Array of friend UIDs
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number; // Total count over all time
@@ -228,6 +231,7 @@ interface AppDataContextType {
     removeUserGM: (uid: string) => Promise<void>;
     makeUserChallenger: (uid: string) => Promise<void>;
     removeUserChallenger: (uid: string) => Promise<void>;
+    setShowcaseBadge: (uid: string, badge: BadgeType | null) => Promise<void>;
     clearGlobalChat: () => Promise<void>;
     clearQuizLeaderboard: () => Promise<void>;
     resetWeeklyStudyTime: () => Promise<void>;
@@ -573,6 +577,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const removeUserChallenger = async (uid: string) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { isChallenger: false });
+    };
+
+     const setShowcaseBadge = async (uid: string, badge: BadgeType | null) => {
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, { showcasedBadge: badge });
     };
 
     const toggleUserBlock = async (uid: string, isBlocked: boolean) => {
@@ -1277,6 +1286,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         removeUserGM,
         makeUserChallenger,
         removeUserChallenger,
+        setShowcaseBadge,
         clearGlobalChat,
         clearQuizLeaderboard,
         resetWeeklyStudyTime,
@@ -1387,6 +1397,7 @@ export const useDailySurprises = () => {
     
 
   
+
 
 
 
