@@ -428,7 +428,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     email: authUser.primaryEmailAddress?.emailAddress || '',
                     photoURL: authUser.imageUrl,
                     isBlocked: false,
-                    credits: 100,
+                    credits: 200,
                     isAdmin: false,
                     isVip: false,
                     isGM: false,
