@@ -3,7 +3,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, addDoc, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, addDoc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 // --- TYPE DEFINITIONS ---
 
@@ -117,8 +117,13 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
   const logStudyTime = useCallback(async (roadmapId: string, date: string, seconds: number) => {
      if (!user) return;
      const roadmapDocRef = doc(db, 'users', user.id, 'roadmaps', roadmapId);
-     const currentData = (await getDoc(roadmapDocRef)).data() as Roadmap;
-     const newTime = (currentData.dailyStudyTime[date] || 0) + seconds;
+     const roadmapSnap = await getDoc(roadmapDocRef);
+     if(!roadmapSnap.exists()) return;
+
+     const currentData = roadmapSnap.data() as Roadmap;
+     const currentDailyTime = currentData.dailyStudyTime || {};
+     const newTime = (currentDailyTime[date] || 0) + seconds;
+     
      await updateDoc(roadmapDocRef, {
         [`dailyStudyTime.${date}`]: newTime
      });
