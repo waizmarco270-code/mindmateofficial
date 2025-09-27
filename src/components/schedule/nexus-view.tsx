@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
@@ -10,12 +10,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar as CalendarIcon, LayoutGrid, List, ChevronLeft, ChevronRight, PlusCircle, Edit, Circle } from 'lucide-react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek as endOfWeekDateFns, eachDayOfInterval, isSameMonth, isToday, isSameDay } from 'date-fns';
+import { Calendar as CalendarIcon, LayoutGrid, List, ChevronLeft, ChevronRight, PlusCircle, Edit, Circle, GripVertical } from 'lucide-react';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek as endOfWeekDateFns, eachDayOfInterval, isSameMonth, isToday, isSameDay, addWeeks, subWeeks, eachWeekOfInterval, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Separator } from '../ui/separator';
 import { Calendar } from '../ui/calendar';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 type CalendarView = 'month' | 'week' | 'agenda';
 
@@ -44,10 +45,10 @@ const colorDotMap = {
 }
 
 export function NexusView() {
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [view, setView] = useState<CalendarView>('month');
-    const [events, setEvents] = useState<NexusEvent[]>([]);
+    const [events, setEvents] = useLocalStorage<NexusEvent[]>('nexus-events', []);
     
     // Add Event Dialog State
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -56,15 +57,28 @@ export function NexusView() {
     const [eventDate, setEventDate] = useState<Date | undefined>(new Date());
     const [eventColor, setEventColor] = useState<NexusEvent['color']>('blue');
 
-    const handlePrevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-    const handleNextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
+    const handlePrev = () => {
+        if (view === 'month') setCurrentDate(subMonths(currentDate, 1));
+        if (view === 'week') setCurrentDate(subWeeks(currentDate, 1));
+    };
+    const handleNext = () => {
+        if (view === 'month') setCurrentDate(addMonths(currentDate, 1));
+        if (view === 'week') setCurrentDate(addWeeks(currentDate, 1));
+    };
 
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const endDate = endOfWeekDateFns(monthEnd, { weekStartsOn: 1 });
+    const monthStart = startOfMonth(currentDate);
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+
+    const days = eachDayOfInterval({ 
+        start: startOfWeek(monthStart, { weekStartsOn: 1 }), 
+        end: endOfWeekDateFns(endOfMonth(currentDate), { weekStartsOn: 1 }) 
+    });
     
-    const days = eachDayOfInterval({ start: startDate, end: endDate });
+    const weekDaysForView = eachDayOfInterval({
+        start: weekStart,
+        end: endOfWeekDateFns(weekStart, { weekStartsOn: 1 })
+    });
+
     const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     const eventsByDate = useMemo(() => {
@@ -103,7 +117,6 @@ export function NexusView() {
         const dateKey = format(selectedDate, 'yyyy-MM-dd');
         return eventsByDate[dateKey] || [];
     }, [selectedDate, eventsByDate]);
-
 
     const renderMonthView = () => (
          <div className="flex flex-col flex-1">
@@ -152,6 +165,76 @@ export function NexusView() {
             </div>
         </div>
     );
+    
+    const renderWeekView = () => (
+         <div className="flex flex-col flex-1">
+            <div className="grid grid-cols-7 text-center text-sm font-semibold text-muted-foreground border-b">
+                {weekDays.map((day, i) => (
+                    <div key={day} className="py-2 border-r last:border-r-0">
+                        <span>{day}</span>
+                        <span className={cn("ml-2 font-bold", isToday(weekDaysForView[i]) && "text-primary")}>
+                            {format(weekDaysForView[i], 'd')}
+                        </span>
+                    </div>
+                ))}
+            </div>
+            <div className="grid grid-cols-7 flex-1">
+                {weekDaysForView.map(day => {
+                    const dayKey = format(day, 'yyyy-MM-dd');
+                    const dayEvents = eventsByDate[dayKey] || [];
+                    const isSelected = isSameDay(day, selectedDate);
+                     return (
+                        <div key={day.toString()} onClick={() => setSelectedDate(day)} className={cn("border-r p-2 space-y-1 overflow-y-auto cursor-pointer", isSelected && "bg-primary/10")}>
+                             {dayEvents.map(event => (
+                                <div key={event.id} className={cn("text-xs text-white p-2 rounded-md", colorMap[event.color])}>
+                                    {event.title}
+                                </div>
+                            ))}
+                        </div>
+                    )
+                })}
+            </div>
+        </div>
+    );
+    
+    const renderAgendaView = () => {
+         const upcomingEvents = useMemo(() => {
+            return Object.entries(eventsByDate)
+                .map(([date, events]) => ({ date: new Date(date), events }))
+                .filter(item => item.date >= startOfWeek(new Date(), { weekStartsOn: 1 }))
+                .sort((a, b) => a.date.getTime() - b.date.getTime());
+        }, [eventsByDate]);
+
+        return (
+            <div className="p-4 space-y-6">
+                {upcomingEvents.length > 0 ? upcomingEvents.map(({date, events}) => (
+                    <div key={date.toISOString()} className="flex items-start gap-4">
+                        <div className="w-16 text-center shrink-0">
+                            <p className="font-bold text-lg">{format(date, 'd')}</p>
+                            <p className="text-sm text-muted-foreground">{format(date, 'MMM')}</p>
+                            <p className="text-xs text-muted-foreground">{format(date, 'EEE')}</p>
+                        </div>
+                        <div className="flex-1 space-y-3">
+                            {events.map(event => (
+                                <div key={event.id} className="p-3 rounded-lg border bg-background relative">
+                                    <div className={cn("absolute left-2 top-2 bottom-2 w-1 rounded-full", colorDotMap[event.color])}></div>
+                                    <div className="pl-4">
+                                        <h4 className="font-bold">{event.title}</h4>
+                                        <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">{event.description}</p>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )) : (
+                    <div className="text-center text-muted-foreground py-10">
+                        <p>No upcoming events.</p>
+                    </div>
+                )}
+            </div>
+        )
+    };
+
 
     return (
        <div className="h-[calc(100vh-12rem)] min-h-[700px] grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -159,15 +242,17 @@ export function NexusView() {
                 <div className="flex flex-col sm:flex-row items-center justify-between border-b p-4 gap-4">
                     <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1">
-                            <Button variant="outline" size="icon" onClick={handlePrevMonth}>
+                            <Button variant="outline" size="icon" onClick={handlePrev}>
                                 <ChevronLeft className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="icon" onClick={handleNextMonth}>
+                            <Button variant="outline" size="icon" onClick={handleNext}>
                                 <ChevronRight className="h-4 w-4" />
                             </Button>
                         </div>
                         <h2 className="text-xl font-bold">
-                            {format(currentMonth, 'MMMM yyyy')}
+                            {view === 'month' && format(currentDate, 'MMMM yyyy')}
+                            {view === 'week' && `${format(weekStart, 'd MMM')} - ${format(endOfWeekDateFns(weekStart, { weekStartsOn: 1 }), 'd MMM, yyyy')}`}
+                            {view === 'agenda' && 'Agenda'}
                         </h2>
                     </div>
                      <div className="flex items-center gap-2">
@@ -241,12 +326,8 @@ export function NexusView() {
                             className="w-full flex flex-col"
                         >
                             {view === 'month' && renderMonthView()}
-                            {(view === 'week' || view === 'agenda') && (
-                                <div className="flex-1 flex flex-col items-center justify-center text-center text-muted-foreground p-4">
-                                    <p className="font-bold text-lg">Coming Soon!</p>
-                                    <p>The <span className="capitalize font-semibold text-primary">{view}</span> view will be built here.</p>
-                                </div>
-                            )}
+                            {view === 'week' && renderWeekView()}
+                            {view === 'agenda' && renderAgendaView()}
                         </motion.div>
                     </AnimatePresence>
                 </div>
