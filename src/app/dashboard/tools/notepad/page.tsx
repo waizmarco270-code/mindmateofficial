@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText, SortAsc, Shuffle, Replace, Plus, X } from 'lucide-react';
+import { FileText, Save, Copy, Check, Download, Trash2, CaseUpper, CaseLower, Pilcrow, Heading, Wand2, ArrowLeftRight, WrapText, SortAsc, Shuffle, Replace, Plus, X, Mic, MicOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -15,6 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 export default function NotepadPage() {
@@ -36,6 +37,66 @@ export default function NotepadPage() {
     const [isReplaceOpen, setIsReplaceOpen] = useState(false);
     const [findText, setFindText] = useState('');
     const [replaceText, setReplaceText] = useState('');
+
+    // Voice Typing State
+    const [isListening, setIsListening] = useState(false);
+    const [isSpeechApiSupported, setIsSpeechApiSupported] = useState(true);
+    const speechRecognitionRef = useRef<SpeechRecognition | null>(null);
+    
+    // Initialize SpeechRecognition
+    useEffect(() => {
+        if (typeof window !== 'undefined' && ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window)) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            speechRecognitionRef.current = new SpeechRecognition();
+            speechRecognitionRef.current.continuous = true;
+            speechRecognitionRef.current.interimResults = true;
+            speechRecognitionRef.current.lang = 'en-US';
+
+            speechRecognitionRef.current.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+                
+                // Append final transcript to notes
+                if (finalTranscript) {
+                    setNotes(notes + (notes.endsWith(' ') || notes === '' ? '' : ' ') + finalTranscript.trim() + ' ');
+                    setSaveStatus('saving');
+                }
+            };
+
+            speechRecognitionRef.current.onerror = (event) => {
+                console.error('Speech recognition error', event.error);
+                setIsListening(false);
+            };
+
+            speechRecognitionRef.current.onend = () => {
+                setIsListening(false);
+            };
+        } else {
+            setIsSpeechApiSupported(false);
+        }
+    }, [notes, setNotes]); // Re-create onresult handler when `notes` changes
+
+    const handleToggleListening = () => {
+        if (!isSpeechApiSupported) {
+            toast({ variant: 'destructive', title: "Voice typing not supported", description: "Your browser doesn't support this feature." });
+            return;
+        }
+        if (isListening) {
+            speechRecognitionRef.current?.stop();
+        } else {
+            speechRecognitionRef.current?.start();
+        }
+        setIsListening(!isListening);
+    };
+
     
     // Auto-save logic
     useEffect(() => {
@@ -225,6 +286,19 @@ export default function NotepadPage() {
                         </div>
                     </div>
                     <div className="flex items-center gap-2 flex-wrap justify-center">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="outline" size="icon" onClick={handleToggleListening} disabled={!isSpeechApiSupported} className={cn(isListening && 'bg-destructive/20 text-destructive border-destructive')}>
+                                        {isListening ? <MicOff /> : <Mic />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{isSpeechApiSupported ? 'Voice Typing' : 'Voice Typing not supported'}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
                          <Button variant="outline" size="sm" onClick={() => setIsReplaceOpen(true)}><Replace className="mr-2"/> Find & Replace</Button>
 
                         <DropdownMenu>
