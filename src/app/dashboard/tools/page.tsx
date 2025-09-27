@@ -101,7 +101,7 @@ export default function ToolsPage() {
                 </h1>
                 <p className="text-muted-foreground">A collection of utilities to help with your studies.</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                 {toolCategories.map((category, index) => {
                     const featureId = category.id as LockableFeature['id'];
                     // Fallback to a default lock state if not defined, though they should be.
@@ -112,33 +112,27 @@ export default function ToolsPage() {
                             key={category.title}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                            transition={{ duration: 0.5, delay: index * 0.05 }}
+                            className="h-full"
                         >
-                            <Link href={isLocked ? '#' : category.href} className="block h-full" onClick={(e) => handleFeatureClick(e, featureId, isLocked)}>
+                            <Link href={isLocked ? '#' : category.href} className="block h-full group" onClick={(e) => handleFeatureClick(e, featureId, isLocked)}>
                                <Card className={cn(
-                                   "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2",
+                                   "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1",
                                    category.shadow,
                                    isLocked && "opacity-70 hover:opacity-100"
                                 )}>
-                                   <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-tr", category.color)}></div>
+                                   <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-br", category.color)}></div>
                                    <CardHeader>
                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                               <div className={cn("p-3 rounded-lg bg-gradient-to-br", category.color)}>
-                                                    <category.icon className="h-6 w-6 text-white"/>
-                                               </div>
-                                               <CardTitle>{category.title}</CardTitle>
-                                           </div>
+                                            <div className={cn("p-3 rounded-lg bg-gradient-to-br", category.color)}>
+                                                <category.icon className="h-6 w-6 text-white"/>
+                                            </div>
                                            {isLocked && <Lock className="h-5 w-5 text-white/70"/>}
                                        </div>
+                                        <CardTitle className="pt-3">{category.title}</CardTitle>
                                    </CardHeader>
-                                   <CardContent>
-                                       <p className="text-muted-foreground">{category.description}</p>
-                                   </CardContent>
-                                   <CardContent>
-                                        <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors">
-                                           {isLocked ? 'Unlock Feature' : 'Open Tool'} <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                       </Button>
+                                   <CardContent className="flex-1">
+                                       <p className="text-sm text-muted-foreground">{category.description}</p>
                                    </CardContent>
                                </Card>
                             </Link>
