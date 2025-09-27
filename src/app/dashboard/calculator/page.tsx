@@ -180,8 +180,8 @@ export default function PercentageCalculatorPage() {
             </CardHeader>
             <CardContent className="space-y-4">
                 {subjects.map((subject, index) => (
-                    <div key={subject.id} className="grid grid-cols-12 gap-x-2 gap-y-3 items-center">
-                        <div className="col-span-12 sm:col-span-6">
+                    <div key={subject.id} className="grid grid-cols-12 items-center gap-x-4 gap-y-2">
+                        <div className="col-span-12 sm:col-span-5">
                             <Label htmlFor={`subject-name-${subject.id}`} className="sr-only">Subject Name</Label>
                             <Input
                                 id={`subject-name-${subject.id}`}
@@ -191,7 +191,7 @@ export default function PercentageCalculatorPage() {
                                 disabled={template !== 'custom' || subject.name === 'English' || !isSignedIn}
                             />
                         </div>
-                        <div className="col-span-6 sm:col-span-3">
+                        <div className="col-span-5 sm:col-span-3">
                              <Label htmlFor={`subject-marks-${subject.id}`} className="sr-only">Marks</Label>
                             <Input
                                 id={`subject-marks-${subject.id}`}
@@ -204,14 +204,14 @@ export default function PercentageCalculatorPage() {
                                 disabled={!isSignedIn}
                             />
                         </div>
-                        <div className="col-span-4 sm:col-span-2 flex items-center justify-center gap-2">
+                        <div className="col-span-5 sm:col-span-3 flex items-center justify-center gap-2">
                              <Checkbox
                                 id={`compulsory-${subject.id}`}
                                 checked={subject.isCompulsory}
                                 onCheckedChange={(checked) => handleSubjectChange(subject.id, 'isCompulsory', Boolean(checked))}
                                 disabled={template !== 'custom' || subject.name === 'English' || !isSignedIn}
                             />
-                            <Label htmlFor={`compulsory-${subject.id}`} className="text-xs text-muted-foreground">Compulsory</Label>
+                            <Label htmlFor={`compulsory-${subject.id}`} className="text-xs text-muted-foreground whitespace-nowrap">Compulsory</Label>
                         </div>
                         <div className="col-span-2 sm:col-span-1 flex justify-end">
                             {!(template !== 'custom' || subject.name === 'English') && (
