@@ -66,7 +66,8 @@ const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
     admin: { name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
     vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
     gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span> },
-    challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> }
+    challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
+    'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> }
 };
 
 export default function LeaderboardPage() {
@@ -240,6 +241,7 @@ export default function LeaderboardPage() {
         const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
         const badges: BadgeType[] = [];
         if (isSuperAdmin) badges.push('dev');
+        if (user.isCoDev) badges.push('co-dev');
         if (user.isAdmin) badges.push('admin');
         if (user.isVip) badges.push('vip');
         if (user.isGM) badges.push('gm');
@@ -691,6 +693,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
         const ownedBadges: BadgeType[] = [];
         if (isSuperAdmin) ownedBadges.push('dev');
+        if (user.isCoDev) ownedBadges.push('co-dev');
         if (user.isAdmin) ownedBadges.push('admin');
         if (user.isVip) ownedBadges.push('vip');
         if (user.isGM) ownedBadges.push('gm');
@@ -828,5 +831,3 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
 }
 
     
-
-
