@@ -44,7 +44,6 @@ import { Button } from '../ui/button';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
-  { href: '/dashboard/roadmap', icon: Map, label: 'Roadmap', glow: 'text-orange-400' },
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro', glow: 'text-green-400' },
   { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-yellow-400' },
@@ -108,7 +107,7 @@ export default function SidebarContent() {
     if (href === '/dashboard/tracker-insights' && (pathname.startsWith('/dashboard/time-tracker') || pathname.startsWith('/dashboard/insights'))) {
         return true;
     }
-    if (href === '/dashboard/schedule' && pathname.startsWith('/dashboard/todos')) {
+    if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos') || pathname.startsWith('/dashboard/roadmap'))) {
         return true;
     }
      if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/dashboard/super-admin'))) {
