@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -57,6 +57,24 @@ const toolCategories = [
         href: "/dashboard/tools/syllabus",
         color: "from-cyan-500 to-teal-500",
         shadow: "shadow-cyan-500/30"
+    },
+    {
+        id: 'image-to-pdf',
+        title: "Image to PDF",
+        description: "Combine multiple images into a single PDF document.",
+        icon: ImageIcon,
+        href: "/dashboard/tools/image-to-pdf",
+        color: "from-blue-500 to-indigo-500",
+        shadow: "shadow-blue-500/30"
+    },
+    {
+        id: 'qr-code-generator',
+        title: "QR Code Generator",
+        description: "Create custom QR codes for links, text, and more.",
+        icon: QrCode,
+        href: "/dashboard/tools/qr-code-generator",
+        color: "from-slate-500 to-gray-500",
+        shadow: "shadow-slate-500/30"
     }
 ]
 
@@ -86,7 +104,8 @@ export default function ToolsPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {toolCategories.map((category, index) => {
                     const featureId = category.id as LockableFeature['id'];
-                    const isLocked = featureLocks?.[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId);
+                    // Fallback to a default lock state if not defined, though they should be.
+                    const isLocked = featureLocks ? (featureLocks[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId)) : false;
 
                     return (
                         <motion.div
