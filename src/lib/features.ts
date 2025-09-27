@@ -1,6 +1,6 @@
 
 export interface LockableFeature {
-    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'premium-games' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'unit-converter' | 'syllabus' | 'image-to-pdf' | 'qr-code-generator' | 'handwriting-to-text';
+    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'premium-games' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'unit-converter' | 'syllabus' | 'image-to-pdf' | 'qr-code-generator';
     name: string;
     description: string;
     defaultCost: number;
@@ -95,12 +95,6 @@ export const lockableFeatures: LockableFeature[] = [
         id: 'qr-code-generator',
         name: 'QR Code Generator',
         description: 'Create and customize QR codes.',
-        defaultCost: 0,
-    },
-    {
-        id: 'handwriting-to-text',
-        name: 'Handwriting to Text',
-        description: 'Convert handwritten notes into digital text using AI.',
         defaultCost: 0,
     }
 ];
