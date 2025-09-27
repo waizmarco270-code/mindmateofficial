@@ -1,8 +1,9 @@
+
 'use client';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play } from 'lucide-react';
+import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play, Trash2, AlertTriangle } from 'lucide-react';
 import { addDays, format, isPast, isToday, endOfWeek, startOfWeek, differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
@@ -13,6 +14,7 @@ import { TimeTracker } from '../tracker/time-tracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 
 
 const formatTime = (seconds: number) => {
@@ -100,8 +102,10 @@ function ExamCountdown({ examDate }: { examDate: Date }) {
 }
 
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
-    const { toggleTaskCompletion } = useRoadmaps();
+    const { toggleTaskCompletion, deleteRoadmap } = useRoadmaps();
     const [isCountdownActive, setIsCountdownActive] = useState(false);
+    const { toast } = useToast();
+
 
     const { totalTasks, completedTasks, progress } = useMemo(() => {
         const allTasks = roadmap.milestones.flatMap(m => m.categories.flatMap(c => c.tasks));
@@ -115,6 +119,16 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
 
     const startDate = new Date(roadmap.startDate);
     const examDate = new Date(roadmap.examDate);
+    
+    const handleDelete = async () => {
+        try {
+            await deleteRoadmap(roadmap.id);
+            toast({ title: "Roadmap Deleted", description: `"${roadmap.name}" has been permanently removed.` });
+            onBack();
+        } catch (error) {
+             toast({ variant: 'destructive', title: "Error", description: "Could not delete the roadmap." });
+        }
+    }
     
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
@@ -131,9 +145,28 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                         </p>
                     </div>
                 </div>
-                 <Button variant="outline" onClick={onPlan} className="w-full">
-                    <Edit className="mr-2 h-4 w-4" /> Plan / Edit Tasks
-                </Button>
+                 <div className="flex gap-2">
+                    <Button variant="outline" onClick={onPlan} className="w-full">
+                        <Edit className="mr-2 h-4 w-4" /> Plan / Edit Tasks
+                    </Button>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4" /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Delete this roadmap?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the "{roadmap.name}" roadmap and all of its data.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                 </div>
                 
                 <Card>
                     <CardHeader>
