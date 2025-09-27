@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Palette, Gift, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, FileText, Monitor, Shield, KeyRound, Trash2, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords } from 'lucide-react';
+import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
@@ -14,47 +14,65 @@ import Link from 'next/link';
 import FaqContent from '../faq/page';
 import AboutContent from '../about/page';
 import RulesContent from '../rules/page';
-import { useAdmin, useUsers, SUPER_ADMIN_UID } from '@/hooks/use-admin';
-import { useUser, useClerk, UserProfile } from '@clerk/nextjs';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Input } from '@/components/ui/input';
+import { useAdmin, useUsers, SUPER_ADMIN_UID, AppThemeId } from '@/hooks/use-admin';
+import { useUser, UserProfile } from '@clerk/nextjs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Dialog, DialogClose, DialogFooter } from '@/components/ui/dialog';
+
+const THEME_COST = 200;
+
+const availableThemes: {id: AppThemeId, name: string, bg: string, primary: string, isDark: boolean}[] = [
+    { id: 'light', name: 'Default Light', bg: 'bg-white', primary: 'bg-slate-900', isDark: false },
+    { id: 'dark', name: 'Default Dark', bg: 'bg-slate-900', primary: 'bg-slate-50', isDark: true },
+    { id: 'emerald-dream', name: 'Emerald Dream', bg: 'bg-emerald-50', primary: 'bg-emerald-600', isDark: false },
+    { id: 'solar-flare', name: 'Solar Flare', bg: 'bg-gray-900', primary: 'bg-orange-500', isDark: true },
+    { id: 'synthwave-sunset', name: 'Synthwave Sunset', bg: 'bg-indigo-950', primary: 'bg-fuchsia-500', isDark: true },
+]
 
 
 function AppearanceSettings() {
     const { theme, setTheme } = useTheme();
+    const { user } = useUser();
+    const { currentUserData, unlockThemeForUser } = useUsers();
+    const [themeToUnlock, setThemeToUnlock] = useState<typeof availableThemes[0] | null>(null);
+    const { toast } = useToast();
+
+    const unlockedThemes = currentUserData?.unlockedThemes || [];
+
+    const handleUnlockTheme = async () => {
+        if (!themeToUnlock || !user || !currentUserData) return;
+        if (currentUserData.credits < THEME_COST) {
+            toast({ variant: "destructive", title: "Insufficient Credits" });
+            return;
+        }
+        try {
+            await unlockThemeForUser(user.id, themeToUnlock.id, THEME_COST);
+            setTheme(themeToUnlock.id); // Apply the new theme immediately
+            toast({ title: `Theme "${themeToUnlock.name}" Unlocked!` });
+            setThemeToUnlock(null);
+        } catch (error: any) {
+            toast({ variant: "destructive", title: "Unlock Failed", description: error.message });
+        }
+    };
+    
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Appearance</CardTitle>
                 <CardDescription>Customize the look and feel of the app.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="flex items-center justify-between rounded-lg border p-4">
-                    <div className="space-y-0.5">
-                        <Label>Theme</Label>
-                        <p className="text-xs text-muted-foreground">
-                            Switch between light, dark, and system modes.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant={theme === 'light' ? 'default' : 'outline'}
-                            size="icon"
-                            onClick={() => setTheme('light')}
-                        >
-                            <Sun className="h-5 w-5" />
-                        </Button>
-                         <Button
-                            variant={theme === 'dark' ? 'default' : 'outline'}
-                            size="icon"
-                            onClick={() => setTheme('dark')}
-                        >
-                            <Moon className="h-5 w-5" />
-                        </Button>
+            <CardContent className="space-y-6">
+                 <div className="space-y-2">
+                    <Label>System</Label>
+                    <div className="flex items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                            <p className="font-medium">Sync with System</p>
+                            <p className="text-xs text-muted-foreground">
+                                Automatically switch between light and dark themes.
+                            </p>
+                        </div>
                         <Button
                             variant={theme === 'system' ? 'default' : 'outline'}
                             size="icon"
@@ -63,8 +81,66 @@ function AppearanceSettings() {
                             <Monitor className="h-5 w-5" />
                         </Button>
                     </div>
+                 </div>
+
+                 <div className="space-y-4">
+                    <Label>Themes</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {availableThemes.map(t => {
+                            const isUnlocked = unlockedThemes.includes(t.id) || t.id === 'light' || t.id === 'dark';
+                            const isActive = theme === t.id;
+
+                            return (
+                                <div key={t.id} className="relative group">
+                                     <button
+                                        onClick={() => {
+                                            if (isUnlocked) setTheme(t.id);
+                                            else setThemeToUnlock(t);
+                                        }}
+                                        className={cn("w-full p-4 border-2 rounded-lg space-y-2 text-left",
+                                            isActive ? 'border-primary ring-2 ring-primary' : 'border-border'
+                                        )}
+                                     >
+                                        <div className="flex items-center gap-2">
+                                            <div className={cn("h-6 w-10 rounded-md flex items-center justify-end p-1", t.bg)}>
+                                                <div className={cn("h-3 w-3 rounded-full", t.primary)}></div>
+                                            </div>
+                                            <span className="font-semibold text-sm">{t.name}</span>
+                                        </div>
+                                     </button>
+                                     {!isUnlocked && (
+                                        <div className="absolute inset-0 bg-background/80 backdrop-blur-sm rounded-lg flex flex-col items-center justify-center p-2">
+                                            <Lock className="h-6 w-6 mb-2 text-muted-foreground"/>
+                                            <p className="text-xs font-bold text-center">Unlock for</p>
+                                            <p className="text-sm font-bold text-primary">{THEME_COST} credits</p>
+                                        </div>
+                                     )}
+                                     {isActive && (
+                                         <div className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-1">
+                                             <CheckCircle className="h-4 w-4"/>
+                                         </div>
+                                     )}
+                                </div>
+                            )
+                        })}
+                    </div>
                 </div>
             </CardContent>
+
+             <AlertDialog open={!!themeToUnlock} onOpenChange={() => setThemeToUnlock(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Unlock "{themeToUnlock?.name}" Theme?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will deduct {THEME_COST} credits from your account. This action is permanent.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleUnlockTheme}>Unlock</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </Card>
     )
 }

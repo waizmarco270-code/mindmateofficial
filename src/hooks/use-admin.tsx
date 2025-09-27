@@ -28,6 +28,7 @@ export interface User {
   votedPolls?: Record<string, string>; // { pollId: 'chosen_option' }
   unlockedResourceSections?: string[]; // Array of unlocked section IDs
   unlockedFeatures?: string[]; // Array of feature IDs
+  unlockedThemes?: string[]; // Array of theme IDs e.g. ['solar-flare']
   hasAiAccess?: boolean; // For Marco AI
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
@@ -129,11 +130,10 @@ export interface DailySurprise {
     featureRoute?: string; // e.g., /dashboard/entertainment
 }
 
+export type AppThemeId = 'light' | 'dark' | 'synthwave-sunset' | 'solar-flare' | 'emerald-dream';
 export interface AppTheme {
-    primary: string; // "H S L" e.g. "262 80% 56%"
-    background: string;
-    accent: string;
-    radius: number; // 0 to 1
+    id: AppThemeId;
+    name: string;
 }
 
 export interface AppSettings {
@@ -210,6 +210,7 @@ interface AppDataContextType {
     addGuessesToAllUsers: (amount: number) => Promise<void>;
     unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
     unlockFeatureForUser: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
+    unlockThemeForUser: (uid: string, themeId: AppThemeId, cost: number) => Promise<void>;
     generateAiAccessToken: (uid: string) => Promise<string | null>;
     generateDevAiAccessToken: (uid: string) => Promise<string | null>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
@@ -274,9 +275,6 @@ interface AppDataContextType {
     setActivePoll: (id: string) => Promise<void>;
     submitPollVote: (pollId: string, option: string) => Promise<void>;
     submitPollComment: (pollId: string, comment: string) => Promise<void>;
-
-    appTheme: AppTheme | null;
-    updateAppTheme: (theme: AppTheme) => Promise<void>;
     
     appSettings: AppSettings | null;
     updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
@@ -320,7 +318,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [allPolls, setAllPolls] = useState<Poll[]>([]);
-    const [appTheme, setAppTheme] = useState<AppTheme | null>(null);
     const [appSettings, setAppSettings] = useState<AppSettings | null>({ marcoAiLaunchStatus: 'countdown' });
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
     const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
@@ -440,6 +437,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     friends: [],
                     unlockedResourceSections: [],
                     unlockedFeatures: [],
+                    unlockedThemes: [],
                     hasAiAccess: false,
                     focusSessionsCompleted: 0,
                     dailyTasksCompleted: 0,
@@ -689,6 +687,15 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             credits: increment(-cost)
         });
     };
+
+    const unlockThemeForUser = async (uid: string, themeId: AppThemeId, cost: number) => {
+        if (!uid) return;
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, {
+            unlockedThemes: arrayUnion(themeId),
+            credits: increment(-cost)
+        });
+    }
 
     const generateAiAccessToken = useCallback(async (uid: string) => {
         if (!uid) return null;
@@ -1171,11 +1178,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await batch.commit();
     }, []);
 
-    const updateAppTheme = async (theme: AppTheme) => {
-        const themeDocRef = doc(db, 'appConfig', 'theme');
-        await setDoc(themeDocRef, theme);
-    }
-    
     const updateAppSettings = async (settings: Partial<AppSettings>) => {
         const settingsDocRef = doc(db, 'appConfig', 'settings');
         await setDoc(settingsDocRef, settings, { merge: true });
@@ -1278,6 +1280,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addGuessesToAllUsers,
         unlockResourceSection,
         unlockFeatureForUser,
+        unlockThemeForUser,
         generateAiAccessToken,
         generateDevAiAccessToken,
         addPerfectedQuiz,
@@ -1335,8 +1338,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updatePoll,
         submitPollVote,
         submitPollComment,
-        appTheme: null, // This is deprecated
-        updateAppTheme: async () => {}, // Deprecated
         appSettings,
         updateAppSettings,
         globalGifts,
