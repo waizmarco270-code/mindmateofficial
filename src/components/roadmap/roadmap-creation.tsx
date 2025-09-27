@@ -13,9 +13,10 @@ import { useToast } from '@/hooks/use-toast';
 
 interface RoadmapCreationProps {
     onCancel: () => void;
+    onComplete: (newRoadmapId: string) => void;
 }
 
-export function RoadmapCreation({ onCancel }: RoadmapCreationProps) {
+export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) {
     const { addRoadmap } = useRoadmaps();
     const { toast } = useToast();
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,11 +37,15 @@ export function RoadmapCreation({ onCancel }: RoadmapCreationProps) {
                 name,
                 targetExam,
                 duration,
-                milestones: [] // Task planning will be a separate step after creation
+                milestones: []
              };
-            await addRoadmap(roadmapData);
-            toast({ title: "Roadmap Created!", description: "You can now add milestones and tasks to it." });
-            onCancel(); // Go back to the list view
+            const newRoadmapId = await addRoadmap(roadmapData);
+            toast({ title: "Roadmap Created!", description: "Now let's plan your tasks." });
+            if (newRoadmapId) {
+                onComplete(newRoadmapId);
+            } else {
+                throw new Error("Failed to get new roadmap ID");
+            }
         } catch (error) {
              toast({ variant: 'destructive', title: "Error", description: "Could not create roadmap." });
              setIsSubmitting(false);
@@ -95,7 +100,7 @@ export function RoadmapCreation({ onCancel }: RoadmapCreationProps) {
                 <CardFooter>
                     <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full">
                         {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <CheckCircle className="mr-2 h-4 w-4"/>}
-                        Create Roadmap
+                        Create & Plan Tasks
                     </Button>
                 </CardFooter>
             </Card>

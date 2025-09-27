@@ -3,7 +3,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, addDoc, updateDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, addDoc, updateDoc, getDoc } from 'firebase/firestore';
 
 // --- TYPE DEFINITIONS ---
 
@@ -23,8 +23,7 @@ export interface RoadmapCategory {
 }
 
 export interface RoadmapMilestone {
-  id: string;
-  title: string;
+  day: number;
   categories: RoadmapCategory[];
 }
 
@@ -45,7 +44,7 @@ interface RoadmapsContextType {
   loading: boolean;
   selectedRoadmap: Roadmap | null;
   setSelectedRoadmapId: (id: string | null) => void;
-  addRoadmap: (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections'>) => Promise<void>;
+  addRoadmap: (roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections'>) => Promise<string | undefined>;
   updateRoadmap: (id: string, data: Partial<Roadmap>) => Promise<void>;
   deleteRoadmap: (id: string) => Promise<void>;
   logStudyTime: (roadmapId: string, date: string, seconds: number) => Promise<void>;
@@ -99,6 +98,7 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
       weeklyReflections: {}
     };
     await setDoc(newDocRef, newRoadmap);
+    return newDocRef.id;
   }, [user]);
 
   const updateRoadmap = useCallback(async (id: string, data: Partial<Roadmap>) => {

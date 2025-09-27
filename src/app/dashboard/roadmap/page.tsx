@@ -6,10 +6,28 @@ import { PlusCircle, Map, Loader2 } from "lucide-react";
 import { RoadmapCreation } from "@/components/roadmap/roadmap-creation";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { TaskPlanner } from '@/components/roadmap/task-planner';
 
 export default function RoadmapPage() {
-    const { roadmaps, selectedRoadmap, setSelectedRoadmapId, loading } = useRoadmaps();
+    const { roadmaps, selectedRoadmap, setSelectedRoadmapId, loading, updateRoadmap } = useRoadmaps();
     const [isCreating, setIsCreating] = useState(false);
+    const [isPlanning, setIsPlanning] = useState<Roadmap | null>(null);
+
+    const handleCreationComplete = (newRoadmapId: string) => {
+        setIsCreating(false);
+        const newRoadmap = roadmaps.find(r => r.id === newRoadmapId);
+        if (newRoadmap) {
+            setIsPlanning(newRoadmap);
+        } else {
+             setSelectedRoadmapId(newRoadmapId);
+        }
+    };
+    
+    const handlePlanningComplete = (roadmapId: string, milestones: any) => {
+        updateRoadmap(roadmapId, { milestones });
+        setIsPlanning(null);
+        setSelectedRoadmapId(roadmapId);
+    }
 
     if (loading) {
         return (
@@ -20,11 +38,15 @@ export default function RoadmapPage() {
     }
     
     if (isCreating) {
-        return <RoadmapCreation onCancel={() => setIsCreating(false)} />;
+        return <RoadmapCreation onCancel={() => setIsCreating(false)} onComplete={handleCreationComplete} />;
+    }
+    
+    if (isPlanning) {
+        return <TaskPlanner roadmap={isPlanning} onComplete={(milestones) => handlePlanningComplete(isPlanning.id, milestones)} onCancel={() => setIsPlanning(null)} />;
     }
     
     if (selectedRoadmap) {
-        return <RoadmapView roadmap={selectedRoadmap} onBack={() => setSelectedRoadmapId(null)} />;
+        return <RoadmapView roadmap={selectedRoadmap} onBack={() => setSelectedRoadmapId(null)} onPlan={() => setIsPlanning(selectedRoadmap)} />;
     }
 
     return (
