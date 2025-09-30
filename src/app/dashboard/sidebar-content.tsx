@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -33,7 +34,6 @@ import {
   HelpCircle,
   Info,
   Map,
-  CreditCard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -64,7 +64,6 @@ const competeNav = [
     { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
     { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
-    { href: '/dashboard/armoury', icon: CreditCard, label: 'The Armoury', glow: 'text-yellow-500' },
 ];
 
 const socialLinks = [

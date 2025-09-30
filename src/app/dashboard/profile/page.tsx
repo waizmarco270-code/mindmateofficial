@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star, Clock, UserPlus, Search, UserCheck, CreditCard } from 'lucide-react';
+import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star, Clock, UserPlus, Search, UserCheck } from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -91,15 +91,7 @@ function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProf
                             <CardTitle className="text-3xl">{user.displayName}</CardTitle>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
                                 {showcasedBadge ? showcasedBadge.badge : <Badge variant="outline">Member</Badge>}
-                                {hasMasterCard && (
-                                    <div className="relative group">
-                                         <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 to-amber-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                                        <div className="relative flex items-center gap-1.5 rounded-full bg-slate-900 border border-yellow-500 px-2.5 py-1 text-xs font-bold text-yellow-400">
-                                            <CreditCard className="h-3 w-3" />
-                                            <span>MASTER</span>
-                                        </div>
-                                    </div>
-                                )}
+                                {hasMasterCard && <Badge variant="outline" className="border-yellow-500 text-yellow-500 font-bold">Master Card</Badge>}
                             </div>
                         </div>
                     </div>

@@ -134,15 +134,6 @@ export default function Header() {
         <SignedIn>
             {isLoaded && user && (
             <>
-                {hasMasterCard && (
-                    <div className="relative group">
-                         <div className="absolute -inset-0.5 bg-gradient-to-r from-yellow-400 to-amber-600 rounded-full blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-pulse"></div>
-                        <div className="relative flex items-center gap-2 rounded-full bg-slate-900 border border-yellow-500 px-3 py-1.5 text-sm font-bold text-yellow-400">
-                            <CreditCard className="h-5 w-5" />
-                            <span>MASTER</span>
-                        </div>
-                    </div>
-                )}
                 {badgeToShow && <div className="flex-shrink-0">{badgeToShow.badge}</div>}
 
                 <Popover>

@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -351,7 +351,6 @@ export default function LeaderboardPage() {
         if (!user) return null;
         
         const showcasedBadge = getShowcasedBadge(user);
-        const hasMasterCard = user.masterCardExpires && new Date(user.masterCardExpires) > new Date();
         
         const scoreToDisplay = {
             'all-time': user.totalScore,
@@ -379,7 +378,6 @@ export default function LeaderboardPage() {
                                     <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
                                     <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                {hasMasterCard && <CreditCard className="absolute -bottom-2 -right-2 h-8 w-8 text-yellow-400 p-1 bg-background rounded-full border border-yellow-500"/>}
                             </div>
                             <div className="flex items-center justify-center gap-2 mt-4">
                                 <CardTitle className="text-2xl">{user.displayName}</CardTitle>
@@ -411,13 +409,10 @@ export default function LeaderboardPage() {
                      <CardContent className="p-4 flex flex-col gap-2">
                         <div className="flex items-center gap-4">
                             <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
-                            <div className="relative">
-                                <Avatar className="w-12 h-12 border-2">
-                                    <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                {hasMasterCard && <CreditCard className="absolute -bottom-1 -right-1 h-5 w-5 text-yellow-400 p-0.5 bg-background rounded-full border border-yellow-500"/>}
-                            </div>
+                            <Avatar className="w-12 h-12 border-2">
+                                <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
                             <div className="flex-1">
                                  <div className="flex items-center gap-2">
                                     <p className="font-semibold">{user.displayName}</p>
@@ -741,7 +736,6 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                             const rank = index + 4;
                             const CardWrapper = activeTab !== 'game-zone' ? 'button' : 'div';
                             const isClickable = activeTab !== 'game-zone';
-                            const hasMasterCard = user.masterCardExpires && new Date(user.masterCardExpires) > new Date();
 
                             return (
                                 <CardWrapper key={user.uid} onClick={isClickable ? () => onUserClick(user) : undefined} className={cn("overflow-hidden text-left rounded-lg w-full", currentUser?.id === user.uid && 'border border-primary', isClickable && 'cursor-pointer hover:bg-muted/50')}>
@@ -749,13 +743,10 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:gap-4">
                                             <div className="flex items-center gap-4 flex-1">
                                                 <p className="font-bold text-lg text-muted-foreground w-8 text-center">{rank}</p>
-                                                <div className="relative">
-                                                    <Avatar className="w-12 h-12 border">
-                                                        <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
-                                                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    {hasMasterCard && <CreditCard className="absolute -bottom-1 -right-1 h-5 w-5 text-yellow-400 p-0.5 bg-background rounded-full border border-yellow-500"/>}
-                                                </div>
+                                                <Avatar className="w-12 h-12 border">
+                                                    <AvatarImage src={user.photoURL || `https://picsum.photos/150/150?u=${user.uid}`} />
+                                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                                </Avatar>
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-medium truncate">{user.displayName}</span>
