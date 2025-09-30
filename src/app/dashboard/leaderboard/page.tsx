@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -351,12 +351,17 @@ export default function LeaderboardPage() {
         if (!user) return null;
         
         const showcasedBadge = getShowcasedBadge(user);
+        const hasMasterCard = user.masterCardExpires && new Date(user.masterCardExpires) > new Date();
         
-        const scoreToDisplay = {
-            'all-time': user.totalScore,
-            'weekly': formatTime(user.weeklyTime),
-            'game-zone': user.entertainmentTotalScore
-        }[activeTab];
+        let scoreToDisplay: string | number;
+        
+        if (activeTab === 'all-time') {
+            scoreToDisplay = user.totalScore;
+        } else if (activeTab === 'weekly') {
+            scoreToDisplay = formatTime(user.weeklyTime);
+        } else {
+            scoreToDisplay = user.entertainmentTotalScore;
+        }
 
         const scoreLabel = {
             'all-time': 'Total Score',
@@ -382,6 +387,7 @@ export default function LeaderboardPage() {
                             <div className="flex items-center justify-center gap-2 mt-4">
                                 <CardTitle className="text-2xl">{user.displayName}</CardTitle>
                                 {showcasedBadge}
+                                {hasMasterCard && <span className="master-card-badge"><CreditCard className="h-3 w-3"/> MASTER</span>}
                             </div>
                             <CardDescription className="font-semibold text-yellow-400 text-lg">1st Place</CardDescription>
                          </CardHeader>
@@ -417,6 +423,7 @@ export default function LeaderboardPage() {
                                  <div className="flex items-center gap-2">
                                     <p className="font-semibold">{user.displayName}</p>
                                     {showcasedBadge}
+                                    {hasMasterCard && <span className="master-card-badge"><CreditCard className="h-3 w-3"/> MASTER</span>}
                                 </div>
                                 <p className="text-sm text-muted-foreground">{placeDetails.title}</p>
                             </div>
@@ -710,11 +717,17 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         return badgeDetails[badgeKey]?.badge ?? null;
     };
 
-    const getScoreToDisplay = (user: any) => ({
-        'all-time': user.totalScore,
-        'weekly': formatWeeklyTime(user.weeklyTime),
-        'game-zone': user.entertainmentTotalScore
-    }[activeTab]);
+    const getScoreToDisplay = (user: any) => {
+        if(activeTab === 'all-time') {
+            const hasMasterCard = user.masterCardExpires && new Date(user.masterCardExpires) > new Date();
+            return hasMasterCard ? '∞' : user.totalScore;
+        } else if (activeTab === 'weekly') {
+            return formatWeeklyTime(user.weeklyTime);
+        } else {
+            return user.entertainmentTotalScore;
+        }
+    };
+
 
     return (
         <div className="space-y-8">
@@ -736,6 +749,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                             const rank = index + 4;
                             const CardWrapper = activeTab !== 'game-zone' ? 'button' : 'div';
                             const isClickable = activeTab !== 'game-zone';
+                            const hasMasterCard = user.masterCardExpires && new Date(user.masterCardExpires) > new Date();
 
                             return (
                                 <CardWrapper key={user.uid} onClick={isClickable ? () => onUserClick(user) : undefined} className={cn("overflow-hidden text-left rounded-lg w-full", currentUser?.id === user.uid && 'border border-primary', isClickable && 'cursor-pointer hover:bg-muted/50')}>
@@ -751,6 +765,7 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                                     <div className="flex items-center gap-2">
                                                         <span className="font-medium truncate">{user.displayName}</span>
                                                         {getShowcasedBadge(user)}
+                                                        {hasMasterCard && <span className="master-card-badge"><CreditCard className="h-3 w-3"/> MASTER</span>}
                                                     </div>
                                                      <p className="text-muted-foreground text-sm">
                                                         {getScoreLabel()}: 
@@ -836,3 +851,4 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
     
 
     
+

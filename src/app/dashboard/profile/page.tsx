@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star, Clock, UserPlus, Search, UserCheck } from 'lucide-react';
+import { Settings, User as UserIcon, Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, Brain, BarChart3, Trophy, Compass, Star, Clock, UserPlus, Search, UserCheck, CreditCard } from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -91,7 +91,7 @@ function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProf
                             <CardTitle className="text-3xl">{user.displayName}</CardTitle>
                             <div className="flex flex-wrap items-center gap-2 mt-2">
                                 {showcasedBadge ? showcasedBadge.badge : <Badge variant="outline">Member</Badge>}
-                                {hasMasterCard && <Badge variant="outline" className="border-yellow-500 text-yellow-500 font-bold">Master Card</Badge>}
+                                {hasMasterCard && <span className="master-card-badge"><CreditCard className="h-3 w-3"/> MASTER</span>}
                             </div>
                         </div>
                     </div>
