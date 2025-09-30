@@ -50,6 +50,13 @@ const mainNavItems = [
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
 ];
 
+const focusNavItems = [
+  { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro', glow: 'text-green-400' },
+  { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-yellow-400' },
+  { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights', glow: 'text-blue-400' },
+  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
+];
+
 const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
@@ -168,7 +175,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
+          defaultValue={['main-tools', 'focus-tools', 'compete-earn', 'community-resources']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -177,6 +184,15 @@ export default function SidebarContent() {
             </AccordionTrigger>
             <AccordionContent className="px-0 pb-2">
               {renderNavLinks(mainNavItems)}
+            </AccordionContent>
+          </AccordionItem>
+          
+           <AccordionItem value="focus-tools" className="border-b-0">
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/90 text-sm font-bold tracking-tight">
+              MindMate Focus
+            </AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">
+              {renderNavLinks(focusNavItems)}
             </AccordionContent>
           </AccordionItem>
         
