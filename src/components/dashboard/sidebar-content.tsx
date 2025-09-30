@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -45,16 +44,10 @@ import { Button } from '../ui/button';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
+  { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
-];
-
-const focusNavItems = [
-  { href: '/dashboard/pomodoro', icon: Timer, label: 'Pomodoro', glow: 'text-green-400' },
-  { href: '/dashboard/tracker', icon: Zap, label: 'Focus Mode', glow: 'text-yellow-400' },
-  { href: '/dashboard/tracker-insights', icon: Clock, label: 'Tracker & Insights', glow: 'text-blue-400' },
-  { href: '/dashboard/challenger', icon: Swords, label: 'Challenger', glow: 'text-red-400' },
 ];
 
 const communityNav = [
@@ -108,8 +101,8 @@ export default function SidebarContent() {
     if (href !== '/dashboard' && pathname.startsWith(href)) return true;
     
     // Special handling for merged routes
-    if (href === '/dashboard/tracker-insights' && (pathname.startsWith('/dashboard/time-tracker') || pathname.startsWith('/dashboard/insights'))) {
-        return true;
+    if (href === '/dashboard/focus' && (pathname.startsWith('/dashboard/pomodoro') || pathname.startsWith('/dashboard/tracker') || pathname.startsWith('/dashboard/tracker-insights') || pathname.startsWith('/dashboard/challenger'))) {
+      return true;
     }
     if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos') || pathname.startsWith('/dashboard/roadmap'))) {
         return true;
@@ -133,7 +126,8 @@ export default function SidebarContent() {
               'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
               isActive(item.href)
                   ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                  : 'hover:text-primary'
+                  : 'hover:text-primary',
+              item.isBold && 'font-bold text-sidebar-foreground/90'
             )}
           >
             <div className={cn(
@@ -175,7 +169,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'focus-tools', 'compete-earn', 'community-resources']}
+          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -184,15 +178,6 @@ export default function SidebarContent() {
             </AccordionTrigger>
             <AccordionContent className="px-0 pb-2">
               {renderNavLinks(mainNavItems)}
-            </AccordionContent>
-          </AccordionItem>
-          
-           <AccordionItem value="focus-tools" className="border-b-0">
-            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/90 text-sm font-bold tracking-tight">
-              MindMate Focus
-            </AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">
-              {renderNavLinks(focusNavItems)}
             </AccordionContent>
           </AccordionItem>
         
