@@ -8,7 +8,6 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays } from 'date-fns';
 import { LucideIcon } from 'lucide-react';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
-import type { MasterCreditPackage } from '@/app/dashboard/armoury/page';
 
 
 // ============================================================================
@@ -78,13 +77,6 @@ export interface User {
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
-  pendingMasterCardRequest?: {
-    packageId: string;
-    packageName: string;
-    price: number;
-    transactionId: string;
-    requestedAt: Timestamp;
-  } | null;
 }
 
 export interface Announcement {
@@ -148,8 +140,6 @@ export interface AppTheme {
 
 export interface AppSettings {
     marcoAiLaunchStatus: 'countdown' | 'live';
-    upiId?: string;
-    qrCodeUrl?: string;
 }
 
 export interface GlobalGift {
@@ -201,18 +191,6 @@ export interface FeatureShowcase {
     createdAt: Date;
 }
 
-export interface MasterCardRequest {
-    id: string;
-    userId: string;
-    userName: string;
-    packageId: string;
-    packageName: string;
-    price: number;
-    transactionId: string;
-    status: 'pending' | 'approved' | 'declined';
-    requestedAt: Timestamp;
-}
-
 
 // ============================================================================
 //  CONTEXT DEFINITIONS
@@ -239,7 +217,6 @@ interface AppDataContextType {
     generateDevAiAccessToken: (uid: string) => Promise<string | null>;
     grantMasterCard: (uid: string, durationDays: number) => Promise<void>;
     revokeMasterCard: (uid: string) => Promise<void>;
-    submitMasterCardRequest: (pkg: MasterCreditPackage, transactionId: string) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string, duration: number) => Promise<void>;
@@ -305,8 +282,6 @@ interface AppDataContextType {
     
     appSettings: AppSettings | null;
     updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
-    uploadQrCode: (file: File) => Promise<void>;
-
 
     globalGifts: GlobalGift[];
     activeGlobalGift: GlobalGift | null;
@@ -323,10 +298,6 @@ interface AppDataContextType {
     addFeatureShowcase: (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => Promise<void>;
     updateFeatureShowcase: (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => Promise<void>;
     deleteFeatureShowcase: (id: string) => Promise<void>;
-    
-    masterCardRequests: MasterCardRequest[];
-    approveMasterCardRequest: (request: MasterCardRequest) => Promise<void>;
-    declineMasterCardRequest: (requestId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -354,7 +325,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
     const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
     const [featureShowcases, setFeatureShowcases] = useState<FeatureShowcase[]>([]);
-    const [masterCardRequests, setMasterCardRequests] = useState<MasterCardRequest[]>([]);
     const [loading, setLoading] = useState(true);
     
     const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
@@ -538,8 +508,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const ticketsQuery = query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'));
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
         const showcasesQuery = query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc'));
-        // FIX: The query that requires an index. Remove orderBy to fix.
-        const masterCardRequestsQuery = query(collection(db, 'masterCardRequests'), where('status', '==', 'pending'));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
@@ -559,12 +527,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             }
         });
         const unsubShowcases = onSnapshot(showcasesQuery, (snapshot) => setFeatureShowcases(processSnapshot<FeatureShowcase>(snapshot)));
-        // FIX: Sort the results on the client side after fetching
-        const unsubMasterCardRequests = onSnapshot(masterCardRequestsQuery, (snapshot) => {
-            const requests = processTimestampedSnapshot(snapshot) as MasterCardRequest[];
-            requests.sort((a, b) => a.requestedAt.toMillis() - b.requestedAt.toMillis());
-            setMasterCardRequests(requests);
-        });
 
 
         return () => {
@@ -578,7 +540,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubTickets();
             unsubLocks();
             unsubShowcases();
-            unsubMasterCardRequests();
         };
     }, []);
 
@@ -864,76 +825,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             masterCardExpires: null
         });
     }, []);
-
-    const submitMasterCardRequest = useCallback(async (pkg: MasterCreditPackage, transactionId: string) => {
-        if (!authUser || !currentUserData) throw new Error("User not found.");
-
-        const requestData = {
-            userId: authUser.id,
-            userName: currentUserData.displayName,
-            packageId: pkg.id,
-            packageName: pkg.name,
-            price: pkg.price,
-            transactionId,
-            status: 'pending' as const,
-            requestedAt: serverTimestamp(),
-        };
-
-        const userUpdate = {
-            pendingMasterCardRequest: {
-                packageId: pkg.id,
-                packageName: pkg.name,
-                price: pkg.price,
-                transactionId: transactionId,
-                requestedAt: new Date(),
-            }
-        };
-
-        const userRef = doc(db, 'users', authUser.id);
-        const requestsColRef = collection(db, 'masterCardRequests');
-        
-        const batch = writeBatch(db);
-        batch.set(doc(requestsColRef), requestData);
-        batch.update(userRef, userUpdate);
-        
-        await batch.commit();
-
-    }, [authUser, currentUserData]);
-    
-    const approveMasterCardRequest = useCallback(async (request: MasterCardRequest) => {
-        const reqDoc = doc(db, 'masterCardRequests', request.id);
-        const userDoc = doc(db, 'users', request.userId);
-
-        const pkg = (await import('@/app/dashboard/armoury/page')).masterCreditPackages.find(p => p.id === request.packageId);
-        if (!pkg) throw new Error("Package not found");
-        
-        const expirationDate = dateFnsAddDays(new Date(), pkg.durationDays);
-
-        const batch = writeBatch(db);
-        batch.update(reqDoc, { status: 'approved' });
-        batch.update(userDoc, {
-            masterCardExpires: expirationDate.toISOString(),
-            pendingMasterCardRequest: null
-        });
-        
-        await batch.commit();
-    }, []);
-
-    const declineMasterCardRequest = useCallback(async (requestId: string) => {
-        const reqDoc = doc(db, 'masterCardRequests', requestId);
-        const reqSnap = await getDoc(reqDoc);
-        if (!reqSnap.exists()) return;
-        
-        const request = reqSnap.data() as MasterCardRequest;
-        const userDoc = doc(db, 'users', request.userId);
-        
-        const batch = writeBatch(db);
-        batch.update(reqDoc, { status: 'declined' });
-        batch.update(userDoc, { pendingMasterCardRequest: null });
-
-        await batch.commit();
-    }, []);
-
 
     const addPerfectedQuiz = async (uid: string, quizId: string) => {
         if(!uid || !quizId) return;
@@ -1346,13 +1237,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(settingsDocRef, settings, { merge: true });
     };
 
-    const uploadQrCode = useCallback(async (file: File) => {
-        const storageRef = ref(storage, 'app-settings/qr-code.png');
-        await uploadBytes(storageRef, file);
-        const downloadURL = await getDownloadURL(storageRef);
-        await updateAppSettings({ qrCodeUrl: downloadURL });
-    }, []);
-    
     const sendGlobalGift = async (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => {
         const newGiftRef = doc(collection(db, 'globalGifts'));
         await setDoc(newGiftRef, {
@@ -1455,7 +1339,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         generateDevAiAccessToken,
         grantMasterCard,
         revokeMasterCard,
-        submitMasterCardRequest,
         addPerfectedQuiz,
         incrementQuizAttempt,
         incrementFocusSessions,
@@ -1513,7 +1396,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         submitPollComment,
         appSettings,
         updateAppSettings,
-        uploadQrCode,
         globalGifts,
         activeGlobalGift,
         sendGlobalGift,
@@ -1527,9 +1409,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addFeatureShowcase,
         updateFeatureShowcase,
         deleteFeatureShowcase,
-        masterCardRequests,
-        approveMasterCardRequest,
-        declineMasterCardRequest,
     };
 
     return (
