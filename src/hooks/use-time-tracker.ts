@@ -238,23 +238,23 @@ export function useTimeTracker() {
 
   const handlePlayPause = useCallback(async (subjectId: string) => {
     const nowISO = new Date().toISOString();
-    let newSubjects = [...state.subjects];
+    let currentSubjects = state.subjects; // Use the most recent state
     
     // Pausing the current subject
     if (state.activeSubjectId === subjectId) {
-      if(state.currentSessionStart) {
-        const newTotalTime = await finishSession(subjectId, state.currentSessionStart);
-        newSubjects = newSubjects.map(s => s.id === subjectId ? { ...s, timeTracked: newTotalTime } : s);
-      }
-      setState({ ...state, subjects: newSubjects, activeSubjectId: null, currentSessionStart: null });
+        if(state.currentSessionStart) {
+            const newTotalTime = await finishSession(subjectId, state.currentSessionStart);
+            currentSubjects = currentSubjects.map(s => s.id === subjectId ? { ...s, timeTracked: newTotalTime } : s);
+        }
+        setState({ ...state, subjects: currentSubjects, activeSubjectId: null, currentSessionStart: null });
     } else {
       // Pausing previous and starting new
       if (state.activeSubjectId && state.currentSessionStart) {
         const newTotalTime = await finishSession(state.activeSubjectId, state.currentSessionStart);
-        newSubjects = newSubjects.map(s => s.id === state.activeSubjectId ? { ...s, timeTracked: newTotalTime } : s);
+        currentSubjects = currentSubjects.map(s => s.id === state.activeSubjectId ? { ...s, timeTracked: newTotalTime } : s);
       }
       // Starting a new subject
-      setState({ subjects: newSubjects, activeSubjectId: subjectId, currentSessionStart: nowISO });
+      setState({ subjects: currentSubjects, activeSubjectId: subjectId, currentSessionStart: nowISO });
     }
   }, [state, finishSession]);
 
