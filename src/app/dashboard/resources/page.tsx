@@ -69,36 +69,37 @@ export default function ResourcesHubPage() {
                 <p className="text-muted-foreground">Your central hub for all study materials. Select a category to begin.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {resourceCategories.map((category, index) => (
                     <motion.div
                         key={category.title}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="h-full"
                     >
-                        <Link href={category.href} className="block h-full">
+                        <Link href={category.href} className="block h-full group">
                            <Card className={cn(
-                               "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2",
+                               "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1 bg-slate-900 border-slate-800",
                                category.shadow
                             )}>
-                               <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-tr", category.color)}></div>
+                               <div className={cn("absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 bg-gradient-to-tr", category.color)}></div>
                                <CardHeader>
                                    <div className="flex items-center gap-4">
-                                       <div className={cn("p-3 rounded-lg bg-gradient-to-br", category.color)}>
+                                       <div className={cn("p-3 rounded-lg bg-gradient-to-br from-slate-800 to-slate-700 border border-slate-600")}>
                                             <category.icon className="h-6 w-6 text-white"/>
                                        </div>
-                                       <CardTitle>{category.title}</CardTitle>
+                                       <CardTitle className="text-xl">{category.title}</CardTitle>
                                    </div>
                                </CardHeader>
                                <CardContent>
                                    <p className="text-muted-foreground">{category.description}</p>
                                </CardContent>
-                               <CardContent>
-                                    <Button variant="outline" className="w-full bg-background/50 group-hover:bg-background transition-colors">
+                               <CardFooter>
+                                    <Button variant="outline" className="w-full bg-slate-800/50 border-slate-700 group-hover:bg-slate-800 group-hover:border-slate-600 transition-colors">
                                        View Resources <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                                    </Button>
-                               </CardContent>
+                               </CardFooter>
                            </Card>
                         </Link>
                     </motion.div>
