@@ -4,12 +4,12 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Gamepad2, Users, Home, BookOpen, Trophy, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { Gamepad2, Users, Home, BookOpen, Trophy, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const navItems = [
-  { href: '/dashboard/social', icon: Users, label: 'Social' },
+  { href: '/dashboard/quiz', icon: Lightbulb, label: 'Quiz' },
   { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Games' },
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources' },
