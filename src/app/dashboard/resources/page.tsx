@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BookMarked, BrainCircuit, Dna, Rocket, Stethoscope, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
@@ -109,3 +109,4 @@ export default function ResourcesHubPage() {
         </div>
     );
 }
+
