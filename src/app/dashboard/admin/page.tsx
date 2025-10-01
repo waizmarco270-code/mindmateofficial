@@ -548,8 +548,8 @@ export default function AdminPanelPage() {
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0 space-y-8">
-              <div className="grid gap-8 lg:grid-cols-2">
+            <AccordionContent className="p-6 pt-0 grid grid-cols-1 gap-8">
+              <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                   <Card>
                     <CardHeader><CardTitle>Create New Announcement</CardTitle><CardDescription>Post a new announcement. It will appear at the top of the list.</CardDescription></CardHeader>
                     <CardContent>
@@ -578,31 +578,33 @@ export default function AdminPanelPage() {
                     </CardContent>
                   </Card>
                 </div>
-                 <div className="grid gap-8 lg:grid-cols-2">
+                 <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                     <Card>
                         <CardHeader><CardTitle>Manage Announcements</CardTitle></CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                                <TableBody>
-                                    {announcements.map(ann => (
-                                        <TableRow key={ann.id}>
-                                            <TableCell className="font-medium max-w-sm truncate">{ann.title}</TableCell>
-                                            <TableCell>{formatDistanceToNow(ann.createdAt, { addSuffix: true })}</TableCell>
-                                            <TableCell className="text-right">
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader><AlertDialogTitle>Delete this announcement?</AlertDialogTitle><AlertDialogDescription>This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteAnnouncement(ann.id)}>Delete</AlertDialogAction></AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))}
-                                    {announcements.length === 0 && <TableRow><TableCell colSpan={3} className="h-24 text-center">No announcements posted.</TableCell></TableRow>}
-                                </TableBody>
-                            </Table>
+                            <div className="max-w-full overflow-x-auto">
+                                <Table>
+                                    <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Date</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                    <TableBody>
+                                        {announcements.map(ann => (
+                                            <TableRow key={ann.id}>
+                                                <TableCell className="font-medium max-w-sm truncate">{ann.title}</TableCell>
+                                                <TableCell>{formatDistanceToNow(ann.createdAt, { addSuffix: true })}</TableCell>
+                                                <TableCell className="text-right">
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader><AlertDialogTitle>Delete this announcement?</AlertDialogTitle><AlertDialogDescription>This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteAnnouncement(ann.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {announcements.length === 0 && <TableRow><TableCell colSpan={3} className="h-24 text-center">No announcements posted.</TableCell></TableRow>}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
                      <Card>
@@ -610,56 +612,58 @@ export default function AdminPanelPage() {
                             <CardTitle>Manage Polls</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Question</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>Votes</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {allPolls.map(poll => (
-                                        <TableRow key={poll.id}>
-                                            <TableCell className="font-medium max-w-sm truncate">{poll.question}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={poll.isActive ? 'default' : 'secondary'}>
-                                                    {poll.isActive ? 'Active' : 'Inactive'}
-                                                </Badge>
-                                            </TableCell>
-                                             <TableCell>
-                                                {Object.values(poll.results).reduce((sum, count) => sum + count, 0)}
-                                            </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                {!poll.isActive && (
-                                                    <Button variant="outline" size="sm" onClick={() => setActivePoll(poll.id)}>
-                                                        <Star className="mr-2 h-4 w-4"/>Set Active
-                                                    </Button>
-                                                )}
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Delete this poll?</AlertDialogTitle>
-                                                            <AlertDialogDescription>This will permanently delete the poll and all its associated votes. This cannot be undone.</AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => deletePoll(poll.id)}>Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
+                            <div className="max-w-full overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Question</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead>Votes</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
-                                    ))}
-                                    {allPolls.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center">No polls created yet.</TableCell></TableRow>}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {allPolls.map(poll => (
+                                            <TableRow key={poll.id}>
+                                                <TableCell className="font-medium max-w-sm truncate">{poll.question}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={poll.isActive ? 'default' : 'secondary'}>
+                                                        {poll.isActive ? 'Active' : 'Inactive'}
+                                                    </Badge>
+                                                </TableCell>
+                                                 <TableCell>
+                                                    {Object.values(poll.results).reduce((sum, count) => sum + count, 0)}
+                                                </TableCell>
+                                                <TableCell className="text-right space-x-2 whitespace-nowrap">
+                                                    {!poll.isActive && (
+                                                        <Button variant="outline" size="sm" onClick={() => setActivePoll(poll.id)}>
+                                                            <Star className="mr-2 h-4 w-4"/>Set Active
+                                                        </Button>
+                                                    )}
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete this poll?</AlertDialogTitle>
+                                                                <AlertDialogDescription>This will permanently delete the poll and all its associated votes. This cannot be undone.</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => deletePoll(poll.id)}>Delete</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {allPolls.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center">No polls created yet.</TableCell></TableRow>}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </CardContent>
                     </Card>
                  </div>
-                 <div className="grid gap-8 lg:grid-cols-2">
+                 <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                     <Card>
                       <CardHeader><CardTitle>Add Daily Surprise</CardTitle></CardHeader>
                       <CardContent>
@@ -737,33 +741,35 @@ export default function AdminPanelPage() {
                      <Card>
                         <CardHeader><CardTitle>Existing Surprises</CardTitle></CardHeader>
                         <CardContent>
-                             <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Type</TableHead>
-                                        <TableHead>Content</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {dailySurprises.map(s => (
-                                        <TableRow key={s.id}>
-                                            <TableCell><Badge variant="secondary" className="capitalize">{s.type.replace('-', ' ')}</Badge></TableCell>
-                                            <TableCell className="max-w-xs truncate">{s.text || s.quizQuestion || s.imageUrl || s.featureTitle}</TableCell>
-                                            <TableCell className="text-right">
-                                                 <AlertDialog>
-                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader><AlertDialogTitle>Delete this surprise?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteDailySurprise(s.id)}>Delete</AlertDialogAction></AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
+                             <div className="max-w-full overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead>Content</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
-                                    ))}
-                                    {dailySurprises.length === 0 && <TableRow><TableCell colSpan={3} className="h-24 text-center">No surprises yet.</TableCell></TableRow>}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {dailySurprises.map(s => (
+                                            <TableRow key={s.id}>
+                                                <TableCell><Badge variant="secondary" className="capitalize whitespace-nowrap">{s.type.replace('-', ' ')}</Badge></TableCell>
+                                                <TableCell className="max-w-xs truncate">{s.text || s.quizQuestion || s.imageUrl || s.featureTitle}</TableCell>
+                                                <TableCell className="text-right">
+                                                     <AlertDialog>
+                                                        <AlertDialogTrigger asChild><Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader><AlertDialogTitle>Delete this surprise?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteDailySurprise(s.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                        {dailySurprises.length === 0 && <TableRow><TableCell colSpan={3} className="h-24 text-center">No surprises yet.</TableCell></TableRow>}
+                                    </TableBody>
+                                </Table>
+                             </div>
                         </CardContent>
                     </Card>
                  </div>
@@ -783,8 +789,8 @@ export default function AdminPanelPage() {
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="p-6 pt-0 space-y-8">
-                <div className="grid gap-8 lg:grid-cols-2">
+              <AccordionContent className="p-6 pt-0 grid grid-cols-1 gap-8">
+                <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                     {/* Add/Edit Resource Section */}
                     <Card>
                       <CardHeader>
@@ -826,43 +832,45 @@ export default function AdminPanelPage() {
                     <Card>
                        <CardHeader><CardTitle>Manage Sections</CardTitle></CardHeader>
                        <CardContent>
-                           <Table>
-                               <TableHeader>
-                                   <TableRow>
-                                       <TableHead>Name</TableHead>
-                                       <TableHead>Parent</TableHead>
-                                       <TableHead>Cost</TableHead>
-                                       <TableHead className="text-right">Actions</TableHead>
-                                   </TableRow>
-                               </TableHeader>
-                               <TableBody>
-                                   {resourceSections.map(section => (
-                                       <TableRow key={section.id}>
-                                           <TableCell className="font-medium">{section.name}</TableCell>
-                                           <TableCell><Badge variant="secondary" className="capitalize">{section.parentCategory}</Badge></TableCell>
-                                           <TableCell>{section.unlockCost} credits</TableCell>
-                                           <TableCell className="text-right space-x-2">
-                                                <Button variant="outline" size="sm" onClick={() => openEditDialog(section)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button></AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the section and all resources inside it. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => deleteResourceSection(section.id)}>Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                           </TableCell>
+                           <div className="max-w-full overflow-x-auto">
+                               <Table>
+                                   <TableHeader>
+                                       <TableRow>
+                                           <TableHead>Name</TableHead>
+                                           <TableHead>Parent</TableHead>
+                                           <TableHead>Cost</TableHead>
+                                           <TableHead className="text-right">Actions</TableHead>
                                        </TableRow>
-                                   ))}
-                                   {resourceSections.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center">No premium sections created yet.</TableCell></TableRow>}
-                               </TableBody>
-                           </Table>
+                                   </TableHeader>
+                                   <TableBody>
+                                       {resourceSections.map(section => (
+                                           <TableRow key={section.id}>
+                                               <TableCell className="font-medium whitespace-nowrap">{section.name}</TableCell>
+                                               <TableCell><Badge variant="secondary" className="capitalize whitespace-nowrap">{section.parentCategory}</Badge></TableCell>
+                                               <TableCell className="whitespace-nowrap">{section.unlockCost} credits</TableCell>
+                                               <TableCell className="text-right space-x-2 whitespace-nowrap">
+                                                    <Button variant="outline" size="sm" onClick={() => openEditDialog(section)}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button></AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the section and all resources inside it. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => deleteResourceSection(section.id)}>Delete</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                               </TableCell>
+                                           </TableRow>
+                                       ))}
+                                       {resourceSections.length === 0 && <TableRow><TableCell colSpan={4} className="h-24 text-center">No premium sections created yet.</TableCell></TableRow>}
+                                   </TableBody>
+                               </Table>
+                           </div>
                        </CardContent>
                     </Card>
                 </div>
-                 <div className="grid gap-8 lg:grid-cols-2">
+                 <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                     <Card>
                       <CardHeader><CardTitle>Add New Resource</CardTitle></CardHeader>
                       <CardContent>
@@ -887,35 +895,36 @@ export default function AdminPanelPage() {
                     <Card>
                         <CardHeader><CardTitle>All Resources</CardTitle><CardDescription>Manage all available resources.</CardDescription></CardHeader>
                         <CardContent>
-                           <Table>
-                               <TableHeader>
-                                   <TableRow>
-                                       <TableHead>Title</TableHead>
-                                       <TableHead className="text-right">Actions</TableHead>
-                                   </TableRow>
-                               </TableHeader>
-                               <TableBody>
-                                   {allResources.map((resource) => (
-                                       <TableRow key={resource.id}>
-                                           <TableCell className="font-medium">{resource.title}</TableCell>
-                                           <TableCell className="text-right space-x-2">
-                                               <Button variant="outline" size="sm" onClick={() => openEditDialog({...resource, type: 'general'})}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
-                                               <AlertDialog>
-                                                   <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button></AlertDialogTrigger>
-                                                   <AlertDialogContent>
-                                                       <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the resource.</AlertDialogDescription></AlertDialogHeader>
-                                                       <AlertDialogFooter>
-                                                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                           <AlertDialogAction onClick={() => deleteResource(resource.id)}>Delete</AlertDialogAction>
-                                                       </AlertDialogFooter>
-                                                   </AlertDialogContent>
-                                               </AlertDialog>
-                                           </TableCell>
+                           <div className="max-w-full overflow-x-auto">
+                               <Table>
+                                   <TableHeader>
+                                       <TableRow>
+                                           <TableHead>Title</TableHead>
+                                           <TableHead className="text-right">Actions</TableHead>
                                        </TableRow>
-                                   ))}
-                                   {allResources.length === 0 && <TableRow><TableCell colSpan={2} className="h-24 text-center">No resources found.</TableCell></TableRow>}
-                               </TableBody>
-                           </Table>
+                                   </TableHeader>
+                                   <TableBody>
+                                       {allResources.map((resource) => (
+                                           <TableRow key={resource.id}>
+                                               <TableCell className="font-medium whitespace-nowrap">{resource.title}</TableCell>
+                                               <TableCell className="text-right space-x-2 whitespace-nowrap">
+                                                   <Button variant="outline" size="sm" onClick={() => openEditDialog({...resource, type: 'general'})}><Edit className="mr-2 h-4 w-4" /> Edit</Button>
+                                                   <AlertDialog>
+                                                       <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4" /> Delete</Button></AlertDialogTrigger>
+                                                       <AlertDialogContent>
+                                                           <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the resource.</AlertDialogDescription></AlertDialogHeader>
+                                                           <AlertDialogFooter>
+                                                               <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                               <AlertDialogAction onClick={() => deleteResource(resource.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                       </AlertDialogContent>
+                                                   </AlertDialog>
+                                               </TableCell>
+                                           </TableRow>
+                                       ))}
+                                       {allResources.length === 0 && <TableRow><TableCell colSpan={2} className="h-24 text-center">No resources found.</TableCell></TableRow>}
+                                   </TableBody>
+                               </Table>
+                           </div>
                         </CardContent>
                     </Card>
                   </div>
@@ -935,16 +944,18 @@ export default function AdminPanelPage() {
                   </div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="p-6 pt-0 space-y-8">
-                  <div className="grid gap-8 lg:grid-cols-2">
+              <AccordionContent className="p-6 pt-0 grid grid-cols-1 gap-8">
+                  <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                       <Card>
                           <CardHeader><CardTitle>Existing Quizzes</CardTitle><CardDescription>Review and delete existing quizzes.</CardDescription></CardHeader>
                           <CardContent>
-                              <Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Questions</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                                  <TableBody>{quizzes.map((quiz) => (<TableRow key={quiz.id}><TableCell className="font-medium">{quiz.title}</TableCell><TableCell>{quiz.category}</TableCell><TableCell>{quiz.questions.length}</TableCell><TableCell className="text-right"><AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/> Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the<span className="font-semibold text-foreground"> {quiz.title} </span> quiz and remove it from the database.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteQuiz(quiz.id)}>Yes, delete quiz</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>))}
-                                      {quizzes.length === 0 && (<TableRow><TableCell colSpan={4} className="h-24 text-center">No quizzes created yet.</TableCell></TableRow>)}
-                                  </TableBody>
-                              </Table>
+                             <div className="max-w-full overflow-x-auto">
+                                <Table><TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead>Questions</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                    <TableBody>{quizzes.map((quiz) => (<TableRow key={quiz.id}><TableCell className="font-medium whitespace-nowrap">{quiz.title}</TableCell><TableCell className="whitespace-nowrap">{quiz.category}</TableCell><TableCell>{quiz.questions.length}</TableCell><TableCell className="text-right"><AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/> Delete</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. This will permanently delete the<span className="font-semibold text-foreground"> {quiz.title} </span> quiz and remove it from the database.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteQuiz(quiz.id)}>Yes, delete quiz</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog></TableCell></TableRow>))}
+                                        {quizzes.length === 0 && (<TableRow><TableCell colSpan={4} className="h-24 text-center">No quizzes created yet.</TableCell></TableRow>)}
+                                    </TableBody>
+                                </Table>
+                             </div>
                           </CardContent>
                       </Card>
                       <Card>
@@ -967,7 +978,7 @@ export default function AdminPanelPage() {
                           </CardContent>
                       </Card>
                   </div>
-                 <div className="grid gap-8 lg:grid-cols-1 mt-8">
+                 <div className="grid grid-cols-1 gap-8 mt-8">
                     <Card>
                       <CardHeader><CardTitle>Create/Edit Quiz Manually</CardTitle><CardDescription>Build and publish a new quiz for the Quiz Zone.</CardDescription></CardHeader>
                       <CardContent className="space-y-6">
@@ -1021,51 +1032,53 @@ export default function AdminPanelPage() {
                             </CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>User</TableHead>
-                                        <TableHead>Message</TableHead>
-                                        <TableHead>Received</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {supportTickets.map(ticket => (
-                                        <TableRow key={ticket.id}>
-                                            <TableCell className="font-medium">{ticket.userName}</TableCell>
-                                            <TableCell className="max-w-sm break-words">{ticket.message}</TableCell>
-                                            <TableCell>{formatDistanceToNow(ticket.createdAt.toDate(), { addSuffix: true })}</TableCell>
-                                            <TableCell>
-                                                <Badge variant={ticket.status === 'resolved' ? 'default' : 'secondary'}>
-                                                    {ticket.status}
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                {ticket.status === 'new' && (
-                                                    <Button variant="outline" size="sm" onClick={() => updateTicketStatus(ticket.id, 'resolved')}>
-                                                        <CheckCircle className="mr-2 h-4 w-4"/>Mark Resolved
-                                                    </Button>
-                                                )}
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Delete this ticket?</AlertDialogTitle>
-                                                            <AlertDialogDescription>This will permanently remove the ticket. This action cannot be undone.</AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={() => deleteTicket(ticket.id)}>Delete</AlertDialogAction></AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                            </TableCell>
+                             <div className="max-w-full overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>User</TableHead>
+                                            <TableHead>Message</TableHead>
+                                            <TableHead>Received</TableHead>
+                                            <TableHead>Status</TableHead>
+                                            <TableHead className="text-right">Actions</TableHead>
                                         </TableRow>
-                                    ))}
-                                     {supportTickets.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No support tickets.</TableCell></TableRow>}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {supportTickets.map(ticket => (
+                                            <TableRow key={ticket.id}>
+                                                <TableCell className="font-medium whitespace-nowrap">{ticket.userName}</TableCell>
+                                                <TableCell className="max-w-sm break-words">{ticket.message}</TableCell>
+                                                <TableCell className="whitespace-nowrap">{formatDistanceToNow(ticket.createdAt.toDate(), { addSuffix: true })}</TableCell>
+                                                <TableCell>
+                                                    <Badge variant={ticket.status === 'resolved' ? 'default' : 'secondary'}>
+                                                        {ticket.status}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right space-x-2 whitespace-nowrap">
+                                                    {ticket.status === 'new' && (
+                                                        <Button variant="outline" size="sm" onClick={() => updateTicketStatus(ticket.id, 'resolved')}>
+                                                            <CheckCircle className="mr-2 h-4 w-4"/>Mark Resolved
+                                                        </Button>
+                                                    )}
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="mr-2 h-4 w-4"/>Delete</Button></AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Delete this ticket?</AlertDialogTitle>
+                                                                <AlertDialogDescription>This will permanently remove the ticket. This action cannot be undone.</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={() => deleteTicket(ticket.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                         {supportTickets.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No support tickets.</TableCell></TableRow>}
+                                    </TableBody>
+                                </Table>
+                             </div>
                         </CardContent>
                     </Card>
                 </AccordionContent>
@@ -1111,3 +1124,6 @@ export default function AdminPanelPage() {
     </div>
   );
 }
+
+
+    
