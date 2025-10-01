@@ -220,7 +220,7 @@ export function useTimeTracker() {
         subjectName: subject.name,
         startTime: startTime,
         endTime: endTime.toISOString(),
-        roadmapId: roadmapId || undefined
+        ...(roadmapId && { roadmapId: roadmapId })
     };
     
     await addDoc(allSessionsColRef, newSession);
@@ -238,25 +238,31 @@ export function useTimeTracker() {
 
   const handlePlayPause = useCallback(async (subjectId: string) => {
     const nowISO = new Date().toISOString();
-    let currentSubjects = state.subjects; // Use the most recent state
     
-    // Pausing the current subject
-    if (state.activeSubjectId === subjectId) {
-        if(state.currentSessionStart) {
-            const newTotalTime = await finishSession(subjectId, state.currentSessionStart);
-            currentSubjects = currentSubjects.map(s => s.id === subjectId ? { ...s, timeTracked: newTotalTime } : s);
+    // Use a function form of setState to ensure we have the latest state
+    setState(prevState => {
+        let currentSubjects = prevState.subjects;
+        
+        // Pausing the current subject
+        if (prevState.activeSubjectId === subjectId) {
+            if(prevState.currentSessionStart) {
+                finishSession(subjectId, prevState.currentSessionStart).then(newTotalTime => {
+                    // This update will be reflected in the next snapshot, but we can optimistically update UI
+                });
+            }
+            return { ...prevState, activeSubjectId: null, currentSessionStart: null };
+        } else {
+          // Pausing previous and starting new
+          if (prevState.activeSubjectId && prevState.currentSessionStart) {
+            finishSession(prevState.activeSubjectId, prevState.currentSessionStart).then(newTotalTime => {
+                // This update will be reflected in the next snapshot
+            });
+          }
+          // Starting a new subject
+          return { ...prevState, activeSubjectId: subjectId, currentSessionStart: nowISO };
         }
-        setState({ ...state, subjects: currentSubjects, activeSubjectId: null, currentSessionStart: null });
-    } else {
-      // Pausing previous and starting new
-      if (state.activeSubjectId && state.currentSessionStart) {
-        const newTotalTime = await finishSession(state.activeSubjectId, state.currentSessionStart);
-        currentSubjects = currentSubjects.map(s => s.id === state.activeSubjectId ? { ...s, timeTracked: newTotalTime } : s);
-      }
-      // Starting a new subject
-      setState({ subjects: currentSubjects, activeSubjectId: subjectId, currentSessionStart: nowISO });
-    }
-  }, [state, finishSession]);
+    });
+  }, [finishSession]);
 
   // Auto-pause on background
   useVisibilityChange(() => {
