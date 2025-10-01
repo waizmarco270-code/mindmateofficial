@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { GlobalGiftCard } from '@/components/dashboard/global-gift';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay"
 import { format, parseISO } from 'date-fns';
 
@@ -151,6 +151,22 @@ const focusTools = [
 ];
 
 function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
+    const [api, setApi] = useState<CarouselApi>()
+    const [current, setCurrent] = useState(0)
+    const [count, setCount] = useState(0)
+
+    useEffect(() => {
+        if (!api) return;
+
+        setCount(api.scrollSnapList().length)
+        setCurrent(api.selectedScrollSnap() + 1)
+
+        api.on("select", () => {
+            setCurrent(api.selectedScrollSnap() + 1)
+        })
+    }, [api])
+
+
     if (!showcases || showcases.length === 0) {
         return null;
     }
@@ -186,6 +202,7 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
      return (
         <div>
             <Carousel 
+                setApi={setApi}
                 className="w-full"
                 plugins={[
                     Autoplay({
@@ -204,13 +221,13 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                                      <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
                                         {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
                                     </div>
-                                     <div className="relative z-10 p-6">
-                                        <CardContent className="relative z-10 p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-6 rounded-lg bg-black/20 border border-white/10">
+                                     <div className="relative z-10 p-4">
+                                        <CardContent className="relative z-10 p-4 sm:p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-4 rounded-lg bg-black/20 border border-white/10">
                                             <div className="flex-1">
                                                  <h2 className={cn("text-sm font-bold uppercase tracking-widest", isLive ? "text-green-400" : "text-red-400")}>
                                                     {isLive ? "New Feature" : "Coming Soon"}
                                                 </h2>
-                                                 <CardTitle className="text-3xl lg:text-4xl font-bold mt-1 text-white">{showcase.title}</CardTitle>
+                                                 <CardTitle className="text-2xl lg:text-3xl font-bold mt-1 text-white">{showcase.title}</CardTitle>
                                                 <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
                                                     {showcase.description}
                                                 </CardDescription>
@@ -222,8 +239,8 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                                             </div>
                                              {!isLive && showcase.launchDate && (
                                                 <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10 w-full sm:w-auto mt-4 md:mt-0">
-                                                    <p className="text-lg font-bold font-code text-cyan-300">LAUNCHING ON</p>
-                                                    <p className="text-4xl font-bold font-serif text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMMM')}</p>
+                                                    <p className="text-base font-bold font-code text-cyan-300">LAUNCHING ON</p>
+                                                    <p className="text-3xl font-bold font-serif text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMMM')}</p>
                                                 </div>
                                              )}
                                         </CardContent>
@@ -240,9 +257,19 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                      </>
                 )}
             </Carousel>
-             <p className="text-center text-xs text-muted-foreground mt-2 sm:hidden">
-                &larr; Scroll for more &rarr;
-            </p>
+             {count > 1 && (
+                <div className="py-2 flex justify-center gap-2">
+                    {Array.from({ length: count }).map((_, i) => (
+                        <div
+                            key={i}
+                            className={cn(
+                                "h-1.5 rounded-full transition-all duration-300",
+                                i + 1 === current ? "w-6 bg-primary" : "w-3 bg-muted"
+                            )}
+                        />
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
