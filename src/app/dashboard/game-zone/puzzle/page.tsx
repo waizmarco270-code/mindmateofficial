@@ -1,7 +1,7 @@
 
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Brain, BookCheck, Smile, Atom, Book, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowLeft, Brain, BookCheck, Smile, Atom, Book, Sparkles, ArrowRight, Sigma } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -22,6 +22,13 @@ const puzzleGames = [
         icon: BookCheck,
         href: "/dashboard/game-zone/puzzle/subject-sprint",
         color: "from-green-500 to-emerald-500",
+    },
+    {
+        title: "Mathematics Legend",
+        description: "Solve 50 levels of math problems against the clock.",
+        icon: Sigma,
+        href: "/dashboard/game-zone/puzzle/mathematics-legend",
+        color: "from-blue-500 to-indigo-500",
     },
 ];
 
@@ -63,3 +70,5 @@ export default function PuzzleHubPage() {
         </div>
     )
 }
+
+    
