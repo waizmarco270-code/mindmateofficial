@@ -7,7 +7,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard, Sigma } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -39,6 +39,7 @@ type UserWithStats = User & {
     subjectSprintHighScore: number;
     flappyMindHighScore: number;
     astroAscentHighScore: number;
+    mathematicsLegendHighScore: number;
     elementQuestTotalScore: number;
     prevWeekEntertainmentTotalScore?: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
@@ -181,17 +182,21 @@ export default function LeaderboardPage() {
                 const subjectSprintHighScore = user.gameHighScores?.subjectSprint || 0;
                 const flappyMindHighScore = user.gameHighScores?.flappyMind || 0;
                 const astroAscentHighScore = user.gameHighScores?.astroAscent || 0;
+                const mathematicsLegendHighScore = user.gameHighScores?.mathematicsLegend || 0;
                 const { s = 0, p = 0, d = 0, f = 0 } = user.elementQuestScores || {};
                 const elementQuestTotalScore = s + p + d + f;
                 
-                 // New logic for Entertainment Total Score: slightly weight different games
-                const entertainmentTotalScore = (emojiQuizHighScore * 1.2) + memoryGameHighScore + (dimensionShiftHighScore * 1.5) + (subjectSprintHighScore * 1.1) + flappyMindHighScore + (astroAscentHighScore * 1.3) + (elementQuestTotalScore * 0.5);
+                const entertainmentTotalScore = 
+                    (emojiQuizHighScore * 1.2) + 
+                    memoryGameHighScore + 
+                    (dimensionShiftHighScore * 1.5) + 
+                    (subjectSprintHighScore * 1.1) + 
+                    flappyMindHighScore + 
+                    (astroAscentHighScore * 1.3) + 
+                    (mathematicsLegendHighScore * 1.4) + // Weighted contribution
+                    (elementQuestTotalScore * 0.5);
 
-                // BUG FIX: Calculate a separate score for last week's winner calculation.
-                // This logic assumes `gameHighScores` reflects the *current* high scores.
-                // For a true "last week" score, you would need to snapshot scores weekly.
-                // This is a simplified approach that uses the current high scores as a proxy.
-                 const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0) + (user.gameHighScores?.astroAscent || 0) + elementQuestTotalScore;
+                const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0) + (user.gameHighScores?.astroAscent || 0) + (user.gameHighScores?.mathematicsLegend || 0) + elementQuestTotalScore;
 
                 return { 
                     ...user, 
@@ -207,6 +212,7 @@ export default function LeaderboardPage() {
                     subjectSprintHighScore,
                     flappyMindHighScore,
                     astroAscentHighScore,
+                    mathematicsLegendHighScore,
                     elementQuestTotalScore,
                     prevWeekEntertainmentTotalScore: Math.round(prevWeekEntertainmentTotalScore)
                 };
@@ -224,7 +230,6 @@ export default function LeaderboardPage() {
         }
         
         const lastWeekWeeklyWinner = [...processedUsers].sort((a,b) => (b.prevWeeklyTime || 0) - (a.prevWeeklyTime || 0))[0];
-        // Use the new, correct property for sorting the last week's entertainment winner
         const lastWeekEntertainmentWinner = [...processedUsers].sort((a,b) => (b.prevWeekEntertainmentTotalScore || 0) - (a.prevWeekEntertainmentTotalScore || 0))[0];
 
         return { sortedUsers: sorted, lastWeekWeeklyWinner, lastWeekEntertainmentWinner };
@@ -298,6 +303,10 @@ export default function LeaderboardPage() {
                     <div className="flex items-center gap-1.5">
                         <Atom className="h-3 w-3 text-cyan-500" />
                         <span className="font-semibold">{user.elementQuestTotalScore || 0}</span>
+                    </div>
+                     <div className="flex items-center gap-1.5">
+                        <Sigma className="h-3 w-3 text-indigo-500" />
+                        <span className="font-semibold">{user.mathematicsLegendHighScore || 0}</span>
                     </div>
                 </div>
             )
@@ -851,4 +860,5 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
     
 
     
+
 
