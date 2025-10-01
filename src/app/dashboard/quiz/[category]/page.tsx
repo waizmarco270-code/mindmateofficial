@@ -23,7 +23,8 @@ interface QuizCategoryPageProps {
   };
 }
 
-export default function QuizCategoryPage({ params: { category } }: QuizCategoryPageProps) {
+export default function QuizCategoryPage({ params }: QuizCategoryPageProps) {
+  const { category } = params;
   const details = categoryDetails[category];
   const { isSignedIn } = useUser();
   const { quizzes, loading: quizzesLoading } = useQuizzes();
