@@ -33,6 +33,7 @@ import {
   HelpCircle,
   Info,
   Map,
+  Lightbulb,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -44,7 +45,7 @@ import { Button } from '../ui/button';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
-  { href: '/dashboard/focus', icon: BrainCircuit, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
+  { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
@@ -58,7 +59,7 @@ const communityNav = [
 
 const competeNav = [
     { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
-    { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
+    { href: '/dashboard/quiz', icon: Lightbulb, label: 'Quiz Zone', glow: 'text-purple-400' },
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
 ];
 
