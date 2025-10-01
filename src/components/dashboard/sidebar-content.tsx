@@ -49,18 +49,18 @@ const mainNavItems = [
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
+  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
+  { href: '/dashboard/quiz', icon: Lightbulb, label: 'Quiz Zone', glow: 'text-purple-400' },
+  { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
 ];
 
 const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
-  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
 ];
 
 const competeNav = [
     { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
-    { href: '/dashboard/quiz', icon: Lightbulb, label: 'Quiz Zone', glow: 'text-purple-400' },
-    { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
 ];
 
 const socialLinks = [
