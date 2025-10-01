@@ -6,7 +6,7 @@ import { type Quiz } from '@/hooks/use-quizzes';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, XCircle, Award, BrainCircuit, Check, Trophy, RefreshCw, X } from 'lucide-react';
+import { Clock, CheckCircle, XCircle, Award, BrainCircuit, Check, Trophy, RefreshCw, X, Eye } from 'lucide-react';
 import { useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -27,6 +27,7 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
     const [selectedAnswers, setSelectedAnswers] = useState<Record<number, string>>({});
     const [timeLeft, setTimeLeft] = useState(quiz.timeLimit);
     const [quizFinished, setQuizFinished] = useState(false);
+    const [showAnswers, setShowAnswers] = useState(false);
     
     const creditAwardedRef = useRef(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -127,6 +128,7 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
         setSelectedAnswers({});
         setTimeLeft(quiz.timeLimit);
         setQuizFinished(false);
+        setShowAnswers(false); // Reset show answers view
         creditAwardedRef.current = false; // Reset credit award lock
         startTimer();
     };
@@ -140,9 +142,11 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
     if (quizFinished) {
         const isPerfectScore = score === quiz.questions.length && score > 0;
         const alreadyPerfected = currentUserData?.perfectedQuizzes?.includes(quiz.id);
-        const previousAttempts = (currentUserData?.quizAttempts?.[quiz.id] || 0); // before this attempt
-        const withinAttemptLimit = previousAttempts < 2;
-        
+        // Important: +1 because the attempt has just finished. So a user's 2nd attempt will show as 2 here.
+        const currentAttemptCount = (currentUserData?.quizAttempts?.[quiz.id] || 0) + 1;
+        const canShowAnswers = currentAttemptCount >= 2;
+
+
         return (
             <div className="flex flex-col items-center justify-center p-4 h-full overflow-y-auto">
                  <Card className="w-full max-w-2xl text-center">
@@ -166,37 +170,58 @@ export function QuizInterface({ quiz, onClose }: QuizInterfaceProps) {
                            <p className="text-6xl font-bold tracking-tight">{score} <span className="text-3xl text-muted-foreground">/ {quiz.questions.length}</span></p>
                         </div>
                         
-                        {isPerfectScore && withinAttemptLimit && !alreadyPerfected && (
+                        {isPerfectScore && !alreadyPerfected && (
                              <div className="flex items-center justify-center gap-2 rounded-lg border border-green-500/50 bg-green-500/10 p-3 text-green-700 dark:text-green-300">
                                 <CheckCircle className="h-5 w-5"/>
                                 <p className="font-semibold">Awesome! You earned {quiz.reward} bonus credits!</p>
                             </div>
                         )}
-                        {isPerfectScore && !withinAttemptLimit && !alreadyPerfected && (
-                             <div className="flex items-center justify-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-destructive">
-                                <XCircle className="h-5 w-5"/>
-                                <p className="font-semibold">Perfect score, but reward is only for the first 2 attempts.</p>
-                            </div>
-                        )}
+                        
                          {isPerfectScore && alreadyPerfected && (
                              <div className="flex items-center justify-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
                                 <Trophy className="h-5 w-5"/>
                                 <p className="font-semibold">Perfect score! You've already earned the reward for this quiz.</p>
                             </div>
                         )}
+                        
+                        {currentAttemptCount >= 2 && !isPerfectScore && !alreadyPerfected && (
+                             <div className="flex items-center justify-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-3 text-destructive">
+                                <XCircle className="h-5 w-5"/>
+                                <p className="font-semibold">Reward is only for a perfect score within your first 2 attempts.</p>
+                            </div>
+                        )}
 
                         <div className="space-y-3 pt-4">
-                             <h4 className="font-semibold text-left">Review Your Answers:</h4>
+                             <div className="flex justify-between items-center">
+                                <h4 className="font-semibold text-left">Review Your Answers:</h4>
+                                {canShowAnswers && !showAnswers && (
+                                    <Button variant="secondary" size="sm" onClick={() => setShowAnswers(true)}>
+                                        <Eye className="mr-2 h-4 w-4"/> Show Answers
+                                    </Button>
+                                )}
+                             </div>
                              <div className="max-h-48 overflow-y-auto space-y-2 text-left p-3 border rounded-md bg-muted/50">
-                                {quiz.questions.map((q, i) => (
-                                     <div key={q.id || i} className="flex justify-between items-center text-sm p-2 rounded-md bg-background">
-                                        <p className="flex-1 pr-4">{i + 1}. {q.text}</p>
-                                        {selectedAnswers[i] === q.correctAnswer ? 
-                                            <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0"/> : 
-                                            <XCircle className="h-5 w-5 text-destructive flex-shrink-0"/>
-                                        }
-                                     </div>
-                                ))}
+                                {quiz.questions.map((q, i) => {
+                                    const userAnswer = selectedAnswers[i];
+                                    const isCorrect = userAnswer === q.correctAnswer;
+                                    return (
+                                        <div key={q.id || i} className={cn("p-2 rounded-md bg-background transition-all", !isCorrect && "border-l-4 border-destructive/50")}>
+                                            <div className="flex justify-between items-center text-sm">
+                                                <p className="flex-1 pr-4">{i + 1}. {q.text}</p>
+                                                {isCorrect ? 
+                                                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0"/> : 
+                                                    <XCircle className="h-5 w-5 text-destructive flex-shrink-0"/>
+                                                }
+                                            </div>
+                                            {showAnswers && !isCorrect && (
+                                                <div className="mt-2 text-xs border-t pt-2">
+                                                    <p>Your answer: <span className="font-semibold">{userAnswer || 'Not Answered'}</span></p>
+                                                    <p>Correct answer: <span className="font-semibold text-green-600">{q.correctAnswer}</span></p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                              </div>
                         </div>
 
