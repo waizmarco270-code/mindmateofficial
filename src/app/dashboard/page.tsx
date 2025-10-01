@@ -185,7 +185,16 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
     
      return (
         <div>
-            <Carousel className="w-full" opts={{ loop: showcases.length > 1 }}>
+            <Carousel 
+                className="w-full"
+                plugins={[
+                    Autoplay({
+                      delay: 5000,
+                      stopOnInteraction: true,
+                    }),
+                ]}
+                opts={{ loop: showcases.length > 1 }}
+            >
                 <CarouselContent>
                     {showcases.map((showcase) => {
                         const isLive = showcase.status === 'live';
@@ -313,7 +322,6 @@ export default function DashboardPage() {
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
     const [isExploreZoneOpen, setIsExploreZoneOpen] = useState(false);
-    const [isFeatureShowcaseOpen, setIsFeatureShowcaseOpen] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
     const [isTypingAnimationDone, setIsTypingAnimationDone] = useState(false);
     
@@ -360,46 +368,7 @@ export default function DashboardPage() {
 
        <div className="flex flex-col space-y-8">
         <SignedIn>
-            <AnimatePresence mode="wait">
-                {isFeatureShowcaseOpen ? (
-                    <motion.div
-                        key="showcase-view"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                    >
-                        <ShowcaseView showcases={featureShowcases} />
-                    </motion.div>
-                ) : (
-                    <motion.div
-                        key="showcase-gateway"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                    >
-                        <Card 
-                            className="relative group overflow-hidden cursor-pointer bg-gradient-to-tr from-purple-500/20 via-sky-500/20 to-blue-600/20 border-primary/20 hover:border-primary/40 transition-all duration-300"
-                            onClick={() => setIsFeatureShowcaseOpen(true)}
-                        >
-                             <div className="absolute inset-0 w-full h-full overflow-hidden [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]">
-                                <div className="absolute inset-0 bg-grid-slate-800 animate-pulse" style={{ animationDuration: '4s' }}></div>
-                            </div>
-                            <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center items-center">
-                                <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-primary/20 rounded-full blur-3xl" style={{ animationDuration: '3s' }}></div>
-                                <motion.div
-                                    animate={{ y: [0, -10, 0], scale: [1, 1.05, 1] }}
-                                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                                >
-                                    <SparklesIcon className="h-10 w-10 text-sky-400 [filter:drop-shadow(0_0_8px_currentColor)]"/>
-                                </motion.div>
-                                <h3 className="text-2xl font-bold mt-2">Tap to See Latest & Upcoming Features</h3>
-                                <p className="text-sm text-muted-foreground">Don't miss out on what's new!</p>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-
+            <ShowcaseView showcases={featureShowcases} />
             <GlobalGiftCard />
 
              <div className="grid grid-cols-2 gap-4">
