@@ -1067,6 +1067,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         return true;
     };
 
+
     // Announcement functions
     const addAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
         await addDoc(collection(db, 'announcements'), { ...announcement, createdAt: serverTimestamp() });
@@ -1496,5 +1497,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
