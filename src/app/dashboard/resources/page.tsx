@@ -15,48 +15,54 @@ const resourceCategories = [
         description: "Comprehensive notes, guides, and practice materials for your board exams.",
         icon: GraduationCap,
         href: "/dashboard/resources/class-10",
-        color: "from-blue-500 to-sky-500",
-        shadow: "shadow-blue-500/30"
+        color: "from-blue-800 via-slate-900 to-slate-900",
+        shadow: "shadow-blue-500/20",
+        iconColor: 'text-blue-400',
     },
     {
         title: "Class 12 Resources",
         description: "Advanced materials, previous year papers, and in-depth guides for all streams.",
         icon: GraduationCap,
         href: "/dashboard/resources/class-12",
-        color: "from-purple-500 to-indigo-500",
-        shadow: "shadow-purple-500/30"
+        color: "from-purple-800 via-slate-900 to-slate-900",
+        shadow: "shadow-purple-500/20",
+        iconColor: 'text-purple-400',
     },
     {
         title: "JEE Resources",
         description: "Unlock premium content for Mains and Advanced, including mock tests and formula sheets.",
         icon: Rocket,
         href: "/dashboard/resources/jee",
-        color: "from-amber-500 to-orange-500",
-        shadow: "shadow-amber-500/30"
+        color: "from-amber-800 via-slate-900 to-slate-900",
+        shadow: "shadow-amber-500/20",
+        iconColor: 'text-amber-400',
     },
     {
         title: "NEET Resources",
         description: "Specialized study materials for medical aspirants, covering biology, physics, and chemistry.",
         icon: Stethoscope,
         href: "/dashboard/resources/neet",
-        color: "from-green-500 to-emerald-500",
-        shadow: "shadow-green-500/30"
+        color: "from-green-800 via-slate-900 to-slate-900",
+        shadow: "shadow-green-500/20",
+        iconColor: 'text-green-400',
     },
     {
         title: "Class 6-9 Resources",
         description: "Foundational concepts, interactive guides, and practice exercises for middle school.",
         icon: BrainCircuit,
         href: "/dashboard/resources/class-6-9",
-        color: "from-rose-500 to-red-500",
-        shadow: "shadow-rose-500/30"
+        color: "from-rose-800 via-slate-900 to-slate-900",
+        shadow: "shadow-rose-500/20",
+        iconColor: 'text-rose-400',
     },
     {
         title: "General Resources",
         description: "A collection of free, useful documents and links to aid your studies.",
         icon: BookMarked,
         href: "/dashboard/resources/general",
-        color: "from-slate-500 to-gray-500",
-        shadow: "shadow-slate-500/30"
+        color: "from-slate-800 via-slate-900 to-slate-900",
+        shadow: "shadow-slate-500/20",
+        iconColor: 'text-slate-400',
     },
 ]
 
@@ -69,7 +75,7 @@ export default function ResourcesHubPage() {
                 <p className="text-muted-foreground">Your central hub for all study materials. Select a category to begin.</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                 {resourceCategories.map((category, index) => (
                     <motion.div
                         key={category.title}
@@ -78,30 +84,17 @@ export default function ResourcesHubPage() {
                         transition={{ duration: 0.5, delay: index * 0.1 }}
                         className="h-full"
                     >
-                        <Link href={category.href} className="block h-full group">
-                           <Card className={cn(
-                               "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1 bg-slate-900 border-slate-800",
-                               category.shadow
-                            )}>
-                               <div className={cn("absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity duration-300 bg-gradient-to-tr", category.color)}></div>
-                               <CardHeader>
-                                   <div className="flex items-center gap-4">
-                                       <div className={cn("p-3 rounded-lg bg-gradient-to-br from-slate-800 to-slate-700 border border-slate-600")}>
-                                            <category.icon className="h-6 w-6 text-white"/>
-                                       </div>
-                                       <CardTitle className="text-xl">{category.title}</CardTitle>
-                                   </div>
-                               </CardHeader>
-                               <CardContent>
-                                   <p className="text-muted-foreground">{category.description}</p>
-                               </CardContent>
-                               <CardFooter>
-                                    <Button variant="outline" className="w-full bg-slate-800/50 border-slate-700 group-hover:bg-slate-800 group-hover:border-slate-600 transition-colors">
-                                       View Resources <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                                   </Button>
-                               </CardFooter>
-                           </Card>
-                        </Link>
+                         <Link href={category.href} className="group block h-full">
+                           <Card className={cn("group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg transition-all duration-300 flex flex-col justify-center h-full", category.shadow)}>
+                                <div className={cn("absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 z-0 opacity-80", category.color)}></div>
+                                <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <CardContent className="p-4 sm:p-6 text-center relative z-10 space-y-3">
+                                    <category.icon className={cn("h-10 w-10 mx-auto", category.iconColor)} />
+                                    <h3 className="text-lg font-semibold">{category.title}</h3>
+                                    <p className="text-xs text-slate-400 hidden sm:block">{category.description}</p>
+                                </CardContent>
+                            </Card>
+                         </Link>
                     </motion.div>
                 ))}
             </div>
@@ -109,4 +102,3 @@ export default function ResourcesHubPage() {
         </div>
     );
 }
-
