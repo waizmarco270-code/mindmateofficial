@@ -169,11 +169,13 @@ export function MathematicsLegendGame() {
                 setHighScore(nextLevel);
                 if (user) updateGameHighScore(user.id, 'mathematicsLegend', nextLevel);
             }
-
+            
+            // Check for milestone every 5 levels
             if (nextLevel % 5 === 0 && !claimedMilestones.includes(nextLevel) && user) {
                 const success = await claimMathematicsLegendMilestone(user.id, nextLevel);
                 if(success) {
                     toast({ title: "Milestone!", description: "+5 credits earned!", className: "bg-primary/10 text-primary" });
+                    setClaimedMilestones(prev => [...prev, nextLevel]); // Optimistic update
                 }
             }
 
@@ -221,7 +223,7 @@ export function MathematicsLegendGame() {
                                 <span>Level: {level}</span>
                                 <span>High Score: {highScore}</span>
                             </div>
-                            <Progress value={(timeLeft / currentQuestion.time) * 100} className="h-2" indicatorClassName={timeLeft <= 5 ? "bg-destructive" : ""} />
+                            <Progress value={(timeLeft / currentQuestion.time) * 100} indicatorClassName={timeLeft <= 5 ? "bg-destructive" : ""} className="h-2"/>
                             
                             <div className="py-10 bg-muted rounded-lg">
                                 <p className="text-4xl font-bold font-mono tracking-wider">{currentQuestion.question}</p>
@@ -258,5 +260,3 @@ export function MathematicsLegendGame() {
         </Card>
     );
 }
-
-    
