@@ -3,14 +3,8 @@
 import { useMemo, useState } from 'react';
 import { User } from '@/hooks/use-admin';
 import { Quiz } from '@/hooks/use-quizzes';
-import { Award, Brain, Clock, Flame, Zap, CheckCircle, BarChart3, List } from 'lucide-react';
+import { Award, Brain, Clock, Flame, Zap, CheckCircle, BarChart3, List, Star, Sun } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip"
 import {
     Dialog,
     DialogContent,
@@ -19,6 +13,8 @@ import {
     DialogTrigger,
 } from '@/components/ui/dialog';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
+import { AnimatePresence, motion } from 'framer-motion';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 
 interface StatBranch {
   id: 'studyTime' | 'focusSessions' | 'quizzes' | 'streak' | 'credits';
@@ -35,10 +31,6 @@ interface ProgressConstellationProps {
   user: User;
   quizzes: Quiz[];
 }
-
-const normalize = (value: number, max: number) => {
-  return Math.max(0, Math.min(value / max, 1));
-};
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -72,19 +64,19 @@ export function ProgressConstellation({ user, quizzes }: ProgressConstellationPr
         });
         return Object.entries(subjectTimes).sort(([, a], [, b]) => b - a);
     }, [sessions, user.uid]);
-
-    const branches: StatBranch[] = [
-        { id: 'studyTime', label: 'Total Study Time', value: stats.studyTime, Icon: Clock, max: 360000, unit: 'h', position: { top: '0', left: '50%' }, color: 'text-sky-400' },
-        { id: 'focusSessions', label: 'Focus Sessions', value: stats.focusSessions, Icon: Zap, max: 100, unit: '', position: { top: '30%', right: '5%' }, color: 'text-yellow-400' },
-        { id: 'quizzes', label: 'Quizzes Perfected', value: stats.quizzes, Icon: Brain, max: 50, unit: '', position: { top: '30%', left: '5%' }, color: 'text-purple-400' },
-        { id: 'streak', label: 'Longest Streak', value: stats.streak, Icon: Flame, max: 100, unit: ' days', position: { bottom: '10%', left: '20%' }, color: 'text-orange-400' },
-        { id: 'credits', label: 'Credits Earned', value: stats.credits, Icon: Award, max: 5000, unit: '', position: { bottom: '10%', right: '20%' }, color: 'text-green-400' },
-    ];
-  
-    const formatValue = (value: number, unit: string) => {
+    
+     const formatValue = (value: number, unit: string) => {
         if (unit === 'h') return `${(value / 3600).toFixed(1)}h`;
         return `${value.toLocaleString()}${unit}`;
     }
+
+    const branches: StatBranch[] = [
+        { id: 'studyTime', label: 'Total Study Time', value: stats.studyTime, Icon: Clock, max: 360000, unit: 'h', position: { top: '0', left: '50%' }, color: 'text-sky-400' },
+        { id: 'focusSessions', label: 'Focus Sessions', value: stats.focusSessions, Icon: Zap, max: 100, unit: '', position: { top: '25%', right: '0' }, color: 'text-yellow-400' },
+        { id: 'quizzes', label: 'Quizzes Perfected', value: stats.quizzes, Icon: Brain, max: 50, unit: '', position: { top: '25%', left: '0' }, color: 'text-purple-400' },
+        { id: 'streak', label: 'Longest Streak', value: stats.streak, Icon: Flame, max: 100, unit: ' days', position: { bottom: '5%', left: '15%' }, color: 'text-orange-400' },
+        { id: 'credits', label: 'Credits Earned', value: stats.credits, Icon: Award, max: 5000, unit: '', position: { bottom: '5%', right: '15%' }, color: 'text-green-400' },
+    ];
     
     const renderDialogContent = () => {
         if (!selectedStat) return null;
@@ -134,58 +126,70 @@ export function ProgressConstellation({ user, quizzes }: ProgressConstellationPr
 
   return (
     <Dialog onOpenChange={(isOpen) => !isOpen && setSelectedStat(null)}>
-        <TooltipProvider>
-            <div className="relative h-96 w-full flex items-center justify-center">
-                {/* Central Node */}
-                <div className="z-10 h-24 w-24 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center flex-col shadow-lg shadow-primary/20">
-                    <Brain className="h-10 w-10 text-primary" />
-                    <span className="text-xs font-bold text-primary mt-1">CORE</span>
+        <div className="relative h-96 w-full max-w-lg mx-auto flex items-center justify-center p-4">
+             {/* Background Glow */}
+            <div className="absolute inset-0 bg-primary/5 blur-[50px] rounded-full"></div>
+            
+            {/* Central Node */}
+            <motion.div 
+                className="relative z-10"
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.5, type: 'spring' }}
+            >
+                <div className="h-32 w-32 rounded-full bg-gradient-to-br from-yellow-400/20 to-amber-500/20 flex items-center justify-center p-1 border-2 border-yellow-400/30">
+                    <Avatar className="h-full w-full">
+                        <AvatarImage src={user.photoURL ?? undefined} alt={user.displayName} />
+                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                    </Avatar>
                 </div>
+                 <Sun className="absolute -top-4 -left-4 h-10 w-10 text-yellow-400 animate-pulse" style={{filter: 'drop-shadow(0 0 5px currentColor)'}} />
+            </motion.div>
 
-                {/* Branches */}
-                {branches.map(branch => {
-                    const progress = normalize(branch.value, branch.max);
-                    const size = 3 + progress * 4; // size in rem (48px to 112px)
-                    
-                    return (
-                        <div key={branch.id} className="absolute -translate-x-1/2 -translate-y-1/2" style={branch.position}>
-                             <Tooltip>
-                                <DialogTrigger asChild>
-                                    <TooltipTrigger asChild>
-                                        <button className="relative flex items-center justify-center group">
-                                            {/* Branch Line */}
-                                            <div
-                                                className="absolute h-px w-24 bg-gradient-to-l from-primary/50 to-transparent"
-                                                style={{ transform: `rotate(${branch.id === 'studyTime' ? 90 : branch.id === 'focusSessions' ? 180 : branch.id === 'quizzes' ? 0 : branch.id === 'streak' ? 45 : -45}deg) scaleX(${progress})`, transformOrigin: 'right center' }}
-                                            />
-                                            {/* End Node (Leaf) */}
-                                            <div
-                                                className={cn("relative flex items-center justify-center rounded-full border-2 border-primary/30 bg-slate-900 transition-all duration-500 ease-out z-10 group-hover:scale-110", branch.color)}
-                                                style={{ 
-                                                    width: `${size}rem`,
-                                                    height: `${size}rem`,
-                                                    boxShadow: `0 0 ${progress * 15}px`,
-                                                }}
-                                                onClick={() => setSelectedStat(branch)}
-                                            >
-                                                <branch.Icon className="h-1/2 w-1/2" style={{ opacity: 0.6 + progress * 0.4 }} />
-                                            </div>
-                                        </button>
-                                    </TooltipTrigger>
-                                </DialogTrigger>
-                                <TooltipContent>
-                                    <div className="flex items-center gap-2">
-                                        <branch.Icon className="h-4 w-4"/>
-                                        <span className="font-bold">{branch.label}:</span>
-                                        <span>{formatValue(branch.value, branch.unit)}</span>
-                                    </div>
-                                </TooltipContent>
-                            </Tooltip>
-                        </div>
-                    )
-                })}
-            </div>
-        </TooltipProvider>
+            {/* Stat Nodes (Stars) */}
+            <AnimatePresence>
+            {branches.map((branch, index) => {
+                 const angle = (index / branches.length) * 2 * Math.PI + (Math.PI / 5);
+                 const radius = 150; // pixels
+                 const x = radius * Math.cos(angle);
+                 const y = radius * Math.sin(angle);
+                
+                return (
+                     <motion.div
+                        key={branch.id}
+                        className="absolute z-20 flex flex-col items-center gap-1"
+                        initial={{ x: 0, y: 0, scale: 0, opacity: 0 }}
+                        animate={{ x, y, scale: 1, opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.3 + index * 0.1, type: 'spring', stiffness: 100 }}
+                    >
+                         {/* Connecting Line */}
+                        <svg className="absolute overflow-visible" style={{transform: `rotate(${angle * (180/Math.PI) + 180}deg)`}}>
+                            <motion.line 
+                                x1="0" y1="0" x2={radius - 20} y2="0" 
+                                stroke="hsl(var(--primary) / 0.2)" 
+                                strokeWidth="1"
+                                initial={{ pathLength: 0 }}
+                                animate={{ pathLength: 1 }}
+                                transition={{ duration: 0.5, delay: 0.6 + index * 0.1 }}
+                            />
+                        </svg>
+
+                         <DialogTrigger asChild>
+                            <motion.button 
+                                onClick={() => setSelectedStat(branch)}
+                                className="group"
+                                whileHover={{ scale: 1.2, zIndex: 50 }}
+                            >
+                                <Star className="h-8 w-8 text-yellow-400/70 fill-yellow-400/30 group-hover:fill-yellow-400/60 transition-colors duration-300" style={{filter: 'drop-shadow(0 0 8px hsl(var(--primary)/20%))'}} />
+                            </motion.button>
+                         </DialogTrigger>
+                        <span className="text-xs font-bold text-slate-400 pointer-events-none">{branch.label}</span>
+                     </motion.div>
+                )
+            })}
+            </AnimatePresence>
+
+        </div>
 
          <DialogContent>
             {selectedStat && (
