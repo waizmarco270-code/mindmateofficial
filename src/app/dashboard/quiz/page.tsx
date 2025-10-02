@@ -43,7 +43,7 @@ export default function QuizZoneHubPage() {
         <p className="text-muted-foreground">Select a category to test your knowledge, compete, and earn credits!</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-2 gap-4 md:gap-6">
         {Object.entries(categoryDetails).map(([key, details], index) => {
            const { Icon, title, description, gradient, shadow } = details;
            return (
@@ -59,15 +59,15 @@ export default function QuizZoneHubPage() {
                     "before:absolute before:inset-0 before:w-full before:h-full before:opacity-10 before:bg-gradient-to-t before:from-background",
                     "after:absolute after:w-full after:h-full after:bg-gradient-to-tr after:from-primary/0 after:via-primary/20 after:to-primary/0 after:animate-shimmer after:inset-0 after:rounded-xl after:opacity-0 group-hover:after:opacity-100 after:duration-500"
                 )}>
-                  <div className={cn("relative z-10 flex h-full flex-col justify-between rounded-xl p-6", gradient)}>
+                  <div className={cn("relative z-10 flex h-full flex-col justify-between rounded-xl p-4", gradient)}>
                       <div className="flex items-start justify-between">
-                          <div className="space-y-2">
-                              <h3 className="text-2xl font-bold text-white [text-shadow:_0_2px_4px_rgb(0_0_0_/_40%)]">{title}</h3>
-                              <p className="text-sm text-white/80">{description}</p>
+                          <div className="space-y-1">
+                              <h3 className="text-xl font-bold text-white [text-shadow:_0_2px_4px_rgb(0_0_0_/_40%)]">{title}</h3>
+                              <p className="text-xs text-white/80">{description}</p>
                           </div>
-                          <Icon className="h-10 w-10 text-white/50 transition-transform duration-300 group-hover:scale-125" />
+                          <Icon className="h-8 w-8 text-white/50 transition-transform duration-300 group-hover:scale-110" />
                       </div>
-                      <div className="mt-8 text-right text-sm font-semibold text-white/90 transition-transform duration-300 group-hover:translate-x-1">
+                      <div className="mt-6 text-right text-sm font-semibold text-white/90 transition-transform duration-300 group-hover:translate-x-1">
                           Explore &rarr;
                       </div>
                   </div>
