@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { Progress } from '../ui/progress';
 import { LoginWall } from '../ui/login-wall';
 import { startOfWeek, format } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+
 
 interface LevelData {
     question: string;
@@ -21,61 +23,97 @@ interface LevelData {
     time: number;
 }
 
+// Generates a random integer between min (inclusive) and max (inclusive)
+const randInt = (min: number, max: number) => Math.floor(Math.random() * (max - min + 1)) + min;
+
 const generateQuestion = (level: number): LevelData => {
     let question = '';
     let answer = 0;
     const options: number[] = [];
-    const time = Math.max(10, 30 - Math.floor(level / 2));
+    // Time decreases as level increases, minimum 10 seconds
+    const time = Math.max(10, 35 - Math.floor(level / 1.5));
 
-    if (level <= 10) { // Basic Arithmetic
-        const a = Math.floor(Math.random() * (level * 5)) + 1;
-        const b = Math.floor(Math.random() * (level * 5)) + 1;
-        if (level <= 5) {
+    if (level <= 5) { // Basic Addition/Subtraction
+        const a = randInt(level * 2, level * 10);
+        const b = randInt(level * 2, level * 10);
+        if (Math.random() > 0.5) {
             question = `${a} + ${b} = ?`;
             answer = a + b;
         } else {
-            if (Math.random() > 0.5) {
-                question = `${a} + ${b} = ?`;
-                answer = a + b;
-            } else {
-                const c = Math.max(a, b);
-                const d = Math.min(a, b);
-                question = `${c} - ${d} = ?`;
-                answer = c - d;
+            question = `${a + b} - ${b} = ?`;
+            answer = a;
+        }
+    } else if (level <= 15) { // Multiplication & Division
+        const a = randInt(level, level + 10);
+        const b = randInt(2, 12);
+        if (Math.random() > 0.5) {
+            question = `${a} × ${b} = ?`;
+            answer = a * b;
+        } else {
+            question = `${a * b} ÷ ${b} = ?`;
+            answer = a;
+        }
+    } else if (level <= 25) { // Two-step equations
+        const a = randInt(2, 10);
+        const b = randInt(5, 25);
+        const x = randInt(3, 15);
+        if (Math.random() > 0.5) {
+            question = `${a}x + ${b} = ${a * x + b}`;
+            answer = x;
+        } else {
+             question = `${a}x - ${b} = ${a * x - b}`;
+            answer = x;
+        }
+    } else if (level <= 35) { // Percentages and Squares
+         if (Math.random() > 0.5) {
+            const perc = randInt(10, 50);
+            const num = randInt(20, 200);
+            question = `${perc}% of ${num} = ?`;
+            answer = (perc / 100) * num;
+        } else {
+            const base = randInt(level - 20, level - 10);
+            question = `${base}² = ?`;
+            answer = base * base;
+        }
+    } else if (level <= 49) { // Multi-step / Simple Quadratics
+        const a = randInt(2, 5);
+        const root1 = randInt(1, 10);
+        const root2 = randInt(-5, 12);
+        if (Math.random() > 0.6) { // Quadratic
+            // (x - r1)(x - r2) = x^2 - (r1+r2)x + r1*r2
+            const c = root1 * root2;
+            const b = -(root1 + root2);
+            question = `Find a root of: x² ${b >= 0 ? '+' : '-'} ${Math.abs(b)}x ${c >= 0 ? '+' : '-'} ${Math.abs(c)} = 0`;
+            answer = Math.random() > 0.5 ? root1 : root2;
+        } else { // Multi-step linear
+            const x = randInt(5, 15);
+            const b = randInt(10, 50);
+            const c = randInt(10, 50);
+            question = `${a}(x + ${b}) = ${c}`;
+            // ax + ab = c => x = (c - ab) / a
+            answer = (c - a*b) / a;
+            // Ensure integer answer for simplicity
+             if(!Number.isInteger(answer)) {
+                return generateQuestion(level); // Recurse if answer is not an integer
             }
         }
-    } else if (level <= 25) { // Multiplication & Division
-        const a = Math.floor(Math.random() * level) + 1;
-        const b = Math.floor(Math.random() * 10) + 1;
-        if (level <= 15) {
-             question = `${a} × ${b} = ?`;
-             answer = a * b;
-        } else {
-            if (Math.random() > 0.5) {
-                question = `${a} × ${b} = ?`;
-                answer = a * b;
-            } else {
-                answer = a;
-                question = `${a * b} ÷ ${b} = ?`;
-            }
-        }
-    } else { // Simple Algebra
-        const a = Math.floor(Math.random() * 10) + 1;
-        const b = Math.floor(Math.random() * 20) + 1;
-        const c = Math.floor(Math.random() * 20) + 1;
-        if (level <= 40) {
-            question = `${a}x + ${b} = ${a*c + b}`;
-            answer = c;
-        } else {
-            question = `${a}x - ${b} = ${a*c - b}`;
-            answer = c;
-        }
+    } else { // Level 50 - The Legend Challenge
+        const a = randInt(11, 20);
+        const b = randInt(21, 30);
+        question = `(${a} + ${b}) × (${b - a}) = ?`;
+        answer = (a+b) * (b-a); // (b^2 - a^2)
     }
     
+    // Generate distractors
     options.push(answer);
     while (options.length < 4) {
-        const wrongAnswer = answer + (Math.floor(Math.random() * 10) + 1) * (Math.random() > 0.5 ? 1 : -1);
-        if (!options.includes(wrongAnswer) && wrongAnswer !== answer && wrongAnswer > 0) {
+        let wrongAnswer;
+        if(answer > 100) {
+            wrongAnswer = answer + randInt(-20, 20);
+        } else {
+            wrongAnswer = randInt(Math.max(1, answer - 15), answer + 15);
+        }
+        if (!options.includes(wrongAnswer) && wrongAnswer !== answer) {
             options.push(wrongAnswer);
         }
     }
@@ -93,7 +131,7 @@ export function MathematicsLegendGame() {
     const [currentQuestion, setCurrentQuestion] = useState<LevelData | null>(null);
     const [timeLeft, setTimeLeft] = useState(30);
     const [highScore, setHighScore] = useState(0);
-    const [claimedMilestones, setClaimedMilestones] = useState<number[]>([]);
+    const [claimedFinalReward, setClaimedFinalReward] = useState(false);
     
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -101,12 +139,13 @@ export function MathematicsLegendGame() {
         if(currentUserData?.gameHighScores?.mathematicsLegend) {
             setHighScore(currentUserData.gameHighScores.mathematicsLegend);
         }
-        if (user && currentUserData?.mathematicsLegendClaims) {
-            const weeklyClaims = currentUserData.mathematicsLegendClaims;
-            const currentWeekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-            setClaimedMilestones(weeklyClaims[currentWeekKey] || []);
+        if (currentUserData?.mathematicsLegendClaims) {
+            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+            if (currentUserData.mathematicsLegendClaims[weekKey]?.includes(50)) {
+                setClaimedFinalReward(true);
+            }
         }
-    }, [currentUserData, user]);
+    }, [currentUserData]);
 
     const stopTimer = () => {
         if (timerRef.current) clearInterval(timerRef.current);
@@ -165,20 +204,11 @@ export function MathematicsLegendGame() {
             toast({ title: `Level ${level} Passed!`, className: "bg-green-500/10 text-green-700 border-green-500/50" });
             
             const nextLevel = level + 1;
-            if (nextLevel > highScore) {
+             if (nextLevel > highScore) {
                 setHighScore(nextLevel);
                 if (user) updateGameHighScore(user.id, 'mathematicsLegend', nextLevel);
             }
             
-            // Check for milestone every 5 levels
-            if (nextLevel % 5 === 0 && !claimedMilestones.includes(nextLevel) && user) {
-                const success = await claimMathematicsLegendMilestone(user.id, nextLevel);
-                if(success) {
-                    toast({ title: "Milestone!", description: "+5 credits earned!", className: "bg-primary/10 text-primary" });
-                    setClaimedMilestones(prev => [...prev, nextLevel]); // Optimistic update
-                }
-            }
-
             setTimeout(() => {
                 setLevel(nextLevel);
                 setupLevel(nextLevel);
@@ -191,6 +221,17 @@ export function MathematicsLegendGame() {
         }
     };
     
+    const handleClaimReward = async () => {
+        if (!user) return;
+        const success = await claimMathematicsLegendMilestone(user.id, 50);
+        if (success) {
+            toast({title: "Jackpot!", description: "200 Credits have been added to your account!"});
+            setClaimedFinalReward(true);
+        } else {
+            toast({variant: 'destructive', title: "Claim Failed", description: "You might have already claimed this weekly reward."})
+        }
+    }
+    
     return (
         <Card className="w-full max-w-lg mx-auto relative">
              <SignedOut>
@@ -200,7 +241,7 @@ export function MathematicsLegendGame() {
                 <CardTitle>Mathematics Legend</CardTitle>
                 <CardDescription>Solve 50 levels of math problems against the clock.</CardDescription>
             </CardHeader>
-            <CardContent className="min-h-[400px] flex flex-col justify-center items-center">
+             <CardContent className="min-h-[400px] flex flex-col justify-center items-center">
                 <AnimatePresence mode="wait">
                     {gameState === 'idle' && (
                         <motion.div key="idle" initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center space-y-4">
@@ -208,13 +249,35 @@ export function MathematicsLegendGame() {
                         </motion.div>
                     )}
                     {(gameState === 'gameOver' || gameState === 'completed') && (
-                        <motion.div key="end" initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center space-y-4">
+                        <motion.div key="end" initial={{opacity:0, scale:0.8}} animate={{opacity:1, scale:1}} className="text-center space-y-4 p-4">
                              <Trophy className={cn("h-16 w-16 mx-auto", gameState === 'completed' ? 'text-yellow-400' : 'text-muted-foreground')}/>
                              <h2 className="text-3xl font-bold">
                                 {gameState === 'completed' ? 'You are a Mathematics Legend!' : 'Game Over'}
                             </h2>
                             <p className="text-muted-foreground">You reached level {level}. Your high score is {highScore}.</p>
-                            <Button onClick={startGame}><RotateCw className="mr-2"/> Play Again</Button>
+                            {gameState === 'completed' && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button className="bg-green-600 hover:bg-green-700" disabled={claimedFinalReward}>
+                                            <Award className="mr-2"/>
+                                            {claimedFinalReward ? "Reward Claimed" : "Claim 200 Credits"}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Claim Your Legendary Reward?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will award you 200 credits for completing all 50 levels. This reward can be claimed once per week.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleClaimReward}>Claim Now</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                            <Button onClick={startGame} variant={gameState === 'completed' ? "outline" : "default"}>
+                                <RotateCw className="mr-2 h-4 w-4"/> Play Again
+                            </Button>
                         </motion.div>
                     )}
                     {gameState === 'playing' && currentQuestion && (
@@ -225,7 +288,7 @@ export function MathematicsLegendGame() {
                             </div>
                             <Progress value={(timeLeft / currentQuestion.time) * 100} indicatorClassName={timeLeft <= 5 ? "bg-destructive" : ""} className="h-2"/>
                             
-                            <div className="py-10 bg-muted rounded-lg">
+                            <div className="py-10 bg-muted rounded-lg min-h-[120px] flex items-center justify-center">
                                 <p className="text-4xl font-bold font-mono tracking-wider">{currentQuestion.question}</p>
                             </div>
                             
@@ -239,23 +302,6 @@ export function MathematicsLegendGame() {
                          </motion.div>
                     )}
                 </AnimatePresence>
-            </CardContent>
-             <CardContent>
-                <div className="pt-4 border-t">
-                    <h4 className="font-bold text-foreground mb-2 text-center">Weekly Milestone Rewards (+5 Credits)</h4>
-                    <div className="flex justify-center gap-2 flex-wrap">
-                        {[...Array(10)].map((_, i) => {
-                            const milestoneLevel = (i + 1) * 5;
-                            const isClaimed = claimedMilestones.includes(milestoneLevel);
-                            return (
-                                <div key={milestoneLevel} className={cn("flex items-center gap-2 p-2 rounded-lg text-xs", isClaimed ? "bg-green-500/10 text-green-500" : "bg-muted")}>
-                                    {isClaimed ? <Check className="h-4 w-4"/> : <Award className="h-4 w-4"/>}
-                                    <span className={cn("font-semibold", isClaimed && "line-through")}>Level {milestoneLevel}</span>
-                                </div>
-                            )
-                        })}
-                    </div>
-                </div>
             </CardContent>
         </Card>
     );

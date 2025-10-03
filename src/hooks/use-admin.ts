@@ -1042,7 +1042,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         
         return true;
     };
-
+    
     const claimMathematicsLegendMilestone = async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
@@ -1052,16 +1052,24 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const weekClaims = userData.mathematicsLegendClaims?.[weekKey] || [];
         
-        if (weekClaims.includes(milestone) || milestone % 5 !== 0) {
+        if (weekClaims.includes(milestone)) return false; // Already claimed this week
+
+        const reward = milestone === 50 ? 200 : 0; // Only reward for level 50
+        if (reward === 0) {
+             // Also update high score if it's a new personal best
+            const currentHighScore = userData.gameHighScores?.mathematicsLegend || 0;
+            if (milestone > currentHighScore) {
+                 await updateDoc(userDocRef, { [`gameHighScores.mathematicsLegend`]: milestone });
+            }
             return false;
         }
 
-        const reward = 5;
         const newClaims = [...weekClaims, milestone];
 
         await updateDoc(userDocRef, {
             credits: increment(reward),
-            [`mathematicsLegendClaims.${weekKey}`]: newClaims
+            [`mathematicsLegendClaims.${weekKey}`]: newClaims,
+            [`gameHighScores.mathematicsLegend`]: Math.max(userData.gameHighScores?.mathematicsLegend || 0, milestone),
         });
 
         return true;
