@@ -1,7 +1,7 @@
 
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Dice5, BrainCircuit } from "lucide-react";
+import { ArrowLeft, Dice5, BrainCircuit, Copy } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -13,6 +13,13 @@ const memoryGames = [
         icon: BrainCircuit,
         href: "/dashboard/game-zone/memory/memory-pattern",
         color: "from-green-500 to-emerald-500",
+    },
+    {
+        title: "Cognitive Cards",
+        description: "Match pairs of cards to test your visual recall.",
+        icon: Copy,
+        href: "/dashboard/game-zone/memory/cognitive-cards",
+        color: "from-blue-500 to-sky-500",
     }
 ];
 
