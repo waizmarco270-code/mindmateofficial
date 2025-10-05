@@ -6,10 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CrystalGrowth } from '@/components/reward/crystal-growth';
 import { ScratchCard } from '@/components/reward/scratch-card';
 import { CardFlipGame } from '@/components/reward/gift-box-game';
-import { Gift, History, Gem, Layers, VenetianMask, Award, Loader2 } from 'lucide-react';
+import { Gift, History, Gem, Layers, VenetianMask, Award, Loader2, CalendarCheck, TreasureChest } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useRewards } from '@/hooks/use-rewards';
 import { formatDistanceToNow } from 'date-fns';
+import { DailyLoginReward } from '@/components/reward/daily-login-reward';
 
 function RecentWinnings() {
     const { rewardHistory, loading } = useRewards();
@@ -70,9 +71,10 @@ export default function RewardZoneHubPage() {
                 <p className="text-muted-foreground">Claim your daily rewards and test your luck for a chance to win prizes!</p>
             </div>
             
-            <Tabs defaultValue="crystal-growth" className="w-full">
+            <Tabs defaultValue="daily-login" className="w-full">
                 <ScrollArea className="w-full whitespace-nowrap rounded-lg">
                     <TabsList className="inline-flex h-auto">
+                        <TabsTrigger value="daily-login" className="w-auto"><TreasureChest className="mr-2"/> Daily Treasury</TabsTrigger>
                         <TabsTrigger value="crystal-growth" className="w-auto"><Gem className="mr-2"/> Crystal Growth</TabsTrigger>
                         <TabsTrigger value="card-flip" className="w-auto flex items-center">
                             <Layers className="mr-2"/> Card Flip
@@ -88,6 +90,7 @@ export default function RewardZoneHubPage() {
                 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
                     <div className="lg:col-span-2">
+                        <TabsContent value="daily-login"><DailyLoginReward /></TabsContent>
                         <TabsContent value="crystal-growth"><CrystalGrowth /></TabsContent>
                         <TabsContent value="card-flip"><CardFlipGame /></TabsContent>
                         <TabsContent value="scratch-card"><ScratchCard /></TabsContent>

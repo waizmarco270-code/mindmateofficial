@@ -36,6 +36,7 @@ export interface User {
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
   isVip?: boolean; // For the special recognition badge
+  vipAccessExpires?: string; // For temporary elite access
   isGM?: boolean; // For the Game Master badge
   isChallenger?: boolean; // For completing a challenge
   isCoDev?: boolean; // For co-developers
@@ -78,7 +79,11 @@ export interface User {
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
-  mathematicsLegendClaims?: Record<string, number[]>;
+  mathematicsLegendClaims?: Record<string, Record<string, number[]>>;
+  dailyLoginRewardState?: {
+      streak: number;
+      lastClaimed: string; // YYYY-MM-DD
+  }
 }
 
 export interface Announcement {
@@ -219,6 +224,7 @@ interface AppDataContextType {
     generateDevAiAccessToken: (uid: string) => Promise<string | null>;
     grantMasterCard: (uid: string, durationDays: number) => Promise<void>;
     revokeMasterCard: (uid: string) => Promise<void>;
+    grantVipAccess: (uid: string, durationDays: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string, duration: number) => Promise<void>;
@@ -336,7 +342,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     // EFFECT: Determine if the logged-in user is an admin or super admin
     useEffect(() => {
         if (isClerkLoaded && authUser && currentUserData) {
-            setIsAdmin(currentUserData.isAdmin ?? false);
+            const hasVipAccess = !!(currentUserData.isVip || (currentUserData.vipAccessExpires && new Date(currentUserData.vipAccessExpires) > new Date()));
+            setIsAdmin(currentUserData.isAdmin || hasVipAccess);
             setIsSuperAdmin(currentUserData.uid === SUPER_ADMIN_UID);
         } else {
             setIsAdmin(false);
@@ -830,6 +837,15 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }, []);
 
+    const grantVipAccess = useCallback(async (uid: string, durationDays: number) => {
+        if (!uid) return;
+        const expirationDate = dateFnsAddDays(new Date(), durationDays);
+        const userDocRef = doc(db, 'users', uid);
+        await updateDoc(userDocRef, {
+            vipAccessExpires: expirationDate.toISOString()
+        });
+    }, []);
+
     const addPerfectedQuiz = async (uid: string, quizId: string) => {
         if(!uid || !quizId) return;
         const userDocRef = doc(db, 'users', uid);
@@ -1043,23 +1059,26 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         return true;
     };
     
-    const claimMathematicsLegendMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+    const claimMathematicsLegendMilestone = useCallback(async (uid: string, milestone: number) => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
+
         if (!userSnap.exists()) return false;
-        
+
         const userData = userSnap.data() as User;
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const weekClaims = userData.mathematicsLegendClaims?.[weekKey] || [];
-        
-        if (weekClaims.includes(milestone)) return false; // Already claimed this week
+
+        if (weekClaims.includes(milestone)) {
+            return false; // Already claimed this week
+        }
 
         const reward = milestone === 50 ? 200 : 0; // Only reward for level 50
         if (reward === 0) {
-             // Also update high score if it's a new personal best
+            // Also update high score if it's a new personal best
             const currentHighScore = userData.gameHighScores?.mathematicsLegend || 0;
             if (milestone > currentHighScore) {
-                 await updateDoc(userDocRef, { [`gameHighScores.mathematicsLegend`]: milestone });
+                await updateDoc(userDocRef, { [`gameHighScores.mathematicsLegend`]: milestone });
             }
             return false;
         }
@@ -1073,8 +1092,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
 
         return true;
-    };
-
+    }, []);
 
     // Announcement functions
     const addAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => {
@@ -1377,6 +1395,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         generateDevAiAccessToken,
         grantMasterCard,
         revokeMasterCard,
+        grantVipAccess,
         addPerfectedQuiz,
         incrementQuizAttempt,
         incrementFocusSessions,

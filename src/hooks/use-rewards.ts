@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
-import { isToday, parseISO, addDays } from 'date-fns';
+import { isToday, parseISO, addDays, isYesterday } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 import { CRYSTAL_TIERS, type CrystalTier } from '@/components/reward/crystal-growth';
@@ -26,7 +26,7 @@ export interface UserCrystal {
 
 export const useRewards = () => {
     const { user } = useUser();
-    const { currentUserData, addCreditsToUser } = useUsers();
+    const { currentUserData, addCreditsToUser, grantVipAccess } = useUsers();
     const { toast } = useToast();
     
     // State for all games
@@ -367,6 +367,52 @@ export const useRewards = () => {
 
     }, [user, canPlayCodebreaker, codebreakerStatus, addCreditsToUser]);
     
+    const claimDailyLoginReward = useCallback(async (streakDay: number) => {
+        if (!user || !currentUserData) throw new Error("User not found");
+
+        const lastClaimDate = currentUserData.dailyLoginRewardState?.lastClaimed;
+        if (lastClaimDate && isToday(new Date(lastClaimDate))) {
+            throw new Error("Reward already claimed for today.");
+        }
+
+        const rewards = {
+            1: { credits: 10 },
+            2: { credits: 5, scratch: 3 },
+            3: { credits: 50 },
+            4: { scratch: 20 },
+            5: { credits: 100 },
+            6: { vip: 3 }, // 3 days of VIP
+            7: { credits: 200, scratch: 10, flip: 10 }
+        };
+
+        const reward = rewards[streakDay as keyof typeof rewards];
+        if (!reward) throw new Error("Invalid streak day for reward.");
+
+        const batch = writeBatch(db);
+        const userRef = doc(db, 'users', user.id);
+
+        if (reward.credits) batch.update(userRef, { credits: increment(reward.credits) });
+        if (reward.scratch) batch.update(userRef, { freeRewards: increment(reward.scratch) });
+        if (reward.flip) batch.update(userRef, { freeGuesses: increment(reward.flip) });
+        if (reward.vip) await grantVipAccess(user.id, reward.vip); // This needs to be await as it's not a batch operation in this structure
+
+        batch.update(userRef, {
+            dailyLoginRewardState: {
+                streak: streakDay,
+                lastClaimed: new Date().toISOString().split('T')[0]
+            },
+            rewardHistory: arrayUnion({
+                reward: `Day ${streakDay} Login`,
+                date: new Date(),
+                source: 'Daily Treasury'
+            })
+        });
+
+        await batch.commit();
+        return reward;
+
+    }, [user, currentUserData, grantVipAccess]);
+    
 
     return { 
         loading,
@@ -388,5 +434,6 @@ export const useRewards = () => {
         canPlayCodebreaker,
         playCodebreaker,
         codebreakerStatus,
+        claimDailyLoginReward,
     };
 };
