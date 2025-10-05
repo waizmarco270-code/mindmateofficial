@@ -24,25 +24,24 @@ const shuffleArray = <T,>(array: T[]): T[] => {
     return [...array].sort(() => Math.random() - 0.5);
 };
 
-const createDeck = (pairs: [string, string][]): CardItem[] => {
+const createDeck = (pairs: string[]): CardItem[] => {
     const deck: CardItem[] = [];
-    pairs.forEach(([item1, item2], index) => {
-        deck.push({ id: index * 2, value: item1, type: String(index) });
-        deck.push({ id: index * 2 + 1, value: item2, type: String(index) });
+    pairs.forEach((item, index) => {
+        deck.push({ id: index * 2, value: item, type: String(index) });
+        deck.push({ id: index * 2 + 1, value: item, type: String(index) });
     });
     return shuffleArray(deck);
 };
 
 const DECKS = {
     chemistry: createDeck([
-        ['H', 'H'], ['He', 'He'], ['Li', 'Li'], ['Be', 'Be'], ['B', 'B'], ['C', 'C'], 
-        ['N', 'N'], ['O', 'O'], ['F', 'F'], ['Ne', 'Ne'], ['Na', 'Na'], ['Mg', 'Mg']
+        'H', 'He', 'Li', 'Be', 'B', 'C', 'N', 'O', 'F', 'Ne', 'Na', 'Mg'
     ]),
     math: createDeck([
-        ['a²+b²=c²', 'Pythagoras'], ['πr²', 'Area'], ['2πr', 'Circum.'], ['l×w', 'Rectangle'], ['(a+b)²','a²+2ab+b²'], ['√-1', 'i'],
+        'Pythagoras', 'Area', 'Circumference', 'Rectangle', '(a+b)²','i'
     ]),
     icons: createDeck([
-        ['Award', 'Award'], ['BrainCircuit', 'BrainCircuit'], ['Check', 'Check'], ['Copy', 'Copy'], ['FlaskConical', 'FlaskConical'], ['Play', 'Play'], ['RotateCw', 'RotateCw'], ['Sigma', 'Sigma']
+        'Award', 'BrainCircuit', 'Check', 'Copy', 'FlaskConical', 'Play', 'RotateCw', 'Sigma'
     ])
 };
 
@@ -72,7 +71,21 @@ export function CognitiveCardsGame() {
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     const setupGame = useCallback(() => {
-        const fullDeck = DECKS[deckCategory];
+        let fullDeck = DECKS[deckCategory];
+        
+        // For math deck, we need to create pairs differently since the original data had non-matching items
+        if(deckCategory === 'math') {
+             const mathPairs = [
+                ['a²+b²=c²', 'a²+b²=c²'], ['πr²', 'πr²'], ['2πr', '2πr'], ['l×w', 'l×w'], ['(a+b)²','(a+b)²'], ['√-1', '√-1'],
+             ];
+             const mathDeck: CardItem[] = [];
+             mathPairs.forEach(([item1, item2], index) => {
+                mathDeck.push({ id: index * 2, value: item1, type: String(index) });
+                mathDeck.push({ id: index * 2 + 1, value: item2, type: String(index) });
+             });
+             fullDeck = shuffleArray(mathDeck);
+        }
+
         const gamePairs = LEVEL_CONFIG[level].pairs;
         const deckSlice = fullDeck.slice(0, gamePairs * 2);
         
