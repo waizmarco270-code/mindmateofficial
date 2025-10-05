@@ -12,6 +12,7 @@ import { LoginWall } from '../ui/login-wall';
 import { Award, BrainCircuit, Check, CheckCircle, Copy, FlaskConical, Play, RotateCw, Sigma } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Progress } from '../ui/progress';
+import { Label } from '../ui/label';
 
 interface CardItem {
   id: number;
