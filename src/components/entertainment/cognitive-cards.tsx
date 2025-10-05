@@ -73,10 +73,9 @@ export function CognitiveCardsGame() {
     const setupGame = useCallback(() => {
         let fullDeck = DECKS[deckCategory];
         
-        // For math deck, we need to create pairs differently since the original data had non-matching items
         if(deckCategory === 'math') {
              const mathPairs = [
-                ['a²+b²=c²', 'a²+b²=c²'], ['πr²', 'πr²'], ['2πr', '2πr'], ['l×w', 'l×w'], ['(a+b)²','(a+b)²'], ['√-1', '√-1'],
+                ['Pythagoras', 'Pythagoras'], ['Area', 'Area'], ['Circumference', 'Circumference'], ['Rectangle', 'Rectangle'], ['(a+b)²','(a+b)²'], ['√-1', '√-1'],
              ];
              const mathDeck: CardItem[] = [];
              mathPairs.forEach(([item1, item2], index) => {
@@ -167,12 +166,14 @@ export function CognitiveCardsGame() {
             const nextLevel = (level + 1) as Level;
             setLevel(nextLevel);
             setScore(0);
+            setMatched([]);
             setTimeLeft(LEVEL_CONFIG[nextLevel].time);
             setGameState('idle');
         } else {
              setGameState('idle');
              setLevel(1);
              setScore(0);
+             setMatched([]);
              toast({ title: "Congratulations! You've completed all levels." });
         }
     }
