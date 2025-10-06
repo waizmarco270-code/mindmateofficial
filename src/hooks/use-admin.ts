@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -976,7 +977,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             return false; // Already claimed this week
         }
         
-        const MILESTONE_REWARDS: Record<number, number> = { 50: 30, 100: 50, 150: 100, 200: 200 };
+        const MILESTONE_REWARDS: Record<number, number> = { 50: 2, 100: 5, 150: 10, 200: 15, 250: 20, 300: 200 };
         const reward = MILESTONE_REWARDS[milestone as keyof typeof MILESTONE_REWARDS];
 
         if (!reward) return false;
@@ -1001,7 +1002,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const weekClaims = userData.flappyMindClaims?.[weekKey] || [];
         
-        const MILESTONE_REWARDS: Record<number, number> = { 5: 2, 10: 5, 15: 10, 20: 50, 30: 100 };
+        const MILESTONE_REWARDS: Record<number, number> = { 5: 3, 10: 3, 15: 3, 20: 15, 30: 3, 50: 3, 100: 100, };
         const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
 
         if (!validMilestone) {
