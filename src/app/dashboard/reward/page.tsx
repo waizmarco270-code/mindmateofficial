@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -11,7 +10,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useRewards } from '@/hooks/use-rewards';
 import { useUsers } from '@/hooks/use-admin';
 import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
