@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { isToday, parseISO, addDays, isYesterday } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
@@ -300,6 +300,27 @@ export const useRewards = () => {
         toast({ title: "Crystal Broken", description: `You recovered ${userCrystal.breakValue} credits.`, variant: "destructive" });
     }, [user, userCrystal, addCreditsToUser, toast]);
 
+    // ===== CODEBREAKER LOGIC =====
+    useEffect(() => {
+        if (!user) {
+            setCodebreakerStatus({ playedToday: true, lastResult: null, attempts: 0, secretCode: '' });
+            return;
+        }
+        const gameRef = doc(db, 'users', user.id, 'dailyClaims', 'codebreaker');
+        const unsubscribe = onSnapshot(gameRef, (doc) => {
+            if (doc.exists() && isToday(doc.data().lastPlayed.toDate())) {
+                setCodebreakerStatus(doc.data() as any);
+            } else {
+                // Reset for a new day
+                const newCode = [...Array(4)].map(() => Math.floor(Math.random() * 10)).join('');
+                const newStatus = { playedToday: false, lastResult: null, attempts: 0, secretCode: newCode };
+                setCodebreakerStatus(newStatus);
+                setDoc(gameRef, { ...newStatus, lastPlayed: Timestamp.now() });
+            }
+        });
+        return unsubscribe;
+    }, [user]);
+
     const canPlayCodebreaker = !codebreakerStatus.playedToday;
 
     const playCodebreaker = useCallback(async (guess: string) => {
@@ -367,11 +388,12 @@ export const useRewards = () => {
 
     }, [user, canPlayCodebreaker, codebreakerStatus, addCreditsToUser]);
     
+    // ===== DAILY LOGIN REWARD LOGIC =====
     const claimDailyLoginReward = useCallback(async (streakDay: number) => {
         if (!user || !currentUserData) throw new Error("User not found");
 
-        const lastClaimDate = currentUserData.dailyLoginRewardState?.lastClaimed;
-        if (lastClaimDate && isToday(new Date(lastClaimDate))) {
+        const lastClaimed = currentUserData.dailyLoginRewardState?.lastClaimed;
+        if (lastClaimed && isToday(new Date(lastClaimed))) {
             throw new Error("Reward already claimed for today.");
         }
 
@@ -391,13 +413,8 @@ export const useRewards = () => {
         const batch = writeBatch(db);
         const userRef = doc(db, 'users', user.id);
 
-        if (reward.credits) batch.update(userRef, { credits: increment(reward.credits) });
-        if (reward.scratch) batch.update(userRef, { freeRewards: increment(reward.scratch) });
-        if (reward.flip) batch.update(userRef, { freeGuesses: increment(reward.flip) });
-        if (reward.vip) await grantVipAccess(user.id, reward.vip); // This needs to be await as it's not a batch operation in this structure
-
-        batch.update(userRef, {
-            dailyLoginRewardState: {
+        const updates: any = {
+             dailyLoginRewardState: {
                 streak: streakDay,
                 lastClaimed: new Date().toISOString().split('T')[0]
             },
@@ -406,9 +423,20 @@ export const useRewards = () => {
                 date: new Date(),
                 source: 'Daily Treasury'
             })
-        });
+        };
 
+        if (reward.credits) updates.credits = increment(reward.credits);
+        if (reward.scratch) updates.freeRewards = increment(reward.scratch);
+        if (reward.flip) updates.freeGuesses = increment(reward.flip);
+        
+        if (reward.vip) {
+            // Can't batch a function call, so we do it separately
+            await grantVipAccess(user.id, reward.vip);
+        }
+
+        batch.update(userRef, updates);
         await batch.commit();
+
         return reward;
 
     }, [user, currentUserData, grantVipAccess]);
