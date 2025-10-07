@@ -45,6 +45,11 @@ export const useRewards = () => {
         attempts: 0,
         secretCode: ''
     });
+     const [dailyLoginState, setDailyLoginState] = useState({
+        streak: 0,
+        canClaim: false,
+        hasClaimedToday: false,
+    });
 
     useEffect(() => {
         setLoading(true);
@@ -59,6 +64,20 @@ export const useRewards = () => {
                 .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date(), source: h.source || 'Unknown' }))
                 .sort((a: RewardRecord, b: RewardRecord) => b.date.getTime() - a.date.getTime())
             );
+
+            // Daily Login Treasury State
+            const lastClaimedDate = currentUserData.dailyLoginRewardState?.lastClaimed;
+            const hasClaimed = lastClaimedDate ? isToday(new Date(lastClaimedDate)) : false;
+            const allTasksDone = (currentUserData.dailyTasksCompleted || 0) > (currentUserData.lastDailyTasksClaim ? 1 : 0); // Simplified check
+            const canClaimToday = !hasClaimed; // Simplified logic, actual claim requires completed tasks, handled in UI
+            const streak = currentUserData.dailyLoginRewardState?.streak || 0;
+            
+            setDailyLoginState({
+                streak: hasClaimed ? streak : streak, // Streak only increases on claim
+                canClaim: canClaimToday,
+                hasClaimedToday: hasClaimed,
+            });
+
         }
         setLoading(false);
     }, [currentUserData]);
@@ -388,13 +407,16 @@ export const useRewards = () => {
 
     }, [user, canPlayCodebreaker, codebreakerStatus, addCreditsToUser]);
     
-    const claimDailyLoginReward = useCallback(async (streakDay: number) => {
+    const claimDailyLoginReward = useCallback(async () => {
         if (!user || !currentUserData) throw new Error("User not found");
 
         const lastClaimed = currentUserData.dailyLoginRewardState?.lastClaimed;
         if (lastClaimed && isToday(new Date(lastClaimed))) {
             throw new Error("Reward already claimed for today.");
         }
+        
+        const currentStreak = currentUserData.dailyLoginRewardState?.streak || 0;
+        const nextStreakDay = (currentStreak % 7) + 1;
 
         const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
             1: { credits: 10 },
@@ -406,17 +428,17 @@ export const useRewards = () => {
             7: { credits: 200, scratch: 10, flip: 10 },
         };
 
-        const reward = rewardsConfig[streakDay];
+        const reward = rewardsConfig[nextStreakDay];
         if (!reward) throw new Error("Invalid streak day for reward.");
 
         const userRef = doc(db, 'users', user.id);
         const updates: any = {
             dailyLoginRewardState: {
-                streak: streakDay,
+                streak: nextStreakDay,
                 lastClaimed: new Date().toISOString().split('T')[0]
             },
             rewardHistory: arrayUnion({
-                reward: `Day ${streakDay} Login`,
+                reward: `Day ${nextStreakDay} Login`,
                 date: new Date(),
                 source: 'Daily Treasury'
             })
@@ -435,7 +457,7 @@ export const useRewards = () => {
         }
         
         await batch.commit();
-        toast({ title: `Day ${streakDay} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
+        toast({ title: `Day ${nextStreakDay} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
 
     }, [user, currentUserData, grantVipAccess, toast]);
@@ -461,6 +483,7 @@ export const useRewards = () => {
         canPlayCodebreaker,
         playCodebreaker,
         codebreakerStatus,
+        dailyLoginState,
         claimDailyLoginReward,
     };
 };
