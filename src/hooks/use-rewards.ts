@@ -69,9 +69,8 @@ export const useRewards = () => {
             const lastClaimedDate = currentUserData.dailyLoginRewardState?.lastClaimed;
             const hasClaimed = lastClaimedDate ? isToday(new Date(lastClaimedDate)) : false;
             
-            // Check if at least 3 daily tasks were completed today
-            const tasksCompletedToday = currentUserData.dailyTasksCompleted > (currentUserData.lastDailyTasksClaim && isToday(new Date(currentUserData.lastDailyTasksClaim)) ? 1 : 0); // Simplified
-            const canClaimToday = !hasClaimed && tasksCompletedToday;
+            // Allow claim if not claimed today
+            const canClaimToday = !hasClaimed;
 
             const streak = currentUserData.dailyLoginRewardState?.streak || 0;
             

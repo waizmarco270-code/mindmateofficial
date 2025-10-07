@@ -21,6 +21,8 @@ import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialo
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay"
 import { format, parseISO } from 'date-fns';
+import { DailyTreasuryDialog } from '@/components/dashboard/DailyTreasuryDialog';
+import { useRewards } from '@/hooks/use-rewards';
 
 
 const studyTools = [
@@ -346,12 +348,21 @@ function BadgeShowcase() {
 export default function DashboardPage() {
     const { user } = useUser();
     const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
+    const { dailyLoginState, loading: rewardsLoading } = useRewards();
+    const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
+    
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
     const [isExploreZoneOpen, setIsExploreZoneOpen] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
     const [isTypingAnimationDone, setIsTypingAnimationDone] = useState(false);
     
+    useEffect(() => {
+        if (!rewardsLoading && dailyLoginState.canClaim) {
+            setIsTreasuryOpen(true);
+        }
+    }, [rewardsLoading, dailyLoginState.canClaim]);
+
     const credits = currentUserData?.credits ?? 0;
     const streak = currentUserData?.streak ?? 0;
     const isVip = currentUserData?.isVip ?? false;
@@ -388,6 +399,11 @@ export default function DashboardPage() {
       <SignedOut>
         <WelcomeDialog />
       </SignedOut>
+      
+       <SignedIn>
+        <DailyTreasuryDialog isOpen={isTreasuryOpen} onOpenChange={setIsTreasuryOpen} />
+      </SignedIn>
+
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
         <p className="text-muted-foreground">Here's a snapshot of your study world.</p>

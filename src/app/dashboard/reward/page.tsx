@@ -16,87 +16,6 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
-function DailyTreasury() {
-    const { dailyLoginState, claimDailyLoginReward, loading } = useRewards();
-    const [isClaiming, setIsClaiming] = useState(false);
-
-    const handleClaim = async () => {
-        if (!dailyLoginState.canClaim) return;
-        setIsClaiming(true);
-        try {
-            await claimDailyLoginReward();
-        } catch (error) {
-            // Toast is handled within the hook
-        } finally {
-            setIsClaiming(false);
-        }
-    };
-    
-    const rewardsConfig: Record<number, {text: string, subtext?: string}> = {
-        1: { text: "+10", subtext: "Credits" },
-        2: { text: "+5 C, +3 S", subtext: "Credits, Scratch" },
-        3: { text: "+50", subtext: "Credits" },
-        4: { text: "+20", subtext: "Scratch" },
-        5: { text: "+100", subtext: "Credits" },
-        6: { text: "3 Days", subtext: "Elite" },
-        7: { text: "Legendary" },
-    };
-    
-    if (loading) {
-        return <Skeleton className="h-48 w-full" />;
-    }
-
-    return (
-        <Card className="w-full overflow-hidden bg-gradient-to-br from-red-900/80 via-slate-900 to-slate-900 border-red-700/50">
-             <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)]"></div>
-            <CardHeader className="relative z-10 text-center">
-                <CardTitle className="text-2xl font-bold text-white">Daily Treasury</CardTitle>
-                <CardDescription className="text-red-300/80">Log in daily to claim increasing rewards. Don't break the streak!</CardDescription>
-            </CardHeader>
-            <CardContent className="relative z-10 space-y-6">
-                 <div className="flex flex-wrap justify-center items-end gap-2">
-                    {Array.from({ length: 7 }).map((_, i) => {
-                        const day = i + 1;
-                        const isCompleted = dailyLoginState.streak >= day;
-                        const isNext = dailyLoginState.streak + 1 === day && !dailyLoginState.hasClaimedToday;
-                        const reward = rewardsConfig[day];
-
-                        return (
-                            <div key={day} className="flex flex-col items-center gap-1 text-center">
-                                <div className={cn(
-                                    "h-20 w-16 sm:w-20 rounded-lg flex flex-col items-center justify-center p-1 border-2 transition-all duration-300",
-                                    isCompleted ? "bg-red-500/20 border-red-400" : "bg-black/20 border-white/10",
-                                    isNext && "border-amber-400 scale-105 shadow-lg shadow-amber-400/30"
-                                )}>
-                                    {isCompleted ? <CheckCircle className="h-6 w-6 text-red-400"/> : <Gift className="h-6 w-6 text-white/50"/>}
-                                     <p className="text-white/80 font-bold mt-1 text-sm sm:text-base">{reward.text}</p>
-                                     {reward.subtext && <p className="text-white/60 text-[10px] leading-tight">{reward.subtext}</p>}
-                                </div>
-                                <p className="text-xs font-bold text-white">Day {day}</p>
-                            </div>
-                        )
-                    })}
-                </div>
-                 <div className="text-center bg-black/20 p-3 rounded-lg border border-white/10">
-                    <p className="text-sm font-semibold text-muted-foreground">Today's Reward (Day {dailyLoginState.hasClaimedToday ? dailyLoginState.streak : dailyLoginState.streak + 1}):</p>
-                    <p className="font-bold text-lg text-amber-400">{rewardsConfig[dailyLoginState.hasClaimedToday ? dailyLoginState.streak : dailyLoginState.streak + 1]?.text || "Come back tomorrow!"}</p>
-                 </div>
-            </CardContent>
-            <CardFooter className="relative z-10">
-                <Button
-                    className="w-full h-14 text-lg font-bold"
-                    onClick={handleClaim}
-                    disabled={!dailyLoginState.canClaim || isClaiming}
-                >
-                    {isClaiming ? <Loader2 className="animate-spin mr-2"/> : (dailyLoginState.canClaim && <Award className="mr-2"/>)}
-                    {dailyLoginState.hasClaimedToday ? "Claimed for Today" : (dailyLoginState.canClaim ? "Claim Reward" : "Complete Tasks to Claim")}
-                </Button>
-            </CardFooter>
-        </Card>
-    );
-}
-
-
 function RecentWinnings() {
     const { rewardHistory, loading } = useRewards();
 
@@ -156,10 +75,9 @@ export default function RewardZoneHubPage() {
                 <p className="text-muted-foreground">Claim your daily rewards and test your luck for a chance to win prizes!</p>
             </div>
             
-            <Tabs defaultValue="daily-treasury" className="w-full">
+            <Tabs defaultValue="crystal-growth" className="w-full">
                 <ScrollArea className="w-full whitespace-nowrap rounded-lg">
                     <TabsList className="inline-flex h-auto">
-                        <TabsTrigger value="daily-treasury" className="w-auto"><Award className="mr-2"/> Daily Treasury</TabsTrigger>
                         <TabsTrigger value="crystal-growth" className="w-auto"><Gem className="mr-2"/> Crystal Growth</TabsTrigger>
                         <TabsTrigger value="card-flip" className="w-auto flex items-center">
                             <Layers className="mr-2"/> Card Flip
@@ -175,7 +93,6 @@ export default function RewardZoneHubPage() {
                 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
                     <div className="lg:col-span-2">
-                        <TabsContent value="daily-treasury"><DailyTreasury /></TabsContent>
                         <TabsContent value="crystal-growth"><CrystalGrowth /></TabsContent>
                         <TabsContent value="card-flip"><CardFlipGame /></TabsContent>
                         <TabsContent value="scratch-card"><ScratchCard /></TabsContent>
@@ -189,8 +106,4 @@ export default function RewardZoneHubPage() {
 
         </div>
     );
-}
-
-function Skeleton({ className }: { className?: string }) {
-    return <div className={cn("animate-pulse rounded-md bg-muted", className)} />;
 }
