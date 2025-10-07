@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
@@ -60,10 +59,16 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
         const qReceived = query(requestsRef, where('receiverId', '==', currentUser.id), where('status', '==', 'pending'));
         const qSent = query(requestsRef, where('senderId', '==', currentUser.id), where('status', '==', 'pending'));
 
-        const unsubReceived = onSnapshot(qReceived, snapshot => {
-            const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FriendRequest));
+        const unsubReceived = onSnapshot(qReceived, (snapshot) => {
+            const requests = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: data.createdAt?.toDate() || new Date(),
+                } as FriendRequest
+            });
             setFriendRequests(requests);
-            // This is the key fix: ensure loading is false after the fetch.
             setFriendsAndRequestsLoading(false);
         }, (error) => {
             console.error("Error fetching received friend requests:", error);

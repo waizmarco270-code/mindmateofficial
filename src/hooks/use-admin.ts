@@ -359,6 +359,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
             setUsers(usersList);
+        }, (error) => {
+            console.error("Error fetching all users:", error);
+            // Don't set loading to false here, let the currentUserData effect handle it
         });
         return () => unsubscribe();
     }, []);
