@@ -367,8 +367,8 @@ export default function DashboardPage() {
 
     const credits = currentUserData?.credits ?? 0;
     const streak = currentUserData?.streak ?? 0;
-    const isVip = currentUserData?.isVip ?? false;
-    const isGM = currentUserData?.isGM ?? false;
+    const isVip = !!currentUserData?.isVip;
+    const isGM = !!currentUserData?.isGM;
     const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 

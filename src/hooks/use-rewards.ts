@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
-import { isToday, parseISO, addDays, isThisWeek } from 'date-fns';
+import { isToday, parseISO, addDays, isYesterday } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 import { CRYSTAL_TIERS, type CrystalTier } from '@/components/reward/crystal-growth';
@@ -49,6 +49,7 @@ export const useRewards = () => {
         streak: 0,
         canClaim: false,
         hasClaimedToday: false,
+        isCompleted: false,
     });
 
     useEffect(() => {
@@ -66,18 +67,21 @@ export const useRewards = () => {
             );
 
             // Daily Login Treasury State
-            const lastClaimedDate = currentUserData.dailyLoginRewardState?.lastClaimed;
-            const hasClaimed = lastClaimedDate ? isToday(new Date(lastClaimedDate)) : false;
-            
-            // Allow claim if not claimed today
-            const canClaimToday = !hasClaimed;
-
             const streak = currentUserData.dailyLoginRewardState?.streak || 0;
+            const lastClaimedDate = currentUserData.dailyLoginRewardState?.lastClaimed;
+            const hasClaimedToday = lastClaimedDate ? isToday(new Date(lastClaimedDate)) : false;
             
+            // The cycle is completed if they have finished day 7
+            const isCompleted = streak >= 7;
+
+            // Allow claim if the cycle is not complete and they haven't claimed today
+            const canClaimToday = !isCompleted && !hasClaimedToday;
+
             setDailyLoginState({
                 streak: streak,
                 canClaim: canClaimToday,
-                hasClaimedToday: hasClaimed,
+                hasClaimedToday: hasClaimedToday,
+                isCompleted: isCompleted,
             });
 
         }
@@ -413,12 +417,19 @@ export const useRewards = () => {
         if (!user || !currentUserData) throw new Error("User not found");
 
         const lastClaimed = currentUserData.dailyLoginRewardState?.lastClaimed;
+        const currentStreak = currentUserData.dailyLoginRewardState?.streak || 0;
+
+        if (currentStreak >= 7) {
+            throw new Error("You have already completed the 7-day reward cycle.");
+        }
         if (lastClaimed && isToday(new Date(lastClaimed))) {
             throw new Error("Reward already claimed for today.");
         }
         
-        const currentStreak = currentUserData.dailyLoginRewardState?.streak || 0;
-        const nextStreakDay = (currentStreak % 7) + 1;
+        let yesterdayDate = new Date();
+        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+        const streakContinued = lastClaimed ? isYesterday(new Date(lastClaimed)) : true;
+        const newStreak = streakContinued ? currentStreak + 1 : 1;
 
         const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
             1: { credits: 10 },
@@ -430,19 +441,18 @@ export const useRewards = () => {
             7: { credits: 200, scratch: 10, flip: 10 },
         };
 
-        const reward = rewardsConfig[nextStreakDay];
+        const reward = rewardsConfig[newStreak];
         if (!reward) throw new Error("Invalid streak day for reward.");
 
         const userRef = doc(db, 'users', user.id);
         
         const batch = writeBatch(db);
 
-        // Update login state
         batch.update(userRef, {
-            'dailyLoginRewardState.streak': nextStreakDay,
+            'dailyLoginRewardState.streak': newStreak,
             'dailyLoginRewardState.lastClaimed': new Date().toISOString().split('T')[0],
              rewardHistory: arrayUnion({
-                reward: `Day ${nextStreakDay} Login`,
+                reward: `Day ${newStreak} Login`,
                 date: new Date(),
                 source: 'Daily Treasury'
             })
@@ -458,7 +468,7 @@ export const useRewards = () => {
             await grantVipAccess(user.id, reward.vip);
         }
         
-        toast({ title: `Day ${nextStreakDay} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
+        toast({ title: `Day ${newStreak} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
 
     }, [user, currentUserData, grantVipAccess, toast]);
