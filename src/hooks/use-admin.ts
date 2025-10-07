@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -31,7 +32,6 @@ export interface User {
   unlockedResourceSections?: string[]; // Array of unlocked section IDs
   unlockedFeatures?: string[]; // Array of feature IDs
   unlockedThemes?: AppThemeId[];
-  vipAccessExpires?: string; // ISO string for expiration date
   hasAiAccess?: boolean; // For Marco AI
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
@@ -224,7 +224,6 @@ interface AppDataContextType {
     generateDevAiAccessToken: (uid: string) => Promise<string | null>;
     grantMasterCard: (uid: string, durationDays: number) => Promise<void>;
     revokeMasterCard: (uid: string) => Promise<void>;
-    grantVipAccess: (uid: string, durationDays: number) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
     incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
     incrementFocusSessions: (uid: string, duration: number) => Promise<void>;
@@ -841,21 +840,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }, []);
 
-    const grantVipAccess = useCallback(async (uid: string, durationDays: number) => {
-        if (!uid) return;
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        if(!userSnap.exists()) return;
-        const userData = userSnap.data() as User;
-
-        const currentExpiry = userData.vipAccessExpires ? new Date(userData.vipAccessExpires) : new Date();
-        const newExpiry = dateFnsAddDays(currentExpiry > new Date() ? currentExpiry : new Date(), durationDays);
-
-        await updateDoc(userDocRef, {
-            vipAccessExpires: newExpiry.toISOString()
-        });
-    }, []);
-
     const addPerfectedQuiz = async (uid: string, quizId: string) => {
         if(!uid || !quizId) return;
         const userDocRef = doc(db, 'users', uid);
@@ -886,7 +870,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { 
             credits: increment(amount),
-            dailyTasksCompleted: increment(1),
             lastDailyTasksClaim: format(new Date(), 'yyyy-MM-dd')
         });
     }
@@ -1405,7 +1388,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         generateDevAiAccessToken,
         grantMasterCard,
         revokeMasterCard,
-        grantVipAccess,
         addPerfectedQuiz,
         incrementQuizAttempt,
         incrementFocusSessions,

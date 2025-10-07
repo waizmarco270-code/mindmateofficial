@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -18,7 +19,10 @@ import { db } from '@/lib/firebase';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, where, addDoc, updateDoc } from 'firebase/firestore';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
-import { useDraggable } from '@dnd-kit/core';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
 
 export type TaskPriority = 'high' | 'medium' | 'low';
 
@@ -31,27 +35,40 @@ export interface Task {
   startTime?: string; // HH:mm format
   endTime?: string;   // HH:mm format
   createdAt: string; // ISO string date
+  order: number;
 }
 
-function DraggableTask({ task, isOverdue, priorityClasses, onToggle, onEdit, onDelete }: {
-    task: Task,
-    isOverdue: boolean,
-    priorityClasses: Record<TaskPriority, { bg: string, text: string, ring: string }>,
-    onToggle: (task: Task) => void,
-    onEdit: (task: Task) => void,
-    onDelete: (id: string) => void
-}) {
-    const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
-        id: task.id,
-        data: task, // Pass the whole task object
-    });
+const formatTime12h = (time24: string) => {
+    if (!time24) return '';
+    try {
+        const date = parse(time24, 'HH:mm', new Date());
+        return format(date, 'h:mm a');
+    } catch (e) {
+        return '';
+    }
+};
+
+function SortableTaskItem({ task }: { task: Task }) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id });
+    const { toggleTask, openEditDialog, deleteTask } = useTodos();
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 'auto',
+        opacity: isDragging ? 0.5 : 1,
+    };
     
-    const style = transform ? {
-        transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-    } : undefined;
+    const priorityClasses: Record<TaskPriority, { bg: string, text: string, ring: string }> = {
+        high: { bg: 'bg-red-500', text: 'text-red-500', ring: 'ring-red-500/50' },
+        medium: { bg: 'bg-yellow-500', text: 'text-yellow-500', ring: 'ring-yellow-500/50' },
+        low: { bg: 'bg-green-500', text: 'text-green-500', ring: 'ring-green-500/50' },
+    };
+    
+    const isOverdue = task.deadline ? isPast(new Date(task.deadline)) && !task.completed : false;
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} className={cn("relative", isDragging && "z-50 opacity-50")}>
+        <div ref={setNodeRef} style={style}>
             <div
                 className={cn(
                     "flex items-center gap-3 rounded-lg border bg-background p-3 transition-all hover:bg-muted/50 overflow-hidden",
@@ -59,25 +76,22 @@ function DraggableTask({ task, isOverdue, priorityClasses, onToggle, onEdit, onD
                 )}
             >
                 <div className={cn("absolute left-0 top-0 bottom-0 w-1.5", priorityClasses[task.priority].bg)}></div>
-                <button {...listeners} className="cursor-grab active:cursor-grabbing px-1 text-muted-foreground">
+                <button {...listeners} {...attributes} className="cursor-grab active:cursor-grabbing px-1 text-muted-foreground">
                     <GripVertical className="h-5 w-5" />
                 </button>
                 <div>
                     <Checkbox
                     id={`task-${task.id}`}
                     checked={task.completed}
-                    onCheckedChange={() => onToggle(task)}
+                    onCheckedChange={() => toggleTask(task)}
                     aria-label={`Mark task "${task.text}" as ${task.completed ? 'incomplete' : 'complete'}`}
                     className={cn("h-5 w-5 rounded-full", priorityClasses[task.priority].ring)}
                     />
                 </div>
-                <div className="flex-1">
-                    <label
-                        htmlFor={`task-${task.id}`}
-                        className={cn('cursor-pointer text-sm font-medium', task.completed && 'text-muted-foreground line-through')}
-                    >
-                    {task.text}
-                    </label>
+                <div className="flex-1" onClick={() => openEditDialog(task)}>
+                    <p className={cn('cursor-pointer text-sm font-medium', task.completed && 'text-muted-foreground line-through')}>
+                        {task.text}
+                    </p>
                     <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground mt-1">
                         {task.startTime && task.endTime && (
                             <div className="flex items-center gap-1.5">
@@ -97,17 +111,8 @@ function DraggableTask({ task, isOverdue, priorityClasses, onToggle, onEdit, onD
                 <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-primary"
-                    onClick={() => onEdit(task)}
-                    aria-label={`Edit task "${task.text}"`}
-                    >
-                    <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                    variant="ghost"
-                    size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                    onClick={() => onDelete(task.id)}
+                    onClick={() => deleteTask(task.id)}
                     aria-label={`Delete task "${task.text}"`}
                     >
                     <Trash2 className="h-4 w-4" />
@@ -117,15 +122,18 @@ function DraggableTask({ task, isOverdue, priorityClasses, onToggle, onEdit, onD
     );
 }
 
-const formatTime12h = (time24: string) => {
-    if (!time24) return '';
-    try {
-        const date = parse(time24, 'HH:mm', new Date());
-        return format(date, 'h:mm a');
-    } catch (e) {
-        return '';
-    }
-};
+// Global context for todos to avoid prop drilling
+const TodoContext = React.createContext<{
+    toggleTask: (task: Task) => void;
+    openEditDialog: (task: Task) => void;
+    deleteTask: (id: string) => void;
+} | null>(null);
+
+const useTodos = () => {
+    const context = React.useContext(TodoContext);
+    if(!context) throw new Error("useTodos must be used within a TodoProvider");
+    return context;
+}
 
 export function TodoList() {
   const { user } = useUser();
@@ -153,6 +161,10 @@ export function TodoList() {
   const [editTaskStartTime, setEditTaskStartTime] = useState('');
   const [editTaskEndTime, setEditTaskEndTime] = useState('');
 
+  // Drag-and-Drop state
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const sensors = useSensors(useSensor(PointerSensor), useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }));
+  const activeTask = useMemo(() => tasks.find(t => t.id === activeId), [activeId, tasks]);
 
   // Daily Tasks from Firestore
   useEffect(() => {
@@ -165,7 +177,7 @@ export function TodoList() {
     today.setHours(0, 0, 0, 0);
 
     const tasksColRef = collection(db, 'users', user.id, 'dailyTasks');
-    const q = query(tasksColRef, where('createdAt', '>=', today.toISOString()), orderBy('createdAt', 'desc'));
+    const q = query(tasksColRef, where('createdAt', '>=', today.toISOString()), orderBy('order', 'asc'));
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const fetchedTasks = snapshot.docs.map(doc => doc.data() as Task);
@@ -192,7 +204,7 @@ export function TodoList() {
     e.preventDefault();
     if (newTaskText.trim() === '' || !user) return;
     
-    const newTaskPayload: Omit<Task, 'id' | 'createdAt'> & {createdAt: string} = {
+    const newTaskPayload: Omit<Task, 'id'> = {
       text: newTaskText,
       completed: false,
       priority: newTaskPriority,
@@ -200,6 +212,7 @@ export function TodoList() {
       endTime: newTaskEndTime || undefined,
       deadline: newTaskDeadline?.toISOString(),
       createdAt: new Date().toISOString(),
+      order: tasks.length // Append to the end
     };
 
     const tasksColRef = collection(db, 'users', user.id, 'dailyTasks');
@@ -212,7 +225,7 @@ export function TodoList() {
   const toggleTask = async (task: Task) => {
     if (!user) return;
     const taskDocRef = doc(db, 'users', user.id, 'dailyTasks', task.id);
-    await setDoc(taskDocRef, { ...task, completed: !task.completed }, { merge: true });
+    await updateDoc(taskDocRef, { completed: !task.completed });
   };
 
   const deleteTask = async (id: string) => {
@@ -251,22 +264,36 @@ export function TodoList() {
       setIsEditDialogOpen(false);
   }
 
-  const sortedTasks = useMemo(() => {
-      return [...tasks].sort((a, b) => {
-        if (a.completed !== b.completed) return a.completed ? 1 : -1;
-        const priorityOrder: Record<TaskPriority, number> = { high: 0, medium: 1, low: 2 };
-        if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-            return priorityOrder[a.priority] - priorityOrder[b.priority];
-        }
-        if(a.startTime && b.startTime) return a.startTime.localeCompare(b.startTime);
-        if(a.startTime) return -1;
-        if(b.startTime) return 1;
+  const handleDragStart = (event: any) => {
+    setActiveId(event.active.id);
+  };
 
-        const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-        const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Infinity;
-        return aDeadline - bDeadline;
-      })
-  }, [tasks]);
+  const handleDragEnd = async (event: any) => {
+    const { active, over } = event;
+    setActiveId(null);
+
+    if (active.id !== over.id && user) {
+        setTasks((items) => {
+            const oldIndex = items.findIndex(item => item.id === active.id);
+            const newIndex = items.findIndex(item => item.id === over.id);
+            
+            const newItems = [...items];
+            const [movedItem] = newItems.splice(oldIndex, 1);
+            newItems.splice(newIndex, 0, movedItem);
+
+            // Update Firestore orders in a batch
+            const batch = writeBatch(db);
+            newItems.forEach((item, index) => {
+                const docRef = doc(db, 'users', user.id, 'dailyTasks', item.id);
+                batch.update(docRef, { order: index });
+            });
+            batch.commit().catch(err => console.error("Failed to update task order:", err));
+
+            return newItems;
+        });
+    }
+  };
+
 
     const { completedCount, reward, canClaim, hasClaimedToday } = useMemo(() => {
         const completed = tasks.filter(t => t.completed).length;
@@ -303,14 +330,15 @@ export function TodoList() {
     };
 
 
-  const priorityClasses: Record<TaskPriority, { bg: string, text: string, ring: string }> = {
-    high: { bg: 'bg-red-500', text: 'text-red-500', ring: 'ring-red-500/50' },
-    medium: { bg: 'bg-yellow-500', text: 'text-yellow-500', ring: 'ring-yellow-500/50' },
-    low: { bg: 'bg-green-500', text: 'text-green-500', ring: 'ring-green-500/50' },
-  }
+  const todoContextValue = {
+      toggleTask,
+      openEditDialog,
+      deleteTask
+  };
   
   return (
-    <div>
+    <TodoContext.Provider value={todoContextValue}>
+    <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogTrigger asChild>
           <Button className="mb-4" disabled={!user}>
@@ -375,21 +403,17 @@ export function TodoList() {
         ) : tasks.length === 0 ? (
             <p className="text-muted-foreground text-center py-4">No tasks for today. Add one to get started!</p>
         ) : (
-            sortedTasks.map((task) => {
-                const isOverdue = task.deadline ? isPast(new Date(task.deadline)) && !task.completed : false;
-                return (
-                    <DraggableTask
-                        key={task.id}
-                        task={task}
-                        isOverdue={isOverdue}
-                        priorityClasses={priorityClasses}
-                        onToggle={toggleTask}
-                        onEdit={openEditDialog}
-                        onDelete={deleteTask}
-                    />
-                )
-            })
+            <SortableContext items={tasks} strategy={verticalListSortingStrategy}>
+                 {tasks.map((task) => (
+                    <SortableTaskItem key={task.id} task={task} />
+                ))}
+            </SortableContext>
         )}
+         <DragOverlay>
+            {activeTask ? (
+                <SortableTaskItem task={activeTask} />
+            ) : null}
+        </DragOverlay>
       </div>
 
        {completedCount >= 3 && (
@@ -458,7 +482,7 @@ export function TodoList() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-
-    </div>
+    </DndContext>
+    </TodoContext.Provider>
   );
 }
