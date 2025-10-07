@@ -2,139 +2,77 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Helper Functions
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
+    
+    // Default deny all reads and writes
+    match /{document=**} {
+      allow read, write: if false;
     }
     
-    function getUserData(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data;
+    // Allow any authenticated user to read any document.
+    // This is necessary for features like leaderboards, profiles, etc.
+    // Writes are still restricted below.
+    match /{path=**} {
+      allow get, list: if request.auth != null;
     }
 
-    function isAdmin() {
-      return getUserData(request.auth.uid).isAdmin == true;
-    }
-
-    // USER-SPECIFIC DATA
+    // Users can only read and write to their own user document.
     match /users/{userId} {
-      allow read: if isSignedIn();
-      allow write: if isOwner(userId);
-
-      // Subcollections for user data
-      match /dailyTasks/{taskId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /timeTrackerSessions/{sessionId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /focusSessions/{sessionId} {
-        allow read, write: if isOwner(userId);
-      }
-       match /pomodoroSessions/{sessionId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /roadmaps/{roadmapId} {
-        allow read, write: if isOwner(userId);
-      }
-      match /challenges/{challengeId} {
-        allow read, write: if isOwner(userId);
-      }
-       match /dailyClaims/{claimId} {
-        allow read, write: if isOwner(userId);
-      }
-       match /rewards/{rewardId} {
-        allow read, write: if isOwner(userId);
-      }
-    }
-    
-    // PUBLIC OR SEMI-PUBLIC DATA
-    match /announcements/{announcementId} {
-      allow read: if true;
-      allow write: if isAdmin();
+      allow read, update, delete: if request.auth.uid == userId;
+      allow create: if request.auth.uid == userId;
     }
 
+    // Users can manage their own subcollections.
+    match /users/{userId}/{collection}/{docId} {
+      allow read, write, delete: if request.auth.uid == userId;
+    }
+
+    // Public collections that anyone can read.
+    match /(announcements|resources|resourceSections|dailySurprises|polls|quizzes|appConfig|featureShowcases|globalGifts)/{document=**} {
+      allow get, list: if true;
+    }
+
+    // Admins can write to public collections.
+    match /(announcements|resources|resourceSections|dailySurprises|polls|quizzes|appConfig|featureShowcases|globalGifts)/{document=**} {
+      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.uid == 'user_32WgV1OikpqTXO9pFApoPRLLarF';
+    }
+
+    // Authenticated users can vote on polls.
     match /polls/{pollId} {
-      allow read: if true;
-      allow create, delete: if isAdmin();
-      allow update: if isSignedIn() || isAdmin(); 
+        allow update: if request.auth != null && 'results' in request.resource.data;
     }
     
-    match /resourceSections/{sectionId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /resources/{resourceId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-    match /dailySurprises/{surpriseId} {
-        allow list: if isSignedIn();
-        allow get: if isSignedIn();
-        allow write: if isAdmin();
-    }
-    
-    match /quizzes/{quizId} {
-        allow read: if true;
-        allow write: if isAdmin();
-    }
-
-    // CHAT & SOCIAL
-    match /global_chat/{messageId} {
-      allow read: if isSignedIn();
-      allow create: if isSignedIn();
-      allow delete: if isAdmin();
-    }
-
-    match /chats/{chatId} {
-      function isParticipant() {
-        return request.auth.uid in resource.data.users;
-      }
-      allow read, write: if isParticipant();
-      
-      match /messages/{messageId} {
-        allow read, write: if isParticipant();
-      }
-    }
-
-    match /friendRequests/{requestId} {
-      allow read, write: if isSignedIn();
-    }
-
-    // ADMIN & CONFIG
-     match /referrals/{referralId} {
-        allow read, write: if isSignedIn();
-    }
-    
+    // Authenticated users can create support tickets for themselves.
     match /supportTickets/{ticketId} {
-      allow read: if isAdmin() || isOwner(resource.data.userId);
-      allow create: if isSignedIn();
-      allow update, delete: if isAdmin();
+      allow create: if request.auth.uid == request.resource.data.userId;
+      // Admins can read/update/delete any ticket.
+      allow read, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.uid == 'user_32WgV1OikpqTXO9pFApoPRLLarF';
     }
 
-    match /ai_access_tokens/{tokenId} {
-      allow read, write: if isAdmin();
-    }
-
-    match /appConfig/{configId} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-    
-     match /featureShowcases/{showcaseId} {
-        allow read: if true;
-        allow write: if isAdmin();
+    // Private chats between two users.
+    match /chats/{chatId} {
+        allow read, write: if request.auth.uid in resource.data.users;
+        match /messages/{messageId} {
+            allow read, create: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
+        }
     }
     
-     match /globalGifts/{giftId} {
-        allow read: if true;
-        allow write: if isAdmin();
-     }
+    // Global chat rules
+    match /global_chat/{messageId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth.uid == request.resource.data.senderId;
+    }
+    
+    // Friend Requests
+    match /friendRequests/{requestId} {
+        allow read, create, delete: if request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId;
+    }
+    
+    // Referral Requests
+    match /referrals/{referralId} {
+        // The user who used the code can create the request.
+        allow create: if request.auth.uid == request.resource.data.newUserId;
+        // Only admins can read/update the request.
+        allow read, update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.uid == 'user_32WgV1OikpqTXO9pFApoPRLLarF';
+    }
   }
 }

@@ -359,9 +359,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
             setUsers(usersList);
+            if(usersList.length > 0) { // If we have users, we can proceed with other data loading.
+                setLoading(false);
+            }
         }, (error) => {
             console.error("Error fetching all users:", error);
-            // Don't set loading to false here, let the currentUserData effect handle it
+            setLoading(false); // Stop loading on error
         });
         return () => unsubscribe();
     }, []);
@@ -476,6 +479,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     },
                     elementQuestScores: { s: 0, p: 0, d: 0, f: 0 },
                     elementQuestMilestonesClaimed: [],
+                    dailyLoginRewardState: {
+                        streak: 1,
+                        lastClaimed: ''
+                    }
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
