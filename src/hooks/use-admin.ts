@@ -236,7 +236,7 @@ interface AppDataContextType {
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    claimMathematicsLegendMilestone: (uid: string, milestone: number) => Promise<boolean>;
+    claimMathematicsLegendMilestone: (uid: string) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -341,8 +341,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     // EFFECT: Determine if the logged-in user is an admin or super admin
     useEffect(() => {
         if (isClerkLoaded && authUser && currentUserData) {
-            const hasVipAccess = !!(currentUserData.isVip || (currentUserData.vipAccessExpires && new Date(currentUserData.vipAccessExpires) > new Date()));
-            setIsAdmin(currentUserData.isAdmin || hasVipAccess);
+            setIsAdmin(currentUserData.isAdmin ?? false);
             setIsSuperAdmin(currentUserData.uid === SUPER_ADMIN_UID);
         } else {
             setIsAdmin(false);
@@ -471,10 +470,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     },
                     elementQuestScores: { s: 0, p: 0, d: 0, f: 0 },
                     elementQuestMilestonesClaimed: [],
-                    dailyLoginRewardState: {
-                        streak: 1,
-                        lastClaimed: ''
-                    }
                 };
                 setDoc(userDocRef, newUser).then(() => {
                   setCurrentUserData(newUser);
@@ -870,6 +865,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, 'users', uid);
         await updateDoc(userDocRef, { 
             credits: increment(amount),
+            dailyTasksCompleted: increment(1),
             lastDailyTasksClaim: format(new Date(), 'yyyy-MM-dd')
         });
     }
@@ -1516,3 +1512,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    
