@@ -36,7 +36,6 @@ export interface User {
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
   isAdmin?: boolean;
   isVip?: boolean; // For the special recognition badge
-  vipAccessExpires?: string; // For temporary elite access
   isGM?: boolean; // For the Game Master badge
   isChallenger?: boolean; // For completing a challenge
   isCoDev?: boolean; // For co-developers
@@ -986,7 +985,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             return false; // Already claimed this week
         }
         
-        const MILESTONE_REWARDS: Record<number, number> = { 50: 2, 100: 5, 150: 10, 200: 15, 250: 20, 300: 200 };
+        const MILESTONE_REWARDS: Record<number, number> = { 50: 2, 100: 5, 150: 10, 200: 15, 250: 20, 300: 200, };
         const reward = MILESTONE_REWARDS[milestone as keyof typeof MILESTONE_REWARDS];
 
         if (!reward) return false;
@@ -1534,3 +1533,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    
