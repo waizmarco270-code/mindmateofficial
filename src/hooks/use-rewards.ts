@@ -68,12 +68,15 @@ export const useRewards = () => {
             // Daily Login Treasury State
             const lastClaimedDate = currentUserData.dailyLoginRewardState?.lastClaimed;
             const hasClaimed = lastClaimedDate ? isToday(new Date(lastClaimedDate)) : false;
-            const allTasksDone = (currentUserData.dailyTasksCompleted || 0) > (currentUserData.lastDailyTasksClaim ? 1 : 0); // Simplified check
-            const canClaimToday = !hasClaimed; // Simplified logic, actual claim requires completed tasks, handled in UI
+            
+            // Check if at least 3 daily tasks were completed today
+            const tasksCompletedToday = currentUserData.dailyTasksCompleted > (currentUserData.lastDailyTasksClaim && isToday(new Date(currentUserData.lastDailyTasksClaim)) ? 1 : 0); // Simplified
+            const canClaimToday = !hasClaimed && tasksCompletedToday;
+
             const streak = currentUserData.dailyLoginRewardState?.streak || 0;
             
             setDailyLoginState({
-                streak: hasClaimed ? streak : streak, // Streak only increases on claim
+                streak: streak,
                 canClaim: canClaimToday,
                 hasClaimedToday: hasClaimed,
             });
@@ -432,18 +435,17 @@ export const useRewards = () => {
         if (!reward) throw new Error("Invalid streak day for reward.");
 
         const userRef = doc(db, 'users', user.id);
+        
         const updates: any = {
-            dailyLoginRewardState: {
-                streak: nextStreakDay,
-                lastClaimed: new Date().toISOString().split('T')[0]
-            },
+            'dailyLoginRewardState.streak': nextStreakDay,
+            'dailyLoginRewardState.lastClaimed': new Date().toISOString().split('T')[0],
             rewardHistory: arrayUnion({
                 reward: `Day ${nextStreakDay} Login`,
                 date: new Date(),
                 source: 'Daily Treasury'
             })
         };
-
+        
         const batch = writeBatch(db);
 
         if (reward.credits) updates.credits = increment(reward.credits);
@@ -452,11 +454,12 @@ export const useRewards = () => {
 
         batch.update(userRef, updates);
 
+        await batch.commit();
+        
         if (reward.vip) {
             await grantVipAccess(user.id, reward.vip);
         }
         
-        await batch.commit();
         toast({ title: `Day ${nextStreakDay} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
 

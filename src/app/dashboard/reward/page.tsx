@@ -30,7 +30,7 @@ function DailyTreasury() {
             setIsClaiming(false);
         }
     };
-
+    
     const rewardsConfig: Record<number, string> = {
         1: "+10 Credits",
         2: "+5 Credits, +3 Scratch",
@@ -57,17 +57,17 @@ function DailyTreasury() {
                     {Array.from({ length: 7 }).map((_, i) => {
                         const day = i + 1;
                         const isCompleted = dailyLoginState.streak >= day;
-                        const isCurrent = dailyLoginState.streak + 1 === day && !dailyLoginState.hasClaimedToday;
-                         const isNext = dailyLoginState.streak + 1 === day;
+                        const isNext = dailyLoginState.streak + 1 === day && !dailyLoginState.hasClaimedToday;
 
                         return (
                             <div key={day} className="flex flex-col items-center gap-2 text-center">
                                 <div className={cn(
-                                    "h-16 w-16 rounded-lg flex flex-col items-center justify-center border-2 transition-all duration-300",
+                                    "h-20 w-16 rounded-lg flex flex-col items-center justify-center border-2 transition-all duration-300",
                                     isCompleted ? "bg-red-500/20 border-red-400" : "bg-black/20 border-white/10",
                                     isNext && "border-amber-400 scale-110 shadow-lg shadow-amber-400/30"
                                 )}>
                                     {isCompleted ? <CheckCircle className="h-6 w-6 text-red-400"/> : <Gift className="h-6 w-6 text-white/50"/>}
+                                     <p className="text-white/80 font-bold mt-1 text-sm">{rewardsConfig[day]}</p>
                                 </div>
                                 <p className="text-xs font-bold text-white">Day {day}</p>
                             </div>
@@ -191,4 +191,3 @@ export default function RewardZoneHubPage() {
 function Skeleton({ className }: { className?: string }) {
     return <div className={cn("animate-pulse rounded-md bg-muted", className)} />;
 }
-
