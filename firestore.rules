@@ -2,115 +2,135 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // --- Helper Functions ---
+  
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
-
+    
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
     
+    function getRole(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    }
+    
     function isAdmin() {
-      return exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    function isSuperAdmin() {
+      // Replace with your actual Super Admin UID
+      return request.auth.uid == 'user_32WgV1OikpqTXO9pFApoPRLLarF';
     }
 
-    // --- User Data ---
-    // Users can read/write their own data. Admins can read/write any user's data.
+    // Users collection
+    // Only the owner can read/write their own document.
     match /users/{userId} {
-      allow read, write: if isOwner(userId) || isAdmin();
+      allow read, update: if isOwner(userId) || isSuperAdmin();
+      allow create: if isSignedIn();
       
-      // Subcollections for users
+      // Subcollections
       match /{subcollection}/{docId} {
-        allow read, write: if isOwner(userId) || isAdmin();
+        allow read, write: if isOwner(userId) || isSuperAdmin();
       }
     }
-
-    // --- Public Read-Only Data ---
+    
+    // Announcements: Publicly readable, admin-only write
     match /announcements/{announcementId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /resources/{resourceId} {
-        allow read: if true;
-        allow write: if isAdmin();
-    }
+    
+    // Resources & Sections: Publicly readable, admin-only write
     match /resourceSections/{sectionId} {
-        allow read: if true;
-        allow write: if isAdmin();
-    }
-     match /quizzes/{quizId} {
       allow read: if true;
       allow write: if isAdmin();
     }
-    match /dailySurprises/{surpriseId} {
-        allow read: if true;
-        allow write: if isAdmin();
+    match /resources/{resourceId} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
-     match /featureShowcases/{showcaseId} {
-        allow read: if true;
-        allow write: if isAdmin();
-     }
+    
+    // Daily Surprises: Publicly readable, admin-only write
+    match /dailySurprises/{surpriseId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // Quizzes: Publicly readable, admin-only write
+    match /quizzes/{quizId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
 
-
-    // --- Polls ---
-    // Anyone can read polls, but only signed-in users can update votes.
+    // Polls: Publicly readable
+    // Users can vote (update results) and comment. Admins can do anything.
     match /polls/{pollId} {
       allow read: if true;
-      allow write: if isAdmin(); // Only admins can create/delete/set active
-      // Allow signed-in users to vote and comment
-      allow update: if isSignedIn() && 
-                      (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['results', 'comments']));
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (isSignedIn() && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['results', 'comments'])
+      ));
     }
     
-    // --- Global Chat ---
-    // Only signed-in users can read and write to the global chat.
-    match /global_chat/{messageId} {
-        allow read, create: if isSignedIn();
-        allow delete: if isAdmin(); // Only admins can delete messages
+    // Support Tickets: Only owner and admins can access
+    match /supportTickets/{ticketId} {
+        allow read, write: if isOwner(request.resource.data.userId) || isAdmin();
+        allow create: if isSignedIn();
     }
     
-    // --- Private Chats ---
-    match /chats/{chatId} {
-        // Users can only access chats they are a part of.
-        allow read, write: if isSignedIn() && request.auth.uid in resource.data.users;
-        
-        match /messages/{messageId} {
-             allow read, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
-        }
-    }
-    
-    // --- Friend Requests ---
+    // Friend Requests: Can be created by sender, read by receiver, deleted by either
     match /friendRequests/{requestId} {
-        // Allow creating if you are the sender. Allow read/delete if you are the sender or receiver.
-        allow create: if isSignedIn() && request.resource.data.senderId == request.auth.uid;
-        allow read, delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+        allow read: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+        allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
+        allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+    }
+    
+    // Chats: Only participants can access messages
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.users;
+      
+      match /messages/{messageId} {
+         allow read, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
+         allow update, delete: if false; // Messages are immutable
+      }
     }
 
-    // --- Support Tickets ---
-    match /supportTickets/{ticketId} {
-        allow create: if isSignedIn();
+    // Global Chat: Any signed-in user can read/write
+    match /global_chat/{messageId} {
+        allow read, create: if isSignedIn();
+        allow update, delete: if isAdmin();
+    }
+
+    // AI Access Tokens: Write-only for server, no client access
+    match /ai_access_tokens/{tokenId} {
+        allow read, write: if false;
+    }
+    
+     // Referrals: Can be created by user, only read/updated by admin
+    match /referrals/{referralId} {
+        allow create: if isSignedIn() && request.resource.data.newUserId == request.auth.uid;
         allow read, update, delete: if isAdmin();
     }
     
-    // --- Referrals ---
-    match /referrals/{referralId} {
-        allow create: if isSignedIn();
-        allow read, update: if isAdmin();
-    }
-    
-    // --- AI Access Tokens ---
-    match /ai_access_tokens/{tokenId} {
-        allow create: if isAdmin(); // Only admins can create tokens
-    }
-
-    // --- App Configuration ---
-    // Read-only for clients, writable only by admins.
+    // App Config: Read-only for clients, admin-only write
     match /appConfig/{configId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    // Feature Showcases: Publicly readable, admin-only write
+    match /featureShowcases/{showcaseId} {
+        allow read: if true;
+        allow write: if isSuperAdmin();
+    }
+
+    // Global Gifts: Read only for active gifts
+    match /globalGifts/{giftId} {
+        allow read: if resource.data.isActive == true;
+        allow write: if isSuperAdmin();
     }
   }
 }
