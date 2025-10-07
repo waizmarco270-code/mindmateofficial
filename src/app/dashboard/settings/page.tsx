@@ -235,6 +235,16 @@ export default function SettingsPage() {
                 <p className="text-muted-foreground">Manage your account, preferences, and app settings.</p>
             </div>
             
+            <Card className="relative overflow-hidden border-primary/20 bg-primary/5">
+                <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)]"></div>
+                <CardContent className="relative p-6 text-center">
+                    <p className="text-sm font-semibold text-primary/80">Current App Version</p>
+                    <p className="text-6xl font-bold tracking-tighter text-shadow-glow animate-pulse" style={{"--tw-shadow-color": "hsl(var(--primary))"} as React.CSSProperties}>
+                        v1.0
+                    </p>
+                </CardContent>
+            </Card>
+
             <Tabs defaultValue="account" className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <TabsList className="md:col-span-1 flex flex-col h-auto bg-transparent p-0 border-r">
                     <TabsTrigger value="account" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><UserIcon className="mr-3"/> Account</TabsTrigger>
@@ -283,4 +293,3 @@ export default function SettingsPage() {
 // Dummy Label to satisfy the compiler for the nested component
 const Label = ({ children, ...props }: React.ComponentProps<'label'>) => <label {...props}>{children}</label>;
 
-    
