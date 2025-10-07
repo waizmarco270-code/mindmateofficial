@@ -1,96 +1,117 @@
 
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    // Default: Deny all reads and writes
+    
+    // Default deny all access unless explicitly allowed
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Users can read all public user data, but only write to their own.
+    // Users can read their own data and limited public data of others.
+    // Users can only write to their own document.
     match /users/{userId} {
-      allow read, list: if request.auth != null;
-      allow write: if request.auth.uid == userId;
-    }
-    
-    // Subcollections within a user document are only accessible by that user.
-    match /users/{userId}/{document=**} {
-      allow read, write, list: if request.auth.uid == userId;
-    }
-    
-    // Anyone can read announcements and resources.
-    match /announcements/{announcementId} {
-      allow read: if true;
-    }
-    match /resources/{resourceId} {
-      allow read: if true;
-    }
-    match /resourceSections/{sectionId} {
-      allow read: if true;
-    }
-    match /dailySurprises/{surpriseId} {
-      allow read: if true;
-    }
-    match /quizzes/{quizId} {
-        allow read: if true;
-    }
-    match /featureShowcases/{showcaseId} {
-        allow read: if true;
-    }
-
-    // App config is readable by all.
-    match /appConfig/{configId} {
-      allow read: if true;
-    }
-
-    // Logged-in users can interact with polls.
-    match /polls/{pollId} {
       allow read: if request.auth != null;
-      allow update: if request.auth != null && 
-                       (
-                         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['results', 'comments']) ||
-                         (request.resource.data.isActive == true && resource.data.isActive == false)
-                       );
-    }
-    
-    // Global gifts are readable by all authenticated users
-    match /globalGifts/{giftId} {
-        allow read, update: if request.auth != null;
-    }
-
-    // Users can submit support tickets.
-    match /supportTickets/{ticketId} {
-      allow create: if request.auth != null;
-      allow read, update: if resource.data.userId == request.auth.uid; 
-    }
-
-    // Friend requests
-    match /friendRequests/{requestId} {
-      allow read: if request.auth != null && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId;
-      allow delete: if request.auth != null && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
-    }
-    
-    // Chat messages
-    match /chats/{chatId} {
-      allow read, write: if request.auth != null && request.auth.uid in resource.data.users;
-      match /messages/{messageId} {
-        allow read, create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
+      allow get: if request.auth != null;
+      allow list: if request.auth != null;
+      allow write: if request.auth.uid == userId;
+      
+      // Subcollections within a user's document
+      match /{subcollection}/{docId} {
+        allow read, write: if request.auth.uid == userId;
       }
     }
     
-    // Global chat
-    match /global_chat/{messageId} {
-      allow read, create: if request.auth != null;
+    // Friend Requests can be created by anyone, but only read by the involved parties
+    // and only deleted by the receiver (accept/decline).
+    match /friendRequests/{requestId} {
+      allow read: if request.auth != null && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
+      allow delete: if request.auth != null && request.auth.uid == resource.data.receiverId;
     }
     
-     // Referrals
+    // Chats are private between two users.
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.users;
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
+      }
+    }
+    
+    // Global chat is read/write for any authenticated user.
+    match /global_chat/{messageId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // Public content can be read by anyone, but only written by admins.
+    function isAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+     function isSuperAdmin() {
+      return request.auth.uid == "user_32WgV1OikpqTXO9pFApoPRLLarF";
+    }
+
+    match /announcements/{announcementId} {
+      allow read: if true;
+      allow write: if isAdmin() || isSuperAdmin();
+    }
+
+    match /quizzes/{quizId} {
+        allow read: if true;
+        allow write: if isAdmin() || isSuperAdmin();
+    }
+    
+    match /dailySurprises/{surpriseId} {
+      allow read: if true;
+      allow write: if isAdmin() || isSuperAdmin();
+    }
+    
+    match /resourceSections/{sectionId} {
+        allow read: if true;
+        allow write: if isAdmin() || isSuperAdmin();
+    }
+
+    match /resources/{resourceId} {
+        allow read: if true;
+        allow write: if isAdmin() || isSuperAdmin();
+    }
+
+    match /polls/{pollId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin() || isSuperAdmin();
+    }
+
     match /referrals/{referralId} {
-      allow create: if request.auth != null;
-      allow read: if request.auth != null; // Admins will check these
+        allow read, write: if isAdmin() || isSuperAdmin();
+        allow create: if request.auth != null;
+    }
+
+    match /supportTickets/{ticketId} {
+        allow read, write: if isAdmin() || isSuperAdmin();
+        allow create: if request.auth != null;
+    }
+
+    match /ai_access_tokens/{tokenId} {
+        allow read, write: if isAdmin() || isSuperAdmin();
+        allow create: if request.auth != null;
+    }
+
+    match /appConfig/{configId} {
+        allow read: if true;
+        allow write: if isSuperAdmin();
+    }
+    
+     match /featureShowcases/{showcaseId} {
+        allow read: if true;
+        allow write: if isSuperAdmin();
+    }
+
+    match /globalGifts/{giftId} {
+        allow read: if true;
+        allow write: if isSuperAdmin();
     }
 
   }
 }
+
+    
