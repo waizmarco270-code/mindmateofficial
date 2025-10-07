@@ -397,7 +397,7 @@ export const useRewards = () => {
             throw new Error("Reward already claimed for today.");
         }
 
-        const rewardsConfig = {
+        const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
             1: { credits: 10 },
             2: { credits: 5, scratch: 3 },
             3: { credits: 50 },
@@ -407,7 +407,7 @@ export const useRewards = () => {
             7: { credits: 200, scratch: 10, flip: 10 },
         };
 
-        const reward = rewardsConfig[streakDay as keyof typeof rewardsConfig];
+        const reward = rewardsConfig[streakDay];
         if (!reward) throw new Error("Invalid streak day for reward.");
 
         const userRef = doc(db, 'users', user.id);
@@ -436,9 +436,10 @@ export const useRewards = () => {
         }
         
         await batch.commit();
+        toast({ title: `Day ${streakDay} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
 
-    }, [user, currentUserData, grantVipAccess]);
+    }, [user, currentUserData, grantVipAccess, toast]);
     
 
     return { 

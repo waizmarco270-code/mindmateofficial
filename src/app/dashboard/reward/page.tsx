@@ -23,11 +23,11 @@ const REWARDS_CONFIG = [
     { day: 3, rewards: [{ type: 'Credits', value: 50 }] },
     { day: 4, rewards: [{ type: 'Scratch Jackpot', value: 20 }] },
     { day: 5, rewards: [{ type: 'Credits', value: 100 }] },
-    { day: 6, rewards: [{ type: 'Elite Access', value: 3 }] },
+    { day: 6, rewards: [{ type: 'VIP Access', value: 3 }] },
     { day: 7, rewards: [{ type: 'Credits', value: 200 }, { type: 'Scratch Cards', value: 10 }, { type: 'Card Flips', value: 10 }] },
 ];
 
-function DailyLoginReward() {
+function DailyTreasury() {
     const { currentUserData } = useUsers();
     const { claimDailyLoginReward } = useRewards();
     const [isClaiming, setIsClaiming] = useState(false);
@@ -37,8 +37,7 @@ function DailyLoginReward() {
             return { currentStreak: 1, canClaimToday: true };
         }
         const { streak, lastClaimed } = currentUserData.dailyLoginRewardState;
-
-        // If lastClaimed is not set, it's a new user state, so they can claim day 1.
+        
         if (!lastClaimed) {
              return { currentStreak: 1, canClaimToday: true };
         }
@@ -49,11 +48,9 @@ function DailyLoginReward() {
             return { currentStreak: streak, canClaimToday: false };
         }
         if (isYesterday(lastClaimedDate)) {
-            // If streak is 7, it resets to 1 for the next day.
             const newStreak = streak === 7 ? 1 : streak + 1;
             return { currentStreak: newStreak, canClaimToday: true };
         }
-        // If it's not today or yesterday, the streak is broken.
         return { currentStreak: 1, canClaimToday: true };
     }, [currentUserData]);
     
@@ -108,7 +105,7 @@ function DailyLoginReward() {
                                     </div>
                                     <div className="space-y-1 text-xs font-semibold">
                                         {rewards.map(r => (
-                                            <p key={r.type}>{r.value} {r.type}</p>
+                                            <p key={r.type}>{r.type === 'VIP Access' ? `${r.value}-Day VIP` : `+${r.value} ${r.type}`}</p>
                                         ))}
                                     </div>
                                 </div>
@@ -207,7 +204,7 @@ export default function RewardZoneHubPage() {
                 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
                     <div className="lg:col-span-2">
-                        <TabsContent value="daily-login"><DailyLoginReward /></TabsContent>
+                        <TabsContent value="daily-login"><DailyTreasury /></TabsContent>
                         <TabsContent value="crystal-growth"><CrystalGrowth /></TabsContent>
                         <TabsContent value="card-flip"><CardFlipGame /></TabsContent>
                         <TabsContent value="scratch-card"><ScratchCard /></TabsContent>
@@ -222,3 +219,4 @@ export default function RewardZoneHubPage() {
         </div>
     );
 }
+

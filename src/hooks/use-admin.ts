@@ -31,6 +31,7 @@ export interface User {
   unlockedResourceSections?: string[]; // Array of unlocked section IDs
   unlockedFeatures?: string[]; // Array of feature IDs
   unlockedThemes?: AppThemeId[];
+  vipAccessExpires?: string; // ISO string for expiration date
   hasAiAccess?: boolean; // For Marco AI
   perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
   quizAttempts?: Record<string, number>; // { quizId: attemptCount }
@@ -78,7 +79,7 @@ export interface User {
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
-  mathematicsLegendClaims?: Record<string, Record<string, number[]>>; // Changed structure
+  mathematicsLegendClaims?: Record<string, number[]>;
   dailyLoginRewardState?: {
       streak: number;
       lastClaimed: string; // YYYY-MM-DD
@@ -1287,7 +1288,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             subjectSprint: 0,
             flappyMind: 0,
             astroAscent: 0,
-            mathematicsLegend: 0
+            mathematicsLegend: 0,
         };
         usersSnapshot.forEach(userDoc => {
             batch.update(userDoc.ref, { 
@@ -1533,5 +1534,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
