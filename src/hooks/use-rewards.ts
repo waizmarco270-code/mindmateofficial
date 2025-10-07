@@ -82,7 +82,7 @@ export const useRewards = () => {
     }, [user]);
 
     // ===== SCRATCH CARD LOGIC =====
-    const canClaimScratchCard = useMemo(() => {
+    const canClaimReward = useMemo(() => {
         if (freeRewards > 0) return true;
         if (!lastScratchDate) return true;
         return !isToday(lastScratchDate);
@@ -94,7 +94,7 @@ export const useRewards = () => {
     }, [lastScratchDate, freeRewards]);
     
     const claimDailyReward = useCallback(async () => {
-        if (!canClaimScratchCard || !user) {
+        if (!canClaimReward || !user) {
             toast({ variant: 'destructive', title: 'No scratch cards left for today!' });
             return { prize: 'better luck' };
         }
@@ -137,7 +137,7 @@ export const useRewards = () => {
         }
 
         return { prize: chosenPrize.value };
-    }, [canClaimScratchCard, user, addCreditsToUser, freeRewards, toast]);
+    }, [canClaimReward, user, addCreditsToUser, freeRewards, toast]);
 
     // ===== CARD FLIP GAME LOGIC =====
     const canPlayCardFlip = useMemo(() => {
@@ -388,7 +388,6 @@ export const useRewards = () => {
 
     }, [user, canPlayCodebreaker, codebreakerStatus, addCreditsToUser]);
     
-    // ===== DAILY LOGIN REWARD LOGIC =====
     const claimDailyLoginReward = useCallback(async (streakDay: number) => {
         if (!user || !currentUserData) throw new Error("User not found");
 
@@ -444,7 +443,7 @@ export const useRewards = () => {
 
     return { 
         loading,
-        canClaimReward: canClaimScratchCard,
+        canClaimReward,
         claimDailyReward, 
         availableScratchCards,
         rewardHistory,
