@@ -1,78 +1,96 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Default deny all reads and writes
+  
+    // Default: Deny all reads and writes
     match /{document=**} {
       allow read, write: if false;
     }
-    
-    // Allow any authenticated user to read any document.
-    // This is necessary for features like leaderboards, profiles, etc.
-    // Writes are still restricted below.
-    match /{path=**} {
-      allow get, list: if request.auth != null;
-    }
 
-    // Users can only read and write to their own user document.
+    // Users can read all public user data, but only write to their own.
     match /users/{userId} {
-      allow read, update, delete: if request.auth.uid == userId;
-      allow create: if request.auth.uid == userId;
+      allow read, list: if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
+    
+    // Subcollections within a user document are only accessible by that user.
+    match /users/{userId}/{document=**} {
+      allow read, write, list: if request.auth.uid == userId;
+    }
+    
+    // Anyone can read announcements and resources.
+    match /announcements/{announcementId} {
+      allow read: if true;
+    }
+    match /resources/{resourceId} {
+      allow read: if true;
+    }
+    match /resourceSections/{sectionId} {
+      allow read: if true;
+    }
+    match /dailySurprises/{surpriseId} {
+      allow read: if true;
+    }
+    match /quizzes/{quizId} {
+        allow read: if true;
+    }
+    match /featureShowcases/{showcaseId} {
+        allow read: if true;
     }
 
-    // Users can manage their own subcollections.
-    match /users/{userId}/{collection}/{docId} {
-      allow read, write, delete: if request.auth.uid == userId;
+    // App config is readable by all.
+    match /appConfig/{configId} {
+      allow read: if true;
     }
 
-    // Public collections that anyone can read.
-    match /(announcements|resources|resourceSections|dailySurprises|polls|quizzes|appConfig|featureShowcases|globalGifts)/{document=**} {
-      allow get, list: if true;
-    }
-
-    // Admins can write to public collections.
-    match /(announcements|resources|resourceSections|dailySurprises|polls|quizzes|appConfig|featureShowcases|globalGifts)/{document=**} {
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.uid == 'user_32WgV1OikpqTXO9pFApoPRLLarF';
-    }
-
-    // Authenticated users can vote on polls.
+    // Logged-in users can interact with polls.
     match /polls/{pollId} {
-        allow update: if request.auth != null && 'results' in request.resource.data;
+      allow read: if request.auth != null;
+      allow update: if request.auth != null && 
+                       (
+                         request.resource.data.diff(resource.data).affectedKeys().hasOnly(['results', 'comments']) ||
+                         (request.resource.data.isActive == true && resource.data.isActive == false)
+                       );
     }
     
-    // Authenticated users can create support tickets for themselves.
-    match /supportTickets/{ticketId} {
-      allow create: if request.auth.uid == request.resource.data.userId;
-      // Admins can read/update/delete any ticket.
-      allow read, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.uid == 'user_32WgV1OikpqTXO9pFApoPRLLarF';
+    // Global gifts are readable by all authenticated users
+    match /globalGifts/{giftId} {
+        allow read, update: if request.auth != null;
     }
 
-    // Private chats between two users.
-    match /chats/{chatId} {
-        allow read, write: if request.auth.uid in resource.data.users;
-        match /messages/{messageId} {
-            allow read, create: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
-        }
+    // Users can submit support tickets.
+    match /supportTickets/{ticketId} {
+      allow create: if request.auth != null;
+      allow read, update: if resource.data.userId == request.auth.uid; 
     }
-    
-    // Global chat rules
-    match /global_chat/{messageId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth.uid == request.resource.data.senderId;
-    }
-    
-    // Friend Requests
+
+    // Friend requests
     match /friendRequests/{requestId} {
-        allow read, create, delete: if request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.senderId;
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
     }
     
-    // Referral Requests
-    match /referrals/{referralId} {
-        // The user who used the code can create the request.
-        allow create: if request.auth.uid == request.resource.data.newUserId;
-        // Only admins can read/update the request.
-        allow read, update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.uid == 'user_32WgV1OikpqTXO9pFApoPRLLarF';
+    // Chat messages
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.users;
+      match /messages/{messageId} {
+        allow read, create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
+      }
     }
+    
+    // Global chat
+    match /global_chat/{messageId} {
+      allow read, create: if request.auth != null;
+    }
+    
+     // Referrals
+    match /referrals/{referralId} {
+      allow create: if request.auth != null;
+      allow read: if request.auth != null; // Admins will check these
+    }
+
   }
 }

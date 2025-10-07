@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -80,7 +79,7 @@ export interface User {
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
-  mathematicsLegendClaims?: Record<string, Record<string, number[]>>;
+  mathematicsLegendClaims?: Record<string, Record<string, number[]>>; // Changed structure
   dailyLoginRewardState?: {
       streak: number;
       lastClaimed: string; // YYYY-MM-DD
@@ -359,12 +358,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
             setUsers(usersList);
-            if(usersList.length > 0) { // If we have users, we can proceed with other data loading.
-                setLoading(false);
-            }
-        }, (error) => {
-            console.error("Error fetching all users:", error);
-            setLoading(false); // Stop loading on error
         });
         return () => unsubscribe();
     }, []);
@@ -850,10 +843,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const grantVipAccess = useCallback(async (uid: string, durationDays: number) => {
         if (!uid) return;
-        const expirationDate = dateFnsAddDays(new Date(), durationDays);
         const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+        if(!userSnap.exists()) return;
+        const userData = userSnap.data() as User;
+
+        const currentExpiry = userData.vipAccessExpires ? new Date(userData.vipAccessExpires) : new Date();
+        const newExpiry = dateFnsAddDays(currentExpiry > new Date() ? currentExpiry : new Date(), durationDays);
+
         await updateDoc(userDocRef, {
-            vipAccessExpires: expirationDate.toISOString()
+            vipAccessExpires: newExpiry.toISOString()
         });
     }, []);
 
@@ -1078,7 +1077,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
         const userData = userSnap.data() as User;
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const weekClaims = userData.mathematicsLegendClaims?.[weekKey] || [];
+        const weekClaims = (userData.mathematicsLegendClaims?.[weekKey] || []);
 
         if (weekClaims.includes(milestone)) {
             return false; // Already claimed this week
@@ -1289,7 +1288,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             subjectSprint: 0,
             flappyMind: 0,
             astroAscent: 0,
-            mathematicsLegend: 0,
+            mathematicsLegend: 0
         };
         usersSnapshot.forEach(userDoc => {
             batch.update(userDoc.ref, { 
