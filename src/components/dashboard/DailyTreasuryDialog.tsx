@@ -18,7 +18,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         setIsClaiming(true);
         try {
             await claimDailyLoginReward();
-            // The dialog will close automatically after claim due to state change
+            // The dialog will close automatically after claim due to state change in the hook
             onOpenChange(false);
         } catch (error) {
             // Toast is handled within the hook
@@ -36,7 +36,8 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         6: { text: "3 Days", subtext: "VIP" },
         7: { text: "Legendary" },
     };
-
+    
+    // Determine the day to display. If today is claimed, it shows the full streak. If not, it shows the next day to be claimed.
     const currentDayForDisplay = dailyLoginState.hasClaimedToday ? dailyLoginState.streak : (dailyLoginState.streak % 7) + 1;
     const currentReward = rewardsConfig[currentDayForDisplay] || { text: 'Bonus!', subtext: 'Come back tomorrow' };
 
@@ -79,7 +80,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
                                             isNext && "border-amber-400 scale-105 shadow-lg shadow-amber-400/30"
                                         )}
                                     >
-                                        {isCompleted ? <CheckCircle className="h-5 w-5 text-red-400" /> : <div className="h-5 w-5" />}
+                                        {isCompleted && <CheckCircle className="h-5 w-5 text-red-400" />}
                                         <p className="text-white/80 font-bold mt-1 text-sm sm:text-base">{reward.text}</p>
                                         {reward.subtext && <p className="text-white/60 text-[10px] leading-tight">{reward.subtext}</p>}
                                     </motion.div>

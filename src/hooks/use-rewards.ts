@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
-import { isToday, parseISO, addDays } from 'date-fns';
+import { isToday, parseISO, addDays, isThisWeek } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 import { CRYSTAL_TIERS, type CrystalTier } from '@/components/reward/crystal-growth';
@@ -435,23 +435,22 @@ export const useRewards = () => {
 
         const userRef = doc(db, 'users', user.id);
         
-        const updates: any = {
+        const batch = writeBatch(db);
+
+        // Update login state
+        batch.update(userRef, {
             'dailyLoginRewardState.streak': nextStreakDay,
             'dailyLoginRewardState.lastClaimed': new Date().toISOString().split('T')[0],
-            rewardHistory: arrayUnion({
+             rewardHistory: arrayUnion({
                 reward: `Day ${nextStreakDay} Login`,
                 date: new Date(),
                 source: 'Daily Treasury'
             })
-        };
-        
-        const batch = writeBatch(db);
+        });
 
-        if (reward.credits) updates.credits = increment(reward.credits);
-        if (reward.scratch) updates.freeRewards = increment(reward.scratch);
-        if (reward.flip) updates.freeGuesses = increment(reward.flip);
-
-        batch.update(userRef, updates);
+        if (reward.credits) batch.update(userRef, { credits: increment(reward.credits) });
+        if (reward.scratch) batch.update(userRef, { freeRewards: increment(reward.scratch) });
+        if (reward.flip) batch.update(userRef, { freeGuesses: increment(reward.flip) });
 
         await batch.commit();
         
