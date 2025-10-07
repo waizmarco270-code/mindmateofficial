@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/react';
 import { PWAInstallPrompt } from '@/components/pwa/pwa-install-prompt';
-import { GoogleAnalytics } from '@next/third-parties/google';
 
 export default function RootLayout({
   children,
@@ -58,7 +57,6 @@ export default function RootLayout({
             <PWAInstallPrompt />
           </ThemeProvider>
         </body>
-        <GoogleAnalytics gaId="G-Q3BB77S3M6" />
       </html>
     </ClerkProvider>
   );
