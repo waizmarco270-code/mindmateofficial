@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,6 +19,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         try {
             await claimDailyLoginReward();
             // The dialog will close automatically after claim due to state change
+            onOpenChange(false);
         } catch (error) {
             // Toast is handled within the hook
         } finally {

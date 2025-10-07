@@ -360,6 +360,8 @@ export default function DashboardPage() {
     useEffect(() => {
         if (!rewardsLoading && dailyLoginState.canClaim) {
             setIsTreasuryOpen(true);
+        } else if (!rewardsLoading && !dailyLoginState.canClaim) {
+            setIsTreasuryOpen(false);
         }
     }, [rewardsLoading, dailyLoginState.canClaim]);
 
