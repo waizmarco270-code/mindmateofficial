@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
-import { isToday, parseISO, addDays, isYesterday } from 'date-fns';
+import { isToday, parseISO, addDays } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 import { CRYSTAL_TIERS, type CrystalTier } from '@/components/reward/crystal-growth';
@@ -397,24 +397,22 @@ export const useRewards = () => {
             throw new Error("Reward already claimed for today.");
         }
 
-        const rewards = {
+        const rewardsConfig = {
             1: { credits: 10 },
             2: { credits: 5, scratch: 3 },
             3: { credits: 50 },
             4: { scratch: 20 },
             5: { credits: 100 },
-            6: { vip: 3 }, // 3 days of VIP
-            7: { credits: 200, scratch: 10, flip: 10 }
+            6: { vip: 3 },
+            7: { credits: 200, scratch: 10, flip: 10 },
         };
 
-        const reward = rewards[streakDay as keyof typeof rewards];
+        const reward = rewardsConfig[streakDay as keyof typeof rewardsConfig];
         if (!reward) throw new Error("Invalid streak day for reward.");
 
-        const batch = writeBatch(db);
         const userRef = doc(db, 'users', user.id);
-
         const updates: any = {
-             dailyLoginRewardState: {
+            dailyLoginRewardState: {
                 streak: streakDay,
                 lastClaimed: new Date().toISOString().split('T')[0]
             },
@@ -425,18 +423,19 @@ export const useRewards = () => {
             })
         };
 
+        const batch = writeBatch(db);
+
         if (reward.credits) updates.credits = increment(reward.credits);
         if (reward.scratch) updates.freeRewards = increment(reward.scratch);
         if (reward.flip) updates.freeGuesses = increment(reward.flip);
-        
-        if (reward.vip) {
-            // Can't batch a function call, so we do it separately
-            await grantVipAccess(user.id, reward.vip);
-        }
 
         batch.update(userRef, updates);
-        await batch.commit();
 
+        if (reward.vip) {
+            await grantVipAccess(user.id, reward.vip);
+        }
+        
+        await batch.commit();
         return reward;
 
     }, [user, currentUserData, grantVipAccess]);

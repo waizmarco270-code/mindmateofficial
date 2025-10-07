@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,7 +10,7 @@ import { Gift, History, Gem, Layers, VenetianMask, Award, Loader2, CalendarCheck
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useRewards } from '@/hooks/use-rewards';
 import { useUsers } from '@/hooks/use-admin';
-import { formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+import { formatDistanceToNow, isToday, isYesterday, parseISO } from 'date-fns';
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -36,14 +37,23 @@ function DailyLoginReward() {
             return { currentStreak: 1, canClaimToday: true };
         }
         const { streak, lastClaimed } = currentUserData.dailyLoginRewardState;
+
+        // If lastClaimed is not set, it's a new user state, so they can claim day 1.
+        if (!lastClaimed) {
+             return { currentStreak: 1, canClaimToday: true };
+        }
+
         const lastClaimedDate = new Date(lastClaimed);
         
         if (isToday(lastClaimedDate)) {
             return { currentStreak: streak, canClaimToday: false };
         }
         if (isYesterday(lastClaimedDate)) {
-            return { currentStreak: streak === 7 ? 1 : streak + 1, canClaimToday: true };
+            // If streak is 7, it resets to 1 for the next day.
+            const newStreak = streak === 7 ? 1 : streak + 1;
+            return { currentStreak: newStreak, canClaimToday: true };
         }
+        // If it's not today or yesterday, the streak is broken.
         return { currentStreak: 1, canClaimToday: true };
     }, [currentUserData]);
     
