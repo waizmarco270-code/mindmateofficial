@@ -4,13 +4,14 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode, Youtube, Instagram } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useAdmin } from '@/hooks/use-admin';
 import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
+import { Separator } from '@/components/ui/separator';
 
 const toolCategories = [
     {
@@ -76,6 +77,27 @@ const toolCategories = [
         color: "from-slate-500 to-gray-500",
         shadow: "shadow-slate-500/30"
     }
+];
+
+const distractionTools = [
+    {
+        id: 'instagram',
+        title: "Instagram Reels",
+        description: "Take a 'short' break with endless scrolling.",
+        icon: Instagram,
+        href: "/dashboard/tools/instagram",
+        color: "from-rose-500 via-pink-500 to-purple-500",
+        shadow: "shadow-pink-500/30"
+    },
+    {
+        id: 'youtube',
+        title: "YouTube Shorts",
+        description: "Just one more video... we promise.",
+        icon: Youtube,
+        href: "/dashboard/tools/youtube",
+        color: "from-red-600 to-red-800",
+        shadow: "shadow-red-500/30"
+    },
 ]
 
 export default function ToolsPage() {
@@ -99,12 +121,11 @@ export default function ToolsPage() {
                   <Wrench className="h-8 w-8 text-primary" />
                   Student Tools
                 </h1>
-                <p className="text-muted-foreground">A collection of utilities to help with your studies.</p>
+                <p className="text-muted-foreground">A collection of utilities to help with your studies and... other things.</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
                 {toolCategories.map((category, index) => {
                     const featureId = category.id as LockableFeature['id'];
-                    // Fallback to a default lock state if not defined, though they should be.
                     const isLocked = featureLocks ? (featureLocks[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId)) : false;
 
                     return (
@@ -141,6 +162,40 @@ export default function ToolsPage() {
                 })}
             </div>
             
+            <Separator />
+            
+            <div>
+                 <h2 className="text-2xl font-bold tracking-tight">Distraction Zone</h2>
+                <p className="text-muted-foreground">Admins are not responsible for any lost time here. Enter at your own risk.</p>
+            </div>
+             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+                 {distractionTools.map((tool, index) => (
+                    <motion.div
+                        key={tool.title}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: index * 0.05 }}
+                        className="h-full"
+                    >
+                         <Link href={tool.href} className="block h-full group">
+                               <Card className={cn("h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1", tool.shadow)}>
+                                   <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-br", tool.color)}></div>
+                                   <CardHeader>
+                                        <div className={cn("p-3 rounded-lg bg-gradient-to-br w-fit", tool.color)}>
+                                            <tool.icon className="h-6 w-6 text-white"/>
+                                        </div>
+                                        <CardTitle className="pt-3">{tool.title}</CardTitle>
+                                   </CardHeader>
+                                   <CardContent className="flex-1">
+                                       <p className="text-sm text-muted-foreground">{tool.description}</p>
+                                   </CardContent>
+                               </Card>
+                         </Link>
+                    </motion.div>
+                 ))}
+            </div>
+
+
             {featureToUnlock && (
                 <FeatureUnlockDialog 
                     feature={featureToUnlock}
