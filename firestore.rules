@@ -1,9 +1,21 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Default allow read for public collections, but write only for admins
+    // Default-deny all access, then allow specifically
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users can only read/write their own document
+    match /users/{userId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow create: if request.auth != null;
+    }
+    
+    // Allow any authenticated user to read public collections
     match /announcements/{docId} {
       allow read: if request.auth != null;
       allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
@@ -14,9 +26,27 @@ service cloud.firestore {
       allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
 
-    match /featureShowcases/{docId} {
+    match /polls/{docId} {
         allow read: if request.auth != null;
-        allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
+        allow update: if request.auth != null && (
+            (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['results', 'votedPolls', 'comments']))
+        );
+        allow create, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+    
+    match /quizzes/{docId} {
+        allow read: if request.auth != null;
+        allow create, delete, update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    match /resources/{docId} {
+        allow read: if request.auth != null;
+        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    match /resourceSections/{docId} {
+        allow read: if request.auth != null;
+        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }
     
     match /appConfig/{docId} {
@@ -24,102 +54,39 @@ service cloud.firestore {
       allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
     }
 
-    // Resources can be read by anyone, but only modified by admins
-    match /resources/{docId} {
-      allow read: if request.auth != null;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    match /resourceSections/{docId} {
-      allow read: if request.auth != null;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-
-    // Quizzes can be read by anyone, but only modified by admins
-    match /quizzes/{docId} {
-      allow read: if request.auth != null;
-      allow write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    // Polls can be read by anyone
-    // Voting/commenting is handled in the user document write rule
-    match /polls/{pollId} {
-        allow read: if request.auth != null;
-        allow update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-        allow create: if request.auth != null; // Let admins create them
-    }
-
-    // Users can only manage their own data, but can read public data of others
-    match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth.uid == userId;
-
-      // Subcollections
-      match /timeTrackerSessions/{sessionId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-      match /pomodoroSessions/{sessionId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-      match /dailyTasks/{taskId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-      match /roadmaps/{roadmapId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-       match /challenges/{challengeId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-      match /rewards/{rewardId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-      match /dailyClaims/{claimId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-      match /weeklyClaims/{claimId} {
-        allow read, write: if request.auth.uid == userId;
-      }
-    }
-    
-    // Friend requests can be read by sender/receiver, created by sender, deleted by either
-    match /friendRequests/{requestId} {
-      allow read: if request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId;
-      allow create: if request.auth.uid == request.resource.data.senderId;
-      allow delete: if request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId;
-    }
-    
-    // Chats can only be accessed by the participants
-    match /chats/{chatId} {
-      allow read, write: if request.auth.uid in resource.data.users;
-      match /messages/{messageId} {
-         allow read, write: if request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
-      }
-    }
-    
-    // Global chat allows any authenticated user to read/write
-    match /global_chat/{messageId} {
-        allow read, create: if request.auth != null;
-        // Only admins can delete messages
-        allow delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-    }
-    
-    // Support tickets can be created by any user, but only read by that user or an admin
     match /supportTickets/{ticketId} {
-        allow create: if request.auth != null;
-        allow read, update: if request.auth.uid == resource.data.userId || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
-        allow delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow read, write: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+      allow create: if request.auth.uid == request.resource.data.userId;
+    }
+    
+    match /globalGifts/{giftId} {
+        allow read: if request.auth != null;
+        allow create, update, delete: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
     }
 
-    // Referral requests can be created by users, but only managed by admins
+    // Chat rules
+    match /chats/{chatId} {
+      allow read, write: if request.auth != null && request.auth.uid in resource.data.users;
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      allow read, create: if request.auth != null && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
+      allow update, delete: if false; // Messages are immutable
+    }
+
+    match /friendRequests/{requestId} {
+        allow read, create: if request.auth != null && (request.auth.uid == request.resource.data.senderId || request.auth.uid == request.resource.data.receiverId);
+        allow delete: if request.auth != null && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+    }
+    
+    // Subcollections within users
+    match /users/{userId}/{collectionId}/{docId} {
+       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
     match /referrals/{referralId} {
         allow create: if request.auth != null;
         allow read, update: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true;
-    }
-    
-    // AI Access Tokens are write-only for users, not readable
-    match /ai_access_tokens/{tokenId} {
-        allow read: if false; // No one can read tokens
-        allow create: if request.auth.uid == request.resource.data.userId; // Only the user can create their own token
     }
   }
 }
