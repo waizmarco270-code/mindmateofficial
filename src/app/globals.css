@@ -493,10 +493,12 @@
   .cyber-grid-bg {
     background-color: #0c0a09;
     background-image:
-        linear-gradient(rgba(139, 92, 246, 0.3) 1px, transparent 1px),
-        linear-gradient(to right, rgba(139, 92, 246, 0.3) 1px, transparent 1px);
-    background-size: 4rem 4rem;
-    animation: animated-grid 5s linear infinite;
+        linear-gradient(45deg, #8b5cf6 25%, transparent 25%), 
+        linear-gradient(-45deg, #8b5cf6 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #8b5cf6 75%),
+        linear-gradient(-45deg, transparent 75%, #8b5cf6 75%);
+    background-size: 60px 60px;
+    animation: animated-grid 25s linear infinite;
   }
 
   .oceanic-flow-bg {
@@ -536,7 +538,7 @@
   .lava-flow-bg {
     background: linear-gradient(135deg, #ff4800, #ff7e00, #ff4800, #000);
     background-size: 300% 300%;
-    animation: nebula-animation 8s ease infinite;
+    animation: nebula-animation 20s ease infinite;
   }
   .mystic-forest-bg {
     background: linear-gradient(160deg, #002e18, #004d2e, #002e18);
@@ -556,7 +558,7 @@
     background-image: linear-gradient(transparent 99%, rgba(161, 161, 170, 0.5) 1%),
                       linear-gradient(90deg, rgba(161, 161, 170, 0.5) 1px, transparent 1px);
     background-size: 100% 5px, 5px 100%;
-    animation: lofi-rain 0.2s linear infinite;
+    animation: lofi-rain 2s linear infinite;
   }
   .whatsapp-style-bg {
     background-color: #e5ddd5;
