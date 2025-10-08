@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogClose, DialogFooter } from '@/components/ui/dialog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const THEME_COST = 50;
 
@@ -147,36 +148,47 @@ function AppearanceSettings() {
 }
 
 function AccountSettings() {
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
     return (
         <Card>
             <CardContent className="p-0">
-                 <UserProfile
-                    routing="hash"
-                    appearance={{
-                        variables: {
-                            colorBackground: 'hsl(var(--background))',
-                            colorText: 'hsl(var(--foreground))',
-                            colorPrimary: 'hsl(var(--primary))',
-                            colorInputBackground: 'hsl(var(--input))',
-                            colorInputText: 'hsl(var(--foreground))',
-                        },
-                        elements: {
-                            card: {
-                                boxShadow: 'none',
-                                width: '100%',
+                {isClient ? (
+                    <UserProfile
+                        routing="hash"
+                        appearance={{
+                            variables: {
+                                colorBackground: 'hsl(var(--background))',
+                                colorText: 'hsl(var(--foreground))',
+                                colorPrimary: 'hsl(var(--primary))',
+                                colorInputBackground: 'hsl(var(--input))',
+                                colorInputText: 'hsl(var(--foreground))',
                             },
-                            scrollBox: {
-                                padding: '1.5rem' // Corresponds to p-6
-                            },
-                            navbar: {
-                                padding: '1.5rem',
-                            },
-                            navbarMobileMenuButton: {
-                                 color: 'hsl(var(--foreground))',
+                            elements: {
+                                card: {
+                                    boxShadow: 'none',
+                                    width: '100%',
+                                },
+                                scrollBox: {
+                                    padding: '1.5rem' // Corresponds to p-6
+                                },
+                                navbar: {
+                                    padding: '1.5rem',
+                                },
+                                navbarMobileMenuButton: {
+                                    color: 'hsl(var(--foreground))',
+                                }
                             }
-                        }
-                    }}
-                 />
+                        }}
+                    />
+                ) : (
+                     <div className="p-6">
+                        <Skeleton className="w-full h-[600px]" />
+                    </div>
+                )}
             </CardContent>
         </Card>
     );

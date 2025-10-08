@@ -69,7 +69,7 @@ export function WorldChatView() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
     const [replyingTo, setReplyingTo] = useState<WorldChatMessage | null>(null);
-    const [activeTheme, setActiveTheme] = useLocalStorage('worldChatTheme', chatThemes[0]);
+    const [activeTheme, setActiveTheme] = useLocalStorage('worldChatTheme', chatThemes[1]);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
