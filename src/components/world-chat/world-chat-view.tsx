@@ -183,13 +183,15 @@ export function WorldChatView() {
                             <span className="text-muted-foreground">{pinnedMessage.text}</span>
                         </div>
                         {isAdmin && (
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => unpinMessage()}>
-                                <PinOff className="h-4 w-4" />
-                            </Button>
+                             <>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => unpinMessage()}>
+                                    <PinOff className="h-4 w-4" />
+                                </Button>
+                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDismissedPinId(pinnedMessage.id)}>
+                                    <X className="h-4 w-4" />
+                                </Button>
+                             </>
                         )}
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDismissedPinId(pinnedMessage.id)}>
-                            <X className="h-4 w-4" />
-                        </Button>
                     </div>
                 )}
                 <CardContent className="p-0 overflow-hidden relative">
@@ -301,14 +303,13 @@ const ClickableMessage = ({ text }: { text: string }) => {
 
 function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void }) {
     const { user: clerkUser } = useUser();
-    const { users, isAdmin } = useAdmin();
+    const { isAdmin } = useAdmin();
     const { editMessage, deleteMessage, toggleReaction, pinMessage } = useWorldChat();
     const { toast } = useToast();
     
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(message.text || '');
 
-    const userToShow = isOwn ? users.find(u => u.uid === clerkUser?.id) : sender;
     const userColor = getUserColor(sender.uid);
     const messageRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -352,20 +353,20 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
     };
 
 
-    if (!userToShow) return null;
+    if (!sender) return null;
 
-    const isSuperAdmin = userToShow.uid === SUPER_ADMIN_UID;
+    const isSuperAdmin = sender.uid === SUPER_ADMIN_UID;
     const ownedBadges = [
-        (isSuperAdmin || userToShow.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
-        userToShow.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
-        userToShow.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
-        userToShow.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
-        userToShow.isCoDev && { type: 'co-dev', name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> }
+        (isSuperAdmin || sender.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+        sender.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+        sender.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+        sender.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
+        sender.isCoDev && { type: 'co-dev', name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> }
     ].filter(Boolean);
 
     if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
 
-    const badgeToShow = ownedBadges.find(b => b.type === userToShow.showcasedBadge) || ownedBadges[0] || null;
+    const badgeToShow = ownedBadges.find(b => b.type === sender.showcasedBadge) || ownedBadges[0] || null;
     const canDelete = isOwn || isAdmin;
 
     const reactions = message.reactions || {};
