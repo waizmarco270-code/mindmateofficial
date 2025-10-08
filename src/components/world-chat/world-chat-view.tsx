@@ -141,7 +141,7 @@ export function WorldChatView() {
 
     return (
         <>
-            <Card className={cn("h-full grid grid-rows-[auto_auto_1fr_auto] border-0 transition-all duration-500", activeTheme.class)}>
+            <div className={cn("h-full grid grid-rows-[auto_auto_1fr_auto] border-0 transition-all duration-500", activeTheme.class)}>
                  <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/10 bg-black/20">
                     <div className="flex items-center gap-3">
                         <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-white hover:bg-white/10">
@@ -163,7 +163,7 @@ export function WorldChatView() {
                                 </SheetHeader>
                                 <div className="py-4 space-y-4">
                                     {chatThemes.map(theme => (
-                                        <button key={theme.id} onClick={() => setActiveTheme(theme)} className="w-full text-left p-2 rounded-lg border-2 data-[active=true]:border-primary data-[active=false]:border-transparent" data-active={activeTheme.id === theme.id}>
+                                        <button key={theme.id} onClick={() => setActiveTheme(theme)} className="w-full text-left p-2 rounded-lg border-2 data-[active=true]:border-primary data-[active-false]:border-transparent" data-active={activeTheme.id === theme.id}>
                                             <div className="flex items-center gap-4">
                                                 <div className={cn("h-16 w-24 rounded-md", theme.class)}></div>
                                                 <span className="font-semibold">{theme.name}</span>
@@ -194,7 +194,7 @@ export function WorldChatView() {
                         )}
                     </div>
                 )}
-                <CardContent className="p-0 overflow-hidden relative">
+                <div className="overflow-hidden relative">
                     <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
                         <div className="p-4 space-y-6">
                             {(loading || usersLoading) && (
@@ -215,7 +215,7 @@ export function WorldChatView() {
                             </AnimatePresence>
                         </div>
                     </ScrollArea>
-                </CardContent>
+                </div>
                 <CardFooter className="p-4 border-t border-white/10 bg-black/20 flex-col items-start gap-2">
                      <AnimatePresence>
                         {replyingTo && (
@@ -252,7 +252,7 @@ export function WorldChatView() {
                         </Button>
                     </form>
                 </CardFooter>
-            </Card>
+            </div>
 
              <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
                 <DialogContent className="max-w-md">
@@ -380,27 +380,9 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="group/message relative flex flex-col"
+            className="group/message relative"
         >
-            <div className={cn("relative flex items-end gap-2 w-full", isOwn ? "justify-end" : "justify-start")}>
-                 {/* Action Buttons */}
-                 <div className={cn(
-                    "absolute bottom-0 z-20 flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1 opacity-0 group-hover/message:opacity-100 transition-opacity",
-                    isOwn ? "left-0 -translate-x-full -ml-1" : "right-0 translate-x-full ml-1"
-                )}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white"><Smile className="h-4 w-4"/></Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-1"><div className="flex gap-1">{REACTIONS.map(emoji => (<Button key={emoji} variant="ghost" size="icon" className="text-xl" onClick={() => toggleReaction(message.id, emoji)}>{emoji}</Button>))}</div></PopoverContent>
-                    </Popover>
-                    {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
-                    {isAdmin && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>)}
-                    {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
-                </div>
-
+            <div className={cn("relative flex items-end gap-2", isOwn ? "justify-end" : "justify-start")}>
                 {!isOwn && <button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={sender.photoURL} /><AvatarFallback>{sender.displayName.charAt(0)}</AvatarFallback></Avatar></button>}
                 
                 <div className={cn("max-w-xs md:max-w-md", isOwn ? "text-right" : "text-left")}>
@@ -411,20 +393,39 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                             <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
                         </div>
                     )}
-                    <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
-                        {message.replyingTo && (
-                            <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs">
-                                <p className="font-bold text-slate-400">Replying to {message.replyingTo.senderName}</p>
-                                <p className="italic text-slate-500 truncate">"{message.replyingTo.textSnippet}"</p>
-                            </div>
-                        )}
-                        {isEditing ? (
-                             <div className="space-y-2">
-                                <textarea ref={textareaRef} value={editText} onChange={(e) => { setEditText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} onKeyDown={handleKeyDown} className="w-full bg-transparent text-white border-0 focus:ring-0 resize-none p-0" />
-                                <div className="flex justify-end gap-2 text-xs"><button onClick={() => setIsEditing(false)}>Cancel</button><button onClick={handleEditSave} className="font-bold text-primary">Save</button></div>
-                            </div>
-                        ) : ( message.text && <ClickableMessage text={message.text} /> )}
-                        {message.editedAt && !isEditing && ( <p className="text-xs text-slate-400/70 mt-1">(edited)</p> )}
+                    <div className="relative">
+                         <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
+                            {message.replyingTo && (
+                                <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs">
+                                    <p className="font-bold text-slate-400">Replying to {message.replyingTo.senderName}</p>
+                                    <p className="italic text-slate-500 truncate">"{message.replyingTo.textSnippet}"</p>
+                                </div>
+                            )}
+                            {isEditing ? (
+                                <div className="space-y-2">
+                                    <textarea ref={textareaRef} value={editText} onChange={(e) => { setEditText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} onKeyDown={handleKeyDown} className="w-full bg-transparent text-white border-0 focus:ring-0 resize-none p-0" />
+                                    <div className="flex justify-end gap-2 text-xs"><button onClick={() => setIsEditing(false)}>Cancel</button><button onClick={handleEditSave} className="font-bold text-primary">Save</button></div>
+                                </div>
+                            ) : ( message.text && <ClickableMessage text={message.text} /> )}
+                            {message.editedAt && !isEditing && ( <p className="text-xs text-slate-400/70 mt-1">(edited)</p> )}
+                         </div>
+                          {/* Action Buttons */}
+                        <div className={cn(
+                            "absolute bottom-0 z-20 flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1 opacity-0 group-hover/message:opacity-100 transition-opacity",
+                            isOwn ? "left-0 -translate-x-full -ml-1" : "right-0 translate-x-full ml-1"
+                        )}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white"><Smile className="h-4 w-4"/></Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-1"><div className="flex gap-1">{REACTIONS.map(emoji => (<Button key={emoji} variant="ghost" size="icon" className="text-xl" onClick={() => toggleReaction(message.id, emoji)}>{emoji}</Button>))}</div></PopoverContent>
+                            </Popover>
+                            {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
+                            {isAdmin && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>)}
+                            {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
+                        </div>
                     </div>
                 </div>
 
