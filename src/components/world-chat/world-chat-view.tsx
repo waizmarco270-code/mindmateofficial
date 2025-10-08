@@ -7,7 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette } from 'lucide-react';
-import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
+import { useWorldChat, WorldChatMessage, ReplyContext, PollData } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -22,6 +22,7 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
+import { Progress } from '../ui/progress';
 
 const userColors = [
     'border-red-500/50',
@@ -60,6 +61,44 @@ const chatThemes = [
     { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
     { id: 'classic-grid', name: 'Classic Grid', class: 'classic-grid-bg' },
 ];
+
+function PollMessage({ pollData, messageId }: { pollData: PollData, messageId: string }) {
+    const { user } = useUser();
+    const { submitPollVote } = useWorldChat();
+
+    const totalVotes = Object.values(pollData.results).flat().length;
+    const userVote = Object.keys(pollData.results).find(option => pollData.results[option].includes(user?.id || ''));
+
+    return (
+        <div className="space-y-3">
+            <p className="font-bold text-lg text-center text-white">{pollData.question}</p>
+            <div className="space-y-2">
+                {pollData.options.map((option, index) => {
+                    if (userVote) {
+                        const votesForOption = pollData.results[option]?.length || 0;
+                        const percentage = totalVotes > 0 ? (votesForOption / totalVotes) * 100 : 0;
+                        const isUserChoice = userVote === option;
+                        return (
+                            <div key={index} className="space-y-1 p-2 rounded-md bg-black/20">
+                                <div className="flex justify-between items-center text-sm font-semibold">
+                                    <p className={cn(isUserChoice && "text-cyan-300")}>{option}</p>
+                                    <p>{percentage.toFixed(0)}%</p>
+                                </div>
+                                <Progress value={percentage} className="h-2"/>
+                            </div>
+                        )
+                    }
+                    return (
+                        <Button key={index} variant="outline" className="w-full justify-start bg-white/5 border-white/20 text-white hover:bg-white/10" onClick={() => submitPollVote(messageId, option)}>
+                            {option}
+                        </Button>
+                    )
+                })}
+            </div>
+             <p className="text-xs text-slate-400 text-center">{totalVotes} vote{totalVotes !== 1 && 's'}</p>
+        </div>
+    )
+}
 
 export function WorldChatView() {
     const { messages, sendMessage, loading, pinnedMessage, unpinMessage, typingUsers, updateTypingStatus } = useWorldChat();
@@ -404,7 +443,9 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                         <p className="italic text-slate-500 truncate">"{message.replyingTo.textSnippet}"</p>
                                     </div>
                                 )}
-                                {isEditing ? (
+                                {message.type === 'poll' && message.pollData ? (
+                                    <PollMessage pollData={message.pollData} messageId={message.id}/>
+                                ) : isEditing ? (
                                     <div className="space-y-2">
                                         <textarea ref={textareaRef} value={editText} onChange={(e) => { setEditText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} onKeyDown={handleKeyDown} className="w-full bg-transparent text-white border-0 focus:ring-0 resize-none p-0" />
                                         <div className="flex justify-end gap-2 text-xs"><button onClick={() => setIsEditing(false)}>Cancel</button><button onClick={handleEditSave} className="font-bold text-primary">Save</button></div>

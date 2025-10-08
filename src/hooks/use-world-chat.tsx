@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -13,23 +14,39 @@ export interface ReplyContext {
     textSnippet: string;
 }
 
+export interface PollData {
+    question: string;
+    options: string[];
+    // Storing user IDs who voted for each option
+    results: Record<string, string[]>; 
+}
+
 export interface WorldChatMessage {
     id: string;
     senderId: string;
+    timestamp: Date;
+    
+    // For regular messages
     text?: string;
     imageUrl?: string;
-    timestamp: Date;
-    reactions?: { [emoji: string]: string[] }; // e.g., { '👍': ['user1', 'user2'] }
+
+    // For polls
+    type?: 'text' | 'poll';
+    pollData?: PollData;
+
+    reactions?: { [emoji: string]: string[] };
     replyingTo?: ReplyContext;
     editedAt?: Date;
 }
 
+
 interface WorldChatContextType {
     messages: WorldChatMessage[];
-    sendMessage: (text: string, replyingTo?: ReplyButton | null) => Promise<void>;
+    sendMessage: (text: string, replyingTo?: ReplyContext | null) => Promise<void>;
     editMessage: (messageId: string, newText: string) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
     toggleReaction: (messageId: string, emoji: string) => Promise<void>;
+    submitPollVote: (messageId: string, option: string) => Promise<void>;
     pinMessage: (messageId: string) => Promise<void>;
     unpinMessage: () => Promise<void>;
     pinnedMessage: WorldChatMessage | null;
@@ -107,6 +124,35 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         
         const messagesRef = collection(db, 'world_chat');
         
+        // Admin Poll Command
+        if (isAdmin && text.startsWith('/poll ')) {
+             // Regex to capture the question and options, handles quotes correctly
+            const pollRegex = /\/poll "([^"]+)"((?:\s*"[^"]+")+)/;
+            const match = text.match(pollRegex);
+            
+            if (match && match[1] && match[2]) {
+                const question = match[1];
+                const options = match[2].match(/"([^"]+)"/g)?.map(opt => opt.slice(1, -1)) || [];
+                
+                if (options.length >= 2) {
+                    const pollData: PollData = {
+                        question,
+                        options,
+                        results: options.reduce((acc, option) => ({ ...acc, [option]: [] }), {})
+                    };
+                    await addDoc(messagesRef, {
+                        senderId: currentUser.id,
+                        timestamp: serverTimestamp(),
+                        type: 'poll',
+                        pollData: pollData,
+                    });
+                    return;
+                }
+            }
+             toast({ variant: 'destructive', title: 'Invalid Poll Format', description: 'Use: /poll "Question" "Option 1" "Option 2" ...' });
+            return;
+        }
+
         await addDoc(messagesRef, {
             senderId: currentUser.id,
             text,
@@ -115,7 +161,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
             ...(replyingTo && { replyingTo }),
         });
 
-    }, [currentUser]);
+    }, [currentUser, isAdmin, toast]);
 
     const editMessage = useCallback(async (messageId: string, newText: string) => {
         if (!currentUser || !newText.trim()) return;
@@ -216,8 +262,32 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         // Let the useEffect cleanup handle removal after timeout
     }, [currentUser, users]);
 
+    const submitPollVote = useCallback(async (messageId: string, option: string) => {
+        if (!currentUser) return;
+        const messageRef = doc(db, 'world_chat', messageId);
+        const message = messages.find(m => m.id === messageId);
+        if (!message || message.type !== 'poll' || !message.pollData) return;
 
-    const value = { messages, loading, sendMessage, editMessage, deleteMessage, toggleReaction, pinnedMessage, pinMessage, unpinMessage, typingUsers, updateTypingStatus };
+        const pollData = message.pollData;
+        const results = pollData.results;
+        
+        // Check if user has already voted
+        const hasVoted = Object.values(results).some(voters => voters.includes(currentUser.id));
+        if (hasVoted) {
+            toast({ variant: 'destructive', title: "You have already voted in this poll." });
+            return;
+        }
+
+        const newResults = { ...results, [option]: [...(results[option] || []), currentUser.id] };
+
+        await updateDoc(messageRef, {
+            'pollData.results': newResults
+        });
+
+    }, [currentUser, messages, toast]);
+
+
+    const value = { messages, loading, sendMessage, editMessage, deleteMessage, toggleReaction, submitPollVote, pinnedMessage, pinMessage, unpinMessage, typingUsers, updateTypingStatus };
 
     return (
         <WorldChatContext.Provider value={value}>
