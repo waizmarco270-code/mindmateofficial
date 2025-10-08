@@ -37,6 +37,7 @@ export interface WorldChatMessage {
     reactions?: { [emoji: string]: string[] };
     replyingTo?: ReplyContext;
     editedAt?: Date;
+    nuggetMarkedBy?: string[];
 }
 
 
@@ -46,6 +47,7 @@ interface WorldChatContextType {
     editMessage: (messageId: string, newText: string) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
     toggleReaction: (messageId: string, emoji: string) => Promise<void>;
+    toggleNugget: (messageId: string) => Promise<void>;
     submitPollVote: (messageId: string, option: string) => Promise<void>;
     pinMessage: (messageId: string) => Promise<void>;
     unpinMessage: () => Promise<void>;
@@ -229,6 +231,26 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
             });
         }
     }, [currentUser, messages]);
+    
+    const toggleNugget = useCallback(async (messageId: string) => {
+        if (!currentUser) return;
+        
+        const messageRef = doc(db, 'world_chat', messageId);
+        const message = messages.find(m => m.id === messageId);
+        if (!message) return;
+
+        const currentMarkers = message.nuggetMarkedBy || [];
+        
+        if(currentMarkers.includes(currentUser.id)) {
+            await updateDoc(messageRef, { nuggetMarkedBy: arrayRemove(currentUser.id) });
+            toast({ title: "Nugget Unmarked" });
+        } else {
+            await updateDoc(messageRef, { nuggetMarkedBy: arrayUnion(currentUser.id) });
+            toast({ title: "Marked as a Wisdom Nugget!" });
+        }
+
+    }, [currentUser, messages, toast]);
+
 
      const pinMessage = useCallback(async (messageId: string) => {
         if (!isAdmin) return;
@@ -287,7 +309,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, messages, toast]);
 
 
-    const value = { messages, loading, sendMessage, editMessage, deleteMessage, toggleReaction, submitPollVote, pinnedMessage, pinMessage, unpinMessage, typingUsers, updateTypingStatus };
+    const value = { messages, loading, sendMessage, editMessage, deleteMessage, toggleReaction, toggleNugget, submitPollVote, pinnedMessage, pinMessage, unpinMessage, typingUsers, updateTypingStatus };
 
     return (
         <WorldChatContext.Provider value={value}>

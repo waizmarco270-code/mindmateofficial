@@ -7,9 +7,9 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MoreVertical, X, Trash2, UserX, Code, Crown, ArrowLeft, ShieldCheck, Gamepad2, Swords } from 'lucide-react';
+import { Send, MoreVertical, X, Trash2, UserX, Code, Crown, ArrowLeft, ShieldCheck, Gamepad2, Swords, Gem } from 'lucide-react';
 import { User, SUPER_ADMIN_UID, useUsers } from '@/hooks/use-admin';
-import { useChat, Message } from '@/hooks/use-chat';
+import { useChat } from '@/hooks/use-chat';
 import { useFriends } from '@/hooks/use-friends';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '../ui/scroll-area';

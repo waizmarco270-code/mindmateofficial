@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -7,12 +8,14 @@ import { ChatBox } from '@/components/social/chat-box';
 import { type User } from '@/hooks/use-admin';
 import { FriendsProvider } from '@/hooks/use-friends.tsx';
 import { Card } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Users, Gem } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export default function SocialPage() {
   const [selectedFriend, setSelectedFriend] = useState<User | null>(null);
@@ -64,8 +67,11 @@ export default function SocialPage() {
                   </>
                 ) : (
                    <>
-                      <div className="md:col-span-4 h-full">
+                      <div className="md:col-span-4 h-full flex flex-col gap-4">
                         <UserList onSelectFriend={handleSelectFriend} selectedFriendId={selectedFriend?.uid} />
+                        <Button asChild variant="outline">
+                            <Link href="/dashboard/social/nuggets"><Gem className="mr-2 h-4 w-4 text-amber-500" /> Wisdom Nugget Jar</Link>
+                        </Button>
                       </div>
                       <div className="md:col-span-8 h-full">
                         {selectedFriend ? (
