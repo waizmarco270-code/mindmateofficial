@@ -53,8 +53,8 @@ const getUserColor = (userId: string) => {
 };
 
 const chatThemes = [
-    { id: 'whatsapp', name: 'WhatsApp Style', class: 'whatsapp-style-bg' },
     { id: 'mindmate-official', name: 'MindMate Official', class: 'mindmate-official-bg' },
+    { id: 'whatsapp', name: 'WhatsApp Style', class: 'whatsapp-style-bg' },
     { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
     { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
     { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
@@ -69,7 +69,7 @@ export function WorldChatView() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
     const [replyingTo, setReplyingTo] = useState<WorldChatMessage | null>(null);
-    const [activeTheme, setActiveTheme] = useLocalStorage('worldChatTheme', chatThemes[1]);
+    const [activeTheme, setActiveTheme] = useLocalStorage('worldChatTheme', chatThemes[0]);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -96,7 +96,7 @@ export function WorldChatView() {
         e.preventDefault();
         if (!newMessage.trim()) return;
 
-        const replyContext = replyingTo ? {
+        const replyContext: ReplyContext | null = replyingTo ? {
             messageId: replyingTo.id,
             senderName: allUsers.find(u => u.uid === replyingTo.senderId)?.displayName || 'Unknown User',
             textSnippet: replyingTo.text?.substring(0, 50) || '',
@@ -188,11 +188,11 @@ export function WorldChatView() {
                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => unpinMessage()}>
                                     <PinOff className="h-4 w-4" />
                                 </Button>
-                                 <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDismissedPinId(pinnedMessage.id)}>
-                                    <X className="h-4 w-4" />
-                                </Button>
                              </>
                         )}
+                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDismissedPinId(pinnedMessage.id)}>
+                            <X className="h-4 w-4" />
+                        </Button>
                     </div>
                 )}
                 <div className="overflow-hidden relative">
@@ -384,22 +384,6 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
             className="group/message relative"
         >
             <div className={cn("relative flex items-end gap-2", isOwn ? "justify-end" : "justify-start")}>
-                <Popover>
-                    <PopoverTrigger asChild>
-                         <div className={cn("absolute flex items-center gap-1 opacity-0 group-hover/message:opacity-100 transition-opacity duration-200", isOwn ? "-left-14" : "-right-14")}>
-                             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/20 text-white/70 hover:bg-black/40 hover:text-white"><Smile className="h-4 w-4"/></Button>
-                        </div>
-                    </PopoverTrigger>
-                     <PopoverContent className="w-auto p-1">
-                        <div className="flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1">
-                            {REACTIONS.map(emoji => (
-                                <Button key={emoji} variant="ghost" size="icon" className="h-8 w-8 text-xl" onClick={() => toggleReaction(message.id, emoji)}>
-                                    {emoji}
-                                </Button>
-                            ))}
-                        </div>
-                    </PopoverContent>
-                </Popover>
 
                 {!isOwn && <button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={sender.photoURL} /><AvatarFallback>{sender.displayName.charAt(0)}</AvatarFallback></Avatar></button>}
                 
@@ -430,8 +414,20 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                             </div>
                         </div>
                      </PopoverTrigger>
-                     <PopoverContent className="w-auto p-1">
+                     <PopoverContent className="w-auto p-0">
                         <div className="flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1">
+                             <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white"><Smile className="h-4 w-4" /></Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-1">
+                                    <div className="flex gap-1">
+                                        {REACTIONS.map(emoji => (
+                                            <Button key={emoji} variant="ghost" size="icon" className="h-8 w-8 text-xl" onClick={() => toggleReaction(message.id, emoji)}>{emoji}</Button>
+                                        ))}
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
                             {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
