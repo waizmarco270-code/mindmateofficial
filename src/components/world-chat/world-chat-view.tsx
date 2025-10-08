@@ -303,7 +303,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="group flex flex-col"
+            className="group/message flex flex-col"
         >
             {showHeader && (
                  <div className={cn("flex items-baseline gap-2 mb-2", isOwn ? "justify-end" : "justify-start")}>
@@ -317,8 +317,8 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                 </div>
             )}
             <div className={cn("flex items-start gap-3 w-full", isOwn ? "justify-end" : "justify-start")}>
-                {/* Message Actions */}
-                <div className={cn("flex items-center opacity-0 group-hover:opacity-100 transition-opacity", isOwn ? "order-first" : "order-last")}>
+                
+                <div className={cn("flex items-center opacity-0 group-hover/message:opacity-100 transition-opacity", isOwn ? "order-first" : "order-last")}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}>
                         <Reply className="h-4 w-4"/>
                     </Button>
