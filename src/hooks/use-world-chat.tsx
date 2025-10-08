@@ -21,11 +21,13 @@ export interface WorldChatMessage {
     timestamp: Date;
     reactions?: { [emoji: string]: string[] }; // e.g., { '👍': ['user1', 'user2'] }
     replyingTo?: ReplyContext;
+    editedAt?: Date;
 }
 
 interface WorldChatContextType {
     messages: WorldChatMessage[];
     sendMessage: (text: string, replyingTo?: ReplyContext) => Promise<void>;
+    editMessage: (messageId: string, newText: string) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
     toggleReaction: (messageId: string, emoji: string) => Promise<void>;
     pinMessage: (messageId: string) => Promise<void>;
@@ -70,7 +72,8 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
                 return {
                     id: doc.id,
                     ...data,
-                    timestamp: (data.timestamp as Timestamp)?.toDate() || new Date()
+                    timestamp: (data.timestamp as Timestamp)?.toDate() || new Date(),
+                    editedAt: (data.editedAt as Timestamp)?.toDate() || undefined,
                 } as WorldChatMessage;
             }).reverse(); // Reverse to show latest messages at the bottom
             setMessages(fetchedMessages);
@@ -94,6 +97,28 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         });
 
     }, [currentUser]);
+
+    const editMessage = useCallback(async (messageId: string, newText: string) => {
+        if (!currentUser || !newText.trim()) return;
+
+        const messageRef = doc(db, 'world_chat', messageId);
+        const message = messages.find(m => m.id === messageId);
+        
+        if (!message || message.senderId !== currentUser.id) {
+            toast({ variant: 'destructive', title: "Permission Denied" });
+            return;
+        }
+
+        try {
+            await updateDoc(messageRef, {
+                text: newText,
+                editedAt: serverTimestamp()
+            });
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Error", description: "Could not edit message." });
+        }
+    }, [currentUser, messages, toast]);
+
 
     const deleteMessage = useCallback(async (messageId: string) => {
         if (!currentUser) return;
@@ -155,7 +180,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     }, [isAdmin, toast]);
 
 
-    const value = { messages, loading, sendMessage, deleteMessage, toggleReaction, pinnedMessage, pinMessage, unpinMessage };
+    const value = { messages, loading, sendMessage, editMessage, deleteMessage, toggleReaction, pinnedMessage, pinMessage, unpinMessage };
 
     return (
         <WorldChatContext.Provider value={value}>

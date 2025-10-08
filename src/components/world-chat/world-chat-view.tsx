@@ -1,17 +1,16 @@
 
-      
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit } from 'lucide-react';
 import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -50,7 +49,7 @@ const getUserColor = (userId: string) => {
 };
 
 export function WorldChatView() {
-    const { messages, sendMessage, loading, pinnedMessage, pinMessage, unpinMessage } = useWorldChat();
+    const { messages, sendMessage, loading, pinnedMessage, unpinMessage } = useWorldChat();
     const { users: allUsers, loading: usersLoading, isAdmin } = useUsers();
     const { user: currentUser } = useUser();
     const [newMessage, setNewMessage] = useState('');
@@ -101,7 +100,6 @@ export function WorldChatView() {
         setReplyingTo(message);
     }
 
-
     return (
         <>
             <Card className="h-full flex flex-col blue-nebula-bg border-0">
@@ -137,10 +135,14 @@ export function WorldChatView() {
                                 </div>
                             )}
                             <AnimatePresence>
-                                {messages.map((msg) => {
+                                {messages.map((msg, index) => {
                                     const sender = usersMap.get(msg.senderId);
                                     if (!sender) return null;
-                                    return <ChatMessage key={msg.id} message={msg} sender={sender} isOwn={msg.senderId === currentUser?.id} onUserSelect={setSelectedUser} onReply={handleReplyClick} />;
+                                    
+                                    const prevMessage = messages[index - 1];
+                                    const showHeader = !prevMessage || prevMessage.senderId !== msg.senderId || !isSameDay(msg.timestamp, prevMessage.timestamp);
+
+                                    return <ChatMessage key={msg.id} message={msg} sender={sender} isOwn={msg.senderId === currentUser?.id} showHeader={showHeader} onUserSelect={setSelectedUser} onReply={handleReplyClick} />;
                                 })}
                             </AnimatePresence>
                         </div>
@@ -228,13 +230,50 @@ const ClickableMessage = ({ text }: { text: string }) => {
     );
 };
 
-function ChatMessage({ message, sender, isOwn, onUserSelect, onReply }: { message: WorldChatMessage, sender: User, isOwn: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void }) {
+function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void }) {
     const { user: clerkUser } = useUser();
     const { users, isAdmin } = useUsers();
-    const { deleteMessage, toggleReaction, pinMessage } = useWorldChat();
+    const { editMessage, deleteMessage, toggleReaction, pinMessage } = useWorldChat();
     
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(message.text || '');
+
     const userToShow = isOwn ? users.find(u => u.uid === clerkUser?.id) : sender;
     const userColor = getUserColor(sender.uid);
+    const messageRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        if(isEditing && textareaRef.current) {
+            textareaRef.current.focus();
+            textareaRef.current.style.height = 'auto';
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+        }
+    }, [isEditing]);
+    
+    useEffect(() => {
+        if(messageRef.current){
+             messageRef.current.style.height = 'auto';
+             messageRef.current.style.height = `${messageRef.current.scrollHeight}px`;
+        }
+    },[message.text]);
+    
+    const handleEditSave = () => {
+        if(editText.trim() !== message.text) {
+            editMessage(message.id, editText);
+        }
+        setIsEditing(false);
+    }
+    
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if(e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleEditSave();
+        } else if (e.key === 'Escape') {
+            setIsEditing(false);
+        }
+    }
+
 
     if (!userToShow) return null;
 
@@ -254,6 +293,8 @@ function ChatMessage({ message, sender, isOwn, onUserSelect, onReply }: { messag
 
     const reactions = message.reactions || {};
     const hasReactions = Object.keys(reactions).some(emoji => reactions[emoji]?.length > 0);
+    const fiveMinutes = 5 * 60 * 1000;
+    const isEditable = isOwn && (new Date().getTime() - message.timestamp.getTime()) < fiveMinutes;
 
     return (
         <motion.div
@@ -263,6 +304,17 @@ function ChatMessage({ message, sender, isOwn, onUserSelect, onReply }: { messag
             exit={{ opacity: 0, y: -20 }}
             className="group flex flex-col"
         >
+            {showHeader && (
+                 <div className={cn("flex items-baseline gap-2 mb-2", isOwn ? "justify-end" : "justify-start")}>
+                    {!isOwn && (
+                         <button onClick={() => onUserSelect(sender)}>
+                             <p className="text-sm font-semibold text-slate-300 hover:underline">{sender.displayName}</p>
+                         </button>
+                    )}
+                    {badgeToShow && badgeToShow.badge}
+                    <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
+                </div>
+            )}
             <div className={cn("flex items-start gap-3 w-full", isOwn ? "justify-end" : "justify-start")}>
                 {/* Message Actions */}
                 <div className={cn("flex items-center opacity-0 group-hover:opacity-100 transition-opacity", isOwn ? "order-first" : "order-last")}>
@@ -285,6 +337,11 @@ function ChatMessage({ message, sender, isOwn, onUserSelect, onReply }: { messag
                             </div>
                         </PopoverContent>
                     </Popover>
+                    {isEditable && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}>
+                            <Edit className="h-4 w-4"/>
+                        </Button>
+                    )}
                     {isAdmin && (
                          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}>
                             <Pin className="h-4 w-4"/>
@@ -320,12 +377,6 @@ function ChatMessage({ message, sender, isOwn, onUserSelect, onReply }: { messag
                     </button>
                 )}
                 <div className={cn("max-w-xs md:max-w-md", isOwn ? "text-right" : "text-left")}>
-                    {!isOwn && (
-                        <div className="flex items-center gap-2 mb-1">
-                            <button onClick={() => onUserSelect(sender)} className="text-sm font-semibold text-slate-300 hover:underline">{sender.displayName}</button>
-                            {badgeToShow && badgeToShow.badge}
-                        </div>
-                    )}
                     <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
                         {message.replyingTo && (
                             <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs">
@@ -333,18 +384,33 @@ function ChatMessage({ message, sender, isOwn, onUserSelect, onReply }: { messag
                                 <p className="italic text-slate-500 truncate">"{message.replyingTo.textSnippet}"</p>
                             </div>
                         )}
-                        {message.text && <ClickableMessage text={message.text} />}
-                        <p className="text-xs text-slate-400 mt-2 pt-1 border-t border-white/10">{formatDistanceToNow(message.timestamp, { addSuffix: true })}</p>
+
+                        {isEditing ? (
+                            <div className="space-y-2">
+                                <textarea
+                                    ref={textareaRef}
+                                    value={editText}
+                                    onChange={(e) => {
+                                        setEditText(e.target.value);
+                                        e.target.style.height = 'auto';
+                                        e.target.style.height = `${e.target.scrollHeight}px`;
+                                    }}
+                                    onKeyDown={handleKeyDown}
+                                    className="w-full bg-transparent text-white border-0 focus:ring-0 resize-none p-0"
+                                />
+                                <div className="flex justify-end gap-2 text-xs">
+                                     <button onClick={() => setIsEditing(false)}>Cancel</button>
+                                     <button onClick={handleEditSave} className="font-bold text-primary">Save</button>
+                                </div>
+                            </div>
+                        ) : (
+                            message.text && <ClickableMessage text={message.text} />
+                        )}
+                        {message.editedAt && !isEditing && (
+                            <p className="text-xs text-slate-400/70 mt-1">(edited)</p>
+                        )}
                     </div>
                 </div>
-                {isOwn && (
-                    <button onClick={() => onUserSelect(userToShow)}>
-                        <Avatar className="h-10 w-10 border-2 border-white/20">
-                            <AvatarImage src={userToShow.photoURL} />
-                            <AvatarFallback>{userToShow.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    </button>
-                )}
             </div>
 
             {hasReactions && (
