@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy } from 'lucide-react';
 import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -239,6 +239,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
     const { user: clerkUser } = useUser();
     const { users, isAdmin } = useUsers();
     const { editMessage, deleteMessage, toggleReaction, pinMessage } = useWorldChat();
+    const { toast } = useToast();
     
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(message.text || '');
@@ -278,6 +279,13 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
             setIsEditing(false);
         }
     }
+    
+    const handleCopy = () => {
+        if (message.text) {
+            navigator.clipboard.writeText(message.text);
+            toast({ title: "Message copied to clipboard" });
+        }
+    };
 
 
     if (!userToShow) return null;
@@ -322,9 +330,12 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
             )}
             <div className={cn("flex items-start gap-3 w-full", isOwn ? "justify-end" : "justify-start")}>
                 
-                <div className={cn("flex items-center opacity-0 group-hover/message:opacity-100 transition-opacity", isOwn ? "order-first" : "order-last")}>
+                 <div className={cn("flex items-center opacity-0 group-hover/message:opacity-100 transition-opacity", isOwn ? "order-first" : "order-last")}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}>
                         <Reply className="h-4 w-4"/>
+                    </Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}>
+                        <Copy className="h-4 w-4"/>
                     </Button>
                     <Popover>
                         <PopoverTrigger asChild>
