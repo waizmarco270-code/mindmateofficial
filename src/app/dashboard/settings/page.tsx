@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle } from 'lucide-react';
+import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
@@ -182,6 +182,50 @@ function AccountSettings() {
     );
 }
 
+function AppControls() {
+    const { toast } = useToast();
+    const handleHardRefresh = () => {
+        toast({
+            title: "Performing Hard Refresh",
+            description: "The application will now reload.",
+        });
+        setTimeout(() => {
+            window.location.reload();
+        }, 1500);
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>App Controls</CardTitle>
+                <CardDescription>Advanced controls for managing the application state.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive">
+                            <RefreshCw className="mr-2" />
+                            Hard Refresh
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will force a hard refresh of the application, clearing any cached data. This is useful if you are experiencing display issues.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleHardRefresh}>Yes, Refresh</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </CardContent>
+        </Card>
+    );
+}
+
 
 function AdminSettings() {
     const { isSuperAdmin } = useAdmin();
@@ -251,6 +295,7 @@ export default function SettingsPage() {
                     <TabsTrigger value="appearance" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Palette className="mr-3"/> Appearance</TabsTrigger>
                     <TabsTrigger value="about" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Info className="mr-3"/> About & FAQ</TabsTrigger>
                     <TabsTrigger value="rules" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gavel className="mr-3"/> Rules & Regulations</TabsTrigger>
+                    <TabsTrigger value="app-controls" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><RefreshCw className="mr-3"/> App Controls</TabsTrigger>
                      {showAdminTab && (
                         <TabsTrigger value="admin" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Shield className="mr-3"/> Admin</TabsTrigger>
                     )}
@@ -279,6 +324,9 @@ export default function SettingsPage() {
                             <CardContent><RulesContent /></CardContent>
                         </Card>
                     </TabsContent>
+                     <TabsContent value="app-controls">
+                        <AppControls />
+                    </TabsContent>
                     {showAdminTab && (
                         <TabsContent value="admin">
                             <AdminSettings />
@@ -293,3 +341,6 @@ export default function SettingsPage() {
 // Dummy Label to satisfy the compiler for the nested component
 const Label = ({ children, ...props }: React.ComponentProps<'label'>) => <label {...props}>{children}</label>;
 
+
+
+    

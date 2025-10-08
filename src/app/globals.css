@@ -155,7 +155,17 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: contain; /* Disables pull-to-refresh */
+    -webkit-touch-callout: none; /* Disables long-press context menu on iOS */
+    user-select: none; /* Disables text selection and context menu */
   }
+
+  /* Re-enable selection for text inputs */
+  input, textarea {
+    -webkit-touch-callout: default;
+    user-select: text;
+  }
+
 
   @keyframes fade-in-up {
     from {
@@ -484,9 +494,12 @@
   .cyber-grid-bg {
     background-color: #0c0a09;
     background-image:
-      linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px),
-      linear-gradient(to right, hsl(var(--primary) / 0.1) 1px, transparent 1px);
-    background-size: 3rem 3rem;
+        linear-gradient(45deg, #8b5cf6 25%, transparent 25%), 
+        linear-gradient(-45deg, #8b5cf6 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #8b5cf6 75%),
+        linear-gradient(-45deg, transparent 75%, #8b5cf6 75%);
+    background-size: 60px 60px;
+    animation: animated-grid 10s linear infinite;
   }
 
   .oceanic-flow-bg {
@@ -522,10 +535,12 @@
   .lava-flow-bg {
     background: linear-gradient(135deg, #ff4800, #ff7e00, #ff4800, #000);
     background-size: 300% 300%;
+    animation: nebula-animation 28s ease infinite;
   }
   .mystic-forest-bg {
     background: linear-gradient(160deg, #002e18, #004d2e, #002e18);
     background-size: 200% 200%;
+    animation: nebula-animation 30s ease infinite;
   }
   .digital-glitch-bg > * {
     animation: glitch 1.5s steps(2, jump-none) infinite;
@@ -540,6 +555,7 @@
     background-image: linear-gradient(transparent 99%, rgba(161, 161, 170, 0.5) 1%),
                       linear-gradient(90deg, rgba(161, 161, 170, 0.5) 1px, transparent 1px);
     background-size: 100% 5px, 5px 100%;
+    animation: lofi-rain 0.2s linear infinite;
   }
   .whatsapp-style-bg {
     background-color: #e5ddd5;
@@ -560,6 +576,7 @@
         radial-gradient(at 0% 100%, hsla(193, 100%, 70%, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 100%, hsla(213, 100%, 70%, 0.15) 0px, transparent 50%);
     background-size: 400% 400%;
+    animation: nebula-animation 60s ease infinite;
   }
 
   .dark .glassmorphism-light-bg {
@@ -592,3 +609,5 @@
     user-select: none;
   }
 }
+
+    
