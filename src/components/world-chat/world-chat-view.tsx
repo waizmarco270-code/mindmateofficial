@@ -19,6 +19,7 @@ import { UserProfileCard } from '@/components/profile/user-profile-card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import Link from 'next/link';
 
 const userColors = [
     'border-red-500/50',
@@ -106,6 +107,9 @@ export function WorldChatView() {
             <Card className="h-full flex flex-col blue-nebula-bg border-0">
                  <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/10 bg-black/20">
                     <div className="flex items-center gap-3">
+                        <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-white hover:bg-white/10">
+                            <Link href="/dashboard"><ArrowLeft /></Link>
+                        </Button>
                         <Globe className="h-6 w-6 text-cyan-300" />
                         <h2 className="text-xl font-bold text-white">World Chat</h2>
                     </div>
