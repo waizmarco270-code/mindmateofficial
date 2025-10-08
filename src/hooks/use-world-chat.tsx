@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -8,6 +7,12 @@ import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timest
 import { useAdmin } from './use-admin';
 import { useToast } from './use-toast';
 
+export interface ReplyContext {
+    messageId: string;
+    senderName: string;
+    textSnippet: string;
+}
+
 export interface WorldChatMessage {
     id: string;
     senderId: string;
@@ -15,11 +20,12 @@ export interface WorldChatMessage {
     imageUrl?: string;
     timestamp: Date;
     reactions?: { [emoji: string]: string[] }; // e.g., { '👍': ['user1', 'user2'] }
+    replyingTo?: ReplyContext;
 }
 
 interface WorldChatContextType {
     messages: WorldChatMessage[];
-    sendMessage: (text: string) => Promise<void>;
+    sendMessage: (text: string, replyingTo?: ReplyContext) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
     toggleReaction: (messageId: string, emoji: string) => Promise<void>;
     pinMessage: (messageId: string) => Promise<void>;
@@ -74,7 +80,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, []);
 
-    const sendMessage = useCallback(async (text: string) => {
+    const sendMessage = useCallback(async (text: string, replyingTo?: ReplyContext) => {
         if (!currentUser || !text.trim()) return;
         
         const messagesRef = collection(db, 'world_chat');
@@ -84,6 +90,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
             text,
             timestamp: serverTimestamp(),
             reactions: {},
+            ...(replyingTo && { replyingTo }),
         });
 
     }, [currentUser]);
