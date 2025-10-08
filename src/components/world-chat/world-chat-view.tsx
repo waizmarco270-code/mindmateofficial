@@ -142,7 +142,7 @@ export function WorldChatView() {
     return (
         <>
             <div className={cn("h-full grid grid-rows-[auto_auto_1fr_auto] border-0 transition-all duration-500", activeTheme.class)}>
-                 <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/10 bg-black/20">
+                 <header className="flex flex-row items-center justify-between p-4 border-b border-white/10 bg-black/20">
                     <div className="flex items-center gap-3">
                         <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-white hover:bg-white/10">
                             <Link href="/dashboard"><ArrowLeft /></Link>
@@ -174,7 +174,7 @@ export function WorldChatView() {
                             </SheetContent>
                         </Sheet>
                     </div>
-                </CardHeader>
+                </header>
                 {showPinnedMessage && pinnedMessageSender && (
                     <div className="p-3 bg-primary/10 border-b border-primary/20 flex items-center gap-3 text-sm">
                         <Pin className="h-5 w-5 text-primary flex-shrink-0" />
@@ -216,7 +216,7 @@ export function WorldChatView() {
                         </div>
                     </ScrollArea>
                 </div>
-                <CardFooter className="p-4 border-t border-white/10 bg-black/20 flex-col items-start gap-2">
+                <footer className="p-4 border-t border-white/10 bg-black/20 flex-col items-start gap-2">
                      <AnimatePresence>
                         {replyingTo && (
                             <motion.div 
@@ -251,7 +251,7 @@ export function WorldChatView() {
                             <Send />
                         </Button>
                     </form>
-                </CardFooter>
+                </footer>
             </div>
 
              <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
