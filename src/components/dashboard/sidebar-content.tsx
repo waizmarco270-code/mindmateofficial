@@ -49,14 +49,20 @@ const mainNavItems = [
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
-  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
-  { href: '/dashboard/quiz', icon: Lightbulb, label: 'Quiz Zone', glow: 'text-purple-400' },
-  { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
-  { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
+];
+
+const communityNav = [
+  { href: '/dashboard/world', icon: Globe, label: 'World Chat', glow: 'text-blue-400' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
+  { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
 ];
 
+const competeNav = [
+    { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
+    { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
+    { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
+];
 
 const socialLinks = [
     { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx' },
@@ -132,7 +138,7 @@ export default function SidebarContent() {
             )}></div>
             <item.icon className={cn("h-5 w-5", item.glow)} />
             <span className="flex-1">{item.label}</span>
-            {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && (
+            {(item.href === '/dashboard/world' && hasGlobalUnread) && (
               <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
             )}
             {item.href === '/dashboard/quiz' && hasNewQuiz && (
@@ -164,9 +170,8 @@ export default function SidebarContent() {
       </div>
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
-          type="single"
-          collapsible
-          defaultValue={'main-tools'}
+          type="multiple"
+          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -175,6 +180,24 @@ export default function SidebarContent() {
             </AccordionTrigger>
             <AccordionContent className="px-0 pb-2">
               {renderNavLinks(mainNavItems)}
+            </AccordionContent>
+          </AccordionItem>
+        
+          <AccordionItem value="community-resources" className="border-b-0">
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+              Community & Resources
+            </AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">
+              {renderNavLinks(communityNav as any)}
+            </AccordionContent>
+          </AccordionItem>
+
+          <AccordionItem value="compete-earn" className="border-b-0">
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+              Compete & Earn
+            </AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">
+              {renderNavLinks(competeNav as any)}
             </AccordionContent>
           </AccordionItem>
         </Accordion>
