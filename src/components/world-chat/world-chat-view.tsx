@@ -5,9 +5,9 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2 } from 'lucide-react';
-import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat';
-import { useUsers, User } from '@/hooks/use-admin';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords } from 'lucide-react';
+import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
+import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
@@ -191,3 +191,5 @@ function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldC
         </motion.div>
     );
 }
+
+    
