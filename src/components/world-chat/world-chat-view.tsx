@@ -213,7 +213,7 @@ const ClickableMessage = ({ text }: { text: string }) => {
     const parts = text.split(urlRegex);
 
     return (
-        <p className="whitespace-pre-wrap text-white text-left">
+        <p className="whitespace-pre-wrap text-white text-left select-none">
             {parts.map((part, index) => {
                 if (part.match(urlRegex)) {
                     return (

@@ -78,6 +78,72 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 262 80% 56%;
   }
+
+  .emerald-dream {
+    --background: 240 10% 98%;
+    --foreground: 224 71% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+    --primary: 158 77% 39%;
+    --primary-foreground: 150 100% 98%;
+    --secondary: 150 20% 95%;
+    --secondary-foreground: 158 77% 20%;
+    --muted: 150 20% 95%;
+    --muted-foreground: 150 10% 40%;
+    --accent: 150 30% 90%;
+    --accent-foreground: 158 77% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 150 10% 88%;
+    --input: 150 10% 92%;
+    --ring: 158 77% 39%;
+  }
+
+  .solar-flare {
+    --background: 20 12% 8%;
+    --foreground: 20 10% 90%;
+    --card: 20 12% 12%;
+    --card-foreground: 20 10% 90%;
+    --popover: 20 12% 8%;
+    --popover-foreground: 20 10% 90%;
+    --primary: 32 95% 55%;
+    --primary-foreground: 20 12% 5%;
+    --secondary: 20 12% 15%;
+    --secondary-foreground: 20 10% 90%;
+    --muted: 20 12% 15%;
+    --muted-foreground: 20 5% 60%;
+    --accent: 45 95% 55%;
+    --accent-foreground: 20 12% 5%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 20 12% 18%;
+    --input: 20 12% 18%;
+    --ring: 32 95% 55%;
+  }
+
+  .synthwave-sunset {
+    --background: 232 43% 11%;
+    --foreground: 230 50% 90%;
+    --card: 232 43% 14%;
+    --card-foreground: 230 50% 90%;
+    --popover: 232 43% 8%;
+    --popover-foreground: 230 50% 90%;
+    --primary: 300 100% 70%;
+    --primary-foreground: 300 50% 5%;
+    --secondary: 232 43% 20%;
+    --secondary-foreground: 230 50% 90%;
+    --muted: 232 43% 20%;
+    --muted-foreground: 230 20% 60%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 180 50% 5%;
+    --destructive: 0 80% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 232 43% 25%;
+    --input: 232 43% 25%;
+    --ring: 300 100% 70%;
+  }
 }
 
 @layer base {
@@ -113,6 +179,11 @@
   }
   
   @keyframes challenger-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  @keyframes master-card-shimmer {
     0% { background-position: -200% 0; }
     100% { background-position: 200% 0; }
   }
@@ -288,6 +359,32 @@
    .admin-badge > svg {
       @apply text-green-300;
    }
+   
+  .co-dev-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(135deg, #DC143C, #1a1a1a, #DC143C);
+    background-size: 200% 200%;
+    color: #f9fafb;
+    border: 1px solid #ff4d6d;
+    text-shadow: 0 0 8px rgba(255, 77, 109, 0.7);
+    animation: challenger-shimmer 5s ease-in-out infinite;
+  }
+  .co-dev-badge > svg {
+    @apply text-white;
+  }
+  
+  .master-card-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(110deg, #d4af37, #f7d06b, #d4af37, #b48811, #d4af37, #f7d06b, #d4af37);
+    background-size: 250% 250%;
+    color: #382d0d;
+    border: 1px solid #f7d06b;
+    text-shadow: 0 0 6px rgba(247, 208, 107, 0.5);
+    animation: master-card-shimmer 4s ease-in-out infinite;
+  }
+  .master-card-badge > svg {
+    @apply text-yellow-900;
+  }
 
   .bg-grid-slate-800 {
     background-image: 
@@ -482,5 +579,10 @@
 
   .text-shadow-glow {
     text-shadow: 0 0 8px currentColor;
+  }
+}
+@layer utilities {
+  .select-none {
+    user-select: none;
   }
 }
