@@ -12,6 +12,7 @@ import { Button } from '../ui/button';
 import { UserPlus, UserCheck, UserX, Check, X, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { usePresence } from '@/hooks/use-presence';
 
 interface UserListProps {
     onSelectFriend: (friend: User) => void;
@@ -22,6 +23,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
     const { user: currentUser } = useUser();
     const { users: allUsers } = useUsers();
     const { friends, friendRequests, sentRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest, loading: friendsLoading } = useFriends();
+    const { onlineUsers, loading: presenceLoading } = usePresence();
 
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -30,7 +32,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
         u.uid !== currentUser?.id && u.displayName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const finalLoading = friendsLoading;
+    const finalLoading = friendsLoading || presenceLoading;
 
     return (
         <Card className="h-full flex flex-col">
@@ -62,6 +64,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                             onAddFriend={sendFriendRequest}
                             onSelectFriend={onSelectFriend}
                             loading={finalLoading}
+                            onlineUsers={onlineUsers}
                         />
                     </TabsContent>
                     <TabsContent value="friends" className="h-full">
@@ -71,6 +74,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                             onSelectFriend={onSelectFriend}
                             loading={finalLoading}
                             selectedFriendId={selectedFriendId}
+                            onlineUsers={onlineUsers}
                         />
                     </TabsContent>
                     <TabsContent value="requests" className="h-full">
@@ -87,13 +91,14 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
     );
 }
 
-function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFriend, loading, selectedFriendId }: { users: User[], friends?: User[], sentRequests?: FriendRequest[], onAddFriend?: (uid: string) => void, onSelectFriend: (user: User) => void, loading: boolean, selectedFriendId?: string | null }) {
+function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFriend, loading, selectedFriendId, onlineUsers }: { users: User[], friends?: User[], sentRequests?: FriendRequest[], onAddFriend?: (uid: string) => void, onSelectFriend: (user: User) => void, loading: boolean, selectedFriendId?: string | null, onlineUsers?: { uid: string }[] }) {
     const { user: currentUser } = useUser();
     if (loading) return <div className="p-4 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></div>;
     if (users.length === 0) return <div className="p-4 text-center text-muted-foreground">No users found.</div>;
 
     const isFriend = (uid: string) => friends?.some(f => f.uid === uid);
     const requestSent = (uid: string) => sentRequests?.some(r => r.receiverId === uid);
+    const isOnline = (uid: string) => onlineUsers?.some(u => u.uid === uid);
 
     return (
         <ScrollArea className="h-full">
@@ -112,6 +117,9 @@ function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFrien
                                 <AvatarImage src={user.photoURL} alt={user.displayName} />
                                 <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
+                            {isOnline(user.uid) && (
+                                <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background animate-pulse" />
+                            )}
                         </div>
                         <p className="flex-1 font-medium truncate">{user.displayName}</p>
                         {onAddFriend && (

@@ -19,6 +19,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { Badge } from '../ui/badge';
+import { usePresence } from '@/hooks/use-presence';
 
 interface ChatBoxProps {
     friend: User;
@@ -29,9 +30,11 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
     const { user: currentUser } = useUser();
     const { messages, sendMessage, loading } = useChat(friend.uid);
     const { removeFriend } = useFriends();
+    const { onlineUsers } = usePresence();
     const [newMessage, setNewMessage] = useState('');
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
+    const isFriendOnline = onlineUsers.some(u => u.uid === friend.uid);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,9 +54,15 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                             <AvatarImage src={friend.photoURL} alt={friend.displayName} />
                             <AvatarFallback>{friend.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
+                        {isFriendOnline && (
+                             <div className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 border-2 border-background animate-pulse" />
+                        )}
                     </div>
                     <div className="grid gap-0.5">
                         <p className="font-semibold">{friend.displayName}</p>
+                        {isFriendOnline && (
+                            <p className="text-xs text-green-500 font-medium">Online</p>
+                        )}
                     </div>
                  </div>
 
