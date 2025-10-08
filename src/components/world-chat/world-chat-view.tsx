@@ -11,8 +11,8 @@ import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { format, formatDistanceToNow, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { format, formatDistanceToNow, isSameDay } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UserProfileCard } from '@/components/profile/user-profile-card';
@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
+import { useToast } from '@/hooks/use-toast';
 
 const userColors = [
     'border-red-500/50',
