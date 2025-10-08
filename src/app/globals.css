@@ -510,7 +510,6 @@
       linear-gradient(to top, rgba(253, 98, 255, 0.4) 1px, transparent 1px),
       linear-gradient(to right, rgba(253, 98, 255, 0.4) 1px, transparent 1px);
     background-size: 4rem 4rem;
-    animation: synthwave-scroll 10s linear infinite;
   }
   .jungle-ruins-bg {
     background: linear-gradient(125deg, #223B2F, #3A5F4F, #5D8C6F, #2F4F41);
@@ -520,7 +519,6 @@
   .black-hole-bg {
     background-color: #000;
     background-image: radial-gradient(circle, #4c00b0, #2c006e, #000000 70%);
-    animation: black-hole-spin 50s linear infinite;
   }
   .anime-speed-lines-bg {
     background: repeating-linear-gradient(45deg, #1e293b, #1e293b 10px, #334155 10px, #334155 20px);
@@ -535,7 +533,7 @@
   .lava-flow-bg {
     background: linear-gradient(135deg, #ff4800, #ff7e00, #ff4800, #000);
     background-size: 300% 300%;
-    animation: nebula-animation 45s ease infinite;
+    animation: nebula-animation 20s ease infinite;
   }
   .mystic-forest-bg {
     background: linear-gradient(160deg, #002e18, #004d2e, #002e18);
