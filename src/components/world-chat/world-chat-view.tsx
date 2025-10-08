@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Image as ImageIcon, Paperclip, Trash2, Smile, Pin, X, PinOff } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Paperclip, Trash2, Smile, Pin, X, PinOff } from 'lucide-react';
 import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -54,12 +54,10 @@ export function WorldChatView() {
     const { users: allUsers, loading: usersLoading, isAdmin } = useUsers();
     const { user: currentUser } = useUser();
     const [newMessage, setNewMessage] = useState('');
-    const [imageFile, setImageFile] = useState<File | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const showPinnedMessage = pinnedMessage && pinnedMessage.id !== dismissedPinId;
     const pinnedMessageSender = pinnedMessage ? allUsers.find(u => u.uid === pinnedMessage.senderId) : null;
@@ -72,20 +70,11 @@ export function WorldChatView() {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!newMessage.trim() && !imageFile) return;
+        if (!newMessage.trim()) return;
 
-        await sendMessage(newMessage, imageFile);
+        await sendMessage(newMessage);
         setNewMessage('');
-        setImageFile(null);
-        if(fileInputRef.current) fileInputRef.current.value = '';
     };
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            setImageFile(e.target.files[0]);
-            setNewMessage(''); // Clear text when image is selected
-        }
-    }
     
     const usersMap = new Map(allUsers.map(u => [u.uid, u]));
 
@@ -134,27 +123,14 @@ export function WorldChatView() {
                     </ScrollArea>
                 </CardContent>
                 <CardFooter className="p-4 border-t border-white/10 bg-black/20 flex-col items-start gap-2">
-                     {imageFile && (
-                        <div className="p-2 bg-slate-700/50 rounded-md w-full flex items-center justify-between">
-                            <p className="text-xs text-white">Image selected: {imageFile.name}</p>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setImageFile(null); if(fileInputRef.current) fileInputRef.current.value = ''; }}>
-                                <X className="h-4 w-4" />
-                            </Button>
-                        </div>
-                    )}
                     <form onSubmit={handleSendMessage} className="flex items-center w-full gap-2">
-                         <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-                         <Button type="button" size="icon" variant="ghost" className="text-slate-400 hover:text-white" onClick={() => fileInputRef.current?.click()}>
-                             <Paperclip />
-                         </Button>
                         <Input
                             value={newMessage}
-                            onChange={(e) => { setNewMessage(e.target.value); setImageFile(null); }}
+                            onChange={(e) => { setNewMessage(e.target.value); }}
                             placeholder="Message the world..."
                             className="flex-1 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 focus:ring-primary"
-                            disabled={!!imageFile}
                         />
-                        <Button type="submit" size="icon" disabled={!newMessage.trim() && !imageFile}>
+                        <Button type="submit" size="icon" disabled={!newMessage.trim()}>
                             <Send />
                         </Button>
                     </form>

@@ -3,9 +3,8 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { db, storage } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAdmin } from './use-admin';
 import { useToast } from './use-toast';
 
@@ -20,7 +19,7 @@ export interface WorldChatMessage {
 
 interface WorldChatContextType {
     messages: WorldChatMessage[];
-    sendMessage: (text: string, image?: File | null) => Promise<void>;
+    sendMessage: (text: string) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
     toggleReaction: (messageId: string, emoji: string) => Promise<void>;
     pinMessage: (messageId: string) => Promise<void>;
@@ -75,38 +74,17 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, []);
 
-    const sendMessage = useCallback(async (text: string, image: File | null = null) => {
-        if (!currentUser) return;
+    const sendMessage = useCallback(async (text: string) => {
+        if (!currentUser || !text.trim()) return;
         
         const messagesRef = collection(db, 'world_chat');
         
-        let imageUrl: string | undefined = undefined;
-
-        if(image) {
-            const filePath = `world_chat_images/${currentUser.id}_${Date.now()}_${image.name}`;
-            const imageRef = ref(storage, filePath);
-            const uploadResult = await uploadBytes(imageRef, image);
-            imageUrl = await getDownloadURL(uploadResult.ref);
-        }
-
-        const messageData: {
-            senderId: string;
-            text?: string;
-            imageUrl?: string;
-            timestamp: any;
-            reactions: {};
-        } = {
+        await addDoc(messagesRef, {
             senderId: currentUser.id,
+            text,
             timestamp: serverTimestamp(),
             reactions: {},
-        };
-
-        if (text) messageData.text = text;
-        if (imageUrl) messageData.imageUrl = imageUrl;
-        
-        if (messageData.text || messageData.imageUrl) {
-            await addDoc(messagesRef, messageData);
-        }
+        });
 
     }, [currentUser]);
 
