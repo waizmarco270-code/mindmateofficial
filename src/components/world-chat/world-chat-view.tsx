@@ -53,11 +53,11 @@ const getUserColor = (userId: string) => {
 };
 
 const chatThemes = [
+    { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
     { id: 'whatsapp', name: 'WhatsApp Style', class: 'whatsapp-style-bg' },
     { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
     { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
     { id: 'cyber', name: 'Cyber Grid', class: 'cyber-grid-bg' },
-    { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
 ];
 
 export function WorldChatView() {
@@ -68,7 +68,7 @@ export function WorldChatView() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
     const [replyingTo, setReplyingTo] = useState<WorldChatMessage | null>(null);
-    const [activeTheme, setActiveTheme] = useLocalStorage('worldChatTheme', chatThemes[4]);
+    const [activeTheme, setActiveTheme] = useLocalStorage('worldChatTheme', chatThemes[0]);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -141,7 +141,7 @@ export function WorldChatView() {
 
     return (
         <>
-            <Card className={cn("h-full flex flex-col border-0 transition-all duration-500", activeTheme.class)}>
+            <Card className={cn("h-full grid grid-rows-[auto_auto_1fr_auto] border-0 transition-all duration-500", activeTheme.class)}>
                  <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/10 bg-black/20">
                     <div className="flex items-center gap-3">
                         <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-white hover:bg-white/10">
@@ -192,7 +192,7 @@ export function WorldChatView() {
                         </Button>
                     </div>
                 )}
-                <CardContent className="flex-1 p-0 overflow-y-auto relative">
+                <CardContent className="p-0 overflow-hidden relative">
                     <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
                         <div className="p-4 space-y-6">
                             {(loading || usersLoading) && (
@@ -301,7 +301,7 @@ const ClickableMessage = ({ text }: { text: string }) => {
 
 function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void }) {
     const { user: clerkUser } = useUser();
-    const { users, isAdmin } = useUsers();
+    const { users, isAdmin } = useAdmin();
     const { editMessage, deleteMessage, toggleReaction, pinMessage } = useWorldChat();
     const { toast } = useToast();
     
