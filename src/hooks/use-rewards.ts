@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -26,7 +27,7 @@ export interface UserCrystal {
 
 export const useRewards = () => {
     const { user } = useUser();
-    const { currentUserData, addCreditsToUser, grantVipAccess } = useUsers();
+    const { currentUserData, addCreditsToUser } = useUsers();
     const { toast } = useToast();
     
     // State for all games
@@ -418,15 +419,15 @@ export const useRewards = () => {
     const claimDailyLoginReward = useCallback(async () => {
         if (!user || !currentUserData) throw new Error("User not found");
 
-        const currentStreak = dailyLoginState.streak;
-        if (currentStreak >= 7) {
+        const streak = dailyLoginState.streak;
+        if (streak >= 7) {
              throw new Error("You have already completed the 7-day reward cycle.");
         }
          if (dailyLoginState.hasClaimedToday) {
             throw new Error("Reward already claimed for today.");
         }
 
-        const newStreak = currentStreak + 1;
+        const newStreak = streak + 1;
 
         const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
             1: { credits: 10 },
@@ -461,14 +462,15 @@ export const useRewards = () => {
 
         await batch.commit();
         
-        if (reward.vip) {
-            await grantVipAccess(user.id, reward.vip);
+        // This function must be awaited separately from the batch
+        if (reward.vip && 'grantVipAccess' in (window as any)) {
+            await (window as any).grantVipAccess(user.id, reward.vip);
         }
         
         toast({ title: `Day ${newStreak} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
 
-    }, [user, currentUserData, grantVipAccess, toast, dailyLoginState]);
+    }, [user, currentUserData, toast, dailyLoginState]);
     
 
     return { 
