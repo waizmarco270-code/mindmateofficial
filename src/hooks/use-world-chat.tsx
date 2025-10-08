@@ -1,10 +1,13 @@
 
+
 'use client';
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db, storage } from '@/lib/firebase';
-import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, deleteDoc, doc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { useAdmin } from './use-admin';
+import { useToast } from './use-toast';
 
 export interface WorldChatMessage {
     id: string;
@@ -17,6 +20,7 @@ export interface WorldChatMessage {
 interface WorldChatContextType {
     messages: WorldChatMessage[];
     sendMessage: (text: string, image?: File | null) => Promise<void>;
+    deleteMessage: (messageId: string) => Promise<void>;
     loading: boolean;
 }
 
@@ -24,6 +28,8 @@ const WorldChatContext = createContext<WorldChatContextType | undefined>(undefin
 
 export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const { user: currentUser } = useUser();
+    const { isAdmin } = useAdmin();
+    const { toast } = useToast();
     const [messages, setMessages] = useState<WorldChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -80,7 +86,30 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
 
     }, [currentUser]);
 
-    const value = { messages, loading, sendMessage };
+    const deleteMessage = useCallback(async (messageId: string) => {
+        if (!currentUser) return;
+        
+        const messageToDelete = messages.find(m => m.id === messageId);
+        if (!messageToDelete) return;
+
+        const canDelete = messageToDelete.senderId === currentUser.id || isAdmin;
+
+        if (!canDelete) {
+            toast({ variant: 'destructive', title: "Permission Denied" });
+            return;
+        }
+
+        try {
+            await deleteDoc(doc(db, 'world_chat', messageId));
+            toast({ title: "Message Deleted" });
+        } catch (error) {
+            toast({ variant: 'destructive', title: "Error", description: "Could not delete message." });
+        }
+
+    }, [currentUser, messages, isAdmin, toast]);
+
+
+    const value = { messages, loading, sendMessage, deleteMessage };
 
     return (
         <WorldChatContext.Provider value={value}>

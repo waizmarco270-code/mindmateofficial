@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Image as ImageIcon, Paperclip } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Image as ImageIcon, Paperclip, Trash2 } from 'lucide-react';
 import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UserProfileCard } from '@/components/profile/user-profile-card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
+import { X } from 'lucide-react';
 
 const userColors = [
     'border-red-500/50',
@@ -47,8 +49,8 @@ const getUserColor = (userId: string) => {
 };
 
 export function WorldChatView() {
-    const { messages, sendMessage, loading } = useWorldChat();
-    const { users: allUsers, loading: usersLoading } = useUsers();
+    const { messages, sendMessage, deleteMessage, loading } = useWorldChat();
+    const { users: allUsers, loading: usersLoading, isAdmin } = useUsers();
     const { user: currentUser } = useUser();
     const [newMessage, setNewMessage] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
@@ -102,7 +104,7 @@ export function WorldChatView() {
                                 {messages.map((msg) => {
                                     const sender = usersMap.get(msg.senderId);
                                     if (!sender) return null;
-                                    return <ChatMessage key={msg.id} message={msg} sender={sender} isOwn={msg.senderId === currentUser?.id} onUserSelect={setSelectedUser} />;
+                                    return <ChatMessage key={msg.id} message={msg} sender={sender} isOwn={msg.senderId === currentUser?.id} onUserSelect={setSelectedUser} deleteMessage={deleteMessage} isAdmin={isAdmin} />;
                                 })}
                             </AnimatePresence>
                         </div>
@@ -154,7 +156,7 @@ export function WorldChatView() {
     );
 }
 
-function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldChatMessage, sender: User, isOwn: boolean, onUserSelect: (user: User) => void }) {
+function ChatMessage({ message, sender, isOwn, onUserSelect, deleteMessage, isAdmin }: { message: WorldChatMessage, sender: User, isOwn: boolean, onUserSelect: (user: User) => void, deleteMessage: (messageId: string) => void, isAdmin: boolean }) {
     const { user: clerkUser } = useUser();
     const { users } = useUsers();
     
@@ -175,6 +177,7 @@ function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldC
     if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
 
     const badgeToShow = ownedBadges.find(b => b.type === userToShow.showcasedBadge) || ownedBadges[0] || null;
+    const canDelete = isOwn || isAdmin;
 
     return (
         <motion.div
@@ -182,8 +185,29 @@ function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldC
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className={cn("flex items-start gap-3", isOwn && "justify-end")}
+            className={cn("group flex items-start gap-3", isOwn && "justify-end")}
         >
+             {canDelete && (
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                         <motion.div initial={{opacity: 0, x: isOwn ? 20 : -20}} animate={{opacity: 1, x: 0}} className={cn("opacity-0 group-hover:opacity-100 transition-opacity", isOwn && "order-first")}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive">
+                                <Trash2 className="h-4 w-4"/>
+                            </Button>
+                        </motion.div>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Message?</AlertDialogTitle>
+                            <AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
              {!isOwn && (
                  <button onClick={() => onUserSelect(sender)}>
                     <Avatar className="h-10 w-10 border-2 border-white/20">
