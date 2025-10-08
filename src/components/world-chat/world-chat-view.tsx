@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem } from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext, PollData } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -54,10 +54,10 @@ const getUserColor = (userId: string) => {
 };
 
 const chatThemes = [
+    { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
     { id: 'mindmate-official', name: 'MindMate Official', class: 'mindmate-official-bg' },
     { id: 'whatsapp', name: 'WhatsApp Style', class: 'whatsapp-style-bg' },
     { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
-    { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
     { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
     { id: 'classic-grid', name: 'Classic Grid', class: 'classic-grid-bg' },
 ];
@@ -344,7 +344,7 @@ const ClickableMessage = ({ text }: { text: string }) => {
 function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void }) {
     const { user: clerkUser } = useUser();
     const { isAdmin } = useAdmin();
-    const { editMessage, deleteMessage, toggleReaction, pinMessage } = useWorldChat();
+    const { editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget } = useWorldChat();
     const { toast } = useToast();
     
     const [isEditing, setIsEditing] = useState(false);
@@ -413,6 +413,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
     const fiveMinutes = 5 * 60 * 1000;
     const isEditable = isOwn && (new Date().getTime() - message.timestamp.getTime()) < fiveMinutes;
     const userColor = getUserColor(sender.uid);
+    const isNugget = (message.nuggetMarkedBy?.length || 0) > 0;
 
     return (
         <motion.div
@@ -436,7 +437,13 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                     <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
                                 </div>
                             )}
-                            <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2 cursor-pointer", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
+                            <div className={cn(
+                                "relative p-3 rounded-2xl bg-black/30 border-2 cursor-pointer", 
+                                userColor, 
+                                isOwn ? "rounded-br-none" : "rounded-bl-none",
+                                isNugget && 'border-amber-400/80 shadow-lg shadow-amber-500/10'
+                            )}>
+                                {isNugget && <Gem className="absolute -top-2.5 -left-2.5 h-5 w-5 text-amber-400 [filter:drop-shadow(0_0_4px_currentColor)]" />}
                                 {message.replyingTo && (
                                     <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs">
                                         <p className="font-bold text-slate-400">Replying to {message.replyingTo.senderName}</p>
@@ -469,6 +476,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                     </div>
                                 </PopoverContent>
                             </Popover>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => toggleNugget(message.id)}><Gem className="h-4 w-4"/></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
                             {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
