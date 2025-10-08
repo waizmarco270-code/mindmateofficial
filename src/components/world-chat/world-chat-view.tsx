@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette } from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
 
 const userColors = [
     'border-red-500/50',
@@ -51,6 +52,13 @@ const getUserColor = (userId: string) => {
     return userColors[Math.abs(hash) % userColors.length];
 };
 
+const chatThemes = [
+    { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
+    { id: 'whatsapp', name: 'WhatsApp Style', class: 'whatsapp-style-bg' },
+    { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
+    { id: 'cyber', name: 'Cyber Grid', class: 'cyber-grid-bg' },
+];
+
 export function WorldChatView() {
     const { messages, sendMessage, loading, pinnedMessage, unpinMessage, typingUsers, updateTypingStatus } = useWorldChat();
     const { users: allUsers, loading: usersLoading, isAdmin } = useUsers();
@@ -59,6 +67,7 @@ export function WorldChatView() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
     const [replyingTo, setReplyingTo] = useState<WorldChatMessage | null>(null);
+    const [activeTheme, setActiveTheme] = useLocalStorage('worldChatTheme', chatThemes[0]);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -131,7 +140,7 @@ export function WorldChatView() {
 
     return (
         <>
-            <Card className="h-full flex flex-col blue-nebula-bg border-0">
+            <Card className={cn("h-full flex flex-col border-0 transition-all duration-500", activeTheme.class)}>
                  <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/10 bg-black/20">
                     <div className="flex items-center gap-3">
                         <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-white hover:bg-white/10">
@@ -139,6 +148,30 @@ export function WorldChatView() {
                         </Button>
                         <Globe className="h-6 w-6 text-cyan-300" />
                         <h2 className="text-xl font-bold text-white">World Chat</h2>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Sheet>
+                            <SheetTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-10 w-10 text-white hover:bg-white/10">
+                                    <Palette />
+                                </Button>
+                            </SheetTrigger>
+                            <SheetContent>
+                                <SheetHeader>
+                                    <SheetTitle>Chat Themes</SheetTitle>
+                                </SheetHeader>
+                                <div className="py-4 space-y-4">
+                                    {chatThemes.map(theme => (
+                                        <button key={theme.id} onClick={() => setActiveTheme(theme)} className="w-full text-left p-2 rounded-lg border-2 data-[active=true]:border-primary data-[active=false]:border-transparent" data-active={activeTheme.id === theme.id}>
+                                            <div className="flex items-center gap-4">
+                                                <div className={cn("h-16 w-24 rounded-md", theme.class)}></div>
+                                                <span className="font-semibold">{theme.name}</span>
+                                            </div>
+                                        </button>
+                                    ))}
+                                </div>
+                            </SheetContent>
+                        </Sheet>
                     </div>
                 </CardHeader>
                 {showPinnedMessage && pinnedMessageSender && (
