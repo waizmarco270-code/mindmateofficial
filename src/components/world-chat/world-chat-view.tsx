@@ -53,8 +53,9 @@ const getUserColor = (userId: string) => {
 };
 
 const chatThemes = [
-    { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
     { id: 'whatsapp', name: 'WhatsApp Style', class: 'whatsapp-style-bg' },
+    { id: 'mindmate-official', name: 'MindMate Official', class: 'mindmate-official-bg' },
+    { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
     { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
     { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
     { id: 'cyber', name: 'Cyber Grid', class: 'cyber-grid-bg' },
@@ -279,7 +280,7 @@ const ClickableMessage = ({ text }: { text: string }) => {
     const parts = text.split(urlRegex);
 
     return (
-        <p className="whitespace-pre-wrap text-white text-left select-none">
+        <p className="whitespace-pre-wrap text-white text-left select-text">
             {parts.map((part, index) => {
                 if (part.match(urlRegex)) {
                     return (
@@ -383,18 +384,35 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
             className="group/message relative"
         >
             <div className={cn("relative flex items-end gap-2", isOwn ? "justify-end" : "justify-start")}>
+                <Popover>
+                    <PopoverTrigger asChild>
+                         <div className={cn("absolute flex items-center gap-1 opacity-0 group-hover/message:opacity-100 transition-opacity duration-200", isOwn ? "-left-14" : "-right-14")}>
+                             <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/20 text-white/70 hover:bg-black/40 hover:text-white"><Smile className="h-4 w-4"/></Button>
+                        </div>
+                    </PopoverTrigger>
+                     <PopoverContent className="w-auto p-1">
+                        <div className="flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1">
+                            {REACTIONS.map(emoji => (
+                                <Button key={emoji} variant="ghost" size="icon" className="h-8 w-8 text-xl" onClick={() => toggleReaction(message.id, emoji)}>
+                                    {emoji}
+                                </Button>
+                            ))}
+                        </div>
+                    </PopoverContent>
+                </Popover>
+
                 {!isOwn && <button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={sender.photoURL} /><AvatarFallback>{sender.displayName.charAt(0)}</AvatarFallback></Avatar></button>}
                 
-                <div className={cn("max-w-xs md:max-w-md", isOwn ? "text-right" : "text-left")}>
-                    {showHeader && (
-                         <div className={cn("flex items-baseline gap-2 mb-1", isOwn ? "justify-end" : "justify-start")}>
-                            {!isOwn && ( <button onClick={() => onUserSelect(sender)}><p className="text-sm font-semibold text-slate-300 hover:underline">{sender.displayName}</p></button> )}
-                            {badgeToShow && badgeToShow.badge}
-                            <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
-                        </div>
-                    )}
-                    <Popover>
-                        <PopoverTrigger asChild>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <div className={cn("max-w-xs md:max-w-md", isOwn ? "text-right" : "text-left")}>
+                            {showHeader && (
+                                <div className={cn("flex items-baseline gap-2 mb-1", isOwn ? "justify-end" : "justify-start")}>
+                                    {!isOwn && ( <button onClick={() => onUserSelect(sender)}><p className="text-sm font-semibold text-slate-300 hover:underline">{sender.displayName}</p></button> )}
+                                    {badgeToShow && badgeToShow.badge}
+                                    <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
+                                </div>
+                            )}
                             <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2 cursor-pointer", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
                                 {message.replyingTo && (
                                     <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs">
@@ -410,18 +428,18 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                 ) : ( message.text && <ClickableMessage text={message.text} /> )}
                                 {message.editedAt && !isEditing && ( <p className="text-xs text-slate-400/70 mt-1">(edited)</p> )}
                             </div>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-1">
-                            <div className="flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1">
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
-                                {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
-                                {isAdmin && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>)}
-                                {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                </div>
+                        </div>
+                     </PopoverTrigger>
+                     <PopoverContent className="w-auto p-1">
+                        <div className="flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
+                            {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
+                            {isAdmin && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>)}
+                            {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
+                        </div>
+                    </PopoverContent>
+                </Popover>
 
                  {isOwn && (<button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={clerkUser?.imageUrl} /><AvatarFallback>{clerkUser?.firstName?.charAt(0)}</AvatarFallback></Avatar></button>)}
             </div>

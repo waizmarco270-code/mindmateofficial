@@ -161,7 +161,7 @@
   }
 
   /* Re-enable selection for text inputs */
-  input, textarea {
+  input, textarea, .select-text {
     -webkit-touch-callout: default;
     user-select: text;
   }
@@ -499,7 +499,6 @@
         linear-gradient(45deg, transparent 75%, #8b5cf6 75%),
         linear-gradient(-45deg, transparent 75%, #8b5cf6 75%);
     background-size: 60px 60px;
-    animation: animated-grid 10s linear infinite;
   }
 
   .oceanic-flow-bg {
@@ -535,12 +534,10 @@
   .lava-flow-bg {
     background: linear-gradient(135deg, #ff4800, #ff7e00, #ff4800, #000);
     background-size: 300% 300%;
-    animation: nebula-animation 28s ease infinite;
   }
   .mystic-forest-bg {
     background: linear-gradient(160deg, #002e18, #004d2e, #002e18);
     background-size: 200% 200%;
-    animation: nebula-animation 30s ease infinite;
   }
   .digital-glitch-bg > * {
     animation: glitch 1.5s steps(2, jump-none) infinite;
@@ -576,12 +573,17 @@
         radial-gradient(at 0% 100%, hsla(193, 100%, 70%, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 100%, hsla(213, 100%, 70%, 0.15) 0px, transparent 50%);
     background-size: 400% 400%;
-    animation: nebula-animation 60s ease infinite;
   }
 
   .dark .glassmorphism-light-bg {
     background-color: rgba(0, 0, 0, 0.5);
   }
+  
+  .mindmate-official-bg {
+      background: linear-gradient(160deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.1));
+      background-size: 200% 200%;
+  }
+
 
   @keyframes rainbow-progress {
     0% { background-position: 0% 50%; }
@@ -609,5 +611,3 @@
     user-select: none;
   }
 }
-
-    
