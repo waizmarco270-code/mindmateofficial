@@ -2,19 +2,21 @@
 'use client';
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { db } from '@/lib/firebase';
+import { db, storage } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export interface WorldChatMessage {
     id: string;
     senderId: string;
-    text: string;
+    text?: string;
+    imageUrl?: string;
     timestamp: Date;
 }
 
 interface WorldChatContextType {
     messages: WorldChatMessage[];
-    sendMessage: (text: string) => Promise<void>;
+    sendMessage: (text: string, image?: File | null) => Promise<void>;
     loading: boolean;
 }
 
@@ -45,15 +47,37 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, []);
 
-    const sendMessage = useCallback(async (text: string) => {
+    const sendMessage = useCallback(async (text: string, image: File | null = null) => {
         if (!currentUser) return;
         
         const messagesRef = collection(db, 'world_chat');
-        await addDoc(messagesRef, {
+        
+        let imageUrl: string | undefined = undefined;
+
+        if(image) {
+            const filePath = `world_chat_images/${currentUser.id}_${Date.now()}_${image.name}`;
+            const imageRef = ref(storage, filePath);
+            const uploadResult = await uploadBytes(imageRef, image);
+            imageUrl = await getDownloadURL(uploadResult.ref);
+        }
+
+        const messageData: {
+            senderId: string;
+            text?: string;
+            imageUrl?: string;
+            timestamp: any;
+        } = {
             senderId: currentUser.id,
-            text,
             timestamp: serverTimestamp(),
-        });
+        };
+
+        if (text) messageData.text = text;
+        if (imageUrl) messageData.imageUrl = imageUrl;
+        
+        if (messageData.text || messageData.imageUrl) {
+            await addDoc(messagesRef, messageData);
+        }
+
     }, [currentUser]);
 
     const value = { messages, loading, sendMessage };
