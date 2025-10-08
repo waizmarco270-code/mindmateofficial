@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Image as ImageIcon, Paperclip, Trash2, Smile } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Image as ImageIcon, Paperclip, Trash2, Smile, Pin, X, PinOff } from 'lucide-react';
 import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -17,8 +17,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UserProfileCard } from '@/components/profile/user-profile-card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { X } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 const userColors = [
     'border-red-500/50',
@@ -50,14 +50,19 @@ const getUserColor = (userId: string) => {
 };
 
 export function WorldChatView() {
-    const { messages, sendMessage, loading } = useWorldChat();
+    const { messages, sendMessage, loading, pinnedMessage, pinMessage, unpinMessage } = useWorldChat();
     const { users: allUsers, loading: usersLoading, isAdmin } = useUsers();
     const { user: currentUser } = useUser();
     const [newMessage, setNewMessage] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
+    const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
+    
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const showPinnedMessage = pinnedMessage && pinnedMessage.id !== dismissedPinId;
+    const pinnedMessageSender = pinnedMessage ? allUsers.find(u => u.uid === pinnedMessage.senderId) : null;
 
     useEffect(() => {
         if (scrollAreaRef.current) {
@@ -93,6 +98,23 @@ export function WorldChatView() {
                         <h2 className="text-xl font-bold text-white">World Chat</h2>
                     </div>
                 </CardHeader>
+                {showPinnedMessage && pinnedMessageSender && (
+                    <div className="p-3 bg-primary/10 border-b border-primary/20 flex items-center gap-3 text-sm">
+                        <Pin className="h-5 w-5 text-primary flex-shrink-0" />
+                        <div className="flex-1 truncate">
+                            <span className="font-bold">{pinnedMessageSender.displayName}:</span>{' '}
+                            <span className="text-muted-foreground">{pinnedMessage.text || 'Image'}</span>
+                        </div>
+                        {isAdmin && (
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => unpinMessage()}>
+                                <PinOff className="h-4 w-4" />
+                            </Button>
+                        )}
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDismissedPinId(pinnedMessage.id)}>
+                            <X className="h-4 w-4" />
+                        </Button>
+                    </div>
+                )}
                 <CardContent className="flex-1 p-0 overflow-y-auto">
                     <ScrollArea className="h-full" ref={scrollAreaRef}>
                         <div className="p-4 space-y-6">
@@ -162,7 +184,7 @@ const REACTIONS = ['👍', '❤️', '😂', '🔥', '🎉', '🤔'];
 function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldChatMessage, sender: User, isOwn: boolean, onUserSelect: (user: User) => void }) {
     const { user: clerkUser } = useUser();
     const { users, isAdmin } = useUsers();
-    const { deleteMessage, toggleReaction } = useWorldChat();
+    const { deleteMessage, toggleReaction, pinMessage } = useWorldChat();
     
     const userToShow = isOwn ? users.find(u => u.uid === clerkUser?.id) : sender;
     const userColor = getUserColor(sender.uid);
@@ -213,6 +235,11 @@ function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldC
                             </div>
                         </PopoverContent>
                     </Popover>
+                    {isAdmin && (
+                         <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}>
+                            <Pin className="h-4 w-4"/>
+                        </Button>
+                    )}
                     {canDelete && (
                         <AlertDialog>
                             <AlertDialogTrigger asChild>

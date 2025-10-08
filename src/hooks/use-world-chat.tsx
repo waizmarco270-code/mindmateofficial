@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db, storage } from '@/lib/firebase';
-import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useAdmin } from './use-admin';
 import { useToast } from './use-toast';
@@ -23,6 +23,9 @@ interface WorldChatContextType {
     sendMessage: (text: string, image?: File | null) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
     toggleReaction: (messageId: string, emoji: string) => Promise<void>;
+    pinMessage: (messageId: string) => Promise<void>;
+    unpinMessage: () => Promise<void>;
+    pinnedMessage: WorldChatMessage | null;
     loading: boolean;
 }
 
@@ -34,13 +37,30 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const { toast } = useToast();
     const [messages, setMessages] = useState<WorldChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
+    const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
+
+    const pinnedMessage = useMemo(() => {
+        if (!pinnedMessageId) return null;
+        return messages.find(m => m.id === pinnedMessageId) || null;
+    }, [pinnedMessageId, messages]);
+
+    // Listen for pinned message
+    useEffect(() => {
+        const configRef = doc(db, 'world_chat', 'config');
+        const unsubscribe = onSnapshot(configRef, (doc) => {
+            if (doc.exists()) {
+                setPinnedMessageId(doc.data().pinnedMessageId || null);
+            }
+        });
+        return unsubscribe;
+    }, []);
 
     useEffect(() => {
         const messagesRef = collection(db, 'world_chat');
         const q = query(messagesRef, orderBy('timestamp', 'desc'), limit(50));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetchedMessages = snapshot.docs.map(doc => {
+            const fetchedMessages = snapshot.docs.filter(doc => doc.id !== 'config').map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
@@ -135,8 +155,22 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [currentUser, messages]);
 
+     const pinMessage = useCallback(async (messageId: string) => {
+        if (!isAdmin) return;
+        const configRef = doc(db, 'world_chat', 'config');
+        await setDoc(configRef, { pinnedMessageId: messageId }, { merge: true });
+        toast({ title: "Message Pinned!" });
+    }, [isAdmin, toast]);
 
-    const value = { messages, loading, sendMessage, deleteMessage, toggleReaction };
+    const unpinMessage = useCallback(async () => {
+        if (!isAdmin) return;
+        const configRef = doc(db, 'world_chat', 'config');
+        await setDoc(configRef, { pinnedMessageId: null }, { merge: true });
+        toast({ title: "Message Unpinned" });
+    }, [isAdmin, toast]);
+
+
+    const value = { messages, loading, sendMessage, deleteMessage, toggleReaction, pinnedMessage, pinMessage, unpinMessage };
 
     return (
         <WorldChatContext.Provider value={value}>
