@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Paperclip, Trash2, Smile, Pin, X, PinOff, ArrowLeft } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft } from 'lucide-react';
 import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -58,15 +58,35 @@ export function WorldChatView() {
     const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
 
-    const showPinnedMessage = pinnedMessage && pinnedMessage.id !== dismissedPinId;
-    const pinnedMessageSender = pinnedMessage ? allUsers.find(u => u.uid === pinnedMessage.senderId) : null;
+    const scrollToBottom = useCallback(() => {
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+        }
+    }, []);
 
     useEffect(() => {
+        // Auto-scroll only if we are already near the bottom
         if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+            const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+            if (scrollHeight - scrollTop - clientHeight < 200) {
+                 scrollToBottom();
+            } else {
+                 setShowScrollButton(true);
+            }
         }
-    }, [messages]);
+    }, [messages, scrollToBottom]);
+    
+    const handleScroll = () => {
+        if(scrollAreaRef.current) {
+            const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
+            if (scrollHeight - scrollTop - clientHeight < 10) {
+                setShowScrollButton(false);
+            }
+        }
+    }
+
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -77,6 +97,9 @@ export function WorldChatView() {
     };
     
     const usersMap = new Map(allUsers.map(u => [u.uid, u]));
+    
+    const showPinnedMessage = pinnedMessage && pinnedMessage.id !== dismissedPinId;
+    const pinnedMessageSender = pinnedMessage ? allUsers.find(u => u.uid === pinnedMessage.senderId) : null;
 
     return (
         <>
@@ -104,8 +127,8 @@ export function WorldChatView() {
                         </Button>
                     </div>
                 )}
-                <CardContent className="flex-1 p-0 overflow-y-auto">
-                    <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
+                <CardContent className="flex-1 p-0 overflow-y-auto relative">
+                    <ScrollArea className="h-full" viewportRef={scrollAreaRef} onScroll={handleScroll}>
                         <div className="p-4 space-y-6">
                             {(loading || usersLoading) && (
                                 <div className="flex justify-center items-center h-full">
@@ -121,6 +144,24 @@ export function WorldChatView() {
                             </AnimatePresence>
                         </div>
                     </ScrollArea>
+                    <AnimatePresence>
+                        {showScrollButton && (
+                             <motion.div
+                                initial={{ y: 50, opacity: 0 }}
+                                animate={{ y: 0, opacity: 1 }}
+                                exit={{ y: 50, opacity: 0 }}
+                                className="absolute bottom-4 right-4 z-10"
+                            >
+                                <Button
+                                    size="icon"
+                                    className="rounded-full h-12 w-12 shadow-lg"
+                                    onClick={scrollToBottom}
+                                >
+                                    <ArrowLeft className="h-6 w-6 transform rotate-[-90deg]" />
+                                </Button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </CardContent>
                 <CardFooter className="p-4 border-t border-white/10 bg-black/20 flex-col items-start gap-2">
                     <form onSubmit={handleSendMessage} className="flex items-center w-full gap-2">
@@ -156,6 +197,33 @@ export function WorldChatView() {
 }
 
 const REACTIONS = ['👍', '❤️', '😂', '🔥', '🎉', '🤔'];
+
+const ClickableMessage = ({ text }: { text: string }) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+
+    return (
+        <p className="whitespace-pre-wrap text-white text-left">
+            {parts.map((part, index) => {
+                if (part.match(urlRegex)) {
+                    return (
+                        <a
+                            key={index}
+                            href={part}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-400 hover:underline"
+                            onClick={(e) => e.stopPropagation()} // Prevents opening user profile
+                        >
+                            {part}
+                        </a>
+                    );
+                }
+                return part;
+            })}
+        </p>
+    );
+};
 
 function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldChatMessage, sender: User, isOwn: boolean, onUserSelect: (user: User) => void }) {
     const { user: clerkUser } = useUser();
@@ -253,7 +321,7 @@ function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldC
                         </div>
                     )}
                     <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
-                        <p className="whitespace-pre-wrap text-white text-left">{message.text}</p>
+                        {message.text && <ClickableMessage text={message.text} />}
                         <p className="text-xs text-slate-400 mt-2 pt-1 border-t border-white/10">{formatDistanceToNow(message.timestamp, { addSuffix: true })}</p>
                     </div>
                 </div>
@@ -291,5 +359,7 @@ function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldC
         </motion.div>
     );
 }
+
+    
 
     
