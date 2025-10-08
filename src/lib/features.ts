@@ -1,6 +1,6 @@
 
 export interface LockableFeature {
-    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'premium-games' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'unit-converter' | 'syllabus' | 'image-to-pdf' | 'qr-code-generator';
+    id: 'ai-assistant' | 'reward-zone' | 'quiz-zone' | 'social-hub' | 'game-zone' | 'premium-games' | 'resources' | 'leaderboard' | 'percentage-calculator' | 'timetable-generator' | 'quick-notepad' | 'unit-converter' | 'syllabus' | 'image-to-pdf' | 'qr-code-generator' | 'personal-vault';
     name: string;
     description: string;
     defaultCost: number;
@@ -96,5 +96,11 @@ export const lockableFeatures: LockableFeature[] = [
         name: 'QR Code Generator',
         description: 'Create and customize QR codes.',
         defaultCost: 0,
+    },
+    {
+        id: 'personal-vault',
+        name: 'Personal Vault',
+        description: 'A private space to organize your own notes and links.',
+        defaultCost: 150,
     }
 ];
