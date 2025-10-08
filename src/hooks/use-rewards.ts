@@ -68,17 +68,19 @@ export const useRewards = () => {
 
             // Daily Login Treasury State
             const streak = currentUserData.dailyLoginRewardState?.streak || 0;
-            const lastClaimedDate = currentUserData.dailyLoginRewardState?.lastClaimed;
-            const hasClaimedToday = lastClaimedDate ? isToday(new Date(lastClaimedDate)) : false;
-            
-            // The cycle is completed if they have finished day 7
-            const isCompleted = streak >= 7;
+            const lastClaimedStr = currentUserData.dailyLoginRewardState?.lastClaimed;
+            const lastClaimedDate = lastClaimedStr ? new Date(lastClaimedStr) : null;
+            const hasClaimedToday = lastClaimedDate ? isToday(lastClaimedDate) : false;
 
-            // Allow claim if the cycle is not complete and they haven't claimed today
+            // If their last claim was not yesterday, their streak should reset (unless it's their very first claim).
+            const streakContinued = !lastClaimedDate || isYesterday(lastClaimedDate) || isToday(lastClaimedDate);
+            const actualStreak = streakContinued ? streak : 0;
+            
+            const isCompleted = actualStreak >= 7;
             const canClaimToday = !isCompleted && !hasClaimedToday;
 
             setDailyLoginState({
-                streak: streak,
+                streak: actualStreak,
                 canClaim: canClaimToday,
                 hasClaimedToday: hasClaimedToday,
                 isCompleted: isCompleted,
@@ -416,20 +418,15 @@ export const useRewards = () => {
     const claimDailyLoginReward = useCallback(async () => {
         if (!user || !currentUserData) throw new Error("User not found");
 
-        const lastClaimed = currentUserData.dailyLoginRewardState?.lastClaimed;
-        const currentStreak = currentUserData.dailyLoginRewardState?.streak || 0;
-
+        const currentStreak = dailyLoginState.streak;
         if (currentStreak >= 7) {
-            throw new Error("You have already completed the 7-day reward cycle.");
+             throw new Error("You have already completed the 7-day reward cycle.");
         }
-        if (lastClaimed && isToday(new Date(lastClaimed))) {
+         if (dailyLoginState.hasClaimedToday) {
             throw new Error("Reward already claimed for today.");
         }
-        
-        let yesterdayDate = new Date();
-        yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-        const streakContinued = lastClaimed ? isYesterday(new Date(lastClaimed)) : true;
-        const newStreak = streakContinued ? currentStreak + 1 : 1;
+
+        const newStreak = currentStreak + 1;
 
         const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
             1: { credits: 10 },
@@ -471,7 +468,7 @@ export const useRewards = () => {
         toast({ title: `Day ${newStreak} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
 
-    }, [user, currentUserData, grantVipAccess, toast]);
+    }, [user, currentUserData, grantVipAccess, toast, dailyLoginState]);
     
 
     return { 
