@@ -2,7 +2,7 @@
 'use client';
 
 import { WorldChatView } from '@/components/world-chat/world-chat-view';
-import { WorldChatProvider } from '@/hooks/use-world-chat';
+import { WorldChatProvider } from '@/hooks/use-world-chat.tsx';
 
 export default function WorldChatPage() {
   return (

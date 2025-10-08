@@ -14,7 +14,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import UserProfileCard from '@/components/dashboard/profile/page';
+import { UserProfileCard } from '@/components/profile/user-profile-card';
 
 const userColors = [
     'border-red-500/50',
@@ -130,7 +130,27 @@ export function WorldChatView() {
 }
 
 function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldChatMessage, sender: User, isOwn: boolean, onUserSelect: (user: User) => void }) {
+    const { user: clerkUser } = useUser();
+    const { users } = useUsers();
+    
+    // Determine which user's data to display
+    const userToShow = isOwn ? users.find(u => u.uid === clerkUser?.id) : sender;
     const userColor = getUserColor(sender.uid);
+
+    if (!userToShow) return null; // Or a loading/error state
+
+    const isSuperAdmin = userToShow.uid === SUPER_ADMIN_UID;
+    const ownedBadges = [
+        (isSuperAdmin || userToShow.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+        userToShow.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+        userToShow.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+        userToShow.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
+        userToShow.isCoDev && { type: 'co-dev', name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> }
+    ].filter(Boolean);
+
+    if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
+
+    const badgeToShow = ownedBadges.find(b => b.type === userToShow.showcasedBadge) || ownedBadges[0] || null;
 
     return (
         <motion.div
@@ -152,6 +172,7 @@ function ChatMessage({ message, sender, isOwn, onUserSelect }: { message: WorldC
                  {!isOwn && (
                     <div className="flex items-center gap-2 mb-1">
                         <button onClick={() => onUserSelect(sender)} className="text-sm font-semibold text-slate-300 hover:underline">{sender.displayName}</button>
+                         {badgeToShow && badgeToShow.badge}
                     </div>
                 )}
                 <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
