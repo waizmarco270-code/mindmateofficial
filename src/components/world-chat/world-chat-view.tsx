@@ -393,40 +393,34 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                             <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
                         </div>
                     )}
-                    <div className="relative">
-                         <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
-                            {message.replyingTo && (
-                                <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs">
-                                    <p className="font-bold text-slate-400">Replying to {message.replyingTo.senderName}</p>
-                                    <p className="italic text-slate-500 truncate">"{message.replyingTo.textSnippet}"</p>
-                                </div>
-                            )}
-                            {isEditing ? (
-                                <div className="space-y-2">
-                                    <textarea ref={textareaRef} value={editText} onChange={(e) => { setEditText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} onKeyDown={handleKeyDown} className="w-full bg-transparent text-white border-0 focus:ring-0 resize-none p-0" />
-                                    <div className="flex justify-end gap-2 text-xs"><button onClick={() => setIsEditing(false)}>Cancel</button><button onClick={handleEditSave} className="font-bold text-primary">Save</button></div>
-                                </div>
-                            ) : ( message.text && <ClickableMessage text={message.text} /> )}
-                            {message.editedAt && !isEditing && ( <p className="text-xs text-slate-400/70 mt-1">(edited)</p> )}
-                         </div>
-                          {/* Action Buttons */}
-                        <div className={cn(
-                            "absolute bottom-0 z-20 flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1 opacity-0 group-hover/message:opacity-100 transition-opacity",
-                            isOwn ? "left-0 -translate-x-full -ml-1" : "right-0 translate-x-full ml-1"
-                        )}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white"><Smile className="h-4 w-4"/></Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-1"><div className="flex gap-1">{REACTIONS.map(emoji => (<Button key={emoji} variant="ghost" size="icon" className="text-xl" onClick={() => toggleReaction(message.id, emoji)}>{emoji}</Button>))}</div></PopoverContent>
-                            </Popover>
-                            {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
-                            {isAdmin && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>)}
-                            {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
-                        </div>
-                    </div>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <div className={cn("relative p-3 rounded-2xl bg-black/30 border-2 cursor-pointer", userColor, isOwn ? "rounded-br-none" : "rounded-bl-none")}>
+                                {message.replyingTo && (
+                                    <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs">
+                                        <p className="font-bold text-slate-400">Replying to {message.replyingTo.senderName}</p>
+                                        <p className="italic text-slate-500 truncate">"{message.replyingTo.textSnippet}"</p>
+                                    </div>
+                                )}
+                                {isEditing ? (
+                                    <div className="space-y-2">
+                                        <textarea ref={textareaRef} value={editText} onChange={(e) => { setEditText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} onKeyDown={handleKeyDown} className="w-full bg-transparent text-white border-0 focus:ring-0 resize-none p-0" />
+                                        <div className="flex justify-end gap-2 text-xs"><button onClick={() => setIsEditing(false)}>Cancel</button><button onClick={handleEditSave} className="font-bold text-primary">Save</button></div>
+                                    </div>
+                                ) : ( message.text && <ClickableMessage text={message.text} /> )}
+                                {message.editedAt && !isEditing && ( <p className="text-xs text-slate-400/70 mt-1">(edited)</p> )}
+                            </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-1">
+                            <div className="flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
+                                {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
+                                {isAdmin && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>)}
+                                {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </div>
 
                  {isOwn && (<button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={clerkUser?.imageUrl} /><AvatarFallback>{clerkUser?.firstName?.charAt(0)}</AvatarFallback></Avatar></button>)}
