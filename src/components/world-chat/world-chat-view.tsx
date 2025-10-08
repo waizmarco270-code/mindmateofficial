@@ -58,7 +58,7 @@ const chatThemes = [
     { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
     { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
     { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
-    { id: 'cyber', name: 'Cyber Grid', class: 'cyber-grid-bg' },
+    { id: 'classic-grid', name: 'Classic Grid', class: 'classic-grid-bg' },
 ];
 
 export function WorldChatView() {

@@ -439,6 +439,20 @@
     border-image: conic-gradient(from var(--angle), #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff, #ff0000) 1;
     animation: rotate-angle 4s linear infinite;
   }
+  
+  .mindmate-official-bg {
+      background: linear-gradient(160deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.1));
+      background-size: 200% 200%;
+      animation: nebula-animation 20s ease infinite;
+  }
+
+  .classic-grid-bg {
+    background-color: hsl(var(--background));
+    background-image:
+        linear-gradient(to right, hsl(var(--border) / 0.5) 1px, transparent 1px),
+        linear-gradient(to bottom, hsl(var(--border) / 0.5) 1px, transparent 1px);
+    background-size: 3rem 3rem;
+  }
 
   .blue-nebula-bg {
     background: linear-gradient(225deg, #000428, #004e92, #0c2e4e, #2980b9);
