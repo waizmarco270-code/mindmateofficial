@@ -62,7 +62,7 @@ const chatThemes = [
 
 export function WorldChatView() {
     const { messages, sendMessage, loading, pinnedMessage, unpinMessage, typingUsers, updateTypingStatus } = useWorldChat();
-    const { users: allUsers, loading: usersLoading, isAdmin } = useUsers();
+    const { users: allUsers, loading: usersLoading, isAdmin } = useAdmin();
     const { user: currentUser } = useUser();
     const [newMessage, setNewMessage] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -393,9 +393,12 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                     <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
                 </div>
             )}
-            <div className={cn("flex items-start gap-3 w-full", isOwn ? "justify-end" : "justify-start")}>
+            <div className={cn("relative flex items-end gap-2 w-full", isOwn ? "justify-end" : "justify-start")}>
                 
-                 <div className={cn("flex items-center opacity-0 group-hover/message:opacity-100 transition-opacity", isOwn ? "order-first" : "order-last")}>
+                 <div className={cn(
+                    "absolute bottom-0 z-10 flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1 opacity-0 group-hover/message:opacity-100 transition-opacity",
+                    isOwn ? "left-0 -translate-x-full -ml-1" : "right-0 translate-x-full ml-1"
+                )}>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}>
                         <Reply className="h-4 w-4"/>
                     </Button>
@@ -451,7 +454,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
 
                 {!isOwn && (
                     <button onClick={() => onUserSelect(sender)}>
-                        <Avatar className="h-10 w-10 border-2 border-white/20">
+                        <Avatar className="h-10 w-10 border-2 border-white/20 self-start">
                             <AvatarImage src={sender.photoURL} />
                             <AvatarFallback>{sender.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
@@ -492,6 +495,14 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                         )}
                     </div>
                 </div>
+                 {isOwn && (
+                    <button onClick={() => onUserSelect(sender)}>
+                        <Avatar className="h-10 w-10 border-2 border-white/20 self-start">
+                            <AvatarImage src={clerkUser?.imageUrl} />
+                            <AvatarFallback>{clerkUser?.firstName?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                    </button>
+                )}
             </div>
 
             {hasReactions && (
