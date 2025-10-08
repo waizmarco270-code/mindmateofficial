@@ -433,7 +433,7 @@
   .blue-nebula-bg {
     background: linear-gradient(225deg, #000428, #004e92, #0c2e4e, #2980b9);
     background-size: 250% 250%;
-    animation: nebula-animation 25s ease infinite;
+    animation: nebula-animation 50s ease infinite;
   }
   
   .red-nebula-bg {
@@ -493,8 +493,8 @@
   .cyber-grid-bg {
     background-color: #0c0a09;
     background-image:
-        linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px),
-        linear-gradient(to right, hsl(var(--primary) / 0.1) 1px, transparent 1px);
+      linear-gradient(hsl(var(--primary) / 0.1) 1px, transparent 1px),
+      linear-gradient(to right, hsl(var(--primary) / 0.1) 1px, transparent 1px);
     background-size: 3rem 3rem;
   }
 
@@ -535,7 +535,7 @@
   .lava-flow-bg {
     background: linear-gradient(135deg, #ff4800, #ff7e00, #ff4800, #000);
     background-size: 300% 300%;
-    animation: nebula-animation 28s ease infinite;
+    animation: nebula-animation 45s ease infinite;
   }
   .mystic-forest-bg {
     background: linear-gradient(160deg, #002e18, #004d2e, #002e18);
@@ -576,7 +576,7 @@
         radial-gradient(at 0% 100%, hsla(193, 100%, 70%, 0.15) 0px, transparent 50%),
         radial-gradient(at 100% 100%, hsla(213, 100%, 70%, 0.15) 0px, transparent 50%);
     background-size: 400% 400%;
-    animation: nebula-animation 30s ease infinite;
+    animation: nebula-animation 60s ease infinite;
     backdrop-filter: blur(20px);
   }
 
