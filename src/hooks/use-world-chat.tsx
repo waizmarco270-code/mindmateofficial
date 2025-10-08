@@ -26,13 +26,15 @@ export interface WorldChatMessage {
 
 interface WorldChatContextType {
     messages: WorldChatMessage[];
-    sendMessage: (text: string, replyingTo?: ReplyContext) => Promise<void>;
+    sendMessage: (text: string, replyingTo?: ReplyButton | null) => Promise<void>;
     editMessage: (messageId: string, newText: string) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
     toggleReaction: (messageId: string, emoji: string) => Promise<void>;
     pinMessage: (messageId: string) => Promise<void>;
     unpinMessage: () => Promise<void>;
     pinnedMessage: WorldChatMessage | null;
+    typingUsers: { id: string; displayName: string }[];
+    updateTypingStatus: (isTyping: boolean) => void;
     loading: boolean;
 }
 
@@ -40,11 +42,12 @@ const WorldChatContext = createContext<WorldChatContextType | undefined>(undefin
 
 export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const { user: currentUser } = useUser();
-    const { isAdmin } = useAdmin();
+    const { users, isAdmin } = useAdmin();
     const { toast } = useToast();
     const [messages, setMessages] = useState<WorldChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
     const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
+    const [typingUsers, setTypingUsers] = useState<{ id: string; displayName: string }[]>([]);
 
     const pinnedMessage = useMemo(() => {
         if (!pinnedMessageId) return null;
@@ -61,6 +64,22 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         });
         return unsubscribe;
     }, []);
+
+    // Listen for typing status
+    useEffect(() => {
+        const typingRef = doc(db, 'typing_status', 'world_chat');
+        const unsubscribe = onSnapshot(typingRef, (doc) => {
+            if (doc.exists()) {
+                const typingData = doc.data().users || {};
+                const now = Date.now();
+                const typing = Object.entries(typingData)
+                    .filter(([uid, data]: [string, any]) => now - data.timestamp < 5000 && uid !== currentUser?.id)
+                    .map(([uid, data]: [string, any]) => ({ id: uid, displayName: data.displayName }));
+                setTypingUsers(typing);
+            }
+        });
+        return unsubscribe;
+    }, [currentUser?.id]);
 
     useEffect(() => {
         const messagesRef = collection(db, 'world_chat');
@@ -83,7 +102,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, []);
 
-    const sendMessage = useCallback(async (text: string, replyingTo?: ReplyContext) => {
+    const sendMessage = useCallback(async (text: string, replyingTo?: ReplyContext | null) => {
         if (!currentUser || !text.trim()) return;
         
         const messagesRef = collection(db, 'world_chat');
@@ -178,9 +197,27 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(configRef, { pinnedMessageId: null }, { merge: true });
         toast({ title: "Message Unpinned" });
     }, [isAdmin, toast]);
+    
+    const updateTypingStatus = useCallback(async (isTyping: boolean) => {
+        if (!currentUser) return;
+        const typingRef = doc(db, 'typing_status', 'world_chat');
+        const userTypingData = {
+            displayName: users.find(u => u.uid === currentUser.id)?.displayName || 'A user',
+            timestamp: Date.now()
+        };
+
+        if(isTyping) {
+             await setDoc(typingRef, {
+                users: {
+                    [currentUser.id]: userTypingData
+                }
+            }, { merge: true });
+        }
+        // Let the useEffect cleanup handle removal after timeout
+    }, [currentUser, users]);
 
 
-    const value = { messages, loading, sendMessage, editMessage, deleteMessage, toggleReaction, pinnedMessage, pinMessage, unpinMessage };
+    const value = { messages, loading, sendMessage, editMessage, deleteMessage, toggleReaction, pinnedMessage, pinMessage, unpinMessage, typingUsers, updateTypingStatus };
 
     return (
         <WorldChatContext.Provider value={value}>

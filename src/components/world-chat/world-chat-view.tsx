@@ -7,7 +7,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy } from 'lucide-react';
-import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
+import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -52,7 +52,7 @@ const getUserColor = (userId: string) => {
 };
 
 export function WorldChatView() {
-    const { messages, sendMessage, loading, pinnedMessage, unpinMessage } = useWorldChat();
+    const { messages, sendMessage, loading, pinnedMessage, unpinMessage, typingUsers, updateTypingStatus } = useWorldChat();
     const { users: allUsers, loading: usersLoading, isAdmin } = useUsers();
     const { user: currentUser } = useUser();
     const [newMessage, setNewMessage] = useState('');
@@ -61,6 +61,8 @@ export function WorldChatView() {
     const [replyingTo, setReplyingTo] = useState<WorldChatMessage | null>(null);
     
     const scrollAreaRef = useRef<HTMLDivElement>(null);
+    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
 
     const scrollToBottom = useCallback(() => {
         if (scrollAreaRef.current) {
@@ -87,12 +89,29 @@ export function WorldChatView() {
             messageId: replyingTo.id,
             senderName: allUsers.find(u => u.uid === replyingTo.senderId)?.displayName || 'Unknown User',
             textSnippet: replyingTo.text?.substring(0, 50) || '',
-        } : undefined;
+        } : null;
 
         await sendMessage(newMessage, replyContext);
         setNewMessage('');
         setReplyingTo(null);
     };
+
+    const handleTyping = (text: string) => {
+        setNewMessage(text);
+
+        if (typingTimeoutRef.current) {
+            clearTimeout(typingTimeoutRef.current);
+        } else {
+             // Started typing
+            updateTypingStatus(true);
+        }
+
+        typingTimeoutRef.current = setTimeout(() => {
+            // Stopped typing
+            updateTypingStatus(false);
+            typingTimeoutRef.current = null;
+        }, 2000); // 2-second timeout
+    }
     
     const usersMap = new Map(allUsers.map(u => [u.uid, u]));
     
@@ -101,6 +120,13 @@ export function WorldChatView() {
     
     const handleReplyClick = (message: WorldChatMessage) => {
         setReplyingTo(message);
+    }
+    
+    const getTypingText = () => {
+        if (typingUsers.length === 0) return null;
+        if (typingUsers.length === 1) return `${typingUsers[0].displayName} is typing...`;
+        if (typingUsers.length === 2) return `${typingUsers[0].displayName} and ${typingUsers[1].displayName} are typing...`;
+        return `${typingUsers.length} users are typing...`;
     }
 
     return (
@@ -175,10 +201,13 @@ export function WorldChatView() {
                             </motion.div>
                         )}
                     </AnimatePresence>
+                     <div className="h-5 text-xs text-slate-400 font-medium italic">
+                        {getTypingText()}
+                    </div>
                     <form onSubmit={handleSendMessage} className="flex items-center w-full gap-2">
                         <Input
                             value={newMessage}
-                            onChange={(e) => { setNewMessage(e.target.value); }}
+                            onChange={(e) => handleTyping(e.target.value)}
                             placeholder="Message the world..."
                             className="flex-1 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 focus:ring-primary"
                         />
