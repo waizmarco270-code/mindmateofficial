@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Paperclip, Trash2, Smile, Pin, X, PinOff, ArrowDown } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Paperclip, Trash2, Smile, Pin, X, PinOff, ArrowLeft } from 'lucide-react';
 import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat.tsx';
 import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -57,48 +57,16 @@ export function WorldChatView() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
     
-    const viewportRef = useRef<HTMLDivElement>(null);
-    const [showScrollButton, setShowScrollButton] = useState(false);
-    const prevMessageCount = useRef(messages.length);
+    const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     const showPinnedMessage = pinnedMessage && pinnedMessage.id !== dismissedPinId;
     const pinnedMessageSender = pinnedMessage ? allUsers.find(u => u.uid === pinnedMessage.senderId) : null;
 
-    const scrollToBottom = () => {
-        if (viewportRef.current) {
-            viewportRef.current.scrollTo({ top: viewportRef.current.scrollHeight, behavior: 'smooth' });
-        }
-    };
-
-    // Auto-scroll logic
     useEffect(() => {
-        if (!viewportRef.current) return;
-        
-        const { scrollTop, scrollHeight, clientHeight } = viewportRef.current;
-        const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
-        
-        // If new messages arrive and user is at the bottom, auto-scroll
-        if (isAtBottom) {
-             setTimeout(scrollToBottom, 50); // Small delay to allow render
-        } else {
-            // If new messages arrive and user is scrolled up, show the button
-             if (messages.length > prevMessageCount.current) {
-                setShowScrollButton(true);
-            }
+        if (scrollAreaRef.current) {
+            scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
         }
-        
-        prevMessageCount.current = messages.length;
-
     }, [messages]);
-    
-    const handleScroll = () => {
-        if (!viewportRef.current) return;
-        const { scrollTop, scrollHeight, clientHeight } = viewportRef.current;
-        const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-        if(isAtBottom) {
-            setShowScrollButton(false);
-        }
-    };
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -136,8 +104,8 @@ export function WorldChatView() {
                         </Button>
                     </div>
                 )}
-                <CardContent className="flex-1 p-0 overflow-y-auto relative">
-                    <ScrollArea className="h-full" viewportRef={viewportRef} onScroll={handleScroll}>
+                <CardContent className="flex-1 p-0 overflow-y-auto">
+                    <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
                         <div className="p-4 space-y-6">
                             {(loading || usersLoading) && (
                                 <div className="flex justify-center items-center h-full">
@@ -153,24 +121,6 @@ export function WorldChatView() {
                             </AnimatePresence>
                         </div>
                     </ScrollArea>
-                    <AnimatePresence>
-                        {showScrollButton && (
-                             <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: 20 }}
-                                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10"
-                            >
-                                <Button
-                                    onClick={scrollToBottom}
-                                    className="rounded-full h-10 shadow-lg bg-primary/80 backdrop-blur-md hover:bg-primary"
-                                >
-                                    <ArrowDown className="mr-2 h-4 w-4" />
-                                    New Messages
-                                </Button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
                 </CardContent>
                 <CardFooter className="p-4 border-t border-white/10 bg-black/20 flex-col items-start gap-2">
                     <form onSubmit={handleSendMessage} className="flex items-center w-full gap-2">
