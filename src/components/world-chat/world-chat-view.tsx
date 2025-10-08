@@ -53,8 +53,8 @@ const getUserColor = (userId: string) => {
 };
 
 const chatThemes = [
-    { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
     { id: 'whatsapp', name: 'WhatsApp Style', class: 'whatsapp-style-bg' },
+    { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
     { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
     { id: 'cyber', name: 'Cyber Grid', class: 'cyber-grid-bg' },
     { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
