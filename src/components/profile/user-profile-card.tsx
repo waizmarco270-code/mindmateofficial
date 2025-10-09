@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -14,6 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFriends } from '@/hooks/use-friends';
 import { format } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
 
 const formatTotalStudyTime = (totalSeconds: number) => {
     if (totalSeconds < 60) return "0m";
