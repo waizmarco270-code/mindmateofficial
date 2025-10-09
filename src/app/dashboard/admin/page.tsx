@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -6,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useAdmin, type Resource, type DailySurprise, type ResourceSection, type SupportTicket } from '@/hooks/use-admin';
+import { useAdmin, type Resource, type DailySurprise, type ResourceSection, type SupportTicket, type FeatureShowcase, type ShowcaseTemplate } from '@/hooks/use-admin';
+import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
   TableHeader,
@@ -16,17 +18,17 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image as ImageIcon, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle, Star, Swords } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image as ImageIcon, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle, Star, Swords, UserPlus, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useQuizzes, type QuizCategory } from '@/hooks/use-quizzes';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogClose, DialogDescription } from '@/components/ui/dialog';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { z } from 'zod';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 
 
@@ -105,7 +107,9 @@ export default function AdminPanelPage() {
     resourceSections, addResourceSection, updateResourceSection, deleteResourceSection,
     dailySurprises, addDailySurprise, deleteDailySurprise,
     supportTickets, updateTicketStatus, deleteTicket,
+    featureShowcases, addFeatureShowcase, updateFeatureShowcase, deleteFeatureShowcase
   } = useAdmin();
+  const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { quizzes, deleteQuiz } = useQuizzes();
   const { toast } = useToast();
 
@@ -157,6 +161,17 @@ export default function AdminPanelPage() {
     { text: '', options: ['', '', '', ''], correctAnswer: '' }
   ]);
   const [isSavingQuiz, setIsSavingQuiz] = useState(false);
+  
+    // State for Showcase
+  const [showcaseTitle, setShowcaseTitle] = useState('');
+  const [showcaseDesc, setShowcaseDesc] = useState('');
+  const [showcaseDate, setShowcaseDate] = useState('');
+  const [showcaseTemplate, setShowcaseTemplate] = useState<ShowcaseTemplate>('cosmic-blue');
+  const [isEditShowcaseOpen, setIsEditShowcaseOpen] = useState(false);
+  const [editingShowcase, setEditingShowcase] = useState<FeatureShowcase | null>(null);
+  const [showcaseStatus, setShowcaseStatus] = useState<FeatureShowcase['status']>('upcoming');
+  const [showcaseLink, setShowcaseLink] = useState('');
+
 
   const handleAddAnnouncement = async () => {
     if (!newAnnouncementTitle.trim() || !newAnnouncementDesc.trim()) {
@@ -468,8 +483,87 @@ export default function AdminPanelPage() {
     };
     reader.readAsText(file);
 };
+
+  const handleApproveReferral = async (referral: ReferralRequest) => {
+      try {
+          await approveReferral(referral);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Approval Failed', description: error.message });
+      }
+  }
   
-  const generalResources = allResources.filter(r => r.sectionId === 'general');
+  const handleDeclineReferral = async (referralId: string) => {
+       try {
+          await declineReferral(referralId);
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Decline Failed', description: error.message });
+      }
+  }
+
+  const handleSaveShowcase = async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      if (!showcaseTitle.trim() || !showcaseDesc.trim()) {
+          toast({ variant: 'destructive', title: 'Title and Description are required.' });
+          return;
+      }
+      
+      try {
+        if (editingShowcase) {
+            // Update existing
+            await updateFeatureShowcase(editingShowcase.id, {
+                title: showcaseTitle,
+                description: showcaseDesc,
+                launchDate: showcaseDate || undefined,
+                template: showcaseTemplate,
+                status: showcaseStatus,
+                link: showcaseLink || undefined,
+            });
+            toast({ title: "Feature Showcase Updated!" });
+        } else {
+            // Add new
+            await addFeatureShowcase({
+                title: showcaseTitle,
+                description: showcaseDesc,
+                launchDate: showcaseDate || undefined,
+                template: showcaseTemplate,
+                status: showcaseStatus,
+                link: showcaseLink || undefined,
+            });
+            toast({ title: "Feature Showcase Added!" });
+        }
+        
+        closeShowcaseDialog();
+
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
+      }
+  }
+
+  const openShowcaseDialog = (showcase: FeatureShowcase | null) => {
+    if (showcase) {
+        setEditingShowcase(showcase);
+        setShowcaseTitle(showcase.title);
+        setShowcaseDesc(showcase.description);
+        setShowcaseDate(showcase.launchDate ? showcase.launchDate.split('T')[0] : '');
+        setShowcaseTemplate(showcase.template);
+        setShowcaseStatus(showcase.status);
+        setShowcaseLink(showcase.link || '');
+    } else {
+        setEditingShowcase(null);
+        setShowcaseTitle('');
+        setShowcaseDesc('');
+        setShowcaseDate('');
+        setShowcaseTemplate('cosmic-blue');
+        setShowcaseStatus('upcoming');
+        setShowcaseLink('');
+    }
+    setIsEditShowcaseOpen(true);
+  };
+
+  const closeShowcaseDialog = () => {
+    setIsEditShowcaseOpen(false);
+    setEditingShowcase(null);
+  };
 
   if (!isAdmin && !isSuperAdmin) {
     return (
@@ -536,6 +630,69 @@ export default function AdminPanelPage() {
 
       <Accordion type="multiple" defaultValue={['content-management']} className="w-full space-y-4">
         
+        {/* Showcase Management */}
+        <AccordionItem value="showcase-management" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Megaphone className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Feature Showcase Management</h3>
+                  <p className="text-sm text-muted-foreground text-left">Create and manage pre-launch announcement banners.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-4">
+                <div className="text-right">
+                    <Button onClick={() => openShowcaseDialog(null)}>Add New Showcase</Button>
+                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Existing Showcases</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Title</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead>Launch Date</TableHead>
+                                    <TableHead>Template</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {featureShowcases.map(sc => (
+                                    <TableRow key={sc.id}>
+                                        <TableCell>{sc.title}</TableCell>
+                                        <TableCell>
+                                            <Badge variant={sc.status === 'live' ? 'default' : 'secondary'} className="capitalize">
+                                                {sc.status}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell>{sc.launchDate ? format(parseISO(sc.launchDate), 'PPP') : 'Not set'}</TableCell>
+                                        <TableCell><Badge variant="outline" className="capitalize">{sc.template.replace(/-/g, ' ')}</Badge></TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                            <Button variant="outline" size="sm" onClick={() => openShowcaseDialog(sc)}><Edit className="h-4 w-4 mr-2"/> Edit</Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="h-4 w-4 mr-2"/> Delete</Button></AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader><AlertDialogTitle>Delete this showcase?</AlertDialogTitle><AlertDialogDescription>This action is permanent and cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteFeatureShowcase(sc.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {featureShowcases.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No showcases created yet.</TableCell></TableRow>}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
         {/* Content Management */}
         <AccordionItem value="content-management" className="border-b-0">
           <Card>
@@ -1011,6 +1168,62 @@ export default function AdminPanelPage() {
             </Card>
         </AccordionItem>
         
+         {/* Referral Management */}
+        <AccordionItem value="referral-management" className="border-b-0">
+           <Card>
+              <AccordionTrigger className="p-6">
+                <div className="flex items-center gap-3">
+                  <UserPlus className="h-6 w-6 text-primary" />
+                  <div>
+                    <h3 className="text-lg font-semibold">Referral Management</h3>
+                    <p className="text-sm text-muted-foreground text-left">Approve or decline pending user referrals.</p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="p-6 pt-0">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Pending Referral Requests</CardTitle>
+                        <CardDescription>Approve requests to grant 50 credits to the referrer.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Inviter</TableHead>
+                                    <TableHead>New User</TableHead>
+                                    <TableHead>Code Used</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {referralsLoading && (
+                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">Loading requests...</TableCell></TableRow>
+                                )}
+                                {!referralsLoading && pendingReferrals.length === 0 && (
+                                    <TableRow><TableCell colSpan={5} className="h-24 text-center">No pending referrals.</TableCell></TableRow>
+                                )}
+                                {pendingReferrals.map(req => (
+                                    <TableRow key={req.id}>
+                                        <TableCell className="font-medium">{req.referrerName}</TableCell>
+                                        <TableCell>{req.newUserName}</TableCell>
+                                        <TableCell><Badge variant="outline">{req.codeUsed}</Badge></TableCell>
+                                        <TableCell>{formatDistanceToNow(req.createdAt.toDate(), { addSuffix: true })}</TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                            <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeclineReferral(req.id)}><XCircle /></Button>
+                                            <Button variant="ghost" size="icon" className="text-green-500" onClick={() => handleApproveReferral(req)}><CheckCircle /></Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+              </AccordionContent>
+            </Card>
+        </AccordionItem>
+
         {/* Support Tickets */}
          <AccordionItem value="support-tickets" className="border-b-0">
             <Card>
@@ -1121,9 +1334,79 @@ export default function AdminPanelPage() {
                 </form>
             </DialogContent>
         </Dialog>
+        <Dialog open={isEditShowcaseOpen} onOpenChange={closeShowcaseDialog}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{editingShowcase ? 'Edit' : 'Add'} Feature Showcase</DialogTitle>
+                </DialogHeader>
+                <form id="showcase-form" onSubmit={handleSaveShowcase} className="space-y-4 py-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="sc-title">Title</Label>
+                            <Input id="sc-title" value={showcaseTitle} onChange={e => setShowcaseTitle(e.target.value)} required />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="sc-date">Launch Date (Optional)</Label>
+                            <Input id="sc-date" type="date" value={showcaseDate} onChange={e => setShowcaseDate(e.target.value)} />
+                        </div>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="sc-desc">Description</Label>
+                        <Textarea id="sc-desc" value={showcaseDesc} onChange={e => setShowcaseDesc(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="sc-link">Feature Link (Optional)</Label>
+                        <Input id="sc-link" value={showcaseLink} onChange={e => setShowcaseLink(e.target.value)} placeholder="e.g., /dashboard/new-feature" />
+                    </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="sc-status">Status</Label>
+                            <Select value={showcaseStatus} onValueChange={(v: FeatureShowcase['status']) => setShowcaseStatus(v)}>
+                                <SelectTrigger id="sc-status"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="upcoming">Upcoming</SelectItem>
+                                    <SelectItem value="live">Live</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="sc-template">Card Template</Label>
+                            <Select value={showcaseTemplate} onValueChange={(v: ShowcaseTemplate) => setShowcaseTemplate(v)}>
+                                <SelectTrigger id="sc-template"><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="cosmic-blue">Cosmic Blue</SelectItem>
+                                    <SelectItem value="fiery-red">Fiery Red</SelectItem>
+                                    <SelectItem value="golden-legend">Golden Legend</SelectItem>
+                                    <SelectItem value="professional-dark">Professional Dark</SelectItem>
+                                    <SelectItem value="emerald-dream">Emerald Dream</SelectItem>
+                                    <SelectItem value="amethyst-haze">Amethyst Haze</SelectItem>
+                                    <SelectItem value="solar-flare">Solar Flare</SelectItem>
+                                    <SelectItem value="midnight-abyss">Midnight Abyss</SelectItem>
+                                    <SelectItem value="rainbow-aurora">Rainbow Aurora</SelectItem>
+                                    <SelectItem value="diamond-pearl">Diamond Pearl</SelectItem>
+                                    <SelectItem value="cyber-grid">Cyber Grid</SelectItem>
+                                    <SelectItem value="oceanic-flow">Oceanic Flow</SelectItem>
+                                    <SelectItem value="synthwave-sunset">Synthwave Sunset</SelectItem>
+                                    <SelectItem value="jungle-ruins">Jungle Ruins</SelectItem>
+                                    <SelectItem value="black-hole">Black Hole</SelectItem>
+                                    <SelectItem value="anime-speed-lines">Anime Speed Lines</SelectItem>
+                                    <SelectItem value="blueprint-grid">Blueprint Grid</SelectItem>
+                                    <SelectItem value="lava-flow">Lava Flow</SelectItem>
+                                    <SelectItem value="mystic-forest">Mystic Forest</SelectItem>
+                                    <SelectItem value="digital-glitch">Digital Glitch</SelectItem>
+                                    <SelectItem value="steampunk-gears">Steampunk Gears</SelectItem>
+                                    <SelectItem value="lofi-rain">Lofi Rain</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </form>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    <Button type="submit" form="showcase-form">Save Showcase</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
-
-
-    
