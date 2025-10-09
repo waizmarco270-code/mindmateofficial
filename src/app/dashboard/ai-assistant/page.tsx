@@ -163,7 +163,7 @@ export default function AiAssistantPage() {
   }
 
   return (
-    <div className="h-full w-full">
+    <div className="flex-1">
         <iframe
         src="https://aimindmate.vercel.app/"
         className="h-full w-full border-0"
