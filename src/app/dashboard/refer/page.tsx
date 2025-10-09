@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
-import { Gift, Copy, Check, ShieldCheck, AlertTriangle, Share2, Users, Crown, Star, Medal } from 'lucide-react';
+import { Gift, Copy, Check, ShieldCheck, AlertTriangle, Share2, Users, Crown, Star, Medal, Trophy } from 'lucide-react';
 import { useReferrals } from '@/hooks/use-referrals';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
