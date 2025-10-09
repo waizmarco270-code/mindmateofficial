@@ -98,9 +98,9 @@ function AdminPanelMenu() {
             <PopoverTrigger asChild>
                 <Button 
                     variant="outline" 
-                    className="relative h-12 w-12 rounded-full p-0 bg-secondary"
+                    className="relative h-10 w-10 rounded-full p-0 bg-secondary"
                 >
-                    <Shield className="h-6 w-6 text-primary" />
+                    <Shield className="h-5 w-5 text-primary" />
                     <span className="sr-only">Admin Panels</span>
                 </Button>
             </PopoverTrigger>
@@ -183,6 +183,8 @@ export default function Header() {
                         </div>
                     </PopoverContent>
                 </Popover>
+                
+                <AdminPanelMenu />
 
                 <Popover>
                     <PopoverTrigger asChild>
@@ -214,7 +216,6 @@ export default function Header() {
                 </Popover>
                 
                 <AnnouncementInbox />
-                <AdminPanelMenu />
 
                 <UserButton afterSignOutUrl="/" appearance={{
                     elements: {
