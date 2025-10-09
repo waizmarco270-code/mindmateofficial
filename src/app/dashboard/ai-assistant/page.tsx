@@ -163,10 +163,10 @@ export default function AiAssistantPage() {
   }
 
   return (
-    <div className="flex-1">
+    <div className="flex-1 flex flex-col">
         <iframe
         src="https://aimindmate.vercel.app/"
-        className="h-full w-full border-0"
+        className="h-full w-full border-0 flex-1"
         title="Marco AI Assistant"
         allow="microphone"
         ></iframe>
