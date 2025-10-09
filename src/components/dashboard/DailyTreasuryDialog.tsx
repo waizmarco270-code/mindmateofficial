@@ -18,7 +18,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         setIsClaiming(true);
         try {
             await claimDailyLoginReward();
-            onOpenChange(false);
+            // The dialog will close automatically on re-render if canClaim becomes false
         } catch (error) {
             // Toast is handled within the hook
         } finally {
@@ -36,13 +36,12 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         7: { text: "Legendary" },
     };
     
-    // Determine the day to display. If today is claimed, it shows the full streak. If not, it shows the next day to be claimed.
-    const currentDayForDisplay = dailyLoginState.streak + 1;
-    const currentReward = rewardsConfig[currentDayForDisplay] || { text: 'Bonus!', subtext: 'Come back tomorrow' };
+    const dayToClaim = dailyLoginState.streak + 1;
+    const currentReward = rewardsConfig[dayToClaim] || { text: 'Bonus!', subtext: 'Come back tomorrow' };
 
 
     return (
-        <Dialog open={isOpen && !dailyLoginState.isCompleted} onOpenChange={onOpenChange}>
+        <Dialog open={isOpen && dailyLoginState.canClaim} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md w-full bg-slate-900/80 backdrop-blur-lg border-primary/20 text-white">
                 <DialogHeader className="text-center">
                     <motion.div
@@ -64,7 +63,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
                         {Array.from({ length: 7 }).map((_, i) => {
                             const day = i + 1;
                             const isCompleted = dailyLoginState.streak >= day;
-                            const isNext = dailyLoginState.streak + 1 === day && !dailyLoginState.hasClaimedToday;
+                            const isNext = (dailyLoginState.streak + 1) === day && !dailyLoginState.hasClaimedToday;
                             const reward = rewardsConfig[day];
 
                             return (
@@ -89,7 +88,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
                         })}
                     </div>
                      <div className="text-center bg-black/30 p-4 rounded-lg border border-white/10">
-                        <p className="text-sm font-semibold text-slate-400">Today's Reward (Day {currentDayForDisplay}):</p>
+                        <p className="text-sm font-semibold text-slate-400">Today's Reward (Day {dayToClaim}):</p>
                         <p className="font-bold text-2xl text-amber-300">{currentReward.text}</p>
                     </div>
                 </div>

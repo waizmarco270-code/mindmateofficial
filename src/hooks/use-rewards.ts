@@ -73,12 +73,11 @@ export const useRewards = () => {
             const lastClaimedDate = lastClaimedStr ? new Date(lastClaimedStr) : null;
             const hasClaimedToday = lastClaimedDate ? isToday(lastClaimedDate) : false;
 
-            // If their last claim was not yesterday, their streak should reset (unless it's their very first claim).
-            const streakContinued = !lastClaimedDate || isYesterday(lastClaimedDate) || isToday(lastClaimedDate);
+            const streakContinued = !lastClaimedDate || isYesterday(lastClaimedDate) || hasClaimedToday;
             const actualStreak = streakContinued ? streak : 0;
             
-            const isCompleted = actualStreak >= 7;
-            const canClaimToday = !isCompleted && !hasClaimedToday;
+            const isCompleted = actualStreak >= 7 && hasClaimedToday;
+            const canClaimToday = !hasClaimedToday && actualStreak < 7;
 
             setDailyLoginState({
                 streak: actualStreak,
@@ -419,15 +418,15 @@ export const useRewards = () => {
     const claimDailyLoginReward = useCallback(async () => {
         if (!user || !currentUserData) throw new Error("User not found");
 
-        const streak = dailyLoginState.streak;
-        if (streak >= 7) {
+        const currentStreak = dailyLoginState.streak;
+        if (currentStreak >= 7) {
              throw new Error("You have already completed the 7-day reward cycle.");
         }
          if (dailyLoginState.hasClaimedToday) {
             throw new Error("Reward already claimed for today.");
         }
 
-        const newStreak = streak + 1;
+        const newStreak = currentStreak + 1;
 
         const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
             1: { credits: 10 },
@@ -445,10 +444,12 @@ export const useRewards = () => {
         const userRef = doc(db, 'users', user.id);
         
         const batch = writeBatch(db);
+        
+        const todayStr = new Date().toISOString().split('T')[0];
 
         batch.update(userRef, {
             'dailyLoginRewardState.streak': newStreak,
-            'dailyLoginRewardState.lastClaimed': new Date().toISOString().split('T')[0],
+            'dailyLoginRewardState.lastClaimed': todayStr,
              rewardHistory: arrayUnion({
                 reward: `Day ${newStreak} Login`,
                 date: new Date(),
@@ -459,13 +460,14 @@ export const useRewards = () => {
         if (reward.credits) batch.update(userRef, { credits: increment(reward.credits) });
         if (reward.scratch) batch.update(userRef, { freeRewards: increment(reward.scratch) });
         if (reward.flip) batch.update(userRef, { freeGuesses: increment(reward.flip) });
+        
+        // This is a special case that requires an external function if it exists
+        // It's safer to handle this outside the batch if it involves complex logic
+        if (reward.vip && 'grantVipAccess' in (window as any)) {
+            // This is just a placeholder; such logic should ideally be on the backend
+        }
 
         await batch.commit();
-        
-        // This function must be awaited separately from the batch
-        if (reward.vip && 'grantVipAccess' in (window as any)) {
-            await (window as any).grantVipAccess(user.id, reward.vip);
-        }
         
         toast({ title: `Day ${newStreak} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
