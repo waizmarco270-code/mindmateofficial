@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -81,6 +81,44 @@ function AnnouncementInbox() {
                         )}
                     </div>
                 </ScrollArea>
+            </PopoverContent>
+        </Popover>
+    )
+}
+
+function AdminPanelMenu() {
+    const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
+
+    if (!isAdmin && !isSuperAdmin && !currentUserData?.isCoDev) {
+        return null;
+    }
+
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button 
+                    variant="outline" 
+                    className="relative h-12 w-12 rounded-full p-0 bg-secondary"
+                >
+                    <Shield className="h-6 w-6 text-primary" />
+                    <span className="sr-only">Admin Panels</span>
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-2">
+                <div className="space-y-1">
+                    <Link href="/dashboard/admin">
+                        <Button variant="ghost" className="w-full justify-start">
+                            <ShieldCheck className="mr-2"/> Admin Panel
+                        </Button>
+                    </Link>
+                    {isSuperAdmin && (
+                        <Link href="/waizmarcoadmin">
+                             <Button variant="ghost" className="w-full justify-start">
+                                <KeyRound className="mr-2"/> Super Admin
+                            </Button>
+                        </Link>
+                    )}
+                </div>
             </PopoverContent>
         </Popover>
     )
@@ -176,6 +214,7 @@ export default function Header() {
                 </Popover>
                 
                 <AnnouncementInbox />
+                <AdminPanelMenu />
 
                 <UserButton afterSignOutUrl="/" appearance={{
                     elements: {
