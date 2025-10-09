@@ -55,12 +55,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarContent />
             </Sidebar>
         )}
-        <div className="flex flex-1 size-full flex-col bg-transparent overflow-x-hidden">
+        <div className="flex flex-1 size-full flex-col bg-transparent">
             {!isImmersive && <Header />}
             <main className="relative flex-1 overflow-y-auto focus:outline-none">
             <SidebarInset className={cn(
-                "p-4 sm:p-6 lg:p-8",
-                isImmersive ? "!p-0 h-full" : 'pb-24'
+                "p-4 sm:p-6 lg:p-8 h-full",
+                isImmersive ? "!p-0" : 'pb-24'
             )}>
                 {children}
             </SidebarInset>
