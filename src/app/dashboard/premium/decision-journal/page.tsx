@@ -13,13 +13,15 @@ import { Plus, Brain, BookOpen, Edit, Trash2, ArrowLeft } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
 
 interface DecisionEntry {
     id: string;
     situation: string;
     thinking: string;
     decision: string;
-    outcome?: string;
+    outcome: string;
     createdAt: string; // ISO String
 }
 
@@ -31,29 +33,49 @@ export default function DecisionJournalPage() {
     const [situation, setSituation] = useState('');
     const [thinking, setThinking] = useState('');
     const [decision, setDecision] = useState('');
+    const [outcome, setOutcome] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
 
-    const openNewDialog = () => {
-        setEditingId(null);
-        setSituation('');
-        setThinking('');
-        setDecision('');
+    const openDialog = (entry: DecisionEntry | null) => {
+        if (entry) {
+            setEditingId(entry.id);
+            setSituation(entry.situation);
+            setThinking(entry.thinking);
+            setDecision(entry.decision);
+            setOutcome(entry.outcome);
+        } else {
+            setEditingId(null);
+            setSituation('');
+            setThinking('');
+            setDecision('');
+            setOutcome('');
+        }
         setIsDialogOpen(true);
     };
     
     const handleSubmit = () => {
         if (!situation.trim() || !thinking.trim() || !decision.trim()) return;
 
-        const newEntry: DecisionEntry = {
-            id: Date.now().toString(),
-            situation,
-            thinking,
-            decision,
-            createdAt: new Date().toISOString(),
-        };
-
-        setEntries(prev => [newEntry, ...prev]);
+        if (editingId) {
+            // Update existing entry
+            setEntries(entries.map(e => e.id === editingId ? { ...e, situation, thinking, decision, outcome } : e));
+        } else {
+            // Create new entry
+            const newEntry: DecisionEntry = {
+                id: Date.now().toString(),
+                situation,
+                thinking,
+                decision,
+                outcome: '',
+                createdAt: new Date().toISOString(),
+            };
+            setEntries(prev => [newEntry, ...prev]);
+        }
         setIsDialogOpen(false);
+    };
+
+    const handleDelete = (id: string) => {
+        setEntries(entries.filter(e => e.id !== id));
     };
 
     return (
@@ -71,7 +93,7 @@ export default function DecisionJournalPage() {
             </div>
 
             <div className="flex justify-end">
-                <Button onClick={openNewDialog}>
+                <Button onClick={() => openDialog(null)}>
                     <Plus className="mr-2"/> New Decision Entry
                 </Button>
             </div>
@@ -110,7 +132,22 @@ export default function DecisionJournalPage() {
                                     </div>
                                 </CardContent>
                                 <CardFooter className="gap-2">
-                                     <Button variant="secondary" className="w-full"><Edit className="mr-2 h-4 w-4"/> Review</Button>
+                                     <Button variant="secondary" className="w-full" onClick={() => openDialog(entry)}><Edit className="mr-2 h-4 w-4"/> Review</Button>
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="destructive" size="icon"><Trash2 className="h-4 w-4"/></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>This will permanently delete this decision entry. This action cannot be undone.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => handleDelete(entry.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                     </AlertDialog>
                                 </CardFooter>
                             </Card>
                          </motion.div>
@@ -129,12 +166,12 @@ export default function DecisionJournalPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="sm:max-w-xl">
                      <DialogHeader>
-                        <DialogTitle>{editingId ? 'Edit' : 'New'} Decision Entry</DialogTitle>
+                        <DialogTitle>{editingId ? 'Review' : 'New'} Decision Entry</DialogTitle>
                         <DialogDescription>
-                            Clearly define the situation, your thought process, and the final decision you made.
+                            {editingId ? 'Update your thought process or record the outcome.' : 'Clearly define the situation and your final decision.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
+                    <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
                         <div className="space-y-2">
                             <Label htmlFor="situation">The Situation</Label>
                             <Textarea id="situation" value={situation} onChange={e => setSituation(e.target.value)} placeholder="e.g., Should I focus on JEE or boards for the next month?" />
@@ -147,6 +184,13 @@ export default function DecisionJournalPage() {
                             <Label htmlFor="decision">The Decision</Label>
                             <Textarea id="decision" value={decision} onChange={e => setDecision(e.target.value)} placeholder="e.g., I've decided to dedicate 70% of my time to JEE prep..." />
                         </div>
+                        {editingId && (
+                             <div className="space-y-2 pt-4 border-t">
+                                <Label htmlFor="outcome" className="font-bold text-base">The Outcome</Label>
+                                <p className="text-xs text-muted-foreground">Come back later to fill this out. How did it turn out? What did you learn?</p>
+                                <Textarea id="outcome" value={outcome} onChange={e => setOutcome(e.target.value)} placeholder="e.g., It was the right call. My mock test scores improved..." rows={4}/>
+                            </div>
+                        )}
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
