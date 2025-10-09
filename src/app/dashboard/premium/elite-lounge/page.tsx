@@ -2,13 +2,15 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Crown, Construction, Loader2, ShieldX, Gift, CheckCircle, BarChart, FileCheck } from 'lucide-react';
+import { Crown, Construction, Loader2, ShieldX, Gift, CheckCircle, BarChart, FileCheck, Film } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { format, isToday, parseISO } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 export default function EliteLoungePage() {
   const { user } = useUser();
@@ -105,8 +107,31 @@ export default function EliteLoungePage() {
                 </Button>
             </CardFooter>
         </Card>
+
+        <Link href="/dashboard/premium/anime-hub" className="block group">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+                className="h-full"
+            >
+                <Card className="h-full relative group overflow-hidden border-0 synthwave-sunset-bg transition-all duration-500 ease-in-out hover:shadow-2xl hover:shadow-purple-500/20">
+                     <div className="absolute inset-0 bg-black/40 group-hover:bg-black/50 transition-colors"></div>
+                     <CardContent className="relative z-10 flex flex-col items-center justify-center h-full text-center text-white p-6">
+                        <motion.div
+                            animate={{ y: [0, -5, 0], scale: [1, 1.05, 1] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                            <Film className="h-16 w-16 text-pink-400 drop-shadow-[0_0_10px_currentColor]"/>
+                        </motion.div>
+                        <CardTitle className="text-3xl font-bold mt-4">Free Anime Hub</CardTitle>
+                        <CardDescription className="text-slate-300 mt-2">Access a library of anime to watch for free, exclusively for elite members.</CardDescription>
+                    </CardContent>
+                </Card>
+            </motion.div>
+        </Link>
         
-        <Card>
+        <Card className="lg:col-span-2">
              <CardHeader>
                 <div className="flex items-center gap-4">
                     <div className="p-3 bg-primary/10 rounded-lg border border-primary/20">
