@@ -19,7 +19,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         setIsClaiming(true);
         try {
             await claimDailyLoginReward();
-            // The dialog will close automatically on re-render because `dailyLoginState.canClaim` becomes false.
+            // The dialog will close automatically because useRewards hook updates the state that controls `isOpen`
         } catch (error) {
             // Toast is handled within the hook
         } finally {
@@ -37,13 +37,14 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         7: { text: "Legendary" },
     };
     
-    // Determine the day to claim. If streak is 7, it resets to 0 for the next claim, making it Day 1.
+    // If the streak is 7, the next claim is for Day 1 of a new cycle.
     const dayToClaim = dailyLoginState.streak >= 7 ? 1 : dailyLoginState.streak + 1;
     const currentReward = rewardsConfig[dayToClaim] || { text: 'Bonus!', subtext: 'Come back tomorrow' };
 
+    const shouldBeOpen = isOpen && dailyLoginState.canClaim && !dailyLoginState.isCompleted;
 
     return (
-        <Dialog open={isOpen && dailyLoginState.canClaim} onOpenChange={onOpenChange}>
+        <Dialog open={shouldBeOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-md w-full bg-slate-900/80 backdrop-blur-lg border-primary/20 text-white">
                 <DialogHeader className="text-center">
                     <motion.div
@@ -84,7 +85,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
                                         <p className="text-white/80 font-bold mt-1 text-sm sm:text-base">{reward.text}</p>
                                         {reward.subtext && <p className="text-white/60 text-[10px] leading-tight">{reward.subtext}</p>}
                                     </motion.div>
-                                    <p className="text-xs font-bold text-white">Day {day}</p>
+                                    <p className="text-xs font-bold text-white">{day === dayToClaim && !dailyLoginState.hasClaimedToday ? 'Today' : `Day ${day}`}</p>
                                 </div>
                             )
                         })}
@@ -101,7 +102,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
                         onClick={handleClaim}
                         disabled={!dailyLoginState.canClaim || isClaiming || loading}
                     >
-                        {isClaiming ? <Loader2 className="animate-spin mr-2" /> : (dailyLoginState.canClaim && <Award className="mr-2" />)}
+                        {isClaiming ? <Loader2 className="animate-spin mr-2" /> : <Award className="mr-2" />}
                         {dailyLoginState.hasClaimedToday ? "Already Claimed" : "Claim Now!"}
                     </Button>
                 </DialogFooter>
@@ -109,5 +110,3 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         </Dialog>
     );
 }
-
-    

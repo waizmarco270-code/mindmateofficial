@@ -50,6 +50,7 @@ export const useRewards = () => {
         streak: 0,
         canClaim: false,
         hasClaimedToday: false,
+        isCompleted: false,
     });
 
     useEffect(() => {
@@ -66,24 +67,22 @@ export const useRewards = () => {
                 .sort((a: RewardRecord, b: RewardRecord) => b.date.getTime() - a.date.getTime())
             );
 
-            // Daily Login Treasury State
+            // Daily Login Treasury State - Reworked logic for reliability
             const streak = currentUserData.dailyLoginRewardState?.streak || 0;
             const lastClaimedStr = currentUserData.dailyLoginRewardState?.lastClaimed;
             const lastClaimedDate = lastClaimedStr ? new Date(lastClaimedStr) : null;
             const hasClaimedToday = lastClaimedDate ? isToday(lastClaimedDate) : false;
 
-            const streakContinued = !lastClaimedDate || isYesterday(lastClaimedDate) || hasClaimedToday;
-            const actualStreak = streakContinued ? streak : 0;
+            const streakContinued = lastClaimedDate ? isYesterday(lastClaimedDate) : true;
+            const actualStreak = (lastClaimedDate && !streakContinued && !hasClaimedToday) ? 0 : streak;
             
-            const isCompletedCycle = actualStreak >= 7;
-            // Can claim if they haven't claimed today AND the cycle isn't completed.
-            // If the cycle is completed (7 days claimed), they must wait for the next day to start a new cycle.
-            const canClaimToday = !hasClaimedToday && !isCompletedCycle;
+            const isCompleted = actualStreak >= 7;
 
             setDailyLoginState({
                 streak: actualStreak,
-                canClaim: canClaimToday,
+                canClaim: !hasClaimedToday && !isCompleted,
                 hasClaimedToday: hasClaimedToday,
+                isCompleted: isCompleted,
             });
 
         }
@@ -422,9 +421,8 @@ export const useRewards = () => {
             throw new Error("Reward already claimed for today.");
         }
 
-        // If streak is 7 or more, reset it. The user must wait until the next day to start a new cycle.
-        const streakToUse = dailyLoginState.streak >= 7 ? 0 : dailyLoginState.streak;
-        const newStreak = streakToUse + 1;
+        // If streak is >= 7, it means they completed a cycle. Reset to 1 for the new claim. Otherwise, increment.
+        const newStreak = dailyLoginState.streak >= 7 ? 1 : dailyLoginState.streak + 1;
 
         const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
             1: { credits: 10 },
@@ -440,9 +438,7 @@ export const useRewards = () => {
         if (!reward) throw new Error("Invalid streak day for reward.");
 
         const userRef = doc(db, 'users', user.id);
-        
         const batch = writeBatch(db);
-        
         const todayStr = new Date().toISOString().split('T')[0];
 
         batch.update(userRef, {
@@ -461,13 +457,13 @@ export const useRewards = () => {
         
         await batch.commit();
         
-        // Optimistically update the local state to prevent re-claims
-        setDailyLoginState(prevState => ({
-            ...prevState,
+        // Force an immediate state update to prevent re-claims
+        setDailyLoginState({
             streak: newStreak,
             canClaim: false,
             hasClaimedToday: true,
-        }));
+            isCompleted: newStreak >= 7,
+        });
         
         toast({ title: `Day ${newStreak} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
@@ -499,5 +495,3 @@ export const useRewards = () => {
         claimDailyLoginReward,
     };
 };
-
-    
