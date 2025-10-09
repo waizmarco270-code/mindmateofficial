@@ -437,24 +437,22 @@ export default function DashboardPage() {
                 </Card>
             </div>
             
-             <div className="space-y-4">
-                <h2 className="text-2xl font-bold tracking-tight">MindMate Focus</h2>
-                <div className="grid grid-cols-2 gap-4 md:gap-6">
-                    {focusTools.map((tool) => (
-                        <Link href={tool.href} className="group block" key={tool.title}>
-                           <Card className={cn("group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg transition-all duration-300 flex flex-col justify-center h-full", tool.shadow)}>
-                                <div className={cn("absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 z-0 opacity-80", tool.color)}></div>
-                                <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
-                                <CardContent className="p-4 sm:p-6 text-center relative z-10 space-y-3">
-                                    <tool.icon className={cn("h-10 w-10 mx-auto", tool.iconColor)} />
-                                    <h3 className="text-lg font-semibold">{tool.title}</h3>
-                                    <p className="text-xs text-slate-400 hidden sm:block">{tool.description}</p>
-                                </CardContent>
-                            </Card>
-                         </Link>
+             <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>MindMate Focus</CardTitle>
+                    <Link href="/dashboard/focus" className="text-sm font-semibold text-primary hover:underline">View All</Link>
+                </CardHeader>
+                <CardContent className="grid grid-cols-4 gap-4 text-center">
+                    {focusTools.map(tool => (
+                        <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
+                             <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
+                                <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.iconColor)} />
+                            </div>
+                            <p className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">{tool.title}</p>
+                        </Link>
                     ))}
-                </div>
-            </div>
+                </CardContent>
+            </Card>
 
             {isSurpriseRevealed ? (
             <DailySurpriseCard />
