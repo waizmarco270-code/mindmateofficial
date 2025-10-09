@@ -16,7 +16,7 @@ export default function AnimeHubPage() {
     }, [setIsImmersive]);
     
     return (
-        <div className="h-full w-full flex flex-col bg-black">
+        <div className="h-full w-full flex flex-col bg-black flex-1">
             <div className="p-2 bg-black/50 flex-shrink-0">
                 <Button asChild variant="ghost">
                     <Link href="/dashboard/premium/elite-lounge">
