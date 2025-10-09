@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -24,6 +24,7 @@ import { format, parseISO } from 'date-fns';
 import { DailyTreasuryDialog } from '@/components/dashboard/DailyTreasuryDialog';
 import { useRewards } from '@/hooks/use-rewards';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 
 
 const focusTools = [
@@ -473,6 +474,28 @@ export default function DashboardPage() {
                     ))}
                 </CardContent>
             </Card>
+            
+            <div className="grid grid-cols-2 gap-4">
+                <Link href="/dashboard/reward">
+                    <Card className="relative overflow-hidden group">
+                        <CardContent className="p-4">
+                            <h3 className="font-bold text-lg">Rewards</h3>
+                            <p className="text-sm text-muted-foreground">Offers & Cashbacks</p>
+                            <Badge className="mt-2 bg-primary/20 text-primary">5 New</Badge>
+                            <Gift className="absolute -bottom-2 -right-2 h-20 w-20 text-primary/10 transition-transform duration-300 group-hover:scale-110" />
+                        </CardContent>
+                    </Card>
+                </Link>
+                 <Link href="/dashboard/refer">
+                    <Card className="relative overflow-hidden group">
+                        <CardContent className="p-4">
+                             <h3 className="font-bold text-lg">Refer & Earn</h3>
+                            <p className="text-sm text-muted-foreground">Get ₹100</p>
+                            <Megaphone className="absolute -bottom-2 -right-2 h-20 w-20 text-primary/10 transition-transform duration-300 group-hover:scale-110" />
+                        </CardContent>
+                    </Card>
+                </Link>
+            </div>
 
             {isSurpriseRevealed ? (
             <DailySurpriseCard />
