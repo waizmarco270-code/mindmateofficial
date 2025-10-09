@@ -45,7 +45,7 @@ export default function RootLayout({
            <link rel="icon" href="/logo.jpg?v=2" type="image/jpeg" sizes="any" />
            <link rel="apple-touch-icon" href="/logo.jpg?v=2" />
         </head>
-        <body className={cn('font-body antialiased', 'min-h-screen bg-background font-sans select-none overscroll-none')}>
+        <body className={cn('font-body antialiased', 'min-h-screen bg-background font-sans select-none')}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
