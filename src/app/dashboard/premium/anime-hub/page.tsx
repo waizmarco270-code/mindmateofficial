@@ -27,7 +27,7 @@ export default function AnimeHubPage() {
             </div>
             <iframe 
                 src="https://www.rareanimeindia.net"
-                className="w-full h-full border-0 flex-1"
+                className="w-full border-0 flex-1"
                 title="Anime Hub"
                 allow="fullscreen"
                 sandbox="allow-forms allow-modals allow-pointer-lock allow-popups allow-same-origin allow-scripts"
