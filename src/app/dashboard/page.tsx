@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
-import { useAnnouncements, useUsers, useAdmin, FeatureShowcase } from '@/hooks/use-admin';
+import { useAnnouncements, useUsers, useAdmin, FeatureShowcase, BadgeType } from '@/hooks/use-admin';
 import { CommunityPoll } from '@/components/dashboard/community-poll';
 import { cn } from '@/lib/utils';
 import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
@@ -277,6 +277,60 @@ function BadgeShowcase() {
     );
 }
 
+const badgeDetails: Record<BadgeType, { name: string; badge: JSX.Element, icon: React.ElementType, gradient: string }> = {
+    dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>, icon: Code, gradient: 'from-red-500 to-rose-500' },
+    'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span>, icon: Code, gradient: 'from-red-500 to-rose-500' },
+    admin: { name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span>, icon: ShieldCheck, gradient: 'from-green-500 to-emerald-500' },
+    vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>, icon: Crown, gradient: 'from-amber-400 to-yellow-500' },
+    gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span>, icon: Gamepad2, gradient: 'from-blue-500 to-sky-500' },
+    challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>, icon: Swords, gradient: 'from-orange-500 to-red-500' },
+};
+
+
+function UserBadgeDisplay() {
+    const { currentUserData, isSuperAdmin, isAdmin } = useAdmin();
+
+    const ownedBadges = [
+        (isSuperAdmin) && 'dev',
+        (currentUserData?.isCoDev) && 'co-dev',
+        (isAdmin) && 'admin',
+        (currentUserData?.isVip) && 'vip',
+        (currentUserData?.isGM) && 'gm',
+        (currentUserData?.isChallenger) && 'challenger',
+    ].filter(Boolean) as BadgeType[];
+
+    if (ownedBadges.length === 0) return null;
+
+    const badgeToShowKey = currentUserData?.showcasedBadge && ownedBadges.includes(currentUserData.showcasedBadge) 
+        ? currentUserData.showcasedBadge 
+        : ownedBadges[0];
+    
+    const badge = badgeDetails[badgeToShowKey];
+    if (!badge) return null;
+    
+    const BadgeIcon = badge.icon;
+
+    return (
+        <Link href="/dashboard/profile" className="group block">
+            <Card className={cn("relative overflow-hidden border-0 transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1", badge.gradient)}>
+                <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/50"></div>
+                 <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
+                    <div className="p-3 sm:p-4 rounded-full bg-black/20 border-2 border-white/20">
+                        <BadgeIcon className="h-8 w-8 sm:h-10 sm:w-10 text-white"/>
+                    </div>
+                    <div className="flex-1 text-left">
+                        <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Your Rank</p>
+                        <CardTitle className="text-xl sm:text-2xl font-bold text-white">{badge.name}</CardTitle>
+                    </div>
+                    <div className="transition-transform group-hover:translate-x-1">
+                        {badge.badge}
+                    </div>
+                </CardContent>
+            </Card>
+        </Link>
+    )
+}
+
 export default function DashboardPage() {
     const { user } = useUser();
     const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
@@ -299,9 +353,6 @@ export default function DashboardPage() {
 
     const credits = currentUserData?.credits ?? 0;
     const streak = currentUserData?.streak ?? 0;
-    const isVip = !!currentUserData?.isVip;
-    const isGM = !!currentUserData?.isGM;
-    const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
     const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'], isLocked: boolean) => {
@@ -345,6 +396,7 @@ export default function DashboardPage() {
 
        <div className="flex flex-col space-y-8">
         <SignedIn>
+            <UserBadgeDisplay />
             <ShowcaseView showcases={featureShowcases} />
             <GlobalGiftCard />
 
