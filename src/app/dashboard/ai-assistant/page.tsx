@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -33,9 +34,10 @@ export default function AiAssistantPage() {
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
   useEffect(() => {
-    // Only enter immersive mode if the user has access and the AI is live.
-    // This prevents the purchase card from being hidden on mobile.
-    setIsImmersive(hasAccess && isAiLive);
+    if (hasAccess && isAiLive) {
+      setIsImmersive(true);
+      return () => setIsImmersive(false); // Cleanup function
+    }
   }, [hasAccess, isAiLive, setIsImmersive]);
 
   const handlePurchase = async () => {
