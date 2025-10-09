@@ -163,15 +163,13 @@ export default function AiAssistantPage() {
   }
 
   return (
-    <>
-      <div className="h-full w-full">
-          <iframe
-          src="https://aimindmate.vercel.app/"
-          className="h-full w-full border-0"
-          title="Marco AI Assistant"
-          allow="microphone"
-          ></iframe>
-      </div>
+    <div className="h-full w-full">
+        <iframe
+        src="https://aimindmate.vercel.app/"
+        className="h-full w-full border-0"
+        title="Marco AI Assistant"
+        allow="microphone"
+        ></iframe>
 
       <Dialog open={!!generatedToken} onOpenChange={() => setGeneratedToken(null)}>
         <DialogContent>
@@ -199,6 +197,6 @@ export default function AiAssistantPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -57,9 +58,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         )}
         <div className="flex flex-1 size-full flex-col bg-transparent">
             {!isImmersive && <Header />}
-            <main className="relative flex-1 overflow-y-auto focus:outline-none">
+            <main className="relative flex-1 overflow-y-auto focus:outline-none flex flex-col">
             <SidebarInset className={cn(
-                "p-4 sm:p-6 lg:p-8 h-full",
+                "p-4 sm:p-6 lg:p-8 flex-1",
                 isImmersive ? "!p-0" : 'pb-24'
             )}>
                 {children}
