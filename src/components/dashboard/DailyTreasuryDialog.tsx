@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,7 +19,7 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         setIsClaiming(true);
         try {
             await claimDailyLoginReward();
-            // The dialog will close automatically on re-render if canClaim becomes false
+            // The dialog will close automatically on re-render because `dailyLoginState.canClaim` becomes false.
         } catch (error) {
             // Toast is handled within the hook
         } finally {
@@ -36,7 +37,8 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         7: { text: "Legendary" },
     };
     
-    const dayToClaim = dailyLoginState.streak + 1;
+    // Determine the day to claim. If streak is 7, it resets to 0 for the next claim, making it Day 1.
+    const dayToClaim = dailyLoginState.streak >= 7 ? 1 : dailyLoginState.streak + 1;
     const currentReward = rewardsConfig[dayToClaim] || { text: 'Bonus!', subtext: 'Come back tomorrow' };
 
 
@@ -107,3 +109,5 @@ export function DailyTreasuryDialog({ isOpen, onOpenChange }: { isOpen: boolean;
         </Dialog>
     );
 }
+
+    

@@ -50,7 +50,6 @@ export const useRewards = () => {
         streak: 0,
         canClaim: false,
         hasClaimedToday: false,
-        isCompleted: false,
     });
 
     useEffect(() => {
@@ -76,14 +75,15 @@ export const useRewards = () => {
             const streakContinued = !lastClaimedDate || isYesterday(lastClaimedDate) || hasClaimedToday;
             const actualStreak = streakContinued ? streak : 0;
             
-            const isCompleted = actualStreak >= 7 && hasClaimedToday;
-            const canClaimToday = !hasClaimedToday && actualStreak < 7;
+            const isCompletedCycle = actualStreak >= 7;
+            // Can claim if they haven't claimed today AND the cycle isn't completed.
+            // If the cycle is completed (7 days claimed), they must wait for the next day to start a new cycle.
+            const canClaimToday = !hasClaimedToday && !isCompletedCycle;
 
             setDailyLoginState({
                 streak: actualStreak,
                 canClaim: canClaimToday,
                 hasClaimedToday: hasClaimedToday,
-                isCompleted: isCompleted,
             });
 
         }
@@ -418,15 +418,13 @@ export const useRewards = () => {
     const claimDailyLoginReward = useCallback(async () => {
         if (!user || !currentUserData) throw new Error("User not found");
 
-        const currentStreak = dailyLoginState.streak;
-        if (currentStreak >= 7) {
-             throw new Error("You have already completed the 7-day reward cycle.");
-        }
-         if (dailyLoginState.hasClaimedToday) {
+        if (dailyLoginState.hasClaimedToday) {
             throw new Error("Reward already claimed for today.");
         }
 
-        const newStreak = currentStreak + 1;
+        // If streak is 7 or more, reset it. The user must wait until the next day to start a new cycle.
+        const streakToUse = dailyLoginState.streak >= 7 ? 0 : dailyLoginState.streak;
+        const newStreak = streakToUse + 1;
 
         const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
             1: { credits: 10 },
@@ -461,13 +459,15 @@ export const useRewards = () => {
         if (reward.scratch) batch.update(userRef, { freeRewards: increment(reward.scratch) });
         if (reward.flip) batch.update(userRef, { freeGuesses: increment(reward.flip) });
         
-        // This is a special case that requires an external function if it exists
-        // It's safer to handle this outside the batch if it involves complex logic
-        if (reward.vip && 'grantVipAccess' in (window as any)) {
-            // This is just a placeholder; such logic should ideally be on the backend
-        }
-
         await batch.commit();
+        
+        // Optimistically update the local state to prevent re-claims
+        setDailyLoginState(prevState => ({
+            ...prevState,
+            streak: newStreak,
+            canClaim: false,
+            hasClaimedToday: true,
+        }));
         
         toast({ title: `Day ${newStreak} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
         return reward;
@@ -499,3 +499,5 @@ export const useRewards = () => {
         claimDailyLoginReward,
     };
 };
+
+    
