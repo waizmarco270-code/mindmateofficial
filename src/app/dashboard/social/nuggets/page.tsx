@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useWorldChat, WorldChatMessage } from '@/hooks/use-world-chat';
+import { useWorldChat, WorldChatMessage, WorldChatProvider } from '@/hooks/use-world-chat';
 import { useAdmin, User } from '@/hooks/use-admin';
 import { ArrowLeft, Gem, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -17,7 +17,7 @@ const formatDateHeading = (date: Date) => {
     return format(date, 'MMMM d, yyyy');
 }
 
-export default function NuggetJarPage() {
+function NuggetJarContent() {
     const { messages, loading: messagesLoading } = useWorldChat();
     const { users, loading: usersLoading } = useAdmin();
 
@@ -108,3 +108,10 @@ export default function NuggetJarPage() {
     );
 }
 
+export default function NuggetJarPage() {
+    return (
+        <WorldChatProvider>
+            <NuggetJarContent />
+        </WorldChatProvider>
+    )
+}
