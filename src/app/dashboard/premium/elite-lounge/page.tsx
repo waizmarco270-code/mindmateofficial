@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Crown, Construction, Loader2, ShieldX, Gift, CheckCircle, BarChart, FileCheck, Film } from 'lucide-react';
+import { Crown, Construction, Loader2, ShieldX, Gift, CheckCircle, BarChart, FileCheck, Film, Brain, Book } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAdmin } from '@/hooks/use-admin';
@@ -108,6 +108,29 @@ export default function EliteLoungePage() {
             </CardFooter>
         </Card>
 
+         <Link href="/dashboard/premium/decision-journal" className="block group">
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="h-full"
+            >
+                <Card className="h-full relative group overflow-hidden border-0 bg-gradient-to-br from-blue-900 to-slate-900 transition-all duration-500 ease-in-out hover:shadow-2xl hover:shadow-blue-500/20">
+                     <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                     <CardContent className="relative z-10 flex flex-col items-center justify-center h-full text-center text-white p-6">
+                        <motion.div
+                            animate={{ y: [0, -5, 0], scale: [1, 1.05, 1] }}
+                            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+                        >
+                            <Brain className="h-16 w-16 text-blue-400 drop-shadow-[0_0_10px_currentColor]"/>
+                        </motion.div>
+                        <CardTitle className="text-3xl font-bold mt-4">Decision Journal</CardTitle>
+                        <CardDescription className="text-slate-300 mt-2">A powerful tool to improve your judgment and learn from your choices.</CardDescription>
+                    </CardContent>
+                </Card>
+            </motion.div>
+        </Link>
+        
         <Link href="/dashboard/premium/anime-hub" className="block group">
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
