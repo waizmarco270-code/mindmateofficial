@@ -33,7 +33,7 @@ import {
   HelpCircle,
   Info,
   Map,
-  Bot,
+  Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -53,7 +53,6 @@ const mainNavItems = [
 ];
 
 const communityNav = [
-  { href: '/dashboard/world', icon: Globe, label: 'World Chat', glow: 'text-blue-400' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
@@ -139,7 +138,7 @@ export default function SidebarContent() {
             )}></div>
             <item.icon className={cn("h-5 w-5", item.glow)} />
             <span className="flex-1">{item.label}</span>
-            {(item.href === '/dashboard/world' && hasGlobalUnread) && (
+            {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && (
               <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
             )}
             {item.href === '/dashboard/quiz' && hasNewQuiz && (

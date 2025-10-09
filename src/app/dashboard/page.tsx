@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bell, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Bot, Vote, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -23,95 +23,8 @@ import Autoplay from "embla-carousel-autoplay"
 import { format, parseISO } from 'date-fns';
 import { DailyTreasuryDialog } from '@/components/dashboard/DailyTreasuryDialog';
 import { useRewards } from '@/hooks/use-rewards';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 
-
-const studyTools = [
-    {
-        title: 'MindMate Nexus',
-        description: 'Your new Study Command Center.',
-        icon: Calendar,
-        href: '/dashboard/schedule',
-        color: 'from-sky-500 to-blue-500',
-        textColor: 'text-sky-100',
-    },
-    {
-        title: 'Time Tracker',
-        description: 'Log and manage your study sessions.',
-        icon: Clock,
-        href: '/dashboard/time-tracker',
-        color: 'from-cyan-500 to-blue-500',
-        textColor: 'text-cyan-100',
-    },
-    {
-        title: 'Study Insights',
-        description: 'Visualize your progress and patterns.',
-        icon: LineChart,
-        href: '/dashboard/insights',
-        color: 'from-pink-500 to-rose-500',
-        textColor: 'text-pink-100',
-    },
-    {
-        title: 'Focus Mode',
-        description: 'Deep work sessions, rewarded.',
-        icon: Zap,
-        href: '/dashboard/tracker',
-        color: 'from-green-500 to-teal-500',
-        textColor: 'text-green-100',
-    },
-    {
-        title: 'To-Dos',
-        description: 'Manage your daily tasks.',
-        icon: ListTodo,
-        href: '/dashboard/todos',
-        color: 'from-amber-500 to-orange-500',
-        textColor: 'text-amber-100',
-    },
-];
-
-const exploreFeatures = [
-   {
-    id: 'resources',
-    title: 'Resources',
-    description: 'Premium study materials.',
-    icon: BookOpen,
-    href: '/dashboard/resources',
-    color: 'from-rose-500 to-red-500',
-    textColor: 'text-rose-100',
-  },
-  {
-    id: 'quiz-zone',
-    title: 'Quiz Zone',
-    description: 'Test your knowledge & earn.',
-    icon: BrainCircuit,
-    href: '/dashboard/quiz',
-    color: 'from-purple-500 to-indigo-600',
-    textColor: 'text-purple-100',
-  },
-   {
-    id: 'game-zone',
-    title: 'Game Zone',
-    description: 'Play games, relax, and earn!',
-    icon: Gamepad2,
-    href: '/dashboard/game-zone',
-    color: 'from-blue-500 to-sky-500',
-    textColor: 'text-blue-100',
-  },
-   {
-    id: 'reward-zone',
-    title: 'Reward Zone',
-    description: 'Claim daily rewards & prizes.',
-    icon: Gift,
-    href: '/dashboard/reward',
-    color: 'from-pink-500 to-rose-500',
-    textColor: 'text-pink-100',
-  },
-];
-
-const leaderboardOptions = [
-    { name: 'All-Time', href: '/dashboard/leaderboard?tab=all-time', icon: Users },
-    { name: 'Weekly', href: '/dashboard/leaderboard?tab=weekly', icon: Calendar },
-    { name: 'Game Zone', href: '/dashboard/leaderboard?tab=game-zone', icon: Gamepad2 }
-]
 
 const focusTools = [
     {
@@ -151,6 +64,25 @@ const focusTools = [
         iconColor: 'text-red-400',
     }
 ];
+
+const quickAccessTools = [
+    { title: 'Social Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
+    { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
+    { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
+    { title: 'MM Nexus', href: '/dashboard/schedule', icon: Calendar, glow: 'text-blue-400' },
+];
+
+const allFeatures = [
+    { title: 'Resources', href: '/dashboard/resources', icon: BookOpen, glow: 'text-orange-400' },
+    { title: 'Game Zone', href: '/dashboard/game-zone', icon: Gamepad2, glow: 'text-rose-400' },
+    { title: 'World Chat', href: '/dashboard/world', icon: Globe, glow: 'text-blue-400' },
+    { title: 'Reward Zone', href: '/dashboard/reward', icon: Gift, glow: 'text-pink-400' },
+    { title: 'Leaderboard', href: '/dashboard/leaderboard', icon: Trophy, glow: 'text-amber-400' },
+    { title: 'Invite & Earn', href: '/dashboard/refer', icon: UserPlus, glow: 'text-green-400' },
+    { title: 'Tools', href: '/dashboard/tools', icon: Wrench, glow: 'text-lime-400' },
+    { title: 'Profile', href: '/dashboard/profile', icon: User, glow: 'text-teal-400' },
+]
+
 
 function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
     const [api, setApi] = useState<CarouselApi>()
@@ -254,8 +186,8 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                 </CarouselContent>
                 {showcases.length > 1 && (
                      <>
-                        <CarouselPrevious className="left-2 hidden sm:flex" />
-                        <CarouselNext className="right-2 hidden sm:flex" />
+                        <CarouselPrevious className="hidden sm:flex" />
+                        <CarouselNext className="hidden sm:flex" />
                      </>
                 )}
             </Carousel>
@@ -447,6 +379,42 @@ export default function DashboardPage() {
                         <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
                              <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
                                 <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.iconColor)} />
+                            </div>
+                            <p className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">{tool.title}</p>
+                        </Link>
+                    ))}
+                </CardContent>
+            </Card>
+
+            <Card>
+                 <CardHeader className="flex flex-row items-center justify-between">
+                    <CardTitle>Quick Access</CardTitle>
+                     <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="ghost" className="text-primary">View All</Button>
+                        </SheetTrigger>
+                        <SheetContent side="bottom" className="h-auto">
+                            <SheetHeader className="text-left">
+                                <SheetTitle>All Features</SheetTitle>
+                            </SheetHeader>
+                            <div className="grid grid-cols-4 gap-4 py-4">
+                                {[...quickAccessTools, ...allFeatures].map(tool => (
+                                    <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
+                                         <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
+                                            <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.glow)} />
+                                        </div>
+                                        <p className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors text-center">{tool.title}</p>
+                                    </Link>
+                                ))}
+                            </div>
+                        </SheetContent>
+                    </Sheet>
+                </CardHeader>
+                <CardContent className="grid grid-cols-4 gap-4 text-center">
+                    {quickAccessTools.map(tool => (
+                        <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
+                             <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
+                                <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.glow)} />
                             </div>
                             <p className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">{tool.title}</p>
                         </Link>
