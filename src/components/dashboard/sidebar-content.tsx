@@ -54,6 +54,7 @@ const mainNavItems = [
 
 const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
+  { href: '/dashboard/world', icon: Globe, label: 'World Chat', glow: 'text-blue-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
 ];
@@ -168,6 +169,14 @@ export default function SidebarContent() {
             </Button>
         </Link>
       </div>
+       <div className="p-4 border-b border-sidebar-border">
+          {isSpecialUser && (
+            <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
+                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
+                <Crown className="h-5 w-5"/> Elite Lounge
+            </Link>
+        )}
+      </div>
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
@@ -201,12 +210,6 @@ export default function SidebarContent() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-         {isSpecialUser && (
-            <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
-                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
-                <Crown className="h-5 w-5"/> Elite Lounge
-            </Link>
-        )}
       </div>
 
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
