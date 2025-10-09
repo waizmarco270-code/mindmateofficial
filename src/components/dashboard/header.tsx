@@ -95,20 +95,6 @@ export default function Header() {
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
   const streak = currentUserData?.streak ?? 0;
-  
-  const isSuperAdmin = currentUserData?.uid === SUPER_ADMIN_UID;
-
-  const ownedBadges = [
-    (isSuperAdmin || currentUserData?.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
-    currentUserData?.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
-    currentUserData?.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
-    currentUserData?.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
-    currentUserData?.isCoDev && { type: 'co-dev', name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> }
-  ].filter(Boolean);
-
-  if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
-
-  const badgeToShow = ownedBadges.find(b => b.type === currentUserData?.showcasedBadge) || ownedBadges[0] || null;
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -134,8 +120,6 @@ export default function Header() {
         <SignedIn>
             {isLoaded && user && (
             <>
-                {badgeToShow && <div className="flex-shrink-0">{badgeToShow.badge}</div>}
-
                 <Popover>
                     <PopoverTrigger asChild>
                          <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
@@ -208,5 +192,3 @@ export default function Header() {
     </header>
   );
 }
-
-  
