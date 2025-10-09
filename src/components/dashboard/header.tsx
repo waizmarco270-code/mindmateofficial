@@ -30,16 +30,16 @@ function AnnouncementInbox() {
                 <Button 
                     variant="outline" 
                     className={cn(
-                        "relative h-12 w-12 rounded-full p-0 transition-all duration-300 ease-in-out",
+                        "relative h-10 w-10 rounded-full p-0 transition-all duration-300 ease-in-out",
                         hasUnreadAnnouncements 
                             ? "bg-gradient-to-br from-purple-500 to-pink-500 text-white border-purple-400 animate-pulse shadow-lg shadow-primary/30"
                             : "bg-secondary"
                     )}
                 >
-                    <Mail className="h-6 w-6" />
+                    <Mail className="h-5 w-5" />
                     {hasUnreadAnnouncements && (
-                         <span className="absolute top-1 right-1 flex h-3 w-3">
-                            <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                         <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
                         </span>
                     )}
                     <span className="sr-only">Announcements</span>
@@ -185,7 +185,7 @@ export default function Header() {
                 </Popover>
                 
                 <AdminPanelMenu />
-
+                
                 <Popover>
                     <PopoverTrigger asChild>
                         <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
