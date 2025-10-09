@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -438,6 +439,31 @@ export default function DashboardPage() {
                     ))}
                 </CardContent>
             </Card>
+
+            <div className="grid grid-cols-2 gap-4">
+                <Link href="/dashboard/leaderboard">
+                    <Card className="hover:bg-muted transition-colors">
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <Trophy className="h-8 w-8 text-amber-400" />
+                            <div>
+                                <h3 className="font-bold text-lg">Leaderboard</h3>
+                                <p className="text-sm text-muted-foreground">See who's on top.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+                <Link href="/dashboard/tools">
+                     <Card className="hover:bg-muted transition-colors">
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <Wrench className="h-8 w-8 text-lime-400" />
+                            <div>
+                                <h3 className="font-bold text-lg">Tools</h3>
+                                <p className="text-sm text-muted-foreground">Student utilities.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </Link>
+            </div>
 
             <Card>
                  <CardHeader className="flex flex-row items-center justify-between">
