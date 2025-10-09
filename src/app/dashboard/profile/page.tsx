@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Star, Search } from 'lucide-react';
+import { Settings, User as UserIcon, Star, Search, Trophy, Brain, Compass } from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { Loader2 } from 'lucide-react';
