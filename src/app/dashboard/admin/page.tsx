@@ -239,7 +239,16 @@ export default function AdminPanelPage() {
 
         try {
             await addResource(resourceData);
-            toast({ title: 'Resource Added', description: 'The new resource has been added.' });
+            
+            const section = resourceSections.find(s => s.id === resourceSectionId);
+            const sectionName = section ? ` in the ${section.name} section.` : '.';
+
+            await sendNotification({
+                title: 'New Resource Available!',
+                body: `Check out "${resourceTitle}"${sectionName}`
+            });
+
+            toast({ title: 'Resource Added', description: 'The new resource has been added and a notification was sent.' });
             // Reset form
             setResourceTitle('');
             setResourceDescription('');
@@ -399,7 +408,13 @@ export default function AdminPanelPage() {
               questions: quizQuestions,
               createdAt: new Date().toISOString(),
           });
-          toast({ title: "Quiz Saved!", description: "The new quiz has been added to the database." });
+          
+          await sendNotification({
+                title: 'New Quiz Added!',
+                body: `Check out "${quizTitle}" in the ${quizCategory.replace('-', ' ')} category.`
+          });
+
+          toast({ title: "Quiz Saved!", description: "The new quiz has been added and a notification was sent." });
           setQuizTitle('');
           setQuizCategory('general');
           setQuizTimeLimit(300);
@@ -470,7 +485,12 @@ export default function AdminPanelPage() {
                 createdAt: new Date().toISOString(),
             });
 
-            toast({ title: "Quiz Imported Successfully!", description: `"${quizData.title}" has been added.` });
+             await sendNotification({
+                title: 'New Quiz Added!',
+                body: `Check out "${quizData.title}" in the ${quizData.category.replace('-', ' ')} category.`
+            });
+
+            toast({ title: "Quiz Imported Successfully!", description: `"${quizData.title}" has been added and a notification sent.` });
 
         } catch (error: any) {
             if (error instanceof z.ZodError) {
