@@ -27,6 +27,8 @@ import { Slider } from '@/components/ui/slider';
 import { lockableFeatures } from '@/lib/features';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogContent } from '@/components/ui/dialog';
+import { sendNotification } from '@/ai/flows/notify-flow';
+import { sendNotificationToUser } from '@/ai/flows/notify-user-flow';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -211,42 +213,50 @@ export default function SuperAdminPanelPage() {
   }
 
   const handleSendPopup = async () => {
-      if(!popupMessage.trim()) {
-          toast({variant: 'destructive', title: 'Invalid Popup', description: 'Please provide a message.'});
-          return;
-      }
-      if(popupTarget === 'single' && !popupSingleUserId) {
-           toast({variant: 'destructive', title: 'No User Selected', description: 'Please select a user to send the popup to.'});
-          return;
-      }
-      setIsSendingPopup(true);
-      try {
-          const rewards = {
-              credits: popupCreditAmount,
-              scratch: popupScratchAmount,
-              flip: popupFlipAmount,
-          };
-          const target = popupTarget === 'all' ? 'all' : popupSingleUserId;
+    if (!popupMessage.trim()) {
+        toast({ variant: 'destructive', title: 'Invalid Popup', description: 'Please provide a message.' });
+        return;
+    }
+    if (popupTarget === 'single' && !popupSingleUserId) {
+        toast({ variant: 'destructive', title: 'No User Selected', description: 'Please select a user to send the popup to.' });
+        return;
+    }
+    setIsSendingPopup(true);
+    try {
+        const rewards = {
+            credits: popupCreditAmount,
+            scratch: popupScratchAmount,
+            flip: popupFlipAmount,
+        };
+        const target = popupTarget === 'all' ? 'all' : popupSingleUserId;
 
-          await sendGlobalGift({
-              message: popupMessage,
-              rewards: rewards,
-              target: target
-          });
+        await sendGlobalGift({
+            message: popupMessage,
+            rewards: rewards,
+            target: target
+        });
 
-          toast({ title: "Popup Sent!", description: "The message is now active."});
-          setPopupMessage('');
-          setPopupCreditAmount(0);
-          setPopupScratchAmount(0);
-          setPopupFlipAmount(0);
-          setPopupSingleUserId(null);
+        // Send push notification
+        if (target === 'all') {
+            await sendNotification({ title: "A Gift From The Admins!", body: popupMessage });
+        } else if (target) {
+            await sendNotificationToUser({ userId: target, title: "A Gift For You!", body: popupMessage });
+        }
 
-      } catch (error: any) {
-          toast({variant: 'destructive', title: 'Failed to Send Popup', description: error.message });
-      } finally {
-          setIsSendingPopup(false);
-      }
-  }
+        toast({ title: "Popup Sent!", description: "The message is now active and notifications have been sent." });
+        setPopupMessage('');
+        setPopupCreditAmount(0);
+        setPopupScratchAmount(0);
+        setPopupFlipAmount(0);
+        setPopupSingleUserId(null);
+
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Failed to Send Popup', description: error.message });
+    } finally {
+        setIsSendingPopup(false);
+    }
+};
+
 
   const handleCostChange = (featureId: string, cost: number) => {
     setFeatureCosts(prev => ({ ...prev, [featureId]: cost }));
@@ -715,7 +725,7 @@ export default function SuperAdminPanelPage() {
                         </div>
 
                         <Button onClick={handleSendPopup} disabled={isSendingPopup}>
-                            {isSendingPopup ? 'Sending...' : 'Send Popup'}
+                            {isSendingPopup ? 'Sending...' : 'Send Popup & Notification'}
                         </Button>
                     </CardContent>
                 </Card>
@@ -1031,3 +1041,4 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
+
