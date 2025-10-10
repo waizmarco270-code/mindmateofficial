@@ -27,8 +27,8 @@ import { Slider } from '@/components/ui/slider';
 import { lockableFeatures } from '@/lib/features';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogContent } from '@/components/ui/dialog';
-import { sendNotification } from '@/ai/flows/notify-flow';
-import { sendNotificationToUser } from '@/ai/flows/notify-user-flow';
+import { sendNotification } from '@/server/flows/notify-flow';
+import { sendNotificationToUser } from '@/server/flows/notify-user-flow';
 
 
 const CREDIT_PASSWORD = "waizcredit";
