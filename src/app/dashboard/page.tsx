@@ -15,7 +15,7 @@ import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
 import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 import { TypingAnimation } from '@/components/dashboard/typing-animation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { GlobalGiftCard } from '@/components/dashboard/global-gift';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
