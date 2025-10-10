@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,11 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { Plus, Brain, BookOpen, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Brain, BookOpen, Edit, Trash2, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 
 interface DecisionEntry {
@@ -23,6 +28,7 @@ interface DecisionEntry {
     decision: string;
     outcome: string;
     createdAt: string; // ISO String
+    reviewDate?: string; // Optional ISO String
 }
 
 export default function DecisionJournalPage() {
@@ -34,6 +40,7 @@ export default function DecisionJournalPage() {
     const [thinking, setThinking] = useState('');
     const [decision, setDecision] = useState('');
     const [outcome, setOutcome] = useState('');
+    const [reviewDate, setReviewDate] = useState<Date | undefined>();
     const [editingId, setEditingId] = useState<string | null>(null);
 
     const openDialog = (entry: DecisionEntry | null) => {
@@ -43,12 +50,14 @@ export default function DecisionJournalPage() {
             setThinking(entry.thinking);
             setDecision(entry.decision);
             setOutcome(entry.outcome);
+            setReviewDate(entry.reviewDate ? new Date(entry.reviewDate) : undefined);
         } else {
             setEditingId(null);
             setSituation('');
             setThinking('');
             setDecision('');
             setOutcome('');
+            setReviewDate(undefined);
         }
         setIsDialogOpen(true);
     };
@@ -58,7 +67,7 @@ export default function DecisionJournalPage() {
 
         if (editingId) {
             // Update existing entry
-            setEntries(entries.map(e => e.id === editingId ? { ...e, situation, thinking, decision, outcome } : e));
+            setEntries(entries.map(e => e.id === editingId ? { ...e, situation, thinking, decision, outcome, reviewDate: reviewDate?.toISOString() } : e));
         } else {
             // Create new entry
             const newEntry: DecisionEntry = {
@@ -68,6 +77,7 @@ export default function DecisionJournalPage() {
                 decision,
                 outcome: '',
                 createdAt: new Date().toISOString(),
+                reviewDate: reviewDate?.toISOString(),
             };
             setEntries(prev => [newEntry, ...prev]);
         }
@@ -116,6 +126,12 @@ export default function DecisionJournalPage() {
                                         {format(new Date(entry.createdAt), 'PPP')}
                                         <span className="text-xs"> ({formatDistanceToNow(new Date(entry.createdAt), { addSuffix: true })})</span>
                                     </CardDescription>
+                                    {entry.reviewDate && (
+                                        <div className="!mt-2 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400 font-semibold p-2 bg-amber-500/10 rounded-md">
+                                            <CalendarIcon className="h-4 w-4" />
+                                            Review by: {format(new Date(entry.reviewDate), 'PPP')}
+                                        </div>
+                                    )}
                                 </CardHeader>
                                 <CardContent className="flex-1 space-y-4">
                                      <div>
@@ -184,13 +200,48 @@ export default function DecisionJournalPage() {
                             <Label htmlFor="decision">The Decision</Label>
                             <Textarea id="decision" value={decision} onChange={e => setDecision(e.target.value)} placeholder="e.g., I've decided to dedicate 70% of my time to JEE prep..." />
                         </div>
-                        {editingId && (
-                             <div className="space-y-2 pt-4 border-t">
-                                <Label htmlFor="outcome" className="font-bold text-base">The Outcome</Label>
-                                <p className="text-xs text-muted-foreground">Come back later to fill this out. How did it turn out? What did you learn?</p>
-                                <Textarea id="outcome" value={outcome} onChange={e => setOutcome(e.target.value)} placeholder="e.g., It was the right call. My mock test scores improved..." rows={4}/>
+                        
+                        <Separator />
+
+                        <div className="space-y-3 pt-2">
+                            <h4 className="font-semibold">Follow-Up</h4>
+                             <div className="space-y-2">
+                                <Label htmlFor="review-date">Schedule Review (Optional)</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full justify-start text-left font-normal",
+                                                !reviewDate && "text-muted-foreground"
+                                            )}
+                                        >
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {reviewDate ? format(reviewDate, "PPP") : <span>Pick a date to review this decision</span>}
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0">
+                                        <Calendar
+                                            mode="single"
+                                            selected={reviewDate}
+                                            onSelect={setReviewDate}
+                                            initialFocus
+                                            disabled={(date) => date < new Date()}
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                                 <p className="text-xs text-muted-foreground">Set a future date to get reminded to record the outcome.</p>
                             </div>
-                        )}
+
+                             {editingId && (
+                                <div className="space-y-2 pt-4 border-t">
+                                    <Label htmlFor="outcome" className="font-bold text-base">The Outcome</Label>
+                                    <p className="text-xs text-muted-foreground">Come back later to fill this out. How did it turn out? What did you learn?</p>
+                                    <Textarea id="outcome" value={outcome} onChange={e => setOutcome(e.target.value)} placeholder="e.g., It was the right call. My mock test scores improved..." rows={4}/>
+                                </div>
+                            )}
+                        </div>
+
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
