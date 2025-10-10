@@ -30,6 +30,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { z } from 'zod';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
+import { sendNotification } from '@/ai/flows/notify-flow';
 
 
 interface QuizQuestion {
@@ -184,7 +185,11 @@ export default function AdminPanelPage() {
             title: newAnnouncementTitle,
             description: newAnnouncementDesc,
         });
-        toast({ title: "Announcement Created!", description: "The new announcement is now live." });
+        
+        // Trigger push notification
+        await sendNotification({ title: newAnnouncementTitle, body: newAnnouncementDesc });
+
+        toast({ title: "Announcement Published!", description: "The new announcement is live and notifications have been sent." });
         setNewAnnouncementTitle('');
         setNewAnnouncementDesc('');
     } catch (error: any) {
