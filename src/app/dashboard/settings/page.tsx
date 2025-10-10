@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw } from 'lucide-react';
+import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
@@ -291,21 +290,25 @@ export default function SettingsPage() {
                 <p className="text-muted-foreground">Manage your account, preferences, and app settings.</p>
             </div>
             
-            <Card className="relative overflow-hidden border-primary/20 bg-primary/5">
-                <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)]"></div>
-                <CardContent className="relative p-6 text-center">
-                    <p className="text-sm font-semibold text-primary/80">Current App Version</p>
-                    <p className="text-6xl font-bold tracking-tighter text-shadow-glow animate-pulse" style={{"--tw-shadow-color": "hsl(var(--primary))"} as React.CSSProperties}>
-                        v1.0
-                    </p>
-                </CardContent>
-            </Card>
+            <Link href="/dashboard/whats-new">
+                <Card className="relative overflow-hidden border-primary/20 bg-primary/5 group cursor-pointer transition-transform hover:-translate-y-1">
+                    <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)]"></div>
+                    <CardContent className="relative p-6 text-center">
+                        <p className="text-sm font-semibold text-primary/80">You are on the latest version!</p>
+                        <p className="text-5xl font-bold tracking-tighter text-shadow-glow animate-pulse" style={{"--tw-shadow-color": "hsl(var(--primary))"} as React.CSSProperties}>
+                            v1.5
+                        </p>
+                         <p className="text-sm font-semibold text-primary/80 group-hover:underline mt-2">Click to see what's new</p>
+                    </CardContent>
+                </Card>
+            </Link>
 
             <Tabs defaultValue="account" className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <TabsList className="md:col-span-1 flex flex-col h-auto bg-transparent p-0 border-r">
                     <TabsTrigger value="account" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><UserIcon className="mr-3"/> Account</TabsTrigger>
                     <TabsTrigger value="appearance" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Palette className="mr-3"/> Appearance</TabsTrigger>
                     <TabsTrigger value="about" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Info className="mr-3"/> About & FAQ</TabsTrigger>
+                     <TabsTrigger value="whats-new" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Megaphone className="mr-3"/> What's New</TabsTrigger>
                     <TabsTrigger value="rules" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gavel className="mr-3"/> Rules & Regulations</TabsTrigger>
                     <TabsTrigger value="app-controls" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><RefreshCw className="mr-3"/> App Controls</TabsTrigger>
                      {showAdminTab && (
@@ -330,6 +333,17 @@ export default function SettingsPage() {
                             <CardContent><FaqContent /></CardContent>
                         </Card>
                     </TabsContent>
+                    <TabsContent value="whats-new">
+                         <Card>
+                            <CardHeader>
+                                <CardTitle>What's New in MindMate</CardTitle>
+                                <CardDescription>Check out the latest features and updates.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-center text-muted-foreground">Please navigate to the <Link href="/dashboard/whats-new" className="text-primary underline">What's New page</Link> to see the full version history.</p>
+                            </CardContent>
+                        </Card>
+                    </TabsContent>
                     <TabsContent value="rules">
                         <Card>
                             <CardHeader><CardTitle>Rules & Regulations</CardTitle></CardHeader>
@@ -352,7 +366,3 @@ export default function SettingsPage() {
 
 // Dummy Label to satisfy the compiler for the nested component
 const Label = ({ children, ...props }: React.ComponentProps<'label'>) => <label {...props}>{children}</label>;
-
-
-
-    

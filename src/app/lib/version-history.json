@@ -1,0 +1,25 @@
+
+[
+  {
+    "version": "1.5",
+    "date": "2024-07-29",
+    "title": "The Engagement Update",
+    "changes": [
+      "Enabled Push Notifications for Announcements, Quizzes, and Resources.",
+      "Added targeted Push Notifications for World Chat replies and Admin Gifts.",
+      "Introduced the 'Decision Journal' to the Elite Lounge.",
+      "Completed the 'Decision Journal' with Edit and Delete functionality.",
+      "Redesigned the header Inbox icon for a sleeker look."
+    ]
+  },
+  {
+    "version": "1.0",
+    "date": "2024-07-20",
+    "title": "Initial Release",
+    "changes": [
+      "Welcome to MindMate! The all-in-one study platform is now live.",
+      "Core features include Focus Modes, To-Do lists, Community Hub, and more.",
+      "Gamified learning with credits, streaks, and a reward zone."
+    ]
+  }
+]

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -33,6 +34,8 @@ import {
   HelpCircle,
   Info,
   Map,
+  Bot,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -45,6 +48,7 @@ import { Button } from '../ui/button';
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
+  { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-purple-400' },
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
@@ -52,6 +56,7 @@ const mainNavItems = [
 
 const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
+  { href: '/dashboard/world', icon: Globe, label: 'World Chat', glow: 'text-blue-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
 ];
@@ -107,7 +112,7 @@ export default function SidebarContent() {
     if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos') || pathname.startsWith('/dashboard/roadmap'))) {
         return true;
     }
-     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin'))) {
+     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin') || pathname.startsWith('/dashboard/whats-new'))) {
         return true;
     }
 
@@ -166,6 +171,14 @@ export default function SidebarContent() {
             </Button>
         </Link>
       </div>
+       <div className="p-4 border-b border-sidebar-border">
+          {isSpecialUser && (
+            <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
+                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
+                <Crown className="h-5 w-5"/> Elite Lounge
+            </Link>
+        )}
+      </div>
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
@@ -199,15 +212,26 @@ export default function SidebarContent() {
             </AccordionContent>
           </AccordionItem>
         </Accordion>
-         {isSpecialUser && (
-            <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group mt-4 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
-                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
-                <Crown className="h-5 w-5"/> Elite Lounge
-            </Link>
-        )}
       </div>
 
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
+          <Link
+                href="/dashboard/whats-new"
+                prefetch={true}
+                className={cn(
+                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
+                    isActive('/dashboard/whats-new') 
+                        ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
+                        : 'hover:text-primary',
+                )}
+            >
+                <div className={cn(
+                    "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
+                    isActive('/dashboard/whats-new') ? "bg-primary" : "group-hover:scale-y-50"
+                )}></div>
+                <Megaphone className="h-5 w-5" />
+                <span className="flex-1">What's New</span>
+            </Link>
           <Link
                 href="/dashboard/settings"
                 prefetch={true}

@@ -15,7 +15,7 @@ import { WelcomeDialog } from '@/components/dashboard/welcome-dialog';
 import { DailySurpriseCard } from '@/components/dashboard/daily-surprise';
 import { TypingAnimation } from '@/components/dashboard/typing-animation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog';
 import { GlobalGiftCard } from '@/components/dashboard/global-gift';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
@@ -26,65 +26,10 @@ import { DailyTreasuryDialog } from '@/components/dashboard/DailyTreasuryDialog'
 import { useRewards } from '@/hooks/use-rewards';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
+import versionHistory from '@/app/lib/version-history.json';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
-
-const focusTools = [
-    {
-        title: 'Pomodoro',
-        description: 'Classic timer for focused sprints.',
-        icon: Timer,
-        href: '/dashboard/pomodoro',
-        color: 'from-green-800 via-slate-900 to-slate-900',
-        shadow: 'shadow-green-500/20',
-        iconColor: 'text-green-400',
-    },
-    {
-        title: 'Focus Mode',
-        description: 'Lock in for long, rewarded sessions.',
-        icon: Zap,
-        href: '/dashboard/tracker',
-        color: 'from-yellow-800 via-slate-900 to-slate-900',
-        shadow: 'shadow-yellow-500/20',
-        iconColor: 'text-yellow-400',
-    },
-    {
-        title: 'Tracker & Insights',
-        description: 'Log time and see your progress.',
-        icon: Clock,
-        href: '/dashboard/tracker-insights',
-        color: 'from-blue-800 via-slate-900 to-slate-900',
-        shadow: 'shadow-blue-500/20',
-        iconColor: 'text-blue-400',
-    },
-    {
-        title: 'Challenger',
-        description: 'Forge discipline, win big.',
-        icon: Swords,
-        href: '/dashboard/challenger',
-        color: 'from-red-800 via-slate-900 to-slate-900',
-        shadow: 'shadow-red-500/20',
-        iconColor: 'text-red-400',
-    }
-];
-
-const quickAccessTools = [
-    { title: 'Social Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
-    { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
-    { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
-    { title: 'MM Nexus', href: '/dashboard/schedule', icon: Calendar, glow: 'text-blue-400' },
-];
-
-const allFeatures = [
-    { title: 'Resources', href: '/dashboard/resources', icon: BookOpen, glow: 'text-orange-400' },
-    { title: 'Game Zone', href: '/dashboard/game-zone', icon: Gamepad2, glow: 'text-rose-400' },
-    { title: 'World Chat', href: '/dashboard/world', icon: Globe, glow: 'text-blue-400' },
-    { title: 'Reward Zone', href: '/dashboard/reward', icon: Gift, glow: 'text-pink-400' },
-    { title: 'Leaderboard', href: '/dashboard/leaderboard', icon: Trophy, glow: 'text-amber-400' },
-    { title: 'Invite & Earn', href: '/dashboard/refer', icon: UserPlus, glow: 'text-green-400' },
-    { title: 'Tools', href: '/dashboard/tools', icon: Wrench, glow: 'text-lime-400' },
-    { title: 'Profile', href: '/dashboard/profile', icon: User, glow: 'text-teal-400' },
-]
-
+const LATEST_VERSION = versionHistory[0].version;
 
 function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
     const [api, setApi] = useState<CarouselApi>()
@@ -210,75 +155,6 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
     );
 }
 
-const badgeShowcaseItems = [
-    {
-        name: 'Challenger',
-        description: 'Awarded to users who successfully complete an official study challenge.',
-        badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
-    },
-    {
-        name: 'Elite Member',
-        description: 'Awarded by admins to the most dedicated and active users.',
-        badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>
-    },
-    {
-        name: 'Game Master',
-        description: 'Awarded weekly to the #1 player on the Game Zone leaderboard.',
-        badge: <span className="gm-badge">GM</span>
-    },
-    {
-        name: 'Admin',
-        description: 'For the moderators and administrators of MindMate.',
-        badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span>
-    },
-    {
-        name: 'Co-Developer',
-        description: 'For the co-developers of the MindMate platform.',
-        badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span>
-    },
-    {
-        name: 'Developer',
-        description: 'The creators and developers of the MindMate platform.',
-        badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>
-    }
-];
-
-function BadgeShowcase() {
-    return (
-        <div className="space-y-4">
-            <h2 className="text-2xl font-bold tracking-tight">App Badges</h2>
-            <Carousel 
-                className="w-full"
-                plugins={[
-                    Autoplay({
-                      delay: 3000,
-                      stopOnInteraction: true,
-                    }),
-                ]}
-                opts={{ loop: true }}
-            >
-                <CarouselContent className="-ml-4">
-                    {badgeShowcaseItems.map((item, index) => (
-                        <CarouselItem key={index} className="pl-4 md:basis-1/2 lg:basis-1/3">
-                            <div className="p-1">
-                                <Card className="h-full">
-                                    <CardContent className="flex flex-col items-center justify-center p-6 text-center gap-4">
-                                        {item.badge}
-                                        <p className="font-bold mt-2">{item.name}</p>
-                                        <p className="text-xs text-muted-foreground">{item.description}</p>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        </CarouselItem>
-                    ))}
-                </CarouselContent>
-                 <CarouselPrevious className="hidden sm:flex" />
-                <CarouselNext className="hidden sm:flex" />
-            </Carousel>
-        </div>
-    );
-}
-
 const badgeDetails: Record<BadgeType, { name: string; badge: JSX.Element, icon: React.ElementType, gradient: string }> = {
     dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span>, icon: Code, gradient: 'from-red-500 to-rose-500' },
     'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span>, icon: Code, gradient: 'from-red-500 to-rose-500' },
@@ -333,17 +209,59 @@ function UserBadgeDisplay() {
     )
 }
 
+function WhatsNewDialog({ isOpen, onOpenChange, onNavigate }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onNavigate: () => void }) {
+    const latestVersionInfo = versionHistory[0];
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="max-w-md">
+                <DialogHeader>
+                    <div className="flex justify-center mb-4">
+                        <motion.div
+                            animate={{ y: [0, -10, 0], scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
+                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                            className="p-4 bg-primary/10 rounded-full"
+                        >
+                            <Megaphone className="h-10 w-10 text-primary" />
+                        </motion.div>
+                    </div>
+                    <DialogTitle className="text-center text-2xl font-bold">Welcome to Version {LATEST_VERSION}!</DialogTitle>
+                    <DialogDescription className="text-center">
+                        The "{latestVersionInfo.title}" is here. Check out what's new.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="my-6">
+                    <ul className="space-y-2 text-sm">
+                        {latestVersionInfo.changes.slice(0, 3).map((change, index) => (
+                            <li key={index} className="flex items-start gap-2">
+                                <SparklesIcon className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
+                                <span>{change}</span>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+                <DialogFooter>
+                     <Button onClick={onNavigate} className="w-full">
+                        See All Updates <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+
 export default function DashboardPage() {
     const { user } = useUser();
     const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
     const { dailyLoginState, loading: rewardsLoading } = useRewards();
+    const [lastSeenVersion, setLastSeenVersion] = useLocalStorage('lastSeenVersion', '0.0');
+    
     const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
+    const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
     
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
-    const [isStudyZoneOpen, setIsStudyZoneOpen] = useState(false);
-    const [isExploreZoneOpen, setIsExploreZoneOpen] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
-    const [isTypingAnimationDone, setIsTypingAnimationDone] = useState(false);
     
     useEffect(() => {
         if (!rewardsLoading && dailyLoginState.canClaim) {
@@ -353,35 +271,28 @@ export default function DashboardPage() {
         }
     }, [rewardsLoading, dailyLoginState.canClaim]);
 
+    useEffect(() => {
+        if (currentUserData && lastSeenVersion !== LATEST_VERSION) {
+            // Delay showing the "What's New" popup a bit to not overwhelm the user
+            const timer = setTimeout(() => {
+                setIsWhatsNewOpen(true);
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [currentUserData, lastSeenVersion]);
+
+    const handleNavigateToWhatsNew = () => {
+        setLastSeenVersion(LATEST_VERSION);
+        setIsWhatsNewOpen(false);
+        // This should be a router navigation in a real app
+        window.location.href = '/dashboard/whats-new';
+    };
+
     const credits = currentUserData?.credits ?? 0;
     const streak = currentUserData?.streak ?? 0;
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
-    const handleFeatureClick = (e: React.MouseEvent, featureId: LockableFeature['id'], isLocked: boolean) => {
-        if (isLocked) {
-            e.preventDefault();
-            const feature = lockableFeatures.find(f => f.id === featureId);
-            if (feature) {
-                setFeatureToUnlock(feature);
-            }
-        }
-    }
-    
-    const cardVariants = {
-        hidden: { opacity: 0, y: 20 },
-        visible: (i: number) => ({
-            opacity: 1,
-            y: 0,
-            transition: {
-                delay: i * 0.1,
-                duration: 0.5,
-                ease: "easeOut"
-            }
-        })
-    };
-
-
-  return (
+    return (
     <div className="space-y-8">
       <SignedOut>
         <WelcomeDialog />
@@ -389,6 +300,7 @@ export default function DashboardPage() {
       
        <SignedIn>
         <DailyTreasuryDialog isOpen={isTreasuryOpen} onOpenChange={setIsTreasuryOpen} />
+        <WhatsNewDialog isOpen={isWhatsNewOpen} onOpenChange={setIsWhatsNewOpen} onNavigate={handleNavigateToWhatsNew} />
       </SignedIn>
 
       <div>
@@ -429,10 +341,33 @@ export default function DashboardPage() {
                     <Link href="/dashboard/focus" className="text-sm font-semibold text-primary hover:underline">View All</Link>
                 </CardHeader>
                 <CardContent className="grid grid-cols-4 gap-4 text-center">
-                    {focusTools.map(tool => (
+                    {[{
+                        title: 'Pomodoro',
+                        icon: Timer,
+                        href: '/dashboard/pomodoro',
+                        color: 'text-green-400',
+                    },
+                    {
+                        title: 'Focus Mode',
+                        icon: Zap,
+                        href: '/dashboard/tracker',
+                        color: 'text-yellow-400',
+                    },
+                    {
+                        title: 'Tracker & Insights',
+                        icon: Clock,
+                        href: '/dashboard/tracker-insights',
+                        color: 'text-blue-400',
+                    },
+                    {
+                        title: 'Challenger',
+                        icon: Swords,
+                        href: '/dashboard/challenger',
+                        color: 'text-red-400',
+                    }].map(tool => (
                         <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
                              <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
-                                <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.iconColor)} />
+                                <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.color)} />
                             </div>
                             <p className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">{tool.title}</p>
                         </Link>
@@ -477,7 +412,20 @@ export default function DashboardPage() {
                                 <SheetTitle>All Features</SheetTitle>
                             </SheetHeader>
                             <div className="grid grid-cols-4 gap-4 py-4">
-                                {[...quickAccessTools, ...allFeatures].map(tool => (
+                                {[
+                                    { title: 'Social Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
+                                    { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
+                                    { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
+                                    { title: 'MM Nexus', href: '/dashboard/schedule', icon: Calendar, glow: 'text-blue-400' },
+                                    { title: 'Resources', href: '/dashboard/resources', icon: BookOpen, glow: 'text-orange-400' },
+                                    { title: 'Game Zone', href: '/dashboard/game-zone', icon: Gamepad2, glow: 'text-rose-400' },
+                                    { title: 'World Chat', href: '/dashboard/world', icon: Globe, glow: 'text-blue-400' },
+                                    { title: 'Reward Zone', href: '/dashboard/reward', icon: Gift, glow: 'text-pink-400' },
+                                    { title: 'Leaderboard', href: '/dashboard/leaderboard', icon: Trophy, glow: 'text-amber-400' },
+                                    { title: 'Invite & Earn', href: '/dashboard/refer', icon: UserPlus, glow: 'text-green-400' },
+                                    { title: 'Tools', href: '/dashboard/tools', icon: Wrench, glow: 'text-lime-400' },
+                                    { title: 'Profile', href: '/dashboard/profile', icon: User, glow: 'text-teal-400' },
+                                ].map(tool => (
                                     <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
                                          <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
                                             <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.glow)} />
@@ -490,7 +438,12 @@ export default function DashboardPage() {
                     </Sheet>
                 </CardHeader>
                 <CardContent className="grid grid-cols-4 gap-4 text-center">
-                    {quickAccessTools.map(tool => (
+                    {[
+                        { title: 'Social Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
+                        { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
+                        { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
+                        { title: 'MM Nexus', href: '/dashboard/schedule', icon: Calendar, glow: 'text-blue-400' },
+                    ].map(tool => (
                         <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
                              <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
                                 <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.glow)} />
@@ -548,7 +501,6 @@ export default function DashboardPage() {
             )}
 
             <CommunityPoll />
-            <BadgeShowcase />
         </SignedIn>
 
         {featureToUnlock && (
