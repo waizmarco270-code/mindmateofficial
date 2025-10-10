@@ -5,7 +5,7 @@
  */
 
 import { ai } from '@/server/genkit';
-import { z } from 'genkit/zod';
+import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getMessaging } from 'firebase-admin/messaging';
 import { initializeApp, getApps } from 'firebase-admin/app';
