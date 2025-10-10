@@ -164,6 +164,24 @@ const badgeDetails: Record<BadgeType, { name: string; badge: JSX.Element, icon: 
     challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>, icon: Swords, gradient: 'from-orange-500 to-red-500' },
 };
 
+const appBadges = [
+    {
+        badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>,
+        title: "Elite Member",
+        description: "Awarded by admins to the most dedicated and active users."
+    },
+    {
+        badge: <span className="gm-badge">GM</span>,
+        title: "Game Master",
+        description: "Awarded weekly to the #1 player on the Game Zone leaderboard."
+    },
+    {
+        badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span>,
+        title: "Admin",
+        description: "For the moderators and administrators of MindMate."
+    },
+]
+
 
 function UserBadgeDisplay() {
     const { currentUserData, isSuperAdmin, isAdmin } = useAdmin();
@@ -501,6 +519,21 @@ export default function DashboardPage() {
             )}
 
             <CommunityPoll />
+
+             <div className="space-y-4">
+                <h2 className="text-2xl font-bold tracking-tight">App Badges</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {appBadges.map((badge, index) => (
+                        <Card key={index}>
+                            <CardContent className="p-6 text-center">
+                                <div className="mb-4 inline-block">{badge.badge}</div>
+                                <h3 className="font-bold">{badge.title}</h3>
+                                <p className="text-xs text-muted-foreground mt-1">{badge.description}</p>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </div>
+            </div>
         </SignedIn>
 
         {featureToUnlock && (
