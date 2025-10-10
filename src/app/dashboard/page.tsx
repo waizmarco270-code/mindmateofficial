@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -180,6 +179,21 @@ const appBadges = [
         title: "Admin",
         description: "For the moderators and administrators of MindMate."
     },
+    {
+        badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>,
+        title: "Challenger",
+        description: "Awarded for successfully completing a tough challenge in the Challenger Zone."
+    },
+     {
+        badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span>,
+        title: "Co-Developer",
+        description: "A special rank for contributors helping build MindMate."
+    },
+     {
+        badge: <span className="dev-badge"><Code className="h-3 w-3"/> DEV</span>,
+        title: "Developer",
+        description: "The architect and lead developer of the MindMate platform."
+    }
 ]
 
 
@@ -522,17 +536,29 @@ export default function DashboardPage() {
 
              <div className="space-y-4">
                 <h2 className="text-2xl font-bold tracking-tight">App Badges</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {appBadges.map((badge, index) => (
-                        <Card key={index}>
-                            <CardContent className="p-6 text-center">
-                                <div className="mb-4 inline-block">{badge.badge}</div>
-                                <h3 className="font-bold">{badge.title}</h3>
-                                <p className="text-xs text-muted-foreground mt-1">{badge.description}</p>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+                <Carousel 
+                    className="w-full"
+                    plugins={[ Autoplay({ delay: 3000, stopOnInteraction: true }) ]}
+                    opts={{ loop: true, align: 'start' }}
+                >
+                    <CarouselContent className="-ml-4">
+                        {appBadges.map((badge, index) => (
+                            <CarouselItem key={index} className="pl-4 basis-full md:basis-1/2 lg:basis-1/3">
+                                <div className="p-1">
+                                    <Card className="h-full">
+                                        <CardContent className="p-6 text-center flex flex-col items-center justify-center gap-4">
+                                            <div className="inline-block">{badge.badge}</div>
+                                            <div>
+                                                <h3 className="font-bold">{badge.title}</h3>
+                                                <p className="text-xs text-muted-foreground mt-1">{badge.description}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            </CarouselItem>
+                        ))}
+                    </CarouselContent>
+                </Carousel>
             </div>
         </SignedIn>
 
@@ -547,3 +573,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
