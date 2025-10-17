@@ -107,9 +107,6 @@ export default function ImageToPdfPage() {
                 <p className="text-muted-foreground">Combine multiple images into a single, downloadable PDF document.</p>
             </div>
             <Card className="relative">
-                <SignedOut>
-                    <LoginWall title="Unlock Converter" description="Sign up to convert your images into PDF documents for easy sharing and printing." />
-                </SignedOut>
                 <CardHeader>
                     <CardTitle>Your Images ({images.length})</CardTitle>
                     <CardDescription>Upload, reorder, and convert your images to a PDF file.</CardDescription>
@@ -126,7 +123,6 @@ export default function ImageToPdfPage() {
                             accept="image/png, image/jpeg, image/webp"
                             className="hidden"
                             onChange={handleFileChange}
-                            disabled={!isSignedIn}
                         />
                         <FileImage className="h-12 w-12 text-muted-foreground mb-4"/>
                         <p className="font-semibold">Click to browse or drag & drop images here</p>
@@ -166,7 +162,7 @@ export default function ImageToPdfPage() {
                 <CardFooter>
                      <Button 
                         onClick={convertToPdf} 
-                        disabled={images.length === 0 || isConverting || !isSignedIn}
+                        disabled={images.length === 0 || isConverting}
                         className="w-full"
                         size="lg"
                     >

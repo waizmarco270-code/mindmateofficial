@@ -99,9 +99,6 @@ export default function ElementQuestChallengeHubPage() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                     <Card className="relative h-full">
-                        <SignedOut>
-                            <LoginWall title="Unlock Element Quest" description="Sign up to play this periodic table game, test your chemistry knowledge, and master the elements." />
-                        </SignedOut>
                         <CardHeader className="text-center">
                             <CardTitle className="text-2xl font-bold">Choose Your Challenge</CardTitle>
                             <CardDescription>Each block has a target time. Beat it to maximize your score!</CardDescription>

@@ -22,8 +22,12 @@ export default function HelpPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!message.trim() || !user) {
+        if (!message.trim()) {
             toast({ variant: 'destructive', title: 'Message cannot be empty.' });
+            return;
+        }
+        if (!user) {
+             toast({ variant: 'destructive', title: 'Sign In Required', description: 'You need to sign in to send a message.' });
             return;
         }
 
@@ -48,12 +52,6 @@ export default function HelpPage() {
             </div>
             <div className="max-w-2xl mx-auto space-y-6">
                 <Card className="relative">
-                     <SignedOut>
-                        <LoginWall 
-                            title="Unlock Support"
-                            description="Sign up for free to send messages directly to our admin team for help and suggestions."
-                        />
-                    </SignedOut>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><MailQuestion className="text-primary"/> Contact an Admin</CardTitle>
                         <CardDescription>Your message will be sent directly to the site administrators. We'll do our best to get back to you if needed.</CardDescription>
@@ -73,11 +71,11 @@ export default function HelpPage() {
                                     onChange={(e) => setMessage(e.target.value)}
                                     placeholder="Describe your issue or suggestion here..."
                                     rows={8}
-                                    disabled={isSubmitting || !isSignedIn}
+                                    disabled={isSubmitting}
                                 />
                             </CardContent>
                             <CardContent>
-                                <Button type="submit" className="w-full" disabled={isSubmitting || !message.trim() || !isSignedIn}>
+                                <Button type="submit" className="w-full" disabled={isSubmitting || !message.trim()}>
                                     <Send className="mr-2 h-4 w-4"/> {isSubmitting ? 'Sending...' : 'Send Message'}
                                 </Button>
                             </CardContent>

@@ -40,9 +40,6 @@ export default function QrCodeGeneratorPage() {
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <Card className="lg:col-span-2 relative">
-                    <SignedOut>
-                        <LoginWall title="Unlock QR Generator" description="Sign up to create and customize your own QR codes for links, text, and more." />
-                    </SignedOut>
                     <CardHeader>
                         <CardTitle>Your QR Code</CardTitle>
                         <CardDescription>Enter your data and see the QR code update in real-time.</CardDescription>
@@ -66,10 +63,9 @@ export default function QrCodeGeneratorPage() {
                                     onChange={(e) => setText(e.target.value)}
                                     placeholder="Enter URL or text here"
                                     rows={4}
-                                    disabled={!isSignedIn}
                                 />
                             </div>
-                            <Button onClick={handleDownload} className="w-full" disabled={!isSignedIn}>
+                            <Button onClick={handleDownload} className="w-full">
                                 <Download className="mr-2"/> Download QR Code
                             </Button>
                         </div>
@@ -86,17 +82,17 @@ export default function QrCodeGeneratorPage() {
                             <div className="flex items-center gap-4">
                                 <div className="space-y-1">
                                     <Label htmlFor="fg-color" className="text-xs">Code</Label>
-                                    <Input id="fg-color" type="color" value={fgColor} onChange={(e) => setFgColor(e.target.value)} disabled={!isSignedIn}/>
+                                    <Input id="fg-color" type="color" value={fgColor} onChange={(e) => setFgColor(e.target.value)}/>
                                 </div>
                                 <div className="space-y-1">
                                     <Label htmlFor="bg-color" className="text-xs">Background</Label>
-                                    <Input id="bg-color" type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} disabled={!isSignedIn}/>
+                                    <Input id="bg-color" type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)}/>
                                 </div>
                             </div>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="qr-size">Size ({size}px)</Label>
-                            <Input id="qr-size" type="range" min="64" max="1024" step="64" value={size} onChange={(e) => setSize(Number(e.target.value))} disabled={!isSignedIn}/>
+                            <Input id="qr-size" type="range" min="64" max="1024" step="64" value={size} onChange={(e) => setSize(Number(e.target.value))}/>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="qr-level">Error Correction Level</Label>
@@ -105,7 +101,6 @@ export default function QrCodeGeneratorPage() {
                                 value={level} 
                                 onChange={(e) => setLevel(e.target.value as any)}
                                 className="w-full h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                                disabled={!isSignedIn}
                             >
                                 <option value="L">Low (L)</option>
                                 <option value="M">Medium (M)</option>

@@ -32,12 +32,6 @@ export default function SocialPage() {
   return (
     <FriendsProvider>
       <div className="h-full relative">
-          <SignedOut>
-              <LoginWall 
-                title="Unlock the Social Hub"
-                description="Sign up for a free account to add friends, join the community chat, and connect with other learners."
-              />
-          </SignedOut>
           <div className="grid h-full grid-cols-1 md:grid-cols-12 gap-6">
               <AnimatePresence>
                 {isMobile ? (
