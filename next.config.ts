@@ -16,9 +16,6 @@ const withPWA = require("@ducanh2912/next-pwa").default({
 
 const nextConfig: NextConfig = {
   /* config options here */
-  env: {
-    NEXT_PUBLIC_FIREBASE_VAPID_KEY: 'BH5-Xy-Z3dC8zUnG71Dv4aMhOglYEf3a7P76z4Rge5A2cQDS5l9lliPPLTQQqKo4NfTTcOAWLK1K1Z-NF-3OwuQ',
-  },
   typescript: {
     ignoreBuildErrors: true,
   },
