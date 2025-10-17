@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame, Award, ShieldQuestion, Swords, Gem, Anchor, ArrowLeftRight } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
-import { SignedIn, SignedOut, SignUpButton, useUser } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignUpButton, SignInButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
@@ -271,7 +271,7 @@ export function LandingPage() {
                 <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
                     MindMate is your all-in-one study companion to learn smarter, stay focused, and connect with a community of learners.
                 </p>
-                 <div className="mt-10 flex flex-col items-center justify-center gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
+                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
                     <SignedOut>
                        <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
                              <Button size="lg" className="relative group w-full sm:w-auto">
@@ -281,7 +281,10 @@ export function LandingPage() {
                                 </span>
                             </Button>
                         </SignUpButton>
-                         <p className="text-sm text-amber-300 font-semibold flex items-center gap-2 mt-2">
+                        <SignInButton mode="modal" afterSignInUrl="/dashboard" afterSignUpUrl="/dashboard">
+                          <Button size="lg" variant="outline" className="w-full sm:w-auto">Demo Login</Button>
+                        </SignInButton>
+                         <p className="text-sm text-amber-300 font-semibold flex items-center gap-2 mt-2 sm:hidden">
                             <Award className="h-5 w-5" /> Sign up now and get 100 free credits!
                         </p>
                     </SignedOut>
@@ -291,6 +294,11 @@ export function LandingPage() {
                         </Link>
                      </SignedIn>
                 </div>
+                 <SignedOut>
+                     <p className="text-sm text-amber-300 font-semibold items-center gap-2 mt-4 hidden sm:flex justify-center">
+                        <Award className="h-5 w-5" /> Sign up now and get 100 free credits!
+                    </p>
+                </SignedOut>
             </div>
         </section>
 
