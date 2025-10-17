@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -15,7 +14,7 @@ import { lockableFeatures, type LockableFeature } from '@/lib/features';
 //  TYPES & INITIAL DATA
 // ============================================================================
 
-export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
+export const SUPER_ADMIN_UID = "user_2jFqwMuJgq13a0r0b4Yc2pL1rA7";
 export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev';
 
 
@@ -236,7 +235,7 @@ interface AppDataContextType {
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    claimMathematicsLegendMilestone: (uid: string) => Promise<boolean>;
+    claimMathematicsLegendMilestone: (uid: string, milestone: number) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -1512,5 +1511,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
