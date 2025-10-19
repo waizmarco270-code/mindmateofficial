@@ -326,27 +326,32 @@ export default function DashboardPage() {
 
     return (
     <div className="space-y-8">
-      <SignedOut>
-        <WelcomeDialog />
-      </SignedOut>
-      
-       <SignedIn>
-        <DailyTreasuryDialog isOpen={isTreasuryOpen} onOpenChange={setIsTreasuryOpen} />
-        <WhatsNewDialog isOpen={isWhatsNewOpen} onOpenChange={setIsWhatsNewOpen} onNavigate={handleNavigateToWhatsNew} />
-      </SignedIn>
-
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
-        <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
-      </div>
-
-       <div className="flex flex-col space-y-8">
+        <SignedOut>
+            <WelcomeDialog />
+        </SignedOut>
+        
         <SignedIn>
-            <UserBadgeDisplay />
-            <ShowcaseView showcases={featureShowcases} />
-            <GlobalGiftCard />
+            <DailyTreasuryDialog isOpen={isTreasuryOpen} onOpenChange={setIsTreasuryOpen} />
+            <WhatsNewDialog isOpen={isWhatsNewOpen} onOpenChange={setIsWhatsNewOpen} onNavigate={handleNavigateToWhatsNew} />
+        </SignedIn>
 
-             <div className="grid grid-cols-2 gap-4">
+        <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
+            <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
+        </div>
+
+        <div className="flex flex-col space-y-8">
+            <SignedIn>
+                <UserBadgeDisplay />
+            </SignedIn>
+
+            <ShowcaseView showcases={featureShowcases} />
+            
+            <SignedIn>
+                <GlobalGiftCard />
+            </SignedIn>
+
+            <div className="grid grid-cols-2 gap-4">
                 <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
                     <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
                     <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
@@ -356,7 +361,7 @@ export default function DashboardPage() {
                         <p className="text-4xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{hasMasterCard ? '∞' : credits}</p>
                     </CardContent>
                 </Card>
-                 <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-orange-500/20 transition-shadow duration-300 flex flex-col justify-center">
+                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-orange-500/20 transition-shadow duration-300 flex flex-col justify-center">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
                     <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <CardContent className="p-4 text-center relative z-10">
@@ -560,7 +565,7 @@ export default function DashboardPage() {
                     </CarouselContent>
                 </Carousel>
             </div>
-        </SignedIn>
+        </div>
 
         {featureToUnlock && (
             <FeatureUnlockDialog
@@ -570,8 +575,5 @@ export default function DashboardPage() {
             />
         )}
       </div>
-    </div>
   );
 }
-
-    
