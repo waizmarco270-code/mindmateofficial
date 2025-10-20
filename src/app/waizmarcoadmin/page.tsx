@@ -27,8 +27,6 @@ import { Slider } from '@/components/ui/slider';
 import { lockableFeatures } from '@/lib/features';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogContent } from '@/components/ui/dialog';
-import { sendNotification } from '@/ai/flows/notify-flow';
-import { sendNotificationToUser } from '@/ai/flows/notify-user-flow';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -235,15 +233,8 @@ export default function SuperAdminPanelPage() {
             rewards: rewards,
             target: target
         });
-
-        // Send push notification
-        if (target === 'all') {
-            await sendNotification({ title: "A Gift From The Admins!", body: popupMessage });
-        } else if (target) {
-            await sendNotificationToUser({ userId: target, title: "A Gift For You!", body: popupMessage });
-        }
-
-        toast({ title: "Popup Sent!", description: "The message is now active and notifications have been sent." });
+        
+        toast({ title: "Popup Sent!", description: "The message is now active for targeted users." });
         setPopupMessage('');
         setPopupCreditAmount(0);
         setPopupScratchAmount(0);
@@ -725,7 +716,7 @@ export default function SuperAdminPanelPage() {
                         </div>
 
                         <Button onClick={handleSendPopup} disabled={isSendingPopup}>
-                            {isSendingPopup ? 'Sending...' : 'Send Popup & Notification'}
+                            {isSendingPopup ? 'Sending...' : 'Send Popup'}
                         </Button>
                     </CardContent>
                 </Card>

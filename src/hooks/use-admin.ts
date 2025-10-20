@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -964,7 +965,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             return false; // Already claimed this week
         }
         
-        const MILESTONE_REWARDS: Record<number, number> = { 50: 2, 100: 5, 150: 10, 200: 15, 250: 20, 300: 200, };
+        const MILESTONE_REWARDS: Record<number, number> = { 50: 2, 100: 5, 150: 10, 200: 15, 250: 20, 300: 200 };
         const reward = MILESTONE_REWARDS[milestone as keyof typeof MILESTONE_REWARDS];
 
         if (!reward) return false;

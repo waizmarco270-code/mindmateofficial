@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { MotionConfig } from 'framer-motion';
 import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
 import { Providers } from './providers';
-import { initializePushNotifications } from '@/lib/push-notifications';
 import { useUser } from '@clerk/nextjs';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -50,13 +49,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       }
     }
   }, [pathname, toast]);
-
-  // Initialize push notifications
-  React.useEffect(() => {
-    if(user) {
-      initializePushNotifications(user.id);
-    }
-  }, [user]);
 
 
   return (

@@ -29,7 +29,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { z } from 'zod';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
-import { sendNotification } from '@/ai/flows/notify-flow';
 
 
 interface QuizQuestion {
@@ -185,10 +184,7 @@ export default function AdminPanelPage() {
             description: newAnnouncementDesc,
         });
         
-        // Trigger push notification
-        await sendNotification({ title: newAnnouncementTitle, body: newAnnouncementDesc });
-
-        toast({ title: "Announcement Published!", description: "The new announcement is live and notifications have been sent." });
+        toast({ title: "Announcement Published!", description: "The new announcement is live." });
         setNewAnnouncementTitle('');
         setNewAnnouncementDesc('');
     } catch (error: any) {
@@ -239,15 +235,7 @@ export default function AdminPanelPage() {
         try {
             await addResource(resourceData);
             
-            const section = resourceSections.find(s => s.id === resourceSectionId);
-            const sectionName = section ? ` in the ${section.name} section.` : '.';
-
-            await sendNotification({
-                title: 'New Resource Available!',
-                body: `Check out "${resourceTitle}"${sectionName}`
-            });
-
-            toast({ title: 'Resource Added', description: 'The new resource has been added and a notification was sent.' });
+            toast({ title: 'Resource Added', description: 'The new resource has been added.' });
             // Reset form
             setResourceTitle('');
             setResourceDescription('');
@@ -408,12 +396,7 @@ export default function AdminPanelPage() {
               createdAt: new Date().toISOString(),
           });
           
-          await sendNotification({
-                title: 'New Quiz Added!',
-                body: `Check out "${quizTitle}" in the ${quizCategory.replace('-', ' ')} category.`
-          });
-
-          toast({ title: "Quiz Saved!", description: "The new quiz has been added and a notification was sent." });
+          toast({ title: "Quiz Saved!", description: "The new quiz has been added." });
           setQuizTitle('');
           setQuizCategory('general');
           setQuizTimeLimit(300);
@@ -484,12 +467,7 @@ export default function AdminPanelPage() {
                 createdAt: new Date().toISOString(),
             });
 
-             await sendNotification({
-                title: 'New Quiz Added!',
-                body: `Check out "${quizData.title}" in the ${quizData.category.replace('-', ' ')} category.`
-            });
-
-            toast({ title: "Quiz Imported Successfully!", description: `"${quizData.title}" has been added and a notification sent.` });
+            toast({ title: "Quiz Imported Successfully!", description: `"${quizData.title}" has been added.` });
 
         } catch (error: any) {
             if (error instanceof z.ZodError) {
