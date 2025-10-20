@@ -281,9 +281,6 @@ export function LandingPage() {
                                 </span>
                             </Button>
                         </SignUpButton>
-                        <Link href="/dashboard" className={cn(buttonVariants({ variant: "outline", size: "lg" }), "w-full sm:w-auto")}>
-                            Demo Login
-                        </Link>
                          <p className="text-sm text-amber-300 font-semibold flex items-center gap-2 mt-2 sm:hidden">
                             <Award className="h-5 w-5" /> Sign up now and get 100 free credits!
                         </p>
