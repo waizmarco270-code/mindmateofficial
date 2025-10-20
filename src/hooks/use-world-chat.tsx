@@ -7,7 +7,6 @@ import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc } from 'firebase/firestore';
 import { useAdmin } from './use-admin';
 import { useToast } from './use-toast';
-import { sendNotificationToUser } from '@/ai/flows/notify-user-flow';
 
 export interface ReplyContext {
     messageId: string;
@@ -165,20 +164,6 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
             ...(replyingTo && { replyingTo }),
         });
         
-        // --- NEW NOTIFICATION LOGIC ---
-        if (replyingTo && replyingTo.senderId !== currentUser.id) {
-            try {
-                await sendNotificationToUser({
-                    userId: replyingTo.senderId,
-                    title: `${currentUserData?.displayName || 'Someone'} replied to you`,
-                    body: text,
-                });
-            } catch (error) {
-                console.error("Failed to send reply notification:", error);
-                // Don't bother the user with this error
-            }
-        }
-
     }, [currentUser, isAdmin, toast, currentUserData]);
 
     const editMessage = useCallback(async (messageId: string, newText: string) => {
