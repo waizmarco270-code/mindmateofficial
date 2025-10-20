@@ -21,7 +21,6 @@ import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialo
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious, type CarouselApi } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay"
 import { format, parseISO } from 'date-fns';
-import { DailyTreasuryDialog } from '@/components/dashboard/DailyTreasuryDialog';
 import { useRewards } from '@/hooks/use-rewards';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
@@ -286,22 +285,13 @@ function WhatsNewDialog({ isOpen, onOpenChange, onNavigate }: { isOpen: boolean,
 export default function DashboardPage() {
     const { user } = useUser();
     const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
-    const { dailyLoginState, loading: rewardsLoading } = useRewards();
     const [lastSeenVersion, setLastSeenVersion] = useLocalStorage('lastSeenVersion', '0.0');
     
-    const [isTreasuryOpen, setIsTreasuryOpen] = useState(false);
     const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
     
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
     
-    useEffect(() => {
-        if (!rewardsLoading && dailyLoginState.canClaim) {
-            setIsTreasuryOpen(true);
-        } else if (!rewardsLoading && !dailyLoginState.canClaim) {
-            setIsTreasuryOpen(false);
-        }
-    }, [rewardsLoading, dailyLoginState.canClaim]);
 
     useEffect(() => {
         if (currentUserData && lastSeenVersion !== LATEST_VERSION) {
@@ -331,7 +321,6 @@ export default function DashboardPage() {
         </SignedOut>
         
         <SignedIn>
-            <DailyTreasuryDialog isOpen={isTreasuryOpen} onOpenChange={setIsTreasuryOpen} />
             <WhatsNewDialog isOpen={isWhatsNewOpen} onOpenChange={setIsWhatsNewOpen} onNavigate={handleNavigateToWhatsNew} />
         </SignedIn>
 

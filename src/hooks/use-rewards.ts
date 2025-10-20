@@ -5,7 +5,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, arrayUnion, Timestamp, setDoc, deleteDoc, getDoc, writeBatch } from 'firebase/firestore';
-import { isToday, parseISO, addDays, isYesterday } from 'date-fns';
+import { isToday, parseISO, addDays } from 'date-fns';
 import { useToast } from './use-toast';
 import { useUsers } from './use-admin';
 import { CRYSTAL_TIERS, type CrystalTier } from '@/components/reward/crystal-growth';
@@ -46,12 +46,6 @@ export const useRewards = () => {
         attempts: 0,
         secretCode: ''
     });
-     const [dailyLoginState, setDailyLoginState] = useState({
-        streak: 0,
-        canClaim: false,
-        hasClaimedToday: false,
-        isCompleted: false,
-    });
 
     useEffect(() => {
         setLoading(true);
@@ -66,25 +60,6 @@ export const useRewards = () => {
                 .map((h: any) => ({ ...h, date: h.date?.toDate() || new Date(), source: h.source || 'Unknown' }))
                 .sort((a: RewardRecord, b: RewardRecord) => b.date.getTime() - a.date.getTime())
             );
-
-            // Daily Login Treasury State - Reworked logic for reliability
-            const streak = currentUserData.dailyLoginRewardState?.streak || 0;
-            const lastClaimedStr = currentUserData.dailyLoginRewardState?.lastClaimed;
-            const lastClaimedDate = lastClaimedStr ? new Date(lastClaimedStr) : null;
-            const hasClaimedToday = lastClaimedDate ? isToday(lastClaimedDate) : false;
-
-            const streakContinued = lastClaimedDate ? isYesterday(lastClaimedDate) : true;
-            const actualStreak = (lastClaimedDate && !streakContinued && !hasClaimedToday) ? 0 : streak;
-            
-            const isCompleted = actualStreak >= 7;
-
-            setDailyLoginState({
-                streak: actualStreak,
-                canClaim: !hasClaimedToday && !isCompleted,
-                hasClaimedToday: hasClaimedToday,
-                isCompleted: isCompleted,
-            });
-
         }
         setLoading(false);
     }, [currentUserData]);
@@ -414,62 +389,6 @@ export const useRewards = () => {
 
     }, [user, canPlayCodebreaker, codebreakerStatus, addCreditsToUser]);
     
-    const claimDailyLoginReward = useCallback(async () => {
-        if (!user || !currentUserData) throw new Error("User not found");
-
-        if (dailyLoginState.hasClaimedToday) {
-            throw new Error("Reward already claimed for today.");
-        }
-
-        // If streak is >= 7, it means they completed a cycle. Reset to 1 for the new claim. Otherwise, increment.
-        const newStreak = dailyLoginState.streak >= 7 ? 1 : dailyLoginState.streak + 1;
-
-        const rewardsConfig: Record<number, { credits?: number; scratch?: number; flip?: number; vip?: number }> = {
-            1: { credits: 10 },
-            2: { credits: 5, scratch: 3 },
-            3: { credits: 50 },
-            4: { scratch: 20 },
-            5: { credits: 100 },
-            6: { vip: 3 },
-            7: { credits: 200, scratch: 10, flip: 10 },
-        };
-
-        const reward = rewardsConfig[newStreak];
-        if (!reward) throw new Error("Invalid streak day for reward.");
-
-        const userRef = doc(db, 'users', user.id);
-        const batch = writeBatch(db);
-        const todayStr = new Date().toISOString().split('T')[0];
-
-        batch.update(userRef, {
-            'dailyLoginRewardState.streak': newStreak,
-            'dailyLoginRewardState.lastClaimed': todayStr,
-             rewardHistory: arrayUnion({
-                reward: `Day ${newStreak} Login`,
-                date: new Date(),
-                source: 'Daily Treasury'
-            })
-        });
-
-        if (reward.credits) batch.update(userRef, { credits: increment(reward.credits) });
-        if (reward.scratch) batch.update(userRef, { freeRewards: increment(reward.scratch) });
-        if (reward.flip) batch.update(userRef, { freeGuesses: increment(reward.flip) });
-        
-        await batch.commit();
-        
-        // Force an immediate state update to prevent re-claims
-        setDailyLoginState({
-            streak: newStreak,
-            canClaim: false,
-            hasClaimedToday: true,
-            isCompleted: newStreak >= 7,
-        });
-        
-        toast({ title: `Day ${newStreak} Reward Claimed!`, description: "Your rewards have been added. Keep the streak going!" });
-        return reward;
-
-    }, [user, currentUserData, toast, dailyLoginState]);
-    
 
     return { 
         loading,
@@ -491,7 +410,5 @@ export const useRewards = () => {
         canPlayCodebreaker,
         playCodebreaker,
         codebreakerStatus,
-        dailyLoginState,
-        claimDailyLoginReward,
     };
 };
