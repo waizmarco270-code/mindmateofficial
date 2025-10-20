@@ -38,8 +38,11 @@ export default function QrCodeGeneratorPage() {
                 <p className="text-muted-foreground">Create and customize your own QR codes for links, text, and more.</p>
             </div>
             
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <Card className="lg:col-span-2 relative">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+                <SignedOut>
+                    <LoginWall title="Sign In to Use QR Generator" description="Create a free account to generate and download custom QR codes." className="lg:col-span-3"/>
+                </SignedOut>
+                <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle>Your QR Code</CardTitle>
                         <CardDescription>Enter your data and see the QR code update in real-time.</CardDescription>

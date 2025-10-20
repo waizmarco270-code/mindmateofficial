@@ -101,7 +101,6 @@ export default function TimetableGeneratorPage() {
             toast({ variant: 'destructive', title: "Sign In Required", description: "Please sign in to generate a timetable." });
             return;
         }
-
         const difficultyWeights = { easy: 1, medium: 1.5, hard: 2 };
         const totalWeight = subjects.reduce((sum, s) => sum + difficultyWeights[s.difficulty], 0);
         
@@ -326,6 +325,9 @@ export default function TimetableGeneratorPage() {
             <AnimatePresence mode="wait">
             {!timetable ? (
                  <Card className="max-w-2xl mx-auto relative">
+                     <SignedOut>
+                         <LoginWall title="Unlock Timetable Generator" description="Sign up to create personalized study schedules tailored to your routine and goals." />
+                     </SignedOut>
                     <CardHeader>
                         <motion.div
                             key={step}
@@ -351,7 +353,7 @@ export default function TimetableGeneratorPage() {
                                 Next <ArrowRight className="ml-2"/>
                             </Button>
                         ) : (
-                             <Button onClick={generateTimetable}>
+                             <Button onClick={generateTimetable} disabled={!isSignedIn}>
                                 <Sparkles className="mr-2"/> Generate Timetable
                             </Button>
                         )}

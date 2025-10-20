@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -50,8 +51,11 @@ export default function HelpPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Help & Support</h1>
                 <p className="text-muted-foreground">Have a problem or a suggestion? Let us know!</p>
             </div>
-            <div className="max-w-2xl mx-auto space-y-6">
-                <Card className="relative">
+            <div className="max-w-2xl mx-auto space-y-6 relative">
+                 <SignedOut>
+                    <LoginWall title="Sign In for Support" description="Create a free account or sign in to contact our support team." />
+                </SignedOut>
+                <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><MailQuestion className="text-primary"/> Contact an Admin</CardTitle>
                         <CardDescription>Your message will be sent directly to the site administrators. We'll do our best to get back to you if needed.</CardDescription>

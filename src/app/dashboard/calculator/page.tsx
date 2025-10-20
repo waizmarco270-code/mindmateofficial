@@ -163,6 +163,10 @@ export default function PercentageCalculatorPage() {
         <p className="text-muted-foreground">Calculate your CBSE/Board exam percentage based on the "Best of 5" rule.</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 relative">
+        <SignedOut>
+            <LoginWall title="Sign In to Use Calculator" description="Create a free account to use the percentage calculator and other powerful study tools." className="lg:col-span-3"/>
+        </SignedOut>
+        <SignedIn>
         <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle>Enter Your Marks</CardTitle>
@@ -295,6 +299,7 @@ export default function PercentageCalculatorPage() {
                 </CardContent>
             </Card>
         </div>
+        </SignedIn>
       </div>
     </div>
   );

@@ -32,6 +32,12 @@ export default function SocialPage() {
   return (
     <FriendsProvider>
       <div className="h-full relative">
+           <SignedOut>
+            <LoginWall 
+                title="Join the Community!"
+                description="Sign up to connect with friends, chat with other students, and join the MindMate social hub."
+            />
+          </SignedOut>
           <div className="grid h-full grid-cols-1 md:grid-cols-12 gap-6">
               <AnimatePresence>
                 {isMobile ? (

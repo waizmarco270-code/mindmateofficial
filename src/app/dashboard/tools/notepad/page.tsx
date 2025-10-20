@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -16,6 +17,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { SignedOut } from '@clerk/nextjs';
+import { LoginWall } from '@/components/ui/login-wall';
 
 
 export default function NotepadPage() {
@@ -231,7 +234,10 @@ export default function NotepadPage() {
                 </h1>
                 <p className="text-muted-foreground">Jot down quick thoughts and ideas. Your notes are saved automatically to this browser.</p>
             </div>
-            <Card className="h-[60vh] flex flex-col">
+            <Card className="h-[60vh] flex flex-col relative">
+                <SignedOut>
+                    <LoginWall title="Sign In to Use Notepad" description="Create a free account to use the notepad and other powerful study tools." />
+                </SignedOut>
                  <CardHeader className="flex flex-row items-center gap-2">
                     <Tabs value={String(activeNoteIndex)} onValueChange={(val) => setActiveNoteIndex(Number(val))}>
                         <TabsList>

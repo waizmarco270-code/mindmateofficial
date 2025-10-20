@@ -107,6 +107,9 @@ export default function ImageToPdfPage() {
                 <p className="text-muted-foreground">Combine multiple images into a single, downloadable PDF document.</p>
             </div>
             <Card className="relative">
+                 <SignedOut>
+                    <LoginWall title="Sign In to Use Converter" description="Create a free account to convert your images to PDF." />
+                </SignedOut>
                 <CardHeader>
                     <CardTitle>Your Images ({images.length})</CardTitle>
                     <CardDescription>Upload, reorder, and convert your images to a PDF file.</CardDescription>

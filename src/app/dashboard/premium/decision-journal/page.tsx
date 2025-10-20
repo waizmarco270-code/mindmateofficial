@@ -19,6 +19,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { SignedOut } from '@clerk/nextjs';
+import { LoginWall } from '@/components/ui/login-wall';
 
 
 interface DecisionEntry {
@@ -89,7 +91,10 @@ export default function DecisionJournalPage() {
     };
 
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 relative">
+             <SignedOut>
+                <LoginWall title="Unlock Decision Journal" description="Sign up to track your decisions, improve judgment, and learn from outcomes." />
+            </SignedOut>
             <div className="flex items-center gap-4">
                 <Button asChild variant="outline" size="icon">
                     <Link href="/dashboard/premium/elite-lounge">
