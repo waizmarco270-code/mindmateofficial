@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate, type CreditPack } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -56,6 +56,13 @@ export default function SuperAdminPanelPage() {
     generateDevAiAccessToken,
     grantMasterCard,
     revokeMasterCard,
+    creditPacks,
+    createCreditPack,
+    updateCreditPack,
+    deleteCreditPack,
+    purchaseRequests,
+    approvePurchaseRequest,
+    declinePurchaseRequest,
   } = useAdmin();
   const { toast } = useToast();
   
@@ -89,6 +96,13 @@ export default function SuperAdminPanelPage() {
 
   // State for Feature Locks
   const [featureCosts, setFeatureCosts] = useState<Record<string, number>>({});
+  
+  // State for Credit Packs
+  const [isPackDialogOpen, setIsPackDialogOpen] = useState(false);
+  const [editingPack, setEditingPack] = useState<CreditPack | null>(null);
+  const [packName, setPackName] = useState('');
+  const [packCredits, setPackCredits] = useState(100);
+  const [packPrice, setPackPrice] = useState(10);
 
   useEffect(() => {
     // Initialize local costs state when featureLocks are loaded
@@ -298,6 +312,53 @@ export default function SuperAdminPanelPage() {
       await revokeMasterCard(user.uid);
       toast({ title: `Master Card revoked from ${user.displayName}.`});
   }
+  
+    const openPackDialog = (pack: CreditPack | null) => {
+        if (pack) {
+            setEditingPack(pack);
+            setPackName(pack.name);
+            setPackCredits(pack.credits);
+            setPackPrice(pack.price);
+        } else {
+            setEditingPack(null);
+            setPackName('');
+            setPackCredits(100);
+            setPackPrice(10);
+        }
+        setIsPackDialogOpen(true);
+    };
+
+    const handleSavePack = async () => {
+        if (!packName.trim() || packCredits <= 0 || packPrice < 0) {
+            toast({ variant: 'destructive', title: 'Invalid input for credit pack.' });
+            return;
+        }
+        
+        const packData = { name: packName, credits: packCredits, price: packPrice };
+
+        if (editingPack) {
+            await updateCreditPack(editingPack.id, packData);
+            toast({ title: 'Credit Pack Updated' });
+        } else {
+            await createCreditPack(packData);
+            toast({ title: 'Credit Pack Created' });
+        }
+        setIsPackDialogOpen(false);
+    };
+    
+     const handleQrCodeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64String = event.target?.result as string;
+            updateAppSettings({ upiQrCode: base64String });
+            toast({ title: 'QR Code Updated!' });
+        };
+        reader.readAsDataURL(file);
+    };
+
 
   if (!isSuperAdmin) {
     return (
@@ -324,6 +385,112 @@ export default function SuperAdminPanelPage() {
       </div>
 
       <Accordion type="multiple" defaultValue={['user-management']} className="w-full space-y-4">
+         {/* Store Management */}
+        <AccordionItem value="store-management" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <ShoppingCart className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Store Management</h3>
+                  <p className="text-sm text-muted-foreground text-left">Manage credit packs and approve purchase requests.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Pending Purchase Requests</CardTitle>
+                        <CardDescription>Review and approve/decline manual UPI payments.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>User</TableHead>
+                                    <TableHead>Pack</TableHead>
+                                    <TableHead>Transaction ID</TableHead>
+                                    <TableHead>Date</TableHead>
+                                    <TableHead className="text-right">Actions</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {purchaseRequests.map(req => (
+                                    <TableRow key={req.id}>
+                                        <TableCell>{req.userName}</TableCell>
+                                        <TableCell>{req.packName} (+{req.credits} Credits)</TableCell>
+                                        <TableCell className="font-mono">{req.transactionId}</TableCell>
+                                        <TableCell>{format(req.createdAt.toDate(), "d MMM, h:mm a")}</TableCell>
+                                        <TableCell className="text-right space-x-2">
+                                            <Button variant="destructive" size="sm" onClick={() => declinePurchaseRequest(req.id)}>Decline</Button>
+                                            <Button size="sm" onClick={() => approvePurchaseRequest(req)}>Approve</Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                                {purchaseRequests.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No pending requests.</TableCell></TableRow>}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                 </Card>
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Manage Credit Packs</CardTitle>
+                            <CardDescription>Add, edit, or delete the credit packs available in the store.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                {creditPacks.map(pack => (
+                                    <div key={pack.id} className="flex items-center p-3 rounded-md bg-muted">
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{pack.name}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {pack.credits.toLocaleString()} Credits for ₹{pack.price}
+                                            </p>
+                                        </div>
+                                        <Button variant="ghost" size="icon" onClick={() => openPackDialog(pack)}><Edit className="h-4 w-4"/></Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete this pack?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This action cannot be undone.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => deleteCreditPack(pack.id)}>Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                ))}
+                            </div>
+                            <Button className="w-full" onClick={() => openPackDialog(null)}>Add New Pack</Button>
+                        </CardContent>
+                     </Card>
+                      <Card>
+                        <CardHeader>
+                            <CardTitle>Manage UPI QR Code</CardTitle>
+                            <CardDescription>Upload the QR code image that users will see for payments.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {appSettings?.upiQrCode && (
+                                <div className="p-2 border bg-white rounded-lg w-48 h-48 mx-auto">
+                                    <img src={appSettings.upiQrCode} alt="Current UPI QR Code" className="w-full h-full object-contain" />
+                                </div>
+                            )}
+                            <div className="space-y-2">
+                                <Label htmlFor="qr-upload">Upload New QR Code</Label>
+                                <Input id="qr-upload" type="file" accept="image/*" onChange={handleQrCodeUpload} />
+                            </div>
+                        </CardContent>
+                      </Card>
+                 </div>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
         {/* App Settings */}
         <AccordionItem value="app-settings" className="border-b-0">
           <Card>
@@ -1029,6 +1196,32 @@ export default function SuperAdminPanelPage() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
+         <Dialog open={isPackDialogOpen} onOpenChange={setIsPackDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{editingPack ? 'Edit' : 'Add'} Credit Pack</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="pack-name">Pack Name</Label>
+                        <Input id="pack-name" value={packName} onChange={e => setPackName(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="pack-credits">Credits</Label>
+                        <Input id="pack-credits" type="number" value={packCredits} onChange={e => setPackCredits(Number(e.target.value))} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="pack-price">Price (₹)</Label>
+                        <Input id="pack-price" type="number" value={packPrice} onChange={e => setPackPrice(Number(e.target.value))} />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    <Button onClick={handleSavePack}>{editingPack ? 'Save Changes' : 'Create Pack'}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
   );
 }
+
