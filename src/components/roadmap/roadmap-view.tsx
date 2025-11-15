@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from '../ui/alert-dialog';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 
 const formatTime = (seconds: number) => {
@@ -103,7 +104,7 @@ function ExamCountdown({ examDate }: { examDate: Date }) {
 
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
     const { toggleTaskCompletion } = useRoadmaps();
-    const [isCountdownActive, setIsCountdownActive] = useState(false);
+    const [isCountdownActive, setIsCountdownActive] = useLocalStorage(`roadmap-countdown-active-${roadmap.id}`, false);
 
 
     const { totalTasks, completedTasks, progress } = useMemo(() => {
