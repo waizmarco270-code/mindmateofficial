@@ -10,13 +10,13 @@ import { Checkbox } from '../ui/checkbox';
 import { useState, useMemo, useEffect } from 'react';
 import { Progress } from '../ui/progress';
 import { ScrollArea } from '../ui/scroll-area';
-import { TimeTracker } from '../tracker/time-tracker';
+import { TimeTracker, useTimeTracker } from '../tracker/time-tracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from '../ui/alert-dialog';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import RoadmapNexusView from './roadmap-nexus-view'; // Corrected Import
+import RoadmapNexusView from './roadmap-nexus-view';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
@@ -106,9 +106,29 @@ function ExamCountdown({ examDate }: { examDate: Date }) {
 }
 
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
-    const { toggleTaskCompletion } = useRoadmaps();
+    const { toggleTaskCompletion, logStudyTime } = useRoadmaps();
+    const { activeSubjectId, activeSubjectTime, currentSessionStart } = useTimeTracker();
     const [isCountdownActive, setIsCountdownActive] = useLocalStorage(`roadmap-countdown-active-${roadmap.id}`, false);
     const [activeView, setActiveView] = useLocalStorage<'timeline' | 'nexus'>(`roadmap-view-${roadmap.id}`, 'timeline');
+
+    // This effect logs study time for the active subject to the current roadmap.
+    useEffect(() => {
+      let interval: NodeJS.Timeout;
+      if (activeSubjectId && currentSessionStart) {
+        // Log time every 30 seconds
+        interval = setInterval(() => {
+          const now = new Date();
+          const start = new Date(currentSessionStart);
+          const duration = differenceInSeconds(now, start);
+          if (duration > 0) {
+            logStudyTime(roadmap.id, format(now, 'yyyy-MM-dd'), duration - (roadmap.dailyStudyTime?.[format(now, 'yyyy-MM-dd')] || 0));
+          }
+        }, 30000);
+      }
+      return () => {
+        if(interval) clearInterval(interval);
+      };
+    }, [activeSubjectId, currentSessionStart, roadmap.id, logStudyTime, roadmap.dailyStudyTime]);
 
 
     const { totalTasks, completedTasks, progress } = useMemo(() => {

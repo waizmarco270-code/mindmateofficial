@@ -21,7 +21,8 @@ import {
 import { format } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useVisibilityChange } from './use-visibility-change';
-import { useRoadmaps } from './use-roadmaps';
+import type { Roadmap } from './use-roadmaps';
+
 
 export interface Subject {
   id: string;
@@ -61,7 +62,6 @@ const THIRTY_MINUTES = 30 * 60 * 1000; // in milliseconds
 export function useTimeTracker() {
   const { user } = useUser();
   const { currentUserData, updateStudyTime } = useUsers();
-  const { selectedRoadmap, logStudyTime } = useRoadmaps();
   const todayString = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const [state, setState] = useState<TimeTrackerState>({
@@ -101,7 +101,7 @@ export function useTimeTracker() {
     return () => unsubscribe();
   }, [subjectsDocRef]);
   
-  // Subscribe to time sessions for ONLY the current user (for insights) AND all users (for leaderboard)
+  // Subscribe to time sessions for ALL users (for leaderboard)
   useEffect(() => {
     if (!user) {
         setSessions([]);
@@ -109,7 +109,6 @@ export function useTimeTracker() {
         return;
     }
 
-    // Fetch ALL sessions for the leaderboard
     const allSessionsQuery = query(collectionGroup(db, 'timeTrackerSessions'));
     const allPomodoroQuery = query(collectionGroup(db, 'pomodoroSessions'));
 
@@ -117,7 +116,6 @@ export function useTimeTracker() {
       const allUserSessions = snapshot.docs.map(doc => ({
           ...doc.data(),
           id: doc.id,
-          // This is a workaround for userId sometimes being missing in old data
           userId: doc.ref.parent.parent?.id || 'unknown'
         } as TimeSession));
       setSessions(allUserSessions);
@@ -202,7 +200,7 @@ export function useTimeTracker() {
 
   }, [user, currentUserData, updateStudyTime]);
 
-  const finishSession = useCallback(async (subjectId: string, startTime: string, endTimeOverride?: Date): Promise<number> => {
+  const finishSession = useCallback(async (subjectId: string, startTime: string, roadmapId?: string, endTimeOverride?: Date): Promise<number> => {
     if (!user) return 0;
     const allSessionsColRef = collection(db, 'users', user.id, 'timeTrackerSessions');
 
@@ -212,9 +210,8 @@ export function useTimeTracker() {
     const endTime = endTimeOverride || new Date();
     const duration = (endTime.getTime() - new Date(startTime).getTime()) / 1000;
 
-    if (duration < 1) return subject.timeTracked; // Ignore very short sessions, return existing time
-    
-    const roadmapId = selectedRoadmap?.id;
+    if (duration < 1) return subject.timeTracked;
+
     const newSession: Omit<TimeSession, 'id'> = {
         userId: user.id,
         subjectName: subject.name,
@@ -228,35 +225,24 @@ export function useTimeTracker() {
     const newTotalStudyTime = (currentUserData?.totalStudyTime || 0) + duration;
     await updateStudyTime(user.id, newTotalStudyTime);
     
-    if (roadmapId) {
-        await logStudyTime(roadmapId, format(new Date(startTime), 'yyyy-MM-dd'), duration);
-    }
-
     return subject.timeTracked + duration;
 
-  }, [user, state.subjects, selectedRoadmap, currentUserData, updateStudyTime, logStudyTime]);
+  }, [user, state.subjects, currentUserData, updateStudyTime]);
 
-  const handlePlayPause = useCallback(async (subjectId: string) => {
+  const handlePlayPause = useCallback(async (subjectId: string, roadmapId?: string) => {
     const nowISO = new Date().toISOString();
     
-    // Use a function form of setState to ensure we have the latest state
     setState(prevState => {
-        let currentSubjects = prevState.subjects;
-        
         // Pausing the current subject
         if (prevState.activeSubjectId === subjectId) {
             if(prevState.currentSessionStart) {
-                finishSession(subjectId, prevState.currentSessionStart).then(newTotalTime => {
-                    // This update will be reflected in the next snapshot, but we can optimistically update UI
-                });
+                finishSession(subjectId, prevState.currentSessionStart, roadmapId).then(newTotalTime => {});
             }
             return { ...prevState, activeSubjectId: null, currentSessionStart: null };
         } else {
           // Pausing previous and starting new
           if (prevState.activeSubjectId && prevState.currentSessionStart) {
-            finishSession(prevState.activeSubjectId, prevState.currentSessionStart).then(newTotalTime => {
-                // This update will be reflected in the next snapshot
-            });
+            finishSession(prevState.activeSubjectId, prevState.currentSessionStart, roadmapId).then(newTotalTime => {});
           }
           // Starting a new subject
           return { ...prevState, activeSubjectId: subjectId, currentSessionStart: nowISO };
@@ -264,15 +250,13 @@ export function useTimeTracker() {
     });
   }, [finishSession]);
 
-  // Auto-pause on background
   useVisibilityChange(() => {
     if (document.visibilityState === 'hidden' && state.activeSubjectId && state.currentSessionStart) {
       const hiddenTimestamp = Date.now();
       
       const handleVisibilityReturn = async () => {
         if (document.visibilityState === 'visible') {
-            const visibleTimestamp = Date.now();
-            if(visibleTimestamp - hiddenTimestamp > THIRTY_MINUTES) {
+            if(Date.now() - hiddenTimestamp > THIRTY_MINUTES) {
                 await handlePlayPause(state.activeSubjectId!);
             }
             window.removeEventListener('visibilitychange', handleVisibilityReturn);
