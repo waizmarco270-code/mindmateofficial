@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -16,7 +17,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from '../ui/alert-dialog';
-
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -105,7 +106,7 @@ function ExamCountdown({ examDate }: { examDate: Date }) {
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
     const { toggleTaskCompletion, logStudyTime } = useRoadmaps();
     const { activeSubjectId, currentSessionStart } = useTimeTracker();
-    const [isCountdownActive, setIsCountdownActive] = useState(false);
+    const [isCountdownActive, setIsCountdownActive] = useLocalStorage(`roadmap-countdown-active-${roadmap.id}`, false);
 
     // This effect logs study time for the active subject to the current roadmap.
     useEffect(() => {
@@ -116,18 +117,21 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
           const now = new Date();
           const start = new Date(currentSessionStart);
           const duration = differenceInSeconds(now, start);
-          const lastLogged = roadmap.dailyStudyTime?.[format(now, 'yyyy-MM-dd')] || 0;
-          const timeSinceLastLog = duration - lastLogged;
+          const dateKey = format(now, 'yyyy-MM-dd');
+          
+          // To prevent logging huge amounts of time if a session was left running,
+          // we only log small increments.
+          const timeSinceLastLog = duration % 30;
 
           if (timeSinceLastLog > 0) {
-            logStudyTime(roadmap.id, format(now, 'yyyy-MM-dd'), timeSinceLastLog);
+            logStudyTime(roadmap.id, dateKey, timeSinceLastLog);
           }
         }, 30000);
       }
       return () => {
         if(interval) clearInterval(interval);
       };
-    }, [activeSubjectId, currentSessionStart, roadmap.id, logStudyTime, roadmap.dailyStudyTime]);
+    }, [activeSubjectId, currentSessionStart, roadmap.id, logStudyTime]);
 
 
     const { totalTasks, completedTasks, progress } = useMemo(() => {
