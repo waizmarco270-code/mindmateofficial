@@ -147,6 +147,7 @@ export interface AppTheme {
 
 export interface AppSettings {
     marcoAiLaunchStatus: 'countdown' | 'live';
+    upiQrCode?: string; // base64 encoded image
 }
 
 export interface GlobalGift {
@@ -198,6 +199,26 @@ export interface FeatureShowcase {
     createdAt: Date;
 }
 
+export interface CreditPack {
+  id: string;
+  name: string;
+  credits: number;
+  price: number;
+  createdAt: Date;
+}
+
+export interface PurchaseRequest {
+  id: string;
+  userId: string;
+  userName: string;
+  packId: string;
+  packName: string;
+  credits: number;
+  price: number;
+  transactionId: string;
+  status: 'pending' | 'approved' | 'declined';
+  createdAt: Timestamp;
+}
 
 // ============================================================================
 //  CONTEXT DEFINITIONS
@@ -306,6 +327,16 @@ interface AppDataContextType {
     addFeatureShowcase: (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => Promise<void>;
     updateFeatureShowcase: (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => Promise<void>;
     deleteFeatureShowcase: (id: string) => Promise<void>;
+    
+    creditPacks: CreditPack[];
+    createCreditPack: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
+    updateCreditPack: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
+    deleteCreditPack: (id: string) => Promise<void>;
+
+    purchaseRequests: PurchaseRequest[];
+    createPurchaseRequest: (pack: CreditPack, transactionId: string) => Promise<void>;
+    approvePurchaseRequest: (request: PurchaseRequest) => Promise<void>;
+    declinePurchaseRequest: (requestId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -333,6 +364,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
     const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
     const [featureShowcases, setFeatureShowcases] = useState<FeatureShowcase[]>([]);
+    const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
+    const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
     const [loading, setLoading] = useState(true);
     
     const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
@@ -501,7 +534,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     id: doc.id,
                     ...data,
                     createdAt: data.createdAt, // Keep as Timestamp for some collections
-                    requestedAt: data.requestedAt, // Keep as Timestamp for some collections
                 };
             });
         };
@@ -517,6 +549,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const ticketsQuery = query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc'));
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
         const showcasesQuery = query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc'));
+        const creditPacksQuery = query(collection(db, 'creditPacks'), orderBy('price', 'asc'));
+        const purchaseRequestsQuery = query(collection(db, 'creditPurchaseRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
         const unsubResources = onSnapshot(resourcesQuery, (snapshot) => setResources(processSnapshot<Resource>(snapshot)));
@@ -536,7 +570,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             }
         });
         const unsubShowcases = onSnapshot(showcasesQuery, (snapshot) => setFeatureShowcases(processSnapshot<FeatureShowcase>(snapshot)));
-
+        const unsubCreditPacks = onSnapshot(creditPacksQuery, (snapshot) => setCreditPacks(processSnapshot<CreditPack>(snapshot)));
+        const unsubPurchaseRequests = onSnapshot(purchaseRequestsQuery, (snapshot) => setPurchaseRequests(processTimestampedSnapshot(snapshot)));
 
         return () => {
             unsubAnnouncements();
@@ -549,6 +584,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubTickets();
             unsubLocks();
             unsubShowcases();
+            unsubCreditPacks();
+            unsubPurchaseRequests();
         };
     }, []);
 
@@ -1361,6 +1398,46 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await deleteDoc(doc(db, 'featureShowcases', id));
     };
 
+    // Credit Pack Functions
+    const createCreditPack = async (pack: Omit<CreditPack, 'id' | 'createdAt'>) => {
+        await addDoc(collection(db, 'creditPacks'), { ...pack, createdAt: serverTimestamp() });
+    };
+    const updateCreditPack = async (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => {
+        await updateDoc(doc(db, 'creditPacks', id), data);
+    };
+    const deleteCreditPack = async (id: string) => {
+        await deleteDoc(doc(db, 'creditPacks', id));
+    };
+
+    // Purchase Request Functions
+    const createPurchaseRequest = async (pack: CreditPack, transactionId: string) => {
+        if (!currentUserData) throw new Error('User not logged in.');
+        await addDoc(collection(db, 'creditPurchaseRequests'), {
+            userId: currentUserData.uid,
+            userName: currentUserData.displayName,
+            packId: pack.id,
+            packName: pack.name,
+            credits: pack.credits,
+            price: pack.price,
+            transactionId,
+            status: 'pending',
+            createdAt: serverTimestamp(),
+        });
+    };
+    const approvePurchaseRequest = async (request: PurchaseRequest) => {
+        const batch = writeBatch(db);
+        const userRef = doc(db, 'users', request.userId);
+        const requestRef = doc(db, 'creditPurchaseRequests', request.id);
+        
+        batch.update(userRef, { credits: increment(request.credits) });
+        batch.update(requestRef, { status: 'approved' });
+
+        await batch.commit();
+    };
+    const declinePurchaseRequest = async (requestId: string) => {
+        await updateDoc(doc(db, 'creditPurchaseRequests', requestId), { status: 'declined' });
+    };
+
 
     // CONTEXT VALUE
     const value: AppDataContextType = {
@@ -1455,6 +1532,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addFeatureShowcase,
         updateFeatureShowcase,
         deleteFeatureShowcase,
+        creditPacks,
+        createCreditPack,
+        updateCreditPack,
+        deleteCreditPack,
+        purchaseRequests,
+        createPurchaseRequest,
+        approvePurchaseRequest,
+        declinePurchaseRequest,
     };
 
     return (

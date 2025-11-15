@@ -415,19 +415,19 @@ export default function SuperAdminPanelPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {purchaseRequests.map(req => (
+                                {purchaseRequests && purchaseRequests.map(req => (
                                     <TableRow key={req.id}>
                                         <TableCell>{req.userName}</TableCell>
                                         <TableCell>{req.packName} (+{req.credits} Credits)</TableCell>
                                         <TableCell className="font-mono">{req.transactionId}</TableCell>
-                                        <TableCell>{format(req.createdAt.toDate(), "d MMM, h:mm a")}</TableCell>
+                                        <TableCell>{req.createdAt ? format(req.createdAt.toDate(), "d MMM, h:mm a") : 'N/A'}</TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <Button variant="destructive" size="sm" onClick={() => declinePurchaseRequest(req.id)}>Decline</Button>
                                             <Button size="sm" onClick={() => approvePurchaseRequest(req)}>Approve</Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                {purchaseRequests.length === 0 && <TableRow><TableCell colSpan={5} className="h-24 text-center">No pending requests.</TableCell></TableRow>}
+                                {(!purchaseRequests || purchaseRequests.length === 0) && <TableRow><TableCell colSpan={5} className="h-24 text-center">No pending requests.</TableCell></TableRow>}
                             </TableBody>
                         </Table>
                     </CardContent>
@@ -440,7 +440,7 @@ export default function SuperAdminPanelPage() {
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                {creditPacks.map(pack => (
+                                {creditPacks && creditPacks.map(pack => (
                                     <div key={pack.id} className="flex items-center p-3 rounded-md bg-muted">
                                         <div className="flex-1">
                                             <p className="font-semibold">{pack.name}</p>
@@ -1224,4 +1224,3 @@ export default function SuperAdminPanelPage() {
     </div>
   );
 }
-

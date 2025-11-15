@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -29,6 +30,9 @@ export default function StorePage() {
         if (!selectedPack || !transactionId.trim() || !user) return;
         setIsSubmitting(true);
         try {
+            if (!createPurchaseRequest) {
+                throw new Error("Purchase functionality is not available.");
+            }
             await createPurchaseRequest(selectedPack, transactionId);
             toast({
                 title: "Request Submitted!",
