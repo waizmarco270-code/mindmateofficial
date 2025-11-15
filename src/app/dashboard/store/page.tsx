@@ -73,7 +73,7 @@ export default function StorePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
                     
-                    {!loading && creditPacks.map(pack => (
+                    {!loading && creditPacks && creditPacks.map(pack => (
                         <Card key={pack.id} className="flex flex-col">
                             <CardHeader className="text-center">
                                 <div className="mx-auto mb-4 h-16 w-16 flex items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-white">
@@ -96,7 +96,7 @@ export default function StorePage() {
                             </CardFooter>
                         </Card>
                     ))}
-                    {!loading && creditPacks.length === 0 && (
+                    {!loading && (!creditPacks || creditPacks.length === 0) && (
                         <Card className="md:col-span-2 lg:col-span-3 text-center py-16">
                             <CardContent>
                                 <p>No credit packs available at the moment. Please check back later.</p>
