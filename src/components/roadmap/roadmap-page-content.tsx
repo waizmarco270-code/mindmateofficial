@@ -105,9 +105,6 @@ export function RoadmapPageContent() {
             <div className="flex justify-between items-start">
                 <div>
                     <h2 className="text-2xl font-bold tracking-tight">Your Roadmaps</h2>
-                    <p className="text-muted-foreground">
-                        Your personalized plans for success. Select a roadmap to view or create a new one.
-                    </p>
                 </div>
                  <Button onClick={() => setIsTemplateDialogOpen(true)}>
                     <PlusCircle className="mr-2 h-4 w-4" /> Create New Roadmap

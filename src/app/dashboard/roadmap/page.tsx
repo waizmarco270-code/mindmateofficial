@@ -13,7 +13,7 @@ export default function RoadmapPage() {
                 <Map className="h-8 w-8 text-primary" />
                 Roadmap
             </h1>
-            <p className="text-muted-foreground">Plan your long-term success, set milestones, and track your progress towards your goals.</p>
+            <p className="text-muted-foreground">Plan your long-term success and track your progress.</p>
         </div>
         <RoadmapPageContent />
     </div>
