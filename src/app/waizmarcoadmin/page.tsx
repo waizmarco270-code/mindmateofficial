@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -25,6 +26,7 @@ import { Slider } from '@/components/ui/slider';
 import { lockableFeatures } from '@/lib/features';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogContent } from '@/components/ui/dialog';
+import Image from 'next/image';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -480,8 +482,8 @@ export default function SuperAdminPanelPage() {
                                         <TableCell className="font-mono">{req.transactionId}</TableCell>
                                         <TableCell>{req.createdAt ? format(req.createdAt.toDate(), "d MMM, h:mm a") : 'N/A'}</TableCell>
                                         <TableCell className="text-right space-x-2">
-                                            <Button variant="destructive" size="sm" onClick={() => declinePurchaseRequest(req.id)}>Decline</Button>
-                                            <Button size="sm" onClick={() => approvePurchaseRequest(req)}>Approve</Button>
+                                            <Button variant="destructive" size="sm" onClick={() => declinePurchaseRequest && declinePurchaseRequest(req.id)}>Decline</Button>
+                                            <Button size="sm" onClick={() => approvePurchaseRequest && approvePurchaseRequest(req)}>Approve</Button>
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -566,9 +568,13 @@ export default function SuperAdminPanelPage() {
                             <CardDescription>Upload the QR code for payments.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {appSettings?.upiQrCode && (
+                            {appSettings?.upiQrCode ? (
                                 <div className="p-2 border bg-white rounded-lg w-48 h-48 mx-auto">
                                     <Image src={appSettings.upiQrCode} alt="Current UPI QR Code" className="w-full h-full object-contain" width={192} height={192} />
+                                </div>
+                            ) : (
+                                <div className="p-2 border bg-white rounded-lg w-48 h-48 mx-auto flex items-center justify-center">
+                                    <ImageIcon className="h-10 w-10 text-muted-foreground"/>
                                 </div>
                             )}
                             <div className="space-y-2">
