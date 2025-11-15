@@ -1,9 +1,9 @@
 
+
 'use client';
 
 import { NexusView } from '@/components/schedule/nexus-view';
 import { TodoList } from '@/components/todos/todo-list';
-import { RoadmapPageContent } from '@/components/roadmap/roadmap-page-content';
 import { useState } from 'react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, ListTodo, Map, ArrowLeft } from 'lucide-react';
@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
-type NexusView = 'grid' | 'nexus' | 'todos' | 'roadmap';
+type NexusView = 'grid' | 'nexus' | 'todos';
 
 const featureCards = [
     {
@@ -28,13 +28,6 @@ const featureCards = [
         icon: ListTodo,
         color: 'from-amber-500 to-orange-500 shadow-orange-500/30'
     },
-    {
-        id: 'roadmap',
-        title: 'Roadmap',
-        description: 'Plan your long-term success.',
-        icon: Map,
-        color: 'from-green-500 to-teal-500 shadow-green-500/30'
-    }
 ]
 
 export default function SchedulePage() {
@@ -65,10 +58,6 @@ export default function SchedulePage() {
             content = <TodoList />;
             title = "Daily To-Do List";
             description = "Manage your day-to-day tasks.";
-        } else { // roadmap
-            content = <RoadmapPageContent />;
-            title = "Roadmap";
-            description = "Plan your long-term success.";
         }
 
         return (

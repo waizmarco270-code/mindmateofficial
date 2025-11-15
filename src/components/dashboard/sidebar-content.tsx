@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -53,6 +54,10 @@ const mainNavItems = [
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
 ];
+
+const planningNav = [
+  { href: '/dashboard/roadmap', icon: Map, label: 'Roadmap', glow: 'text-orange-400' },
+]
 
 const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
@@ -182,7 +187,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
+          defaultValue={['main-tools', 'planning', 'compete-earn', 'community-resources']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -194,6 +199,15 @@ export default function SidebarContent() {
             </AccordionContent>
           </AccordionItem>
         
+          <AccordionItem value="planning" className="border-b-0">
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+              Planning
+            </AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">
+              {renderNavLinks(planningNav as any)}
+            </AccordionContent>
+          </AccordionItem>
+
           <AccordionItem value="community-resources" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
               Community & Resources
@@ -215,42 +229,6 @@ export default function SidebarContent() {
       </div>
 
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
-          {isSuperAdmin && (
-             <Link
-                href="/dashboard/dev"
-                prefetch={true}
-                className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-                    isActive('/dashboard/dev') 
-                        ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                        : 'hover:text-primary',
-                )}
-            >
-                <div className={cn(
-                    "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-                    isActive('/dashboard/dev') ? "bg-primary" : "group-hover:scale-y-50"
-                )}></div>
-                <Fingerprint className="h-5 w-5 text-red-400" />
-                <span className="flex-1">Dev Explorer</span>
-            </Link>
-          )}
-          <Link
-                href="/dashboard/whats-new"
-                prefetch={true}
-                className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-                    isActive('/dashboard/whats-new') 
-                        ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                        : 'hover:text-primary',
-                )}
-            >
-                <div className={cn(
-                    "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-                    isActive('/dashboard/whats-new') ? "bg-primary" : "group-hover:scale-y-50"
-                )}></div>
-                <Megaphone className="h-5 w-5" />
-                <span className="flex-1">What's New</span>
-            </Link>
           <Link
                 href="/dashboard/settings"
                 prefetch={true}
