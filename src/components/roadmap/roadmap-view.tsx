@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -121,8 +122,11 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
           const now = new Date();
           const start = new Date(currentSessionStart);
           const duration = differenceInSeconds(now, start);
-          if (duration > 0) {
-            logStudyTime(roadmap.id, format(now, 'yyyy-MM-dd'), duration - (roadmap.dailyStudyTime?.[format(now, 'yyyy-MM-dd')] || 0));
+          const lastLogged = roadmap.dailyStudyTime?.[format(now, 'yyyy-MM-dd')] || 0;
+          const timeSinceLastLog = duration - lastLogged;
+
+          if (timeSinceLastLog > 0) {
+            logStudyTime(roadmap.id, format(now, 'yyyy-MM-dd'), timeSinceLastLog);
           }
         }, 30000);
       }

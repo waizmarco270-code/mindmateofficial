@@ -57,7 +57,7 @@ const CategoryNode = ({ category, layout, onClick }: { category: RoadmapCategory
     );
 };
 
-export function RoadmapNexusView({ roadmap }: RoadmapNexusViewProps) {
+export default function RoadmapNexusView({ roadmap }: RoadmapNexusViewProps) {
     const [selectedMilestone, setSelectedMilestone] = useState<RoadmapMilestone | null>(null);
     const [selectedCategory, setSelectedCategory] = useState<RoadmapCategory | null>(null);
 
