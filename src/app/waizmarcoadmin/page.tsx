@@ -1,12 +1,10 @@
-
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate, type CreditPack } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate, type CreditPack, type StoreItem } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -17,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -60,6 +58,10 @@ export default function SuperAdminPanelPage() {
     createCreditPack,
     updateCreditPack,
     deleteCreditPack,
+    storeItems,
+    createStoreItem,
+    updateStoreItem,
+    deleteStoreItem,
     purchaseRequests,
     approvePurchaseRequest,
     declinePurchaseRequest,
@@ -103,6 +105,16 @@ export default function SuperAdminPanelPage() {
   const [packName, setPackName] = useState('');
   const [packCredits, setPackCredits] = useState(100);
   const [packPrice, setPackPrice] = useState(10);
+
+  // State for Store Items
+  const [isStoreItemDialogOpen, setIsStoreItemDialogOpen] = useState(false);
+  const [editingStoreItem, setEditingStoreItem] = useState<StoreItem | null>(null);
+  const [itemName, setItemName] = useState('');
+  const [itemDescription, setItemDescription] = useState('');
+  const [itemCost, setItemCost] = useState(100);
+  const [itemType, setItemType] = useState<StoreItem['type']>('scratch-card');
+  const [itemQuantity, setItemQuantity] = useState(1);
+
 
   useEffect(() => {
     // Initialize local costs state when featureLocks are loaded
@@ -329,6 +341,7 @@ export default function SuperAdminPanelPage() {
     };
 
     const handleSavePack = async () => {
+        if (!createCreditPack || !updateCreditPack) return;
         if (!packName.trim() || packCredits <= 0 || packPrice < 0) {
             toast({ variant: 'destructive', title: 'Invalid input for credit pack.' });
             return;
@@ -358,6 +371,51 @@ export default function SuperAdminPanelPage() {
         };
         reader.readAsDataURL(file);
     };
+    
+    const openStoreItemDialog = (item: StoreItem | null) => {
+        if (item) {
+            setEditingStoreItem(item);
+            setItemName(item.name);
+            setItemDescription(item.description);
+            setItemCost(item.cost);
+            setItemType(item.type);
+            setItemQuantity(item.quantity);
+        } else {
+            setEditingStoreItem(null);
+            setItemName('');
+            setItemDescription('');
+            setItemCost(100);
+            setItemType('scratch-card');
+            setItemQuantity(1);
+        }
+        setIsStoreItemDialogOpen(true);
+    }
+
+    const handleSaveStoreItem = async () => {
+        if (!createStoreItem || !updateStoreItem) return;
+        if (!itemName.trim() || itemCost <= 0 || itemQuantity <= 0) {
+            toast({ variant: 'destructive', title: 'Invalid input for store item.'});
+            return;
+        }
+
+        const itemData = {
+            name: itemName,
+            description: itemDescription,
+            cost: itemCost,
+            type: itemType,
+            quantity: itemQuantity,
+        };
+
+        if (editingStoreItem) {
+            await updateStoreItem(editingStoreItem.id, itemData);
+            toast({ title: "Store Item Updated" });
+        } else {
+            await createStoreItem(itemData);
+            toast({ title: "Store Item Created" });
+        }
+        setIsStoreItemDialogOpen(false);
+    };
+
 
 
   if (!isSuperAdmin) {
@@ -393,7 +451,7 @@ export default function SuperAdminPanelPage() {
                 <ShoppingCart className="h-6 w-6 text-primary" />
                 <div>
                   <h3 className="text-lg font-semibold">Store Management</h3>
-                  <p className="text-sm text-muted-foreground text-left">Manage credit packs and approve purchase requests.</p>
+                  <p className="text-sm text-muted-foreground text-left">Manage credit packs, store items, and approve purchase requests.</p>
                 </div>
               </div>
             </AccordionTrigger>
@@ -432,11 +490,11 @@ export default function SuperAdminPanelPage() {
                         </Table>
                     </CardContent>
                  </Card>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                      <Card>
                         <CardHeader>
                             <CardTitle>Manage Credit Packs</CardTitle>
-                            <CardDescription>Add, edit, or delete the credit packs available in the store.</CardDescription>
+                            <CardDescription>Manage packs for buying credits with real money.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
@@ -460,25 +518,57 @@ export default function SuperAdminPanelPage() {
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={() => deleteCreditPack(pack.id)}>Delete</AlertDialogAction>
+                                                    <AlertDialogAction onClick={() => deleteCreditPack && deleteCreditPack(pack.id)}>Delete</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </div>
                                 ))}
                             </div>
-                            <Button className="w-full" onClick={() => openPackDialog(null)}>Add New Pack</Button>
+                            <Button className="w-full" onClick={() => openPackDialog(null)}>Add New Credit Pack</Button>
                         </CardContent>
                      </Card>
                       <Card>
                         <CardHeader>
+                            <CardTitle>Manage Redeemable Items</CardTitle>
+                            <CardDescription>Manage items users can buy with credits.</CardDescription>
+                        </CardHeader>
+                         <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                {storeItems && storeItems.map(item => (
+                                    <div key={item.id} className="flex items-center p-3 rounded-md bg-muted">
+                                        <div className="flex-1">
+                                            <p className="font-semibold">{item.name}</p>
+                                            <p className="text-sm text-muted-foreground">
+                                                {item.cost} Credits
+                                            </p>
+                                        </div>
+                                        <Button variant="ghost" size="icon" onClick={() => openStoreItemDialog(item)}><Edit className="h-4 w-4"/></Button>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader><AlertDialogTitle>Delete this item?</AlertDialogTitle></AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={() => deleteStoreItem && deleteStoreItem(item.id)}>Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                ))}
+                            </div>
+                             <Button className="w-full" onClick={() => openStoreItemDialog(null)}>Add New Item</Button>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
                             <CardTitle>Manage UPI QR Code</CardTitle>
-                            <CardDescription>Upload the QR code image that users will see for payments.</CardDescription>
+                            <CardDescription>Upload the QR code for payments.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {appSettings?.upiQrCode && (
                                 <div className="p-2 border bg-white rounded-lg w-48 h-48 mx-auto">
-                                    <img src={appSettings.upiQrCode} alt="Current UPI QR Code" className="w-full h-full object-contain" />
+                                    <Image src={appSettings.upiQrCode} alt="Current UPI QR Code" className="w-full h-full object-contain" width={192} height={192} />
                                 </div>
                             )}
                             <div className="space-y-2">
@@ -1218,6 +1308,47 @@ export default function SuperAdminPanelPage() {
                 <DialogFooter>
                     <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                     <Button onClick={handleSavePack}>{editingPack ? 'Save Changes' : 'Create Pack'}</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+         <Dialog open={isStoreItemDialogOpen} onOpenChange={setIsStoreItemDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Store Item</DialogTitle>
+                </DialogHeader>
+                 <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="item-name">Item Name</Label>
+                        <Input id="item-name" value={itemName} onChange={e => setItemName(e.target.value)} />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="item-description">Description</Label>
+                        <Textarea id="item-description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="item-cost">Cost (Credits)</Label>
+                            <Input id="item-cost" type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="item-type">Item Type</Label>
+                            <Select value={itemType} onValueChange={(v: StoreItem['type']) => setItemType(v)}>
+                                <SelectTrigger id="item-type"><SelectValue/></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="scratch-card">Scratch Card</SelectItem>
+                                    <SelectItem value="card-flip">Card Flip Play</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="item-quantity">Quantity</Label>
+                        <Input id="item-quantity" type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))} />
+                    </div>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                    <Button onClick={handleSaveStoreItem}>{editingStoreItem ? 'Save Changes' : 'Create Item'}</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

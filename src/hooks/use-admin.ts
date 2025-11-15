@@ -1,5 +1,3 @@
-
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -220,6 +218,17 @@ export interface PurchaseRequest {
   createdAt: Timestamp;
 }
 
+export interface StoreItem {
+    id: string;
+    name: string;
+    description: string;
+    cost: number;
+    type: 'scratch-card' | 'card-flip';
+    quantity: number;
+    createdAt: Date;
+}
+
+
 // ============================================================================
 //  CONTEXT DEFINITIONS
 // ============================================================================
@@ -329,14 +338,20 @@ interface AppDataContextType {
     deleteFeatureShowcase: (id: string) => Promise<void>;
     
     creditPacks: CreditPack[];
-    createCreditPack: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
-    updateCreditPack: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
-    deleteCreditPack: (id: string) => Promise<void>;
+    createCreditPack?: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
+    updateCreditPack?: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
+    deleteCreditPack?: (id: string) => Promise<void>;
 
-    purchaseRequests: PurchaseRequest[];
-    createPurchaseRequest: (pack: CreditPack, transactionId: string) => Promise<void>;
-    approvePurchaseRequest: (request: PurchaseRequest) => Promise<void>;
-    declinePurchaseRequest: (requestId: string) => Promise<void>;
+    purchaseRequests?: PurchaseRequest[];
+    createPurchaseRequest?: (pack: CreditPack, transactionId: string) => Promise<void>;
+    approvePurchaseRequest?: (request: PurchaseRequest) => Promise<void>;
+    declinePurchaseRequest?: (requestId: string) => Promise<void>;
+    
+    storeItems?: StoreItem[];
+    createStoreItem?: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
+    updateStoreItem?: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
+    deleteStoreItem?: (id: string) => Promise<void>;
+    redeemStoreItem?: (item: StoreItem) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -365,6 +380,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
     const [featureShowcases, setFeatureShowcases] = useState<FeatureShowcase[]>([]);
     const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
+    const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
     const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
     const [loading, setLoading] = useState(true);
     
@@ -550,6 +566,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const featureLocksRef = doc(db, 'appConfig', 'featureLocks');
         const showcasesQuery = query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc'));
         const creditPacksQuery = query(collection(db, 'creditPacks'), orderBy('price', 'asc'));
+        const storeItemsQuery = query(collection(db, 'storeItems'), orderBy('cost', 'asc'));
         const purchaseRequestsQuery = query(collection(db, 'creditPurchaseRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'asc'));
 
         const unsubAnnouncements = onSnapshot(announcementsQuery, (snapshot) => setAnnouncements(processSnapshot<Announcement>(snapshot)));
@@ -571,6 +588,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
         const unsubShowcases = onSnapshot(showcasesQuery, (snapshot) => setFeatureShowcases(processSnapshot<FeatureShowcase>(snapshot)));
         const unsubCreditPacks = onSnapshot(creditPacksQuery, (snapshot) => setCreditPacks(processSnapshot<CreditPack>(snapshot)));
+        const unsubStoreItems = onSnapshot(storeItemsQuery, (snapshot) => setStoreItems(processSnapshot<StoreItem>(snapshot)));
         const unsubPurchaseRequests = onSnapshot(purchaseRequestsQuery, (snapshot) => setPurchaseRequests(processTimestampedSnapshot(snapshot)));
 
         return () => {
@@ -585,6 +603,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             unsubLocks();
             unsubShowcases();
             unsubCreditPacks();
+            unsubStoreItems();
             unsubPurchaseRequests();
         };
     }, []);
@@ -1438,6 +1457,43 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(doc(db, 'creditPurchaseRequests', requestId), { status: 'declined' });
     }, []);
 
+    // Store Item Functions
+    const createStoreItem = useCallback(async (item: Omit<StoreItem, 'id'|'createdAt'>) => {
+        await addDoc(collection(db, 'storeItems'), { ...item, createdAt: serverTimestamp() });
+    }, []);
+    const updateStoreItem = useCallback(async (id: string, data: Partial<Omit<StoreItem, 'id'|'createdAt'>>) => {
+        await updateDoc(doc(db, 'storeItems', id), data);
+    }, []);
+    const deleteStoreItem = useCallback(async (id: string) => {
+        await deleteDoc(doc(db, 'storeItems', id));
+    }, []);
+    
+    const redeemStoreItem = useCallback(async (item: StoreItem) => {
+        if (!authUser || !currentUserData) throw new Error("You must be logged in.");
+
+        const hasMasterCard = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
+        if (!hasMasterCard && currentUserData.credits < item.cost) {
+            throw new Error("Insufficient credits.");
+        }
+
+        const userRef = doc(db, 'users', authUser.id);
+        const batch = writeBatch(db);
+        
+        if (!hasMasterCard) {
+            batch.update(userRef, { credits: increment(-item.cost) });
+        }
+
+        if (item.type === 'scratch-card') {
+            batch.update(userRef, { freeRewards: increment(item.quantity) });
+        } else if (item.type === 'card-flip') {
+            batch.update(userRef, { freeGuesses: increment(item.quantity) });
+        }
+
+        await batch.commit();
+
+    }, [authUser, currentUserData]);
+
 
     // CONTEXT VALUE
     const value: AppDataContextType = {
@@ -1540,6 +1596,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         createPurchaseRequest,
         approvePurchaseRequest,
         declinePurchaseRequest,
+        storeItems,
+        createStoreItem,
+        updateStoreItem,
+        deleteStoreItem,
+        redeemStoreItem,
     };
 
     return (
@@ -1597,5 +1658,3 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
