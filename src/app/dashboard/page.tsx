@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -26,6 +26,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Badge } from '@/components/ui/badge';
 import versionHistory from '@/app/lib/version-history.json';
 import { useLocalStorage } from '@/hooks/use-local-storage';
+import { usePinnedPage } from '@/hooks/use-pinned-page';
+import { useRouter, usePathname } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
+
 
 const LATEST_VERSION = versionHistory[0].version;
 
@@ -240,79 +244,37 @@ function UserBadgeDisplay() {
     )
 }
 
-function WhatsNewDialog({ isOpen, onOpenChange, onNavigate }: { isOpen: boolean, onOpenChange: (open: boolean) => void, onNavigate: () => void }) {
-    const latestVersionInfo = versionHistory[0];
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-md">
-                <DialogHeader>
-                    <div className="flex justify-center mb-4">
-                        <motion.div
-                            animate={{ y: [0, -10, 0], scale: [1, 1.1, 1], rotate: [0, 5, -5, 0] }}
-                            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                            className="p-4 bg-primary/10 rounded-full"
-                        >
-                            <Megaphone className="h-10 w-10 text-primary" />
-                        </motion.div>
-                    </div>
-                    <DialogTitle className="text-center text-2xl font-bold">Welcome to Version {LATEST_VERSION}!</DialogTitle>
-                    <DialogDescription className="text-center">
-                        The "{latestVersionInfo.title}" is here. Check out what's new.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="my-6">
-                    <ul className="space-y-2 text-sm">
-                        {latestVersionInfo.changes.slice(0, 3).map((change, index) => (
-                            <li key={index} className="flex items-start gap-2">
-                                <SparklesIcon className="h-4 w-4 text-yellow-500 mt-0.5 flex-shrink-0" />
-                                <span>{change}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-                <DialogFooter>
-                     <Button onClick={onNavigate} className="w-full">
-                        See All Updates <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    )
-}
-
-
 export default function DashboardPage() {
     const { user } = useUser();
+    const router = useRouter();
+    const pathname = usePathname();
+    const { pinnedPage } = usePinnedPage();
     const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
-    const [lastSeenVersion, setLastSeenVersion] = useLocalStorage('lastSeenVersion', '0.0');
-    
-    const [isWhatsNewOpen, setIsWhatsNewOpen] = useState(false);
     
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
-    
+    const [isRedirecting, setIsRedirecting] = useState(true);
 
     useEffect(() => {
-        if (currentUserData && lastSeenVersion !== LATEST_VERSION) {
-            // Delay showing the "What's New" popup a bit to not overwhelm the user
-            const timer = setTimeout(() => {
-                setIsWhatsNewOpen(true);
-            }, 2000);
-            return () => clearTimeout(timer);
+        if (pinnedPage && pathname === '/dashboard') {
+            router.replace(pinnedPage);
+        } else {
+            setIsRedirecting(false);
         }
-    }, [currentUserData, lastSeenVersion]);
-
-    const handleNavigateToWhatsNew = () => {
-        setLastSeenVersion(LATEST_VERSION);
-        setIsWhatsNewOpen(false);
-        // This should be a router navigation in a real app
-        window.location.href = '/dashboard/whats-new';
-    };
+    }, [pinnedPage, pathname, router]);
 
     const credits = currentUserData?.credits ?? 0;
     const streak = currentUserData?.streak ?? 0;
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
+    if (isRedirecting) {
+        return (
+            <div className="flex h-full w-full items-center justify-center">
+                <Loader2 className="h-10 w-10 animate-spin" />
+            </div>
+        );
+    }
+    
 
     return (
     <div className="space-y-8">
@@ -320,10 +282,6 @@ export default function DashboardPage() {
             <WelcomeDialog />
         </SignedOut>
         
-        <SignedIn>
-            <WhatsNewDialog isOpen={isWhatsNewOpen} onOpenChange={setIsWhatsNewOpen} onNavigate={handleNavigateToWhatsNew} />
-        </SignedIn>
-
         <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
             <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
@@ -443,6 +401,7 @@ export default function DashboardPage() {
                                     { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
                                     { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
                                     { title: 'MM Nexus', href: '/dashboard/schedule', icon: Calendar, glow: 'text-blue-400' },
+                                    { title: 'Roadmap', href: '/dashboard/roadmap', icon: Map, glow: 'text-orange-400' },
                                     { title: 'Resources', href: '/dashboard/resources', icon: BookOpen, glow: 'text-orange-400' },
                                     { title: 'Game Zone', href: '/dashboard/game-zone', icon: Gamepad2, glow: 'text-rose-400' },
                                     { title: 'World Chat', href: '/dashboard/world', icon: Globe, glow: 'text-blue-400' },
@@ -451,6 +410,7 @@ export default function DashboardPage() {
                                     { title: 'Invite & Earn', href: '/dashboard/refer', icon: UserPlus, glow: 'text-green-400' },
                                     { title: 'Tools', href: '/dashboard/tools', icon: Wrench, glow: 'text-lime-400' },
                                     { title: 'Profile', href: '/dashboard/profile', icon: User, glow: 'text-teal-400' },
+                                    { title: 'Settings', href: '/dashboard/settings', icon: 'settings', glow: 'text-slate-400' },
                                 ].map(tool => (
                                     <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
                                          <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">

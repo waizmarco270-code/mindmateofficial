@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -15,6 +14,8 @@ import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import { useUnreadMessages } from '@/hooks/use-unread';
 import { Badge } from '../ui/badge';
+import { usePinnedPage } from '@/hooks/use-pinned-page';
+import { usePathname } from 'next/navigation';
 
 
 function AnnouncementInbox() {
@@ -129,7 +130,20 @@ export default function Header() {
   const { setOpenMobile } = useSidebar();
   const { user, isLoaded } = useUser();
   const { currentUserData } = useUsers();
+  const { pinnedPage, setPinnedPage } = usePinnedPage();
+  const pathname = usePathname();
   
+  const isCurrentPagePinned = pinnedPage === pathname;
+
+  const handlePinToggle = () => {
+    if (isCurrentPagePinned) {
+      setPinnedPage(null); // Unpin
+    } else {
+      setPinnedPage(pathname); // Pin current page
+    }
+  };
+
+
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
   const streak = currentUserData?.streak ?? 0;
@@ -216,6 +230,16 @@ export default function Header() {
                 </Popover>
                 
                 <AnnouncementInbox />
+
+                <Button 
+                    variant="outline" 
+                    size="icon" 
+                    onClick={handlePinToggle}
+                    className={cn("h-10 w-10 rounded-full", isCurrentPagePinned && "bg-primary text-primary-foreground hover:bg-primary/90")}
+                    title={isCurrentPagePinned ? "Unpin this page" : "Pin this as your start page"}
+                >
+                    {isCurrentPagePinned ? <PinOff className="h-5 w-5" /> : <Pin className="h-5 w-5" />}
+                </Button>
 
                 <UserButton afterSignOutUrl="/" appearance={{
                     elements: {
