@@ -57,6 +57,7 @@ export default function RootLayout({
             <Analytics />
             <PWAInstallPrompt />
           </ThemeProvider>
+          <script type='text/javascript' src='//pl28059856.effectivegatecpm.com/e8/de/1d/e8de1db75ad4d8edc513827078e7ad34.js'></script>
         </body>
       </html>
     </ClerkProvider>
