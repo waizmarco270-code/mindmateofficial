@@ -1,10 +1,9 @@
 
-
 'use client';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play, Trash2, AlertTriangle, X, Timeline, GitGraph } from 'lucide-react';
+import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play, Trash2, AlertTriangle, X } from 'lucide-react';
 import { addDays, format, isPast, isToday, endOfWeek, startOfWeek, differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
@@ -17,10 +16,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from '../ui/alert-dialog';
-import { useLocalStorage } from '@/hooks/use-local-storage';
-import RoadmapNexusView from './roadmap-nexus-view';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 
 
 const formatTime = (seconds: number) => {
@@ -110,8 +105,7 @@ function ExamCountdown({ examDate }: { examDate: Date }) {
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
     const { toggleTaskCompletion, logStudyTime } = useRoadmaps();
     const { activeSubjectId, currentSessionStart } = useTimeTracker();
-    const [isCountdownActive, setIsCountdownActive] = useLocalStorage(`roadmap-countdown-active-${roadmap.id}`, false);
-    const [activeView, setActiveView] = useLocalStorage<'timeline' | 'nexus'>(`roadmap-view-${roadmap.id}`, 'timeline');
+    const [isCountdownActive, setIsCountdownActive] = useState(false);
 
     // This effect logs study time for the active subject to the current roadmap.
     useEffect(() => {
@@ -218,145 +212,132 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
             
             {/* Right Panel - Timeline */}
             <Card className="lg:col-span-8 h-full flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <CardTitle>Roadmap View</CardTitle>
-                    <div className="flex items-center space-x-2">
-                        <Label htmlFor="view-toggle" className="flex items-center gap-2 text-sm font-normal">
-                            <Timeline /> Timeline
-                        </Label>
-                        <Switch id="view-toggle" checked={activeView === 'nexus'} onCheckedChange={(checked) => setActiveView(checked ? 'nexus' : 'timeline')} />
-                        <Label htmlFor="view-toggle" className="flex items-center gap-2 text-sm font-normal">
-                           Nexus <GitGraph />
-                        </Label>
-                    </div>
+                <CardHeader>
+                    <CardTitle>Roadmap Timeline</CardTitle>
                 </CardHeader>
                 <CardContent className="flex-1 overflow-hidden">
-                    {activeView === 'timeline' ? (
-                         <ScrollArea className="h-full pr-6">
-                            <div className="space-y-8">
-                                {Array.from({ length: roadmap.duration }).map((_, i) => {
-                                    const dayNumber = i + 1;
-                                    const dayMilestone = roadmap.milestones.find(m => m.day === dayNumber);
-                                    const dayDate = addDays(startDate, i);
-                                    const dateKey = format(dayDate, 'yyyy-MM-dd');
-                                    const timeTrackedToday = roadmap.dailyStudyTime?.[dateKey] || 0;
-                                    
-                                    const isDayPast = isPast(dayDate) && !isToday(dayDate);
-                                    const isDayToday = isToday(dayDate);
+                    <ScrollArea className="h-full pr-6">
+                        <div className="space-y-8">
+                            {Array.from({ length: roadmap.duration }).map((_, i) => {
+                                const dayNumber = i + 1;
+                                const dayMilestone = roadmap.milestones.find(m => m.day === dayNumber);
+                                const dayDate = addDays(startDate, i);
+                                const dateKey = format(dayDate, 'yyyy-MM-dd');
+                                const timeTrackedToday = roadmap.dailyStudyTime?.[dateKey] || 0;
+                                
+                                const isDayPast = isPast(dayDate) && !isToday(dayDate);
+                                const isDayToday = isToday(dayDate);
 
-                                    const tasksForDay = dayMilestone?.categories.flatMap(c => c.tasks) || [];
-                                    const allTasksCompleted = tasksForDay.length > 0 && tasksForDay.every(t => t.completed);
-                                    const isFailedDay = isDayPast && tasksForDay.length > 0 && !allTasksCompleted;
-                                    
-                                    // Weekly Reflection Logic
-                                    const isEndOfWeek = dayDate.getDay() === 0; // Sunday
-                                    const weekStartDate = startOfWeek(dayDate, { weekStartsOn: 1 });
-                                    const weekStartDateKey = format(weekStartDate, 'yyyy-MM-dd');
-                                    const reflection = roadmap.weeklyReflections?.[weekStartDateKey];
-                                    const showReflectionPrompt = isEndOfWeek && isDayPast && !reflection;
+                                const tasksForDay = dayMilestone?.categories.flatMap(c => c.tasks) || [];
+                                const allTasksCompleted = tasksForDay.length > 0 && tasksForDay.every(t => t.completed);
+                                const isFailedDay = isDayPast && tasksForDay.length > 0 && !allTasksCompleted;
+                                
+                                // Weekly Reflection Logic
+                                const isEndOfWeek = dayDate.getDay() === 0; // Sunday
+                                const weekStartDate = startOfWeek(dayDate, { weekStartsOn: 1 });
+                                const weekStartDateKey = format(weekStartDate, 'yyyy-MM-dd');
+                                const reflection = roadmap.weeklyReflections?.[weekStartDateKey];
+                                const showReflectionPrompt = isEndOfWeek && isDayPast && !reflection;
 
-                                    return (
-                                        <div key={dayNumber} className="flex gap-4 sm:gap-6">
-                                            <div className="flex flex-col items-center">
-                                                <div className={cn(
-                                                    "flex h-12 w-12 items-center justify-center rounded-full border-2 font-bold text-lg",
-                                                    isDayToday ? "bg-primary text-primary-foreground border-primary" :
-                                                    allTasksCompleted ? "bg-green-500/20 border-green-500 text-green-500" :
-                                                    isFailedDay ? "bg-destructive/20 border-destructive text-destructive" :
-                                                    isDayPast ? "bg-muted border-dashed" : "bg-muted/50"
-                                                )}>
-                                                    {allTasksCompleted ? <CheckCircle className="h-6 w-6"/> : isFailedDay ? <X className="h-6 w-6"/> : dayNumber}
-                                                </div>
-                                                <div className="w-0.5 flex-1 bg-border my-2"></div>
+                                return (
+                                    <div key={dayNumber} className="flex gap-4 sm:gap-6">
+                                        <div className="flex flex-col items-center">
+                                            <div className={cn(
+                                                "flex h-12 w-12 items-center justify-center rounded-full border-2 font-bold text-lg",
+                                                isDayToday ? "bg-primary text-primary-foreground border-primary" :
+                                                allTasksCompleted ? "bg-green-500/20 border-green-500 text-green-500" :
+                                                isFailedDay ? "bg-destructive/20 border-destructive text-destructive" :
+                                                isDayPast ? "bg-muted border-dashed" : "bg-muted/50"
+                                            )}>
+                                                {allTasksCompleted ? <CheckCircle className="h-6 w-6"/> : isFailedDay ? <X className="h-6 w-6"/> : dayNumber}
                                             </div>
-                                            <div className="flex-1 pb-8">
-                                                <div className="flex justify-between items-start">
-                                                     <p className="font-semibold text-muted-foreground">{format(dayDate, 'EEEE, d MMMM')}</p>
-                                                     {timeTrackedToday > 0 && (
-                                                         <div className="flex items-center gap-1.5 text-sm font-semibold text-primary">
-                                                            <Clock className="h-4 w-4"/>
-                                                            <span>{formatTime(timeTrackedToday)}</span>
-                                                         </div>
-                                                     )}
-                                                </div>
-                                                <div className="space-y-4 mt-2">
-                                                    {dayMilestone && dayMilestone.categories.length > 0 ? (
-                                                        dayMilestone.categories.map(category => (
-                                                            <Card key={category.id} className="overflow-hidden bg-background">
-                                                                <div className="p-3 border-b flex items-center gap-3" style={{ borderLeft: `4px solid ${category.color}` }}>
-                                                                    <h4 className="font-semibold">{category.title}</h4>
-                                                                </div>
-                                                                <div className="p-3 space-y-3">
-                                                                    {category.tasks.map(task => (
-                                                                        <div key={task.id} className="flex items-center gap-3">
-                                                                            <Checkbox
-                                                                                id={task.id}
-                                                                                checked={task.completed}
-                                                                                onCheckedChange={() => toggleTaskCompletion(roadmap.id, dayNumber, category.id, task.id)}
-                                                                            />
-                                                                            <label
-                                                                                htmlFor={task.id}
-                                                                                className={cn("text-sm", task.completed && "line-through text-muted-foreground")}
-                                                                            >
-                                                                                {task.text}
-                                                                            </label>
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </Card>
-                                                        ))
-                                                    ) : (
-                                                        <p className="text-sm text-muted-foreground italic">No tasks planned for this day.</p>
-                                                    )}
-                                                    {showReflectionPrompt && (
-                                                        <Dialog>
-                                                            <DialogTrigger asChild>
-                                                                <Button variant="outline" className="w-full">
-                                                                    <MessageSquare className="mr-2 h-4 w-4" /> Add Weekly Reflection
-                                                                </Button>
-                                                            </DialogTrigger>
-                                                            <DialogContent>
-                                                                <DialogHeader>
-                                                                    <DialogTitle>Reflection for Week Ending {format(dayDate, 'd MMM')}</DialogTitle>
-                                                                </DialogHeader>
-                                                                <WeeklyReflectionForm roadmapId={roadmap.id} weekStartDate={weekStartDate} onSave={() => {}} />
-                                                            </DialogContent>
-                                                        </Dialog>
-                                                    )}
-                                                     {reflection && (
-                                                        <Card className="bg-amber-500/10 border-amber-500/20">
-                                                            <CardHeader>
-                                                                <CardTitle className="text-base flex items-center justify-between">
-                                                                    <span>Weekly Reflection</span>
-                                                                    <div className="flex">{Array.from({length: 5}).map((_, i) => <Star key={i} className={cn("h-4 w-4", i < reflection.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/50")} />)}</div>
-                                                                </CardTitle>
-                                                            </CardHeader>
-                                                            <CardContent>
-                                                                <p className="text-sm italic text-muted-foreground">"{reflection.note}"</p>
-                                                            </CardContent>
-                                                        </Card>
-                                                    )}
-                                                </div>
-                                            </div>
+                                            <div className="w-0.5 flex-1 bg-border my-2"></div>
                                         </div>
-                                    );
-                                })}
-                                <div className="flex gap-4 sm:gap-6">
-                                    <div className="flex flex-col items-center">
-                                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20 border-2 border-green-500 font-bold text-lg text-green-500">
-                                        <CheckCircle />
+                                        <div className="flex-1 pb-8">
+                                            <div className="flex justify-between items-start">
+                                                 <p className="font-semibold text-muted-foreground">{format(dayDate, 'EEEE, d MMMM')}</p>
+                                                 {timeTrackedToday > 0 && (
+                                                     <div className="flex items-center gap-1.5 text-sm font-semibold text-primary">
+                                                        <Clock className="h-4 w-4"/>
+                                                        <span>{formatTime(timeTrackedToday)}</span>
+                                                     </div>
+                                                 )}
+                                            </div>
+                                            <div className="space-y-4 mt-2">
+                                                {dayMilestone && dayMilestone.categories.length > 0 ? (
+                                                    dayMilestone.categories.map(category => (
+                                                        <Card key={category.id} className="overflow-hidden bg-background">
+                                                            <div className="p-3 border-b flex items-center gap-3" style={{ borderLeft: `4px solid ${category.color}` }}>
+                                                                <h4 className="font-semibold">{category.title}</h4>
+                                                            </div>
+                                                            <div className="p-3 space-y-3">
+                                                                {category.tasks.map(task => (
+                                                                    <div key={task.id} className="flex items-center gap-3">
+                                                                        <Checkbox
+                                                                            id={task.id}
+                                                                            checked={task.completed}
+                                                                            onCheckedChange={() => toggleTaskCompletion(roadmap.id, dayNumber, category.id, task.id)}
+                                                                        />
+                                                                        <label
+                                                                            htmlFor={task.id}
+                                                                            className={cn("text-sm", task.completed && "line-through text-muted-foreground")}
+                                                                        >
+                                                                            {task.text}
+                                                                        </label>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </Card>
+                                                    ))
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground italic">No tasks planned for this day.</p>
+                                                )}
+                                                {showReflectionPrompt && (
+                                                    <Dialog>
+                                                        <DialogTrigger asChild>
+                                                            <Button variant="outline" className="w-full">
+                                                                <MessageSquare className="mr-2 h-4 w-4" /> Add Weekly Reflection
+                                                            </Button>
+                                                        </DialogTrigger>
+                                                        <DialogContent>
+                                                            <DialogHeader>
+                                                                <DialogTitle>Reflection for Week Ending {format(dayDate, 'd MMM')}</DialogTitle>
+                                                            </DialogHeader>
+                                                            <WeeklyReflectionForm roadmapId={roadmap.id} weekStartDate={weekStartDate} onSave={() => {}} />
+                                                        </DialogContent>
+                                                    </Dialog>
+                                                )}
+                                                 {reflection && (
+                                                    <Card className="bg-amber-500/10 border-amber-500/20">
+                                                        <CardHeader>
+                                                            <CardTitle className="text-base flex items-center justify-between">
+                                                                <span>Weekly Reflection</span>
+                                                                <div className="flex">{Array.from({length: 5}).map((_, i) => <Star key={i} className={cn("h-4 w-4", i < reflection.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/50")} />)}</div>
+                                                            </CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent>
+                                                            <p className="text-sm italic text-muted-foreground">"{reflection.note}"</p>
+                                                        </CardContent>
+                                                    </Card>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex-1 pt-2">
-                                        <p className="font-bold text-lg">End of Roadmap!</p>
-                                        <p className="text-muted-foreground">Congratulations on completing your plan.</p>
+                                );
+                            })}
+                            <div className="flex gap-4 sm:gap-6">
+                                <div className="flex flex-col items-center">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20 border-2 border-green-500 font-bold text-lg text-green-500">
+                                    <CheckCircle />
                                     </div>
                                 </div>
+                                <div className="flex-1 pt-2">
+                                    <p className="font-bold text-lg">End of Roadmap!</p>
+                                    <p className="text-muted-foreground">Congratulations on completing your plan.</p>
+                                </div>
                             </div>
-                        </ScrollArea>
-                    ) : (
-                        <RoadmapNexusView roadmap={roadmap} />
-                    )}
+                        </div>
+                    </ScrollArea>
                 </CardContent>
             </Card>
         </div>

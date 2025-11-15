@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -200,7 +201,7 @@ export function useTimeTracker() {
 
   }, [user, currentUserData, updateStudyTime]);
 
-  const finishSession = useCallback(async (subjectId: string, startTime: string, roadmapId?: string, endTimeOverride?: Date): Promise<number> => {
+  const finishSession = useCallback(async (subjectId: string, startTime: string, endTimeOverride?: Date): Promise<number> => {
     if (!user) return 0;
     const allSessionsColRef = collection(db, 'users', user.id, 'timeTrackerSessions');
 
@@ -217,7 +218,6 @@ export function useTimeTracker() {
         subjectName: subject.name,
         startTime: startTime,
         endTime: endTime.toISOString(),
-        ...(roadmapId && { roadmapId: roadmapId })
     };
     
     await addDoc(allSessionsColRef, newSession);
@@ -229,20 +229,20 @@ export function useTimeTracker() {
 
   }, [user, state.subjects, currentUserData, updateStudyTime]);
 
-  const handlePlayPause = useCallback(async (subjectId: string, roadmapId?: string) => {
+  const handlePlayPause = useCallback(async (subjectId: string) => {
     const nowISO = new Date().toISOString();
     
     setState(prevState => {
         // Pausing the current subject
         if (prevState.activeSubjectId === subjectId) {
             if(prevState.currentSessionStart) {
-                finishSession(subjectId, prevState.currentSessionStart, roadmapId).then(newTotalTime => {});
+                finishSession(subjectId, prevState.currentSessionStart).then(newTotalTime => {});
             }
             return { ...prevState, activeSubjectId: null, currentSessionStart: null };
         } else {
           // Pausing previous and starting new
           if (prevState.activeSubjectId && prevState.currentSessionStart) {
-            finishSession(prevState.activeSubjectId, prevState.currentSessionStart, roadmapId).then(newTotalTime => {});
+            finishSession(prevState.activeSubjectId, prevState.currentSessionStart).then(newTotalTime => {});
           }
           // Starting a new subject
           return { ...prevState, activeSubjectId: subjectId, currentSessionStart: nowISO };
