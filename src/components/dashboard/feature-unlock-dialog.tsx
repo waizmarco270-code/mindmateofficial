@@ -22,11 +22,12 @@ export function FeatureUnlockDialog({ feature, isOpen, onOpenChange }: FeatureUn
     const { toast } = useToast();
 
     const cost = featureLocks?.[feature.id]?.cost ?? feature.defaultCost;
+    const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
     const handleUnlock = async () => {
         if (!user || !currentUserData) return;
 
-        if (currentUserData.credits < cost) {
+        if (!hasMasterCard && currentUserData.credits < cost) {
             toast({ variant: 'destructive', title: 'Insufficient Credits' });
             return;
         }
@@ -62,7 +63,7 @@ export function FeatureUnlockDialog({ feature, isOpen, onOpenChange }: FeatureUn
                     <div className="flex items-center justify-around text-center p-4 bg-muted rounded-lg">
                         <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Your Balance</p>
-                            <p className="text-2xl font-bold">{currentUserData?.credits ?? 0}</p>
+                            <p className="text-2xl font-bold">{hasMasterCard ? '∞' : (currentUserData?.credits ?? 0)}</p>
                         </div>
                         <div className="space-y-1">
                             <p className="text-sm text-muted-foreground">Unlock Cost</p>
@@ -71,8 +72,8 @@ export function FeatureUnlockDialog({ feature, isOpen, onOpenChange }: FeatureUn
                     </div>
                 </div>
                 <DialogFooter className="flex-col gap-2">
-                    <Button onClick={handleUnlock} className="w-full" disabled={(currentUserData?.credits ?? 0) < cost}>
-                        Confirm & Unlock for {cost} Credits
+                    <Button onClick={handleUnlock} className="w-full" disabled={!hasMasterCard && (currentUserData?.credits ?? 0) < cost}>
+                        {hasMasterCard ? 'Unlock for Free' : `Confirm & Unlock for ${cost} Credits`}
                     </Button>
                      <DialogClose asChild>
                         <Button variant="outline" className="w-full">Cancel</Button>

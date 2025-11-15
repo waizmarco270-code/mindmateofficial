@@ -11,7 +11,7 @@ export const lockableFeatures: LockableFeature[] = [
         id: 'ai-assistant',
         name: 'Marco AI',
         description: 'Your personal AI tutor for instant help.',
-        defaultCost: 100,
+        defaultCost: 1000,
     },
     {
         id: 'reward-zone',
