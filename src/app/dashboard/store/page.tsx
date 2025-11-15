@@ -4,34 +4,42 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { useAdmin, CreditPack, useUsers } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck } from 'lucide-react';
+import { useAdmin, type CreditPack, useUsers } from '@/hooks/use-admin';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import Image from 'next/image';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function StorePage() {
     const { user, isSignedIn } = useUser();
-    const { creditPacks, purchaseCredits, loading } = useAdmin();
-    const { currentUserData } = useUsers();
+    const { creditPacks, appSettings, loading, createPurchaseRequest } = useAdmin();
     const { toast } = useToast();
-    const [isPurchasing, setIsPurchasing] = useState<string | null>(null);
+    
+    const [selectedPack, setSelectedPack] = useState<CreditPack | null>(null);
+    const [transactionId, setTransactionId] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handlePurchase = async (pack: CreditPack) => {
-        if (!user) return;
-        setIsPurchasing(pack.id);
+    const handleSubmitRequest = async () => {
+        if (!selectedPack || !transactionId.trim() || !user) return;
+        setIsSubmitting(true);
         try {
-            await purchaseCredits(user.id, pack);
+            await createPurchaseRequest(selectedPack, transactionId);
             toast({
-                title: "Purchase Successful!",
-                description: `You've received ${pack.credits} credits. Your balance is now ${ (currentUserData?.credits ?? 0) + pack.credits }.`,
-                className: "bg-green-500/10 border-green-500/50"
+                title: "Request Submitted!",
+                description: "Your purchase is pending approval. Credits will be added shortly.",
             });
+            setSelectedPack(null);
+            setTransactionId('');
         } catch (error: any) {
-            toast({ variant: 'destructive', title: "Purchase Failed", description: error.message });
+             toast({ variant: 'destructive', title: "Submission Failed", description: error.message });
         } finally {
-            setIsPurchasing(null);
+            setIsSubmitting(false);
         }
     };
 
@@ -59,7 +67,7 @@ export default function StorePage() {
                 </SignedOut>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {loading && Array.from({length:3}).map((_, i) => <Card key={i} className="h-64 animate-pulse bg-muted"/>)}
+                    {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
                     
                     {!loading && creditPacks.map(pack => (
                         <Card key={pack.id} className="flex flex-col">
@@ -75,10 +83,10 @@ export default function StorePage() {
                             <CardFooter>
                                 <Button 
                                     className="w-full text-lg h-12"
-                                    onClick={() => handlePurchase(pack)}
-                                    disabled={isPurchasing === pack.id || !isSignedIn}
+                                    onClick={() => setSelectedPack(pack)}
+                                    disabled={!isSignedIn}
                                 >
-                                    {isPurchasing === pack.id ? <Loader2 className="animate-spin mr-2"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
+                                    <ShoppingCart className="mr-2 h-5 w-5"/>
                                     Buy for ₹{pack.price}
                                 </Button>
                             </CardFooter>
@@ -98,14 +106,52 @@ export default function StorePage() {
                 <CardHeader className="flex flex-row items-center gap-4">
                     <ShieldCheck className="h-8 w-8 text-green-600 flex-shrink-0"/>
                     <div>
-                         <CardTitle className="text-green-700 dark:text-green-300">Safe & Secure</CardTitle>
+                         <CardTitle className="text-green-700 dark:text-green-300">Safe & Secure Payments</CardTitle>
                          <CardDescription className="text-green-800/80 dark:text-green-400/80">
-                            Our payment system is a placeholder. No real money will be charged. This is for demonstration purposes only.
+                            Payments are processed manually via UPI. Your request will be approved by an admin after verification.
                          </CardDescription>
                     </div>
                 </CardHeader>
             </Card>
+
+            <Dialog open={!!selectedPack} onOpenChange={(open) => !open && setSelectedPack(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Complete Your Purchase</DialogTitle>
+                        <DialogDescription>
+                            Scan the QR code to pay ₹{selectedPack?.price}, then enter the transaction ID below.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-6 text-center">
+                        {appSettings?.upiQrCode ? (
+                             <div className="flex justify-center p-4 bg-white rounded-lg border">
+                                <Image src={appSettings.upiQrCode} alt="UPI QR Code" width={256} height={256} />
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg">
+                                <p className="text-muted-foreground">QR Code not available.</p>
+                                <p className="text-sm text-muted-foreground">Please contact admin.</p>
+                            </div>
+                        )}
+                        <div className="space-y-2 text-left">
+                            <Label htmlFor="transaction-id">UPI Transaction ID</Label>
+                            <Input 
+                                id="transaction-id"
+                                value={transactionId}
+                                onChange={(e) => setTransactionId(e.target.value)}
+                                placeholder="Enter the 12-digit transaction ID"
+                            />
+                        </div>
+                    </div>
+                     <DialogFooter>
+                        <Button variant="outline" onClick={() => setSelectedPack(null)}>Cancel</Button>
+                        <Button onClick={handleSubmitRequest} disabled={isSubmitting || !transactionId.trim()}>
+                            {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Send className="mr-2 h-4 w-4"/>}
+                             Submit for Approval
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
-

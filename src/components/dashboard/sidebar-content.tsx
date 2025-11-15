@@ -119,6 +119,9 @@ export default function SidebarContent() {
      if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin') || pathname.startsWith('/dashboard/whats-new') || pathname.startsWith('/dashboard/dev'))) {
         return true;
     }
+     if (href === '/dashboard/store' && pathname.startsWith('/dashboard/store/history')) {
+        return true;
+    }
 
     return false;
   };
