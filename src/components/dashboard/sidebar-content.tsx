@@ -36,7 +36,8 @@ import {
   Map,
   Bot,
   Megaphone,
-  Fingerprint
+  Fingerprint,
+  ShoppingCart
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -67,6 +68,7 @@ const competeNav = [
     { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
     { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
+    { href: '/dashboard/store', icon: ShoppingCart, label: 'Store', glow: 'text-green-400' },
 ];
 
 const socialLinks = [
