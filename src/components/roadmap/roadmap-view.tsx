@@ -10,7 +10,8 @@ import { Checkbox } from '../ui/checkbox';
 import { useState, useMemo, useEffect } from 'react';
 import { Progress } from '../ui/progress';
 import { ScrollArea } from '../ui/scroll-area';
-import { TimeTracker, useTimeTracker } from '../tracker/time-tracker';
+import { TimeTracker } from '../tracker/time-tracker';
+import { useTimeTracker } from '@/hooks/use-time-tracker';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
@@ -107,7 +108,7 @@ function ExamCountdown({ examDate }: { examDate: Date }) {
 
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
     const { toggleTaskCompletion, logStudyTime } = useRoadmaps();
-    const { activeSubjectId, activeSubjectTime, currentSessionStart } = useTimeTracker();
+    const { activeSubjectId, currentSessionStart } = useTimeTracker();
     const [isCountdownActive, setIsCountdownActive] = useLocalStorage(`roadmap-countdown-active-${roadmap.id}`, false);
     const [activeView, setActiveView] = useLocalStorage<'timeline' | 'nexus'>(`roadmap-view-${roadmap.id}`, 'timeline');
 
