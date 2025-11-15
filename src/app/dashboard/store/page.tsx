@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdmin, type CreditPack, useUsers } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, Upload } from 'lucide-react';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, Upload, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
