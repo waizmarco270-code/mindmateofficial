@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 
-type NexusView = 'grid' | 'nexus' | 'todos';
+type NexusViewType = 'grid' | 'nexus' | 'todos';
 
 const featureCards = [
     {
@@ -31,7 +31,7 @@ const featureCards = [
 ]
 
 export default function SchedulePage() {
-    const [view, setView] = useState<NexusView>('grid');
+    const [view, setView] = useState<NexusViewType>('grid');
 
     const cardVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -93,7 +93,7 @@ export default function SchedulePage() {
                         animate="visible"
                         custom={i}
                     >
-                         <button onClick={() => setView(card.id as NexusView)} className="w-full h-full text-left">
+                         <button onClick={() => setView(card.id as NexusViewType)} className="w-full h-full text-left">
                             <Card className={cn("group relative h-full w-full overflow-hidden rounded-xl p-px transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2", card.color)}>
                                  <div className="relative z-10 flex h-full flex-col justify-between rounded-xl p-6 bg-card">
                                      <div className="flex items-start justify-between">

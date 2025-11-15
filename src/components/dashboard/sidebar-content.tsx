@@ -48,16 +48,13 @@ import { Button } from '../ui/button';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
+  { href: '/dashboard/roadmap', icon: Map, label: 'Roadmap', glow: 'text-orange-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-purple-400' },
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
 ];
-
-const planningNav = [
-  { href: '/dashboard/roadmap', icon: Map, label: 'Roadmap', glow: 'text-orange-400' },
-]
 
 const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
@@ -114,7 +111,7 @@ export default function SidebarContent() {
     if (href === '/dashboard/focus' && (pathname.startsWith('/dashboard/pomodoro') || pathname.startsWith('/dashboard/tracker') || pathname.startsWith('/dashboard/tracker-insights') || pathname.startsWith('/dashboard/challenger'))) {
       return true;
     }
-    if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos') || pathname.startsWith('/dashboard/roadmap'))) {
+    if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos'))) {
         return true;
     }
      if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin') || pathname.startsWith('/dashboard/whats-new') || pathname.startsWith('/dashboard/dev'))) {
@@ -187,7 +184,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'planning', 'compete-earn', 'community-resources']}
+          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -199,15 +196,6 @@ export default function SidebarContent() {
             </AccordionContent>
           </AccordionItem>
         
-          <AccordionItem value="planning" className="border-b-0">
-            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Planning
-            </AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">
-              {renderNavLinks(planningNav as any)}
-            </AccordionContent>
-          </AccordionItem>
-
           <AccordionItem value="community-resources" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
               Community & Resources
