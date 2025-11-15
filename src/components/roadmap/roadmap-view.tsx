@@ -16,7 +16,7 @@ import { Textarea } from '../ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from '../ui/alert-dialog';
 import { useLocalStorage } from '@/hooks/use-local-storage';
-import { RoadmapNexusView } from './roadmap-nexus-view';
+import RoadmapNexusView from './roadmap-nexus-view'; // Corrected Import
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
