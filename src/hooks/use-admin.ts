@@ -1027,7 +1027,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const weekClaims = userData.flappyMindClaims?.[weekKey] || [];
         
-        const MILESTONE_REWARDS: Record<number, number> = { 5: 3, 10: 3, 15: 3, 20: 15, 30: 3, 50: 3, 100: 100, };
+        const MILESTONE_REWARDS: Record<number, number> = { 5: 3, 10: 3, 15: 3, 20: 15, 30: 3, 50: 3, 100: 100 };
         const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
 
         if (!validMilestone) {
@@ -1399,18 +1399,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     };
 
     // Credit Pack Functions
-    const createCreditPack = async (pack: Omit<CreditPack, 'id' | 'createdAt'>) => {
+    const createCreditPack = useCallback(async (pack: Omit<CreditPack, 'id' | 'createdAt'>) => {
         await addDoc(collection(db, 'creditPacks'), { ...pack, createdAt: serverTimestamp() });
-    };
-    const updateCreditPack = async (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => {
+    }, []);
+    const updateCreditPack = useCallback(async (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => {
         await updateDoc(doc(db, 'creditPacks', id), data);
-    };
-    const deleteCreditPack = async (id: string) => {
+    }, []);
+    const deleteCreditPack = useCallback(async (id: string) => {
         await deleteDoc(doc(db, 'creditPacks', id));
-    };
+    }, []);
 
     // Purchase Request Functions
-    const createPurchaseRequest = async (pack: CreditPack, transactionId: string) => {
+    const createPurchaseRequest = useCallback(async (pack: CreditPack, transactionId: string) => {
         if (!currentUserData) throw new Error('User not logged in.');
         await addDoc(collection(db, 'creditPurchaseRequests'), {
             userId: currentUserData.uid,
@@ -1423,8 +1423,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             status: 'pending',
             createdAt: serverTimestamp(),
         });
-    };
-    const approvePurchaseRequest = async (request: PurchaseRequest) => {
+    }, [currentUserData]);
+    const approvePurchaseRequest = useCallback(async (request: PurchaseRequest) => {
         const batch = writeBatch(db);
         const userRef = doc(db, 'users', request.userId);
         const requestRef = doc(db, 'creditPurchaseRequests', request.id);
@@ -1433,10 +1433,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         batch.update(requestRef, { status: 'approved' });
 
         await batch.commit();
-    };
-    const declinePurchaseRequest = async (requestId: string) => {
+    }, []);
+    const declinePurchaseRequest = useCallback(async (requestId: string) => {
         await updateDoc(doc(db, 'creditPurchaseRequests', requestId), { status: 'declined' });
-    };
+    }, []);
 
 
     // CONTEXT VALUE
@@ -1597,3 +1597,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    
