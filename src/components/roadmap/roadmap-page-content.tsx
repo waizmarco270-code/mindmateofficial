@@ -1,9 +1,9 @@
 
 'use client';
 import { useState } from 'react';
-import { useRoadmaps, Roadmap, RoadmapMilestone } from "@/hooks/use-roadmaps";
+import { useRoadmaps, Roadmap, RoadmapMilestone, RoadmapCategory } from "@/hooks/use-roadmaps";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Map, Loader2, Sparkles, FilePlus, Trash2 } from "lucide-react";
+import { PlusCircle, Map, Loader2, Sparkles, FilePlus, Trash2, Upload } from "lucide-react";
 import { RoadmapCreation } from "@/components/roadmap/roadmap-creation";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { TaskPlanner } from "@/components/roadmap/task-planner";
@@ -12,47 +12,65 @@ import roadmapTemplates from '@/app/lib/roadmap-templates.json';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '../ui/input';
+import { z } from 'zod';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
+
+const RoadmapTaskSchema = z.object({
+  text: z.string().min(1),
+  // We can omit id and completed as they will be added internally
+});
+
+const RoadmapCategorySchema = z.object({
+  title: z.string().min(1),
+  color: z.string().startsWith('#').length(7),
+  tasks: z.array(RoadmapTaskSchema).min(1),
+});
+
+const RoadmapMilestoneSchema = z.object({
+  day: z.number().int().positive(),
+  categories: z.array(RoadmapCategorySchema).min(1),
+});
+
+const RoadmapImportSchema = z.object({
+  name: z.string().min(1, "Roadmap name is required."),
+  duration: z.number().int().positive("Duration must be a positive number."),
+  examDate: z.string().refine(val => !isNaN(Date.parse(val)), "Invalid exam date format."),
+  milestones: z.array(RoadmapMilestoneSchema).min(1, "Roadmap must have at least one milestone."),
+});
 
 export function RoadmapPageContent() {
     const { roadmaps, selectedRoadmap, setSelectedRoadmapId, loading, updateRoadmap, addRoadmap, deleteRoadmap } = useRoadmaps();
     const [viewState, setViewState] = useState<'list' | 'create' | 'plan'>('list');
     const [planningRoadmap, setPlanningRoadmap] = useState<Roadmap | null>(null);
     const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
     const { toast } = useToast();
-
-    const handleCreationComplete = (newRoadmapData: Parameters<typeof addRoadmap>[0]) => {
-        setViewState('list');
-        const newRoadmap = {
-            ...newRoadmapData,
-            id: Date.now().toString(), // temporary ID
-            userId: '', // temporary
-            startDate: new Date().toISOString(),
-            dailyStudyTime: {},
-            weeklyReflections: {},
-            milestones: newRoadmapData.milestones || [],
-        };
-        setPlanningRoadmap(newRoadmap);
-        setViewState('plan');
+    
+    const handleCreationComplete = async (newRoadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections'>) => {
+        setViewState('list'); // Go back to list while it processes
+        const newRoadmapId = await addRoadmap(newRoadmapData);
+        if (newRoadmapId) {
+            const newRoadmap = {
+                ...newRoadmapData,
+                id: newRoadmapId,
+                userId: '', // placeholder
+                startDate: new Date().toISOString(),
+                dailyStudyTime: {},
+                weeklyReflections: {},
+            };
+            setPlanningRoadmap(newRoadmap);
+            setViewState('plan');
+        } else {
+            toast({ variant: 'destructive', title: 'Error creating roadmap.' });
+        }
     };
     
     const handlePlanningComplete = async (milestones: Roadmap['milestones']) => {
         if (!planningRoadmap) return;
 
-        // If it's a new roadmap from a template, create it now
-        if (!roadmaps.some(r => r.id === planningRoadmap.id)) {
-             const newRoadmapId = await addRoadmap({
-                name: planningRoadmap.name,
-                examDate: planningRoadmap.examDate,
-                duration: planningRoadmap.duration,
-                milestones: milestones,
-            });
-             if (newRoadmapId) {
-                setSelectedRoadmapId(newRoadmapId);
-            }
-        } else { // It's an existing roadmap
-            await updateRoadmap(planningRoadmap.id, { milestones });
-            setSelectedRoadmapId(planningRoadmap.id);
-        }
+        await updateRoadmap(planningRoadmap.id, { milestones });
+        setSelectedRoadmapId(planningRoadmap.id);
 
         setPlanningRoadmap(null);
         setViewState('list');
@@ -66,7 +84,14 @@ export function RoadmapPageContent() {
             name: template.name,
             examDate: examDate.toISOString(),
             duration: template.duration,
-            milestones: template.milestones as RoadmapMilestone[],
+            milestones: template.milestones.map(m => ({
+                ...m,
+                categories: m.categories.map(c => ({
+                    ...c,
+                    id: `cat-${Date.now()}-${Math.random()}`,
+                    tasks: c.tasks.map(t => ({...t, id: `task-${Date.now()}-${Math.random()}`}))
+                }))
+            })),
         });
         setIsTemplateDialogOpen(false);
     }
@@ -79,6 +104,82 @@ export function RoadmapPageContent() {
              toast({ variant: 'destructive', title: "Error", description: "Could not delete the roadmap." });
         }
     }
+
+     const handleRoadmapImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        if (file.type !== 'application/json') {
+            toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please upload a valid .json file.' });
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const content = e.target?.result;
+            if (typeof content !== 'string') return;
+            
+            setIsImporting(true);
+            try {
+                const jsonData = JSON.parse(content);
+                const validationResult = RoadmapImportSchema.safeParse(jsonData);
+
+                if (!validationResult.success) {
+                    const errorMessage = validationResult.error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join('\n');
+                    toast({ variant: 'destructive', title: 'Invalid JSON Format', description: errorMessage, duration: 10000 });
+                    return;
+                }
+                
+                // Add internal IDs to the imported data
+                const roadmapDataToCreate = {
+                    ...validationResult.data,
+                    milestones: validationResult.data.milestones.map(m => ({
+                        ...m,
+                        categories: m.categories.map(c => ({
+                            ...c,
+                            id: `cat-${Date.now()}-${Math.random()}`,
+                            tasks: c.tasks.map(t => ({...t, id: `task-${Date.now()}-${Math.random()}`, completed: false}))
+                        }))
+                    }))
+                };
+
+                const newId = await addRoadmap(roadmapDataToCreate);
+                if (newId) {
+                    toast({ title: "Roadmap Imported!", description: `"${validationResult.data.name}" has been added.` });
+                    setSelectedRoadmapId(newId);
+                    setIsTemplateDialogOpen(false);
+                } else {
+                    throw new Error("Failed to create roadmap in database.");
+                }
+
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
+            } finally {
+                setIsImporting(false);
+                if (event.target) event.target.value = ''; // Reset file input
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+     const jsonExample = `{
+  "name": "JEE Advanced 60-Day Plan",
+  "duration": 60,
+  "examDate": "2025-05-26T00:00:00.000Z",
+  "milestones": [
+    {
+      "day": 1,
+      "categories": [
+        {
+          "title": "Physics",
+          "color": "#ef4444",
+          "tasks": [ { "text": "Revise Kinematics" } ]
+        }
+      ]
+    }
+  ]
+}`.trim();
+
 
     if (loading) {
         return (
@@ -93,7 +194,7 @@ export function RoadmapPageContent() {
     }
     
     if (viewState === 'plan' && planningRoadmap) {
-        return <TaskPlanner roadmap={planningRoadmap} onComplete={(milestones) => handlePlanningComplete(milestones)} onCancel={() => setViewState('list')} />;
+        return <TaskPlanner roadmap={planningRoadmap} onComplete={(milestones) => handlePlanningComplete(milestones)} onCancel={() => { setViewState('list'); setPlanningRoadmap(null); }} />;
     }
     
     if (selectedRoadmap) {
@@ -172,12 +273,26 @@ export function RoadmapPageContent() {
                         <Card className="hover:border-primary transition-colors h-full flex flex-col">
                              <CardHeader>
                                 <CardTitle className="flex items-center gap-2"><Sparkles/> Use a Template</CardTitle>
-                                <CardDescription className="flex-1">Choose a pre-built template and customize it to fit your needs.</CardDescription>
+                                <CardDescription className="flex-1">Choose a pre-built template or import your own AI-generated plan.</CardDescription>
                             </CardHeader>
                             <CardContent className="mt-auto grid grid-cols-1 gap-2">
                                 {roadmapTemplates.map(template => (
                                     <Button key={template.id} variant="secondary" onClick={() => handleSelectTemplate(template)}>{template.name}</Button>
                                 ))}
+                                 <div className="relative my-2">
+                                    <div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div>
+                                    <div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or</span></div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Input id="roadmap-import" type="file" accept=".json" onChange={handleRoadmapImport} disabled={isImporting} className="text-xs"/>
+                                    {isImporting && <p className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin"/>Importing...</p>}
+                                </div>
+                                <Accordion type="single" collapsible className="w-full">
+                                    <AccordionItem value="format-guide">
+                                        <AccordionTrigger className="text-xs">View Import Format Guide</AccordionTrigger>
+                                        <AccordionContent><pre className="p-2 bg-muted rounded-md text-xs whitespace-pre-wrap">{jsonExample}</pre></AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
                             </CardContent>
                         </Card>
                     </div>
