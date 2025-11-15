@@ -3,7 +3,7 @@
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play, Trash2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play, Trash2, AlertTriangle, X } from 'lucide-react';
 import { addDays, format, isPast, isToday, endOfWeek, startOfWeek, differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
@@ -204,6 +204,10 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                                 
                                 const isDayPast = isPast(dayDate) && !isToday(dayDate);
                                 const isDayToday = isToday(dayDate);
+
+                                const tasksForDay = dayMilestone?.categories.flatMap(c => c.tasks) || [];
+                                const allTasksCompleted = tasksForDay.length > 0 && tasksForDay.every(t => t.completed);
+                                const isFailedDay = isDayPast && tasksForDay.length > 0 && !allTasksCompleted;
                                 
                                 // Weekly Reflection Logic
                                 const isEndOfWeek = dayDate.getDay() === 0; // Sunday
@@ -218,9 +222,11 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                                             <div className={cn(
                                                 "flex h-12 w-12 items-center justify-center rounded-full border-2 font-bold text-lg",
                                                 isDayToday ? "bg-primary text-primary-foreground border-primary" :
+                                                allTasksCompleted ? "bg-green-500/20 border-green-500 text-green-500" :
+                                                isFailedDay ? "bg-destructive/20 border-destructive text-destructive" :
                                                 isDayPast ? "bg-muted border-dashed" : "bg-muted/50"
                                             )}>
-                                                {dayNumber}
+                                                {allTasksCompleted ? <CheckCircle className="h-6 w-6"/> : isFailedDay ? <X className="h-6 w-6"/> : dayNumber}
                                             </div>
                                             <div className="w-0.5 flex-1 bg-border my-2"></div>
                                         </div>
