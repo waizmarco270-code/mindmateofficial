@@ -227,6 +227,8 @@ export interface StoreItem {
     type: 'scratch-card' | 'card-flip';
     quantity: number;
     createdAt: Date;
+    stock: number;
+    isFeatured: boolean;
 }
 
 
@@ -267,7 +269,7 @@ interface AppDataContextType {
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    claimMathematicsLegendMilestone: (uid: string) => Promise<boolean>;
+    claimMathematicsLegendMilestone: (uid: string, milestone: number) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -1010,7 +1012,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const claimDimensionShiftMilestone = async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
-        const userSnap = getDoc(userDocRef);
+        const userSnap = await getDoc(userDocRef);
 
         if (!userSnap.exists()) return false;
 
@@ -1104,8 +1106,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         
         return true;
     };
-    
-    const claimMathematicsLegendMilestone = useCallback(async (uid: string, milestone: number) => {
+
+     const claimMathematicsLegendMilestone = useCallback(async (uid: string, milestone: number) => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
 
@@ -1478,20 +1480,33 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             throw new Error("Insufficient credits.");
         }
 
+        const itemRef = doc(db, 'storeItems', item.id);
         const userRef = doc(db, 'users', authUser.id);
-        const batch = writeBatch(db);
         
-        if (!hasMasterCard) {
-            batch.update(userRef, { credits: increment(-item.cost) });
-        }
+        await db.runTransaction(async (transaction) => {
+            const itemDoc = await transaction.get(itemRef);
+            if (!itemDoc.exists()) {
+                throw "Item does not exist.";
+            }
+            const currentItem = itemDoc.data() as StoreItem;
+            if (currentItem.stock <= 0) {
+                throw "This item is out of stock.";
+            }
+            
+            transaction.update(itemRef, { stock: increment(-1) });
+            
+            const updates: { [key: string]: any } = {};
+            if (!hasMasterCard) {
+                updates.credits = increment(-item.cost);
+            }
+            if (item.type === 'scratch-card') {
+                updates.freeRewards = increment(item.quantity);
+            } else if (item.type === 'card-flip') {
+                updates.freeGuesses = increment(item.quantity);
+            }
+            transaction.update(userRef, updates);
+        });
 
-        if (item.type === 'scratch-card') {
-            batch.update(userRef, { freeRewards: increment(item.quantity) });
-        } else if (item.type === 'card-flip') {
-            batch.update(userRef, { freeGuesses: increment(item.quantity) });
-        }
-
-        await batch.commit();
 
     }, [authUser, currentUserData]);
 
@@ -1659,3 +1674,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
+
+    
