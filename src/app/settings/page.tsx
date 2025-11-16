@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -10,9 +11,9 @@ import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
 // Re-integrating components that were on separate pages
-import FaqContent from '../faq/page';
-import AboutContent from '../about/page';
-import RulesContent from '../rules/page';
+import FaqContent from '@/app/dashboard/faq/page';
+import AboutContent from '@/app/dashboard/about/page';
+import RulesContent from '@/app/dashboard/rules/page';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, AppThemeId } from '@/hooks/use-admin';
 import { useUser, UserProfile, useClerk } from '@clerk/nextjs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
