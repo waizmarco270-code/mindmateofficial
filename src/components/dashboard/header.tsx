@@ -158,8 +158,7 @@ export default function Header() {
 
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
-  const streak = currentUserData?.streak ?? 0;
-
+  
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
       <Button
@@ -184,32 +183,6 @@ export default function Header() {
         <SignedIn>
             {isLoaded && user && (
             <>
-                <Popover>
-                    <PopoverTrigger asChild>
-                         <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-                            <Flame className="h-5 w-5 text-orange-500 animate-flicker" />
-                            <span>{streak} <span className="hidden sm:inline">Day Streak</span></span>
-                        </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="max-w-xs p-4">
-                        <div className="space-y-3">
-                            <div>
-                                <h4 className="font-bold text-base mb-1 flex items-center gap-2"><CalendarCheck className="h-5 w-5 text-primary"/> Streak Rewards</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Maintain your daily streak to earn bonus credits. The longer you go, the more you get!
-                                </p>
-                            </div>
-                            <div>
-                                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                                    <li><span className="font-semibold text-foreground">+50 Credits</span> for every 5-day streak.</li>
-                                    <li><span className="font-semibold text-foreground">+100 Credits</span> bonus every 30 days!</li>
-                                </ul>
-                            </div>
-                            <p className="text-xs text-orange-500 font-semibold text-center pt-2">Don't break the chain!</p>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-                
                 <AdminPanelMenu />
                 
                 <Popover>
