@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -90,11 +91,11 @@ function AnnouncementInbox() {
 function AdminPanelMenu() {
     const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
 
-    if (!isAdmin && !isSuperAdmin && !currentUserData?.isCoDev) {
+    const showDevLink = isSuperAdmin || currentUserData?.isCoDev;
+
+    if (!isAdmin && !isSuperAdmin && !showDevLink) {
         return null;
     }
-
-    const showDevLink = isSuperAdmin || currentUserData?.isCoDev;
 
     return (
         <Popover>
@@ -109,22 +110,24 @@ function AdminPanelMenu() {
             </PopoverTrigger>
             <PopoverContent className="w-56 p-2">
                 <div className="space-y-1">
-                    <Link href="/dashboard/admin">
-                        <Button variant="ghost" className="w-full justify-start">
-                            <ShieldCheck className="mr-2"/> Admin Panel
-                        </Button>
-                    </Link>
+                     {showDevLink && (
+                        <Link href="/dashboard/dev">
+                             <Button variant="ghost" className="w-full justify-start">
+                                <DollarSign className="mr-2"/> Payments Panel
+                            </Button>
+                        </Link>
+                    )}
+                    {isAdmin && (
+                        <Link href="/dashboard/admin">
+                            <Button variant="ghost" className="w-full justify-start">
+                                <ShieldCheck className="mr-2"/> Admin Panel
+                            </Button>
+                        </Link>
+                    )}
                     {isSuperAdmin && (
                         <Link href="/waizmarcoadmin">
                              <Button variant="ghost" className="w-full justify-start">
                                 <KeyRound className="mr-2"/> Super Admin
-                            </Button>
-                        </Link>
-                    )}
-                    {showDevLink && (
-                        <Link href="/dashboard/dev">
-                             <Button variant="ghost" className="w-full justify-start">
-                                <Fingerprint className="mr-2"/> Dev Panel
                             </Button>
                         </Link>
                     )}

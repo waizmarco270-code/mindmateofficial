@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone, Fingerprint } from 'lucide-react';
+import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone, Fingerprint, Server } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
@@ -13,7 +14,7 @@ import FaqContent from '../faq/page';
 import AboutContent from '../about/page';
 import RulesContent from '../rules/page';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, AppThemeId } from '@/hooks/use-admin';
-import { useUser, UserProfile } from '@clerk/nextjs';
+import { useUser, UserProfile, useClerk } from '@clerk/nextjs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -275,6 +276,81 @@ function AdminSettings() {
     );
 }
 
+
+const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
+    <div className="flex justify-between items-center border-b py-3">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <p className="text-sm font-mono font-semibold text-right">{value || 'Not Set'}</p>
+    </div>
+);
+
+function DevExplorer() {
+    const { user: clerkUser, isLoaded, isSignedIn } = useUser();
+    const { session } = useClerk();
+    const { isAdmin, isSuperAdmin, currentUserData, appSettings, loading } = useAdmin();
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Dev Explorer</CardTitle>
+                <CardDescription>Live application state for debugging purposes.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base"><UserIcon/> Clerk Auth State</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <InfoRow label="Is Loaded" value={isLoaded ? 'true' : 'false'} />
+                            <InfoRow label="Is Signed In" value={isSignedIn ? 'true' : 'false'} />
+                            <InfoRow label="Clerk User ID" value={clerkUser?.id} />
+                            <InfoRow label="Session ID" value={session?.id} />
+                            <InfoRow label="Full Name" value={clerkUser?.fullName} />
+                            <InfoRow label="Primary Email" value={clerkUser?.primaryEmailAddress?.emailAddress} />
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base"><Fingerprint/> MindMate Profile</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <InfoRow label="Is Loading" value={loading ? 'true' : 'false'} />
+                            <InfoRow label="Firestore UID" value={currentUserData?.uid} />
+                            <InfoRow label="Display Name" value={currentUserData?.displayName} />
+                            <InfoRow label="Credits" value={String(currentUserData?.credits)} />
+                            <InfoRow label="Streak" value={String(currentUserData?.streak)} />
+                            <InfoRow label="Is Blocked" value={currentUserData?.isBlocked ? 'true' : 'false'} />
+                        </CardContent>
+                    </Card>
+                    
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base"><ShieldCheck/> Roles & Permissions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <InfoRow label="Is Admin" value={isAdmin ? 'true' : 'false'} />
+                            <InfoRow label="Is Super Admin" value={isSuperAdmin ? 'true' : 'false'} />
+                            <InfoRow label="Is VIP" value={currentUserData?.isVip ? 'true' : 'false'} />
+                            <InfoRow label="Is Co-Dev" value={currentUserData?.isCoDev ? 'true' : 'false'} />
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-base"><Server/> App Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <InfoRow label="Marco AI Status" value={appSettings?.marcoAiLaunchStatus || 'loading...'} />
+                        </CardContent>
+                    </Card>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function SettingsPage() {
     const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
     const showAdminTab = isAdmin || isSuperAdmin;
@@ -314,7 +390,7 @@ export default function SettingsPage() {
                      {showAdminTab && (
                         <TabsTrigger value="admin" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Shield className="mr-3"/> Admin</TabsTrigger>
                     )}
-                     {showDevTab && (
+                    {showDevTab && (
                         <TabsTrigger value="dev" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Fingerprint className="mr-3"/> Dev</TabsTrigger>
                     )}
                 </TabsList>
@@ -363,17 +439,7 @@ export default function SettingsPage() {
                     )}
                     {showDevTab && (
                         <TabsContent value="dev">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Developer Explorer</CardTitle>
-                                    <CardDescription>Advanced debugging and profiling tools.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <Link href="/dashboard/dev">
-                                        <Button>Go to Dev Explorer</Button>
-                                    </Link>
-                                </CardContent>
-                            </Card>
+                            <DevExplorer />
                         </TabsContent>
                     )}
                 </div>
