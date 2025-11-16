@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -94,6 +94,8 @@ function AdminPanelMenu() {
         return null;
     }
 
+    const showDevLink = isSuperAdmin || currentUserData?.isCoDev;
+
     return (
         <Popover>
             <PopoverTrigger asChild>
@@ -116,6 +118,13 @@ function AdminPanelMenu() {
                         <Link href="/waizmarcoadmin">
                              <Button variant="ghost" className="w-full justify-start">
                                 <KeyRound className="mr-2"/> Super Admin
+                            </Button>
+                        </Link>
+                    )}
+                    {showDevLink && (
+                        <Link href="/dashboard/dev">
+                             <Button variant="ghost" className="w-full justify-start">
+                                <Fingerprint className="mr-2"/> Dev Panel
                             </Button>
                         </Link>
                     )}
