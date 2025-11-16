@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -590,7 +591,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             }
         });
         const unsubShowcases = onSnapshot(showcasesQuery, (snapshot) => setFeatureShowcases(processSnapshot<FeatureShowcase>(snapshot)));
-        const unsubCreditPacks = onSnapshot(creditPacksQuery, (snapshot) => setCreditPacks(processSnapshot<CreditPack>(snapshot)));
+        const unsubCreditPacks = onSnapshot(creditPacksQuery, (snapshot) => {
+             const packs = processSnapshot<CreditPack>(snapshot);
+             if (packs.length === 0) {
+                 // Pre-populate if empty
+                const defaultPacks = [
+                    { name: 'Starter Pack', credits: 500, price: 10 },
+                    { name: 'Student Pack', credits: 1500, price: 25 },
+                    { name: 'Pro Pack', credits: 2500, price: 39 },
+                ];
+                 const batch = writeBatch(db);
+                defaultPacks.forEach(pack => {
+                    const docRef = doc(collection(db, 'creditPacks'));
+                    batch.set(docRef, { ...pack, createdAt: serverTimestamp() });
+                });
+                batch.commit();
+             } else {
+                setCreditPacks(packs);
+             }
+        });
         const unsubStoreItems = onSnapshot(storeItemsQuery, (snapshot) => setStoreItems(processSnapshot<StoreItem>(snapshot)));
         const unsubPurchaseRequests = onSnapshot(purchaseRequestsQuery, (snapshot) => setPurchaseRequests(processTimestampedSnapshot(snapshot)));
 

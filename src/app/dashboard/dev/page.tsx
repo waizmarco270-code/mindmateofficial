@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -79,14 +80,18 @@ export default function PaymentsPanelPage() {
         
         const packData = { name: packName, credits: packCredits, price: packPrice };
 
-        if (editingPack) {
-            await updateCreditPack(editingPack.id, packData);
-            toast({ title: 'Credit Pack Updated' });
-        } else {
-            await createCreditPack(packData);
-            toast({ title: 'Credit Pack Created' });
+        try {
+            if (editingPack) {
+                await updateCreditPack(editingPack.id, packData);
+                toast({ title: 'Credit Pack Updated' });
+            } else {
+                await createCreditPack(packData);
+                toast({ title: 'Credit Pack Created' });
+            }
+            setIsPackDialogOpen(false);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Operation Failed', description: error.message });
         }
-        setIsPackDialogOpen(false);
     };
     
      const handleQrCodeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -142,14 +147,18 @@ export default function PaymentsPanelPage() {
             isFeatured: itemIsFeatured,
         };
 
-        if (editingStoreItem) {
-            await updateStoreItem(editingStoreItem.id, itemData);
-            toast({ title: "Store Item Updated" });
-        } else {
-            await createStoreItem(itemData);
-            toast({ title: "Store Item Created" });
+        try {
+            if (editingStoreItem) {
+                await updateStoreItem(editingStoreItem.id, itemData);
+                toast({ title: "Store Item Updated" });
+            } else {
+                await createStoreItem(itemData);
+                toast({ title: "Store Item Created" });
+            }
+            setIsStoreItemDialogOpen(false);
+        } catch(error: any) {
+             toast({ variant: 'destructive', title: 'Operation Failed', description: error.message });
         }
-        setIsStoreItemDialogOpen(false);
     };
 
     if (!isSuperAdmin && !isCoDev) {
@@ -305,7 +314,60 @@ export default function PaymentsPanelPage() {
                             </div>
                         ))}
                     </div>
-                        <Button className="w-full" onClick={() => openStoreItemDialog(null)}>Add New Item</Button>
+                     <Dialog open={isStoreItemDialogOpen} onOpenChange={setIsStoreItemDialogOpen}>
+                        <DialogTrigger asChild>
+                            <Button className="w-full" onClick={() => openStoreItemDialog(null)}>Add New Item</Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Redeemable Item</DialogTitle>
+                            </DialogHeader>
+                                <div className="grid gap-4 py-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="item-name">Item Name</Label>
+                                    <Input id="item-name" value={itemName} onChange={e => setItemName(e.target.value)} />
+                                </div>
+                                    <div className="space-y-2">
+                                    <Label htmlFor="item-description">Description</Label>
+                                    <Textarea id="item-description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                        <Label htmlFor="item-cost">Cost (Credits)</Label>
+                                        <Input id="item-cost" type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="item-type">Item Type</Label>
+                                        <Select value={itemType} onValueChange={(v: StoreItem['type']) => setItemType(v)}>
+                                            <SelectTrigger id="item-type"><SelectValue/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="scratch-card">Scratch Card</SelectItem>
+                                                <SelectItem value="card-flip">Card Flip Play</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="item-quantity">Quantity (per purchase)</Label>
+                                        <Input id="item-quantity" type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="item-stock">Stock</Label>
+                                        <Input id="item-stock" type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))} />
+                                    </div>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <input type="checkbox" id="item-featured" checked={itemIsFeatured} onChange={e => setItemIsFeatured(e.target.checked)} />
+                                    <Label htmlFor="item-featured">Mark as Featured</Label>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                <Button onClick={handleSaveStoreItem}>{editingStoreItem ? 'Save Changes' : 'Create Item'}</Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </CardContent>
             </Card>
             <Card className="lg:col-span-1">
@@ -330,57 +392,7 @@ export default function PaymentsPanelPage() {
                 </CardContent>
             </Card>
         </div>
-        <Dialog open={isStoreItemDialogOpen} onOpenChange={setIsStoreItemDialogOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Redeemable Item</DialogTitle>
-                </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="item-name">Item Name</Label>
-                        <Input id="item-name" value={itemName} onChange={e => setItemName(e.target.value)} />
-                    </div>
-                        <div className="space-y-2">
-                        <Label htmlFor="item-description">Description</Label>
-                        <Textarea id="item-description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                            <Label htmlFor="item-cost">Cost (Credits)</Label>
-                            <Input id="item-cost" type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="item-type">Item Type</Label>
-                            <Select value={itemType} onValueChange={(v: StoreItem['type']) => setItemType(v)}>
-                                <SelectTrigger id="item-type"><SelectValue/></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="scratch-card">Scratch Card</SelectItem>
-                                    <SelectItem value="card-flip">Card Flip Play</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                        <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="item-quantity">Quantity (per purchase)</Label>
-                            <Input id="item-quantity" type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="item-stock">Stock</Label>
-                            <Input id="item-stock" type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))} />
-                        </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <input type="checkbox" id="item-featured" checked={itemIsFeatured} onChange={e => setItemIsFeatured(e.target.checked)} />
-                        <Label htmlFor="item-featured">Mark as Featured</Label>
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                    <Button onClick={handleSaveStoreItem}>{editingStoreItem ? 'Save Changes' : 'Create Item'}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
     </div>
   );
 }
+
