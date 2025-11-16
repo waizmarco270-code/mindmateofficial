@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -266,7 +267,7 @@ interface AppDataContextType {
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    claimMathematicsLegendMilestone: (uid: string, milestone: number) => Promise<boolean>;
+    claimMathematicsLegendMilestone: (uid: string) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -338,20 +339,20 @@ interface AppDataContextType {
     deleteFeatureShowcase: (id: string) => Promise<void>;
     
     creditPacks: CreditPack[];
-    createCreditPack?: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
-    updateCreditPack?: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
-    deleteCreditPack?: (id: string) => Promise<void>;
+    createCreditPack: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
+    updateCreditPack: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
+    deleteCreditPack: (id: string) => Promise<void>;
 
-    purchaseRequests?: PurchaseRequest[];
-    createPurchaseRequest?: (pack: CreditPack, transactionId: string) => Promise<void>;
-    approvePurchaseRequest?: (request: PurchaseRequest) => Promise<void>;
-    declinePurchaseRequest?: (requestId: string) => Promise<void>;
+    purchaseRequests: PurchaseRequest[];
+    createPurchaseRequest: (pack: CreditPack, transactionId: string) => Promise<void>;
+    approvePurchaseRequest: (request: PurchaseRequest) => Promise<void>;
+    declinePurchaseRequest: (requestId: string) => Promise<void>;
     
-    storeItems?: StoreItem[];
-    createStoreItem?: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
-    updateStoreItem?: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
-    deleteStoreItem?: (id: string) => Promise<void>;
-    redeemStoreItem?: (item: StoreItem) => Promise<void>;
+    storeItems: StoreItem[];
+    createStoreItem: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
+    updateStoreItem: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
+    deleteStoreItem: (id: string) => Promise<void>;
+    redeemStoreItem: (item: StoreItem) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -1009,7 +1010,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const claimDimensionShiftMilestone = async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
+        const userSnap = getDoc(userDocRef);
 
         if (!userSnap.exists()) return false;
 
