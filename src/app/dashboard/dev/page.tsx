@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useAdmin, useUsers, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
