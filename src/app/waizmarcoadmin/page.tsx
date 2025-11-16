@@ -116,6 +116,8 @@ export default function SuperAdminPanelPage() {
   const [itemCost, setItemCost] = useState(100);
   const [itemType, setItemType] = useState<StoreItem['type']>('scratch-card');
   const [itemQuantity, setItemQuantity] = useState(1);
+  const [itemStock, setItemStock] = useState(100);
+  const [itemIsFeatured, setItemIsFeatured] = useState(false);
 
 
   useEffect(() => {
@@ -382,6 +384,8 @@ export default function SuperAdminPanelPage() {
             setItemCost(item.cost);
             setItemType(item.type);
             setItemQuantity(item.quantity);
+            setItemStock(item.stock);
+            setItemIsFeatured(item.isFeatured);
         } else {
             setEditingStoreItem(null);
             setItemName('');
@@ -389,6 +393,8 @@ export default function SuperAdminPanelPage() {
             setItemCost(100);
             setItemType('scratch-card');
             setItemQuantity(1);
+            setItemStock(100);
+            setItemIsFeatured(false);
         }
         setIsStoreItemDialogOpen(true);
     }
@@ -406,6 +412,8 @@ export default function SuperAdminPanelPage() {
             cost: itemCost,
             type: itemType,
             quantity: itemQuantity,
+            stock: itemStock,
+            isFeatured: itemIsFeatured,
         };
 
         if (editingStoreItem) {
@@ -527,7 +535,34 @@ export default function SuperAdminPanelPage() {
                                     </div>
                                 ))}
                             </div>
-                            <Button className="w-full" onClick={() => openPackDialog(null)}>Add New Credit Pack</Button>
+                            <Dialog open={isPackDialogOpen} onOpenChange={setIsPackDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="w-full" onClick={() => openPackDialog(null)}>Add New Credit Pack</Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>{editingPack ? 'Edit' : 'Add'} Credit Pack</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="pack-name">Pack Name</Label>
+                                            <Input id="pack-name" value={packName} onChange={e => setPackName(e.target.value)} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="pack-credits">Credits</Label>
+                                            <Input id="pack-credits" type="number" value={packCredits} onChange={e => setPackCredits(Number(e.target.value))} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="pack-price">Price (₹)</Label>
+                                            <Input id="pack-price" type="number" value={packPrice} onChange={e => setPackPrice(Number(e.target.value))} />
+                                        </div>
+                                    </div>
+                                    <DialogFooter>
+                                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                        <Button onClick={handleSavePack}>{editingPack ? 'Save Changes' : 'Create Pack'}</Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
                         </CardContent>
                      </Card>
                       <Card>
@@ -540,9 +575,9 @@ export default function SuperAdminPanelPage() {
                                 {storeItems && storeItems.map(item => (
                                     <div key={item.id} className="flex items-center p-3 rounded-md bg-muted">
                                         <div className="flex-1">
-                                            <p className="font-semibold">{item.name}</p>
+                                            <p className="font-semibold">{item.name} {item.isFeatured && <span className="text-xs text-primary">(Featured)</span>}</p>
                                             <p className="text-sm text-muted-foreground">
-                                                {item.cost} Credits
+                                                {item.cost} Credits | Stock: {item.stock}
                                             </p>
                                         </div>
                                         <Button variant="ghost" size="icon" onClick={() => openStoreItemDialog(item)}><Edit className="h-4 w-4"/></Button>
@@ -1292,35 +1327,11 @@ export default function SuperAdminPanelPage() {
                 </DialogFooter>
             </DialogContent>
         </Dialog>
-         <Dialog open={isPackDialogOpen} onOpenChange={setIsPackDialogOpen}>
+        
+        <Dialog open={isStoreItemDialogOpen} onOpenChange={setIsStoreItemDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{editingPack ? 'Edit' : 'Add'} Credit Pack</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="pack-name">Pack Name</Label>
-                        <Input id="pack-name" value={packName} onChange={e => setPackName(e.target.value)} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="pack-credits">Credits</Label>
-                        <Input id="pack-credits" type="number" value={packCredits} onChange={e => setPackCredits(Number(e.target.value))} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="pack-price">Price (₹)</Label>
-                        <Input id="pack-price" type="number" value={packPrice} onChange={e => setPackPrice(Number(e.target.value))} />
-                    </div>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                    <Button onClick={handleSavePack}>{editingPack ? 'Save Changes' : 'Create Pack'}</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-         <Dialog open={isStoreItemDialogOpen} onOpenChange={setIsStoreItemDialogOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Store Item</DialogTitle>
+                    <DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Redeemable Item</DialogTitle>
                 </DialogHeader>
                  <div className="grid gap-4 py-4">
                     <div className="space-y-2">
@@ -1347,9 +1358,19 @@ export default function SuperAdminPanelPage() {
                             </Select>
                         </div>
                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="item-quantity">Quantity</Label>
-                        <Input id="item-quantity" type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))} />
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="item-quantity">Quantity (per purchase)</Label>
+                            <Input id="item-quantity" type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="item-stock">Stock</Label>
+                            <Input id="item-stock" type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))} />
+                        </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <input type="checkbox" id="item-featured" checked={itemIsFeatured} onChange={e => setItemIsFeatured(e.target.checked)} />
+                        <Label htmlFor="item-featured">Mark as Featured</Label>
                     </div>
                 </div>
                 <DialogFooter>
