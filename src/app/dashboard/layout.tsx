@@ -63,7 +63,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             <main className="relative flex-1 overflow-y-auto focus:outline-none flex flex-col">
             <SidebarInset className={cn(
                 "flex-1 flex flex-col",
-                isImmersive ? "!p-0" : "p-4 sm:p-6 lg:p-8 pb-24"
+                isImmersive ? "!p-0" : "p-4 sm:p-6 lg:p-8"
             )}>
                 {children}
             </SidebarInset>
@@ -91,3 +91,5 @@ export default function DashboardLayout({
     </ImmersiveProvider>
   );
 }
+
+    

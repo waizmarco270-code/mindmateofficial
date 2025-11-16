@@ -75,7 +75,6 @@ export interface User {
     f?: number;
   };
   elementQuestMilestonesClaimed?: number[];
-  claimedGlobalGifts?: string[];
   dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
@@ -270,7 +269,7 @@ interface AppDataContextType {
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    claimMathematicsLegendMilestone: (uid: string) => Promise<boolean>;
+    claimMathematicsLegendMilestone: (uid: string, milestone: number) => Promise<boolean>;
     makeUserAdmin: (uid: string) => Promise<void>;
     removeUserAdmin: (uid: string) => Promise<void>;
     makeUserVip: (uid: string) => Promise<void>;
@@ -592,8 +591,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
         const unsubShowcases = onSnapshot(showcasesQuery, (snapshot) => setFeatureShowcases(processSnapshot<FeatureShowcase>(snapshot)));
         const unsubCreditPacks = onSnapshot(creditPacksQuery, (snapshot) => {
-             const packs = processSnapshot<CreditPack>(snapshot);
-             if (packs.length === 0) {
+            const packs = processSnapshot<CreditPack>(snapshot);
+            if (packs.length === 0) {
                  // Pre-populate if empty
                 const defaultPacksData = [
                     { name: 'Starter Pack', credits: 500, price: 10 },
@@ -611,9 +610,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 batch.commit().then(() => {
                     setCreditPacks(createdPacks); // Update local state immediately
                 });
-             } else {
+            } else {
                 setCreditPacks(packs);
-             }
+            }
         });
         const unsubStoreItems = onSnapshot(storeItemsQuery, (snapshot) => setStoreItems(processSnapshot<StoreItem>(snapshot)));
         const unsubPurchaseRequests = onSnapshot(purchaseRequestsQuery, (snapshot) => setPurchaseRequests(processTimestampedSnapshot(snapshot)));
@@ -1131,7 +1130,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         return true;
     };
 
-    const claimMathematicsLegendMilestone = useCallback(async (uid: string, milestone: number) => {
+    const claimMathematicsLegendMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
 
@@ -1698,7 +1697,5 @@ export const useDailySurprises = () => {
         loading: context.loading
     };
 }
-
-    
 
     

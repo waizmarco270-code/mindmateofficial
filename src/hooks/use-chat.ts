@@ -1,10 +1,10 @@
 
+
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, doc, setDoc } from 'firebase/firestore';
-import { useFriends } from './use-friends';
 
 export interface Message {
     id: string;
@@ -82,3 +82,5 @@ export const useChat = (friendId: string) => {
 
     return { messages, loading, sendMessage };
 }
+
+    

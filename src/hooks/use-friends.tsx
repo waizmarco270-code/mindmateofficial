@@ -1,9 +1,11 @@
+
+
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
 import { useUsers, User } from './use-admin';
 import { useToast } from './use-toast';
 
@@ -123,12 +125,8 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
         const currentUserRef = doc(db, 'users', currentUser.id);
         const friendUserRef = doc(db, 'users', request.senderId);
 
-        const currentUserFriends = (currentUserData?.friends || []);
-        const senderUser = allUsers.find(u => u.uid === request.senderId);
-        const senderFriends = (senderUser?.friends || []);
-
-        batch.update(currentUserRef, { friends: [...currentUserFriends, request.senderId] });
-        batch.update(friendUserRef, { friends: [...senderFriends, currentUser.id] });
+        batch.update(currentUserRef, { friends: arrayUnion(request.senderId) });
+        batch.update(friendUserRef, { friends: arrayUnion(currentUser.id) });
 
         try {
             await batch.commit();
@@ -137,7 +135,7 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error accepting friend request:", error);
             toast({ variant: 'destructive', title: "Error", description: "Could not accept friend request." });
         }
-    }, [currentUser, currentUserData, allUsers, toast]);
+    }, [currentUser, toast]);
 
     const declineFriendRequest = useCallback(async (request: FriendRequest) => {
         const requestRef = doc(db, 'friendRequests', request.id);
@@ -151,18 +149,15 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
     }, [toast]);
 
     const removeFriend = useCallback(async (friendId: string) => {
-        if (!currentUser || !currentUserData) return;
+        if (!currentUser) return;
         const batch = writeBatch(db);
 
         const currentUserRef = doc(db, 'users', currentUser.id);
         const friendUserRef = doc(db, 'users', friendId);
         
-        const currentUserFriends = (currentUserData.friends || []).filter(id => id !== friendId);
-        const friendUser = allUsers.find(u => u.uid === friendId);
-        const friendFriends = (friendUser?.friends || []).filter(id => id !== currentUser.id);
-
-        batch.update(currentUserRef, { friends: currentUserFriends });
-        batch.update(friendUserRef, { friends: friendFriends });
+        // Using arrayRemove to handle deletion from arrays
+        batch.update(currentUserRef, { friends: arrayRemove(friendId) });
+        batch.update(friendUserRef, { friends: arrayRemove(currentUser.id) });
 
         try {
             await batch.commit();
@@ -171,7 +166,7 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error removing friend:", error);
             toast({ variant: 'destructive', title: "Error", description: "Could not remove friend." });
         }
-    }, [currentUser, currentUserData, allUsers, toast]);
+    }, [currentUser, toast]);
 
     const value: FriendsContextType = { 
         friends, 
@@ -198,3 +193,5 @@ export const useFriends = () => {
     }
     return context;
 };
+
+    
