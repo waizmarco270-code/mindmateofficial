@@ -44,6 +44,7 @@ export default function RootLayout({
            <link rel="manifest" href="/manifest.json" />
            <link rel="icon" href="/logo.jpg?v=2" type="image/jpeg" sizes="any" />
            <link rel="apple-touch-icon" href="/logo.jpg?v=2" />
+           <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4020763286633958" crossOrigin="anonymous"></script>
         </head>
         <body className={cn('font-body antialiased', 'min-h-screen bg-background font-sans select-none')}>
           <ThemeProvider
