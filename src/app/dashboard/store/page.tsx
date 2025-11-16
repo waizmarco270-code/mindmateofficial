@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,7 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter } from '@/components/ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 
 function CreditPacksTab() {
@@ -160,7 +162,8 @@ function RedeemItemsTab() {
              {!loading && storeItems && storeItems.map(item => {
                  const canAfford = hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost;
                  return (
-                    <Card key={item.id} className="flex flex-col">
+                    <Card key={item.id} className={cn("flex flex-col relative overflow-hidden", item.isFeatured && "border-primary")}>
+                        {item.isFeatured && <div className="absolute top-2 right-2 text-xs font-bold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">Featured</div>}
                         <CardHeader className="text-center">
                             <div className="mx-auto mb-4 h-16 w-16 flex items-center justify-center rounded-full bg-primary/10 text-primary">
                                 {getItemIcon(item.type)}
@@ -168,7 +171,13 @@ function RedeemItemsTab() {
                             <CardTitle className="text-2xl">{item.name}</CardTitle>
                             <CardDescription>{item.description}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-1" />
+                        <CardContent className="flex-1">
+                             {item.stock < 100 && (
+                                <p className="text-center text-sm font-bold text-destructive mb-4">
+                                    {item.stock > 0 ? `Only ${item.stock} left!` : "Sold Out!"}
+                                </p>
+                            )}
+                        </CardContent>
                         <CardFooter className="flex flex-col gap-4">
                             <div className="font-bold text-2xl flex items-center gap-2">
                                 <Gem className="h-5 w-5 text-amber-500" />
@@ -176,9 +185,9 @@ function RedeemItemsTab() {
                             </div>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button className="w-full text-lg h-12" disabled={!canAfford || isRedeeming === item.id}>
+                                    <Button className="w-full text-lg h-12" disabled={!canAfford || isRedeeming === item.id || item.stock === 0}>
                                          {isRedeeming === item.id ? <Loader2 className="mr-2 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
-                                        Redeem
+                                        {item.stock === 0 ? "Sold Out" : "Redeem"}
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>

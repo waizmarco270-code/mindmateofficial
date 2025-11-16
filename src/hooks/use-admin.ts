@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -341,20 +342,20 @@ interface AppDataContextType {
     deleteFeatureShowcase: (id: string) => Promise<void>;
     
     creditPacks: CreditPack[];
-    createCreditPack?: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
-    updateCreditPack?: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
-    deleteCreditPack?: (id: string) => Promise<void>;
+    createCreditPack: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
+    updateCreditPack: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
+    deleteCreditPack: (id: string) => Promise<void>;
 
     purchaseRequests: PurchaseRequest[];
-    createPurchaseRequest?: (pack: CreditPack, transactionId: string) => Promise<void>;
-    approvePurchaseRequest?: (request: PurchaseRequest) => Promise<void>;
-    declinePurchaseRequest?: (requestId: string) => Promise<void>;
+    createPurchaseRequest: (pack: CreditPack, transactionId: string) => Promise<void>;
+    approvePurchaseRequest: (request: PurchaseRequest) => Promise<void>;
+    declinePurchaseRequest: (requestId: string) => Promise<void>;
     
     storeItems: StoreItem[];
-    createStoreItem?: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
-    updateStoreItem?: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
-    deleteStoreItem?: (id: string) => Promise<void>;
-    redeemStoreItem?: (item: StoreItem) => Promise<void>;
+    createStoreItem: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
+    updateStoreItem: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
+    deleteStoreItem: (id: string) => Promise<void>;
+    redeemStoreItem: (item: StoreItem) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -369,8 +370,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     // STATE MANAGEMENT
     const [isAdmin, setIsAdmin] = useState(false);
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [isCoDev, setIsCoDev] = useState(false);
+    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [currentUserData, setCurrentUserData] = useState<User | null>(null);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -532,9 +533,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubLocks = onSnapshot(doc(db, 'appConfig', 'featureLocks'), (doc) => setFeatureLocks(doc.exists() ? doc.data() as Record<LockableFeature['id'], FeatureLock> : null));
         const unsubShowcases = onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processSnapshot<FeatureShowcase>(s)));
         
-        const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), (snapshot) => {
-            const packs = processSnapshot<CreditPack>(snapshot);
-            if (packs.length === 0) {
+        const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), async (snapshot) => {
+            if (snapshot.empty) {
                  const defaultPacksData = [
                     { name: 'Starter Pack', credits: 500, price: 10 },
                     { name: 'Student Pack', credits: 1500, price: 25 },
@@ -542,14 +542,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                  ];
                  const batch = writeBatch(db);
                  defaultPacksData.forEach(pack => batch.set(doc(collection(db, 'creditPacks')), { ...pack, createdAt: serverTimestamp() }));
-                 batch.commit().then(() => {
-                     // After commit, we let the onSnapshot listener fetch the new data automatically
-                 });
+                 await batch.commit();
+                 // The listener will re-fire with the new data
             } else {
-                setCreditPacks(packs);
+                 setCreditPacks(processSnapshot<CreditPack>(snapshot));
             }
         });
-        const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('cost', 'asc')), (s) => setStoreItems(processSnapshot<StoreItem>(s)));
+        const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('cost', 'asc')), async (s) => {
+            if(s.empty) {
+                const defaultItems = [
+                    { name: '5 Scratch Cards', description: 'Test your luck with a bundle of 5 scratch cards.', cost: 80, type: 'scratch-card', quantity: 5, stock: 999, isFeatured: true },
+                    { name: '5 Card Flip Plays', description: 'Get 5 extra plays for the Card Flip game.', cost: 40, type: 'card-flip', quantity: 5, stock: 999, isFeatured: false }
+                ];
+                 const batch = writeBatch(db);
+                 defaultItems.forEach(item => batch.set(doc(collection(db, 'storeItems')), { ...item, createdAt: serverTimestamp() }));
+                 await batch.commit();
+            } else {
+                setStoreItems(processSnapshot<StoreItem>(s))
+            }
+        });
         const unsubPurchaseRequests = onSnapshot(query(collection(db, 'creditPurchaseRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'asc')), (s) => setPurchaseRequests(processTimestampedSnapshot(s)));
         
 
@@ -886,9 +897,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         }
     }, []);
     const resetGameZoneLeaderboard = useCallback(async () => {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const usersSnapshot = await getDocs(query(collection(db, 'users')));
         const batch = writeBatch(db);
-        usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0 } }));
+        const resetScores = {
+            memoryGame: 0,
+            emojiQuiz: 0,
+            dimensionShift: 0,
+            subjectSprint: 0,
+            flappyMind: 0,
+            astroAscent: 0,
+            mathematicsLegend: 0,
+        };
+        usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { gameHighScores: resetScores }));
         await batch.commit();
     }, []);
     const updateAppSettings = async (settings: Partial<AppSettings>) => await setDoc(doc(db, 'appConfig', 'settings'), settings, { merge: true });
