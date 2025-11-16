@@ -45,6 +45,7 @@ export default function RootLayout({
            <link rel="icon" href="/logo.jpg?v=2" type="image/jpeg" sizes="any" />
            <link rel="apple-touch-icon" href="/logo.jpg?v=2" />
            <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4020763286633958" crossOrigin="anonymous"></script>
+           <script type='text/javascript' src='//www.effectivegatecpm.com/wnm53cza?key=46a2d6759dc246e7886deade36c72ba0'></script>
         </head>
         <body className={cn('font-body antialiased', 'min-h-screen bg-background font-sans select-none')}>
           <ThemeProvider
@@ -58,7 +59,6 @@ export default function RootLayout({
             <Analytics />
             <PWAInstallPrompt />
           </ThemeProvider>
-          <script type='text/javascript' src='//pl28059856.effectivegatecpm.com/e8/de/1d/e8de1db75ad4d8edc513827078e7ad34.js'></script>
         </body>
       </html>
     </ClerkProvider>
