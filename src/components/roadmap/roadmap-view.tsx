@@ -1,11 +1,10 @@
 
-
 'use client';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play, Trash2, AlertTriangle, X } from 'lucide-react';
-import { addDays, format, isPast, isToday, endOfWeek, startOfWeek, differenceInSeconds } from 'date-fns';
+import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play, Trash2, AlertTriangle, X, Flame, Dumbbell } from 'lucide-react';
+import { addDays, format, isPast, isToday, endOfWeek, startOfWeek, differenceInSeconds, startOfToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { useState, useMemo, useEffect } from 'react';
@@ -102,6 +101,109 @@ function ExamCountdown({ examDate }: { examDate: Date }) {
         </div>
     );
 }
+
+function DisciplineTrackers({ roadmap }: { roadmap: Roadmap }) {
+    const { handleRelapse, toggleWorkoutDay } = useRoadmaps();
+    const [streak, setStreak] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+
+    const noFapStartDate = useMemo(() => {
+        const history = roadmap.relapseHistory || [];
+        const lastRelapse = history.length > 0 ? history[history.length - 1] : null;
+        return lastRelapse ? new Date(lastRelapse) : new Date(roadmap.noFapStartDate!);
+    }, [roadmap.noFapStartDate, roadmap.relapseHistory]);
+
+    useEffect(() => {
+        if (!roadmap.hasNoFapTracker) return;
+
+        const interval = setInterval(() => {
+            const totalSeconds = differenceInSeconds(new Date(), noFapStartDate);
+            if (totalSeconds < 0) return;
+            const days = Math.floor(totalSeconds / 86400);
+            const hours = Math.floor((totalSeconds % 86400) / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            setStreak({ days, hours, minutes, seconds });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [noFapStartDate, roadmap.hasNoFapTracker]);
+    
+    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+    const weekDays = Array.from({length: 7}).map((_, i) => addDays(currentWeekStart, i));
+
+    if (!roadmap.hasNoFapTracker && !roadmap.hasWorkoutTracker) {
+        return null;
+    }
+
+    return (
+        <div className="space-y-6">
+            <h2 className="text-xl font-bold">Discipline Trackers</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {roadmap.hasNoFapTracker && (
+                    <Card className="bg-gradient-to-br from-orange-900/80 via-slate-900 to-slate-900 border-orange-700/50">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-orange-400"><Flame /> NoFap Streak</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-center">
+                            <div className="grid grid-cols-4 gap-2 text-white font-mono">
+                                <div><p className="text-4xl font-bold">{String(streak.days).padStart(2, '0')}</p><p className="text-xs">Days</p></div>
+                                <div><p className="text-4xl font-bold">{String(streak.hours).padStart(2, '0')}</p><p className="text-xs">Hours</p></div>
+                                <div><p className="text-4xl font-bold">{String(streak.minutes).padStart(2, '0')}</p><p className="text-xs">Mins</p></div>
+                                <div><p className="text-4xl font-bold">{String(streak.seconds).padStart(2, '0')}</p><p className="text-xs">Secs</p></div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" className="w-full"><AlertTriangle className="mr-2 h-4 w-4"/> Relapsed</Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>This will reset your streak counter to zero. Acknowledge the slip-up and start again stronger.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleRelapse(roadmap.id)}>Reset My Streak</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </CardFooter>
+                    </Card>
+                )}
+                {roadmap.hasWorkoutTracker && (
+                    <Card className="bg-gradient-to-br from-emerald-900/80 via-slate-900 to-slate-900 border-emerald-700/50">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-emerald-400"><Dumbbell/> Workout Log</CardTitle>
+                            <CardDescription>Mark the days you've completed your workout this week.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex justify-around items-center">
+                            {weekDays.map(day => {
+                                const dateKey = format(day, 'yyyy-MM-dd');
+                                const isCompleted = roadmap.workoutLog?.[dateKey];
+                                return (
+                                    <button
+                                        key={dateKey}
+                                        onClick={() => toggleWorkoutDay(roadmap.id, dateKey)}
+                                        className={cn(
+                                            "flex flex-col items-center justify-center h-16 w-12 rounded-lg border-2 transition-all duration-200",
+                                            isCompleted ? "bg-green-500/20 border-green-500 text-green-400" : "bg-muted/10 border-transparent hover:bg-muted/30",
+                                            isToday(day) && "ring-2 ring-primary ring-offset-2 ring-offset-background"
+                                        )}
+                                    >
+                                        <span className="text-xs">{format(day, 'EEE')}</span>
+                                        <span className="text-lg font-bold">{format(day, 'd')}</span>
+                                        {isCompleted && <CheckCircle className="h-4 w-4 mt-1"/>}
+                                    </button>
+                                )
+                            })}
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        </div>
+    );
+}
+
 
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
     const { toggleTaskCompletion, logStudyTime } = useRoadmaps();
@@ -222,6 +324,7 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                 <CardContent className="flex-1 overflow-hidden">
                     <ScrollArea className="h-full pr-6">
                         <div className="space-y-8">
+                             {(roadmap.hasNoFapTracker || roadmap.hasWorkoutTracker) && <DisciplineTrackers roadmap={roadmap} />}
                             {Array.from({ length: roadmap.duration }).map((_, i) => {
                                 const dayNumber = i + 1;
                                 const dayMilestone = roadmap.milestones.find(m => m.day === dayNumber);
