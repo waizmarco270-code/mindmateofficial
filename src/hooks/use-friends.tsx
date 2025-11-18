@@ -5,7 +5,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, where, writeBatch, serverTimestamp, getDocs, updateDoc, arrayUnion, arrayRemove, Timestamp } from 'firebase/firestore';
 import { useUsers, User } from './use-admin';
 import { useToast } from './use-toast';
 
@@ -67,7 +67,7 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
                 return {
                     id: doc.id,
                     ...data,
-                    createdAt: data.createdAt?.toDate() || new Date(),
+                    createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
                 } as FriendRequest
             });
             setFriendRequests(requests);
@@ -78,7 +78,14 @@ export const FriendsProvider = ({ children }: { children: ReactNode }) => {
         });
 
         const unsubSent = onSnapshot(qSent, snapshot => {
-             const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FriendRequest));
+             const requests = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
+                } as FriendRequest;
+             });
              setSentRequests(requests);
         });
 
@@ -194,4 +201,3 @@ export const useFriends = () => {
     return context;
 };
 
-    
