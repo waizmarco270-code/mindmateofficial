@@ -1,6 +1,7 @@
+
 'use client';
 import { useState } from 'react';
-import { Roadmap, RoadmapMilestone, RoadmapCategory, RoadmapTask, useRoadmaps } from '@/hooks/use-roadmaps';
+import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,15 +9,16 @@ import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Slider } from '@/components/ui/slider';
-import { PlusCircle, ArrowLeft, CheckCircle, Loader2, CalendarIcon, Wand2 } from 'lucide-react';
+import { PlusCircle, ArrowLeft, CheckCircle, Loader2, CalendarIcon, Wand2, Brain, Dumbbell } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Textarea } from '../ui/textarea';
+import { Switch } from '../ui/switch';
 
 interface RoadmapCreationProps {
     onCancel: () => void;
-    onComplete: (newRoadmapId: string) => void;
+    onComplete: (newRoadmapData: Omit<Roadmap, 'id' | 'userId'>) => void;
 }
 
 export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) {
@@ -28,6 +30,8 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
     const [name, setName] = useState('');
     const [examDate, setExamDate] = useState<Date | undefined>(new Date());
     const [duration, setDuration] = useState(90);
+    const [includeNoFap, setIncludeNoFap] = useState(false);
+    const [includeWorkout, setIncludeWorkout] = useState(false);
 
     const handleSubmit = async () => {
         if(!name.trim()) {
@@ -41,21 +45,23 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
 
         setIsSubmitting(true);
         try {
-             const roadmapData: Omit<Roadmap, 'id' | 'userId' | 'startDate' | 'dailyStudyTime' | 'weeklyReflections' | 'targetExam'> = {
+             const newRoadmapData: Omit<Roadmap, 'id' | 'userId'> = {
                 name,
                 examDate: examDate.toISOString(),
                 duration,
-                milestones: []
+                startDate: new Date().toISOString(),
+                milestones: [],
+                dailyStudyTime: {},
+                weeklyReflections: {},
+                hasNoFapTracker: includeNoFap,
+                noFapStartDate: includeNoFap ? new Date().toISOString() : undefined,
+                relapseHistory: [],
+                hasWorkoutTracker: includeWorkout,
+                workoutLog: {}
              };
              
-            const newRoadmapId = await addRoadmap(roadmapData);
-            toast({ title: "Roadmap Created!", description: "Your new roadmap is ready." });
+            onComplete(newRoadmapData);
 
-            if (newRoadmapId) {
-                 onComplete(newRoadmapId);
-            } else {
-                throw new Error("Failed to get new roadmap ID");
-            }
         } catch (error) {
              toast({ variant: 'destructive', title: "Error", description: "Could not create roadmap." });
              setIsSubmitting(false);
@@ -116,6 +122,23 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
                         <div className="flex justify-between text-xs text-muted-foreground">
                             <span>1 Week</span>
                             <span>1 Year</span>
+                        </div>
+                    </div>
+                     <div className="space-y-4 pt-4 border-t">
+                        <Label className="text-base font-semibold">Discipline Trackers (Optional)</Label>
+                        <div className="flex items-center justify-between p-4 border rounded-lg">
+                            <Label htmlFor="nofap-tracker" className="flex items-center gap-3 cursor-pointer">
+                                <Brain className="h-5 w-5 text-purple-400" />
+                                <span className="font-medium">Include NoFap Tracker</span>
+                            </Label>
+                            <Switch id="nofap-tracker" checked={includeNoFap} onCheckedChange={setIncludeNoFap} />
+                        </div>
+                         <div className="flex items-center justify-between p-4 border rounded-lg">
+                            <Label htmlFor="workout-tracker" className="flex items-center gap-3 cursor-pointer">
+                                <Dumbbell className="h-5 w-5 text-orange-400" />
+                                <span className="font-medium">Include Workout Tracker</span>
+                            </Label>
+                            <Switch id="workout-tracker" checked={includeWorkout} onCheckedChange={setIncludeWorkout} />
                         </div>
                     </div>
                 </CardContent>
