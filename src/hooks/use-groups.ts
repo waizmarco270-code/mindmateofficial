@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, orderBy, limit, updateDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, orderBy, limit, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
 
@@ -16,6 +15,11 @@ export interface Group {
     createdBy: string;
     createdAt: Timestamp;
     memberDetails?: User[]; // Populated client-side
+    lastMessage?: {
+        text: string;
+        senderId: string;
+        timestamp: Timestamp;
+    };
 }
 
 export interface GroupMessage {
@@ -42,9 +46,8 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!user) {
-            setGroups([]);
-            setLoading(false);
+        if (!user || usersLoading) {
+            setLoading(usersLoading);
             return;
         }
 
@@ -70,7 +73,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         });
 
         return () => unsubscribe();
-    }, [user, users]);
+    }, [user, users, usersLoading]);
 
     const createGroup = useCallback(async (name: string, memberIds: string[]) => {
         if (!user) return;
@@ -88,7 +91,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [user, toast]);
 
-    const value = { groups, loading: loading || usersLoading, createGroup };
+    const value: GroupsContextType = { groups, loading: loading || usersLoading, createGroup };
 
     return (
         <GroupsContext.Provider value={value}>
@@ -111,7 +114,11 @@ export const useGroupChat = (groupId: string) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        if (!groupId) return;
+        if (!groupId) {
+            setLoading(false);
+            return;
+        };
+
         setLoading(true);
         const messagesRef = collection(db, 'groups', groupId, 'messages');
         const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(100)); // Get last 100 messages
@@ -143,7 +150,6 @@ export const useGroupChat = (groupId: string) => {
             timestamp: serverTimestamp(),
         });
         
-        // Update last message on the group for previews
         const groupRef = doc(db, 'groups', groupId);
         await updateDoc(groupRef, {
             lastMessage: {
