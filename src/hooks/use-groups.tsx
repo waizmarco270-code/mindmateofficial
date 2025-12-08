@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
@@ -13,7 +12,7 @@ import { GroupsContext, type GroupsContextType, type Group } from '@/context/gro
 
 export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
-    const { users, loading: usersLoading } = useUsers();
+    const { users, currentUserData, addCreditsToUser, loading: usersLoading } = useUsers();
     const { toast } = useToast();
     const [groups, setGroups] = useState<Group[]>([]);
     const [loading, setLoading] = useState(true);
@@ -54,7 +53,16 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     }, [user, users, usersLoading]);
 
     const createGroup = useCallback(async (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => {
-        if (!user) return;
+        if (!user || !currentUserData) return;
+
+        const creationCost = 200;
+        const hasMasterCard = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
+        if (!hasMasterCard && currentUserData.credits < creationCost) {
+            toast({ variant: "destructive", title: "Insufficient Credits", description: `You need ${creationCost} credits to create a clan.` });
+            return;
+        }
+
         try {
             await addDoc(collection(db, 'groups'), {
                 name,
@@ -65,12 +73,17 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
                 createdAt: serverTimestamp(),
                 members: [user.id, ...memberIds],
             });
-            toast({ title: "Clan Created!", description: `"${name}" is ready.` });
+            
+            if (!hasMasterCard) {
+                await addCreditsToUser(user.id, -creationCost);
+            }
+
+            toast({ title: "Clan Created!", description: `"${name}" is ready. ${!hasMasterCard ? `${creationCost} credits were deducted.` : ''}` });
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Could not create clan." });
             console.error("Error creating group:", error);
         }
-    }, [user, toast]);
+    }, [user, currentUserData, toast, addCreditsToUser]);
 
     const value: GroupsContextType = { groups, loading: loading || usersLoading, createGroup };
 

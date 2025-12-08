@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
@@ -12,20 +11,24 @@ import { useGroups } from '@/hooks/use-groups.tsx';
 import { Checkbox } from '../ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
-import { Loader2, PlusCircle, ImagePlus, Edit } from 'lucide-react';
+import { Loader2, PlusCircle, ImagePlus, Edit, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@clerk/nextjs';
 import { groupBanners } from '@/lib/group-assets';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { useUsers } from '@/hooks/use-admin';
 
 interface CreateGroupModalProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
 }
 
+const CLAN_CREATION_COST = 200;
+
 export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps) {
     const { user } = useUser();
+    const { currentUserData } = useUsers();
     const { friends, loading: friendsLoading } = useFriends();
     const { createGroup } = useGroups();
     const { toast } = useToast();
@@ -38,6 +41,8 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
     const [isCreating, setIsCreating] = useState(false);
     
     const logoInputRef = useRef<HTMLInputElement>(null);
+
+    const hasEnoughCredits = (currentUserData?.credits ?? 0) >= CLAN_CREATION_COST;
 
     const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -73,7 +78,11 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
     const handleCreateGroup = useCallback(async () => {
         if (!user) return;
         if (!groupName.trim()) {
-            toast({ variant: 'destructive', title: "Group name is required." });
+            toast({ variant: 'destructive', title: "Clan name is required." });
+            return;
+        }
+        if (!hasEnoughCredits) {
+            toast({ variant: 'destructive', title: "Insufficient Credits", description: `You need ${CLAN_CREATION_COST} credits to create a clan.` });
             return;
         }
 
@@ -87,7 +96,7 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
         } finally {
             setIsCreating(false);
         }
-    }, [user, groupName, groupMotto, groupLogo, selectedBanner, selectedFriendIds, toast, onOpenChange, createGroup, resetForm]);
+    }, [user, groupName, groupMotto, groupLogo, selectedBanner, selectedFriendIds, toast, onOpenChange, createGroup, resetForm, hasEnoughCredits]);
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); if(!open) resetForm(); }}>
@@ -166,12 +175,20 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
                             )}
                         </ScrollArea>
                     </div>
+                    
+                    <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
+                        <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                        <p className="text-xs font-semibold">
+                            Clan creation costs {CLAN_CREATION_COST} credits. Your balance: {currentUserData?.credits ?? 0}
+                        </p>
+                    </div>
+
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button onClick={handleCreateGroup} disabled={isCreating || !groupName.trim()}>
+                    <Button onClick={handleCreateGroup} disabled={isCreating || !groupName.trim() || !hasEnoughCredits}>
                         {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                         Create Clan
                     </Button>
