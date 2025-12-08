@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -110,15 +111,33 @@ export function GroupFocus({ group }: GroupFocusProps) {
                 <CardDescription>Start a group focus session to study with your clan and earn massive XP.</CardDescription>
             </CardHeader>
             <CardContent className="relative z-10 space-y-4 text-center">
-                <p className="font-semibold">Choose a session duration:</p>
-                <div className="flex justify-center gap-4">
-                    {DURATION_OPTIONS.map(opt => (
-                         <Button key={opt.seconds} variant={sessionDuration === opt.seconds ? 'default' : 'secondary'} onClick={() => setSessionDuration(opt.seconds)}>{opt.label}</Button>
-                    ))}
-                </div>
-                 <Button size="lg" className="w-full sm:w-auto" onClick={() => setIsSessionActive(true)}>
-                    <Play className="mr-2"/> Start Group Focus
-                </Button>
+                <AnimatePresence>
+                    {isSessionActive ? (
+                        <motion.div
+                            key="session-options"
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="overflow-hidden"
+                        >
+                            <div className="space-y-4 pt-4">
+                                <p className="font-semibold">Choose a session duration:</p>
+                                <div className="flex justify-center gap-4">
+                                    {DURATION_OPTIONS.map(opt => (
+                                        <Button key={opt.seconds} variant={sessionDuration === opt.seconds ? 'default' : 'secondary'} onClick={() => setSessionDuration(opt.seconds)}>{opt.label}</Button>
+                                    ))}
+                                </div>
+                                <Button size="lg" className="w-full sm:w-auto" onClick={() => setIsSessionActive(true)}>
+                                    <Play className="mr-2"/> Start Group Focus
+                                </Button>
+                            </div>
+                        </motion.div>
+                    ) : (
+                         <Button size="lg" className="w-full sm:w-auto" onClick={() => setIsSessionActive(true)}>
+                             <Play className="mr-2"/> Start Group Focus
+                        </Button>
+                    )}
+                </AnimatePresence>
             </CardContent>
         </Card>
     );
