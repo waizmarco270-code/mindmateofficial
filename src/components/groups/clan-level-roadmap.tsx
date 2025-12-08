@@ -60,16 +60,20 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange }: ClanLevelRoadma
                                                     </div>
                                                 </div>
                                                 {level.badge && (
-                                                    <div className="p-3 rounded-lg bg-muted border flex items-center gap-3">
-                                                        <Gem className="h-6 w-6 text-fuchsia-500"/>
-                                                        <div>
-                                                            <p className="font-bold">Unlocked Badge</p>
+                                                    <div className="p-3 rounded-lg bg-muted border flex flex-col items-start gap-2">
+                                                        <div className="flex items-center gap-3">
+                                                            <Gem className="h-6 w-6 text-fuchsia-500"/>
+                                                            <div>
+                                                                <p className="font-bold">Unlocked Badge</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="self-center pt-1">
                                                             <div className={level.badge.class}>{level.badge.name}</div>
                                                         </div>
                                                     </div>
                                                 )}
                                                 {banner && (
-                                                     <div className="p-3 rounded-lg bg-muted border flex flex-col items-center gap-3">
+                                                     <div className="p-3 rounded-lg bg-muted border flex flex-col items-start gap-2">
                                                         <div className="flex items-center gap-3 self-start">
                                                             <Shield className="h-6 w-6 text-purple-500"/>
                                                             <div>
