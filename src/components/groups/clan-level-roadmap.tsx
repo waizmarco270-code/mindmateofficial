@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -20,7 +18,7 @@ interface ClanLevelRoadmapDialogProps {
 export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, currentLevel }: ClanLevelRoadmapDialogProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-auto">
+            <DialogContent className="max-w-4xl h-auto bg-background/50 backdrop-blur-lg">
                 <DialogHeader>
                     <DialogTitle className="text-2xl">Clan Level Roadmap</DialogTitle>
                     <DialogDescription>
@@ -41,7 +39,7 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                                     <CarouselItem key={level.level} className="pl-4 md:basis-1/2 lg:basis-1/3">
                                         <div className="p-1">
                                             <Card className={cn(
-                                                "h-full flex flex-col bg-background/30 backdrop-blur-sm transition-all duration-300 border-2 shadow-lg",
+                                                "h-full flex flex-col bg-background transition-all duration-300 border-2 shadow-lg",
                                                 isCurrentLevel ? "border-primary shadow-primary/20" : level.borderColorClass,
                                                 level.shadowClass
                                             )}>
@@ -93,4 +91,4 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
         </Dialog>
     );
 }
-
+    
