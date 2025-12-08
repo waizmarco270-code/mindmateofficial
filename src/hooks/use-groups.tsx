@@ -1,13 +1,13 @@
 
-
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
+import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, orderBy, limit, updateDoc, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, orderBy, updateDoc } from 'firebase/firestore';
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
+import { GroupsContext, type GroupsContextType } from '@/context/groups-context';
 
 export interface Group {
     id: string;
@@ -27,17 +27,9 @@ export interface GroupMessage {
     id: string;
     senderId: string;
     text?: string;
-    imageUrl?: string; // base64 data URI
+    imageUrl?: string;
     timestamp: Date;
 }
-
-interface GroupsContextType {
-    groups: Group[];
-    loading: boolean;
-    createGroup: (name: string, memberIds: string[]) => Promise<void>;
-}
-
-const GroupsContext = createContext<GroupsContextType | undefined>(undefined);
 
 export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
@@ -91,7 +83,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error creating group:", error);
         }
     }, [user, toast]);
-
+    
     const value: GroupsContextType = { groups, loading: loading || usersLoading, createGroup };
 
     return (
@@ -122,7 +114,7 @@ export const useGroupChat = (groupId: string) => {
 
         setLoading(true);
         const messagesRef = collection(db, 'groups', groupId, 'messages');
-        const q = query(messagesRef, orderBy('timestamp', 'asc'), limit(100)); // Get last 100 messages
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const fetchedMessages = snapshot.docs.map(doc => {

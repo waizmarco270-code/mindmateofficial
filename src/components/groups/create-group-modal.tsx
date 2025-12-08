@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useFriends, FriendsProvider } from '@/hooks/use-friends';
+import { useFriends } from '@/hooks/use-friends';
 import { useGroups } from '@/hooks/use-groups';
 import { Checkbox } from '../ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
@@ -19,7 +19,7 @@ interface CreateGroupModalProps {
     onOpenChange: (isOpen: boolean) => void;
 }
 
-function CreateGroupContent({ isOpen, onOpenChange }: CreateGroupModalProps) {
+export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps) {
     const { friends, loading: friendsLoading } = useFriends();
     const { createGroup, loading: groupsLoading } = useGroups();
     const { toast } = useToast();
@@ -107,12 +107,4 @@ function CreateGroupContent({ isOpen, onOpenChange }: CreateGroupModalProps) {
             </DialogContent>
         </Dialog>
     );
-}
-
-export function CreateGroupModal(props: CreateGroupModalProps) {
-    return (
-        <FriendsProvider>
-            <CreateGroupContent {...props} />
-        </FriendsProvider>
-    )
 }
