@@ -2,11 +2,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Group } from '@/context/groups-context';
-import { Loader2, Play, Users, Zap, CheckCircle, Plus, Trash2, Clock } from 'lucide-react';
+import { Loader2, Play, Users, Zap, CheckCircle, Plus, Trash2, Clock, Check, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+
 
 interface GroupFocusProps {
     group: Group;
@@ -87,7 +90,10 @@ export function GroupFocus({ group }: GroupFocusProps) {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button variant="destructive" onClick={() => setIsSessionActive(false)}>End Session</Button>
+                    <Button variant="destructive" onClick={() => setIsSessionActive(false)}>
+                        <X className="mr-2 h-4 w-4" />
+                        End Session
+                    </Button>
                 </CardFooter>
             </Card>
         )
