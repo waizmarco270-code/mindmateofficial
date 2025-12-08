@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { groupBanners } from '@/app/lib/group-assets';
+import { groupBanners } from '@/lib/group-assets';
 import { Users, Award, Shield, Gem, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
@@ -70,7 +70,7 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                                                           {level.badge && (
                                                             <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
                                                                 <Gem className="h-5 w-5 text-fuchsia-400"/>
-                                                                <span className="font-semibold text-sm">Badge: <span className={level.badge.class}>{level.badge.name}</span></span>
+                                                                <span className="font-semibold text-sm flex items-center gap-2">Badge: <span className={level.badge.class}>{level.badge.name}</span></span>
                                                             </div>
                                                         )}
                                                         {banner && (

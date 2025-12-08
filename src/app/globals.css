@@ -454,41 +454,49 @@
   .blue-nebula-bg {
     background: linear-gradient(225deg, #000428, #004e92, #0c2e4e, #2980b9);
     background-size: 250% 250%;
+    animation: nebula-animation 20s ease infinite;
   }
   
   .red-nebula-bg {
     background: linear-gradient(125deg, #2d0000, #6a0000, #2c0b4d, #000000);
     background-size: 300% 300%;
+    animation: nebula-animation 25s ease infinite;
   }
   
   .golden-legend-bg {
      background: linear-gradient(125deg, #33230b, #1a1a1a, #4a3410, #000000);
      background-size: 300% 300%;
+     animation: nebula-animation 25s ease infinite;
   }
   
   .professional-dark-bg {
       background: linear-gradient(125deg, #0f172a, #1e293b, #0f172a);
       background-size: 200% 200%;
+      animation: nebula-animation 30s ease infinite;
   }
   
   .emerald-dream-bg {
     background: linear-gradient(125deg, #064e3b, #10b981, #059669, #022c22);
     background-size: 300% 300%;
+    animation: nebula-animation 22s ease infinite;
   }
 
   .amethyst-haze-bg {
     background: linear-gradient(125deg, #3b0764, #a855f7, #6b21a8, #1e1b4b);
     background-size: 300% 300%;
+    animation: nebula-animation 24s ease infinite;
   }
 
   .solar-flare-bg {
     background: linear-gradient(125deg, #7f1d1d, #f59e0b, #ef4444, #450a0a);
     background-size: 300% 300%;
+    animation: nebula-animation 26s ease infinite;
   }
   
   .midnight-abyss-bg {
     background: linear-gradient(125deg, #0c0a09, #1e293b, #0c0a09, #082f49);
     background-size: 300% 300%;
+    animation: nebula-animation 28s ease infinite;
   }
   
   .rainbow-aurora-bg {
@@ -500,6 +508,7 @@
   .diamond-pearl-bg {
     background: linear-gradient(145deg, #e0e0e0, #ffffff, #f0f0f0, #e0e0e0);
     background-size: 400% 400%;
+    animation: nebula-animation 15s ease infinite;
   }
   
   .cyber-grid-bg {
@@ -510,11 +519,13 @@
         linear-gradient(45deg, transparent 75%, #8b5cf6 75%),
         linear-gradient(-45deg, transparent 75%, #8b5cf6 75%);
     background-size: 60px 60px;
+    animation: animated-grid 10s linear infinite;
   }
 
   .oceanic-flow-bg {
     background: linear-gradient(125deg, #0891b2, #0ea5e9, #0284c7, #075985);
     background-size: 200% 200%;
+    animation: oceanic-flow 18s ease infinite;
   }
 
   .synthwave-sunset-bg {
@@ -523,14 +534,17 @@
       linear-gradient(to top, rgba(253, 98, 255, 0.4) 1px, transparent 1px),
       linear-gradient(to right, rgba(253, 98, 255, 0.4) 1px, transparent 1px);
     background-size: 4rem 4rem;
+    animation: synthwave-scroll 10s linear infinite;
   }
   .jungle-ruins-bg {
     background: linear-gradient(125deg, #223B2F, #3A5F4F, #5D8C6F, #2F4F41);
     background-size: 200% 200%;
+    animation: nebula-animation 25s ease infinite;
   }
   .black-hole-bg {
     background-color: #000;
     background-image: radial-gradient(circle, #4c00b0, #2c006e, #000000 70%);
+    animation: black-hole-spin 50s linear infinite;
   }
   .anime-speed-lines-bg {
     background: repeating-linear-gradient(45deg, #1e293b, #1e293b 10px, #334155 10px, #334155 20px);
@@ -545,10 +559,12 @@
   .lava-flow-bg {
     background: linear-gradient(135deg, #ff4800, #ff7e00, #ff4800, #000);
     background-size: 300% 300%;
+    animation: nebula-animation 8s ease infinite;
   }
   .mystic-forest-bg {
     background: linear-gradient(160deg, #002e18, #004d2e, #002e18);
     background-size: 200% 200%;
+    animation: nebula-animation 20s ease infinite;
   }
   .digital-glitch-bg > * {
     animation: glitch 1.5s steps(2, jump-none) infinite;
@@ -590,10 +606,9 @@
     background-color: rgba(0, 0, 0, 0.5);
   }
   
-  .mindmate-official-bg {
-      background: linear-gradient(160deg, hsl(var(--primary) / 0.1), hsl(var(--primary) / 0.2), hsl(var(--primary) / 0.1));
-      background-size: 200% 200%;
-  }
+  .banner-sunflower-bg { background: linear-gradient(135deg, #f59e0b, #fbbf24, #fca5a5); }
+  .banner-forest-bg { background: linear-gradient(135deg, #166534, #22c55e, #10b981); }
+  .banner-shiny-bg { background: linear-gradient(135deg, #a78bfa, #fbcfe8, #a5b4fc); background-size: 200% 200%; animation: nebula-animation 10s ease infinite; }
 
 
   @keyframes rainbow-progress {
@@ -612,13 +627,31 @@
   .animate-red-pulse {
       animation: red-pulse 1.5s infinite;
   }
+  
+  .animated-rainbow-progress {
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #eab308, #84cc16, #22c55e, #14b8a6, #06b6d4, #3b82f6, #8b5cf6);
+    background-size: 300% 100%;
+    animation: rainbow-progress 3s linear infinite;
+  }
 
   .text-shadow-glow {
     text-shadow: 0 0 8px currentColor;
   }
+  
+  @keyframes pulse-pro { 0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } }
+  .clan-badge-pro { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-400/50 shadow-lg shadow-blue-500/10 animate-[pulse-pro_2s_infinite]; }
+
+  @keyframes pulse-alpha { 0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); } }
+  .clan-badge-alpha { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-red-500/10 text-red-400 border border-red-400/50 shadow-lg shadow-red-500/10 animate-[pulse-alpha_2s_infinite]; }
+  
+  @keyframes pulse-warrior { 0%, 100% { box-shadow: 0 0 0 0 rgba(107, 114, 128, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(107, 114, 128, 0); } }
+  .clan-badge-warrior { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-slate-500/10 text-slate-400 border border-slate-400/50 shadow-lg shadow-slate-500/10 animate-[pulse-warrior_2s_infinite]; }
+
+  .clan-badge-legendary { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-amber-400/10 text-amber-400 border border-amber-400/50 shadow-lg shadow-amber-400/10 animate-gold-shine; }
 }
+
 @layer utilities {
-  .select-none {
-    user-select: none;
+  .text-shadow {
+    text-shadow: 0 0 8px var(--tw-shadow-color, currentColor);
   }
 }
