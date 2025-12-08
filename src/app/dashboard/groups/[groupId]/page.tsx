@@ -9,7 +9,7 @@ import { GroupChat } from '@/components/groups/group-chat';
 import { GroupLeaderboard } from '@/components/groups/group-leaderboard';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Group } from '@/context/groups-context';
+import type { Group, GroupMember } from '@/context/groups-context';
 import { useUsers, User } from '@/hooks/use-admin';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -24,6 +24,8 @@ export default function GroupDetailPage() {
 
     const [group, setGroup] = useState<Group | null>(null);
     const [loading, setLoading] = useState(true);
+    const [leaderboardVisible, setLeaderboardVisible] = useState(!isMobile);
+
 
     useEffect(() => {
         if (!groupId) return;
@@ -33,7 +35,8 @@ export default function GroupDetailPage() {
         const unsubscribe = onSnapshot(groupDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                const memberDetails = (data.members as string[]).map(uid => users.find(u => u.uid === uid)).filter(Boolean) as User[];
+                const memberUids = data.members.map((m: GroupMember) => m.uid);
+                const memberDetails = memberUids.map((uid: string) => users.find(u => u.uid === uid)).filter(Boolean) as User[];
                 setGroup({ id: docSnap.id, ...data, memberDetails } as Group);
             } else {
                 setGroup(null);
@@ -68,7 +71,7 @@ export default function GroupDetailPage() {
     if(isMobile) {
         return (
             <div className="h-full">
-                <GroupChat group={group} />
+                <GroupChat group={group} onToggleLeaderboard={() => setLeaderboardVisible(!leaderboardVisible)} />
             </div>
         )
     }
@@ -76,12 +79,16 @@ export default function GroupDetailPage() {
     return (
        <ResizablePanelGroup direction="horizontal" className="h-full max-h-[calc(100vh-8rem)] w-full rounded-lg border">
           <ResizablePanel defaultSize={65} minSize={40}>
-            <GroupChat group={group} />
+            <GroupChat group={group} onToggleLeaderboard={() => setLeaderboardVisible(!leaderboardVisible)} />
           </ResizablePanel>
-          <ResizableHandle withHandle />
-          <ResizablePanel defaultSize={35} minSize={30}>
-             <GroupLeaderboard group={group} />
-          </ResizablePanel>
+           {leaderboardVisible && (
+               <>
+                  <ResizableHandle withHandle />
+                  <ResizablePanel defaultSize={35} minSize={30} maxSize={50}>
+                     <GroupLeaderboard group={group} />
+                  </ResizablePanel>
+               </>
+           )}
        </ResizablePanelGroup>
     );
 }

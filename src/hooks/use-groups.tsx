@@ -8,7 +8,7 @@ import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc, getDocs, increment, writeBatch, arrayUnion } from 'firebase/firestore';
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
-import { GroupsContext, type GroupsContextType, type Group, type GroupJoinRequest } from '@/context/groups-context';
+import { GroupsContext, type GroupsContextType, type Group, type GroupJoinRequest, type GroupMember } from '@/context/groups-context';
 
 export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
@@ -27,12 +27,12 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
         const groupsRef = collection(db, 'groups');
         
-        // Listener for user's groups
-        const userGroupsQuery = user ? query(groupsRef, where('members', 'array-contains', user.id)) : null;
+        const userGroupsQuery = user ? query(groupsRef, where('memberUids', 'array-contains', user.id)) : null;
         const unsubUserGroups = userGroupsQuery ? onSnapshot(userGroupsQuery, (snapshot) => {
             const userGroupsData = snapshot.docs.map(doc => {
                 const data = doc.data();
-                const memberDetails = (data.members as string[]).map(uid => users.find(u => u.uid === uid)).filter(Boolean) as User[];
+                const members = data.members || [];
+                const memberDetails = members.map((m: GroupMember) => users.find(u => u.uid === m.uid)).filter(Boolean) as User[];
                 return {
                     id: doc.id, ...data, memberDetails,
                     createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
@@ -42,17 +42,21 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             setGroups(userGroupsData);
         }) : () => {};
 
-        // Listener for all public groups
         const publicGroupsQuery = query(groupsRef, where('isPublic', '==', true));
         const unsubPublicGroups = onSnapshot(publicGroupsQuery, (snapshot) => {
-            const publicGroupsData = snapshot.docs.map(doc => {
+             const publicGroupsData = snapshot.docs.map(doc => {
                 const data = doc.data();
-                return { id: doc.id, ...data, createdAt: (data.createdAt as Timestamp)?.toDate() || new Date() } as Group;
+                const members = data.members || [];
+                const memberUids = members.map((m: GroupMember) => m.uid);
+                const memberDetails = memberUids.map((uid: string) => users.find(u => u.uid === uid)).filter(Boolean) as User[];
+                return { 
+                    id: doc.id, ...data, memberDetails,
+                    createdAt: (data.createdAt as Timestamp)?.toDate() || new Date() 
+                } as Group;
             });
             setAllPublicGroups(publicGroupsData);
         });
 
-        // Listeners for join requests
         const requestsRef = collection(db, 'groupJoinRequests');
         const receivedRequestsQuery = user ? query(requestsRef, where('clanAdminId', '==', user.id), where('status', '==', 'pending')) : null;
         const sentRequestsQuery = user ? query(requestsRef, where('senderId', '==', user.id), where('status', '==', 'pending')) : null;
@@ -93,9 +97,15 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             throw new Error("Clan name already exists.");
         }
 
+        const initialMembers: GroupMember[] = [
+            { uid: user.id, role: 'leader' },
+            ...memberIds.map(id => ({ uid: id, role: 'member' as const }))
+        ];
+
         await addDoc(groupsRef, {
             name: name.trim(), motto: motto || '', logoUrl: logoUrl || null, banner: banner || 'default',
-            createdBy: user.id, createdAt: serverTimestamp(), members: [user.id, ...memberIds], isPublic: true, joinMode: 'auto'
+            createdBy: user.id, createdAt: serverTimestamp(), members: initialMembers, memberUids: [user.id, ...memberIds],
+            isPublic: true, joinMode: 'auto'
         });
         if (!hasMasterCard) await addCreditsToUser(user.id, -CLAN_CREATION_COST);
         toast({ title: "Clan Created!", description: `"${name}" is ready.` });
@@ -118,9 +128,32 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(groupRef, data);
     }, [user, currentUserData, addCreditsToUser]);
 
-    const removeMember = useCallback(async (groupId: string, memberId: string) => {
-        await updateDoc(doc(db, 'groups', groupId), { members: arrayRemove(memberId) });
+    const updateMemberRole = useCallback(async (groupId: string, memberId: string, role: GroupMember['role']) => {
+        const groupRef = doc(db, 'groups', groupId);
+        const groupDoc = await getDoc(groupRef);
+        if (!groupDoc.exists()) return;
+
+        const groupData = groupDoc.data() as Group;
+        const newMembers = groupData.members.map(m => m.uid === memberId ? { ...m, role } : m);
+        await updateDoc(groupRef, { members: newMembers });
     }, []);
+
+    const removeMember = useCallback(async (groupId: string, memberId: string) => {
+        const groupRef = doc(db, 'groups', groupId);
+        const groupDoc = await getDoc(groupRef);
+        if (!groupDoc.exists()) return;
+        
+        const groupData = groupDoc.data() as Group;
+        const newMembers = groupData.members.filter(m => m.uid !== memberId);
+        const newMemberUids = groupData.memberUids.filter(uid => uid !== memberId);
+
+        await updateDoc(groupRef, { members: newMembers, memberUids: newMemberUids });
+    }, []);
+
+    const leaveGroup = useCallback(async (groupId: string) => {
+        if (!user) return;
+        await removeMember(groupId, user.id);
+    }, [user, removeMember]);
 
     const deleteGroup = useCallback(async (groupId: string) => {
         await deleteDoc(doc(db, 'groups', groupId));
@@ -128,7 +161,8 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
     const sendJoinRequest = useCallback(async (group: Group) => {
         if (!user || !currentUserData) throw new Error("Not logged in");
-        if (group.members.includes(user.id)) throw new Error("You are already a member.");
+        const memberUids = group.members.map(m => m.uid);
+        if (memberUids.includes(user.id)) throw new Error("You are already a member.");
 
         const requestRef = doc(collection(db, 'groupJoinRequests'));
         await setDoc(requestRef, {
@@ -141,13 +175,15 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     
     const addMemberToAutoJoinClan = useCallback(async (group: Group) => {
         if (!user) throw new Error("Not logged in");
-        await updateDoc(doc(db, 'groups', group.id), { members: arrayUnion(user.id) });
+        const newMember: GroupMember = { uid: user.id, role: 'member' };
+        await updateDoc(doc(db, 'groups', group.id), { members: arrayUnion(newMember), memberUids: arrayUnion(user.id) });
         toast({ title: `Joined "${group.name}"!` });
     }, [user, toast]);
 
     const approveJoinRequest = useCallback(async (request: GroupJoinRequest) => {
         const batch = writeBatch(db);
-        batch.update(doc(db, 'groups', request.groupId), { members: arrayUnion(request.senderId) });
+        const newMember: GroupMember = { uid: request.senderId, role: 'member' };
+        batch.update(doc(db, 'groups', request.groupId), { members: arrayUnion(newMember), memberUids: arrayUnion(request.senderId) });
         batch.delete(doc(db, 'groupJoinRequests', request.id));
         await batch.commit();
         toast({ title: "Member Approved" });
@@ -160,7 +196,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
     const value: GroupsContextType = {
         groups, allPublicGroups, joinRequests, sentJoinRequests, loading: loading || usersLoading,
-        createGroup, updateGroup, removeMember, deleteGroup, sendJoinRequest, approveJoinRequest,
+        createGroup, updateGroup, updateMemberRole, removeMember, leaveGroup, deleteGroup, sendJoinRequest, approveJoinRequest,
         declineJoinRequest, addMemberToAutoJoinClan,
     };
 

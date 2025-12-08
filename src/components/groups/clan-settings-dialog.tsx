@@ -8,18 +8,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useGroups } from '@/hooks/use-groups.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Loader2, Edit, AlertTriangle, Trash2, LogOut, DollarSign, Users, CheckCircle, Shield, Globe, Lock } from 'lucide-react';
+import { Loader2, Edit, AlertTriangle, Trash2, LogOut, DollarSign, Users, CheckCircle, Shield, Globe, Lock, Crown, UserCog } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { groupBanners } from '@/lib/group-assets';
-import { Group, GroupJoinRequest } from '@/context/groups-context';
+import { Group, GroupJoinRequest, GroupRole } from '@/context/groups-context';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useRouter } from 'next/navigation';
 import { useUsers, User } from '@/hooks/use-admin';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
 import { Switch } from '../ui/switch';
-
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
 
 interface ClanSettingsDialogProps {
     group: Group;
@@ -29,24 +29,52 @@ interface ClanSettingsDialogProps {
 
 const RENAME_COST = 500;
 
-function MemberManagement({ group, onRemoveMember }: { group: Group, onRemoveMember: (memberId: string) => void }) {
+function MemberManagement({ group, onRemoveMember, onUpdateRole }: { group: Group, onRemoveMember: (memberId: string) => void, onUpdateRole: (memberId: string, role: GroupRole) => void }) {
+    
+    const roleHierarchy: GroupRole[] = ['leader', 'co-leader', 'elder', 'member'];
+    
     return (
         <ScrollArea className="max-h-80">
             <div className="space-y-2">
-                {group.memberDetails?.map(member => (
-                    <div key={member.uid} className="flex items-center justify-between p-2 rounded-lg bg-muted">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src={member.photoURL}/>
-                                <AvatarFallback>{member.displayName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span>{member.displayName}</span>
+                {group.members?.map(member => {
+                    const memberDetails = group.memberDetails?.find(md => md.uid === member.uid);
+                    if (!memberDetails) return null;
+                    
+                    return (
+                        <div key={member.uid} className="flex items-center justify-between p-2 rounded-lg bg-muted">
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-9 w-9">
+                                    <AvatarImage src={memberDetails.photoURL}/>
+                                    <AvatarFallback>{memberDetails.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <span>{memberDetails.displayName}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {member.uid !== group.createdBy && (
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="outline" size="sm" className="capitalize w-28 justify-between">
+                                                {member.role} <UserCog className="h-4 w-4 ml-2"/>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent>
+                                            {roleHierarchy.map(role => (
+                                                <DropdownMenuItem key={role} onClick={() => onUpdateRole(member.uid, role)} disabled={role === 'leader'}>
+                                                    Set as {role}
+                                                </DropdownMenuItem>
+                                            ))}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                )}
+                                {member.uid === group.createdBy ? (
+                                    <Badge className="capitalize bg-yellow-500/20 text-yellow-500">{member.role}</Badge>
+                                ) : (
+                                    <Button size="sm" variant="destructive" onClick={() => onRemoveMember(member.uid)}>Kick</Button>
+                                )}
+                            </div>
                         </div>
-                        {member.uid !== group.createdBy && (
-                            <Button size="sm" variant="destructive" onClick={() => onRemoveMember(member.uid)}>Kick</Button>
-                        )}
-                    </div>
-                ))}
+                    )
+                })}
             </div>
         </ScrollArea>
     )
@@ -81,7 +109,7 @@ function RequestManagement({ requests, onApprove, onDecline }: { requests: Group
 
 
 export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettingsDialogProps) {
-    const { updateGroup, removeMember, deleteGroup, joinRequests, approveJoinRequest, declineJoinRequest } = useGroups();
+    const { updateGroup, removeMember, leaveGroup, deleteGroup, joinRequests, approveJoinRequest, declineJoinRequest, updateMemberRole } = useGroups();
     const { currentUserData } = useUsers();
     const { toast } = useToast();
     const router = useRouter();
@@ -162,9 +190,9 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
         }
     };
     
-    const handleLeaveGroup = async () => {
+    const handleLeave = async () => {
         try {
-            await removeMember(group.id, group.createdBy); // Pass your own ID
+            await leaveGroup(group.id);
             toast({ title: "You have left the clan." });
             onOpenChange(false);
             router.push('/dashboard/groups');
@@ -183,6 +211,8 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
             toast({ variant: 'destructive', title: "Error", description: "Could not disband the clan." });
         }
     };
+    
+    const isClanAdmin = currentUserData?.uid === group.createdBy;
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -191,12 +221,9 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                     <DialogTitle>Clan Settings</DialogTitle>
                 </DialogHeader>
                  <Tabs defaultValue="general" className="w-full">
-                    <TabsList className="grid w-full grid-cols-4">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="general">General</TabsTrigger>
                         <TabsTrigger value="members">Members</TabsTrigger>
-                        <TabsTrigger value="requests">
-                            Requests {groupJoinRequests.length > 0 && <span className="ml-2 h-2 w-2 rounded-full bg-destructive animate-pulse"/>}
-                        </TabsTrigger>
                         <TabsTrigger value="danger">Danger Zone</TabsTrigger>
                     </TabsList>
                     <TabsContent value="general" className="py-4 space-y-6 max-h-[70vh] overflow-y-auto pr-4">
@@ -248,19 +275,39 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                                 </div>
                                 <Switch id="join-mode" checked={joinMode === 'approval'} onCheckedChange={(checked) => setJoinMode(checked ? 'approval' : 'auto')} />
                             </div>
+                             {joinMode === 'approval' && (
+                                <Card>
+                                    <CardHeader>
+                                        <CardTitle>Join Requests</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <RequestManagement requests={groupJoinRequests} onApprove={approveJoinRequest} onDecline={declineJoinRequest}/>
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                          <Button onClick={handleSaveChanges} disabled={isSaving} className="w-full">
                             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>} Save General Settings
                         </Button>
                     </TabsContent>
                      <TabsContent value="members" className="py-4">
-                        <MemberManagement group={group} onRemoveMember={removeMember}/>
-                     </TabsContent>
-                     <TabsContent value="requests" className="py-4">
-                        <RequestManagement requests={groupJoinRequests} onApprove={approveJoinRequest} onDecline={declineJoinRequest}/>
+                        <MemberManagement group={group} onRemoveMember={removeMember} onUpdateRole={updateMemberRole}/>
                      </TabsContent>
                      <TabsContent value="danger" className="py-4">
                         <div className="p-4 border border-destructive/50 rounded-lg space-y-4">
+                            <h4 className="font-bold text-destructive text-lg">Danger Zone</h4>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" className="w-full justify-between">
+                                        <span>Leave Clan</span>
+                                        <LogOut/>
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader><AlertDialogTitle>Are you sure you want to leave?</AlertDialogTitle><AlertDialogDescription>You will lose access to the clan chat and will need to rejoin.</AlertDialogDescription></AlertDialogHeader>
+                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleLeave}>Yes, Leave Clan</AlertDialogAction></AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="destructive" className="w-full justify-between">

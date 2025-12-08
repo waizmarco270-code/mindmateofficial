@@ -1,8 +1,16 @@
 
+
 'use client';
 
 import { createContext } from 'react';
 import type { User } from '@/hooks/use-admin';
+
+export type GroupRole = 'leader' | 'co-leader' | 'elder' | 'member';
+
+export interface GroupMember {
+    uid: string;
+    role: GroupRole;
+}
 
 export interface GroupMessage {
     id: string;
@@ -20,7 +28,7 @@ export interface Group {
     banner?: string;
     createdBy: string;
     createdAt: Date;
-    members: string[];
+    members: GroupMember[]; // Changed from string[] to GroupMember[]
     memberDetails?: User[];
     lastMessage?: {
         text: string;
@@ -50,7 +58,9 @@ export interface GroupsContextType {
     loading: boolean;
     createGroup: (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => Promise<void>;
     updateGroup: (groupId: string, data: Partial<Group>, isRenaming?: boolean, renameCost?: number) => Promise<void>;
+    updateMemberRole: (groupId: string, memberId: string, role: GroupRole) => Promise<void>;
     removeMember: (groupId: string, memberId: string) => Promise<void>;
+    leaveGroup: (groupId: string) => Promise<void>;
     deleteGroup: (groupId: string) => Promise<void>;
     sendJoinRequest: (group: Group) => Promise<void>;
     approveJoinRequest: (request: GroupJoinRequest) => Promise<void>;
