@@ -12,12 +12,15 @@ import { db } from '@/lib/firebase';
 import type { Group } from '@/context/groups-context';
 import { useUsers, User } from '@/hooks/use-admin';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Card } from '@/components/ui/card';
 
 export default function GroupDetailPage() {
     const params = useParams();
     const router = useRouter();
     const groupId = params.groupId as string;
     const { users, loading: usersLoading } = useUsers();
+    const isMobile = useIsMobile();
 
     const [group, setGroup] = useState<Group | null>(null);
     const [loading, setLoading] = useState(true);
@@ -30,22 +33,23 @@ export default function GroupDetailPage() {
         const unsubscribe = onSnapshot(groupDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
-                // Member details are now added inside the useGroups hook, 
-                // but we can re-map here to ensure freshness if needed.
                 const memberDetails = (data.members as string[]).map(uid => users.find(u => u.uid === uid)).filter(Boolean) as User[];
                 setGroup({ id: docSnap.id, ...data, memberDetails } as Group);
             } else {
                 setGroup(null);
-                 // Group doesn't exist, maybe redirect
                 router.push('/dashboard/groups');
             }
             setLoading(false);
+        }, (error) => {
+            console.error("Error fetching group:", error);
+            setLoading(false);
+            router.push('/dashboard/groups');
         });
 
         return () => unsubscribe();
     }, [groupId, users, router]);
 
-    if (loading) {
+    if (loading || usersLoading) {
         return <div className="flex items-center justify-center h-full"><Loader2 className="h-10 w-10 animate-spin"/></div>
     }
 
@@ -60,13 +64,24 @@ export default function GroupDetailPage() {
             </div>
         )
     }
+    
+    if(isMobile) {
+        return (
+            <div className="h-full">
+                <GroupChat group={group} />
+            </div>
+        )
+    }
 
     return (
-       <div className="h-full max-h-[calc(100vh-8rem)] w-full">
-         <GroupChat group={group} />
-       </div>
+       <ResizablePanelGroup direction="horizontal" className="h-full max-h-[calc(100vh-8rem)] w-full rounded-lg border">
+          <ResizablePanel defaultSize={65} minSize={40}>
+            <GroupChat group={group} />
+          </ResizablePanel>
+          <ResizableHandle withHandle />
+          <ResizablePanel defaultSize={35} minSize={30}>
+             <GroupLeaderboard group={group} />
+          </ResizablePanel>
+       </ResizablePanelGroup>
     );
 }
-
-
-    

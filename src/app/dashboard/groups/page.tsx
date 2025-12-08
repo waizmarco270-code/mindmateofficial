@@ -3,9 +3,9 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Globe, Loader2, Plus, Users, Search, Filter } from 'lucide-react';
+import { Globe, Loader2, Plus, Users, Search, Filter, Lock } from 'lucide-react';
 import { CreateGroupModal } from '@/components/groups/create-group-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -21,6 +21,9 @@ import { motion } from 'framer-motion';
 import { groupBanners } from '@/lib/group-assets';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { useRouter } from 'next/navigation';
+
 
 function GroupCard({ group, index }: { group: Group, index: number }) {
     const banner = groupBanners.find(b => b.id === group.banner) || groupBanners[0];
@@ -72,63 +75,131 @@ function GroupCard({ group, index }: { group: Group, index: number }) {
 function ExploreClans() {
     const { allPublicGroups, loading, sendJoinRequest, addMemberToAutoJoinClan, sentJoinRequests } = useGroups();
     const { user } = useUser();
+    const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [isSubmitting, setIsSubmitting] = useState('');
 
     const filteredGroups = allPublicGroups.filter(g => 
+        g.isPublic &&
         g.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
         !g.members.includes(user?.id || '')
     );
+    
+    const topClans = [...allPublicGroups].sort((a,b) => b.members.length - a.members.length).slice(0, 5);
 
     const handleJoin = async (group: Group) => {
+        if (!user) return;
         setIsSubmitting(group.id);
-        if (group.joinMode === 'auto') {
-            await addMemberToAutoJoinClan(group);
-        } else {
-            await sendJoinRequest(group);
+        try {
+            if (group.joinMode === 'auto') {
+                await addMemberToAutoJoinClan(group);
+                router.push(`/dashboard/groups/${group.id}`);
+            } else {
+                await sendJoinRequest(group);
+            }
+        } finally {
+            setIsSubmitting('');
         }
-        setIsSubmitting('');
+    }
+    
+    const handleInspect = (group: Group) => {
+        router.push(`/dashboard/groups/inspect/${group.id}`);
     }
 
     if (loading) return <div className="flex items-center justify-center p-10"><Loader2 className="h-8 w-8 animate-spin"/></div>
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-8">
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input placeholder="Search for public clans..." className="pl-10 h-12" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
             </div>
-            {filteredGroups.length === 0 ? (
-                <p className="text-center text-muted-foreground py-10">No clans found.</p>
-            ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredGroups.map(group => {
-                        const hasRequested = sentJoinRequests.some(r => r.groupId === group.id);
-                        return (
-                             <Card key={group.id} className="flex flex-col">
-                                <CardHeader className="flex-row items-start gap-4">
-                                     <Avatar className="h-12 w-12 border-2 border-primary/50 shrink-0">
-                                        <AvatarImage src={group.logoUrl || undefined} />
-                                        <AvatarFallback>{group.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                     <div className="flex-1">
-                                        <CardTitle>{group.name}</CardTitle>
-                                        <CardDescription>{group.members.length} members</CardDescription>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="flex-1">
-                                    <p className="text-sm text-muted-foreground italic line-clamp-2">{group.motto || 'No motto set.'}</p>
-                                </CardContent>
-                                <CardFooter>
-                                    <Button className="w-full" onClick={() => handleJoin(group)} disabled={hasRequested || isSubmitting === group.id}>
-                                        {isSubmitting === group.id ? <Loader2 className="h-4 w-4 animate-spin"/> :
-                                         hasRequested ? "Request Sent" :
-                                         group.joinMode === 'auto' ? "Join Now" : "Send Join Request"}
-                                    </Button>
-                                </CardFooter>
-                            </Card>
-                        )
-                    })}
+
+            {searchTerm && (
+                <div className="space-y-4">
+                     <h3 className="text-xl font-bold">Search Results</h3>
+                    {filteredGroups.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-10">No clans found matching your search.</p>
+                    ) : (
+                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredGroups.map(group => {
+                                const hasRequested = sentJoinRequests.some(r => r.groupId === group.id);
+                                return (
+                                     <Card key={group.id} className="flex flex-col">
+                                        <CardHeader className="flex-row items-start gap-4">
+                                             <Avatar className="h-12 w-12 border-2 border-primary/50 shrink-0">
+                                                <AvatarImage src={group.logoUrl || undefined} />
+                                                <AvatarFallback>{group.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                             <div className="flex-1">
+                                                <CardTitle>{group.name}</CardTitle>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Badge variant="outline">{group.members.length} members</Badge>
+                                                    {group.joinMode === 'auto' ? (
+                                                        <Badge variant="secondary" className="bg-green-500/10 text-green-700">Open to Join</Badge>
+                                                    ) : (
+                                                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-700">Approval Required</Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-1">
+                                            <p className="text-sm text-muted-foreground italic line-clamp-2">{group.motto || 'No motto set.'}</p>
+                                        </CardContent>
+                                        <CardFooter className="grid grid-cols-2 gap-2">
+                                            <Button variant="outline" onClick={() => handleInspect(group)}>Inspect</Button>
+                                            <Button onClick={() => handleJoin(group)} disabled={hasRequested || isSubmitting === group.id}>
+                                                {isSubmitting === group.id ? <Loader2 className="h-4 w-4 animate-spin"/> :
+                                                 hasRequested ? "Request Sent" : "Join"}
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                )
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+            
+            {!searchTerm && (
+                <div className="space-y-4">
+                    <h3 className="text-xl font-bold">Top Clans</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                         {topClans.map(group => {
+                                const hasRequested = sentJoinRequests.some(r => r.groupId === group.id);
+                                return (
+                                     <Card key={group.id} className="flex flex-col">
+                                        <CardHeader className="flex-row items-start gap-4">
+                                             <Avatar className="h-12 w-12 border-2 border-primary/50 shrink-0">
+                                                <AvatarImage src={group.logoUrl || undefined} />
+                                                <AvatarFallback>{group.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                             <div className="flex-1">
+                                                <CardTitle>{group.name}</CardTitle>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <Badge variant="outline">{group.members.length} members</Badge>
+                                                     {group.joinMode === 'auto' ? (
+                                                        <Badge variant="secondary" className="bg-green-500/10 text-green-700">Open</Badge>
+                                                    ) : (
+                                                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-700">Approval</Badge>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-1">
+                                            <p className="text-sm text-muted-foreground italic line-clamp-2">{group.motto || 'No motto set.'}</p>
+                                        </CardContent>
+                                        <CardFooter className="grid grid-cols-2 gap-2">
+                                            <Button variant="outline" onClick={() => handleInspect(group)}>Inspect</Button>
+                                            <Button onClick={() => handleJoin(group)} disabled={hasRequested || isSubmitting === group.id}>
+                                                {isSubmitting === group.id ? <Loader2 className="h-4 w-4 animate-spin"/> :
+                                                 hasRequested ? "Request Sent" : "Join"}
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                )
+                            })}
+                    </div>
                 </div>
             )}
         </div>
