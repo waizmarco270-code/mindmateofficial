@@ -3,14 +3,13 @@
 'use client';
 
 import * as React from 'react';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/dashboard/header';
 import SidebarContent from '@/components/dashboard/sidebar-content';
 import MobileNav from '@/components/dashboard/mobile-nav';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { FOCUS_PENALTY_SESSION_KEY, FOCUS_SESSION_ACTIVE_KEY } from './tracker/page';
 import { useToast } from '@/hooks/use-toast';
 import { MotionConfig } from 'framer-motion';
 import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
@@ -32,29 +31,10 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     }
   }, [isMobile]);
 
-  React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      // This is now the primary mechanism for showing the penalty toast.
-      const penaltyMessage = sessionStorage.getItem(FOCUS_PENALTY_SESSION_KEY);
-      if (penaltyMessage) {
-        toast({
-          variant: 'destructive',
-          title: 'Session Stopped Early',
-          description: penaltyMessage,
-          duration: 10000,
-        });
-        sessionStorage.removeItem(FOCUS_PENALTY_SESSION_KEY);
-        // Also clean up the active session flag in case it was left behind
-        sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
-      }
-    }
-  }, [pathname, toast]);
-
-
   return (
      <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
         {!isImmersive && (
-            <Sidebar className="hidden md:flex md:flex-shrink-0">
+            <Sidebar collapsible="icon" className="hidden md:flex md:flex-shrink-0">
                 <SidebarContent />
             </Sidebar>
         )}
@@ -91,5 +71,3 @@ export default function DashboardLayout({
     </ImmersiveProvider>
   );
 }
-
-    

@@ -22,6 +22,7 @@ import { useFriends, type FriendRequest } from '@/hooks/use-friends';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useRewards } from '@/hooks/use-rewards';
+import { SidebarTrigger } from '../ui/sidebar';
 
 
 function Inbox() {
@@ -197,7 +198,8 @@ export default function Header() {
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
-      <Button
+       <SidebarTrigger className="hidden md:flex h-8 w-8" />
+       <Button
         variant="ghost"
         size="icon"
         className="md:hidden"
