@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -47,6 +48,7 @@ export default function GroupDetailPage() {
         const unsubscribe = onSnapshot(groupDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                
                 const memberDetails = (data.members as GroupMember[]).map((m: GroupMember) => {
                     const userDetail = users.find(u => u.uid === m.uid);
                     return userDetail ? { ...userDetail, role: m.role } : null;
@@ -196,7 +198,7 @@ export default function GroupDetailPage() {
             </div>
 
             <ClanSettingsDialog group={group} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen}/>
-            <ClanLevelRoadmapDialog isOpen={isRoadmapOpen} onOpenChange={setIsRoadmapOpen} />
+            <ClanLevelRoadmapDialog isOpen={isRoadmapOpen} onOpenChange={setIsRoadmapOpen} groupLogo={group.logoUrl}/>
        </div>
     );
 }
