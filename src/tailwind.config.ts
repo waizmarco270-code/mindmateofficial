@@ -116,11 +116,6 @@ export default {
           '0%': { 'background-position': '-200% 0' },
           '100%': { 'background-position': '200% 0' },
         },
-         'gold-shine': {
-          '0%': { filter: 'drop-shadow(0 0 2px #f59e0b)' },
-          '50%': { filter: 'drop-shadow(0 0 6px #fde047) drop-shadow(0 0 12px #f59e0b)' },
-          '100%': { filter: 'drop-shadow(0 0 2px #f59e0b)' },
-        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -128,7 +123,6 @@ export default {
         'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
         'tilt': 'tilt 10s infinite linear',
         'shimmer': 'shimmer 4s ease-in-out infinite',
-        'gold-shine': 'gold-shine 2s ease-in-out infinite',
       },
     },
   },

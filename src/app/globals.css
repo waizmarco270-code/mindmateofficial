@@ -635,7 +635,8 @@
   @keyframes pulse-warrior { 0%, 100% { box-shadow: 0 0 0 0 rgba(107, 114, 128, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(107, 114, 128, 0); } }
   .clan-badge-warrior { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-slate-500/10 text-slate-400 border border-slate-400/50 shadow-lg shadow-slate-500/10 animate-[pulse-warrior_2s_infinite]; }
 
-  .clan-badge-legendary { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-amber-400/10 text-amber-400 border border-amber-400/50 shadow-lg shadow-amber-400/10 animate-gold-shine; }
+  .clan-badge-legendary { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-amber-400/10 text-amber-400 border border-amber-400/50 shadow-lg shadow-amber-400/10; animation: gold-shine 2s ease-in-out infinite; }
+  .animate-gold-shine { animation: gold-shine 2s ease-in-out infinite; }
 
   .animated-rainbow-progress {
     background: linear-gradient(90deg, #ef4444, #f59e0b, #eab308, #84cc16, #22c55e, #14b8a6, #06b6d4, #3b82f6, #8b5cf6);
