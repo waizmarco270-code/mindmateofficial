@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { createContext } from 'react';
@@ -28,8 +27,10 @@ export interface Group {
     banner?: string;
     createdBy: string;
     createdAt: Date;
-    members: GroupMember[]; // Changed from string[] to GroupMember[]
+    members: GroupMember[];
     memberDetails?: User[];
+    level: number;
+    xp: number;
     lastMessage?: {
         text: string;
         senderId: string;

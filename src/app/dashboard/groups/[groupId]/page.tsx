@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft } from 'lucide-react';
 import { GroupChat } from '@/components/groups/group-chat';
 import { GroupLeaderboard } from '@/components/groups/group-leaderboard';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -20,6 +19,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ClanSettingsDialog } from '@/components/groups/clan-settings-dialog';
 import { useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
+import { clanLevelConfig } from '@/app/lib/clan-levels';
+import { Progress } from '@/components/ui/progress';
 
 export default function GroupDetailPage() {
     const params = useParams();
@@ -48,7 +49,7 @@ export default function GroupDetailPage() {
                     return userDetail ? { ...userDetail, role: m.role } : null;
                 }).filter(Boolean) as (User & { role: GroupMember['role'] })[];
                 
-                setGroup({ id: docSnap.id, ...data, memberDetails } as Group);
+                setGroup({ id: docSnap.id, ...data, memberDetails, level: data.level || 1 } as Group);
             } else {
                 setGroup(null);
                 router.push('/dashboard/groups');
@@ -80,6 +81,9 @@ export default function GroupDetailPage() {
     }
     
     const isClanAdmin = currentUser?.id === group.createdBy;
+    const levelInfo = clanLevelConfig[group.level - 1] || clanLevelConfig[0];
+    const xpPercentage = ((group.xp || 0) / levelInfo.xpRequired) * 100;
+
 
     return (
        <div className="h-full relative">
@@ -91,7 +95,7 @@ export default function GroupDetailPage() {
                         transition={{ delay: 0.3, type: 'spring', stiffness: 150 }}
                         className="fixed bottom-24 left-4 z-40"
                     >
-                        <Button className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-purple-600 shadow-2xl shadow-primary/30 flex flex-col gap-1">
+                         <Button className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-purple-600 shadow-2xl shadow-primary/30 flex flex-col gap-1">
                             <MessageSquare className="h-8 w-8"/>
                             <span className="text-xs font-bold">CHAT</span>
                         </Button>
@@ -108,11 +112,13 @@ export default function GroupDetailPage() {
                         <Button variant="outline" size="icon" onClick={() => router.push('/dashboard/groups')}>
                             <ArrowLeft className="h-4 w-4" />
                         </Button>
-                        <Avatar className="h-16 w-16 border-2 border-primary">
-                            <AvatarImage src={group.logoUrl || undefined} />
-                            <AvatarFallback>{group.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
+                        <div className={cn("relative p-1 rounded-full", levelInfo.avatarBorderClass)}>
+                            <Avatar className="h-16 w-16">
+                                <AvatarImage src={group.logoUrl || undefined} />
+                                <AvatarFallback>{group.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                        <div className="flex-1">
                             <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
                             <p className="text-muted-foreground italic">"{group.motto || 'No motto set.'}"</p>
                         </div>
@@ -128,11 +134,28 @@ export default function GroupDetailPage() {
                         )}
                     </div>
                 </div>
+                
+                <Card className="bg-muted/30">
+                    <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-3">
+                            <span className="font-bold text-lg">Level {group.level}</span>
+                            <Progress value={xpPercentage} className="w-32 h-2" />
+                            <span className="font-bold text-lg">Level {group.level + 1}</span>
+                        </div>
+                        <div className="text-center sm:text-right">
+                            <p className="font-bold">{levelInfo.name}</p>
+                            <p className="text-xs text-muted-foreground">XP: {group.xp || 0} / {levelInfo.xpRequired}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+
 
                 <div className={cn("grid grid-cols-1 gap-6", isLeaderboardOpen && "lg:grid-cols-2")}>
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><Users /> Members ({group.members.length})</CardTitle>
+                            <CardTitle className="flex items-center gap-2">
+                                <Users /> Members ({group.members.length} / {levelInfo.memberLimit})
+                            </CardTitle>
                         </CardHeader>
                         <CardContent className="max-h-96 overflow-y-auto">
                              <div className="space-y-2">
@@ -169,4 +192,3 @@ export default function GroupDetailPage() {
        </div>
     );
 }
-

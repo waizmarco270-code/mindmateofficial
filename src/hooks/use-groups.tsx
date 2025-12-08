@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
@@ -35,6 +34,8 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
                 const memberDetails = members.map((m: GroupMember) => users.find(u => u.uid === m.uid)).filter(Boolean) as User[];
                 return {
                     id: doc.id, ...data, memberDetails,
+                    level: data.level || 1, // Default to level 1
+                    xp: data.xp || 0, // Default to 0 xp
                     createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
                     lastMessage: data.lastMessage ? { ...data.lastMessage, timestamp: (data.lastMessage.timestamp as Timestamp)?.toDate() || new Date() } : undefined,
                 } as Group;
@@ -51,6 +52,8 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
                 const memberDetails = memberUids.map((uid: string) => users.find(u => u.uid === uid)).filter(Boolean) as User[];
                 return { 
                     id: doc.id, ...data, memberDetails,
+                    level: data.level || 1,
+                    xp: data.xp || 0,
                     createdAt: (data.createdAt as Timestamp)?.toDate() || new Date() 
                 } as Group;
             });
@@ -105,7 +108,8 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         await addDoc(groupsRef, {
             name: name.trim(), motto: motto || '', logoUrl: logoUrl || null, banner: banner || 'default',
             createdBy: user.id, createdAt: serverTimestamp(), members: initialMembers, memberUids: [user.id, ...memberIds],
-            isPublic: true, joinMode: 'auto'
+            isPublic: true, joinMode: 'auto',
+            level: 1, xp: 0, // Add new level fields
         });
         if (!hasMasterCard) await addCreditsToUser(user.id, -CLAN_CREATION_COST);
         toast({ title: "Clan Created!", description: `"${name}" is ready.` });
