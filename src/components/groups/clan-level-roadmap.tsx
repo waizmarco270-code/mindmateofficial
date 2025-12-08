@@ -1,10 +1,11 @@
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Users, Award, Shield, Gem, Upload } from 'lucide-react';
+import { Users, Award, Gem, Upload } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
@@ -18,17 +19,12 @@ interface ClanLevelRoadmapDialogProps {
 export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, currentLevel }: ClanLevelRoadmapDialogProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl h-auto bg-background/50 backdrop-blur-lg">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl">Clan Level Roadmap</DialogTitle>
-                    <DialogDescription>
-                        As your clan gains XP, it will level up, unlocking new perks and prestigious rewards.
-                    </DialogDescription>
-                </DialogHeader>
+            <DialogContent className="max-w-4xl bg-transparent border-0 shadow-none p-0">
                 <div className="py-4">
                      <Carousel
                         opts={{
                             align: "start",
+                            loop: false,
                         }}
                         className="w-full"
                     >
@@ -44,7 +40,7 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                                                 level.shadowClass
                                             )}>
                                                 <CardHeader className="items-center text-center">
-                                                    <div className={cn("relative p-1 rounded-full", level.avatarBorderClass)}>
+                                                    <div className={cn("relative p-1 rounded-full border-2", isCurrentLevel ? 'border-primary' : level.avatarBorderClass)}>
                                                         <Avatar className="h-20 w-20">
                                                             <AvatarImage src={groupLogo || undefined} />
                                                             <AvatarFallback className="text-3xl font-bold bg-muted/30">{level.level}</AvatarFallback>
@@ -69,7 +65,7 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                                                                 <span className="font-semibold text-sm flex items-center gap-2">Badge: <span className={level.badge.class}>{level.badge.name}</span></span>
                                                             </div>
                                                         )}
-                                                         {level.bannerUnlock === 'custom' && (
+                                                        {level.bannerUnlock === 'custom' && (
                                                             <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
                                                                 <Upload className="h-5 w-5 text-rose-400"/>
                                                                 <span className="font-semibold text-sm">Custom Banner Upload</span>
