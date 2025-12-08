@@ -23,6 +23,7 @@ import { cn } from '@/lib/utils';
 import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { Progress } from '@/components/ui/progress';
 import { ClanLevelRoadmapDialog } from '@/components/groups/clan-level-roadmap';
+import { GroupFocus } from '@/components/groups/group-focus';
 
 
 export default function GroupDetailPage() {
@@ -158,6 +159,7 @@ export default function GroupDetailPage() {
                     </CardContent>
                 </Card>
 
+                <GroupFocus group={group} />
 
                 <div className={cn("grid grid-cols-1 gap-6", isLeaderboardOpen && "lg:grid-cols-2")}>
                     <Card>

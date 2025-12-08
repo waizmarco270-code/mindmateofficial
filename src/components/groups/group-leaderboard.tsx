@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useMemo } from 'react';
@@ -37,7 +38,7 @@ export function GroupLeaderboard({ group }: GroupLeaderboardProps) {
     }, [group.memberDetails]);
 
     return (
-        <Card className="h-full flex flex-col border-0 rounded-none">
+        <Card className="h-full flex flex-col">
             <CardHeader className="border-b">
                 <CardTitle className="flex items-center gap-2">
                     <Trophy className="text-amber-500" />
