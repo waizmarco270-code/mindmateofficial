@@ -8,6 +8,7 @@ import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestam
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { GroupsContext, type GroupsContextType, type Group, type GroupJoinRequest, type GroupMember } from '@/context/groups-context';
+import { clanLevelConfig } from '@/lib/clan-levels';
 
 export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
@@ -82,6 +83,38 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         };
 
     }, [user, users, usersLoading]);
+    
+    const logXp = useCallback(async (groupId: string, amount: number) => {
+        if (amount <= 0) return;
+
+        const groupRef = doc(db, 'groups', groupId);
+        const groupSnap = await getDoc(groupRef);
+        if (!groupSnap.exists()) return;
+
+        const groupData = groupSnap.data() as Group;
+        const currentLevelInfo = clanLevelConfig.find(l => l.level === groupData.level);
+        if (!currentLevelInfo) return;
+
+        const newXp = (groupData.xp || 0) + amount;
+        
+        let newLevel = groupData.level;
+        let xpForNextLevel = newXp;
+        
+        // Check for level up
+        const nextLevelInfo = clanLevelConfig.find(l => l.level === groupData.level + 1);
+        if (nextLevelInfo && newXp >= nextLevelInfo.xpRequired) {
+            newLevel++;
+            xpForNextLevel = newXp - nextLevelInfo.xpRequired;
+            // In a real app, you might send a notification here
+            // toast({ title: "Clan Leveled Up!", description: `Your clan has reached Level ${newLevel}!`});
+        }
+        
+        await updateDoc(groupRef, {
+            xp: xpForNextLevel,
+            level: newLevel
+        });
+    }, []);
+
 
     const createGroup = useCallback(async (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => {
         if (!user || !currentUserData) throw new Error("User not found.");
@@ -104,15 +137,19 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             { uid: user.id, role: 'leader' },
             ...memberIds.map(id => ({ uid: id, role: 'member' as const }))
         ];
-
-        await addDoc(groupsRef, {
-            name: name.trim(), motto: motto || '', logoUrl: logoUrl || null, banner: banner || 'default',
+        
+        const newDocRef = doc(collection(db, 'groups'));
+        
+        await setDoc(newDocRef, {
+            id: newDocRef.id, name: name.trim(), motto: motto || '', logoUrl: logoUrl || null, banner: banner || 'default',
             createdBy: user.id, createdAt: serverTimestamp(), members: initialMembers, memberUids: [user.id, ...memberIds],
             isPublic: true, joinMode: 'auto',
-            level: 1, xp: 0, // Add new level fields
+            level: 1, xp: 0,
         });
+
         if (!hasMasterCard) await addCreditsToUser(user.id, -CLAN_CREATION_COST);
         toast({ title: "Clan Created!", description: `"${name}" is ready.` });
+        return newDocRef.id;
     }, [user, currentUserData, toast, addCreditsToUser]);
 
     const updateGroup = useCallback(async (groupId: string, data: Partial<Group>, isRenaming: boolean = false, renameCost: number = 0) => {
@@ -201,7 +238,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const value: GroupsContextType = {
         groups, allPublicGroups, joinRequests, sentJoinRequests, loading: loading || usersLoading,
         createGroup, updateGroup, updateMemberRole, removeMember, leaveGroup, deleteGroup, sendJoinRequest, approveJoinRequest,
-        declineJoinRequest, addMemberToAutoJoinClan,
+        declineJoinRequest, addMemberToAutoJoinClan, logXp
     };
 
     return (
@@ -218,3 +255,5 @@ export const useGroups = () => {
     }
     return context;
 };
+
+    

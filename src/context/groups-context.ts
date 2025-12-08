@@ -68,6 +68,9 @@ export interface GroupsContextType {
     approveJoinRequest: (request: GroupJoinRequest) => Promise<void>;
     declineJoinRequest: (requestId: string) => Promise<void>;
     addMemberToAutoJoinClan: (group: Group) => Promise<void>;
+    logXp: (groupId: string, amount: number) => Promise<void>;
 }
 
 export const GroupsContext = createContext<GroupsContextType | undefined>(undefined);
+
+    

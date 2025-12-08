@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -23,6 +22,7 @@ import { format } from 'date-fns';
 import { useUsers } from './use-admin';
 import { useVisibilityChange } from './use-visibility-change';
 import type { Roadmap } from './use-roadmaps';
+import { useGroups } from './use-groups';
 
 
 export interface Subject {
@@ -63,6 +63,7 @@ const THIRTY_MINUTES = 30 * 60 * 1000; // in milliseconds
 export function useTimeTracker() {
   const { user } = useUser();
   const { currentUserData, updateStudyTime } = useUsers();
+  const { groups, logXp } = useGroups();
   const todayString = useMemo(() => format(new Date(), 'yyyy-MM-dd'), []);
 
   const [state, setState] = useState<TimeTrackerState>({
@@ -224,10 +225,20 @@ export function useTimeTracker() {
     
     const newTotalStudyTime = (currentUserData?.totalStudyTime || 0) + duration;
     await updateStudyTime(user.id, newTotalStudyTime);
+
+    // Award Clan XP if in a clan
+    if (groups.length > 0) {
+        // Assuming user can only be in one clan for now
+        const clanId = groups[0].id; 
+        const xpAmount = Math.floor(duration / 600); // 1 XP per 10 minutes
+        if (xpAmount > 0) {
+            await logXp(clanId, xpAmount);
+        }
+    }
     
     return subject.timeTracked + duration;
 
-  }, [user, state.subjects, currentUserData, updateStudyTime]);
+  }, [user, state.subjects, currentUserData, updateStudyTime, groups, logXp]);
 
   const handlePlayPause = useCallback(async (subjectId: string) => {
     const nowISO = new Date().toISOString();
@@ -307,6 +318,7 @@ export function useTimeTracker() {
     pomodoroSessions,
     loading,
     activeSubjectId: state.activeSubjectId,
+    currentSessionStart: state.currentSessionStart,
     activeSubjectTime,
     totalTimeToday,
     handlePlayPause,
@@ -316,3 +328,5 @@ export function useTimeTracker() {
     addPomodoroSession
   };
 }
+
+    
