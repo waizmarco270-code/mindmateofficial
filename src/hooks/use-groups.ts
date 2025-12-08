@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
@@ -98,12 +99,11 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
 export const useGroups = () => {
     const context = useContext(GroupsContext);
-    if (!context) {
+    if (context === undefined) {
         throw new Error('useGroups must be used within a GroupsProvider');
     }
     return context;
 };
-
 
 export const useGroupChat = (groupId: string) => {
     const { user } = useUser();
