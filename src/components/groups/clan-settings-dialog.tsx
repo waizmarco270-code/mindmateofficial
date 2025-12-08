@@ -12,7 +12,7 @@ import { Loader2, Edit, AlertTriangle, Trash2, LogOut, DollarSign, Users, CheckC
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { groupBanners } from '@/lib/group-assets';
-import { Group, GroupJoinRequest, GroupRole } from '@/context/groups-context';
+import { Group, GroupJoinRequest, GroupRole, GroupMember } from '@/context/groups-context';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useRouter } from 'next/navigation';
 import { useUsers, User } from '@/hooks/use-admin';
@@ -20,6 +20,8 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
 import { Switch } from '../ui/switch';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
+import { Badge } from '../ui/badge';
+
 
 interface ClanSettingsDialogProps {
     group: Group;
@@ -50,7 +52,7 @@ function MemberManagement({ group, onRemoveMember, onUpdateRole }: { group: Grou
                                 <span>{memberDetails.displayName}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                                {member.uid !== group.createdBy && (
+                                {member.uid !== group.createdBy ? (
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="outline" size="sm" className="capitalize w-28 justify-between">
@@ -65,11 +67,11 @@ function MemberManagement({ group, onRemoveMember, onUpdateRole }: { group: Grou
                                             ))}
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                )}
-                                {member.uid === group.createdBy ? (
-                                    <Badge className="capitalize bg-yellow-500/20 text-yellow-500">{member.role}</Badge>
                                 ) : (
-                                    <Button size="sm" variant="destructive" onClick={() => onRemoveMember(member.uid)}>Kick</Button>
+                                    <Badge className="capitalize bg-yellow-500/20 text-yellow-500">Leader</Badge>
+                                )}
+                                {member.uid !== group.createdBy && (
+                                     <Button size="sm" variant="destructive" onClick={() => onRemoveMember(member.uid)}>Kick</Button>
                                 )}
                             </div>
                         </div>
@@ -263,14 +265,14 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                             <h4 className="font-semibold">Privacy Settings</h4>
                              <div className="flex items-center justify-between p-4 border rounded-lg">
                                 <div>
-                                    <Label htmlFor="public-switch" className="flex items-center gap-3"><Globe className="h-5 w-5"/> Publicly Discoverable</Label>
+                                    <Label htmlFor="public-switch" className="flex items-center gap-3 cursor-pointer"><Globe className="h-5 w-5"/> Publicly Discoverable</Label>
                                     <p className="text-xs text-muted-foreground mt-1">Allow other users to find and request to join your clan.</p>
                                 </div>
                                 <Switch id="public-switch" checked={isPublic} onCheckedChange={setIsPublic} />
                             </div>
                             <div className="flex items-center justify-between p-4 border rounded-lg">
                                 <div>
-                                    <Label htmlFor="join-mode" className="flex items-center gap-3"><Lock className="h-5 w-5"/> Approval Required to Join</Label>
+                                    <Label htmlFor="join-mode" className="flex items-center gap-3 cursor-pointer"><Lock className="h-5 w-5"/> Approval Required to Join</Label>
                                     <p className="text-xs text-muted-foreground mt-1">If on, you must approve new members. If off, anyone can join freely.</p>
                                 </div>
                                 <Switch id="join-mode" checked={joinMode === 'approval'} onCheckedChange={(checked) => setJoinMode(checked ? 'approval' : 'auto')} />
@@ -308,18 +310,20 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                                     <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleLeave}>Yes, Leave Clan</AlertDialogAction></AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full justify-between">
-                                        <span>Disband Clan</span>
-                                        <Trash2/>
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the clan and all its data for everyone. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteGroup}>Yes, Disband Clan</AlertDialogAction></AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            {isClanAdmin && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full justify-between">
+                                            <span>Disband Clan</span>
+                                            <Trash2/>
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the clan and all its data for everyone. This cannot be undone.</AlertDialogDescription></AlertDialogHeader>
+                                        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteGroup}>Yes, Disband Clan</AlertDialogAction></AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
                         </div>
                      </TabsContent>
                 </Tabs>

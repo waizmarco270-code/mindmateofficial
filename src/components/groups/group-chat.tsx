@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MoreVertical, ImagePlus, X, Paperclip, Users, Trash2, LogOut, Settings } from 'lucide-react';
+import { Send, MoreVertical, ImagePlus, X, Paperclip, Users, Trash2, LogOut, Settings, MessageSquare } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -72,6 +72,9 @@ export function GroupChat({ group }: { group: Group }) {
                 } as GroupMessage;
             });
             setMessages(fetchedMessages);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching group messages:", error);
             setLoading(false);
         });
 
@@ -159,14 +162,6 @@ export function GroupChat({ group }: { group: Group }) {
                     </div>
                 </div>
                  <div className="flex items-center gap-2">
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button variant="outline"><Users className="mr-2"/> Leaderboard</Button>
-                        </SheetTrigger>
-                        <SheetContent className="p-0">
-                           <GroupLeaderboard group={group} />
-                        </SheetContent>
-                    </Sheet>
                     {isClanAdmin && (
                         <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
                             <Settings />
@@ -254,6 +249,3 @@ export function GroupChat({ group }: { group: Group }) {
         </div>
     );
 }
-
-
-    
