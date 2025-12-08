@@ -6,8 +6,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { groupBanners } from '@/lib/group-assets';
-import { Users, Award, Shield } from 'lucide-react';
+import { groupBanners } from '@/app/lib/group-assets';
+import { Users, Award, Shield, Gem } from 'lucide-react';
 import Image from 'next/image';
 
 interface ClanLevelRoadmapDialogProps {
@@ -54,17 +54,26 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange }: ClanLevelRoadma
                                                  <div className="p-3 rounded-lg bg-muted border flex items-center gap-3">
                                                     <Award className="h-6 w-6 text-amber-500"/>
                                                     <div>
-                                                        <p className="font-bold">XP Required</p>
+                                                        <p className="font-bold">XP to Reach</p>
                                                         <p className="text-sm text-muted-foreground">{level.xpRequired.toLocaleString()}</p>
                                                     </div>
                                                 </div>
+                                                {level.badge && (
+                                                    <div className="p-3 rounded-lg bg-muted border flex items-center gap-3">
+                                                        <Gem className="h-6 w-6 text-fuchsia-500"/>
+                                                        <div>
+                                                            <p className="font-bold">Unlocked Badge</p>
+                                                            <div className={level.badge.class}>{level.badge.name}</div>
+                                                        </div>
+                                                    </div>
+                                                )}
                                                 {banner && (
-                                                     <div className="sm:col-span-2 p-3 rounded-lg bg-muted border flex flex-col items-center gap-3">
+                                                     <div className="p-3 rounded-lg bg-muted border flex flex-col items-center gap-3">
                                                         <div className="flex items-center gap-3 self-start">
                                                             <Shield className="h-6 w-6 text-purple-500"/>
                                                             <div>
                                                                 <p className="font-bold">Unlocked Banner</p>
-                                                                <p className="text-sm text-muted-foreground capitalize">{banner.id}</p>
+                                                                <p className="text-sm text-muted-foreground capitalize">{banner.id.replace('banner-','')}</p>
                                                             </div>
                                                         </div>
                                                          <div className={cn("relative w-full h-24 rounded-lg overflow-hidden mt-2", banner.class)}>

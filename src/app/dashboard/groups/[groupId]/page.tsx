@@ -142,7 +142,7 @@ export default function GroupDetailPage() {
                  <Card className="bg-muted/30">
                     <CardHeader className="flex flex-row items-center justify-between p-4">
                          <div className="flex items-center gap-3">
-                             <span className="font-bold text-lg text-primary">Level {group.level}: {levelInfo.name}</span>
+                             <span className="font-bold text-lg text-primary">{levelInfo.name}</span>
                          </div>
                          <Button variant="secondary" size="sm" onClick={() => setIsRoadmapOpen(true)}>
                             <Info className="mr-2 h-4 w-4"/> View All Levels
@@ -200,4 +200,3 @@ export default function GroupDetailPage() {
        </div>
     );
 }
-
