@@ -1,50 +1,40 @@
 
-
 'use client';
 
 import * as React from 'react';
-import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { SidebarProvider, Sidebar } from '@/components/ui/sidebar';
 import Header from '@/components/dashboard/header';
 import SidebarContent from '@/components/dashboard/sidebar-content';
-import MobileNav from '@/components/dashboard/mobile-nav';
 import { cn } from '@/lib/utils';
 import { MotionConfig } from 'framer-motion';
 import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
 import { Providers } from './providers';
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useSidebar } from '@/components/ui/sidebar';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
-  const isMobile = useIsMobile();
-  const [open, setOpen] = useLocalStorage<boolean>('sidebar-open', !isMobile);
+  const { openMobile, setOpenMobile } = useSidebar();
 
-  React.useEffect(() => {
-    if (isMobile) {
-      setOpen(false);
-    }
-  }, [isMobile, setOpen]);
-  
   return (
-     <SidebarProvider open={open} onOpenChange={setOpen}>
-        {!isImmersive && (
-            <Sidebar collapsible="icon" className="hidden md:flex md:flex-shrink-0">
-                <SidebarContent />
-            </Sidebar>
-        )}
-        <div className="flex flex-1 size-full flex-col bg-transparent">
-            {!isImmersive && <Header />}
-            <main className="relative flex-1 overflow-y-auto focus:outline-none flex flex-col">
-            <SidebarInset className={cn(
-                "flex-1 flex flex-col",
-                isImmersive ? "!p-0" : "p-4 sm:p-6 lg:p-8"
-            )}>
-                {children}
-            </SidebarInset>
-            </main>
-        </div>
-        {!isImmersive && isMobile && <MobileNav />}
-    </SidebarProvider>
+    <>
+      {/* Universal Sheet-based Sidebar for all screen sizes */}
+      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+        <SheetContent side="left" className="w-[18rem] bg-sidebar/80 p-0 text-sidebar-foreground backdrop-blur-lg [&>button]:hidden">
+            <SidebarContent />
+        </SheetContent>
+      </Sheet>
+
+      <div className="flex flex-1 size-full flex-col bg-transparent">
+        {!isImmersive && <Header />}
+        <main className={cn(
+            "relative flex-1 overflow-y-auto focus:outline-none flex flex-col",
+            isImmersive ? "p-0" : "p-4 sm:p-6 lg:p-8"
+        )}>
+            {children}
+        </main>
+      </div>
+    </>
   )
 }
 
@@ -55,6 +45,7 @@ export default function DashboardLayout({
 }) {
   return (
     <ImmersiveProvider>
+      <SidebarProvider>
         <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
             <Providers>
                 <AppLayout>
@@ -62,6 +53,7 @@ export default function DashboardLayout({
                 </AppLayout>
             </Providers>
         </MotionConfig>
+      </SidebarProvider>
     </ImmersiveProvider>
   );
 }

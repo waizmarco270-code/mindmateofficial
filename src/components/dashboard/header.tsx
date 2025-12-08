@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useSidebar, SidebarTrigger } from '@/components/ui/sidebar';
+import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
@@ -39,7 +38,7 @@ function Inbox() {
     };
 
     const handleDecline = async (request: FriendRequest) => {
-        await declineFriendRequest(request.id);
+        await declineFriendRequest(request);
         toast({ title: "Request Declined" });
     };
 
@@ -109,7 +108,7 @@ function Inbox() {
                                     </div>
                                     <div className="flex gap-1.5">
                                         <Button size="icon" className="h-8 w-8 bg-green-500/20 text-green-600 hover:bg-green-500/30" onClick={() => handleAccept(req)}><Check/></Button>
-                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDecline(req.id)}><X/></Button>
+                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => declineFriendRequest(req.id)}><X/></Button>
                                     </div>
                                 </div>
                              )) : <p className="text-sm text-muted-foreground text-center py-10">No pending friend requests.</p>}
@@ -200,13 +199,11 @@ export default function Header() {
        <Button
         variant="ghost"
         size="icon"
-        className="md:hidden"
         onClick={() => setOpenMobile(true)}
       >
         <PanelLeft className="h-6 w-6" />
         <span className="sr-only">Toggle Menu</span>
       </Button>
-       <SidebarTrigger className="hidden md:flex" />
 
       <div className="flex-1" />
       <div className="flex items-center gap-2 md:gap-4">
