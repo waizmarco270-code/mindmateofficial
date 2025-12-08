@@ -6,7 +6,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MoreVertical, ImagePlus, X, Paperclip } from 'lucide-react';
+import { Send, MoreVertical, ImagePlus, X, Paperclip, Users, Trash2, LogOut, Settings } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -17,6 +17,9 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timest
 import { db } from '@/lib/firebase';
 import type { Group, GroupMessage } from '@/context/groups-context';
 import { Loader2 } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
+import { GroupLeaderboard } from './group-leaderboard';
+import { ClanSettingsDialog } from './clan-settings-dialog';
 
 const userColors = [
     'border-red-500/50', 'border-orange-500/50', 'border-amber-500/50',
@@ -45,6 +48,9 @@ export function GroupChat({ group }: { group: Group }) {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
+    const isClanAdmin = currentUser?.id === group.createdBy;
 
     useEffect(() => {
         if (!group.id) {
@@ -143,19 +149,30 @@ export function GroupChat({ group }: { group: Group }) {
         <div className="h-full flex flex-col bg-card">
             <header className="flex items-center justify-between p-4 border-b">
                 <div className="flex items-center gap-3">
-                    <div className="flex -space-x-2 overflow-hidden">
-                        {group.memberDetails?.slice(0, 3).map(member => (
-                            <Avatar key={member.uid} className="inline-block h-8 w-8 rounded-full ring-2 ring-background">
-                                <AvatarImage src={member.photoURL} />
-                                <AvatarFallback>{member.displayName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                        ))}
-                    </div>
+                     <Avatar className="h-12 w-12 border-2 border-primary/50">
+                        <AvatarImage src={group.logoUrl || undefined} />
+                        <AvatarFallback>{group.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
                     <div>
                         <h3 className="font-bold">{group.name}</h3>
                         <p className="text-xs text-muted-foreground">{group.members.length} members</p>
                     </div>
                 </div>
+                 <div className="flex items-center gap-2">
+                    <Sheet>
+                        <SheetTrigger asChild>
+                            <Button variant="outline"><Users className="mr-2"/> Leaderboard</Button>
+                        </SheetTrigger>
+                        <SheetContent className="p-0">
+                           <GroupLeaderboard group={group} />
+                        </SheetContent>
+                    </Sheet>
+                    {isClanAdmin && (
+                        <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                            <Settings />
+                        </Button>
+                    )}
+                 </div>
             </header>
 
             <ScrollArea className="flex-1" viewportRef={scrollAreaRef}>
@@ -166,9 +183,7 @@ export function GroupChat({ group }: { group: Group }) {
                         const sender = group.memberDetails?.find(m => m.uid === msg.senderId);
                         const prevMessage = messages[index - 1];
                         
-                        // Show header if it's the first message, or sender is different, or it's a new day
                         const showHeader = !prevMessage || prevMessage.senderId !== msg.senderId || !isSameDay(new Date(msg.timestamp), new Date(prevMessage.timestamp));
-                        // Show date separator if it's a new day
                         const showDateSeparator = index === 0 || !isSameDay(new Date(msg.timestamp), new Date(prevMessage.timestamp));
 
 
@@ -179,7 +194,7 @@ export function GroupChat({ group }: { group: Group }) {
                                 )}
                                 <div className={cn("flex items-end gap-2", msg.senderId === currentUser?.id ? "justify-end" : "")}>
                                     {! (msg.senderId === currentUser?.id) && (
-                                        <Avatar className={cn("h-8 w-8", showHeader ? 'opacity-100' : 'opacity-0')}>
+                                        <Avatar className={cn("h-8 w-8 self-start", showHeader ? 'opacity-100' : 'opacity-0')}>
                                             <AvatarImage src={sender?.photoURL} />
                                             <AvatarFallback>{sender?.displayName.charAt(0)}</AvatarFallback>
                                         </Avatar>
@@ -234,6 +249,11 @@ export function GroupChat({ group }: { group: Group }) {
                     </Button>
                 </form>
             </footer>
+
+            <ClanSettingsDialog group={group} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
         </div>
     );
 }
+
+
+    

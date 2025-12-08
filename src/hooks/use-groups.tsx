@@ -4,17 +4,17 @@
 import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc } from 'firebase/firestore';
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { GroupsContext, type GroupsContextType, type Group } from '@/context/groups-context';
-
 
 export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
     const { users, currentUserData, addCreditsToUser, loading: usersLoading } = useUsers();
     const { toast } = useToast();
     const [groups, setGroups] = useState<Group[]>([]);
+    const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -85,7 +85,32 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [user, currentUserData, toast, addCreditsToUser]);
 
-    const value: GroupsContextType = { groups, loading: loading || usersLoading, createGroup };
+    const updateGroup = useCallback(async (groupId: string, data: Partial<Group>) => {
+        const groupRef = doc(db, 'groups', groupId);
+        await updateDoc(groupRef, data);
+    }, []);
+
+    const removeMember = useCallback(async (groupId: string, memberId: string) => {
+        const groupRef = doc(db, 'groups', groupId);
+        await updateDoc(groupRef, {
+            members: arrayRemove(memberId)
+        });
+    }, []);
+    
+    const deleteGroup = useCallback(async (groupId: string) => {
+        const groupRef = doc(db, 'groups', groupId);
+        // Note: In a real app, you might want to delete subcollections like messages too.
+        await deleteDoc(groupRef);
+    }, []);
+
+    const value: GroupsContextType = { 
+        groups, 
+        loading: loading || usersLoading, 
+        createGroup,
+        updateGroup,
+        removeMember,
+        deleteGroup
+    };
 
     return (
         <GroupsContext.Provider value={value}>
@@ -101,3 +126,6 @@ export const useGroups = () => {
     }
     return context;
 };
+
+
+    

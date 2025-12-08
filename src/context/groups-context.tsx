@@ -33,6 +33,12 @@ export interface GroupsContextType {
     groups: Group[];
     loading: boolean;
     createGroup: (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => Promise<void>;
+    updateGroup: (groupId: string, data: Partial<Group>) => Promise<void>;
+    removeMember: (groupId: string, memberId: string) => Promise<void>;
+    deleteGroup: (groupId: string) => Promise<void>;
 }
 
 export const GroupsContext = createContext<GroupsContextType | undefined>(undefined);
+
+
+    
