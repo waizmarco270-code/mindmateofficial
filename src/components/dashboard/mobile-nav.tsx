@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -25,6 +24,13 @@ export default function MobileNav() {
   const { setOpenMobile } = useSidebar();
   const [isCollapsed, setIsCollapsed] = useLocalStorage('mobile-nav-collapsed', false);
   
+  const isActive = (href: string) => {
+    if (href === '/dashboard') {
+        return pathname === '/dashboard';
+    }
+    return pathname.startsWith(href);
+  }
+
   return (
     <AnimatePresence>
         {!isCollapsed ? (
@@ -44,10 +50,7 @@ export default function MobileNav() {
                 </button>
                 <div className="relative flex h-full items-center justify-around">
                     {navItems.map((item) => {
-                    const isActive = 
-                        (item.href === '/dashboard' && pathname === '/dashboard') ||
-                        (item.href !== '/dashboard' && pathname.startsWith(item.href));
-
+                    const active = isActive(item.href);
                     return (
                         <Link
                         key={item.href}
@@ -55,7 +58,7 @@ export default function MobileNav() {
                         prefetch={true}
                         className={cn(
                             'relative z-10 flex flex-col items-center justify-center w-16 h-full text-xs font-medium transition-colors gap-1',
-                            isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                            active ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
                         )}
                         >
                             <item.icon className="h-5 w-5" />

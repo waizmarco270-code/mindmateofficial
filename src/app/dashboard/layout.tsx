@@ -11,6 +11,7 @@ import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
 import { Providers } from './providers';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useSidebar } from '@/components/ui/sidebar';
+import MobileNav from '@/components/dashboard/mobile-nav';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
@@ -33,6 +34,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         )}>
             {children}
         </main>
+        {!isImmersive && <MobileNav />}
       </div>
     </>
   )
