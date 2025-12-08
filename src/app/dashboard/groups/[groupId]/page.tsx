@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft, Info } from 'lucide-react';
 import { GroupChat } from '@/components/groups/group-chat';
 import { GroupLeaderboard } from '@/components/groups/group-leaderboard';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -21,6 +21,8 @@ import { useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { Progress } from '@/components/ui/progress';
+import { ClanLevelRoadmapDialog } from '@/components/groups/clan-level-roadmap';
+
 
 export default function GroupDetailPage() {
     const params = useParams();
@@ -34,6 +36,7 @@ export default function GroupDetailPage() {
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+    const [isRoadmapOpen, setIsRoadmapOpen] = useState(false);
 
 
     useEffect(() => {
@@ -49,7 +52,7 @@ export default function GroupDetailPage() {
                     return userDetail ? { ...userDetail, role: m.role } : null;
                 }).filter(Boolean) as (User & { role: GroupMember['role'] })[];
                 
-                setGroup({ id: docSnap.id, ...data, memberDetails, level: data.level || 1 } as Group);
+                setGroup({ id: docSnap.id, ...data, memberDetails, level: data.level || 1, xp: data.xp || 0 } as Group);
             } else {
                 setGroup(null);
                 router.push('/dashboard/groups');
@@ -81,8 +84,9 @@ export default function GroupDetailPage() {
     }
     
     const isClanAdmin = currentUser?.id === group.createdBy;
-    const levelInfo = clanLevelConfig[group.level - 1] || clanLevelConfig[0];
-    const xpPercentage = ((group.xp || 0) / levelInfo.xpRequired) * 100;
+    const levelInfo = clanLevelConfig.find(l => l.level === group.level) || clanLevelConfig[0];
+    const nextLevelInfo = clanLevelConfig.find(l => l.level === group.level + 1);
+    const xpPercentage = nextLevelInfo ? (group.xp / nextLevelInfo.xpRequired) * 100 : 100;
 
 
     return (
@@ -125,7 +129,7 @@ export default function GroupDetailPage() {
                     </div>
                      <div className="flex items-center gap-2">
                         <Button variant="outline" onClick={() => setIsLeaderboardOpen(o => !o)}>
-                           <Trophy className="mr-2 h-4 w-4"/> Leaderboard
+                           <Trophy className="mr-2 h-4 w-4"/> {isLeaderboardOpen ? 'Hide' : 'Show'} Leaderboard
                         </Button>
                         {isClanAdmin && (
                             <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
@@ -135,17 +139,20 @@ export default function GroupDetailPage() {
                     </div>
                 </div>
                 
-                <Card className="bg-muted/30">
-                    <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                        <div className="flex items-center gap-3">
-                            <span className="font-bold text-lg">Level {group.level}</span>
-                            <Progress value={xpPercentage} className="w-32 h-2" />
-                            <span className="font-bold text-lg">Level {group.level + 1}</span>
-                        </div>
-                        <div className="text-center sm:text-right">
-                            <p className="font-bold">{levelInfo.name}</p>
-                            <p className="text-xs text-muted-foreground">XP: {group.xp || 0} / {levelInfo.xpRequired}</p>
-                        </div>
+                 <Card className="bg-muted/30">
+                    <CardHeader className="flex flex-row items-center justify-between p-4">
+                         <div className="flex items-center gap-3">
+                             <span className="font-bold text-lg text-primary">Level {group.level}: {levelInfo.name}</span>
+                         </div>
+                         <Button variant="secondary" size="sm" onClick={() => setIsRoadmapOpen(true)}>
+                            <Info className="mr-2 h-4 w-4"/> View All Levels
+                        </Button>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4">
+                         <Progress value={xpPercentage} className="h-2" />
+                         <p className="text-xs text-muted-foreground mt-2 text-right">
+                           XP: {group.xp} / {nextLevelInfo ? nextLevelInfo.xpRequired : 'MAX'}
+                        </p>
                     </CardContent>
                 </Card>
 
@@ -189,6 +196,8 @@ export default function GroupDetailPage() {
             </div>
 
             <ClanSettingsDialog group={group} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen}/>
+            <ClanLevelRoadmapDialog isOpen={isRoadmapOpen} onOpenChange={setIsRoadmapOpen} />
        </div>
     );
 }
+
