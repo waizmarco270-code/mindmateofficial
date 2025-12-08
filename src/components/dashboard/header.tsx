@@ -39,7 +39,7 @@ function Inbox() {
     };
 
     const handleDecline = async (request: FriendRequest) => {
-        await declineFriendRequest(request);
+        await declineFriendRequest(request.id);
         toast({ title: "Request Declined" });
     };
 
@@ -109,7 +109,7 @@ function Inbox() {
                                     </div>
                                     <div className="flex gap-1.5">
                                         <Button size="icon" className="h-8 w-8 bg-green-500/20 text-green-600 hover:bg-green-500/30" onClick={() => handleAccept(req)}><Check/></Button>
-                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDecline(req)}><X/></Button>
+                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDecline(req.id)}><X/></Button>
                                     </div>
                                 </div>
                              )) : <p className="text-sm text-muted-foreground text-center py-10">No pending friend requests.</p>}
@@ -175,7 +175,7 @@ function AdminPanelMenu() {
 
 
 export default function Header() {
-  const { setOpenMobile, toggleSidebar } = useSidebar();
+  const { setOpenMobile } = useSidebar();
   const { user, isLoaded } = useUser();
   const { currentUserData } = useUsers();
   const { pinnedPage, setPinnedPage } = usePinnedPage();

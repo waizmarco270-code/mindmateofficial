@@ -3,18 +3,15 @@
 'use client';
 
 import * as React from 'react';
-import { SidebarProvider, Sidebar, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, Sidebar, SidebarInset } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
 import Header from '@/components/dashboard/header';
 import SidebarContent from '@/components/dashboard/sidebar-content';
 import MobileNav from '@/components/dashboard/mobile-nav';
-import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
 import { MotionConfig } from 'framer-motion';
 import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
 import { Providers } from './providers';
-import { useUser } from '@clerk/nextjs';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
