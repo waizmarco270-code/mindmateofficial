@@ -59,6 +59,7 @@ const mainNavItems = [
 
 const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
+  { href: '/dashboard/groups', icon: Users, label: 'Groups', glow: 'text-green-400' },
   { href: '/dashboard/world', icon: Globe, label: 'World Chat', glow: 'text-blue-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
@@ -103,6 +104,7 @@ export default function SidebarContent() {
   const isVip = currentUserData?.isVip || false;
   const isGM = currentUserData?.isGM || false;
   const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
+  const showDevLink = isSuperAdmin || currentUserData?.isCoDev;
   
   const isActive = (href: string) => {
     // Exact match for dashboard home, startsWith for others
@@ -116,10 +118,13 @@ export default function SidebarContent() {
     if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos'))) {
         return true;
     }
-     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin') || pathname.startsWith('/dashboard/whats-new') || pathname.startsWith('/dashboard/dev'))) {
+     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin') || pathname.startsWith('/dashboard/whats-new'))) {
         return true;
     }
      if (href === '/dashboard/store' && pathname.startsWith('/dashboard/store/history')) {
+        return true;
+    }
+     if (href === '/dashboard/social' && pathname.startsWith('/dashboard/groups')) {
         return true;
     }
 
@@ -222,6 +227,25 @@ export default function SidebarContent() {
       </div>
 
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
+          {showDevLink && (
+               <Link
+                    href="/dashboard/dev"
+                    prefetch={true}
+                    className={cn(
+                        'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
+                        isActive('/dashboard/dev') 
+                            ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
+                            : 'hover:text-primary',
+                    )}
+                >
+                    <div className={cn(
+                        "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
+                        isActive('/dashboard/dev') ? "bg-primary" : "group-hover:scale-y-50"
+                    )}></div>
+                    <Fingerprint className="h-5 w-5 text-rose-400" />
+                    <span className="flex-1">Dev Panel</span>
+                </Link>
+          )}
           <Link
                 href="/dashboard/settings"
                 prefetch={true}

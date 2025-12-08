@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -397,6 +398,7 @@ export default function DashboardPage() {
                             </SheetHeader>
                             <div className="grid grid-cols-4 gap-4 py-4">
                                 {[
+                                    { title: 'Groups', href: '/dashboard/groups', icon: Users, glow: 'text-green-400' },
                                     { title: 'Social Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
                                     { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
                                     { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
@@ -425,10 +427,10 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="grid grid-cols-4 gap-4 text-center">
                     {[
+                        { title: 'Groups', href: '/dashboard/groups', icon: Users, glow: 'text-green-400' },
                         { title: 'Social Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
                         { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
                         { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
-                        { title: 'MM Nexus', href: '/dashboard/schedule', icon: Calendar, glow: 'text-blue-400' },
                     ].map(tool => (
                         <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
                              <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">

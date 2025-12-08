@@ -6,11 +6,10 @@ import { useState } from 'react';
 import { UserList } from '@/components/social/user-list';
 import { ChatBox } from '@/components/social/chat-box';
 import { type User } from '@/hooks/use-admin';
-import { FriendsProvider } from '@/hooks/use-friends.tsx';
+import { FriendsProvider } from '@/hooks/use-friends';
 import { Card } from '@/components/ui/card';
-import { Users, Gem } from 'lucide-react';
+import { Users, Gem, MessageSquare } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
@@ -72,6 +71,9 @@ export default function SocialPage() {
                         <Button asChild variant="outline">
                             <Link href="/dashboard/social/nuggets"><Gem className="mr-2 h-4 w-4 text-amber-500" /> Wisdom Nugget Jar</Link>
                         </Button>
+                         <Button asChild>
+                            <Link href="/dashboard/groups"><Users className="mr-2 h-4 w-4"/> View Your Groups</Link>
+                        </Button>
                       </div>
                       <div className="md:col-span-8 h-full">
                         {selectedFriend ? (
@@ -79,7 +81,7 @@ export default function SocialPage() {
                         ) : (
                           <Card className="h-full flex items-center justify-center border-dashed">
                               <div className="text-center text-muted-foreground">
-                                  <Users className="h-12 w-12 mx-auto mb-4"/>
+                                  <MessageSquare className="h-12 w-12 mx-auto mb-4"/>
                                   <h2 className="text-lg font-semibold">Select a friend to start chatting</h2>
                                   <p className="text-sm">Your conversations will appear here.</p>
                               </div>
