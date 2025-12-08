@@ -25,6 +25,7 @@ export interface Group {
     motto?: string;
     logoUrl?: string | null;
     banner?: string;
+    bannerUrl?: string | null; // For custom banners
     createdBy: string;
     createdAt: Date;
     members: GroupMember[];
@@ -57,7 +58,7 @@ export interface GroupsContextType {
     joinRequests: GroupJoinRequest[];
     sentJoinRequests: GroupJoinRequest[];
     loading: boolean;
-    createGroup: (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => Promise<void>;
+    createGroup: (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => Promise<string | undefined>;
     updateGroup: (groupId: string, data: Partial<Group>, isRenaming?: boolean, renameCost?: number) => Promise<void>;
     updateMemberRole: (groupId: string, memberId: string, role: GroupRole) => Promise<void>;
     removeMember: (groupId: string, memberId: string) => Promise<void>;

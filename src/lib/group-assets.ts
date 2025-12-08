@@ -1,4 +1,5 @@
 
+
 export const groupBanners = [
     { id: 'default', class: 'bg-slate-800' },
     { id: 'nebula', class: 'blue-nebula-bg' },
@@ -8,4 +9,7 @@ export const groupBanners = [
     { id: 'oceanic', class: 'oceanic-flow-bg' },
     { id: 'golden', class: 'golden-legend-bg' },
     { id: 'jungle', class: 'jungle-ruins-bg' },
+    { id: 'banner-sunflower', class: 'banner-sunflower-bg' },
+    { id: 'banner-forest', class: 'banner-forest-bg' },
+    { id: 'banner-shiny', class: 'banner-shiny-bg' },
 ];

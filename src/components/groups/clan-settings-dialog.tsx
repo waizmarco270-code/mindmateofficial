@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useGroups } from '@/hooks/use-groups.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Loader2, Edit, AlertTriangle, Trash2, LogOut, DollarSign, Users, CheckCircle, Shield, Globe, Lock, Crown, UserCog } from 'lucide-react';
+import { Loader2, Edit, AlertTriangle, Trash2, LogOut, DollarSign, Users, CheckCircle, Shield, Globe, Lock, Crown, UserCog, Upload } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { groupBanners } from '@/lib/group-assets';
@@ -20,7 +21,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { ScrollArea } from '../ui/scroll-area';
 import { Switch } from '../ui/switch';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '../ui/dropdown-menu';
-import { Badge } from '../ui/badge';
+import { Badge } from '@/components/ui/badge';
 
 
 interface ClanSettingsDialogProps {
@@ -119,6 +120,7 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
     const [groupName, setGroupName] = useState(group.name);
     const [groupMotto, setGroupMotto] = useState(group.motto || '');
     const [groupLogo, setGroupLogo] = useState<string | null>(group.logoUrl || null);
+    const [groupBanner, setGroupBanner] = useState<string | null>(group.bannerUrl || null);
     const [selectedBanner, setSelectedBanner] = useState(group.banner || 'default');
     const [isPublic, setIsPublic] = useState(group.isPublic);
     const [joinMode, setJoinMode] = useState<'auto' | 'approval'>(group.joinMode);
@@ -130,6 +132,7 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
             setGroupName(group.name);
             setGroupMotto(group.motto || '');
             setGroupLogo(group.logoUrl || null);
+            setGroupBanner(group.bannerUrl || null);
             setSelectedBanner(group.banner || 'default');
             setIsPublic(group.isPublic);
             setJoinMode(group.joinMode);
@@ -138,12 +141,14 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
 
 
     const logoInputRef = useRef<HTMLInputElement>(null);
+    const bannerInputRef = useRef<HTMLInputElement>(null);
     
     const hasEnoughForRename = (currentUserData?.credits ?? 0) >= RENAME_COST;
     const groupJoinRequests = joinRequests.filter(r => r.groupId === group.id);
+    const canUploadCustomBanner = group.level >= 5;
 
 
-    const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, setter: (value: string | null) => void) => {
         const file = e.target.files?.[0];
         if (!file) return;
 
@@ -154,7 +159,7 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
 
         const reader = new FileReader();
         reader.onload = (event) => {
-            setGroupLogo(event.target?.result as string);
+            setter(event.target?.result as string);
         };
         reader.readAsDataURL(file);
     };
@@ -178,6 +183,7 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                 name: groupName.trim(),
                 motto: groupMotto,
                 logoUrl: groupLogo,
+                bannerUrl: groupBanner,
                 banner: selectedBanner,
                 isPublic,
                 joinMode
@@ -235,7 +241,7 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                                     <AvatarImage src={groupLogo || undefined} alt="Group logo preview" />
                                     <AvatarFallback>{groupName.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <input type="file" ref={logoInputRef} onChange={handleLogoSelect} accept="image/*" className="hidden"/>
+                                <input type="file" ref={logoInputRef} onChange={(e) => handleFileSelect(e, setGroupLogo)} accept="image/*" className="hidden"/>
                                 <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full" onClick={() => logoInputRef.current?.click()}>
                                     <Edit className="h-4 w-4"/>
                                 </Button>
@@ -255,10 +261,20 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                             <Label>Clan Banner</Label>
                             <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
                                 {groupBanners.map(banner => (
-                                    <button key={banner.id} onClick={() => setSelectedBanner(banner.id)} className={cn("h-16 rounded-lg border-2 transition-all", selectedBanner === banner.id ? 'border-primary ring-2 ring-primary/50' : 'border-transparent hover:border-primary/50')}>
+                                    <button key={banner.id} onClick={() => { setSelectedBanner(banner.id); setGroupBanner(null); }} className={cn("h-16 rounded-lg border-2 transition-all", selectedBanner === banner.id ? 'border-primary ring-2 ring-primary/50' : 'border-transparent hover:border-primary/50')}>
                                         <div className={cn("w-full h-full rounded-md", banner.class)}></div>
                                     </button>
                                 ))}
+                                {canUploadCustomBanner && (
+                                    <button onClick={() => bannerInputRef.current?.click()} className={cn("h-16 rounded-lg border-2 transition-all flex items-center justify-center bg-muted/50", !selectedBanner && groupBanner ? 'border-primary ring-2 ring-primary/50' : 'border-dashed hover:border-primary/50')}>
+                                        {groupBanner ? (
+                                            <img src={groupBanner} alt="Custom banner preview" className="w-full h-full object-cover rounded-md" />
+                                        ) : (
+                                            <Upload className="h-6 w-6 text-muted-foreground" />
+                                        )}
+                                    </button>
+                                )}
+                                <input type="file" ref={bannerInputRef} onChange={(e) => { handleFileSelect(e, setGroupBanner); setSelectedBanner(''); }} accept="image/*" className="hidden"/>
                             </div>
                         </div>
                         <div className="space-y-4 pt-4 border-t">

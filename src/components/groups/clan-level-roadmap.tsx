@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -7,7 +8,7 @@ import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { groupBanners } from '@/app/lib/group-assets';
-import { Users, Award, Shield, Gem } from 'lucide-react';
+import { Users, Award, Shield, Gem, Upload } from 'lucide-react';
 import Image from 'next/image';
 
 interface ClanLevelRoadmapDialogProps {
@@ -79,6 +80,15 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange }: ClanLevelRoadma
                                                          <div className={cn("relative w-full h-24 rounded-lg overflow-hidden mt-2", banner.class)}>
                                                             <div className="absolute inset-0 bg-grid-slate-800/50"></div>
                                                          </div>
+                                                    </div>
+                                                )}
+                                                {level.bannerUnlock === 'custom' && (
+                                                     <div className="p-3 rounded-lg bg-muted border flex items-center gap-3">
+                                                        <Upload className="h-6 w-6 text-rose-500"/>
+                                                        <div>
+                                                            <p className="font-bold">Custom Banner Slot</p>
+                                                            <p className="text-sm text-muted-foreground">Upload your own clan banner.</p>
+                                                        </div>
                                                     </div>
                                                 )}
                                              </div>
