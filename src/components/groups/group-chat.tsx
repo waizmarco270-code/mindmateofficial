@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -11,10 +11,20 @@ import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { format, isSameDay } from 'date-fns';
-import { useGroupChat, Group, type GroupMessage } from '@/hooks/use-groups';
-import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import type { Group } from '@/app/dashboard/groups/page';
+import { Loader2 } from 'lucide-react';
+
+export interface GroupMessage {
+    id: string;
+    senderId: string;
+    text?: string;
+    imageUrl?: string; // base64 data URI
+    timestamp: Date;
+}
 
 const userColors = [
     'border-red-500/50', 'border-orange-500/50', 'border-amber-500/50',
@@ -35,13 +45,40 @@ const getUserColor = (userId: string) => {
 
 export function GroupChat({ group }: { group: Group }) {
     const { user: currentUser } = useUser();
-    const { messages, sendMessage, loading } = useGroupChat(group.id);
+    const [messages, setMessages] = useState<GroupMessage[]>([]);
+    const [loading, setLoading] = useState(true);
     const [newMessage, setNewMessage] = useState('');
     const [imageFile, setImageFile] = useState<File | null>(null);
     const [imagePreview, setImagePreview] = useState<string | null>(null);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+
+    useEffect(() => {
+        if (!group.id) {
+            setLoading(false);
+            return;
+        };
+
+        setLoading(true);
+        const messagesRef = collection(db, 'groups', group.id, 'messages');
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const fetchedMessages = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    timestamp: (data.timestamp as Timestamp)?.toDate() || new Date()
+                } as GroupMessage;
+            });
+            setMessages(fetchedMessages);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [group.id]);
 
     useEffect(() => {
         if (scrollAreaRef.current) {
@@ -60,6 +97,28 @@ export function GroupChat({ group }: { group: Group }) {
             setImagePreview(null);
         }
     }, [imageFile]);
+
+    const sendMessage = useCallback(async (text?: string, imageUrl?: string | null) => {
+        if (!group.id || !currentUser || (!text?.trim() && !imageUrl)) return;
+
+        const messagesRef = collection(db, 'groups', group.id, 'messages');
+        await addDoc(messagesRef, {
+            senderId: currentUser.id,
+            text: text || '',
+            imageUrl: imageUrl || null,
+            timestamp: serverTimestamp(),
+        });
+        
+        const groupRef = doc(db, 'groups', group.id);
+        await updateDoc(groupRef, {
+            lastMessage: {
+                text: text ? (text.length > 30 ? text.substring(0, 30) + '...' : text) : 'Sent an image',
+                senderId: currentUser.id,
+                timestamp: serverTimestamp()
+            }
+        });
+
+    }, [group.id, currentUser]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -114,38 +173,44 @@ export function GroupChat({ group }: { group: Group }) {
                     ) : messages.map((msg, index) => {
                         const sender = group.memberDetails?.find(m => m.uid === msg.senderId);
                         const prevMessage = messages[index - 1];
+                        
+                        // Show header if it's the first message, or sender is different, or it's a new day
                         const showHeader = !prevMessage || prevMessage.senderId !== msg.senderId || !isSameDay(new Date(msg.timestamp), new Date(prevMessage.timestamp));
+                        // Show date separator if it's a new day
+                        const showDateSeparator = index === 0 || !isSameDay(new Date(msg.timestamp), new Date(prevMessage.timestamp));
+
 
                         return (
-                            <div key={msg.id} className={cn("flex items-end gap-2", msg.senderId === currentUser?.id ? "justify-end" : "")}>
-                                {!isSameDay(new Date(msg.timestamp), prevMessage ? new Date(prevMessage.timestamp) : 0) && (
-                                    <div className="text-xs text-muted-foreground text-center col-span-full py-4">{format(new Date(msg.timestamp), 'MMMM d, yyyy')}</div>
+                           <div key={msg.id}>
+                                {showDateSeparator && (
+                                    <div className="text-center text-xs text-muted-foreground my-4">{format(new Date(msg.timestamp), 'MMMM d, yyyy')}</div>
                                 )}
-
-                                {! (msg.senderId === currentUser?.id) && (
-                                    <Avatar className={cn("h-8 w-8", showHeader ? 'opacity-100' : 'opacity-0')}>
-                                        <AvatarImage src={sender?.photoURL} />
-                                        <AvatarFallback>{sender?.displayName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                )}
-                                
-                                <div className={cn("max-w-xs md:max-w-md", msg.senderId === currentUser?.id ? "text-right" : "")}>
-                                    {showHeader && !(msg.senderId === currentUser?.id) && (
-                                        <p className={cn("text-xs font-semibold mb-1", getUserColor(sender?.uid || ''))}>
-                                            {sender?.displayName}
-                                        </p>
+                                <div className={cn("flex items-end gap-2", msg.senderId === currentUser?.id ? "justify-end" : "")}>
+                                    {! (msg.senderId === currentUser?.id) && (
+                                        <Avatar className={cn("h-8 w-8", showHeader ? 'opacity-100' : 'opacity-0')}>
+                                            <AvatarImage src={sender?.photoURL} />
+                                            <AvatarFallback>{sender?.displayName.charAt(0)}</AvatarFallback>
+                                        </Avatar>
                                     )}
-                                    <div className={cn("p-3 rounded-2xl", msg.senderId === currentUser?.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none")}>
-                                        {msg.text && <p className="whitespace-pre-wrap">{msg.text}</p>}
-                                        {msg.imageUrl && (
-                                            <div className="mt-2">
-                                                <Image src={msg.imageUrl} alt="Uploaded image" width={300} height={200} className="rounded-md object-cover" />
-                                            </div>
+                                    
+                                    <div className={cn("max-w-xs md:max-w-md", msg.senderId === currentUser?.id ? "text-right" : "")}>
+                                        {showHeader && !(msg.senderId === currentUser?.id) && (
+                                            <p className={cn("text-xs font-semibold mb-1", getUserColor(sender?.uid || ''))}>
+                                                {sender?.displayName}
+                                            </p>
                                         )}
-                                        <p className="text-xs opacity-70 mt-1">{format(new Date(msg.timestamp), 'h:mm a')}</p>
+                                        <div className={cn("p-3 rounded-2xl", msg.senderId === currentUser?.id ? "bg-primary text-primary-foreground rounded-br-none" : "bg-muted rounded-bl-none")}>
+                                            {msg.text && <p className="whitespace-pre-wrap text-left">{msg.text}</p>}
+                                            {msg.imageUrl && (
+                                                <div className="mt-2">
+                                                    <Image src={msg.imageUrl} alt="Uploaded image" width={300} height={200} className="rounded-md object-cover" />
+                                                </div>
+                                            )}
+                                            <p className="text-xs opacity-70 mt-1">{format(new Date(msg.timestamp), 'h:mm a')}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                           </div>
                         );
                     })}
                 </div>

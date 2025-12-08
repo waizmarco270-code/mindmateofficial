@@ -1,16 +1,19 @@
 
 'use client';
 
-import { useState }from 'react';
+import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Globe, Loader2, Plus, Users, ArrowRight } from 'lucide-react';
-import { useGroups, GroupsProvider } from '@/hooks/use-groups';
+import { Globe, Loader2, Plus, Users } from 'lucide-react';
 import { CreateGroupModal } from '@/components/groups/create-group-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
+import { useGroups, type Group } from '@/hooks/use-groups';
+import type { User } from '@/hooks/use-admin';
+import { FriendsProvider } from '@/hooks/use-friends';
+import { GroupsProvider } from '@/hooks/use-groups';
 
 function GroupsPageContent() {
     const { user } = useUser();
@@ -96,11 +99,12 @@ function GroupsPageContent() {
     );
 }
 
-
 export default function GroupsPage() {
     return (
-        <GroupsProvider>
-            <GroupsPageContent />
-        </GroupsProvider>
-    )
+        <FriendsProvider>
+            <GroupsProvider>
+                <GroupsPageContent />
+            </GroupsProvider>
+        </FriendsProvider>
+    );
 }

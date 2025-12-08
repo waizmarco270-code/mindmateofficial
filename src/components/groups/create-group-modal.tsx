@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@clerk/nextjs';
 
 interface CreateGroupModalProps {
     isOpen: boolean;
@@ -20,12 +21,14 @@ interface CreateGroupModalProps {
 }
 
 export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps) {
+    const { user } = useUser();
     const { friends, loading: friendsLoading } = useFriends();
-    const { createGroup, loading: groupsLoading } = useGroups();
+    const { createGroup } = useGroups();
     const { toast } = useToast();
 
     const [groupName, setGroupName] = useState('');
     const [selectedFriendIds, setSelectedFriendIds] = useState<string[]>([]);
+    const [isCreating, setIsCreating] = useState(false);
     
     const handleFriendSelect = (friendId: string) => {
         setSelectedFriendIds(prev =>
@@ -33,16 +36,25 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
         );
     };
 
-    const handleCreateGroup = async () => {
+    const handleCreateGroup = useCallback(async () => {
+        if (!user) return;
         if (!groupName.trim()) {
             toast({ variant: 'destructive', title: "Group name is required." });
             return;
         }
-        await createGroup(groupName, selectedFriendIds);
-        onOpenChange(false);
-        setGroupName('');
-        setSelectedFriendIds([]);
-    };
+
+        setIsCreating(true);
+        try {
+            await createGroup(groupName, selectedFriendIds);
+            onOpenChange(false);
+            setGroupName('');
+            setSelectedFriendIds([]);
+        } catch (error) {
+            console.error("Error creating group:", error);
+        } finally {
+            setIsCreating(false);
+        }
+    }, [user, groupName, selectedFriendIds, toast, onOpenChange, createGroup]);
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -99,8 +111,8 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button onClick={handleCreateGroup} disabled={groupsLoading || !groupName.trim()}>
-                        {groupsLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                    <Button onClick={handleCreateGroup} disabled={isCreating || !groupName.trim()}>
+                        {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
                         Create Group
                     </Button>
                 </DialogFooter>
