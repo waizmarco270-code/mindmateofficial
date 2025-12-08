@@ -11,17 +11,17 @@ import { GroupsProvider } from "@/hooks/use-groups.tsx";
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AppDataProvider>
-      <FriendsProvider>
         <GroupsProvider>
-          <UnreadMessagesProvider>
-              <WorldChatProvider>
-                  <RoadmapsProvider>
-                      {children}
-                  </RoadmapsProvider>
-              </WorldChatProvider>
-          </UnreadMessagesProvider>
+          <FriendsProvider>
+            <UnreadMessagesProvider>
+                <WorldChatProvider>
+                    <RoadmapsProvider>
+                        {children}
+                    </RoadmapsProvider>
+                </WorldChatProvider>
+            </UnreadMessagesProvider>
+          </FriendsProvider>
         </GroupsProvider>
-      </FriendsProvider>
     </AppDataProvider>
   );
 }

@@ -2,7 +2,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -17,72 +17,108 @@ import { useUnreadMessages } from '@/hooks/use-unread';
 import { Badge } from '../ui/badge';
 import { usePinnedPage } from '@/hooks/use-pinned-page';
 import { usePathname } from 'next/navigation';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { useFriends, type FriendRequest } from '@/hooks/use-friends';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { useToast } from '@/hooks/use-toast';
+import { useRewards } from '@/hooks/use-rewards';
 
 
-function AnnouncementInbox() {
+function Inbox() {
     const { announcements } = useAnnouncements();
-    const { hasUnreadAnnouncements, markAnnouncementsAsRead } = useUnreadMessages();
-    
-    const latestAnnouncement = announcements.length > 0 ? announcements[0] : null;
-    const previousAnnouncements = announcements.slice(1, 10);
+    const { 
+      hasUnread, hasUnreadAnnouncements, hasUnreadFriendRequests, 
+      markAnnouncementsAsRead, markFriendRequestsAsRead 
+    } = useUnreadMessages();
+    const { friendRequests, acceptFriendRequest, declineFriendRequest, loading: friendsLoading } = useFriends();
+    const { toast } = useToast();
+
+    const handleAccept = async (request: FriendRequest) => {
+        await acceptFriendRequest(request);
+        toast({ title: "Friend Added!" });
+    };
+
+    const handleDecline = async (request: FriendRequest) => {
+        await declineFriendRequest(request);
+        toast({ title: "Request Declined" });
+    };
 
     return (
-        <Popover onOpenChange={(open) => { if(open) markAnnouncementsAsRead() }}>
+        <Popover onOpenChange={(open) => {
+            if (open) {
+                markAnnouncementsAsRead();
+                markFriendRequestsAsRead();
+            }
+        }}>
             <PopoverTrigger asChild>
-                <Button 
-                    variant="outline" 
+                <Button
+                    variant="outline"
                     className={cn(
                         "relative h-10 w-10 rounded-full p-0 transition-all duration-300 ease-in-out",
-                        hasUnreadAnnouncements 
+                        hasUnread
                             ? "bg-gradient-to-br from-purple-500 to-pink-500 text-white border-purple-400 animate-pulse shadow-lg shadow-primary/30"
                             : "bg-secondary"
                     )}
                 >
                     <Mail className="h-5 w-5" />
-                    {hasUnreadAnnouncements && (
+                    {hasUnread && (
                          <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
                         </span>
                     )}
-                    <span className="sr-only">Announcements</span>
+                    <span className="sr-only">Inbox</span>
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-96 p-0">
-                 <div className="p-4 bg-muted/50 rounded-t-lg">
+                <div className="p-4 bg-muted/50 rounded-t-lg">
                     <h4 className="font-bold text-base flex items-center gap-2"><Mail className="h-5 w-5 text-primary"/> Inbox</h4>
-                    <p className="text-sm text-muted-foreground">The latest updates and news from the admins.</p>
-                 </div>
-                 <Separator />
-                <ScrollArea className="h-[400px]">
-                    <div className="p-4 space-y-4">
-                        {latestAnnouncement && (
-                            <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 via-background to-background border border-primary/20">
-                                <p className="font-bold text-primary mb-1">Latest Announcement</p>
-                                <p className="font-semibold text-sm">{latestAnnouncement.title}</p>
-                                <p className="text-xs text-muted-foreground">{latestAnnouncement.description}</p>
-                                <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(latestAnnouncement.createdAt, { addSuffix: true })}</p>
-                            </div>
-                        )}
-
-                        {previousAnnouncements.length > 0 && (
-                            <>
-                                <Separator/>
-                                 <p className="font-semibold text-sm text-muted-foreground px-2">Previous Announcements</p>
-                                {previousAnnouncements.map(announcement => (
-                                    <div key={announcement.id} className="space-y-1 p-3 rounded-md hover:bg-muted cursor-pointer">
-                                        <p className="font-semibold text-sm">{announcement.title}</p>
-                                        <p className="text-xs text-muted-foreground">{announcement.description}</p>
-                                        <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</p>
+                    <p className="text-sm text-muted-foreground">Your recent notifications.</p>
+                </div>
+                <Tabs defaultValue="announcements">
+                    <TabsList className="w-full justify-around rounded-none bg-muted/30">
+                        <TabsTrigger value="announcements" className="relative">
+                            Announcements
+                             {hasUnreadAnnouncements && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive"/>}
+                        </TabsTrigger>
+                        <TabsTrigger value="requests" className="relative">
+                            Requests
+                            {hasUnreadFriendRequests && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive"/>}
+                        </TabsTrigger>
+                        <TabsTrigger value="rewards" disabled>Rewards</TabsTrigger>
+                    </TabsList>
+                    <ScrollArea className="h-[400px]">
+                        <TabsContent value="announcements" className="p-4 space-y-4">
+                            {announcements.length > 0 ? announcements.map(announcement => (
+                                <div key={announcement.id} className="space-y-1 p-3 rounded-md hover:bg-muted cursor-pointer">
+                                    <p className="font-semibold text-sm">{announcement.title}</p>
+                                    <p className="text-xs text-muted-foreground">{announcement.description}</p>
+                                    <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</p>
+                                </div>
+                            )) : <p className="text-sm text-muted-foreground text-center py-10">No new announcements.</p>}
+                        </TabsContent>
+                        <TabsContent value="requests" className="p-4 space-y-2">
+                             {friendRequests.length > 0 ? friendRequests.map(req => (
+                                <div key={req.id} className="flex items-center gap-3 p-2 rounded-lg bg-background border">
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={req.sender.photoURL} />
+                                        <AvatarFallback>{req.sender.displayName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1">
+                                        <p className="text-sm font-semibold">{req.sender.displayName}</p>
+                                        <p className="text-xs text-muted-foreground">sent you a friend request</p>
                                     </div>
-                                ))}
-                            </>
-                        )}
-
-                        {announcements.length === 0 && (
-                            <p className="text-sm text-muted-foreground text-center py-10">No announcements yet.</p>
-                        )}
-                    </div>
-                </ScrollArea>
+                                    <div className="flex gap-1.5">
+                                        <Button size="icon" className="h-8 w-8 bg-green-500/20 text-green-600 hover:bg-green-500/30" onClick={() => handleAccept(req)}><Check/></Button>
+                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDecline(req)}><X/></Button>
+                                    </div>
+                                </div>
+                             )) : <p className="text-sm text-muted-foreground text-center py-10">No pending friend requests.</p>}
+                        </TabsContent>
+                         <TabsContent value="rewards">
+                           <p className="text-sm text-muted-foreground text-center py-10">Rewards notifications will appear here.</p>
+                        </TabsContent>
+                    </ScrollArea>
+                </Tabs>
             </PopoverContent>
         </Popover>
     )
@@ -214,7 +250,7 @@ export default function Header() {
                     </PopoverContent>
                 </Popover>
                 
-                <AnnouncementInbox />
+                <Inbox />
 
                 <Button 
                     variant="outline" 
