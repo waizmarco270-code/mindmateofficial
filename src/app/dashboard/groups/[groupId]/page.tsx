@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Users, MessageSquare, Menu } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy } from 'lucide-react';
 import { GroupChat } from '@/components/groups/group-chat';
 import { GroupLeaderboard } from '@/components/groups/group-leaderboard';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -15,17 +16,23 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ClanSettingsDialog } from '@/components/groups/clan-settings-dialog';
+import { useUser } from '@clerk/nextjs';
+import { cn } from '@/lib/utils';
 
 export default function GroupDetailPage() {
     const params = useParams();
     const router = useRouter();
     const groupId = params.groupId as string;
     const { users, loading: usersLoading } = useUsers();
+    const { user: currentUser } = useUser();
 
     const [group, setGroup] = useState<Group | null>(null);
     const [loading, setLoading] = useState(true);
     const [isChatOpen, setIsChatOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
 
 
     useEffect(() => {
@@ -71,15 +78,17 @@ export default function GroupDetailPage() {
             </div>
         )
     }
+    
+    const isClanAdmin = currentUser?.id === group.createdBy;
 
     return (
        <div className="h-full relative">
             <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
                 <SheetTrigger asChild>
                     <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 0.5, type: 'spring', stiffness: 150 }}
+                        initial={{ scale: 0, x: '-100%' }}
+                        animate={{ scale: 1, x: 0 }}
+                        transition={{ delay: 0.3, type: 'spring', stiffness: 150 }}
                         className="fixed bottom-24 left-4 z-40"
                     >
                         <Button className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-purple-600 shadow-2xl shadow-primary/30 flex flex-col gap-1">
@@ -94,21 +103,33 @@ export default function GroupDetailPage() {
             </Sheet>
 
             <div className="space-y-6">
-                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={() => router.push('/dashboard/groups')}>
-                        <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                    <Avatar className="h-16 w-16 border-2 border-primary">
-                        <AvatarImage src={group.logoUrl || undefined} />
-                        <AvatarFallback>{group.name.charAt(0)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
-                        <p className="text-muted-foreground italic">"{group.motto || 'No motto set.'}"</p>
+                 <div className="flex items-center justify-between gap-4">
+                     <div className="flex items-center gap-4">
+                        <Button variant="outline" size="icon" onClick={() => router.push('/dashboard/groups')}>
+                            <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                        <Avatar className="h-16 w-16 border-2 border-primary">
+                            <AvatarImage src={group.logoUrl || undefined} />
+                            <AvatarFallback>{group.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h1 className="text-3xl font-bold tracking-tight">{group.name}</h1>
+                            <p className="text-muted-foreground italic">"{group.motto || 'No motto set.'}"</p>
+                        </div>
+                    </div>
+                     <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={() => setIsLeaderboardOpen(o => !o)}>
+                           <Trophy className="mr-2 h-4 w-4"/> Leaderboard
+                        </Button>
+                        {isClanAdmin && (
+                            <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
+                                <Settings />
+                            </Button>
+                        )}
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className={cn("grid grid-cols-1 gap-6", isLeaderboardOpen && "lg:grid-cols-2")}>
                     <Card>
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><Users /> Members ({group.members.length})</CardTitle>
@@ -130,11 +151,22 @@ export default function GroupDetailPage() {
                             </div>
                         </CardContent>
                     </Card>
-                     <div className="h-full">
-                        <GroupLeaderboard group={group} />
-                    </div>
+                     <AnimatePresence>
+                     {isLeaderboardOpen && (
+                         <motion.div
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 20 }}
+                         >
+                            <GroupLeaderboard group={group} />
+                         </motion.div>
+                     )}
+                     </AnimatePresence>
                 </div>
             </div>
+
+            <ClanSettingsDialog group={group} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen}/>
        </div>
     );
 }
+

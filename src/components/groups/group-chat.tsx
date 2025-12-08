@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -17,9 +18,6 @@ import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timest
 import { db } from '@/lib/firebase';
 import type { Group, GroupMessage } from '@/context/groups-context';
 import { Loader2 } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet';
-import { GroupLeaderboard } from './group-leaderboard';
-import { ClanSettingsDialog } from './clan-settings-dialog';
 
 const userColors = [
     'border-red-500/50', 'border-orange-500/50', 'border-amber-500/50',
@@ -48,9 +46,6 @@ export function GroupChat({ group }: { group: Group }) {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
-    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-
-    const isClanAdmin = currentUser?.id === group.createdBy;
 
     useEffect(() => {
         if (!group.id) {
@@ -161,13 +156,6 @@ export function GroupChat({ group }: { group: Group }) {
                         <p className="text-xs text-muted-foreground">{group.members.length} members</p>
                     </div>
                 </div>
-                 <div className="flex items-center gap-2">
-                    {isClanAdmin && (
-                        <Button variant="outline" size="icon" onClick={() => setIsSettingsOpen(true)}>
-                            <Settings />
-                        </Button>
-                    )}
-                 </div>
             </header>
 
             <ScrollArea className="flex-1" viewportRef={scrollAreaRef}>
@@ -244,8 +232,6 @@ export function GroupChat({ group }: { group: Group }) {
                     </Button>
                 </form>
             </footer>
-
-            <ClanSettingsDialog group={group} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
         </div>
     );
 }
