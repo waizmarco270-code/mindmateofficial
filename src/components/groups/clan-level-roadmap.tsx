@@ -41,7 +41,7 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                                     <CarouselItem key={level.level} className="pl-4 md:basis-1/2 lg:basis-1/3">
                                         <div className="p-1">
                                             <Card className={cn(
-                                                "h-full flex flex-col bg-slate-900/50 transition-all duration-300 border-2 shadow-lg",
+                                                "h-full flex flex-col bg-background transition-all duration-300 border-2 shadow-lg",
                                                 isCurrentLevel ? "border-primary shadow-primary/20" : level.borderColorClass,
                                                 level.shadowClass
                                             )}>
