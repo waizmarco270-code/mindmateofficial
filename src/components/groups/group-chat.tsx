@@ -11,7 +11,7 @@ import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { format, isSameDay } from 'date-fns';
-import { useGroupChat, Group } from '@/hooks/use-groups';
+import { useGroupChat, Group, type GroupMessage } from '@/hooks/use-groups';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
