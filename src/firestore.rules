@@ -1,0 +1,158 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function getUserData(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data;
+    }
+    
+    function isAdmin() {
+      return isSignedIn() && getUserData(request.auth.uid).isAdmin == true;
+    }
+
+    function isSuperAdmin() {
+      return isSignedIn() && request.auth.uid == 'user_2jFqwMuJgq13a0r0b4Yc2pL1rA7';
+    }
+
+    // Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) || isSuperAdmin();
+      allow delete: if isOwner(userId) || isSuperAdmin();
+
+      // Subcollections for user-specific data
+      match /{subcollection}/{docId} {
+        allow read, write, delete: if isOwner(userId);
+      }
+    }
+    
+    // Global Read-Only Collections
+    match /announcements/{docId} {
+      allow read: if isSignedIn();
+      allow write, delete: if isAdmin() || isSuperAdmin();
+    }
+
+    match /resources/{docId} {
+      allow read: if isSignedIn();
+      allow write, delete: if isAdmin() || isSuperAdmin();
+    }
+
+    match /resourceSections/{docId} {
+      allow read: if isSignedIn();
+      allow write, delete: if isAdmin() || isSuperAdmin();
+    }
+    
+    match /dailySurprises/{docId} {
+        allow read: if isSignedIn();
+        allow write, delete: if isAdmin() || isSuperAdmin();
+    }
+    
+    match /quizzes/{docId} {
+        allow read: if isSignedIn();
+        allow write, delete: if isAdmin() || isSuperAdmin();
+    }
+
+    match /featureShowcases/{docId} {
+        allow read: if true; // Publicly readable for landing page
+        allow write, delete: if isSuperAdmin();
+    }
+
+    // App Config
+    match /appConfig/{docId} {
+      allow read: if true; // Publicly readable for all clients
+      allow write: if isSuperAdmin();
+    }
+
+    // Polls
+    match /polls/{pollId} {
+      allow read: if isSignedIn();
+      allow create, update, delete: if isAdmin() || isSuperAdmin();
+    }
+    
+    // Chats
+    match /chats/{chatId} {
+      allow read, write: if isSignedIn() && request.auth.uid in resource.data.users;
+      
+      match /messages/{messageId} {
+         allow read, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
+         allow update, delete: if false; // Disallow editing/deleting messages
+      }
+    }
+    
+    // Friend Requests
+    match /friendRequests/{requestId} {
+        allow read: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+        allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
+        allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+    }
+    
+    // Global Chat
+    match /global_chat/{messageId} {
+        allow read, create: if isSignedIn();
+        allow update: if false;
+        allow delete: if isOwner(resource.data.senderId) || isAdmin() || isSuperAdmin();
+    }
+    
+    // Support Tickets
+    match /supportTickets/{ticketId} {
+        allow read: if isAdmin() || isSuperAdmin();
+        allow create: if isSignedIn();
+        allow update, delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // Referrals
+    match /referrals/{referralId} {
+        allow read, update, delete: if isAdmin() || isSuperAdmin();
+        allow create: if isSignedIn();
+    }
+    
+    // Global Gifts (Popups)
+    match /globalGifts/{giftId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSuperAdmin();
+    }
+
+    // AI Access Tokens (Highly Restricted)
+    match /ai_access_tokens/{tokenId} {
+        allow read, create, update, delete: if false; // Should only be manageable via backend functions for security
+    }
+
+    // Groups (Clans)
+    match /groups/{groupId} {
+      allow read: if isSignedIn(); // Allow all signed-in users to read for discovery
+      allow update: if isSignedIn() && isOwner(resource.data.createdBy); // Only admin can update
+      allow create: if isSignedIn() && isOwner(request.resource.data.createdBy); // Creator can create
+      allow delete: if isSignedIn() && isOwner(resource.data.createdBy); // Only admin can delete
+
+      match /messages/{messageId} {
+        allow read, create: if isSignedIn() && request.auth.uid in resource.data.members;
+        allow update, delete: if false;
+      }
+    }
+    
+    // Group Join Requests
+    match /groupJoinRequests/{requestId} {
+    	allow read: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.clanAdminId);
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
+      allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.clanAdminId);
+    }
+
+  }
+}

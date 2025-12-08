@@ -84,8 +84,8 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
             onOpenChange(false);
             resetForm();
         } catch (error: any) {
-            // The hook now handles toast messages for specific errors.
-            // We can add a generic one here if needed, but it might be redundant.
+            // Errors (like insufficient funds or name taken) are now handled with toasts inside the hook.
+            // No need to show another toast here unless it's a generic fallback.
             console.error("Error creating group:", error.message);
         } finally {
             setIsCreating(false);
