@@ -1,4 +1,5 @@
 
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -30,6 +31,16 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.8rem;
+
+    /* Sidebar is always dark */
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 262 80% 56%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 262 80% 56%;
   }
 
   .dark {
@@ -57,6 +68,16 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    /* Sidebar variables are the same in dark mode, but defined for clarity */
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 262 80% 56%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 262 80% 56%;
   }
 
   .emerald-dream {
@@ -123,18 +144,6 @@
     --border: 232 43% 25%;
     --input: 232 43% 25%;
     --ring: 300 100% 70%;
-  }
-
-  /* Always-dark sidebar styles */
-  .dark, .light {
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 262 80% 56%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 262 80% 56%;
   }
 }
 
@@ -606,9 +615,10 @@
     background-color: rgba(0, 0, 0, 0.5);
   }
   
-  .banner-sunflower-bg { background: linear-gradient(135deg, #f59e0b, #fbbf24, #fca5a5); }
-  .banner-forest-bg { background: linear-gradient(135deg, #166534, #22c55e, #10b981); }
-  .banner-shiny-bg { background: linear-gradient(135deg, #a78bfa, #fbcfe8, #a5b4fc); background-size: 200% 200%; animation: nebula-animation 10s ease infinite; }
+  .banner-pro-bg { background: linear-gradient(135deg, #3b82f6, #60a5fa, #2563eb); }
+  .banner-alpha-bg { background: linear-gradient(135deg, #ef4444, #f87171, #dc2626); }
+  .banner-warrior-bg { background: linear-gradient(135deg, #64748b, #94a3b8, #475569); }
+  .banner-legendary-bg { background: linear-gradient(135deg, #f59e0b, #fbbf24, #d97706); background-size: 200% 200%; animation: nebula-animation 10s ease infinite;}
 
 
   @keyframes rainbow-progress {
@@ -616,28 +626,6 @@
     100% { background-position: 200% 50%; }
   }
 
-  .animate-flicker {
-    animation: flicker 1.5s infinite;
-  }
-
-  .animate-gold-shine {
-      animation: gold-shine 3s ease-in-out infinite;
-  }
-
-  .animate-red-pulse {
-      animation: red-pulse 1.5s infinite;
-  }
-  
-  .animated-rainbow-progress {
-    background: linear-gradient(90deg, #ef4444, #f59e0b, #eab308, #84cc16, #22c55e, #14b8a6, #06b6d4, #3b82f6, #8b5cf6);
-    background-size: 300% 100%;
-    animation: rainbow-progress 3s linear infinite;
-  }
-
-  .text-shadow-glow {
-    text-shadow: 0 0 8px currentColor;
-  }
-  
   @keyframes pulse-pro { 0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } 70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); } }
   .clan-badge-pro { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-400/50 shadow-lg shadow-blue-500/10 animate-[pulse-pro_2s_infinite]; }
 
@@ -648,10 +636,17 @@
   .clan-badge-warrior { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-slate-500/10 text-slate-400 border border-slate-400/50 shadow-lg shadow-slate-500/10 animate-[pulse-warrior_2s_infinite]; }
 
   .clan-badge-legendary { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-amber-400/10 text-amber-400 border border-amber-400/50 shadow-lg shadow-amber-400/10 animate-gold-shine; }
+
+  .animated-rainbow-progress {
+    background: linear-gradient(90deg, #ef4444, #f59e0b, #eab308, #84cc16, #22c55e, #14b8a6, #06b6d4, #3b82f6, #8b5cf6);
+    background-size: 300% 100%;
+    animation: rainbow-progress 3s linear infinite;
+  }
+
 }
 
 @layer utilities {
-  .text-shadow {
-    text-shadow: 0 0 8px var(--tw-shadow-color, currentColor);
+  .text-shadow-glow {
+    text-shadow: 0 0 8px currentColor;
   }
 }

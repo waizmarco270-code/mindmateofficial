@@ -51,7 +51,10 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="bg-background/50 backdrop-blur-lg border-0 shadow-none p-0 max-w-full w-full h-full flex items-center justify-center">
+            <DialogContent className="bg-transparent border-0 shadow-none p-0 max-w-full w-full h-full flex items-center justify-center">
+                 <Button variant="ghost" size="icon" className="absolute top-4 right-4 z-50 h-10 w-10 rounded-full bg-black/30 hover:bg-black/50 text-white" onClick={() => onOpenChange(false)}>
+                    <X/>
+                 </Button>
                  <div className="py-4 w-full space-y-4">
                      <Carousel
                         setApi={setApi}
@@ -68,7 +71,7 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                                     <CarouselItem key={level.level} className="pl-4 md:basis-1/2 lg:basis-1/3">
                                         <div className="p-1">
                                             <Card className={cn(
-                                                "h-full flex flex-col bg-background transition-all duration-300 border-2 shadow-lg",
+                                                "h-full flex flex-col bg-background/30 backdrop-blur-sm transition-all duration-300 border-2 shadow-lg",
                                                 isCurrentLevel ? "border-primary shadow-primary/20" : level.borderColorClass,
                                                 level.shadowClass
                                             )}>
@@ -115,8 +118,10 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                         <CarouselPrevious className="hidden sm:flex" />
                         <CarouselNext className="hidden sm:flex"/>
                     </Carousel>
-                    <div className="px-10">
-                        <Progress value={scrollProgress} className="h-2 w-full" />
+                    <div className="px-10 mt-4">
+                        <div className="h-1.5 w-full bg-muted rounded-full">
+                            <div className="h-1.5 rounded-full animated-rainbow-progress" style={{ width: `${scrollProgress}%` }}></div>
+                        </div>
                     </div>
                 </div>
             </DialogContent>
