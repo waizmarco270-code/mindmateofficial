@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
@@ -52,18 +53,21 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, [user, users, usersLoading]);
 
-    const createGroup = useCallback(async (name: string, memberIds: string[]) => {
+    const createGroup = useCallback(async (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => {
         if (!user) return;
         try {
             await addDoc(collection(db, 'groups'), {
                 name,
+                motto: motto || '',
+                logoUrl: logoUrl || null,
+                banner: banner || 'default',
                 createdBy: user.id,
                 createdAt: serverTimestamp(),
                 members: [user.id, ...memberIds],
             });
-            toast({ title: "Group Created!", description: `"${name}" is ready.` });
+            toast({ title: "Clan Created!", description: `"${name}" is ready.` });
         } catch (error) {
-            toast({ variant: "destructive", title: "Error", description: "Could not create group." });
+            toast({ variant: "destructive", title: "Error", description: "Could not create clan." });
             console.error("Error creating group:", error);
         }
     }, [user, toast]);
@@ -83,60 +87,4 @@ export const useGroups = () => {
         throw new Error('useGroups must be used within a GroupsProvider');
     }
     return context;
-};
-
-export const useGroupChat = (groupId: string) => {
-    const { user } = useUser();
-    const [messages, setMessages] = useState<any[]>([]); // Using 'any' for now, can be typed later
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        if (!groupId) {
-            setLoading(false);
-            return;
-        };
-
-        setLoading(true);
-        const messagesRef = collection(db, 'groups', groupId, 'messages');
-        const q = query(messagesRef, orderBy('timestamp', 'asc')); 
-
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const fetchedMessages = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    timestamp: (data.timestamp as Timestamp)?.toDate() || new Date()
-                };
-            });
-            setMessages(fetchedMessages);
-            setLoading(false);
-        });
-
-        return () => unsubscribe();
-    }, [groupId]);
-
-    const sendMessage = useCallback(async (text?: string, imageUrl?: string | null) => {
-        if (!groupId || !user || (!text?.trim() && !imageUrl)) return;
-
-        const messagesRef = collection(db, 'groups', groupId, 'messages');
-        await addDoc(messagesRef, {
-            senderId: user.id,
-            text: text || '',
-            imageUrl: imageUrl || null,
-            timestamp: serverTimestamp(),
-        });
-        
-        const groupRef = doc(db, 'groups', groupId);
-        await updateDoc(groupRef, {
-            lastMessage: {
-                text: text ? (text.length > 30 ? text.substring(0, 30) + '...' : text) : 'Sent an image',
-                senderId: user.id,
-                timestamp: serverTimestamp()
-            }
-        });
-
-    }, [groupId, user]);
-
-    return { messages, loading, sendMessage };
 };

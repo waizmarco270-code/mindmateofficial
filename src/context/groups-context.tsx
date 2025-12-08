@@ -15,6 +15,9 @@ export interface GroupMessage {
 export interface Group {
     id: string;
     name: string;
+    motto?: string;
+    logoUrl?: string | null;
+    banner?: string;
     createdBy: string;
     createdAt: Date;
     members: string[];
@@ -29,7 +32,7 @@ export interface Group {
 export interface GroupsContextType {
     groups: Group[];
     loading: boolean;
-    createGroup: (name: string, memberIds: string[]) => Promise<void>;
+    createGroup: (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => Promise<void>;
 }
 
 export const GroupsContext = createContext<GroupsContextType | undefined>(undefined);
