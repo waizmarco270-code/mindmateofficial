@@ -2,9 +2,9 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useSidebar } from '@/components/ui/sidebar';
+import { useSidebar, SidebarTrigger } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
@@ -22,7 +22,6 @@ import { useFriends, type FriendRequest } from '@/hooks/use-friends';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useRewards } from '@/hooks/use-rewards';
-import { SidebarTrigger } from '../ui/sidebar';
 
 
 function Inbox() {
@@ -176,7 +175,7 @@ function AdminPanelMenu() {
 
 
 export default function Header() {
-  const { setOpenMobile } = useSidebar();
+  const { setOpenMobile, toggleSidebar } = useSidebar();
   const { user, isLoaded } = useUser();
   const { currentUserData } = useUsers();
   const { pinnedPage, setPinnedPage } = usePinnedPage();
@@ -198,16 +197,17 @@ export default function Header() {
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
-       <SidebarTrigger className="hidden md:flex h-8 w-8" />
        <Button
         variant="ghost"
         size="icon"
         className="md:hidden"
         onClick={() => setOpenMobile(true)}
       >
-        <Menu className="h-6 w-6" />
+        <PanelLeft className="h-6 w-6" />
         <span className="sr-only">Toggle Menu</span>
       </Button>
+       <SidebarTrigger className="hidden md:flex" />
+
       <div className="flex-1" />
       <div className="flex items-center gap-2 md:gap-4">
         <SignedOut>

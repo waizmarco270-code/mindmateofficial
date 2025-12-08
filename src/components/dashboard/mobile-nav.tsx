@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -7,6 +8,9 @@ import { usePathname } from 'next/navigation';
 import { Gamepad2, Globe, Home, BookOpen, Trophy, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLocalStorage } from '@/hooks/use-local-storage';
+import { useSidebar } from '../ui/sidebar';
+
 
 const navItems = [
   { href: '/dashboard/world', icon: Globe, label: 'World' },
@@ -16,13 +20,10 @@ const navItems = [
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard' },
 ];
 
-interface MobileNavProps {
-    isCollapsed: boolean;
-    onToggleCollapse: (isCollapsed: boolean) => void;
-}
-
-export default function MobileNav({ isCollapsed, onToggleCollapse }: MobileNavProps) {
+export default function MobileNav() {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
+  const [isCollapsed, setIsCollapsed] = useLocalStorage('mobile-nav-collapsed', false);
   
   return (
     <AnimatePresence>
@@ -36,7 +37,7 @@ export default function MobileNav({ isCollapsed, onToggleCollapse }: MobileNavPr
                 className="fixed bottom-0 left-0 right-0 h-20 border-t bg-background/80 backdrop-blur-lg z-40 md:hidden"
             >
                 <button 
-                    onClick={() => onToggleCollapse(true)}
+                    onClick={() => setIsCollapsed(true)}
                     className="absolute -top-6 left-1/2 -translate-x-1/2 w-12 h-6 bg-muted/80 backdrop-blur-sm rounded-t-lg flex items-center justify-center"
                 >
                     <ChevronDown className="h-5 w-5 text-muted-foreground"/>
@@ -71,7 +72,7 @@ export default function MobileNav({ isCollapsed, onToggleCollapse }: MobileNavPr
                 animate={{ y: 0 }}
                 exit={{ y: "200%" }}
                 transition={{ duration: 0.2, ease: 'easeOut', delay: 0.1 }}
-                onClick={() => onToggleCollapse(false)}
+                onClick={() => setIsCollapsed(false)}
                 className="fixed bottom-2 left-1/2 -translate-x-1/2 h-10 w-10 bg-muted/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg border z-40 md:hidden"
             >
                 <ChevronUp className="h-5 w-5 text-muted-foreground"/>

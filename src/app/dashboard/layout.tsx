@@ -15,24 +15,21 @@ import { MotionConfig } from 'framer-motion';
 import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
 import { Providers } from './providers';
 import { useUser } from '@clerk/nextjs';
+import { useLocalStorage } from '@/hooks/use-local-storage';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
   const isMobile = useIsMobile();
-  const { user } = useUser();
-  const [isSidebarOpen, setIsSidebarOpen] = React.useState(true);
-  const [isMobileNavCollapsed, setIsMobileNavCollapsed] = React.useState(false);
-  const { toast } = useToast();
-  const pathname = usePathname();
+  const [open, setOpen] = useLocalStorage<boolean>('sidebar-open', !isMobile);
 
   React.useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsSidebarOpen(!isMobile);
+    if (isMobile) {
+      setOpen(false);
     }
-  }, [isMobile]);
-
+  }, [isMobile, setOpen]);
+  
   return (
-     <SidebarProvider open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
+     <SidebarProvider open={open} onOpenChange={setOpen}>
         {!isImmersive && (
             <Sidebar collapsible="icon" className="hidden md:flex md:flex-shrink-0">
                 <SidebarContent />
@@ -49,7 +46,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarInset>
             </main>
         </div>
-        {!isImmersive && isMobile && <MobileNav isCollapsed={isMobileNavCollapsed} onToggleCollapse={setIsMobileNavCollapsed} />}
+        {!isImmersive && isMobile && <MobileNav />}
     </SidebarProvider>
   )
 }
