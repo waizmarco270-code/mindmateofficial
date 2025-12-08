@@ -1,13 +1,14 @@
 
 'use client';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Users, Award, Gem, Upload } from 'lucide-react';
+import { Users, Award, Gem, Upload, X } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 
 interface ClanLevelRoadmapDialogProps {
     isOpen: boolean;
@@ -19,11 +20,16 @@ interface ClanLevelRoadmapDialogProps {
 export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, currentLevel }: ClanLevelRoadmapDialogProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl bg-transparent border-0 shadow-none p-0">
-                <div className="py-4">
+            <DialogContent className="bg-background/50 backdrop-blur-lg border-0 shadow-none p-0 max-w-full w-full h-full flex items-center justify-center">
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-12 w-12 rounded-full bg-black/30 hover:bg-black/50 text-white z-50">
+                        <X className="h-6 w-6" />
+                    </Button>
+                </DialogClose>
+                <div className="py-4 w-full">
                      <Carousel
                         opts={{
-                            align: "start",
+                            align: "center",
                             loop: false,
                         }}
                         className="w-full"
@@ -87,4 +93,3 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
         </Dialog>
     );
 }
-    
