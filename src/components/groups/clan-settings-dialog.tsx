@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useRef } from 'react';
@@ -8,13 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useGroups } from '@/hooks/use-groups.tsx';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Loader2, Edit, AlertTriangle, Trash2, LogOut } from 'lucide-react';
+import { Loader2, Edit, AlertTriangle, Trash2, LogOut, DollarSign } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { groupBanners } from '@/lib/group-assets';
 import { Group } from '@/context/groups-context';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { useRouter } from 'next/navigation';
+import { useUsers } from '@/hooks/use-admin';
 
 interface ClanSettingsDialogProps {
     group: Group;
@@ -22,8 +24,11 @@ interface ClanSettingsDialogProps {
     onOpenChange: (isOpen: boolean) => void;
 }
 
+const RENAME_COST = 500;
+
 export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettingsDialogProps) {
     const { updateGroup, removeMember, deleteGroup } = useGroups();
+    const { currentUserData } = useUsers();
     const { toast } = useToast();
     const router = useRouter();
 
@@ -34,6 +39,8 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
     const [isSaving, setIsSaving] = useState(false);
 
     const logoInputRef = useRef<HTMLInputElement>(null);
+    
+    const hasEnoughForRename = (currentUserData?.credits ?? 0) >= RENAME_COST;
 
     const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -56,18 +63,27 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
             toast({ variant: 'destructive', title: "Clan name cannot be empty." });
             return;
         }
+
+        const isRenaming = groupName.trim() !== group.name;
+
+        if (isRenaming && !hasEnoughForRename) {
+            toast({ variant: 'destructive', title: 'Insufficient Credits', description: `You need ${RENAME_COST} credits to rename your clan.` });
+            return;
+        }
+
         setIsSaving(true);
         try {
             await updateGroup(group.id, {
-                name: groupName,
+                name: groupName.trim(),
                 motto: groupMotto,
                 logoUrl: groupLogo,
                 banner: selectedBanner,
-            });
+            }, isRenaming, RENAME_COST);
+
             toast({ title: "Clan details updated!" });
             onOpenChange(false);
-        } catch (error) {
-            toast({ variant: 'destructive', title: "Error", description: "Could not save changes." });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Error", description: error.message });
         } finally {
             setIsSaving(false);
         }
@@ -118,6 +134,10 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                         <div className="space-y-2 flex-1">
                             <Label htmlFor="group-name">Clan Name</Label>
                             <Input id="group-name" value={groupName} onChange={e => setGroupName(e.target.value)} />
+                             <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                                <DollarSign className="h-3 w-3 text-amber-500"/>
+                                Renaming costs {RENAME_COST} credits.
+                            </p>
                             <Label htmlFor="group-motto">Clan Motto</Label>
                             <Input id="group-motto" value={groupMotto} onChange={e => setGroupMotto(e.target.value)} />
                         </div>
@@ -164,6 +184,3 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
         </Dialog>
     );
 }
-
-
-    

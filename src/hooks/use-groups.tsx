@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc, getDocs, increment } from 'firebase/firestore';
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { GroupsContext, type GroupsContextType, type Group } from '@/context/groups-context';
@@ -14,7 +15,6 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const { users, currentUserData, addCreditsToUser, loading: usersLoading } = useUsers();
     const { toast } = useToast();
     const [groups, setGroups] = useState<Group[]>([]);
-    const [selectedRoadmapId, setSelectedRoadmapId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -60,12 +60,25 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
         if (!hasMasterCard && currentUserData.credits < creationCost) {
             toast({ variant: "destructive", title: "Insufficient Credits", description: `You need ${creationCost} credits to create a clan.` });
-            return;
+            throw new Error("Insufficient Credits");
+        }
+        
+        // Check for unique name (case-insensitive)
+        const groupsRef = collection(db, 'groups');
+        const q = query(groupsRef, where('name', '==', name.trim()));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+             const existingGroup = querySnapshot.docs[0].data();
+             if (existingGroup.name.toLowerCase() === name.trim().toLowerCase()) {
+                toast({ variant: "destructive", title: "Clan Name Taken", description: "A clan with this name already exists." });
+                throw new Error("Clan name already exists.");
+             }
         }
 
         try {
             await addDoc(collection(db, 'groups'), {
-                name,
+                name: name.trim(),
                 motto: motto || '',
                 logoUrl: logoUrl || null,
                 banner: banner || 'default',
@@ -82,13 +95,36 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
             toast({ variant: "destructive", title: "Error", description: "Could not create clan." });
             console.error("Error creating group:", error);
+            throw error; // Re-throw to be caught in the component
         }
     }, [user, currentUserData, toast, addCreditsToUser]);
 
-    const updateGroup = useCallback(async (groupId: string, data: Partial<Group>) => {
+    const updateGroup = useCallback(async (groupId: string, data: Partial<Group>, isRenaming: boolean = false, renameCost: number = 0) => {
+        if (!user || !currentUserData) return;
+
+        if (isRenaming) {
+            const hasMasterCard = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+             if (!hasMasterCard && currentUserData.credits < renameCost) {
+                throw new Error("Insufficient credits to rename the clan.");
+             }
+             // Check for unique name
+             const groupsRef = collection(db, 'groups');
+             const q = query(groupsRef, where('name', '==', data.name?.trim()));
+             const querySnapshot = await getDocs(q);
+             if (!querySnapshot.empty && querySnapshot.docs[0].id !== groupId) {
+                 if (querySnapshot.docs[0].data().name.toLowerCase() === data.name?.trim().toLowerCase()) {
+                    throw new Error("A clan with this name already exists.");
+                 }
+             }
+
+             if (!hasMasterCard) {
+                 await addCreditsToUser(user.id, -renameCost);
+             }
+        }
+        
         const groupRef = doc(db, 'groups', groupId);
         await updateDoc(groupRef, data);
-    }, []);
+    }, [user, currentUserData, addCreditsToUser]);
 
     const removeMember = useCallback(async (groupId: string, memberId: string) => {
         const groupRef = doc(db, 'groups', groupId);
@@ -126,6 +162,3 @@ export const useGroups = () => {
     }
     return context;
 };
-
-
-    

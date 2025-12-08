@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
@@ -42,7 +43,8 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
     
     const logoInputRef = useRef<HTMLInputElement>(null);
 
-    const hasEnoughCredits = (currentUserData?.credits ?? 0) >= CLAN_CREATION_COST;
+    const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+    const hasEnoughCredits = hasMasterCard || (currentUserData?.credits ?? 0) >= CLAN_CREATION_COST;
 
     const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -75,28 +77,20 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
         setSelectedFriendIds([]);
     }, []);
 
-    const handleCreateGroup = useCallback(async () => {
-        if (!user) return;
-        if (!groupName.trim()) {
-            toast({ variant: 'destructive', title: "Clan name is required." });
-            return;
-        }
-        if (!hasEnoughCredits) {
-            toast({ variant: 'destructive', title: "Insufficient Credits", description: `You need ${CLAN_CREATION_COST} credits to create a clan.` });
-            return;
-        }
-
+    const handleCreateGroup = async () => {
         setIsCreating(true);
         try {
             await createGroup(groupName, selectedFriendIds, groupMotto, groupLogo, selectedBanner);
             onOpenChange(false);
             resetForm();
-        } catch (error) {
-            console.error("Error creating group:", error);
+        } catch (error: any) {
+            // The hook now handles toast messages for specific errors.
+            // We can add a generic one here if needed, but it might be redundant.
+            console.error("Error creating group:", error.message);
         } finally {
             setIsCreating(false);
         }
-    }, [user, groupName, groupMotto, groupLogo, selectedBanner, selectedFriendIds, toast, onOpenChange, createGroup, resetForm, hasEnoughCredits]);
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => { onOpenChange(open); if(!open) resetForm(); }}>
@@ -176,7 +170,9 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
                         </ScrollArea>
                     </div>
                     
-                    <div className="flex items-center gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-amber-700 dark:text-amber-300">
+                    <div className={cn("flex items-center gap-2 rounded-lg border p-3",
+                        hasEnoughCredits ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300" : "border-destructive/50 bg-destructive/10 text-destructive"
+                    )}>
                         <AlertTriangle className="h-5 w-5 flex-shrink-0" />
                         <p className="text-xs font-semibold">
                             Clan creation costs {CLAN_CREATION_COST} credits. Your balance: {currentUserData?.credits ?? 0}
