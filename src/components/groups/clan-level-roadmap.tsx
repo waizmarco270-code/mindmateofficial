@@ -6,9 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { groupBanners } from '@/lib/group-assets';
 import { Users, Award, Shield, Gem, Upload } from 'lucide-react';
-import Image from 'next/image';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
@@ -37,15 +35,14 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                         className="w-full"
                     >
                         <CarouselContent className="-ml-4">
-                            {clanLevelConfig.map((level, index) => {
-                                const banner = groupBanners.find(b => b.id === level.bannerUnlock);
+                            {clanLevelConfig.slice(0, 5).map((level) => {
                                 const isCurrentLevel = level.level === currentLevel;
                                 return (
                                     <CarouselItem key={level.level} className="pl-4 md:basis-1/2 lg:basis-1/3">
                                         <div className="p-1">
                                             <Card className={cn(
-                                                "h-full flex flex-col border-2 bg-slate-900/50 transition-all duration-300",
-                                                isCurrentLevel ? "border-primary shadow-lg shadow-primary/20" : "border-slate-800"
+                                                "h-full flex flex-col bg-slate-900/50 transition-all duration-300 border-2",
+                                                isCurrentLevel ? "border-primary shadow-lg shadow-primary/20" : level.borderColorClass
                                             )}>
                                                 <CardHeader className="items-center text-center">
                                                     <div className={cn("relative p-1 rounded-full", level.avatarBorderClass)}>
@@ -54,7 +51,7 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                                                             <AvatarFallback className="text-3xl font-bold bg-muted/30">{level.level}</AvatarFallback>
                                                         </Avatar>
                                                     </div>
-                                                    <CardTitle className="pt-2">{level.name}</CardTitle>
+                                                    <CardTitle className="pt-2">Level {level.level}</CardTitle>
                                                 </CardHeader>
                                                 <CardContent className="flex-1 space-y-4">
                                                     <p className="text-center text-sm text-muted-foreground min-h-[40px]">{level.description}</p>
@@ -71,17 +68,6 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, curren
                                                             <div className="flex items-center gap-2 p-2 bg-muted/50 rounded-md">
                                                                 <Gem className="h-5 w-5 text-fuchsia-400"/>
                                                                 <span className="font-semibold text-sm flex items-center gap-2">Badge: <span className={level.badge.class}>{level.badge.name}</span></span>
-                                                            </div>
-                                                        )}
-                                                        {banner && (
-                                                             <div className="flex flex-col gap-2 p-2 bg-muted/50 rounded-md">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Shield className="h-5 w-5 text-purple-400"/>
-                                                                    <span className="font-semibold text-sm">Banner: {banner.id}</span>
-                                                                </div>
-                                                                <div className={cn("relative w-full h-20 rounded-md overflow-hidden", banner.class)}>
-                                                                    <div className="absolute inset-0 bg-grid-slate-800/50"></div>
-                                                                </div>
                                                             </div>
                                                         )}
                                                          {level.bannerUnlock === 'custom' && (
