@@ -1,16 +1,15 @@
 
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { Button } from '../ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Group } from '@/context/groups-context';
-import { Loader2, Play, Users, Zap, CheckCircle, Plus, Trash2, Clock, Check, X } from 'lucide-react';
+import { Loader2, Play, Users, Zap, CheckCircle, Plus, Trash2, Clock, Check, X, Pause } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-
+import { useToast } from '@/hooks/use-toast';
 
 interface GroupFocusProps {
     group: Group;
@@ -22,11 +21,49 @@ const DURATION_OPTIONS = [
     { label: "90 min", seconds: 5400 },
 ];
 
+const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
 export function GroupFocus({ group }: GroupFocusProps) {
-    const [isSessionActive, setIsSessionActive] = useState(false);
-    const [sessionDuration, setSessionDuration] = useState(1500);
+    const [view, setView] = useState<'idle' | 'options' | 'session'>('idle');
+    const [duration, setDuration] = useState(1500);
+    const [timeLeft, setTimeLeft] = useState(1500);
     const [tasks, setTasks] = useState<{ id: number, text: string, completed: boolean }[]>([]);
     const [newTask, setNewTask] = useState('');
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (view === 'session') {
+            timerRef.current = setInterval(() => {
+                setTimeLeft(prev => {
+                    if (prev <= 1) {
+                        clearInterval(timerRef.current!);
+                        toast({ title: "Group Session Finished!", description: "Great work, team!" });
+                        setView('idle'); // Or a "completed" state
+                        return 0;
+                    }
+                    return prev - 1;
+                });
+            }, 1000);
+        } else {
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, [view, toast]);
+    
+    const startSession = () => {
+        setTimeLeft(duration);
+        setView('session');
+    }
+    
+    const endSession = () => {
+        setView('idle');
+        setTasks([]); // Reset tasks for next session
+    }
 
     const handleAddTask = () => {
         if (newTask.trim()) {
@@ -43,7 +80,7 @@ export function GroupFocus({ group }: GroupFocusProps) {
         setTasks(tasks.filter(t => t.id !== id));
     };
     
-    if (isSessionActive) {
+    if (view === 'session') {
         return (
             <Card className="bg-gradient-to-br from-green-900/50 to-slate-900 border-green-700/50 shadow-lg shadow-green-500/10">
                 <CardHeader>
@@ -51,21 +88,20 @@ export function GroupFocus({ group }: GroupFocusProps) {
                         <motion.div animate={{ scale: [1, 1.2, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
                             <Zap />
                         </motion.div>
-                        Group Focus Session
+                        Group Focus Session Active
                     </CardTitle>
-                    <CardDescription>Locked in for {sessionDuration / 60} minutes.</CardDescription>
+                    <CardDescription>Locked in for {duration / 60} minutes.</CardDescription>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                         <h4 className="font-semibold flex items-center gap-2"><Clock/> Timer</h4>
                         <div className="text-6xl font-bold font-mono text-center py-8 bg-black/20 rounded-lg">
-                           {(sessionDuration / 60).toString().padStart(2, '0')}:00
+                           {formatTime(timeLeft)}
                         </div>
                     </div>
                      <div className="space-y-4">
                         <h4 className="font-semibold flex items-center gap-2"><Users/> Active Members</h4>
                         <div className="space-y-2 p-3 bg-black/20 rounded-lg max-h-48 overflow-y-auto">
-                            {/* Placeholder for now */}
                             <p className="text-sm text-muted-foreground p-4 text-center">Live member list coming soon!</p>
                         </div>
                     </div>
@@ -91,7 +127,7 @@ export function GroupFocus({ group }: GroupFocusProps) {
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button variant="destructive" onClick={() => setIsSessionActive(false)}>
+                    <Button variant="destructive" onClick={endSession}>
                         <X className="mr-2 h-4 w-4" />
                         End Session
                     </Button>
@@ -111,8 +147,8 @@ export function GroupFocus({ group }: GroupFocusProps) {
                 <CardDescription>Start a group focus session to study with your clan and earn massive XP.</CardDescription>
             </CardHeader>
             <CardContent className="relative z-10 space-y-4 text-center">
-                <AnimatePresence>
-                    {isSessionActive ? (
+                 <AnimatePresence>
+                    {view === 'options' ? (
                         <motion.div
                             key="session-options"
                             initial={{ opacity: 0, height: 0 }}
@@ -120,20 +156,20 @@ export function GroupFocus({ group }: GroupFocusProps) {
                             exit={{ opacity: 0, height: 0 }}
                             className="overflow-hidden"
                         >
-                            <div className="space-y-4 pt-4">
+                            <div className="space-y-4 pt-4 border-t border-muted">
                                 <p className="font-semibold">Choose a session duration:</p>
                                 <div className="flex justify-center gap-4">
                                     {DURATION_OPTIONS.map(opt => (
-                                        <Button key={opt.seconds} variant={sessionDuration === opt.seconds ? 'default' : 'secondary'} onClick={() => setSessionDuration(opt.seconds)}>{opt.label}</Button>
+                                        <Button key={opt.seconds} variant={duration === opt.seconds ? 'default' : 'secondary'} onClick={() => setDuration(opt.seconds)}>{opt.label}</Button>
                                     ))}
                                 </div>
-                                <Button size="lg" className="w-full sm:w-auto" onClick={() => setIsSessionActive(true)}>
-                                    <Play className="mr-2"/> Start Group Focus
+                                <Button size="lg" className="w-full sm:w-auto" onClick={startSession}>
+                                    <Zap className="mr-2"/> Start Session
                                 </Button>
                             </div>
                         </motion.div>
                     ) : (
-                         <Button size="lg" className="w-full sm:w-auto" onClick={() => setIsSessionActive(true)}>
+                         <Button size="lg" className="w-full sm:w-auto" onClick={() => setView('options')}>
                              <Play className="mr-2"/> Start Group Focus
                         </Button>
                     )}
