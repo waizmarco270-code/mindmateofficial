@@ -3,14 +3,12 @@
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { clanLevelConfig } from '@/app/lib/clan-levels';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { groupBanners } from '@/app/lib/group-assets';
 import { Users, Award, Shield, Gem, Upload } from 'lucide-react';
 import Image from 'next/image';
-import { useGroups } from '@/hooks/use-groups.tsx';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 
@@ -18,9 +16,10 @@ interface ClanLevelRoadmapDialogProps {
     isOpen: boolean;
     onOpenChange: (isOpen: boolean) => void;
     groupLogo?: string | null;
+    currentLevel?: number;
 }
 
-export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo }: ClanLevelRoadmapDialogProps) {
+export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo, currentLevel }: ClanLevelRoadmapDialogProps) {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="max-w-4xl h-auto">
@@ -40,10 +39,14 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo }: Clan
                         <CarouselContent className="-ml-4">
                             {clanLevelConfig.map((level, index) => {
                                 const banner = groupBanners.find(b => b.id === level.bannerUnlock);
+                                const isCurrentLevel = level.level === currentLevel;
                                 return (
                                     <CarouselItem key={level.level} className="pl-4 md:basis-1/2 lg:basis-1/3">
                                         <div className="p-1">
-                                            <Card className="h-full flex flex-col border-2 bg-slate-900/50" style={{borderColor: `hsl(var(--primary)) / ${0.1 * level.level}`}}>
+                                            <Card className={cn(
+                                                "h-full flex flex-col border-2 bg-slate-900/50 transition-all duration-300",
+                                                isCurrentLevel ? "border-primary shadow-lg shadow-primary/20" : "border-slate-800"
+                                            )}>
                                                 <CardHeader className="items-center text-center">
                                                     <div className={cn("relative p-1 rounded-full", level.avatarBorderClass)}>
                                                         <Avatar className="h-20 w-20">
@@ -96,7 +99,7 @@ export function ClanLevelRoadmapDialog({ isOpen, onOpenChange, groupLogo }: Clan
                              })}
                         </CarouselContent>
                         <CarouselPrevious className="hidden sm:flex" />
-                        <CarouselNext className="hidden sm:flex" />
+                        <CarouselNext className="hidden sm:flex"/>
                     </Carousel>
                 </div>
             </DialogContent>

@@ -13,7 +13,7 @@ import type { Group, GroupMember } from '@/context/groups-context';
 import { useUsers, User } from '@/hooks/use-admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -198,7 +198,7 @@ export default function GroupDetailPage() {
             </div>
 
             <ClanSettingsDialog group={group} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen}/>
-            <ClanLevelRoadmapDialog isOpen={isRoadmapOpen} onOpenChange={setIsRoadmapOpen} groupLogo={group.logoUrl}/>
+            <ClanLevelRoadmapDialog isOpen={isRoadmapOpen} onOpenChange={setIsRoadmapOpen} groupLogo={group.logoUrl} currentLevel={group.level}/>
        </div>
     );
 }
