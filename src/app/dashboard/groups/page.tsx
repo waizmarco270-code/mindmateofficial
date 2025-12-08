@@ -10,10 +10,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
-import { useGroups, type Group } from '@/hooks/use-groups';
+import { useGroups, type Group } from '@/hooks/use-groups.tsx';
 import type { User } from '@/hooks/use-admin';
 import { FriendsProvider } from '@/hooks/use-friends';
-import { GroupsProvider } from '@/hooks/use-groups';
+import { GroupsProvider } from '@/hooks/use-groups.tsx';
 
 function GroupsPageContent() {
     const { user } = useUser();

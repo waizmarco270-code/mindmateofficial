@@ -9,8 +9,8 @@ import { GroupChat } from '@/components/groups/group-chat';
 import { GroupLeaderboard } from '@/components/groups/group-leaderboard';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Group } from '@/hooks/use-groups';
-import { useUsers } from '@/hooks/use-admin';
+import type { Group } from '@/context/groups-context';
+import { useUsers, User } from '@/hooks/use-admin';
 
 export default function GroupDetailPage() {
     const params = useParams();

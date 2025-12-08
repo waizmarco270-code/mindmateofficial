@@ -15,16 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import Image from 'next/image';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Group } from '@/app/dashboard/groups/page';
+import type { Group, GroupMessage } from '@/context/groups-context';
 import { Loader2 } from 'lucide-react';
-
-export interface GroupMessage {
-    id: string;
-    senderId: string;
-    text?: string;
-    imageUrl?: string; // base64 data URI
-    timestamp: Date;
-}
 
 const userColors = [
     'border-red-500/50', 'border-orange-500/50', 'border-amber-500/50',

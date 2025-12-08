@@ -58,8 +58,8 @@ const mainNavItems = [
 ];
 
 const communityNav = [
-  { href: '/dashboard/groups', icon: Users, label: 'Study Groups', glow: 'text-green-400' },
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
+  { href: '/dashboard/groups', icon: Users, label: 'Study Groups', glow: 'text-green-400' },
   { href: '/dashboard/world', icon: Globe, label: 'World Chat', glow: 'text-blue-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },

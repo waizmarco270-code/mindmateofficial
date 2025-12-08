@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useFriends } from '@/hooks/use-friends';
-import { useGroups } from '@/hooks/use-groups';
+import { useGroups } from '@/hooks/use-groups.tsx';
 import { Checkbox } from '../ui/checkbox';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';

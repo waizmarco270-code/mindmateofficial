@@ -5,7 +5,7 @@ import { useMemo } from 'react';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trophy, Clock, ListChecks, Medal } from 'lucide-react';
-import type { Group } from '@/hooks/use-groups';
+import type { Group } from '@/context/groups-context';
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from '../ui/table';
 
 interface GroupLeaderboardProps {
