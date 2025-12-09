@@ -15,6 +15,8 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { useAdmin } from '@/hooks/use-admin';
 import { MaintenancePage } from '@/components/dashboard/maintenance-page';
 import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
+import MobileNav from '@/components/dashboard/mobile-nav';
+
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
@@ -75,3 +77,4 @@ export default function DashboardLayout({
     </ImmersiveProvider>
   );
 }
+
