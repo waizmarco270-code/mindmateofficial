@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate, type CreditPack, type StoreItem } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppTheme, type FeatureLock, GlobalGift, AppSettings, FeatureShowcase, ShowcaseTemplate, type CreditPack, type StoreItem, MaintenanceTheme } from '@/hooks/use-admin';
 import { useReferrals, type ReferralRequest } from '@/hooks/use-referrals';
 import {
   Table,
@@ -123,6 +123,8 @@ export default function SuperAdminPanelPage() {
   // Maintenance Mode State
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
   const [maintenanceMessage, setMaintenanceMessage] = useState('');
+  const [maintenanceTheme, setMaintenanceTheme] = useState<MaintenanceTheme>('shiny');
+  const [maintenanceStartTime, setMaintenanceStartTime] = useState('');
   const [maintenanceEndTime, setMaintenanceEndTime] = useState('');
   const [whatsNewMessage, setWhatsNewMessage] = useState('');
 
@@ -140,6 +142,8 @@ export default function SuperAdminPanelPage() {
     if (appSettings) {
       setIsMaintenanceMode(appSettings.isMaintenanceMode || false);
       setMaintenanceMessage(appSettings.maintenanceMessage || 'The app is currently down for maintenance. We will be back shortly!');
+      setMaintenanceTheme(appSettings.maintenanceTheme || 'shiny');
+      setMaintenanceStartTime(appSettings.maintenanceStartTime || '');
       setMaintenanceEndTime(appSettings.maintenanceEndTime || '');
       setWhatsNewMessage(appSettings.whatsNewMessage || '');
     }
@@ -446,7 +450,9 @@ export default function SuperAdminPanelPage() {
         await updateAppSettings({
             isMaintenanceMode,
             maintenanceMessage,
-            maintenanceEndTime,
+            maintenanceTheme,
+            maintenanceStartTime: maintenanceStartTime || undefined,
+            maintenanceEndTime: maintenanceEndTime || undefined,
             whatsNewMessage,
             // Generate a new ID only when turning maintenance on
             lastMaintenanceId: isMaintenanceMode ? Date.now().toString() : appSettings?.lastMaintenanceId,
@@ -511,9 +517,28 @@ export default function SuperAdminPanelPage() {
                             <Label htmlFor="maintenance-message">Maintenance Message</Label>
                             <Textarea id="maintenance-message" value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} placeholder="E.g., We're deploying a new update..."/>
                         </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="maintenance-start-time">Scheduled Start Time (Optional)</Label>
+                                <Input id="maintenance-start-time" type="datetime-local" value={maintenanceStartTime} onChange={e => setMaintenanceStartTime(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="maintenance-end-time">Scheduled End Time (Optional)</Label>
+                                <Input id="maintenance-end-time" type="datetime-local" value={maintenanceEndTime} onChange={e => setMaintenanceEndTime(e.target.value)} />
+                            </div>
+                        </div>
                         <div className="space-y-2">
-                            <Label htmlFor="maintenance-end-time">Maintenance End Time (Optional)</Label>
-                            <Input id="maintenance-end-time" type="datetime-local" value={maintenanceEndTime} onChange={e => setMaintenanceEndTime(e.target.value)} />
+                          <Label>Maintenance Page Theme</Label>
+                          <Select value={maintenanceTheme} onValueChange={(v: MaintenanceTheme) => setMaintenanceTheme(v)}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a theme..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="shiny">Shiny</SelectItem>
+                              <SelectItem value="forest">Forest</SelectItem>
+                              <SelectItem value="sunflower">Sunflower</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                     </CardContent>
                 </Card>
