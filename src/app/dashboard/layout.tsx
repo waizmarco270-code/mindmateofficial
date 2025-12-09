@@ -2,7 +2,7 @@
 'use client';
 
 import * as React from 'react';
-import { SidebarProvider, Sidebar } from '@/components/ui/sidebar';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import Header from '@/components/dashboard/header';
 import SidebarContent from '@/components/dashboard/sidebar-content';
 import { cn } from '@/lib/utils';
@@ -12,13 +12,27 @@ import { Providers } from './providers';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useSidebar } from '@/components/ui/sidebar';
 import MobileNav from '@/components/dashboard/mobile-nav';
+import { useAdmin } from '@/hooks/use-admin';
+import { MaintenancePage } from '@/components/dashboard/maintenance-page';
+import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
   const { openMobile, setOpenMobile } = useSidebar();
+  const { appSettings, loading } = useAdmin();
+
+  if (loading) {
+    // You can return a loading spinner here if you want
+    return null;
+  }
+  
+  if (appSettings?.isMaintenanceMode) {
+    return <MaintenancePage settings={appSettings} />;
+  }
 
   return (
     <>
+      <WhatsNewPopup settings={appSettings} />
       {/* Universal Sheet-based Sidebar for all screen sizes */}
       <Sheet open={openMobile} onOpenChange={setOpenMobile}>
         <SheetContent side="left" className="w-[18rem] bg-sidebar/80 p-0 text-sidebar-foreground backdrop-blur-lg [&>button]:hidden">

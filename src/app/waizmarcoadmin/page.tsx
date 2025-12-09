@@ -16,7 +16,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon, Wrench, CircleDashed } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -27,6 +27,7 @@ import { lockableFeatures } from '@/lib/features';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogContent } from '@/components/ui/dialog';
 import Image from 'next/image';
+import { Switch } from '@/components/ui/switch';
 
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -60,13 +61,13 @@ export default function SuperAdminPanelPage() {
     createCreditPack,
     updateCreditPack,
     deleteCreditPack,
+    purchaseRequests,
+    approvePurchaseRequest,
+    declinePurchaseRequest,
     storeItems,
     createStoreItem,
     updateStoreItem,
     deleteStoreItem,
-    purchaseRequests,
-    approvePurchaseRequest,
-    declinePurchaseRequest,
   } = useAdmin();
   const { toast } = useToast();
   
@@ -119,6 +120,12 @@ export default function SuperAdminPanelPage() {
   const [itemStock, setItemStock] = useState(100);
   const [itemIsFeatured, setItemIsFeatured] = useState(false);
 
+  // Maintenance Mode State
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [maintenanceMessage, setMaintenanceMessage] = useState('');
+  const [maintenanceEndTime, setMaintenanceEndTime] = useState('');
+  const [whatsNewMessage, setWhatsNewMessage] = useState('');
+
 
   useEffect(() => {
     // Initialize local costs state when featureLocks are loaded
@@ -128,6 +135,15 @@ export default function SuperAdminPanelPage() {
     }, {} as Record<string, number>);
     setFeatureCosts(initialCosts);
   }, [featureLocks]);
+  
+  useEffect(() => {
+    if (appSettings) {
+      setIsMaintenanceMode(appSettings.isMaintenanceMode || false);
+      setMaintenanceMessage(appSettings.maintenanceMessage || 'The app is currently down for maintenance. We will be back shortly!');
+      setMaintenanceEndTime(appSettings.maintenanceEndTime || '');
+      setWhatsNewMessage(appSettings.whatsNewMessage || '');
+    }
+  }, [appSettings]);
   
   
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -425,6 +441,18 @@ export default function SuperAdminPanelPage() {
         }
         setIsStoreItemDialogOpen(false);
     };
+    
+    const handleMaintenanceUpdate = async () => {
+        await updateAppSettings({
+            isMaintenanceMode,
+            maintenanceMessage,
+            maintenanceEndTime,
+            whatsNewMessage,
+            // Generate a new ID only when turning maintenance on
+            lastMaintenanceId: isMaintenanceMode ? Date.now().toString() : appSettings?.lastMaintenanceId,
+        });
+        toast({ title: 'Maintenance settings updated!' });
+    };
 
 
 
@@ -453,6 +481,60 @@ export default function SuperAdminPanelPage() {
       </div>
 
       <Accordion type="multiple" defaultValue={['user-management']} className="w-full space-y-4">
+        {/* Maintenance Mode */}
+        <AccordionItem value="maintenance" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Wrench className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">App Maintenance & Status</h3>
+                  <p className="text-sm text-muted-foreground text-left">Control app-wide maintenance mode and post-update popups.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-6">
+                <Card>
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <CardTitle>Maintenance Mode</CardTitle>
+                            <Switch
+                                checked={isMaintenanceMode}
+                                onCheckedChange={setIsMaintenanceMode}
+                                aria-label="Toggle Maintenance Mode"
+                            />
+                        </div>
+                        <CardDescription>When active, all users will see the maintenance page instead of the app.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="maintenance-message">Maintenance Message</Label>
+                            <Textarea id="maintenance-message" value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} placeholder="E.g., We're deploying a new update..."/>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="maintenance-end-time">Maintenance End Time (Optional)</Label>
+                            <Input id="maintenance-end-time" type="datetime-local" value={maintenanceEndTime} onChange={e => setMaintenanceEndTime(e.target.value)} />
+                        </div>
+                    </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Post-Maintenance "What's New" Popup</CardTitle>
+                        <CardDescription>This message will be shown once to every user after maintenance mode is turned off.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                         <div className="space-y-2">
+                            <Label htmlFor="whats-new-message">Popup Message</Label>
+                            <Textarea id="whats-new-message" value={whatsNewMessage} onChange={e => setWhatsNewMessage(e.target.value)} placeholder="E.g., Welcome back! We've added..." rows={5}/>
+                        </div>
+                    </CardContent>
+                 </Card>
+                <Button onClick={handleMaintenanceUpdate} className="w-full">
+                    Update App Status
+                </Button>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
          {/* Store Management */}
         <AccordionItem value="store-management" className="border-b-0">
           <Card>
