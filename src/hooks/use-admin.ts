@@ -82,7 +82,8 @@ export interface User {
   dailyLoginRewardState?: {
       streak: number;
       lastClaimed: string; // YYYY-MM-DD
-  }
+  };
+  lastMaintenanceIdSeen?: string;
 }
 
 export interface Announcement {
@@ -147,6 +148,11 @@ export interface AppTheme {
 export interface AppSettings {
     marcoAiLaunchStatus: 'countdown' | 'live';
     upiQrCode?: string; // base64 encoded image
+    isMaintenanceMode?: boolean;
+    maintenanceMessage?: string;
+    maintenanceEndTime?: string; // ISO String
+    whatsNewMessage?: string;
+    lastMaintenanceId?: string;
 }
 
 export interface GlobalGift {

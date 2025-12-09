@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import * as React from 'react';
@@ -11,7 +12,6 @@ import { ImmersiveProvider, useImmersive } from '@/hooks/use-immersive';
 import { Providers } from './providers';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useSidebar } from '@/components/ui/sidebar';
-import MobileNav from '@/components/dashboard/mobile-nav';
 import { useAdmin } from '@/hooks/use-admin';
 import { MaintenancePage } from '@/components/dashboard/maintenance-page';
 import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
@@ -19,14 +19,16 @@ import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
   const { openMobile, setOpenMobile } = useSidebar();
-  const { appSettings, loading } = useAdmin();
+  const { appSettings, loading, isSuperAdmin, isCoDev } = useAdmin();
+  
+  const showMaintenance = appSettings?.isMaintenanceMode && !isSuperAdmin && !isCoDev;
 
   if (loading) {
     // You can return a loading spinner here if you want
     return null;
   }
   
-  if (appSettings?.isMaintenanceMode) {
+  if (showMaintenance) {
     return <MaintenancePage settings={appSettings} />;
   }
 
