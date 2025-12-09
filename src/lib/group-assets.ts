@@ -9,7 +9,8 @@ export const groupBanners = [
     { id: 'oceanic', class: 'oceanic-flow-bg' },
     { id: 'golden', class: 'golden-legend-bg' },
     { id: 'jungle', class: 'jungle-ruins-bg' },
-    { id: 'banner-sunflower', class: 'banner-sunflower-bg' },
-    { id: 'banner-forest', class: 'banner-forest-bg' },
-    { id: 'banner-shiny', class: 'banner-shiny-bg' },
+    { id: 'banner-pro', class: 'banner-pro-bg' },
+    { id: 'banner-alpha', class: 'banner-alpha-bg' },
+    { id: 'banner-warrior', class: 'banner-warrior-bg' },
+    { id: 'banner-legendary', class: 'banner-legendary-bg' },
 ];

@@ -23,7 +23,15 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const { openMobile, setOpenMobile } = useSidebar();
   const { appSettings, loading, isSuperAdmin, isCoDev } = useAdmin();
   
-  const showMaintenance = appSettings?.isMaintenanceMode && !isSuperAdmin && !isCoDev;
+  const now = new Date();
+  const maintenanceStart = appSettings?.maintenanceStartTime ? new Date(appSettings.maintenanceStartTime) : null;
+  const maintenanceEnd = appSettings?.maintenanceEndTime ? new Date(appSettings.maintenanceEndTime) : null;
+
+  const isScheduledMaintenance = maintenanceStart && maintenanceEnd && now >= maintenanceStart && now < maintenanceEnd;
+  const isManualMaintenance = appSettings?.isMaintenanceMode;
+
+  const showMaintenance = (isScheduledMaintenance || isManualMaintenance) && !isSuperAdmin && !isCoDev;
+
 
   if (loading) {
     // You can return a loading spinner here if you want
@@ -77,4 +85,5 @@ export default function DashboardLayout({
     </ImmersiveProvider>
   );
 }
+
 

@@ -145,12 +145,16 @@ export interface AppTheme {
     name: string;
 }
 
+export type MaintenanceTheme = 'shiny' | 'forest' | 'sunflower';
+
 export interface AppSettings {
     marcoAiLaunchStatus: 'countdown' | 'live';
     upiQrCode?: string; // base64 encoded image
     isMaintenanceMode?: boolean;
     maintenanceMessage?: string;
+    maintenanceStartTime?: string; // ISO String for scheduled start
     maintenanceEndTime?: string; // ISO String
+    maintenanceTheme?: MaintenanceTheme;
     whatsNewMessage?: string;
     lastMaintenanceId?: string;
 }
@@ -1064,3 +1068,4 @@ export const useDailySurprises = () => {
 
     
     
+
