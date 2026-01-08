@@ -108,7 +108,7 @@ function Inbox() {
                                     </div>
                                     <div className="flex gap-1.5">
                                         <Button size="icon" className="h-8 w-8 bg-green-500/20 text-green-600 hover:bg-green-500/30" onClick={() => handleAccept(req)}><Check/></Button>
-                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => declineFriendRequest(req.id)}><X/></Button>
+                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDecline(req)}><X/></Button>
                                     </div>
                                 </div>
                              )) : <p className="text-sm text-muted-foreground text-center py-10">No pending friend requests.</p>}
