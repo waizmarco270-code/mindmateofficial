@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
