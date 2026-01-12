@@ -1,7 +1,8 @@
 
+
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -153,11 +154,18 @@ function AdminPanelMenu() {
                         </Link>
                     )}
                     {isAdmin && (
-                        <Link href="/dashboard/admin">
-                            <Button variant="ghost" className="w-full justify-start">
-                                <ShieldCheck className="mr-2"/> Admin Panel
-                            </Button>
-                        </Link>
+                        <>
+                            <Link href="/dashboard/admin">
+                                <Button variant="ghost" className="w-full justify-start">
+                                    <ShieldCheck className="mr-2"/> Admin Panel
+                                </Button>
+                            </Link>
+                             <Link href="/dashboard/admin/study-panel">
+                                <Button variant="ghost" className="w-full justify-start">
+                                    <BookOpen className="mr-2"/> Study Panel
+                                </Button>
+                            </Link>
+                        </>
                     )}
                     {isSuperAdmin && (
                         <Link href="/waizmarcoadmin">
@@ -276,3 +284,4 @@ export default function Header() {
     </header>
   );
 }
+
