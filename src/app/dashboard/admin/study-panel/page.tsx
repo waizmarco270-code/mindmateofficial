@@ -110,7 +110,7 @@ export default function StudyPanelPage() {
                         <Table>
                             <TableHeader><TableRow><TableHead>Name</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                             <TableBody>
-                                {videoCategories.map(cat => (
+                                {videoCategories && videoCategories.map(cat => (
                                     <TableRow key={cat.id}>
                                         <TableCell>{cat.name}</TableCell>
                                         <TableCell className="text-right">
@@ -151,7 +151,7 @@ export default function StudyPanelPage() {
                             <Label htmlFor="lec-cat">Category</Label>
                              <Select value={newVideoCategoryId} onValueChange={setNewVideoCategoryId}>
                                 <SelectTrigger id="lec-cat"><SelectValue placeholder="Select a category..." /></SelectTrigger>
-                                <SelectContent>{videoCategories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
+                                <SelectContent>{videoCategories && videoCategories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
                          <Button onClick={handleAddVideoLecture} disabled={isAddingLecture}>{isAddingLecture ? 'Adding...' : 'Add Lecture'}</Button>
@@ -164,10 +164,10 @@ export default function StudyPanelPage() {
                     <Table>
                         <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                         <TableBody>
-                            {videoLectures.map(lec => (
+                            {videoLectures && videoLectures.map(lec => (
                                 <TableRow key={lec.id}>
                                     <TableCell>{lec.title}</TableCell>
-                                    <TableCell>{videoCategories.find(c => c.id === lec.categoryId)?.name || 'N/A'}</TableCell>
+                                    <TableCell>{videoCategories?.find(c => c.id === lec.categoryId)?.name || 'N/A'}</TableCell>
                                     <TableCell className="text-right">
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
@@ -186,3 +186,4 @@ export default function StudyPanelPage() {
         </div>
     );
 }
+
