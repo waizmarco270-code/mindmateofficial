@@ -412,7 +412,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [resources, setResources] = useState<Resource[]>([]);
     const [resourceSections, setResourceSections] = useState<ResourceSection[]>([]);
-    const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
+    const [dailySurprises, setDailySurprises] useState<DailySurprise[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [allPolls, setAllPolls] = useState<Poll[]>([]);
     const [appSettings, setAppSettings] = useState<AppSettings | null>({ marcoAiLaunchStatus: 'countdown' });
@@ -1178,3 +1178,6 @@ export const useDailySurprises = () => {
 
 
 
+
+
+    
