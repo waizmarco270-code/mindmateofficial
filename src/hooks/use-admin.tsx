@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
@@ -1207,3 +1208,5 @@ export const useDailySurprises = () => {
     if(!context) throw new Error('useDailySurprises must be used within an AppDataProvider');
     return { dailySurprises: context.dailySurprises, addDailySurprise: context.addDailySurprise, deleteDailySurprise: context.deleteDailySurprise, loading: context.loading };
 }
+
+
