@@ -16,12 +16,23 @@ import { useAdmin } from '@/hooks/use-admin';
 import { MaintenancePage } from '@/components/dashboard/maintenance-page';
 import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
 import MobileNav from '@/components/dashboard/mobile-nav';
+import { usePathname } from 'next/navigation';
 
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isImmersive } = useImmersive();
+  const { isImmersive, setIsImmersive } = useImmersive();
   const { openMobile, setOpenMobile } = useSidebar();
   const { appSettings, loading, isSuperAdmin, isCoDev } = useAdmin();
+  const pathname = usePathname();
+
+  // The super admin page uses this layout but shouldn't have the standard UI chrome.
+  if (pathname.startsWith('/waizmarcoadmin')) {
+      return (
+        <main className="bg-muted min-h-screen p-4 sm:p-6 lg:p-8">
+            {children}
+        </main>
+      );
+  }
   
   const now = new Date();
   const maintenanceStart = appSettings?.maintenanceStartTime ? new Date(appSettings.maintenanceStartTime) : null;
@@ -85,5 +96,3 @@ export default function DashboardLayout({
     </ImmersiveProvider>
   );
 }
-
-

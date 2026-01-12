@@ -136,13 +136,16 @@ service cloud.firestore {
 
     // Groups (Clans)
     match /groups/{groupId} {
+      function isClanMember() {
+        return request.auth.uid in resource.data.memberUids;
+      }
       allow read: if isSignedIn(); // Allow all signed-in users to read for discovery
       allow update: if isSignedIn() && isOwner(resource.data.createdBy); // Only admin can update
       allow create: if isSignedIn() && isOwner(request.resource.data.createdBy); // Creator can create
       allow delete: if isSignedIn() && isOwner(resource.data.createdBy); // Only admin can delete
 
       match /messages/{messageId} {
-        allow read, create: if isSignedIn() && request.auth.uid in resource.data.members;
+        allow read, create: if isSignedIn() && isClanMember();
         allow update, delete: if false;
       }
     }
@@ -152,6 +155,17 @@ service cloud.firestore {
     	allow read: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.clanAdminId);
       allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
       allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.clanAdminId);
+    }
+
+    // Learning Hub
+    match /videoCategories/{categoryId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isSuperAdmin();
+    }
+
+     match /videoLectures/{lectureId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isSuperAdmin();
     }
 
   }

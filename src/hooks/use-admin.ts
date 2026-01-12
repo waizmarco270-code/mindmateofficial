@@ -1117,7 +1117,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [authUser, currentUserData]);
     
-    // Video Lecture Functions
     const addVideoCategory = useCallback(async (category: Omit<VideoCategory, 'id' | 'createdAt'>) => {
         await addDoc(collection(db, 'videoCategories'), { ...category, createdAt: serverTimestamp() });
     }, []);
@@ -1201,14 +1200,3 @@ export const useDailySurprises = () => {
     if(!context) throw new Error('useDailySurprises must be used within an AppDataProvider');
     return { dailySurprises: context.dailySurprises, addDailySurprise: context.addDailySurprise, deleteDailySurprise: context.deleteDailySurprise, loading: context.loading };
 }
-
-    
-    
-
-
-
-
-
-    
-
-    
