@@ -140,7 +140,7 @@ service cloud.firestore {
         return request.auth.uid in resource.data.memberUids;
       }
       allow read: if isSignedIn(); // Allow all signed-in users to read for discovery
-      allow update: if isSignedIn() && isOwner(resource.data.createdBy); // Only admin can update
+      allow update: if isSignedIn() && (isOwner(resource.data.createdBy) || request.auth.uid in resource.data.members.filter(m => m.role == 'co-leader').map(m => m.uid));
       allow create: if isSignedIn() && isOwner(request.resource.data.createdBy); // Creator can create
       allow delete: if isSignedIn() && isOwner(resource.data.createdBy); // Only admin can delete
 
