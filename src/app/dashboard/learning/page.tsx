@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useAdmin } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Film, Search, BookOpen } from 'lucide-react';
@@ -13,18 +13,23 @@ export default function LearningHubPage() {
     const { videoCategories, videoLectures, loading } = useAdmin();
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredCategories = videoCategories
-        .map(category => {
-            const lectures = videoLectures.filter(lec => 
-                lec.categoryId === category.id &&
-                lec.title.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredCategories = useMemo(() => {
+        if (!videoCategories || !videoLectures) return [];
+
+        return videoCategories
+            .map(category => {
+                const lectures = videoLectures.filter(lec =>
+                    lec.categoryId === category.id &&
+                    lec.title.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                return { ...category, lectures };
+            })
+            .filter(category =>
+                category.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                category.lectures.length > 0
             );
-            return { ...category, lectures };
-        })
-        .filter(category => 
-            category.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            category.lectures.length > 0
-        );
+    }, [videoCategories, videoLectures, searchTerm]);
+
 
     return (
         <div className="space-y-8">
@@ -38,8 +43,8 @@ export default function LearningHubPage() {
 
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input 
-                    placeholder="Search lectures or categories..." 
+                <Input
+                    placeholder="Search lectures or categories..."
                     className="pl-10 h-12 text-base"
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
@@ -51,8 +56,8 @@ export default function LearningHubPage() {
                     {Array.from({ length: 2 }).map((_, i) => (
                         <div key={i}>
                             <Skeleton className="h-8 w-1/3 mb-4" />
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {Array.from({ length: 3 }).map((_, j) => (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                {Array.from({ length: 4 }).map((_, j) => (
                                     <Skeleton key={j} className="h-56 w-full" />
                                 ))}
                             </div>
