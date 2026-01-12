@@ -412,7 +412,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
     const [resources, setResources] = useState<Resource[]>([]);
     const [resourceSections, setResourceSections] = useState<ResourceSection[]>([]);
-    const [dailySurprises, setDailySurprises] useState<DailySurprise[]>([]);
+    const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [allPolls, setAllPolls] = useState<Poll[]>([]);
     const [appSettings, setAppSettings] = useState<AppSettings | null>({ marcoAiLaunchStatus: 'countdown' });
@@ -912,26 +912,31 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     
     // Admin/Global functions
-    const addAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => await addDoc(collection(db, 'announcements'), { ...announcement, createdAt: serverTimestamp() });
-    const updateAnnouncement = async (id: string, data: Partial<Announcement>) => await updateDoc(doc(db, 'announcements', id), data);
-    const deleteAnnouncement = async (id: string) => await deleteDoc(doc(db, 'announcements', id));
-    const addResourceSection = async (section: Omit<ResourceSection, 'id'|'createdAt'>) => await addDoc(collection(db, 'resourceSections'), { ...section, createdAt: serverTimestamp() });
-    const updateResourceSection = async (id: string, data: Partial<Omit<ResourceSection, 'id'|'createdAt'>>) => await updateDoc(doc(db, 'resourceSections', id), data);
-    const deleteResourceSection = async (id: string) => {
+    const addAnnouncement = useCallback(async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => await addDoc(collection(db, 'announcements'), { ...announcement, createdAt: serverTimestamp() }), []);
+    const updateAnnouncement = useCallback(async (id: string, data: Partial<Announcement>) => await updateDoc(doc(db, 'announcements', id), data), []);
+    const deleteAnnouncement = useCallback(async (id: string) => await deleteDoc(doc(db, 'announcements', id)), []);
+    
+    const addResourceSection = useCallback(async (section: Omit<ResourceSection, 'id'|'createdAt'>) => await addDoc(collection(db, 'resourceSections'), { ...section, createdAt: serverTimestamp() }), []);
+    const updateResourceSection = useCallback(async (id: string, data: Partial<Omit<ResourceSection, 'id'|'createdAt'>>) => await updateDoc(doc(db, 'resourceSections', id), data), []);
+    const deleteResourceSection = useCallback(async (id: string) => {
         const q = query(collection(db, "resources"), where("sectionId", "==", id));
         const querySnapshot = await getDocs(q);
         const batch = writeBatch(db);
         querySnapshot.forEach((doc) => batch.delete(doc.ref));
         batch.delete(doc(db, 'resourceSections', id));
         await batch.commit();
-    };
-    const addResource = async (resource: Omit<Resource, 'id' | 'createdAt'>) => await addDoc(collection(db, 'resources'), { ...resource, createdAt: serverTimestamp() });
-    const updateResource = async (id: string, data: Partial<Omit<Resource, 'id' | 'createdAt'>>) => await updateDoc(doc(db, 'resources', id), data);
-    const deleteResource = async (id: string) => await deleteDoc(doc(db, 'resources', id));
-    const addDailySurprise = async (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => await addDoc(collection(db, 'dailySurprises'), { ...surprise, createdAt: serverTimestamp() });
-    const deleteDailySurprise = async (id: string) => await deleteDoc(doc(db, 'dailySurprises', id));
-    const updateTicketStatus = async (id: string, status: 'new' | 'resolved') => await updateDoc(doc(db, 'supportTickets', id), { status });
-    const deleteTicket = async (id: string) => await deleteDoc(doc(db, 'supportTickets', id));
+    }, []);
+
+    const addResource = useCallback(async (resource: Omit<Resource, 'id' | 'createdAt'>) => await addDoc(collection(db, 'resources'), { ...resource, createdAt: serverTimestamp() }), []);
+    const updateResource = useCallback(async (id: string, data: Partial<Omit<Resource, 'id' | 'createdAt'>>) => await updateDoc(doc(db, 'resources', id), data), []);
+    const deleteResource = useCallback(async (id: string) => await deleteDoc(doc(db, 'resources', id)), []);
+    
+    const addDailySurprise = useCallback(async (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => await addDoc(collection(db, 'dailySurprises'), { ...surprise, createdAt: serverTimestamp() }), []);
+    const deleteDailySurprise = useCallback(async (id: string) => await deleteDoc(doc(db, 'dailySurprises', id)), []);
+
+    const updateTicketStatus = useCallback(async (id: string, status: 'new' | 'resolved') => await updateDoc(doc(db, 'supportTickets', id), { status }), []);
+    const deleteTicket = useCallback(async (id: string) => await deleteDoc(doc(db, 'supportTickets', id)), []);
+
     const addPoll = useCallback(async (pollData: Omit<Poll, 'id' | 'createdAt' | 'isActive' | 'results'>) => {
         await addDoc(collection(db, 'polls'), { ...pollData, isActive: false, results: pollData.options.reduce((acc, option) => ({ ...acc, [option]: 0 }), {}), createdAt: serverTimestamp() });
     }, []);
@@ -943,7 +948,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         batch.update(doc(db, 'polls', pollId), { isActive: true });
         await batch.commit();
     }, []);
-    const updatePoll = async (id: string, data: Partial<Poll>) => {
+    const updatePoll = useCallback(async (id: string, data: Partial<Poll>) => {
         const pollDocRef = doc(db, 'polls', id);
         const currentPollSnap = await getDoc(pollDocRef);
         const updateData: Partial<Poll> = { ...data };
@@ -951,34 +956,34 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             updateData.results = data.options.reduce((acc, option) => ({ ...acc, [option]: 0 }), {});
         }
         await updateDoc(pollDocRef, updateData);
-    };
-    const submitPollVote = async (pollId: string, option: string) => {
+    }, []);
+    const submitPollVote = useCallback(async (pollId: string, option: string) => {
         if (!authUser) return;
         const batch = writeBatch(db);
         batch.update(doc(db, 'polls', pollId), { [`results.${option}`]: increment(1) });
         batch.update(doc(db, 'users', authUser.id), { [`votedPolls.${pollId}`]: option });
         await batch.commit();
-    };
-    const submitPollComment = async (pollId: string, comment: string) => {
+    }, [authUser]);
+    const submitPollComment = useCallback(async (pollId: string, comment: string) => {
         if (!authUser || !currentUserData) return;
         await updateDoc(doc(db, 'polls', pollId), { comments: arrayUnion({ userId: authUser.id, userName: currentUserData.displayName, comment, createdAt: Timestamp.now() }) });
-    };
+    }, [authUser, currentUserData]);
     const submitSupportTicket = useCallback(async (message: string) => {
         if (!authUser || !currentUserData) throw new Error("User not found");
         await addDoc(collection(db, 'supportTickets'), { userId: authUser.id, userName: currentUserData.displayName, message, status: 'new', createdAt: serverTimestamp() });
     }, [authUser, currentUserData]);
-    const clearGlobalChat = async () => {
+    const clearGlobalChat = useCallback(async () => {
         const chatSnapshot = await getDocs(collection(db, 'global_chat'));
         const batch = writeBatch(db);
         chatSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
         await batch.commit();
-    };
-    const clearQuizLeaderboard = async () => {
+    }, []);
+    const clearQuizLeaderboard = useCallback(async () => {
         const usersSnapshot = await getDocs(collection(db, 'users'));
         const batch = writeBatch(db);
         usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { perfectedQuizzes: [], quizAttempts: {} }));
         await batch.commit();
-    };
+    }, []);
     const resetWeeklyStudyTime = useCallback(async () => {
         const usersSnapshot = await getDocs(collection(db, 'users'));
         const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
@@ -1008,14 +1013,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { gameHighScores: resetScores }));
         await batch.commit();
     }, []);
-    const updateAppSettings = async (settings: Partial<AppSettings>) => await setDoc(doc(db, 'appConfig', 'settings'), settings, { merge: true });
-    const sendGlobalGift = async (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => {
+    const updateAppSettings = useCallback(async (settings: Partial<AppSettings>) => await setDoc(doc(db, 'appConfig', 'settings'), settings, { merge: true }), []);
+    const sendGlobalGift = useCallback(async (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => {
         const newGiftRef = doc(collection(db, 'globalGifts'));
         await setDoc(newGiftRef, { ...gift, id: newGiftRef.id, createdAt: serverTimestamp(), isActive: true, claimedBy: [] });
-    };
-    const deactivateGift = async (giftId: string) => await updateDoc(doc(db, 'globalGifts', giftId), { isActive: false });
-    const deleteGlobalGift = async (giftId: string) => await deleteDoc(doc(db, 'globalGifts', giftId));
-    const claimGlobalGift = async (giftId: string, userId: string) => {
+    }, []);
+    const deactivateGift = useCallback(async (giftId: string) => await updateDoc(doc(db, 'globalGifts', giftId), { isActive: false }), []);
+    const deleteGlobalGift = useCallback(async (giftId: string) => await deleteDoc(doc(db, 'globalGifts', giftId)), []);
+    const claimGlobalGift = useCallback(async (giftId: string, userId: string) => {
         const giftRef = doc(db, 'globalGifts', giftId);
         const giftDoc = await getDoc(giftRef);
         if (!giftDoc.exists()) throw new Error("Gift not found.");
@@ -1027,12 +1032,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (gift.rewards.scratch > 0) batch.update(doc(db, 'users', userId), { freeRewards: increment(gift.rewards.scratch) });
         if (gift.rewards.flip > 0) batch.update(doc(db, 'users', userId), { freeGuesses: increment(gift.rewards.flip) });
         await batch.commit();
-    };
+    }, []);
     const lockFeature = useCallback(async (featureId: LockableFeature['id'], cost: number) => await setDoc(doc(db, 'appConfig', 'featureLocks'), { [featureId]: { id: featureId, isLocked: true, cost } }, { merge: true }), []);
     const unlockFeature = useCallback(async (featureId: LockableFeature['id']) => await setDoc(doc(db, 'appConfig', 'featureLocks'), { [featureId]: { id: featureId, isLocked: false, cost: 0 } }, { merge: true }), []);
-    const addFeatureShowcase = async (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => await addDoc(collection(db, 'featureShowcases'), { ...showcase, createdAt: serverTimestamp() });
-    const updateFeatureShowcase = async (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => await updateDoc(doc(db, 'featureShowcases', id), data);
-    const deleteFeatureShowcase = async (id: string) => await deleteDoc(doc(db, 'featureShowcases', id));
+    const addFeatureShowcase = useCallback(async (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => await addDoc(collection(db, 'featureShowcases'), { ...showcase, createdAt: serverTimestamp() }), []);
+    const updateFeatureShowcase = useCallback(async (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => await updateDoc(doc(db, 'featureShowcases', id), data), []);
+    const deleteFeatureShowcase = useCallback(async (id: string) => await deleteDoc(doc(db, 'featureShowcases', id)), []);
     const createCreditPack = useCallback(async (pack: Omit<CreditPack, 'id' | 'createdAt'>) => {
         await addDoc(collection(db, 'creditPacks'), { ...pack, createdAt: serverTimestamp() });
     }, []);
@@ -1179,5 +1184,7 @@ export const useDailySurprises = () => {
 
 
 
+
+    
 
     
