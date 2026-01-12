@@ -809,8 +809,7 @@ export default function AdminPanelPage() {
                                                             </AlertDialogHeader>
                                                             <AlertDialogFooter>
                                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={() => deletePoll(poll.id)}>Delete</AlertDialogAction>
-                                                            </AlertDialogFooter>
+                                                                <AlertDialogAction onClick={() => deletePoll(poll.id)}>Delete</AlertDialogAction></AlertDialogFooter>
                                                         </AlertDialogContent>
                                                     </AlertDialog>
                                                 </TableCell>

@@ -876,7 +876,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const weekClaims = userData.flappyMindClaims?.[weekKey] || [];
         const MILESTONE_REWARDS: Record<number, number> = { 5: 3, 10: 3, 15: 3, 20: 15, 30: 3, 50: 3, 100: 100 };
-        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).reverse().find(m => milestone >= m && !weekClaims.includes(m));
         const updateData: { [key: string]: any } = { [`gameHighScores.flappyMind`]: Math.max(userData.gameHighScores?.flappyMind || 0, milestone) };
         if (!validMilestone) {
             await updateDoc(userDocRef, updateData);
@@ -898,7 +898,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const userData = userSnap.data() as User;
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
         const weekClaims = userData.astroAscentClaims?.[weekKey] || [];
-        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).reverse().find(m => milestone >= m && !weekClaims.includes(m));
         const updateData: { [key: string]: any } = { [`gameHighScores.astroAscent`]: Math.max(userData.gameHighScores?.astroAscent || 0, milestone) };
         if (!validMilestone) {
             await updateDoc(userDocRef, updateData);
