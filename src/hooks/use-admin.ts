@@ -241,6 +241,23 @@ export interface StoreItem {
     isFeatured: boolean;
 }
 
+export interface VideoCategory {
+  id: string;
+  name: string;
+  description: string;
+  createdAt: Date;
+}
+
+export interface VideoLecture {
+  id: string;
+  title: string;
+  description: string;
+  youtubeUrl: string;
+  thumbnailUrl: string;
+  categoryId: string;
+  createdAt: Date;
+}
+
 
 // ============================================================================
 //  CONTEXT DEFINITIONS
@@ -366,6 +383,14 @@ interface AppDataContextType {
     updateStoreItem: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
     deleteStoreItem: (id: string) => Promise<void>;
     redeemStoreItem: (item: StoreItem) => Promise<void>;
+    
+    videoCategories: VideoCategory[];
+    addVideoCategory: (category: Omit<VideoCategory, 'id' | 'createdAt'>) => Promise<void>;
+    deleteVideoCategory: (categoryId: string) => Promise<void>;
+
+    videoLectures: VideoLecture[];
+    addVideoLecture: (lecture: Omit<VideoLecture, 'id' | 'createdAt'>) => Promise<void>;
+    deleteVideoLecture: (lectureId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -397,6 +422,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
     const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
     const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
+    const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
+    const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
     const [loading, setLoading] = useState(true);
     
     const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
@@ -542,7 +569,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubGifts = onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(processSnapshot<GlobalGift>(s)));
         const unsubLocks = onSnapshot(doc(db, 'appConfig', 'featureLocks'), (doc) => setFeatureLocks(doc.exists() ? doc.data() as Record<LockableFeature['id'], FeatureLock> : null));
         const unsubShowcases = onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processSnapshot<FeatureShowcase>(s)));
-        
         const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), async (snapshot) => {
             if (snapshot.empty) {
                  const defaultPacksData = [
@@ -553,7 +579,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                  const batch = writeBatch(db);
                  defaultPacksData.forEach(pack => batch.set(doc(collection(db, 'creditPacks')), { ...pack, createdAt: serverTimestamp() }));
                  await batch.commit();
-                 // The listener will re-fire with the new data
             } else {
                  setCreditPacks(processSnapshot<CreditPack>(snapshot));
             }
@@ -573,11 +598,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
         const unsubPurchaseRequests = onSnapshot(query(collection(db, 'creditPurchaseRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'asc')), (s) => setPurchaseRequests(processTimestampedSnapshot(s)));
         
+        const unsubVideoCategories = onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(processSnapshot<VideoCategory>(s)));
+        const unsubVideoLectures = onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(processSnapshot<VideoLecture>(s)));
 
         return () => {
             unsubAnnouncements(); unsubResources(); unsubPolls(); unsubDailySurprises(); unsubSections();
             unsubAppSettings(); unsubGifts(); unsubTickets(); unsubLocks(); unsubShowcases();
             unsubCreditPacks(); unsubStoreItems(); unsubPurchaseRequests();
+            unsubVideoCategories(); unsubVideoLectures();
         };
     }, []);
 
@@ -794,35 +822,94 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { credits: increment(reward), elementQuestMilestonesClaimed: arrayUnion(milestone) });
     }, []);
 
-    const claimMilestoneFactory = (gameId: 'dimensionShift' | 'flappyMind' | 'astroAscent' | 'mathematicsLegend', rewards: Record<number, number>) => async (uid: string, milestone: number): Promise<boolean> => {
+    const claimDimensionShiftMilestone = async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
         if (!userSnap.exists()) return false;
         const userData = userSnap.data() as User;
-        const claimField = `${gameId}Claims` as const;
         const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const weekClaims = userData[claimField]?.[weekKey] || [];
-        const validMilestone = Object.keys(rewards).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
-        
-        const updateData: { [key: string]: any } = { [`gameHighScores.${gameId}`]: Math.max(userData.gameHighScores?.[gameId] || 0, milestone) };
+        const weekClaims = userData.dimensionShiftClaims?.[weekKey] || [];
+        const MILESTONE_REWARDS: Record<number, number> = { 50: 2, 100: 5, 150: 10, 200: 15, 250: 20, 300: 200 };
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
+        const updateData: { [key: string]: any } = { [`gameHighScores.dimensionShift`]: Math.max(userData.gameHighScores?.dimensionShift || 0, milestone) };
         if (!validMilestone) {
             await updateDoc(userDocRef, updateData);
             return false;
         }
-
-        const reward = rewards[validMilestone as keyof typeof rewards];
+        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
         const newClaims = [...weekClaims, validMilestone];
         updateData.credits = increment(reward);
-        updateData[`${claimField}.${weekKey}`] = newClaims;
-        
+        updateData[`dimensionShiftClaims.${weekKey}`] = newClaims;
+        await updateDoc(userDocRef, updateData);
+        return true;
+    };
+    
+    const claimFlappyMindMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+        if (!userSnap.exists()) return false;
+        const userData = userSnap.data() as User;
+        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const weekClaims = userData.flappyMindClaims?.[weekKey] || [];
+        const MILESTONE_REWARDS: Record<number, number> = { 5: 3, 10: 3, 15: 3, 20: 15, 30: 3, 50: 3, 100: 100 };
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
+        const updateData: { [key: string]: any } = { [`gameHighScores.flappyMind`]: Math.max(userData.gameHighScores?.flappyMind || 0, milestone) };
+        if (!validMilestone) {
+            await updateDoc(userDocRef, updateData);
+            return false;
+        }
+        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
+        const newClaims = [...weekClaims, validMilestone];
+        updateData.credits = increment(reward);
+        updateData[`flappyMindClaims.${weekKey}`] = newClaims;
+        await updateDoc(userDocRef, updateData);
+        return true;
+    };
+    
+    const claimAstroAscentMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+        const MILESTONE_REWARDS: Record<number, number> = { 25: 5, 50: 10, 75: 25, 100: 50 };
+        if (!userSnap.exists()) return false;
+        const userData = userSnap.data() as User;
+        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const weekClaims = userData.astroAscentClaims?.[weekKey] || [];
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
+        const updateData: { [key: string]: any } = { [`gameHighScores.astroAscent`]: Math.max(userData.gameHighScores?.astroAscent || 0, milestone) };
+        if (!validMilestone) {
+            await updateDoc(userDocRef, updateData);
+            return false;
+        }
+        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
+        const newClaims = [...weekClaims, validMilestone];
+        updateData.credits = increment(reward);
+        updateData[`astroAscentClaims.${weekKey}`] = newClaims;
         await updateDoc(userDocRef, updateData);
         return true;
     };
 
-    const claimDimensionShiftMilestone = claimMilestoneFactory('dimensionShift', { 50: 2, 100: 5, 150: 10, 200: 15, 250: 20, 300: 200 });
-    const claimFlappyMindMilestone = claimMilestoneFactory('flappyMind', { 5: 3, 10: 3, 15: 3, 20: 15, 30: 3, 50: 3, 100: 100 });
-    const claimAstroAscentMilestone = claimMilestoneFactory('astroAscent', { 25: 5, 50: 10, 75: 25, 100: 50 });
-    const claimMathematicsLegendMilestone = claimMilestoneFactory('mathematicsLegend', { 50: 200 });
+    const claimMathematicsLegendMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+        const userDocRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userDocRef);
+        if (!userSnap.exists()) return false;
+        const userData = userSnap.data() as User;
+        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+        const weekClaims = userData.mathematicsLegendClaims?.[weekKey] || [];
+        const MILESTONE_REWARDS: Record<number, number> = { 50: 200 };
+        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).find(m => milestone >= m && !weekClaims.includes(m));
+        const updateData: { [key: string]: any } = { [`gameHighScores.mathematicsLegend`]: Math.max(userData.gameHighScores?.mathematicsLegend || 0, milestone) };
+        if (!validMilestone) {
+            await updateDoc(userDocRef, updateData);
+            return false;
+        }
+        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
+        const newClaims = [...weekClaims, validMilestone];
+        updateData.credits = increment(reward);
+        updateData[`mathematicsLegendClaims.${weekKey}`] = newClaims;
+        await updateDoc(userDocRef, updateData);
+        return true;
+    };
+
     
     // Admin/Global functions
     const addAnnouncement = async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => await addDoc(collection(db, 'announcements'), { ...announcement, createdAt: serverTimestamp() });
@@ -946,7 +1033,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const addFeatureShowcase = async (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => await addDoc(collection(db, 'featureShowcases'), { ...showcase, createdAt: serverTimestamp() });
     const updateFeatureShowcase = async (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => await updateDoc(doc(db, 'featureShowcases', id), data);
     const deleteFeatureShowcase = async (id: string) => await deleteDoc(doc(db, 'featureShowcases', id));
-
     const createCreditPack = useCallback(async (pack: Omit<CreditPack, 'id' | 'createdAt'>) => {
         await addDoc(collection(db, 'creditPacks'), { ...pack, createdAt: serverTimestamp() });
     }, []);
@@ -1002,6 +1088,27 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [authUser, currentUserData]);
     
+    // Video Lecture Functions
+    const addVideoCategory = useCallback(async (category: Omit<VideoCategory, 'id' | 'createdAt'>) => {
+        await addDoc(collection(db, 'videoCategories'), { ...category, createdAt: serverTimestamp() });
+    }, []);
+
+    const deleteVideoCategory = useCallback(async (categoryId: string) => {
+        const batch = writeBatch(db);
+        const lecturesSnapshot = await getDocs(query(collection(db, 'videoLectures'), where('categoryId', '==', categoryId)));
+        lecturesSnapshot.forEach(doc => batch.delete(doc.ref));
+        batch.delete(doc(db, 'videoCategories', categoryId));
+        await batch.commit();
+    }, []);
+
+    const addVideoLecture = useCallback(async (lecture: Omit<VideoLecture, 'id' | 'createdAt'>) => {
+        await addDoc(collection(db, 'videoLectures'), { ...lecture, createdAt: serverTimestamp() });
+    }, []);
+    
+    const deleteVideoLecture = useCallback(async (lectureId: string) => {
+        await deleteDoc(doc(db, 'videoLectures', lectureId));
+    }, []);
+    
     const value: AppDataContextType = {
         isAdmin, isSuperAdmin, isCoDev, users, currentUserData, toggleUserBlock, deleteUserData, addCreditsToUser,
         giftCreditsToAllUsers, resetUserCredits, addFreeSpinsToUser, addSpinsToAllUsers, addFreeGuessesToUser,
@@ -1020,7 +1127,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         lockFeature, unlockFeature, featureShowcases, addFeatureShowcase, updateFeatureShowcase, deleteFeatureShowcase,
         creditPacks, createCreditPack, updateCreditPack, deleteCreditPack, purchaseRequests, createPurchaseRequest,
         approvePurchaseRequest, declinePurchaseRequest, storeItems, createStoreItem, updateStoreItem, deleteStoreItem,
-        redeemStoreItem,
+        redeemStoreItem, videoCategories, addVideoCategory, deleteVideoCategory, videoLectures, addVideoLecture, deleteVideoLecture,
     };
 
     return (
@@ -1068,4 +1175,5 @@ export const useDailySurprises = () => {
 
     
     
+
 
