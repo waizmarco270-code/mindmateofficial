@@ -84,6 +84,7 @@ export interface User {
       lastClaimed: string; // YYYY-MM-DD
   };
   lastMaintenanceIdSeen?: string;
+  transactions?: { id: string; packName: string; credits: number; price: number; date: Date; }[];
 }
 
 export interface Announcement {
@@ -269,6 +270,7 @@ interface AppDataContextType {
     isSuperAdmin: boolean;
     users: User[];
     currentUserData: User | null;
+    transactions: PurchaseRequest[];
     toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
     deleteUserData: (password: string) => Promise<void>;
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
@@ -422,6 +424,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
     const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
     const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
+    const [transactions, setTransactions] = useState<PurchaseRequest[]>([]);
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
     const [loading, setLoading] = useState(true);
@@ -545,6 +548,27 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         
     }, [authUser, isClerkLoaded]);
     
+    // EFFECT: Listen for user's approved transactions
+    useEffect(() => {
+        if (!authUser) {
+            setTransactions([]);
+            return;
+        }
+        const q = query(collection(db, 'creditPurchaseRequests'), where('userId', '==', authUser.id), where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const userTransactions = snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    ...data,
+                    createdAt: (data.createdAt as Timestamp)?.toDate() || new Date()
+                } as PurchaseRequest
+            });
+            setTransactions(userTransactions);
+        });
+        return () => unsubscribe();
+    }, [authUser]);
+
     // EFFECT: Listen for global data (announcements, resources, polls, etc.)
     useEffect(() => {
         const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
@@ -611,18 +635,18 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
 
     // FUNCTIONS: Actions that modify data
-    const makeUserAdmin = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isAdmin: true });
-    const removeUserAdmin = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isAdmin: false });
-    const makeUserVip = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isVip: true });
-    const removeUserVip = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isVip: false });
-    const makeUserGM = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isGM: true });
-    const removeUserGM = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isGM: false });
-    const makeUserChallenger = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isChallenger: true });
-    const removeUserChallenger = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isChallenger: false });
-    const makeUserCoDev = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isCoDev: true });
-    const removeUserCoDev = async (uid: string) => await updateDoc(doc(db, 'users', uid), { isCoDev: false });
-    const setShowcaseBadge = async (uid: string, badge: BadgeType | null) => await updateDoc(doc(db, 'users', uid), { showcasedBadge: badge });
-    const toggleUserBlock = async (uid: string, isBlocked: boolean) => await updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked });
+    const makeUserAdmin = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isAdmin: true }), []);
+    const removeUserAdmin = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isAdmin: false }), []);
+    const makeUserVip = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isVip: true }), []);
+    const removeUserVip = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isVip: false }), []);
+    const makeUserGM = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isGM: true }), []);
+    const removeUserGM = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isGM: false }), []);
+    const makeUserChallenger = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isChallenger: true }), []);
+    const removeUserChallenger = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isChallenger: false }), []);
+    const makeUserCoDev = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isCoDev: true }), []);
+    const removeUserCoDev = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isCoDev: false }), []);
+    const setShowcaseBadge = useCallback(async (uid: string, badge: BadgeType | null) => await updateDoc(doc(db, 'users', uid), { showcasedBadge: badge }), []);
+    const toggleUserBlock = useCallback(async (uid: string, isBlocked: boolean) => await updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked }), []);
     
     const deleteUserData = useCallback(async (password: string) => {
         if (!clerk.user) throw new Error("User not found");
@@ -630,55 +654,55 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(doc(db, 'users', clerk.user.id), { markedForDeletion: true, markedForDeletionAt: serverTimestamp() });
     }, [clerk.user]);
 
-    const addCreditsToUser = async (uid: string, amount: number) => {
+    const addCreditsToUser = useCallback(async (uid: string, amount: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
         const userData = userSnap.data();
         if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date() && amount < 0) return;
         await updateDoc(userDocRef, { credits: increment(amount) });
-    };
+    }, []);
     
-    const giftCreditsToAllUsers = async (amount: number) => {
+    const giftCreditsToAllUsers = useCallback(async (amount: number) => {
         if (!Number.isFinite(amount) || amount <= 0) return;
         const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
         const batch = writeBatch(db);
         usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { credits: increment(amount) }));
         await batch.commit();
-    };
+    }, []);
 
-    const addFreeSpinsToUser = async (uid: string, amount: number) => {
+    const addFreeSpinsToUser = useCallback(async (uid: string, amount: number) => {
         if (!uid || !Number.isFinite(amount) || amount <= 0) return;
         await updateDoc(doc(db, 'users', uid), { freeRewards: increment(amount) });
-    };
+    }, []);
     
-    const addSpinsToAllUsers = async (amount: number) => {
+    const addSpinsToAllUsers = useCallback(async (amount: number) => {
         if (!Number.isFinite(amount) || amount <= 0) return;
         const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
         const batch = writeBatch(db);
         usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { freeRewards: increment(amount) }));
         await batch.commit();
-    };
+    }, []);
 
-    const addFreeGuessesToUser = async (uid: string, amount: number) => {
+    const addFreeGuessesToUser = useCallback(async (uid: string, amount: number) => {
         if (!uid || !Number.isFinite(amount) || amount <= 0) return;
         await updateDoc(doc(db, 'users', uid), { freeGuesses: increment(amount) });
-    };
+    }, []);
 
-    const addGuessesToAllUsers = async (amount: number) => {
+    const addGuessesToAllUsers = useCallback(async (amount: number) => {
         if (!Number.isFinite(amount) || amount <= 0) return;
         const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
         const batch = writeBatch(db);
         usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { freeGuesses: increment(amount) }));
         await batch.commit();
-    };
+    }, []);
 
-    const resetUserCredits = async (uid: string) => {
+    const resetUserCredits = useCallback(async (uid: string) => {
         if (!uid) return;
         await updateDoc(doc(db, 'users', uid), { credits: 100 });
-    };
+    }, []);
     
-    const unlockResourceSection = async (uid: string, sectionId: string, cost: number) => {
+    const unlockResourceSection = useCallback(async (uid: string, sectionId: string, cost: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
@@ -687,9 +711,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
              updateData.credits = increment(-cost);
         }
         await updateDoc(userDocRef, updateData);
-    };
+    }, []);
 
-    const unlockFeatureForUser = async (uid: string, featureId: LockableFeature['id'], cost: number) => {
+    const unlockFeatureForUser = useCallback(async (uid: string, featureId: LockableFeature['id'], cost: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
@@ -698,9 +722,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             updateData.credits = increment(-cost);
         }
         await updateDoc(userDocRef, updateData);
-    };
+    }, []);
 
-    const unlockThemeForUser = async (uid: string, themeId: AppThemeId, cost: number) => {
+    const unlockThemeForUser = useCallback(async (uid: string, themeId: AppThemeId, cost: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
@@ -709,7 +733,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             updateData.credits = increment(-cost);
         }
         await updateDoc(userDocRef, updateData);
-    }
+    }, []);
 
     const generateAiAccessToken = useCallback(async (uid: string) => {
         if (!uid) return null;
@@ -756,37 +780,37 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(doc(db, 'users', uid), { masterCardExpires: null });
     }, []);
 
-    const addPerfectedQuiz = async (uid: string, quizId: string) => {
+    const addPerfectedQuiz = useCallback(async (uid: string, quizId: string) => {
         if(!uid || !quizId) return;
         await updateDoc(doc(db, 'users', uid), { perfectedQuizzes: arrayUnion(quizId) });
-    }
+    }, []);
 
-    const incrementQuizAttempt = async (uid: string, quizId: string) => {
+    const incrementQuizAttempt = useCallback(async (uid: string, quizId: string) => {
         if (!uid || !quizId) return;
         await updateDoc(doc(db, 'users', uid), { [`quizAttempts.${quizId}`]: increment(1) });
-    };
+    }, []);
     
-    const incrementFocusSessions = async (uid: string, durationInSeconds: number) => {
+    const incrementFocusSessions = useCallback(async (uid: string, durationInSeconds: number) => {
         if(!uid) return;
         await updateDoc(doc(db, 'users', uid), { focusSessionsCompleted: increment(1), totalStudyTime: increment(durationInSeconds) });
-    }
+    }, []);
 
-    const claimDailyTaskReward = async (uid: string, amount: number) => {
+    const claimDailyTaskReward = useCallback(async (uid: string, amount: number) => {
         if(!uid || amount <= 0) return;
         await updateDoc(doc(db, 'users', uid), { credits: increment(amount), dailyTasksCompleted: increment(1), lastDailyTasksClaim: format(new Date(), 'yyyy-MM-dd') });
-    }
+    }, []);
     
     const claimEliteDailyReward = useCallback(async (uid: string) => {
         if (!uid) return;
         await updateDoc(doc(db, 'users', uid), { credits: increment(20), freeRewards: increment(5), freeGuesses: increment(5), lastEliteClaim: format(new Date(), 'yyyy-MM-dd') });
     }, []);
     
-    const updateStudyTime = async (uid: string, totalSeconds: number) => {
+    const updateStudyTime = useCallback(async (uid: string, totalSeconds: number) => {
         if(!uid) return;
         await updateDoc(doc(db, 'users', uid), { totalStudyTime: totalSeconds });
-    }
+    }, []);
 
-    const updateGameHighScore = async (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind' | 'astroAscent' | 'mathematicsLegend', score: number) => {
+    const updateGameHighScore = useCallback(async (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind' | 'astroAscent' | 'mathematicsLegend', score: number) => {
         if (!uid) return;
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
@@ -794,7 +818,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             const currentHighScore = userSnap.data().gameHighScores?.[game] || 0;
             if (score > currentHighScore) await updateDoc(userDocRef, { [`gameHighScores.${game}`]: score });
         }
-    };
+    }, []);
     
     const updateElementQuestScore = useCallback(async (uid: string, block: 's' | 'p' | 'd' | 'f', score: number) => {
         if (!uid) return;
@@ -822,7 +846,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { credits: increment(reward), elementQuestMilestonesClaimed: arrayUnion(milestone) });
     }, []);
 
-    const claimDimensionShiftMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+    const claimDimensionShiftMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
         if (!userSnap.exists()) return false;
@@ -842,9 +866,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateData[`dimensionShiftClaims.${weekKey}`] = newClaims;
         await updateDoc(userDocRef, updateData);
         return true;
-    };
+    }, []);
     
-    const claimFlappyMindMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+    const claimFlappyMindMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
         if (!userSnap.exists()) return false;
@@ -864,9 +888,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateData[`flappyMindClaims.${weekKey}`] = newClaims;
         await updateDoc(userDocRef, updateData);
         return true;
-    };
+    }, []);
     
-    const claimAstroAscentMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+    const claimAstroAscentMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
         const MILESTONE_REWARDS: Record<number, number> = { 25: 5, 50: 10, 75: 25, 100: 50 };
@@ -886,9 +910,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateData[`astroAscentClaims.${weekKey}`] = newClaims;
         await updateDoc(userDocRef, updateData);
         return true;
-    };
+    }, []);
 
-    const claimMathematicsLegendMilestone = async (uid: string, milestone: number): Promise<boolean> => {
+    const claimMathematicsLegendMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
         const userDocRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userDocRef);
         if (!userSnap.exists()) return false;
@@ -908,8 +932,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateData[`mathematicsLegendClaims.${weekKey}`] = newClaims;
         await updateDoc(userDocRef, updateData);
         return true;
-    };
-
+    }, []);
     
     // Admin/Global functions
     const addAnnouncement = useCallback(async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => await addDoc(collection(db, 'announcements'), { ...announcement, createdAt: serverTimestamp() }), []);
@@ -1057,7 +1080,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUserData]);
     const approvePurchaseRequest = useCallback(async (request: PurchaseRequest) => {
         const batch = writeBatch(db);
-        batch.update(doc(db, 'users', request.userId), { credits: increment(request.credits) });
+        const userRef = doc(db, 'users', request.userId);
+        batch.update(userRef, { credits: increment(request.credits), transactions: arrayUnion({ id: request.id, packName: request.packName, credits: request.credits, price: request.price, date: new Date() }) });
         batch.update(doc(db, 'creditPurchaseRequests', request.id), { status: 'approved' });
         await batch.commit();
     }, []);
@@ -1115,7 +1139,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }, []);
     
     const value: AppDataContextType = {
-        isAdmin, isSuperAdmin, isCoDev, users, currentUserData, toggleUserBlock, deleteUserData, addCreditsToUser,
+        isAdmin, isSuperAdmin, isCoDev, users, currentUserData, transactions, toggleUserBlock, deleteUserData, addCreditsToUser,
         giftCreditsToAllUsers, resetUserCredits, addFreeSpinsToUser, addSpinsToAllUsers, addFreeGuessesToUser,
         addGuessesToAllUsers, unlockResourceSection, unlockFeatureForUser, unlockThemeForUser, generateAiAccessToken,
         generateDevAiAccessToken, grantMasterCard, revokeMasterCard, addPerfectedQuiz, incrementQuizAttempt,
