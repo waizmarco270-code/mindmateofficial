@@ -196,7 +196,7 @@ export default function SidebarContent() {
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['main-tools', 'compete-earn', 'community-resources']}
+          defaultValue={['main-tools', 'compete-earn', 'community-resources', 'admin-dev']}
           className="w-full"
         >
           <AccordionItem value="main-tools" className="border-b-0">
@@ -225,29 +225,35 @@ export default function SidebarContent() {
               {renderNavLinks(competeNav as any)}
             </AccordionContent>
           </AccordionItem>
+            
+          {(isAdmin || showDevLink) && (
+            <AccordionItem value="admin-dev" className="border-b-0">
+              <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
+                Admin & Dev
+              </AccordionTrigger>
+              <AccordionContent className="px-0 pb-2">
+                <div className="space-y-1">
+                   {isAdmin && (
+                    <Link href="/dashboard/admin" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/admin') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary')}>
+                      <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/admin') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
+                      <Shield className="h-5 w-5 text-red-400"/> Admin Panel
+                    </Link>
+                  )}
+                  {showDevLink && (
+                    <Link href="/dashboard/dev" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/dev') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary')}>
+                      <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/dev') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
+                      <Fingerprint className="h-5 w-5 text-rose-400"/> Dev Panel
+                    </Link>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
         </Accordion>
       </div>
 
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
-          {showDevLink && (
-               <Link
-                    href="/dashboard/dev"
-                    prefetch={true}
-                    className={cn(
-                        'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-                        isActive('/dashboard/dev') 
-                            ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                            : 'hover:text-primary',
-                    )}
-                >
-                    <div className={cn(
-                        "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-                        isActive('/dashboard/dev') ? "bg-primary" : "group-hover:scale-y-50"
-                    )}></div>
-                    <Fingerprint className="h-5 w-5 text-rose-400" />
-                    <span className="flex-1">Dev Panel</span>
-                </Link>
-          )}
           <Link
                 href="/dashboard/settings"
                 prefetch={true}
