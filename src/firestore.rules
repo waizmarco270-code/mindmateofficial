@@ -22,7 +22,7 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() {
-      return isSignedIn() && request.auth.uid == 'user_2jFqwMuJgq13a0r0b4Yc2pL1rA7';
+      return isSignedIn() && request.auth.uid == 'user_32WgV1OikpqTXO9pFApoPRLLarF';
     }
 
     // Default Deny
@@ -98,7 +98,9 @@ service cloud.firestore {
     
     // Friend Requests
     match /friendRequests/{requestId} {
+        // Only the sender or receiver can read the request.
         allow read: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
+        // Only the sender can create it, receiver can delete (decline)
         allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
         allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
     }
@@ -134,39 +136,7 @@ service cloud.firestore {
         allow read, create, update, delete: if false; // Should only be manageable via backend functions for security
     }
 
-    // Groups (Clans)
-    match /groups/{groupId} {
-      function isClanMember() {
-        return request.auth.uid in resource.data.memberUids;
-      }
-      allow read: if isSignedIn(); // Allow all signed-in users to read for discovery
-      allow update: if isSignedIn() && (isOwner(resource.data.createdBy) || request.auth.uid in resource.data.members.filter(m => m.role == 'co-leader').map(m => m.uid));
-      allow create: if isSignedIn() && isOwner(request.resource.data.createdBy); // Creator can create
-      allow delete: if isSignedIn() && isOwner(resource.data.createdBy); // Only admin can delete
-
-      match /messages/{messageId} {
-        allow read, create: if isSignedIn() && isClanMember();
-        allow update, delete: if false;
-      }
-    }
-    
-    // Group Join Requests
-    match /groupJoinRequests/{requestId} {
-    	allow read: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.clanAdminId);
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
-      allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.clanAdminId);
-    }
-
-    // Learning Hub
-    match /videoCategories/{categoryId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin() || isSuperAdmin();
-    }
-
-     match /videoLectures/{lectureId} {
-      allow read: if isSignedIn();
-      allow write: if isAdmin() || isSuperAdmin();
-    }
-
   }
 }
+
+    
