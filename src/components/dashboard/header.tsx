@@ -168,7 +168,7 @@ function AdminPanelMenu() {
                         </>
                     )}
                     {isSuperAdmin && (
-                        <Link href="/waizmarcoadmin">
+                        <Link href="/dashboard/super-admin">
                              <Button variant="ghost" className="w-full justify-start">
                                 <KeyRound className="mr-2"/> Super Admin
                             </Button>

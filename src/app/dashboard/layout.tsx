@@ -24,15 +24,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const { openMobile, setOpenMobile } = useSidebar();
   const { appSettings, loading, isSuperAdmin, isCoDev } = useAdmin();
   const pathname = usePathname();
-
-  // The super admin page uses this layout but shouldn't have the standard UI chrome.
-  if (pathname.startsWith('/waizmarcoadmin')) {
-      return (
-        <main className="bg-muted min-h-screen p-4 sm:p-6 lg:p-8">
-            {children}
-        </main>
-      );
-  }
   
   const now = new Date();
   const maintenanceStart = appSettings?.maintenanceStartTime ? new Date(appSettings.maintenanceStartTime) : null;
@@ -53,25 +44,30 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     return <MaintenancePage settings={appSettings} />;
   }
 
+  const useSuperAdminStyling = pathname.startsWith('/dashboard/super-admin');
+
   return (
     <>
       <WhatsNewPopup settings={appSettings} />
       {/* Universal Sheet-based Sidebar for all screen sizes */}
-      <Sheet open={openMobile} onOpenChange={setOpenMobile}>
-        <SheetContent side="left" className="w-[18rem] bg-sidebar/80 p-0 text-sidebar-foreground backdrop-blur-lg [&>button]:hidden">
-            <SidebarContent />
-        </SheetContent>
-      </Sheet>
+      {!useSuperAdminStyling && (
+        <Sheet open={openMobile} onOpenChange={setOpenMobile}>
+          <SheetContent side="left" className="w-[18rem] bg-sidebar/80 p-0 text-sidebar-foreground backdrop-blur-lg [&>button]:hidden">
+              <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      )}
 
-      <div className="flex flex-1 size-full flex-col bg-transparent">
-        {!isImmersive && <Header />}
+      <div className={cn("flex flex-1 size-full flex-col bg-transparent", useSuperAdminStyling && "bg-muted")}>
+        {!isImmersive && !useSuperAdminStyling && <Header />}
         <main className={cn(
             "relative flex-1 overflow-y-auto focus:outline-none flex flex-col",
-            isImmersive ? "p-0" : "p-4 sm:p-6 lg:p-8"
+            isImmersive || useSuperAdminStyling ? "p-0" : "p-4 sm:p-6 lg:p-8",
+            useSuperAdminStyling && "p-4 sm:p-6 lg:p-8"
         )}>
             {children}
         </main>
-        {!isImmersive && <MobileNav />}
+        {!isImmersive && !useSuperAdminStyling && <MobileNav />}
       </div>
     </>
   )

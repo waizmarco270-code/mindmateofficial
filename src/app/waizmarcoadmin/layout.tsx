@@ -1,9 +1,8 @@
 
-
 'use client';
 
-// This layout now uses the main dashboard layout to ensure a single provider context.
-// This resolves the issue where multiple AppDataProviders were conflicting.
+// This layout file is no longer needed as the page has been moved.
+// It can be safely deleted.
 export default function SuperAdminLayout({
   children,
 }: {
