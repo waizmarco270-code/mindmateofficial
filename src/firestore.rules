@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -136,7 +135,12 @@ service cloud.firestore {
         allow read, create, update, delete: if false; // Should only be manageable via backend functions for security
     }
 
+    // Credit Purchase Requests
+    match /creditPurchaseRequests/{requestId} {
+      allow read: if isAdmin() || isSuperAdmin() || isOwner(resource.data.userId);
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || isSuperAdmin();
+    }
+
   }
 }
-
-    

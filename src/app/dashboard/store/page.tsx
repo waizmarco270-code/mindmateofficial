@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -27,19 +28,21 @@ function CreditPacksTab() {
     
     const [selectedPack, setSelectedPack] = useState<CreditPack | null>(null);
     const [transactionId, setTransactionId] = useState('');
+    const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
      const handleSubmitRequest = async () => {
         if (!selectedPack || !transactionId.trim() || !createPurchaseRequest) return;
         setIsSubmitting(true);
         try {
-            await createPurchaseRequest(selectedPack, transactionId);
+            await createPurchaseRequest(selectedPack, transactionId, screenshotFile);
             toast({
                 title: "Request Submitted!",
                 description: "Your purchase is pending approval. Credits will be added shortly.",
             });
             setSelectedPack(null);
             setTransactionId('');
+            setScreenshotFile(null);
         } catch (error: any) {
              toast({ variant: 'destructive', title: "Submission Failed", description: error.message });
         } finally {
@@ -89,7 +92,7 @@ function CreditPacksTab() {
                     <DialogHeader>
                         <DialogTitle>Complete Your Purchase</DialogTitle>
                         <DialogDescription>
-                            Scan the QR code to pay ₹{selectedPack?.price}, then enter the transaction ID below.
+                            Scan the QR code to pay ₹{selectedPack?.price}, then enter the transaction ID and upload a screenshot as proof.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-4 space-y-6 text-center">
@@ -103,14 +106,25 @@ function CreditPacksTab() {
                                 <p className="text-sm text-muted-foreground">Please contact admin.</p>
                             </div>
                         )}
-                        <div className="space-y-2 text-left">
-                            <Label htmlFor="transaction-id">UPI Transaction ID</Label>
-                            <Input 
-                                id="transaction-id"
-                                value={transactionId}
-                                onChange={(e) => setTransactionId(e.target.value)}
-                                placeholder="Enter the 12-digit transaction ID"
-                            />
+                        <div className="space-y-4 text-left">
+                            <div className="space-y-2">
+                                <Label htmlFor="transaction-id">UPI Transaction ID</Label>
+                                <Input 
+                                    id="transaction-id"
+                                    value={transactionId}
+                                    onChange={(e) => setTransactionId(e.target.value)}
+                                    placeholder="Enter the 12-digit transaction ID"
+                                />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="screenshot">Payment Screenshot (Optional)</Label>
+                                <Input 
+                                    id="screenshot"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={(e) => setScreenshotFile(e.target.files ? e.target.files[0] : null)}
+                                />
+                            </div>
                         </div>
                     </div>
                      <DialogFooter>

@@ -4,7 +4,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { db, storage } from '@/lib/firebase';
-import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup } from 'firebase/firestore';
+import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup, runTransaction } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays } from 'date-fns';
 import { LucideIcon } from 'lucide-react';
@@ -226,6 +226,7 @@ export interface PurchaseRequest {
   credits: number;
   price: number;
   transactionId: string;
+  screenshotUrl?: string;
   status: 'pending' | 'approved' | 'declined';
   createdAt: Timestamp;
 }
@@ -376,7 +377,7 @@ interface AppDataContextType {
     deleteCreditPack: (id: string) => Promise<void>;
 
     purchaseRequests: PurchaseRequest[];
-    createPurchaseRequest: (pack: CreditPack, transactionId: string) => Promise<void>;
+    createPurchaseRequest: (pack: CreditPack, transactionId: string, screenshotFile: File | null) => Promise<void>;
     approvePurchaseRequest: (request: PurchaseRequest) => Promise<void>;
     declinePurchaseRequest: (requestId: string) => Promise<void>;
     
@@ -1078,14 +1079,23 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const deleteCreditPack = useCallback(async (id: string) => {
         await deleteDoc(doc(db, 'creditPacks', id));
     }, []);
-    const createPurchaseRequest = useCallback(async (pack: CreditPack, transactionId: string) => {
+    const createPurchaseRequest = useCallback(async (pack: CreditPack, transactionId: string, screenshotFile: File | null) => {
         if (!currentUserData) throw new Error('User not logged in.');
+        
+        let screenshotUrl: string | undefined = undefined;
+        if(screenshotFile) {
+            const storageRef = ref(storage, `payment_proofs/${currentUserData.uid}_${Date.now()}_${screenshotFile.name}`);
+            const uploadResult = await uploadBytes(storageRef, screenshotFile);
+            screenshotUrl = await getDownloadURL(uploadResult.ref);
+        }
+
         await addDoc(collection(db, 'creditPurchaseRequests'), {
             userId: currentUserData.uid, userName: currentUserData.displayName,
             packId: pack.id, packName: pack.name, credits: pack.credits, price: pack.price,
-            transactionId, status: 'pending', createdAt: serverTimestamp(),
+            transactionId, screenshotUrl, status: 'pending', createdAt: serverTimestamp(),
         });
     }, [currentUserData]);
+
     const approvePurchaseRequest = useCallback(async (request: PurchaseRequest) => {
         const batch = writeBatch(db);
         const userRef = doc(db, 'users', request.userId);
@@ -1107,20 +1117,32 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }, []);
     const redeemStoreItem = useCallback(async (item: StoreItem) => {
         if (!authUser || !currentUserData) throw new Error("You must be logged in.");
-        const hasMasterCard = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
-        if (!hasMasterCard && currentUserData.credits < item.cost) throw new Error("Insufficient credits.");
-        const itemRef = doc(db, 'storeItems', item.id);
-        const userRef = doc(db, 'users', authUser.id);
-        await db.runTransaction(async (transaction) => {
+
+        await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, 'users', authUser.id);
+            const itemRef = doc(db, 'storeItems', item.id);
+
+            const userSnap = await transaction.get(userRef);
             const itemDoc = await transaction.get(itemRef);
-            if (!itemDoc.exists()) throw "Item does not exist.";
+
+            if (!userSnap.exists()) throw new Error("User not found.");
+            if (!itemDoc.exists()) throw new Error("Item does not exist.");
+
+            const userData = userSnap.data();
             const currentItem = itemDoc.data() as StoreItem;
-            if (currentItem.stock <= 0) throw "This item is out of stock.";
+            
+            const hasMasterCard = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+            
+            if (!hasMasterCard && userData.credits < item.cost) throw new Error("Insufficient credits.");
+            if (currentItem.stock <= 0) throw new Error("This item is out of stock.");
+
             transaction.update(itemRef, { stock: increment(-1) });
+
             const updates: { [key: string]: any } = {};
             if (!hasMasterCard) updates.credits = increment(-item.cost);
             if (item.type === 'scratch-card') updates.freeRewards = increment(item.quantity);
             else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
+
             transaction.update(userRef, updates);
         });
     }, [authUser, currentUserData]);
@@ -1208,5 +1230,3 @@ export const useDailySurprises = () => {
     if(!context) throw new Error('useDailySurprises must be used within an AppDataProvider');
     return { dailySurprises: context.dailySurprises, addDailySurprise: context.addDailySurprise, deleteDailySurprise: context.deleteDailySurprise, loading: context.loading };
 }
-
-

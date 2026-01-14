@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -585,6 +586,7 @@ export default function SuperAdminPanelPage() {
                                     <TableHead>User</TableHead>
                                     <TableHead>Pack</TableHead>
                                     <TableHead>Transaction ID</TableHead>
+                                    <TableHead>Screenshot</TableHead>
                                     <TableHead>Date</TableHead>
                                     <TableHead className="text-right">Actions</TableHead>
                                 </TableRow>
@@ -595,6 +597,13 @@ export default function SuperAdminPanelPage() {
                                         <TableCell>{req.userName}</TableCell>
                                         <TableCell>{req.packName} (+{req.credits} Credits)</TableCell>
                                         <TableCell className="font-mono">{req.transactionId}</TableCell>
+                                        <TableCell>
+                                            {req.screenshotUrl ? (
+                                                <a href={req.screenshotUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">View</a>
+                                            ) : (
+                                                'None'
+                                            )}
+                                        </TableCell>
                                         <TableCell>{req.createdAt ? format(req.createdAt.toDate(), "d MMM, h:mm a") : 'N/A'}</TableCell>
                                         <TableCell className="text-right space-x-2">
                                             <Button variant="destructive" size="sm" onClick={() => declinePurchaseRequest && declinePurchaseRequest(req.id)}>Decline</Button>
@@ -602,7 +611,7 @@ export default function SuperAdminPanelPage() {
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                {(!purchaseRequests || purchaseRequests.length === 0) && <TableRow><TableCell colSpan={5} className="h-24 text-center">No pending requests.</TableCell></TableRow>}
+                                {(!purchaseRequests || purchaseRequests.length === 0) && <TableRow><TableCell colSpan={6} className="h-24 text-center">No pending requests.</TableCell></TableRow>}
                             </TableBody>
                         </Table>
                     </CardContent>
