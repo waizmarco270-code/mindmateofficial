@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -11,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
 import Link from 'next/link';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import Image from 'next/image';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +18,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogTrigger, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { cn } from '@/lib/utils';
-
 
 function CreditPacksTab() {
     const { creditPacks, appSettings, loading, createPurchaseRequest } = useAdmin();
@@ -78,13 +76,6 @@ function CreditPacksTab() {
                         </CardFooter>
                     </Card>
                 ))}
-                {!loading && (!creditPacks || creditPacks.length === 0) && (
-                    <Card className="md:col-span-2 lg:col-span-3 text-center py-16">
-                        <CardContent>
-                            <p>No credit packs available at the moment. Please check back later.</p>
-                        </CardContent>
-                    </Card>
-                )}
             </div>
 
              <Dialog open={!!selectedPack} onOpenChange={(open) => !open && setSelectedPack(null)}>
@@ -103,7 +94,6 @@ function CreditPacksTab() {
                         ) : (
                             <div className="flex flex-col items-center justify-center h-64 bg-muted rounded-lg">
                                 <p className="text-muted-foreground">QR Code not available.</p>
-                                <p className="text-sm text-muted-foreground">Please contact admin.</p>
                             </div>
                         )}
                         <div className="space-y-4 text-left">
@@ -162,14 +152,6 @@ function RedeemItemsTab() {
         }
     };
     
-    const getItemIcon = (type: StoreItem['type']) => {
-        switch(type) {
-            case 'scratch-card': return <VenetianMask className="h-8 w-8" />;
-            case 'card-flip': return <Layers className="h-8 w-8" />;
-            default: return <Gem className="h-8 w-8" />;
-        }
-    }
-    
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
@@ -177,26 +159,17 @@ function RedeemItemsTab() {
                  const canAfford = hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost;
                  return (
                     <Card key={item.id} className={cn("flex flex-col relative overflow-hidden", item.isFeatured && "border-primary")}>
-                        {item.isFeatured && <div className="absolute top-2 right-2 text-xs font-bold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">Featured</div>}
                         <CardHeader className="text-center">
-                            <div className="mx-auto mb-4 h-16 w-16 flex items-center justify-center rounded-full bg-primary/10 text-primary">
-                                {getItemIcon(item.type)}
-                            </div>
                             <CardTitle className="text-2xl">{item.name}</CardTitle>
                             <CardDescription>{item.description}</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1">
-                             {item.stock < 100 && (
-                                <p className="text-center text-sm font-bold text-destructive mb-4">
-                                    {item.stock > 0 ? `Only ${item.stock} left!` : "Sold Out!"}
-                                </p>
-                            )}
-                        </CardContent>
-                        <CardFooter className="flex flex-col gap-4">
-                            <div className="font-bold text-2xl flex items-center gap-2">
+                             <div className="font-bold text-2xl flex items-center justify-center gap-2">
                                 <Gem className="h-5 w-5 text-amber-500" />
                                 <span>{item.cost.toLocaleString()}</span>
                             </div>
+                        </CardContent>
+                        <CardFooter>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button className="w-full text-lg h-12" disabled={!canAfford || isRedeeming === item.id || item.stock === 0}>
@@ -208,7 +181,7 @@ function RedeemItemsTab() {
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Confirm Redemption</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            This will deduct {item.cost} credits from your account and add "{item.name}" to your inventory.
+                                            Redeem "{item.name}" for {item.cost} credits?
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                      <AlertDialogFooter>
@@ -221,20 +194,11 @@ function RedeemItemsTab() {
                     </Card>
                  )
             })}
-             {!loading && (!storeItems || storeItems.length === 0) && (
-                <Card className="md:col-span-2 lg:col-span-3 text-center py-16">
-                    <CardContent>
-                        <p>No items available for redemption at the moment. Please check back later.</p>
-                    </CardContent>
-                </Card>
-            )}
         </div>
     )
 }
 
 export default function StorePage() {
-    const { isSignedIn } = useUser();
-    
     return (
         <div className="space-y-8">
             <div className="flex justify-between items-start">
@@ -243,48 +207,28 @@ export default function StorePage() {
                         <ShoppingCart className="h-8 w-8 text-primary"/>
                         MindMate Store
                     </h1>
-                    <p className="text-muted-foreground">Top-up your credits or redeem them for exciting in-app items.</p>
+                    <p className="text-muted-foreground">Top-up your credits or redeem them for exciting items.</p>
                 </div>
                 <Button asChild variant="outline">
                     <Link href="/dashboard/store/history">
                         <History className="mr-2 h-4 w-4"/>
-                        Purchase History
+                        History
                     </Link>
                 </Button>
             </div>
 
-            <div className="relative">
-                <SignedOut>
-                    <LoginWall title="Sign In to Access Store" description="Create a free account to purchase credits and unlock premium content."/>
-                </SignedOut>
-
-                <Tabs defaultValue="redeem" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="redeem">Redeem Items</TabsTrigger>
-                        <TabsTrigger value="buy">Buy Credits</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="redeem" className="mt-8">
-                        <RedeemItemsTab />
-                    </TabsContent>
-                    <TabsContent value="buy" className="mt-8">
-                        <CreditPacksTab />
-                    </TabsContent>
-                </Tabs>
-                
-            </div>
-
-             <Card className="bg-green-500/10 border-green-500/20">
-                <CardHeader className="flex flex-row items-center gap-4">
-                    <ShieldCheck className="h-8 w-8 text-green-600 flex-shrink-0"/>
-                    <div>
-                         <CardTitle className="text-green-700 dark:text-green-300">Safe & Secure Payments</CardTitle>
-                         <CardDescription className="text-green-800/80 dark:text-green-400/80">
-                            Payments are processed manually via UPI. Your request will be approved by an admin after verification.
-                         </CardDescription>
-                    </div>
-                </CardHeader>
-            </Card>
-
+            <Tabs defaultValue="redeem" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="redeem">Redeem Items</TabsTrigger>
+                    <TabsTrigger value="buy">Buy Credits</TabsTrigger>
+                </TabsList>
+                <TabsContent value="redeem" className="mt-8">
+                    <RedeemItemsTab />
+                </TabsContent>
+                <TabsContent value="buy" className="mt-8">
+                    <CreditPacksTab />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

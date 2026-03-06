@@ -1,3 +1,4 @@
+
 rules_version = '2';
 
 service cloud.firestore {
@@ -69,13 +70,13 @@ service cloud.firestore {
     }
 
     match /featureShowcases/{docId} {
-        allow read: if true; // Publicly readable for landing page
+        allow read: if true;
         allow write, delete: if isSuperAdmin();
     }
 
     // App Config
     match /appConfig/{docId} {
-      allow read: if true; // Publicly readable for all clients
+      allow read: if true;
       allow write: if isSuperAdmin();
     }
 
@@ -91,15 +92,13 @@ service cloud.firestore {
       
       match /messages/{messageId} {
          allow read, create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.users;
-         allow update, delete: if false; // Disallow editing/deleting messages
+         allow update, delete: if false;
       }
     }
     
     // Friend Requests
     match /friendRequests/{requestId} {
-        // Only the sender or receiver can read the request.
         allow read: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
-        // Only the sender can create it, receiver can delete (decline)
         allow create: if isSignedIn() && request.auth.uid == request.resource.data.senderId;
         allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
     }
@@ -130,16 +129,26 @@ service cloud.firestore {
         allow create, update, delete: if isSuperAdmin();
     }
 
-    // AI Access Tokens (Highly Restricted)
+    // AI Access Tokens
     match /ai_access_tokens/{tokenId} {
-        allow read, create, update, delete: if false; // Should only be manageable via backend functions for security
+        allow read, create, update, delete: if false;
     }
 
     // Credit Purchase Requests
     match /creditPurchaseRequests/{requestId} {
-      allow read: if isAdmin() || isSuperAdmin() || isOwner(resource.data.userId);
+      allow read: if isAdmin() || isSuperAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
       allow create: if isSignedIn();
       allow update, delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // Video Content
+    match /videoCategories/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isSuperAdmin();
+    }
+    match /videoLectures/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isSuperAdmin();
     }
 
   }

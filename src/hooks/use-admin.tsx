@@ -1,64 +1,53 @@
 
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { db, storage } from '@/lib/firebase';
-import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, collectionGroup, runTransaction } from 'firebase/firestore';
+import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, runTransaction } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays } from 'date-fns';
-import { LucideIcon } from 'lucide-react';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
-
-
-// ============================================================================
-//  TYPES & INITIAL DATA
-// ============================================================================
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
 export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev';
 
-
 export interface User {
-  id: string; // Document ID from Firestore (should be same as Clerk UID)
-  uid: string; // Clerk User ID
+  id: string;
+  uid: string;
   displayName: string;
   email: string;
   photoURL?: string;
   isBlocked: boolean;
   credits: number;
-  masterCardExpires?: string; // ISO string for expiration date
-  votedPolls?: Record<string, string>; // { pollId: 'chosen_option' }
-  unlockedResourceSections?: string[]; // Array of unlocked section IDs
-  unlockedFeatures?: string[]; // Array of feature IDs
+  masterCardExpires?: string;
+  votedPolls?: Record<string, string>;
+  unlockedResourceSections?: string[];
+  unlockedFeatures?: string[];
   unlockedThemes?: AppThemeId[];
-  hasAiAccess?: boolean; // For Marco AI
-  perfectedQuizzes?: string[]; // Array of quiz IDs the user got a perfect score on
-  quizAttempts?: Record<string, number>; // { quizId: attemptCount }
+  hasAiAccess?: boolean;
+  perfectedQuizzes?: string[];
+  quizAttempts?: Record<string, number>;
   isAdmin?: boolean;
-  isVip?: boolean; // For the special recognition badge
-  isGM?: boolean; // For the Game Master badge
-  isChallenger?: boolean; // For completing a challenge
-  isCoDev?: boolean; // For co-developers
-  showcasedBadge?: BadgeType; // The badge the user wants to display
-  friends?: string[]; // Array of friend UIDs
+  isVip?: boolean;
+  isGM?: boolean;
+  isChallenger?: boolean;
+  isCoDev?: boolean;
+  showcasedBadge?: BadgeType;
+  friends?: string[];
   focusSessionsCompleted?: number;
-  dailyTasksCompleted?: number; // Total count over all time
-  lastDailyTasksClaim?: string; // YYYY-MM-DD, for per-day reward claim
-  lastEliteClaim?: string; // YYYY-MM-DD, for elite daily reward
-  totalStudyTime?: number; // in seconds
-  lastRewardDate?: string; // For scratch card
-  lastGiftBoxDate?: string; // For gift box game
-  lastRpsDate?: string; // For RPS Game
-  freeRewards?: number; // Extra scratch cards
-  freeGuesses?: number; // Extra gift box guesses
+  dailyTasksCompleted?: number;
+  lastDailyTasksClaim?: string;
+  lastEliteClaim?: string;
+  totalStudyTime?: number;
+  lastRewardDate?: string;
+  lastGiftBoxDate?: string;
+  lastRpsDate?: string;
+  freeRewards?: number;
+  freeGuesses?: number;
   rewardHistory?: { reward: number | string, date: Timestamp, source: string }[];
   streak?: number;
   longestStreak?: number;
-  lastStreakCheck?: string; // YYYY-MM-DD
-  referralCode?: string; // e.g. JOHNDOE-123
-  referralUsed?: boolean; // True if they have used someone else's code
-  referredBy?: string; // UID of the user who referred them
+  lastStreakCheck?: string;
   gameHighScores?: {
     memoryGame?: number;
     emojiQuiz?: number;
@@ -75,15 +64,10 @@ export interface User {
     f?: number;
   };
   elementQuestMilestonesClaimed?: number[];
-  dimensionShiftClaims?: Record<string, number[]>; // { 'YYYY-MM-DD': [50, 100] }
+  dimensionShiftClaims?: Record<string, number[]>;
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
   mathematicsLegendClaims?: Record<string, number[]>;
-  dailyLoginRewardState?: {
-      streak: number;
-      lastClaimed: string; // YYYY-MM-DD
-  };
-  lastMaintenanceIdSeen?: string;
   transactions?: { id: string; packName: string; credits: number; price: number; date: Date; }[];
 }
 
@@ -108,7 +92,7 @@ export interface Resource {
     title: string;
     description: string;
     url: string;
-    sectionId: string; // ID from ResourceSection
+    sectionId: string;
     createdAt: Date;
 }
 
@@ -126,35 +110,29 @@ export interface Poll {
 export interface DailySurprise {
     id: string;
     type: 'quote' | 'fact' | 'meme' | 'quiz' | 'new-feature';
-    text?: string; // For quote/fact
-    author?: string; // For quote
-    imageUrl?: string; // For meme
+    text?: string;
+    author?: string;
+    imageUrl?: string;
     quizQuestion?: string;
     quizOptions?: string[];
     quizCorrectAnswer?: string;
     createdAt: Date;
-    // For new-feature type
     featureTitle?: string;
     featureDescription?: string;
-    featureIcon?: string; // Lucide icon name
-    featureRoute?: string; // e.g., /dashboard/entertainment
+    featureIcon?: string;
+    featureRoute?: string;
 }
 
 export type AppThemeId = 'light' | 'dark' | 'synthwave-sunset' | 'solar-flare' | 'emerald-dream';
-export interface AppTheme {
-    id: AppThemeId;
-    name: string;
-}
-
 export type MaintenanceTheme = 'shiny' | 'forest' | 'sunflower';
 
 export interface AppSettings {
     marcoAiLaunchStatus: 'countdown' | 'live';
-    upiQrCode?: string; // base64 encoded image
+    upiQrCode?: string;
     isMaintenanceMode?: boolean;
     maintenanceMessage?: string;
-    maintenanceStartTime?: string; // ISO String for scheduled start
-    maintenanceEndTime?: string; // ISO String
+    maintenanceStartTime?: string;
+    maintenanceEndTime?: string;
     maintenanceTheme?: MaintenanceTheme;
     whatsNewMessage?: string;
     lastMaintenanceId?: string;
@@ -168,12 +146,11 @@ export interface GlobalGift {
         scratch: number;
         flip: number;
     };
-    target: 'all' | string; // 'all' or a specific UID
+    target: 'all' | string;
     createdAt: Date;
     isActive: boolean;
-    claimedBy?: string[]; // Array of UIDs who have claimed it
+    claimedBy?: string[];
 }
-
 
 export interface SupportTicket {
     id: string;
@@ -202,7 +179,7 @@ export interface FeatureShowcase {
     id: string;
     title: string;
     description: string;
-    launchDate?: string; // Optional launch date as ISO string
+    launchDate?: string;
     template: ShowcaseTemplate;
     status: 'upcoming' | 'live';
     link?: string;
@@ -260,11 +237,6 @@ export interface VideoLecture {
   createdAt: Date;
 }
 
-
-// ============================================================================
-//  CONTEXT DEFINITIONS
-// ============================================================================
-
 interface AppDataContextType {
     isAdmin: boolean;
     isCoDev: boolean;
@@ -273,7 +245,6 @@ interface AppDataContextType {
     currentUserData: User | null;
     transactions: PurchaseRequest[];
     toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
-    deleteUserData: (password: string) => Promise<void>;
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
     giftCreditsToAllUsers: (amount: number) => Promise<void>;
     resetUserCredits: (uid: string) => Promise<void>;
@@ -294,7 +265,7 @@ interface AppDataContextType {
     claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
     claimEliteDailyReward: (uid: string) => Promise<void>;
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
-    updateGameHighScore: (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind' | 'astroAscent' | 'mathematicsLegend', score: number) => Promise<void>;
+    updateGameHighScore: (uid: string, game: string, score: number) => Promise<void>;
     updateElementQuestScore: (uid: string, block: 's' | 'p' | 'd' | 'f', score: number) => Promise<void>;
     claimElementQuestMilestone: (uid: string, milestone: 100 | 200 | 300 | 400) => Promise<void>;
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
@@ -317,32 +288,25 @@ interface AppDataContextType {
     resetWeeklyStudyTime: () => Promise<void>;
     resetGameZoneLeaderboard: () => Promise<void>;
     submitSupportTicket: (message: string) => Promise<void>;
-    
     announcements: Announcement[];
     addAnnouncement: (announcement: Omit<Announcement, 'id' | 'createdAt'>) => Promise<void>;
     updateAnnouncement: (id: string, data: Partial<Announcement>) => Promise<void>;
     deleteAnnouncement: (id: string) => Promise<void>;
-    
     resources: Resource[];
     addResource: (resource: Omit<Resource, 'id' | 'createdAt'>) => Promise<void>;
     updateResource: (id: string, data: Partial<Omit<Resource, 'id' | 'createdAt'>>) => Promise<void>;
     deleteResource: (id: string) => Promise<void>;
-
     resourceSections: ResourceSection[];
     addResourceSection: (section: Omit<ResourceSection, 'id'|'createdAt'>) => Promise<void>;
     updateResourceSection: (id: string, data: Partial<Omit<ResourceSection, 'id'|'createdAt'>>) => Promise<void>;
     deleteResourceSection: (id: string) => Promise<void>;
-    
     dailySurprises: DailySurprise[];
     addDailySurprise: (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => Promise<void>;
     deleteDailySurprise: (id: string) => Promise<void>;
-
     supportTickets: SupportTicket[];
     updateTicketStatus: (id: string, status: 'new' | 'resolved') => Promise<void>;
     deleteTicket: (id: string) => Promise<void>;
-
     loading: boolean;
-    
     activePoll: Poll | null;
     allPolls: Poll[];
     addPoll: (pollData: Omit<Poll, 'id' | 'createdAt' | 'isActive' | 'results'>) => Promise<void>;
@@ -351,46 +315,37 @@ interface AppDataContextType {
     setActivePoll: (id: string) => Promise<void>;
     submitPollVote: (pollId: string, option: string) => Promise<void>;
     submitPollComment: (pollId: string, comment: string) => Promise<void>;
-    
     appSettings: AppSettings | null;
     updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
-
     globalGifts: GlobalGift[];
     activeGlobalGift: GlobalGift | null;
     sendGlobalGift: (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => Promise<void>;
     deactivateGift: (giftId: string) => Promise<void>;
     deleteGlobalGift: (giftId: string) => Promise<void>;
     claimGlobalGift: (giftId: string, userId: string) => Promise<void>;
-
     featureLocks: Record<LockableFeature['id'], FeatureLock> | null;
     lockFeature: (featureId: LockableFeature['id'], cost: number) => Promise<void>;
     unlockFeature: (featureId: LockableFeature['id']) => Promise<void>;
-
     featureShowcases: FeatureShowcase[];
     addFeatureShowcase: (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => Promise<void>;
     updateFeatureShowcase: (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => Promise<void>;
     deleteFeatureShowcase: (id: string) => Promise<void>;
-    
     creditPacks: CreditPack[];
     createCreditPack: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
     updateCreditPack: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
     deleteCreditPack: (id: string) => Promise<void>;
-
     purchaseRequests: PurchaseRequest[];
     createPurchaseRequest: (pack: CreditPack, transactionId: string, screenshotFile: File | null) => Promise<void>;
     approvePurchaseRequest: (request: PurchaseRequest) => Promise<void>;
     declinePurchaseRequest: (requestId: string) => Promise<void>;
-    
     storeItems: StoreItem[];
     createStoreItem: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
     updateStoreItem: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
     deleteStoreItem: (id: string) => Promise<void>;
     redeemStoreItem: (item: StoreItem) => Promise<void>;
-    
     videoCategories: VideoCategory[];
     addVideoCategory: (category: Omit<VideoCategory, 'id' | 'createdAt'>) => Promise<void>;
     deleteVideoCategory: (categoryId: string) => Promise<void>;
-
     videoLectures: VideoLecture[];
     addVideoLecture: (lecture: Omit<VideoLecture, 'id' | 'createdAt'>) => Promise<void>;
     deleteVideoLecture: (lectureId: string) => Promise<void>;
@@ -398,15 +353,8 @@ interface AppDataContextType {
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
-// ============================================================================
-//  MAIN DATA PROVIDER COMPONENT
-// ============================================================================
-
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const { user: authUser, isLoaded: isClerkLoaded } = useUser();
-    const clerk = useClerk();
-
-    // STATE MANAGEMENT
     const [isAdmin, setIsAdmin] = useState(false);
     const [isCoDev, setIsCoDev] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -418,7 +366,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [dailySurprises, setDailySurprises] = useState<DailySurprise[]>([]);
     const [supportTickets, setSupportTickets] = useState<SupportTicket[]>([]);
     const [allPolls, setAllPolls] = useState<Poll[]>([]);
-    const [appSettings, setAppSettings] = useState<AppSettings | null>({ marcoAiLaunchStatus: 'countdown' });
+    const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
     const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
     const [featureShowcases, setFeatureShowcases] = useState<FeatureShowcase[]>([]);
@@ -429,11 +377,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
     const [loading, setLoading] = useState(true);
-    
+
     const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
     const activePoll = useMemo(() => allPolls.find(p => p.isActive) || null, [allPolls]);
 
-    // EFFECT: Determine user roles
     useEffect(() => {
         if (isClerkLoaded && authUser && currentUserData) {
             setIsAdmin(currentUserData.isAdmin ?? false);
@@ -446,214 +393,90 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [isClerkLoaded, authUser, currentUserData]);
 
-    // EFFECT: Listen for real-time updates to the ALL users collection (for Admin Panel)
     useEffect(() => {
-        const usersCol = collection(db, 'users');
-        const q = query(usersCol);
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const usersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-            setUsers(usersList);
+        const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+            setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
         });
         return () => unsubscribe();
     }, []);
 
-    // EFFECT: Listen for real-time updates for the CURRENTLY LOGGED-IN user's data
     useEffect(() => {
-        if (!isClerkLoaded) {
-            setLoading(true);
-            return;
-        }
-
-        if (!authUser) {
-            setCurrentUserData(null);
-            setLoading(false);
-            return;
-        }
+        if (!isClerkLoaded) return;
+        if (!authUser) { setCurrentUserData(null); setLoading(false); return; }
 
         const userDocRef = doc(db, 'users', authUser.id);
-        const unsubscribe = onSnapshot(userDocRef, async (doc) => {
-            if (doc.exists()) {
-                const data = doc.data();
-                let userData = { id: doc.id, ...data } as User;
-                
-                const updates: Partial<User> = {};
-                let hasProfileUpdates = false;
-
-                const clerkFullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ');
-                const clerkDisplayName = clerkFullName || authUser.username;
-
-                if (clerkDisplayName && data.displayName !== clerkDisplayName) {
-                    updates.displayName = clerkDisplayName;
-                    hasProfileUpdates = true;
-                }
-                
-                if (data.photoURL !== authUser.imageUrl) {
-                    updates.photoURL = authUser.imageUrl;
-                    hasProfileUpdates = true;
-                }
-                
+        const unsubscribe = onSnapshot(userDocRef, async (snap) => {
+            if (snap.exists()) {
+                const data = snap.data();
                 const todayStr = format(new Date(), 'yyyy-MM-dd');
+                const updates: Partial<User> = {};
+                let hasUpdates = false;
+
                 if (data.lastStreakCheck !== todayStr) {
                     const lastCheckDate = data.lastStreakCheck ? new Date(data.lastStreakCheck) : null;
                     const currentStreak = data.streak || 0;
-                    
                     if (lastCheckDate && isYesterday(lastCheckDate)) {
                         const newStreak = currentStreak + 1;
                         updates.streak = newStreak;
-                        if (newStreak > (data.longestStreak || 0)) {
-                            updates.longestStreak = newStreak;
-                        }
-                        if (newStreak > 0 && newStreak % 30 === 0) {
-                            updates.credits = increment(100);
-                        } else if (newStreak > 0 && newStreak % 5 === 0) {
-                            updates.credits = increment(50);
-                        }
-                    } else {
-                        updates.streak = 1;
-                    }
+                        if (newStreak > (data.longestStreak || 0)) updates.longestStreak = newStreak;
+                        if (newStreak % 30 === 0) updates.credits = increment(100);
+                        else if (newStreak % 5 === 0) updates.credits = increment(50);
+                    } else { updates.streak = 1; }
                     updates.lastStreakCheck = todayStr;
-                    hasProfileUpdates = true;
+                    hasUpdates = true;
                 }
-                
-                if (hasProfileUpdates) {
-                    await updateDoc(userDocRef, updates);
-                    userData = { ...userData, ...updates };
-                }
-                
-                setCurrentUserData(userData);
 
+                if (hasUpdates) await updateDoc(userDocRef, updates);
+                setCurrentUserData({ id: snap.id, ...data, ...updates } as User);
             } else {
-                const clerkFullName = [authUser.firstName, authUser.lastName].filter(Boolean).join(' ');
                 const newUser: User = {
-                    id: authUser.id, uid: authUser.id,
-                    displayName: clerkFullName || authUser.username || 'New User',
-                    email: authUser.primaryEmailAddress?.emailAddress || '',
-                    photoURL: authUser.imageUrl, isBlocked: false, credits: 200, isAdmin: false,
-                    isVip: false, isGM: false, isChallenger: false, isCoDev: false, friends: [],
-                    unlockedResourceSections: [], unlockedFeatures: [], unlockedThemes: [], hasAiAccess: false,
-                    focusSessionsCompleted: 0, dailyTasksCompleted: 0, totalStudyTime: 0,
-                    freeRewards: 0, freeGuesses: 0, streak: 1, longestStreak: 1,
-                    lastStreakCheck: format(new Date(), 'yyyy-MM-dd'), referralUsed: false,
+                    id: authUser.id, uid: authUser.id, displayName: authUser.fullName || authUser.username || 'New User',
+                    email: authUser.primaryEmailAddress?.emailAddress || '', photoURL: authUser.imageUrl, isBlocked: false,
+                    credits: 200, isAdmin: false, isVip: false, isGM: false, isChallenger: false, isCoDev: false,
+                    friends: [], unlockedResourceSections: [], unlockedFeatures: [], unlockedThemes: [], hasAiAccess: false,
+                    focusSessionsCompleted: 0, dailyTasksCompleted: 0, totalStudyTime: 0, freeRewards: 0, freeGuesses: 0,
+                    streak: 1, longestStreak: 1, lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
                     gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0 },
-                    elementQuestScores: { s: 0, p: 0, d: 0, f: 0 },
-                    elementQuestMilestonesClaimed: [],
+                    elementQuestScores: { s: 0, p: 0, d: 0, f: 0 }, elementQuestMilestonesClaimed: [],
                 };
-                setDoc(userDocRef, newUser).then(() => setCurrentUserData(newUser));
+                await setDoc(userDocRef, newUser);
+                setCurrentUserData(newUser);
             }
             setLoading(false);
-        }, (error) => {
-            console.error("Error fetching user data:", error);
-            setLoading(false);
         });
         return () => unsubscribe();
-        
     }, [authUser, isClerkLoaded]);
-    
-    // EFFECT: Listen for user's approved transactions
+
     useEffect(() => {
-        if (!authUser) {
-            setTransactions([]);
-            return;
-        }
+        if (!authUser) { setTransactions([]); return; }
         const q = query(collection(db, 'creditPurchaseRequests'), where('userId', '==', authUser.id), where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const userTransactions = snapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    createdAt: (data.createdAt as Timestamp)?.toDate() || new Date()
-                } as PurchaseRequest
-            });
-            setTransactions(userTransactions);
-        });
-        return () => unsubscribe();
+        return onSnapshot(q, (s) => setTransactions(s.docs.map(d => ({ id: d.id, ...d.data() } as any))));
     }, [authUser]);
 
-    // EFFECT: Listen for global data (announcements, resources, polls, etc.)
     useEffect(() => {
-        const processSnapshot = <T extends { id: string; createdAt?: any }>(snapshot: any): T[] => {
-            return snapshot.docs.map((doc: any) => ({
-                id: doc.id, ...doc.data(),
-                createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(),
-            } as T));
-        };
-        
-        const processTimestampedSnapshot = (snapshot: any): any[] => {
-             return snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
-        };
-
-
-        const unsubAnnouncements = onSnapshot(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')), (s) => setAnnouncements(processSnapshot<Announcement>(s)));
-        const unsubResources = onSnapshot(query(collection(db, 'resources'), orderBy('createdAt', 'desc')), (s) => setResources(processSnapshot<Resource>(s)));
-        const unsubSections = onSnapshot(query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc')), (s) => setResourceSections(processSnapshot<ResourceSection>(s)));
-        const unsubDailySurprises = onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(processSnapshot<DailySurprise>(s)));
-        const unsubTickets = onSnapshot(query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc')), (s) => setSupportTickets(processTimestampedSnapshot(s)));
-        const unsubPolls = onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc')), (s) => setAllPolls(processSnapshot<Poll>(s)));
-        const unsubAppSettings = onSnapshot(doc(db, 'appConfig', 'settings'), (doc) => setAppSettings(doc.exists() ? doc.data() as AppSettings : null));
-        const unsubGifts = onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(processSnapshot<GlobalGift>(s)));
-        const unsubLocks = onSnapshot(doc(db, 'appConfig', 'featureLocks'), (doc) => setFeatureLocks(doc.exists() ? doc.data() as Record<LockableFeature['id'], FeatureLock> : null));
-        const unsubShowcases = onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processSnapshot<FeatureShowcase>(s)));
-        const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), async (snapshot) => {
-            if (snapshot.empty) {
-                 const defaultPacksData = [
-                    { name: 'Starter Pack', credits: 500, price: 10 },
-                    { name: 'Student Pack', credits: 1500, price: 25 },
-                    { name: 'Pro Pack', credits: 2500, price: 39 },
-                 ];
-                 const batch = writeBatch(db);
-                 defaultPacksData.forEach(pack => batch.set(doc(collection(db, 'creditPacks')), { ...pack, createdAt: serverTimestamp() }));
-                 await batch.commit();
-            } else {
-                 setCreditPacks(processSnapshot<CreditPack>(snapshot));
-            }
-        });
-        const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('cost', 'asc')), async (s) => {
-            if(s.empty) {
-                const defaultItems = [
-                    { name: '5 Scratch Cards', description: 'Test your luck with a bundle of 5 scratch cards.', cost: 80, type: 'scratch-card', quantity: 5, stock: 999, isFeatured: true },
-                    { name: '5 Card Flip Plays', description: 'Get 5 extra plays for the Card Flip game.', cost: 40, type: 'card-flip', quantity: 5, stock: 999, isFeatured: false }
-                ];
-                 const batch = writeBatch(db);
-                 defaultItems.forEach(item => batch.set(doc(collection(db, 'storeItems')), { ...item, createdAt: serverTimestamp() }));
-                 await batch.commit();
-            } else {
-                setStoreItems(processSnapshot<StoreItem>(s))
-            }
-        });
-        const unsubPurchaseRequests = onSnapshot(query(collection(db, 'creditPurchaseRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'asc')), (s) => setPurchaseRequests(processTimestampedSnapshot(s)));
-        
-        const unsubVideoCategories = onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(processSnapshot<VideoCategory>(s)));
-        const unsubVideoLectures = onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(processSnapshot<VideoLecture>(s)));
+        const process = <T extends { id: string }>(s: any) => s.docs.map((d: any) => ({ id: d.id, ...d.data() } as T));
+        const unsubAnnouncements = onSnapshot(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')), (s) => setAnnouncements(process<Announcement>(s)));
+        const unsubResources = onSnapshot(query(collection(db, 'resources'), orderBy('createdAt', 'desc')), (s) => setResources(process<Resource>(s)));
+        const unsubSections = onSnapshot(query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc')), (s) => setResourceSections(process<ResourceSection>(s)));
+        const unsubDailySurprises = onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(process<DailySurprise>(s)));
+        const unsubTickets = onSnapshot(query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc')), (s) => setSupportTickets(process<SupportTicket>(s)));
+        const unsubPolls = onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc')), (s) => setAllPolls(process<Poll>(s)));
+        const unsubAppSettings = onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null));
+        const unsubGifts = onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(process<GlobalGift>(s)));
+        const unsubLocks = onSnapshot(doc(db, 'appConfig', 'featureLocks'), (d) => setFeatureLocks(d.exists() ? d.data() as any : null));
+        const unsubShowcases = onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(process<FeatureShowcase>(s)));
+        const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), (s) => setCreditPacks(process<CreditPack>(s)));
+        const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('cost', 'asc')), (s) => setStoreItems(process<StoreItem>(s)));
+        const unsubPurchaseRequests = onSnapshot(query(collection(db, 'creditPurchaseRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'asc')), (s) => setPurchaseRequests(process<PurchaseRequest>(s)));
+        const unsubVideoCats = onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(process<VideoCategory>(s)));
+        const unsubVideoLecs = onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(process<VideoLecture>(s)));
 
         return () => {
             unsubAnnouncements(); unsubResources(); unsubPolls(); unsubDailySurprises(); unsubSections();
             unsubAppSettings(); unsubGifts(); unsubTickets(); unsubLocks(); unsubShowcases();
-            unsubCreditPacks(); unsubStoreItems(); unsubPurchaseRequests();
-            unsubVideoCategories(); unsubVideoLectures();
+            unsubCreditPacks(); unsubStoreItems(); unsubPurchaseRequests(); unsubVideoCats(); unsubVideoLecs();
         };
     }, []);
-
-
-    // FUNCTIONS: Actions that modify data
-    const makeUserAdmin = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isAdmin: true }), []);
-    const removeUserAdmin = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isAdmin: false }), []);
-    const makeUserVip = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isVip: true }), []);
-    const removeUserVip = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isVip: false }), []);
-    const makeUserGM = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isGM: true }), []);
-    const removeUserGM = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isGM: false }), []);
-    const makeUserChallenger = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isChallenger: true }), []);
-    const removeUserChallenger = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isChallenger: false }), []);
-    const makeUserCoDev = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isCoDev: true }), []);
-    const removeUserCoDev = useCallback(async (uid: string) => await updateDoc(doc(db, 'users', uid), { isCoDev: false }), []);
-    const setShowcaseBadge = useCallback(async (uid: string, badge: BadgeType | null) => await updateDoc(doc(db, 'users', uid), { showcasedBadge: badge }), []);
-    const toggleUserBlock = useCallback(async (uid: string, isBlocked: boolean) => await updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked }), []);
-    
-    const deleteUserData = useCallback(async (password: string) => {
-        if (!clerk.user) throw new Error("User not found");
-        await clerk.user.reauthenticateWithPassword(password);
-        await updateDoc(doc(db, 'users', clerk.user.id), { markedForDeletion: true, markedForDeletionAt: serverTimestamp() });
-    }, [clerk.user]);
 
     const addCreditsToUser = useCallback(async (uid: string, amount: number) => {
         if (!uid) return;
@@ -663,536 +486,292 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date() && amount < 0) return;
         await updateDoc(userDocRef, { credits: increment(amount) });
     }, []);
-    
-    const giftCreditsToAllUsers = useCallback(async (amount: number) => {
-        if (!Number.isFinite(amount) || amount <= 0) return;
-        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
-        const batch = writeBatch(db);
-        usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { credits: increment(amount) }));
-        await batch.commit();
-    }, []);
 
-    const addFreeSpinsToUser = useCallback(async (uid: string, amount: number) => {
-        if (!uid || !Number.isFinite(amount) || amount <= 0) return;
-        await updateDoc(doc(db, 'users', uid), { freeRewards: increment(amount) });
-    }, []);
-    
-    const addSpinsToAllUsers = useCallback(async (amount: number) => {
-        if (!Number.isFinite(amount) || amount <= 0) return;
-        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
-        const batch = writeBatch(db);
-        usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { freeRewards: increment(amount) }));
-        await batch.commit();
-    }, []);
-
-    const addFreeGuessesToUser = useCallback(async (uid: string, amount: number) => {
-        if (!uid || !Number.isFinite(amount) || amount <= 0) return;
-        await updateDoc(doc(db, 'users', uid), { freeGuesses: increment(amount) });
-    }, []);
-
-    const addGuessesToAllUsers = useCallback(async (amount: number) => {
-        if (!Number.isFinite(amount) || amount <= 0) return;
-        const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
-        const batch = writeBatch(db);
-        usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { freeGuesses: increment(amount) }));
-        await batch.commit();
-    }, []);
-
-    const resetUserCredits = useCallback(async (uid: string) => {
-        if (!uid) return;
-        await updateDoc(doc(db, 'users', uid), { credits: 100 });
-    }, []);
-    
-    const unlockResourceSection = useCallback(async (uid: string, sectionId: string, cost: number) => {
-        if (!uid) return;
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        const updateData: any = { unlockedResourceSections: arrayUnion(sectionId) };
-        if (!userSnap.data()?.masterCardExpires || new Date(userSnap.data()?.masterCardExpires) < new Date()) {
-             updateData.credits = increment(-cost);
-        }
-        await updateDoc(userDocRef, updateData);
-    }, []);
-
-    const unlockFeatureForUser = useCallback(async (uid: string, featureId: LockableFeature['id'], cost: number) => {
-        if (!uid) return;
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        const updateData: any = { unlockedFeatures: arrayUnion(featureId) };
-        if (!userSnap.data()?.masterCardExpires || new Date(userSnap.data()?.masterCardExpires) < new Date()) {
-            updateData.credits = increment(-cost);
-        }
-        await updateDoc(userDocRef, updateData);
-    }, []);
-
-    const unlockThemeForUser = useCallback(async (uid: string, themeId: AppThemeId, cost: number) => {
-        if (!uid) return;
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        const updateData: any = { unlockedThemes: arrayUnion(themeId) };
-        if (!userSnap.data()?.masterCardExpires || new Date(userSnap.data()?.masterCardExpires) < new Date()) {
-            updateData.credits = increment(-cost);
-        }
-        await updateDoc(userDocRef, updateData);
-    }, []);
-
-    const generateAiAccessToken = useCallback(async (uid: string) => {
-        if (!uid) return null;
-        const userRef = doc(db, 'users', uid);
-        const tokensRef = collection(db, 'ai_access_tokens');
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) return null;
-        const userData = userSnap.data() as User;
-        const cost = 1000;
-        const hasMasterCard = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
-        if (!hasMasterCard && userData.credits < cost) throw new Error("Insufficient credits.");
-        const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-        const batch = writeBatch(db);
-        const updateData: any = { hasAiAccess: true };
-        if (!hasMasterCard) updateData.credits = increment(-cost);
-        batch.update(userRef, updateData);
-        batch.set(doc(tokensRef), { userId: uid, userName: userData.displayName, token, createdAt: serverTimestamp(), isUsed: false });
-        await batch.commit();
-        return token;
-    }, []);
-
-    const generateDevAiAccessToken = useCallback(async (uid: string) => {
-        if (!uid) return null;
-        const userRef = doc(db, 'users', uid);
-        const tokensRef = collection(db, 'ai_access_tokens');
-        const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) return null;
-        const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-        const batch = writeBatch(db);
-        batch.update(userRef, { hasAiAccess: true });
-        batch.set(doc(tokensRef), { userId: uid, userName: userSnap.data().displayName, token, createdAt: serverTimestamp(), isUsed: false });
-        await batch.commit();
-        return token;
-    }, []);
-
-    const grantMasterCard = useCallback(async (uid: string, durationDays: number) => {
-        if (!uid) return;
-        const expirationDate = dateFnsAddDays(new Date(), durationDays);
-        await updateDoc(doc(db, 'users', uid), { masterCardExpires: expirationDate.toISOString() });
-    }, []);
-
-    const revokeMasterCard = useCallback(async (uid: string) => {
-        if (!uid) return;
-        await updateDoc(doc(db, 'users', uid), { masterCardExpires: null });
-    }, []);
-
-    const addPerfectedQuiz = useCallback(async (uid: string, quizId: string) => {
-        if(!uid || !quizId) return;
-        await updateDoc(doc(db, 'users', uid), { perfectedQuizzes: arrayUnion(quizId) });
-    }, []);
-
-    const incrementQuizAttempt = useCallback(async (uid: string, quizId: string) => {
-        if (!uid || !quizId) return;
-        await updateDoc(doc(db, 'users', uid), { [`quizAttempts.${quizId}`]: increment(1) });
-    }, []);
-    
-    const incrementFocusSessions = useCallback(async (uid: string, durationInSeconds: number) => {
-        if(!uid) return;
-        await updateDoc(doc(db, 'users', uid), { focusSessionsCompleted: increment(1), totalStudyTime: increment(durationInSeconds) });
-    }, []);
-
-    const claimDailyTaskReward = useCallback(async (uid: string, amount: number) => {
-        if(!uid || amount <= 0) return;
-        await updateDoc(doc(db, 'users', uid), { credits: increment(amount), dailyTasksCompleted: increment(1), lastDailyTasksClaim: format(new Date(), 'yyyy-MM-dd') });
-    }, []);
-    
-    const claimEliteDailyReward = useCallback(async (uid: string) => {
-        if (!uid) return;
-        await updateDoc(doc(db, 'users', uid), { credits: increment(20), freeRewards: increment(5), freeGuesses: increment(5), lastEliteClaim: format(new Date(), 'yyyy-MM-dd') });
-    }, []);
-    
-    const updateStudyTime = useCallback(async (uid: string, totalSeconds: number) => {
-        if(!uid) return;
-        await updateDoc(doc(db, 'users', uid), { totalStudyTime: totalSeconds });
-    }, []);
-
-    const updateGameHighScore = useCallback(async (uid: string, game: 'memoryGame' | 'emojiQuiz' | 'dimensionShift' | 'subjectSprint' | 'flappyMind' | 'astroAscent' | 'mathematicsLegend', score: number) => {
-        if (!uid) return;
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        if (userSnap.exists()) {
-            const currentHighScore = userSnap.data().gameHighScores?.[game] || 0;
-            if (score > currentHighScore) await updateDoc(userDocRef, { [`gameHighScores.${game}`]: score });
-        }
-    }, []);
-    
-    const updateElementQuestScore = useCallback(async (uid: string, block: 's' | 'p' | 'd' | 'f', score: number) => {
-        if (!uid) return;
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        if (userSnap.exists()) {
-            const currentHighScore = userSnap.data().elementQuestScores?.[block] || 0;
-            if (score > currentHighScore) await updateDoc(userDocRef, { [`elementQuestScores.${block}`]: score });
-        }
-    }, []);
-
-    const claimElementQuestMilestone = useCallback(async (uid: string, milestone: 100 | 200 | 300 | 400) => {
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        if (!userSnap.exists()) throw new Error("User not found.");
-        const userData = userSnap.data() as User;
-        const { s = 0, p = 0, d = 0, f = 0 } = userData.elementQuestScores || {};
-        const totalScore = s + p + d + f;
-        if (totalScore < milestone) throw new Error("Score not high enough to claim this milestone.");
-        const claimedMilestones = userData.elementQuestMilestonesClaimed || [];
-        if (claimedMilestones.includes(milestone)) throw new Error("You have already claimed this milestone reward.");
-        const MILESTONE_REWARDS = { 100: 50, 200: 100, 300: 150, 400: 200 };
-        const reward = MILESTONE_REWARDS[milestone];
-        if (!reward) throw new Error("Invalid milestone.");
-        await updateDoc(userDocRef, { credits: increment(reward), elementQuestMilestonesClaimed: arrayUnion(milestone) });
-    }, []);
-
-    const claimDimensionShiftMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        if (!userSnap.exists()) return false;
-        const userData = userSnap.data() as User;
-        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const weekClaims = userData.dimensionShiftClaims?.[weekKey] || [];
-        const MILESTONE_REWARDS: Record<number, number> = { 50: 2, 100: 5, 150: 10, 200: 15, 250: 20, 300: 200 };
-        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).reverse().find(m => milestone >= m && !weekClaims.includes(m));
-        const updateData: { [key: string]: any } = { [`gameHighScores.dimensionShift`]: Math.max(userData.gameHighScores?.dimensionShift || 0, milestone) };
-        if (!validMilestone) {
-            await updateDoc(userDocRef, updateData);
-            return false;
-        }
-        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
-        const newClaims = [...weekClaims, validMilestone];
-        updateData.credits = increment(reward);
-        updateData[`dimensionShiftClaims.${weekKey}`] = newClaims;
-        await updateDoc(userDocRef, updateData);
-        return true;
-    }, []);
-    
-    const claimFlappyMindMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        if (!userSnap.exists()) return false;
-        const userData = userSnap.data() as User;
-        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const weekClaims = userData.flappyMindClaims?.[weekKey] || [];
-        const MILESTONE_REWARDS: Record<number, number> = { 5: 3, 10: 3, 15: 3, 20: 15, 30: 3, 50: 3, 100: 100 };
-        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).reverse().find(m => milestone >= m && !weekClaims.includes(m));
-        const updateData: { [key: string]: any } = { [`gameHighScores.flappyMind`]: Math.max(userData.gameHighScores?.flappyMind || 0, milestone) };
-        if (!validMilestone) {
-            await updateDoc(userDocRef, updateData);
-            return false;
-        }
-        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
-        const newClaims = [...weekClaims, validMilestone];
-        updateData.credits = increment(reward);
-        updateData[`flappyMindClaims.${weekKey}`] = newClaims;
-        await updateDoc(userDocRef, updateData);
-        return true;
-    }, []);
-    
-    const claimAstroAscentMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        const MILESTONE_REWARDS: Record<number, number> = { 25: 5, 50: 10, 75: 25, 100: 50 };
-
-        if (!userSnap.exists()) return false;
-        
-        const userData = userSnap.data() as User;
-        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const weekClaims = userData.astroAscentClaims?.[weekKey] || [];
-
-        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).reverse().find(m => milestone >= m && !weekClaims.includes(m));
-        const updateData: { [key: string]: any } = { [`gameHighScores.astroAscent`]: Math.max(userData.gameHighScores?.astroAscent || 0, milestone) };
-        
-        if (!validMilestone) {
-            await updateDoc(userDocRef, updateData);
-            return false;
-        }
-
-        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
-        const newClaims = [...weekClaims, validMilestone];
-        
-        updateData.credits = increment(reward);
-        updateData[`astroAscentClaims.${weekKey}`] = newClaims;
-        
-        await updateDoc(userDocRef, updateData);
-        
-        return true;
-    }, []);
-
-    const claimMathematicsLegendMilestone = useCallback(async (uid: string, milestone: number): Promise<boolean> => {
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        if (!userSnap.exists()) return false;
-        const userData = userSnap.data() as User;
-        const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-        const weekClaims = userData.mathematicsLegendClaims?.[weekKey] || [];
-        const MILESTONE_REWARDS: Record<number, number> = { 50: 200 };
-        const validMilestone = Object.keys(MILESTONE_REWARDS).map(Number).reverse().find(m => milestone >= m && !weekClaims.includes(m));
-        const updateData: { [key: string]: any } = { [`gameHighScores.mathematicsLegend`]: Math.max(userData.gameHighScores?.mathematicsLegend || 0, milestone) };
-        if (!validMilestone) {
-            await updateDoc(userDocRef, updateData);
-            return false;
-        }
-        const reward = MILESTONE_REWARDS[validMilestone as keyof typeof MILESTONE_REWARDS];
-        const newClaims = [...weekClaims, validMilestone];
-        updateData.credits = increment(reward);
-        updateData[`mathematicsLegendClaims.${weekKey}`] = newClaims;
-        await updateDoc(userDocRef, updateData);
-        return true;
-    }, []);
-    
-    // Admin/Global functions
-    const addAnnouncement = useCallback(async (announcement: Omit<Announcement, 'id' | 'createdAt'>) => await addDoc(collection(db, 'announcements'), { ...announcement, createdAt: serverTimestamp() }), []);
-    const updateAnnouncement = useCallback(async (id: string, data: Partial<Announcement>) => await updateDoc(doc(db, 'announcements', id), data), []);
-    const deleteAnnouncement = useCallback(async (id: string) => await deleteDoc(doc(db, 'announcements', id)), []);
-    
-    const addResourceSection = useCallback(async (section: Omit<ResourceSection, 'id'|'createdAt'>) => await addDoc(collection(db, 'resourceSections'), { ...section, createdAt: serverTimestamp() }), []);
-    const updateResourceSection = useCallback(async (id: string, data: Partial<Omit<ResourceSection, 'id'|'createdAt'>>) => await updateDoc(doc(db, 'resourceSections', id), data), []);
-    const deleteResourceSection = useCallback(async (id: string) => {
-        const q = query(collection(db, "resources"), where("sectionId", "==", id));
-        const querySnapshot = await getDocs(q);
-        const batch = writeBatch(db);
-        querySnapshot.forEach((doc) => batch.delete(doc.ref));
-        batch.delete(doc(db, 'resourceSections', id));
-        await batch.commit();
-    }, []);
-
-    const addResource = useCallback(async (resource: Omit<Resource, 'id' | 'createdAt'>) => await addDoc(collection(db, 'resources'), { ...resource, createdAt: serverTimestamp() }), []);
-    const updateResource = useCallback(async (id: string, data: Partial<Omit<Resource, 'id' | 'createdAt'>>) => await updateDoc(doc(db, 'resources', id), data), []);
-    const deleteResource = useCallback(async (id: string) => await deleteDoc(doc(db, 'resources', id)), []);
-    
-    const addDailySurprise = useCallback(async (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => await addDoc(collection(db, 'dailySurprises'), { ...surprise, createdAt: serverTimestamp() }), []);
-    const deleteDailySurprise = useCallback(async (id: string) => await deleteDoc(doc(db, 'dailySurprises', id)), []);
-
-    const updateTicketStatus = useCallback(async (id: string, status: 'new' | 'resolved') => await updateDoc(doc(db, 'supportTickets', id), { status }), []);
-    const deleteTicket = useCallback(async (id: string) => await deleteDoc(doc(db, 'supportTickets', id)), []);
-
-    const addPoll = useCallback(async (pollData: Omit<Poll, 'id' | 'createdAt' | 'isActive' | 'results'>) => {
-        await addDoc(collection(db, 'polls'), { ...pollData, isActive: false, results: pollData.options.reduce((acc, option) => ({ ...acc, [option]: 0 }), {}), createdAt: serverTimestamp() });
-    }, []);
-    const deletePoll = useCallback(async (pollId: string) => await deleteDoc(doc(db, 'polls', pollId)), []);
-    const setActivePoll = useCallback(async (pollId: string) => {
-        const batch = writeBatch(db);
-        const pollsSnapshot = await getDocs(query(collection(db, 'polls'), where('isActive', '==', true)));
-        pollsSnapshot.forEach(pollDoc => batch.update(pollDoc.ref, { isActive: false }));
-        batch.update(doc(db, 'polls', pollId), { isActive: true });
-        await batch.commit();
-    }, []);
-    const updatePoll = useCallback(async (id: string, data: Partial<Poll>) => {
-        const pollDocRef = doc(db, 'polls', id);
-        const currentPollSnap = await getDoc(pollDocRef);
-        const updateData: Partial<Poll> = { ...data };
-        if (data.options && JSON.stringify(data.options) !== JSON.stringify(currentPollSnap.data()?.options)) {
-            updateData.results = data.options.reduce((acc, option) => ({ ...acc, [option]: 0 }), {});
-        }
-        await updateDoc(pollDocRef, updateData);
-    }, []);
-    const submitPollVote = useCallback(async (pollId: string, option: string) => {
-        if (!authUser) return;
-        const batch = writeBatch(db);
-        batch.update(doc(db, 'polls', pollId), { [`results.${option}`]: increment(1) });
-        batch.update(doc(db, 'users', authUser.id), { [`votedPolls.${pollId}`]: option });
-        await batch.commit();
-    }, [authUser]);
-    const submitPollComment = useCallback(async (pollId: string, comment: string) => {
-        if (!authUser || !currentUserData) return;
-        await updateDoc(doc(db, 'polls', pollId), { comments: arrayUnion({ userId: authUser.id, userName: currentUserData.displayName, comment, createdAt: Timestamp.now() }) });
-    }, [authUser, currentUserData]);
-    const submitSupportTicket = useCallback(async (message: string) => {
-        if (!authUser || !currentUserData) throw new Error("User not found");
-        await addDoc(collection(db, 'supportTickets'), { userId: authUser.id, userName: currentUserData.displayName, message, status: 'new', createdAt: serverTimestamp() });
-    }, [authUser, currentUserData]);
-    const clearGlobalChat = useCallback(async () => {
-        const chatSnapshot = await getDocs(collection(db, 'global_chat'));
-        const batch = writeBatch(db);
-        chatSnapshot.docs.forEach((doc) => batch.delete(doc.ref));
-        await batch.commit();
-    }, []);
-    const clearQuizLeaderboard = useCallback(async () => {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const batch = writeBatch(db);
-        usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { perfectedQuizzes: [], quizAttempts: {} }));
-        await batch.commit();
-    }, []);
-    const resetWeeklyStudyTime = useCallback(async () => {
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
-        const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
-        for (const userDoc of usersSnapshot.docs) {
-            const sessionsQuery = query(collection(db, 'users', userDoc.id, 'timeTrackerSessions'), where('startTime', '>=', weekStart), where('startTime', '<=', weekEnd));
-            const sessionsSnapshot = await getDocs(sessionsQuery);
-            if (!sessionsSnapshot.empty) {
-                const batch = writeBatch(db);
-                sessionsSnapshot.forEach(sessionDoc => batch.delete(sessionDoc.ref));
-                await batch.commit();
-            }
-        }
-    }, []);
-    const resetGameZoneLeaderboard = useCallback(async () => {
-        const usersSnapshot = await getDocs(query(collection(db, 'users')));
-        const batch = writeBatch(db);
-        const resetScores = {
-            memoryGame: 0,
-            emojiQuiz: 0,
-            dimensionShift: 0,
-            subjectSprint: 0,
-            flappyMind: 0,
-            astroAscent: 0,
-            mathematicsLegend: 0,
-        };
-        usersSnapshot.forEach(userDoc => batch.update(userDoc.ref, { gameHighScores: resetScores }));
-        await batch.commit();
-    }, []);
-    const updateAppSettings = useCallback(async (settings: Partial<AppSettings>) => await setDoc(doc(db, 'appConfig', 'settings'), settings, { merge: true }), []);
-    const sendGlobalGift = useCallback(async (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => {
-        const newGiftRef = doc(collection(db, 'globalGifts'));
-        await setDoc(newGiftRef, { ...gift, id: newGiftRef.id, createdAt: serverTimestamp(), isActive: true, claimedBy: [] });
-    }, []);
-    const deactivateGift = useCallback(async (giftId: string) => await updateDoc(doc(db, 'globalGifts', giftId), { isActive: false }), []);
-    const deleteGlobalGift = useCallback(async (giftId: string) => await deleteDoc(doc(db, 'globalGifts', giftId)), []);
-    const claimGlobalGift = useCallback(async (giftId: string, userId: string) => {
-        const giftRef = doc(db, 'globalGifts', giftId);
-        const giftDoc = await getDoc(giftRef);
-        if (!giftDoc.exists()) throw new Error("Gift not found.");
-        const gift = giftDoc.data() as GlobalGift;
-        if (gift.claimedBy?.includes(userId)) return;
-        const batch = writeBatch(db);
-        batch.update(giftRef, { claimedBy: arrayUnion(userId) });
-        if (gift.rewards.credits > 0) batch.update(doc(db, 'users', userId), { credits: increment(gift.rewards.credits) });
-        if (gift.rewards.scratch > 0) batch.update(doc(db, 'users', userId), { freeRewards: increment(gift.rewards.scratch) });
-        if (gift.rewards.flip > 0) batch.update(doc(db, 'users', userId), { freeGuesses: increment(gift.rewards.flip) });
-        await batch.commit();
-    }, []);
-    const lockFeature = useCallback(async (featureId: LockableFeature['id'], cost: number) => await setDoc(doc(db, 'appConfig', 'featureLocks'), { [featureId]: { id: featureId, isLocked: true, cost } }, { merge: true }), []);
-    const unlockFeature = useCallback(async (featureId: LockableFeature['id']) => await setDoc(doc(db, 'appConfig', 'featureLocks'), { [featureId]: { id: featureId, isLocked: false, cost: 0 } }, { merge: true }), []);
-    const addFeatureShowcase = useCallback(async (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => await addDoc(collection(db, 'featureShowcases'), { ...showcase, createdAt: serverTimestamp() }), []);
-    const updateFeatureShowcase = useCallback(async (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => await updateDoc(doc(db, 'featureShowcases', id), data), []);
-    const deleteFeatureShowcase = useCallback(async (id: string) => await deleteDoc(doc(db, 'featureShowcases', id)), []);
-    const createCreditPack = useCallback(async (pack: Omit<CreditPack, 'id' | 'createdAt'>) => {
-        await addDoc(collection(db, 'creditPacks'), { ...pack, createdAt: serverTimestamp() });
-    }, []);
-    const updateCreditPack = useCallback(async (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => {
-        await updateDoc(doc(db, 'creditPacks', id), data);
-    }, []);
-    const deleteCreditPack = useCallback(async (id: string) => {
-        await deleteDoc(doc(db, 'creditPacks', id));
-    }, []);
-    const createPurchaseRequest = useCallback(async (pack: CreditPack, transactionId: string, screenshotFile: File | null) => {
-        if (!currentUserData) throw new Error('User not logged in.');
-        
-        let screenshotUrl: string | undefined = undefined;
-        if(screenshotFile) {
-            const storageRef = ref(storage, `payment_proofs/${currentUserData.uid}_${Date.now()}_${screenshotFile.name}`);
-            const uploadResult = await uploadBytes(storageRef, screenshotFile);
-            screenshotUrl = await getDownloadURL(uploadResult.ref);
-        }
-
-        await addDoc(collection(db, 'creditPurchaseRequests'), {
-            userId: currentUserData.uid, userName: currentUserData.displayName,
-            packId: pack.id, packName: pack.name, credits: pack.credits, price: pack.price,
-            transactionId, screenshotUrl, status: 'pending', createdAt: serverTimestamp(),
-        });
-    }, [currentUserData]);
-
-    const approvePurchaseRequest = useCallback(async (request: PurchaseRequest) => {
-        const batch = writeBatch(db);
-        const userRef = doc(db, 'users', request.userId);
-        batch.update(userRef, { credits: increment(request.credits), transactions: arrayUnion({ id: request.id, packName: request.packName, credits: request.credits, price: request.price, date: new Date() }) });
-        batch.update(doc(db, 'creditPurchaseRequests', request.id), { status: 'approved' });
-        await batch.commit();
-    }, []);
-    const declinePurchaseRequest = useCallback(async (requestId: string) => {
-        await updateDoc(doc(db, 'creditPurchaseRequests', requestId), { status: 'declined' });
-    }, []);
-    const createStoreItem = useCallback(async (item: Omit<StoreItem, 'id' | 'createdAt'>) => {
-        await addDoc(collection(db, 'storeItems'), { ...item, createdAt: serverTimestamp() });
-    }, []);
-    const updateStoreItem = useCallback(async (id: string, data: Partial<Omit<StoreItem, 'id'|'createdAt'>>) => {
-        await updateDoc(doc(db, 'storeItems', id), data);
-    }, []);
-    const deleteStoreItem = useCallback(async (id: string) => {
-        await deleteDoc(doc(db, 'storeItems', id));
-    }, []);
     const redeemStoreItem = useCallback(async (item: StoreItem) => {
         if (!authUser || !currentUserData) throw new Error("You must be logged in.");
-
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, 'users', authUser.id);
             const itemRef = doc(db, 'storeItems', item.id);
-
             const userSnap = await transaction.get(userRef);
-            const itemDoc = await transaction.get(itemRef);
-
-            if (!userSnap.exists()) throw new Error("User not found.");
-            if (!itemDoc.exists()) throw new Error("Item does not exist.");
-
+            const itemSnap = await transaction.get(itemRef);
+            if (!userSnap.exists() || !itemSnap.exists()) throw new Error("Data error.");
             const userData = userSnap.data();
-            const currentItem = itemDoc.data() as StoreItem;
-            
+            const currentItem = itemSnap.data() as StoreItem;
             const hasMasterCard = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
-            
             if (!hasMasterCard && userData.credits < item.cost) throw new Error("Insufficient credits.");
-            if (currentItem.stock <= 0) throw new Error("This item is out of stock.");
-
+            if (currentItem.stock <= 0) throw new Error("Sold out.");
             transaction.update(itemRef, { stock: increment(-1) });
-
-            const updates: { [key: string]: any } = {};
+            const updates: any = {};
             if (!hasMasterCard) updates.credits = increment(-item.cost);
             if (item.type === 'scratch-card') updates.freeRewards = increment(item.quantity);
             else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
-
             transaction.update(userRef, updates);
         });
     }, [authUser, currentUserData]);
-    
-    const addVideoCategory = useCallback(async (category: Omit<VideoCategory, 'id' | 'createdAt'>) => {
-        await addDoc(collection(db, 'videoCategories'), { ...category, createdAt: serverTimestamp() });
-    }, []);
 
-    const deleteVideoCategory = useCallback(async (categoryId: string) => {
+    const createPurchaseRequest = useCallback(async (pack: CreditPack, transactionId: string, screenshotFile: File | null) => {
+        if (!currentUserData) throw new Error('User not logged in.');
+        let screenshotUrl = '';
+        if (screenshotFile) {
+            const storageRef = ref(storage, `payment_proofs/${currentUserData.uid}_${Date.now()}`);
+            const uploadResult = await uploadBytes(storageRef, screenshotFile);
+            screenshotUrl = await getDownloadURL(uploadResult.ref);
+        }
+        await addDoc(collection(db, 'creditPurchaseRequests'), {
+            userId: currentUserData.uid, userName: currentUserData.displayName, packId: pack.id,
+            packName: pack.name, credits: pack.credits, price: pack.price, transactionId,
+            screenshotUrl, status: 'pending', createdAt: serverTimestamp(),
+        });
+    }, [currentUserData]);
+
+    const approvePurchaseRequest = useCallback(async (req: PurchaseRequest) => {
         const batch = writeBatch(db);
-        const lecturesSnapshot = await getDocs(query(collection(db, 'videoLectures'), where('categoryId', '==', categoryId)));
-        lecturesSnapshot.forEach(doc => batch.delete(doc.ref));
-        batch.delete(doc(db, 'videoCategories', categoryId));
+        batch.update(doc(db, 'users', req.userId), { 
+            credits: increment(req.credits),
+            transactions: arrayUnion({ id: req.id, packName: req.packName, credits: req.credits, price: req.price, date: new Date() }) 
+        });
+        batch.update(doc(db, 'creditPurchaseRequests', req.id), { status: 'approved' });
         await batch.commit();
     }, []);
 
-    const addVideoLecture = useCallback(async (lecture: Omit<VideoLecture, 'id' | 'createdAt'>) => {
-        await addDoc(collection(db, 'videoLectures'), { ...lecture, createdAt: serverTimestamp() });
-    }, []);
-    
-    const deleteVideoLecture = useCallback(async (lectureId: string) => {
-        await deleteDoc(doc(db, 'videoLectures', lectureId));
-    }, []);
-    
+    const declinePurchaseRequest = useCallback(async (id: string) => await updateDoc(doc(db, 'creditPurchaseRequests', id), { status: 'declined' }), []);
+
     const value: AppDataContextType = {
-        isAdmin, isSuperAdmin, isCoDev, users, currentUserData, transactions, toggleUserBlock, deleteUserData, addCreditsToUser,
-        giftCreditsToAllUsers, resetUserCredits, addFreeSpinsToUser, addSpinsToAllUsers, addFreeGuessesToUser,
-        addGuessesToAllUsers, unlockResourceSection, unlockFeatureForUser, unlockThemeForUser, generateAiAccessToken,
-        generateDevAiAccessToken, grantMasterCard, revokeMasterCard, addPerfectedQuiz, incrementQuizAttempt,
-        incrementFocusSessions, claimDailyTaskReward, claimEliteDailyReward, updateStudyTime, updateGameHighScore,
-        updateElementQuestScore, claimElementQuestMilestone, claimDimensionShiftMilestone, claimFlappyMindMilestone, claimAstroAscentMilestone,
-        claimMathematicsLegendMilestone, makeUserAdmin, removeUserAdmin, makeUserVip, removeUserVip, makeUserGM, removeUserGM,
-        makeUserChallenger, removeUserChallenger, makeUserCoDev, removeUserCoDev, setShowcaseBadge, clearGlobalChat,
-        clearQuizLeaderboard, resetWeeklyStudyTime, resetGameZoneLeaderboard, submitSupportTicket, announcements,
-        addAnnouncement, updateAnnouncement, deleteAnnouncement, resources, addResource, updateResource, deleteResource,
-        resourceSections, addResourceSection, updateResourceSection, deleteResourceSection, dailySurprises, addDailySurprise,
-        deleteDailySurprise, supportTickets, updateTicketStatus, deleteTicket, loading, activePoll, allPolls, addPoll,
-        deletePoll, setActivePoll, updatePoll, submitPollVote, submitPollComment, appSettings, updateAppSettings,
-        globalGifts, activeGlobalGift, sendGlobalGift, deactivateGift, deleteGlobalGift, claimGlobalGift, featureLocks,
-        lockFeature, unlockFeature, featureShowcases, addFeatureShowcase, updateFeatureShowcase, deleteFeatureShowcase,
-        creditPacks, createCreditPack, updateCreditPack, deleteCreditPack, purchaseRequests, createPurchaseRequest,
-        approvePurchaseRequest, declinePurchaseRequest, storeItems, createStoreItem, updateStoreItem, deleteStoreItem,
-        redeemStoreItem, videoCategories, addVideoCategory, deleteVideoCategory, videoLectures, addVideoLecture, deleteVideoLecture,
+        isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureLocks, featureShowcases, creditPacks, storeItems, purchaseRequests, videoCategories, videoLectures,
+        toggleUserBlock: (uid, isBlocked) => updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked }),
+        addCreditsToUser,
+        giftCreditsToAllUsers: async (amt) => {
+            const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
+            const batch = writeBatch(db);
+            usersSnapshot.forEach(d => batch.update(d.ref, { credits: increment(amt) }));
+            await batch.commit();
+        },
+        resetUserCredits: (uid) => updateDoc(doc(db, 'users', uid), { credits: 100 }),
+        addFreeSpinsToUser: (uid, amt) => updateDoc(doc(db, 'users', uid), { freeRewards: increment(amt) }),
+        addSpinsToAllUsers: async (amt) => {
+            const snap = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
+            const batch = writeBatch(db);
+            snap.forEach(d => batch.update(d.ref, { freeRewards: increment(amt) }));
+            await batch.commit();
+        },
+        addFreeGuessesToUser: (uid, amt) => updateDoc(doc(db, 'users', uid), { freeGuesses: increment(amt) }),
+        addGuessesToAllUsers: async (amt) => {
+            const snap = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
+            const batch = writeBatch(db);
+            snap.forEach(d => batch.update(d.ref, { freeGuesses: increment(amt) }));
+            await batch.commit();
+        },
+        unlockResourceSection: async (uid, sid, cost) => {
+            const userRef = doc(db, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
+            await updateDoc(userRef, { unlockedResourceSections: arrayUnion(sid), credits: hasMaster ? increment(0) : increment(-cost) });
+        },
+        unlockFeatureForUser: async (uid, fid, cost) => {
+            const userRef = doc(db, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
+            await updateDoc(userRef, { unlockedFeatures: arrayUnion(fid), credits: hasMaster ? increment(0) : increment(-cost) });
+        },
+        unlockThemeForUser: async (uid, tid, cost) => {
+            const userRef = doc(db, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
+            await updateDoc(userRef, { unlockedThemes: arrayUnion(tid), credits: hasMaster ? increment(0) : increment(-cost) });
+        },
+        generateAiAccessToken: async (uid) => {
+            const userRef = doc(db, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            const userData = userSnap.data() as User;
+            const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+            if (!hasMaster && userData.credits < 1000) throw new Error("Credits needed.");
+            const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+            const batch = writeBatch(db);
+            batch.update(userRef, { hasAiAccess: true, credits: hasMaster ? increment(0) : increment(-1000) });
+            batch.set(doc(collection(db, 'ai_access_tokens')), { userId: uid, token, createdAt: serverTimestamp(), isUsed: false });
+            await batch.commit();
+            return token;
+        },
+        generateDevAiAccessToken: async (uid) => {
+            const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+            await updateDoc(doc(db, 'users', uid), { hasAiAccess: true });
+            await addDoc(collection(db, 'ai_access_tokens'), { userId: uid, token, createdAt: serverTimestamp(), isUsed: false });
+            return token;
+        },
+        grantMasterCard: (uid, days) => updateDoc(doc(db, 'users', uid), { masterCardExpires: dateFnsAddDays(new Date(), days).toISOString() }),
+        revokeMasterCard: (uid) => updateDoc(doc(db, 'users', uid), { masterCardExpires: null }),
+        addPerfectedQuiz: (uid, qid) => updateDoc(doc(db, 'users', uid), { perfectedQuizzes: arrayUnion(qid) }),
+        incrementQuizAttempt: (uid, qid) => updateDoc(doc(db, 'users', uid), { [`quizAttempts.${qid}`]: increment(1) }),
+        incrementFocusSessions: (uid, dur) => updateDoc(doc(db, 'users', uid), { focusSessionsCompleted: increment(1), totalStudyTime: increment(dur) }),
+        claimDailyTaskReward: (uid, amt) => updateDoc(doc(db, 'users', uid), { credits: increment(amt), dailyTasksCompleted: increment(1), lastDailyTasksClaim: format(new Date(), 'yyyy-MM-dd') }),
+        claimEliteDailyReward: (uid) => updateDoc(doc(db, 'users', uid), { credits: increment(20), freeRewards: increment(5), freeGuesses: increment(5), lastEliteClaim: format(new Date(), 'yyyy-MM-dd') }),
+        updateStudyTime: (uid, secs) => updateDoc(doc(db, 'users', uid), { totalStudyTime: secs }),
+        updateGameHighScore: async (uid, game, score) => {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (snap.exists() && score > (snap.data().gameHighScores?.[game] || 0)) await updateDoc(doc(db, 'users', uid), { [`gameHighScores.${game}`]: score });
+        },
+        updateElementQuestScore: async (uid, blk, score) => {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (snap.exists() && score > (snap.data().elementQuestScores?.[blk] || 0)) await updateDoc(doc(db, 'users', uid), { [`elementQuestScores.${blk}`]: score });
+        },
+        claimElementQuestMilestone: (uid, m) => updateDoc(doc(db, 'users', uid), { credits: increment(m === 100 ? 50 : m === 200 ? 100 : m === 300 ? 150 : 200), elementQuestMilestonesClaimed: arrayUnion(m) }),
+        claimDimensionShiftMilestone: async (uid, m) => {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (!snap.exists()) return false;
+            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+            const claims = snap.data().dimensionShiftClaims?.[weekKey] || [];
+            if (claims.includes(m)) return false;
+            const reward = m === 50 ? 2 : m === 100 ? 5 : m === 150 ? 10 : m === 200 ? 15 : m === 250 ? 20 : 200;
+            await updateDoc(snap.ref, { credits: increment(reward), [`dimensionShiftClaims.${weekKey}`]: arrayUnion(m) });
+            return true;
+        },
+        claimFlappyMindMilestone: async (uid, m) => {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (!snap.exists()) return false;
+            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+            const claims = snap.data().flappyMindClaims?.[weekKey] || [];
+            if (claims.includes(m)) return false;
+            const reward = m === 20 ? 15 : m === 100 ? 100 : 3;
+            await updateDoc(snap.ref, { credits: increment(reward), [`flappyMindClaims.${weekKey}`]: arrayUnion(m) });
+            return true;
+        },
+        claimAstroAscentMilestone: async (uid, m) => {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (!snap.exists()) return false;
+            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+            const claims = snap.data().astroAscentClaims?.[weekKey] || [];
+            if (claims.includes(m)) return false;
+            const reward = m === 25 ? 5 : m === 50 ? 10 : m === 75 ? 25 : 50;
+            await updateDoc(snap.ref, { credits: increment(reward), [`astroAscentClaims.${weekKey}`]: arrayUnion(m) });
+            return true;
+        },
+        claimMathematicsLegendMilestone: async (uid, m) => {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (!snap.exists()) return false;
+            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
+            const claims = snap.data().mathematicsLegendClaims?.[weekKey] || [];
+            if (claims.includes(m)) return false;
+            await updateDoc(snap.ref, { credits: increment(200), [`mathematicsLegendClaims.${weekKey}`]: arrayUnion(m) });
+            return true;
+        },
+        makeUserAdmin: (uid) => updateDoc(doc(db, 'users', uid), { isAdmin: true }),
+        removeUserAdmin: (uid) => updateDoc(doc(db, 'users', uid), { isAdmin: false }),
+        makeUserVip: (uid) => updateDoc(doc(db, 'users', uid), { isVip: true }),
+        removeUserVip: (uid) => updateDoc(doc(db, 'users', uid), { isVip: false }),
+        makeUserGM: (uid) => updateDoc(doc(db, 'users', uid), { isGM: true }),
+        removeUserGM: (uid) => updateDoc(doc(db, 'users', uid), { isGM: false }),
+        makeUserChallenger: (uid) => updateDoc(doc(db, 'users', uid), { isChallenger: true }),
+        removeUserChallenger: (uid) => updateDoc(doc(db, 'users', uid), { isChallenger: false }),
+        makeUserCoDev: (uid) => updateDoc(doc(db, 'users', uid), { isCoDev: true }),
+        removeUserCoDev: (uid) => updateDoc(doc(db, 'users', uid), { isCoDev: false }),
+        setShowcaseBadge: (uid, badge) => updateDoc(doc(db, 'users', uid), { showcasedBadge: badge }),
+        clearGlobalChat: async () => {
+            const snap = await getDocs(collection(db, 'global_chat'));
+            const batch = writeBatch(db);
+            snap.docs.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+        },
+        clearQuizLeaderboard: async () => {
+            const snap = await getDocs(collection(db, 'users'));
+            const batch = writeBatch(db);
+            snap.forEach(d => batch.update(d.ref, { perfectedQuizzes: [], quizAttempts: {} }));
+            await batch.commit();
+        },
+        resetWeeklyStudyTime: async () => {
+            const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
+            const snap = await getDocs(collectionGroup(db, 'timeTrackerSessions'));
+            const batch = writeBatch(db);
+            snap.forEach(d => { if (d.data().startTime >= weekStart) batch.delete(d.ref); });
+            await batch.commit();
+        },
+        resetGameZoneLeaderboard: async () => {
+            const snap = await getDocs(collection(db, 'users'));
+            const batch = writeBatch(db);
+            snap.forEach(d => batch.update(d.ref, { gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0 } }));
+            await batch.commit();
+        },
+        submitSupportTicket: (msg) => addDoc(collection(db, 'supportTickets'), { userId: authUser?.id, userName: currentUserData?.displayName, message: msg, status: 'new', createdAt: serverTimestamp() }),
+        addAnnouncement: (a) => addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() }),
+        updateAnnouncement: (id, d) => updateDoc(doc(db, 'announcements', id), d),
+        deleteAnnouncement: (id) => deleteDoc(doc(db, 'announcements', id)),
+        addResourceSection: (s) => addDoc(collection(db, 'resourceSections'), { ...s, createdAt: serverTimestamp() }),
+        updateResourceSection: (id, d) => updateDoc(doc(db, 'resourceSections', id), d),
+        deleteResourceSection: async (id) => {
+            const resSnap = await getDocs(query(collection(db, "resources"), where("sectionId", "==", id)));
+            const batch = writeBatch(db);
+            resSnap.forEach(d => batch.delete(d.ref));
+            batch.delete(doc(db, 'resourceSections', id));
+            await batch.commit();
+        },
+        addResource: (r) => addDoc(collection(db, 'resources'), { ...r, createdAt: serverTimestamp() }),
+        updateResource: (id, d) => updateDoc(doc(db, 'resources', id), d),
+        deleteResource: (id) => deleteDoc(doc(db, 'resources', id)),
+        addDailySurprise: (s) => addDoc(collection(db, 'dailySurprises'), { ...s, createdAt: serverTimestamp() }),
+        deleteDailySurprise: (id) => deleteDoc(doc(db, 'dailySurprises', id)),
+        updateTicketStatus: (id, s) => updateDoc(doc(db, 'supportTickets', id), { status: s }),
+        deleteTicket: (id) => deleteDoc(doc(db, 'supportTickets', id)),
+        addPoll: (p) => addDoc(collection(db, 'polls'), { ...p, isActive: false, results: p.options.reduce((acc, o) => ({ ...acc, [o]: 0 }), {}), createdAt: serverTimestamp() }),
+        updatePoll: (id, d) => updateDoc(doc(db, 'polls', id), d),
+        deletePoll: (id) => deleteDoc(doc(db, 'polls', id)),
+        setActivePoll: async (id) => {
+            const activeSnap = await getDocs(query(collection(db, 'polls'), where('isActive', '==', true)));
+            const batch = writeBatch(db);
+            activeSnap.forEach(d => batch.update(d.ref, { isActive: false }));
+            batch.update(doc(db, 'polls', id), { isActive: true });
+            await batch.commit();
+        },
+        submitPollVote: async (id, opt) => {
+            if (!authUser) return;
+            const batch = writeBatch(db);
+            batch.update(doc(db, 'polls', id), { [`results.${opt}`]: increment(1) });
+            batch.update(doc(db, 'users', authUser.id), { [`votedPolls.${id}`]: opt });
+            await batch.commit();
+        },
+        submitPollComment: (id, c) => updateDoc(doc(db, 'polls', id), { comments: arrayUnion({ userId: authUser?.id, userName: currentUserData?.displayName, comment: c, createdAt: Timestamp.now() }) }),
+        updateAppSettings: (s) => updateDoc(doc(db, 'appConfig', 'settings'), s),
+        sendGlobalGift: (g) => addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] }),
+        deactivateGift: (id) => updateDoc(doc(db, 'globalGifts', id), { isActive: false }),
+        deleteGlobalGift: (id) => deleteDoc(doc(db, 'globalGifts', id)),
+        claimGlobalGift: async (id, uid) => {
+            const giftRef = doc(db, 'globalGifts', id);
+            const giftSnap = await getDoc(giftRef);
+            if (!giftSnap.exists() || giftSnap.data().claimedBy?.includes(uid)) return;
+            const gift = giftSnap.data();
+            const batch = writeBatch(db);
+            batch.update(giftRef, { claimedBy: arrayUnion(uid) });
+            if (gift.rewards.credits) batch.update(doc(db, 'users', uid), { credits: increment(gift.rewards.credits) });
+            if (gift.rewards.scratch) batch.update(doc(db, 'users', uid), { freeRewards: increment(gift.rewards.scratch) });
+            if (gift.rewards.flip) batch.update(doc(db, 'users', uid), { freeGuesses: increment(gift.rewards.flip) });
+            await batch.commit();
+        },
+        lockFeature: (fid, cost) => setDoc(doc(db, 'appConfig', 'featureLocks'), { [fid]: { id: fid, isLocked: true, cost } }, { merge: true }),
+        unlockFeature: (fid) => setDoc(doc(db, 'appConfig', 'featureLocks'), { [fid]: { id: fid, isLocked: false, cost: 0 } }, { merge: true }),
+        addFeatureShowcase: (s) => addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() }),
+        updateFeatureShowcase: (id, d) => updateDoc(doc(db, 'featureShowcases', id), d),
+        deleteFeatureShowcase: (id) => deleteDoc(doc(db, 'featureShowcases', id)),
+        createCreditPack: (p) => addDoc(collection(db, 'creditPacks'), { ...p, createdAt: serverTimestamp() }),
+        updateCreditPack: (id, d) => updateDoc(doc(db, 'creditPacks', id), d),
+        deleteCreditPack: (id) => deleteDoc(doc(db, 'creditPacks', id)),
+        createPurchaseRequest,
+        approvePurchaseRequest,
+        declinePurchaseRequest,
+        createStoreItem: (i) => addDoc(collection(db, 'storeItems'), { ...i, createdAt: serverTimestamp() }),
+        updateStoreItem: (id, d) => updateDoc(doc(db, 'storeItems', id), d),
+        deleteStoreItem: (id) => deleteDoc(doc(db, 'storeItems', id)),
+        redeemStoreItem,
+        addVideoCategory: (c) => addDoc(collection(db, 'videoCategories'), { ...c, createdAt: serverTimestamp() }),
+        deleteVideoCategory: async (id) => {
+            const batch = writeBatch(db);
+            const lecsSnap = await getDocs(query(collection(db, 'videoLectures'), where('categoryId', '==', id)));
+            lecsSnap.forEach(d => batch.delete(d.ref));
+            batch.delete(doc(db, 'videoCategories', id));
+            await batch.commit();
+        },
+        addVideoLecture: (l) => addDoc(collection(db, 'videoLectures'), { ...l, createdAt: serverTimestamp() }),
+        deleteVideoLecture: (id) => deleteDoc(doc(db, 'videoLectures', id)),
     };
 
-    return (
-        <AppDataContext.Provider value={value}>
-            {children}
-        </AppDataContext.Provider>
-    );
+    return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 };
 
 export const useAdmin = () => {
@@ -1201,32 +780,17 @@ export const useAdmin = () => {
     return context;
 };
 
-export const useUsers = () => {
-    const context = useContext(AppDataContext);
-    if (!context) throw new Error('useUsers must be used within an AppDataProvider');
-    return context;
-};
-
+export const useUsers = () => useAdmin();
 export const useAnnouncements = () => {
-    const context = useContext(AppDataContext);
-    if (!context) throw new Error('useAnnouncements must be used within an AppDataProvider');
-    return context;
+    const { announcements, loading } = useAdmin();
+    return { announcements, loading };
 };
-
 export const useResources = () => {
-    const context = useContext(AppDataContext);
-    if (!context) throw new Error('useResources must be used within an AppDataProvider');
-    return { allResources: context.resources, allSections: context.resourceSections, loading: context.loading };
+    const { resources, resourceSections, loading } = useAdmin();
+    return { allResources: resources, allSections: resourceSections, loading };
 };
-
-export const usePolls = () => {
-    const context = useContext(AppDataContext);
-    if(!context) throw new Error('usePolls must be used within an AppDataProvider');
-    return context;
-}
-
+export const usePolls = () => useAdmin();
 export const useDailySurprises = () => {
-    const context = useContext(AppDataContext);
-    if(!context) throw new Error('useDailySurprises must be used within an AppDataProvider');
-    return { dailySurprises: context.dailySurprises, addDailySurprise: context.addDailySurprise, deleteDailySurprise: context.deleteDailySurprise, loading: context.loading };
-}
+    const { dailySurprises, loading } = useAdmin();
+    return { dailySurprises, loading };
+};
