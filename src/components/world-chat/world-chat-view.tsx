@@ -1,12 +1,11 @@
-
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem } from 'lucide-react';
-import { useWorldChat, WorldChatMessage, ReplyContext, PollData } from '@/hooks/use-world-chat';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem, CloudRain, Zap } from 'lucide-react';
+import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,27 +19,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../ui/sheet';
-import { Progress } from '../ui/progress';
 
 const userColors = [
-    'border-red-500/50',
-    'border-orange-500/50',
-    'border-amber-500/50',
-    'border-yellow-500/50',
-    'border-lime-500/50',
-    'border-green-500/50',
-    'border-emerald-500/50',
-    'border-teal-500/50',
-    'border-cyan-500/50',
-    'border-sky-500/50',
-    'border-blue-500/50',
-    'border-indigo-500/50',
-    'border-violet-500/50',
-    'border-purple-500/50',
-    'border-fuchsia-500/50',
-    'border-pink-500/50',
-    'border-rose-500/50',
+    'text-red-400', 'text-orange-400', 'text-amber-400', 'text-yellow-400', 'text-lime-400', 
+    'text-green-400', 'text-emerald-400', 'text-teal-400', 'text-cyan-400', 'text-sky-400', 
+    'text-blue-400', 'text-indigo-400', 'text-violet-400', 'text-purple-400', 'text-fuchsia-400', 
+    'text-pink-400', 'text-rose-400',
 ];
 
 const getUserColor = (userId: string) => {
@@ -51,92 +35,56 @@ const getUserColor = (userId: string) => {
     return userColors[Math.abs(hash) % userColors.length];
 };
 
-const chatThemes = [
-    { id: 'blue-nebula', name: 'Cosmic Blue', class: 'blue-nebula-bg' },
-    { id: 'mindmate-official', name: 'MindMate Official', class: 'mindmate-official-bg' },
-    { id: 'whatsapp', name: 'WhatsApp Style', class: 'whatsapp-style-bg' },
-    { id: 'glassmorphism', name: 'Glassmorphism', class: 'glassmorphism-light-bg' },
-    { id: 'lava', name: 'Lava Flow', class: 'lava-flow-bg' },
-    { id: 'classic-grid', name: 'Classic Grid', class: 'classic-grid-bg' },
-];
-
-function PollMessage({ pollData, messageId }: { pollData: PollData, messageId: string }) {
-    const { user } = useUser();
-    const { submitPollVote } = useWorldChat();
-
-    const totalVotes = Object.values(pollData.results).flat().length;
-    const userVote = Object.keys(pollData.results).find(option => pollData.results[option].includes(user?.id || ''));
-
-    return (
-        <div className="space-y-3">
-            <p className="font-bold text-lg text-center text-white">{pollData.question}</p>
-            <div className="space-y-2">
-                {pollData.options.map((option, index) => {
-                    if (userVote) {
-                        const votesForOption = pollData.results[option]?.length || 0;
-                        const percentage = totalVotes > 0 ? (votesForOption / totalVotes) * 100 : 0;
-                        const isUserChoice = userVote === option;
-                        return (
-                            <div key={index} className="space-y-1 p-2 rounded-md bg-black/20">
-                                <div className="flex justify-between items-center text-sm font-semibold">
-                                    <p className={cn(isUserChoice && "text-cyan-300")}>{option}</p>
-                                    <p>{percentage.toFixed(0)}%</p>
-                                </div>
-                                <Progress value={percentage} className="h-2"/>
-                            </div>
-                        )
-                    }
-                    return (
-                        <Button key={index} variant="outline" className="w-full justify-start bg-white/5 border-white/20 text-white hover:bg-white/10" onClick={() => submitPollVote(messageId, option)}>
-                            {option}
-                        </Button>
-                    )
-                })}
-            </div>
-             <p className="text-xs text-slate-400 text-center">{totalVotes} vote{totalVotes !== 1 && 's'}</p>
-        </div>
-    )
-}
-
 export function WorldChatView() {
-    const { messages, sendMessage, loading, pinnedMessage, unpinMessage, typingUsers, updateTypingStatus } = useWorldChat();
+    const { messages, sendMessage, sendRain, claimRain, loading, pinnedMessage, unpinMessage, typingUsers, updateTypingStatus } = useWorldChat();
     const { users: allUsers, loading: usersLoading, isAdmin } = useAdmin();
     const { user: currentUser } = useUser();
+    const { toast } = useToast();
     const [newMessage, setNewMessage] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
-    const [dismissedPinId, setDismissedPinId] = useLocalStorage<string | null>('dismissedPinId', null);
     const [replyingTo, setReplyingTo] = useState<WorldChatMessage | null>(null);
-    const [activeTheme, setActiveTheme] = useLocalStorage('worldChatTheme', chatThemes[0]);
-    
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-
-    const scrollToBottom = useCallback(() => {
+    const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
         if (scrollAreaRef.current) {
-            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior: 'smooth' });
+            scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior });
         }
     }, []);
 
     useEffect(() => {
+        scrollToBottom('auto');
+    }, [loading]);
+
+    useEffect(() => {
         if (scrollAreaRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
-            if (scrollHeight - scrollTop - clientHeight < 200) {
+            if (scrollHeight - scrollTop - clientHeight < 300) {
                  scrollToBottom();
             }
         }
     }, [messages, scrollToBottom]);
 
-
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim()) return;
 
+        if (isAdmin && newMessage.startsWith('/rain ')) {
+            const parts = newMessage.split(' ');
+            const amount = parseInt(parts[1]);
+            const limit = parseInt(parts[2]);
+            if (!isNaN(amount) && !isNaN(limit)) {
+                await sendRain(amount, limit);
+                setNewMessage('');
+                return;
+            }
+        }
+
         const replyContext: ReplyContext | null = replyingTo ? {
             messageId: replyingTo.id,
             senderId: replyingTo.senderId,
-            senderName: allUsers.find(u => u.uid === replyingTo.senderId)?.displayName || 'Unknown User',
-            textSnippet: replyingTo.text?.substring(0, 50) || '',
+            senderName: allUsers.find(u => u.uid === replyingTo.senderId)?.displayName || 'Unknown',
+            textSnippet: replyingTo.text?.substring(0, 50) || 'Action Message',
         } : null;
 
         await sendMessage(newMessage, replyContext);
@@ -146,361 +94,223 @@ export function WorldChatView() {
 
     const handleTyping = (text: string) => {
         setNewMessage(text);
-
-        if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-        } else {
-            updateTypingStatus(true);
-        }
-
+        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+        else updateTypingStatus(true);
         typingTimeoutRef.current = setTimeout(() => {
             updateTypingStatus(false);
             typingTimeoutRef.current = null;
         }, 2000); 
-    }
+    };
     
     const usersMap = new Map(allUsers.map(u => [u.uid, u]));
-    
-    const showPinnedMessage = pinnedMessage && pinnedMessage.id !== dismissedPinId;
-    const pinnedMessageSender = pinnedMessage ? allUsers.find(u => u.uid === pinnedMessage.senderId) : null;
-    
-    const handleReplyClick = (message: WorldChatMessage) => {
-        setReplyingTo(message);
-    }
-    
     const getTypingText = () => {
         if (typingUsers.length === 0) return null;
         if (typingUsers.length === 1) return `${typingUsers[0].displayName} is typing...`;
-        if (typingUsers.length === 2) return `${typingUsers[0].displayName} and ${typingUsers[1].displayName} are typing...`;
         return `${typingUsers.length} users are typing...`;
-    }
-
-    return (
-        <>
-            <div className={cn("h-full grid grid-rows-[auto_auto_1fr_auto] border-0 transition-all duration-500", activeTheme.class)}>
-                 <header className="flex flex-row items-center justify-between p-4 border-b border-white/10 bg-black/20">
-                    <div className="flex items-center gap-3">
-                        <Button asChild variant="ghost" size="icon" className="h-10 w-10 text-white hover:bg-white/10">
-                            <Link href="/dashboard"><ArrowLeft /></Link>
-                        </Button>
-                        <Globe className="h-6 w-6 text-cyan-300" />
-                        <h2 className="text-xl font-bold text-white">World Chat</h2>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Sheet>
-                            <SheetTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-10 w-10 text-white hover:bg-white/10">
-                                    <Palette />
-                                </Button>
-                            </SheetTrigger>
-                            <SheetContent>
-                                <SheetHeader>
-                                    <SheetTitle>Chat Themes</SheetTitle>
-                                </SheetHeader>
-                                <div className="py-4 space-y-4">
-                                    {chatThemes.map(theme => (
-                                        <button key={theme.id} onClick={() => setActiveTheme(theme)} className="w-full text-left p-2 rounded-lg border-2 data-[active=true]:border-primary data-[active-false]:border-transparent" data-active={activeTheme.id === theme.id}>
-                                            <div className="flex items-center gap-4">
-                                                <div className={cn("h-16 w-24 rounded-md", theme.class)}></div>
-                                                <span className="font-semibold">{theme.name}</span>
-                                            </div>
-                                        </button>
-                                    ))}
-                                </div>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
-                </header>
-                {showPinnedMessage && pinnedMessageSender && (
-                    <div className="p-3 bg-primary/10 border-b border-primary/20 flex items-center gap-3 text-sm">
-                        <Pin className="h-5 w-5 text-primary flex-shrink-0" />
-                        <div className="flex-1 truncate text-white">
-                            <span className="font-bold">{pinnedMessageSender.displayName}:</span>{' '}
-                            <span>{pinnedMessage.text}</span>
-                        </div>
-                        {isAdmin && (
-                             <>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-primary" onClick={() => unpinMessage()}>
-                                    <PinOff className="h-4 w-4" />
-                                </Button>
-                             </>
-                        )}
-                         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDismissedPinId(pinnedMessage.id)}>
-                            <X className="h-4 w-4" />
-                        </Button>
-                    </div>
-                )}
-                <div className="overflow-hidden relative">
-                    <ScrollArea className="h-full" viewportRef={scrollAreaRef}>
-                        <div className="p-4 space-y-6">
-                            {(loading || usersLoading) && (
-                                <div className="flex justify-center items-center h-full">
-                                    <Loader2 className="h-8 w-8 animate-spin text-white" />
-                                </div>
-                            )}
-                            <AnimatePresence>
-                                {messages.map((msg, index) => {
-                                    const sender = usersMap.get(msg.senderId);
-                                    if (!sender) return null;
-                                    
-                                    const prevMessage = messages[index - 1];
-                                    const showHeader = !prevMessage || prevMessage.senderId !== msg.senderId || !isSameDay(msg.timestamp, prevMessage.timestamp);
-
-                                    return <ChatMessage key={msg.id} message={msg} sender={sender} isOwn={msg.senderId === currentUser?.id} showHeader={showHeader} onUserSelect={setSelectedUser} onReply={handleReplyClick} />;
-                                })}
-                            </AnimatePresence>
-                        </div>
-                    </ScrollArea>
-                </div>
-                <footer className="p-4 border-t border-white/10 bg-black/20 flex-col items-start gap-2">
-                     <AnimatePresence>
-                        {replyingTo && (
-                            <motion.div 
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: 'auto', opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                className="w-full bg-slate-800/60 rounded-t-lg p-2 border-b border-slate-700 overflow-hidden"
-                            >
-                                <div className="flex items-center justify-between">
-                                    <div className="text-xs text-slate-400">
-                                        <p>Replying to <span className="font-bold text-slate-300">{allUsers.find(u => u.uid === replyingTo.senderId)?.displayName}</span></p>
-                                        <p className="truncate italic">"{replyingTo.text}"</p>
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-slate-400 hover:text-white" onClick={() => setReplyingTo(null)}>
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                     <div className="h-5 text-xs text-slate-400 font-medium italic">
-                        {getTypingText()}
-                    </div>
-                    <form onSubmit={handleSendMessage} className="flex items-center w-full gap-2">
-                        <Input
-                            value={newMessage}
-                            onChange={(e) => handleTyping(e.target.value)}
-                            placeholder="Message the world..."
-                            className="flex-1 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-400 focus:ring-primary"
-                        />
-                        <Button type="submit" size="icon" disabled={!newMessage.trim()}>
-                            <Send />
-                        </Button>
-                    </form>
-                </footer>
-            </div>
-
-             <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-                <DialogContent className="max-w-md">
-                    {selectedUser && (
-                         <>
-                         <DialogHeader>
-                            <DialogTitle>{selectedUser.displayName}'s Profile</DialogTitle>
-                         </DialogHeader>
-                         <div className="max-h-[70vh] overflow-y-auto p-1">
-                            <UserProfileCard user={selectedUser} />
-                         </div>
-                        </>
-                    )}
-                </DialogContent>
-             </Dialog>
-        </>
-    );
-}
-
-const REACTIONS = ['👍', '❤️', '😂', '🔥', '🎉', '🤔'];
-
-const ClickableMessage = ({ text }: { text: string }) => {
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const parts = text.split(urlRegex);
-
-    return (
-        <p className="whitespace-pre-wrap text-white text-left select-text">
-            {parts.map((part, index) => {
-                if (part.match(urlRegex)) {
-                    return (
-                        <a
-                            key={index}
-                            href={part}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-400 hover:underline"
-                            onClick={(e) => e.stopPropagation()} 
-                        >
-                            {part}
-                        </a>
-                    );
-                }
-                return part;
-            })}
-        </p>
-    );
-};
-
-function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void }) {
-    const { user: clerkUser } = useUser();
-    const { isAdmin } = useWorldChat();
-    const { editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget } = useWorldChat();
-    const { toast } = useToast();
-    
-    const [isEditing, setIsEditing] = useState(false);
-    const [editText, setEditText] = useState(message.text || '');
-
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-    useEffect(() => {
-        if(isEditing && textareaRef.current) {
-            textareaRef.current.focus();
-            textareaRef.current.style.height = 'auto';
-            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-        }
-    }, [isEditing]);
-    
-    const handleEditSave = () => {
-        if(editText.trim() !== message.text) {
-            editMessage(message.id, editText);
-        }
-        setIsEditing(false);
-    }
-    
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if(e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleEditSave();
-        } else if (e.key === 'Escape') {
-            setIsEditing(false);
-        }
-    }
-    
-    const handleCopy = () => {
-        if (message.text) {
-            navigator.clipboard.writeText(message.text);
-            toast({ title: "Message copied to clipboard" });
-        }
     };
 
-
-    if (!sender) return null;
-
-    const isSuperAdmin = sender.uid === SUPER_ADMIN_UID;
-    const ownedBadges = [
-        (isSuperAdmin || sender.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
-        sender.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
-        sender.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
-        sender.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
-        sender.isCoDev && { type: 'co-dev', name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> }
-    ].filter(Boolean);
-
-    if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> } as any);
-
-    const badgeToShow = ownedBadges.find(b => b.type === sender.showcasedBadge) || ownedBadges[0] || null;
-    const canDelete = isOwn || isAdmin;
-
-    const hasAlphaRadiance = sender.inventory?.alphaGlowExpires && new Date(sender.inventory.alphaGlowExpires) > new Date();
-
-    const reactions = message.reactions || {};
-    const hasReactions = Object.keys(reactions).some(emoji => reactions[emoji]?.length > 0);
-    const fiveMinutes = 5 * 60 * 1000;
-    const isEditable = isOwn && (new Date().getTime() - message.timestamp.getTime()) < fiveMinutes;
-    const userColor = getUserColor(sender.uid);
-    const isNugget = (message.nuggetMarkedBy?.length || 0) > 0;
-
     return (
-        <motion.div
-            layout
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="group/message relative"
-        >
-            <div className={cn("relative flex items-end gap-2", isOwn ? "justify-end" : "justify-start")}>
+        <div className="h-screen flex flex-col bg-whatsapp-style-bg relative overflow-hidden">
+            {/* Fixed Header */}
+            <header className="flex-shrink-0 z-20 flex items-center justify-between p-4 bg-[#075e54] dark:bg-[#1f2c34] text-white shadow-md">
+                <div className="flex items-center gap-3">
+                    <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/10 h-8 w-8">
+                        <Link href="/dashboard"><ArrowLeft /></Link>
+                    </Button>
+                    <Globe className="h-6 w-6 text-emerald-400" />
+                    <div>
+                        <h2 className="font-bold text-lg leading-tight">World Hub</h2>
+                        <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">Public Community</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/10">
+                        <Link href="/dashboard/social/nuggets"><Gem className="h-5 w-5 text-amber-400"/></Link>
+                    </Button>
+                </div>
+            </header>
 
-                {!isOwn && <button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={sender.photoURL} /><AvatarFallback>{sender.displayName?.charAt(0)}</AvatarFallback></Avatar></button>}
-                
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <div className={cn("max-w-xs md:max-w-md", isOwn ? "text-right" : "text-left")}>
-                            {showHeader && (
-                                <div className={cn("flex items-baseline gap-2 mb-1", isOwn ? "justify-end" : "justify-start")}>
-                                    {!isOwn && ( <button onClick={() => onUserSelect(sender)}><p className="text-sm font-semibold text-slate-300 hover:underline">{sender.displayName}</p></button> )}
-                                    {badgeToShow && (badgeToShow as any).badge}
-                                    <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
-                                </div>
-                            )}
-                            <div className={cn(
-                                "relative p-3 rounded-2xl bg-black/30 border-2 cursor-pointer transition-all duration-500", 
-                                userColor, 
-                                isOwn ? "rounded-br-none" : "rounded-bl-none",
-                                isNugget && 'border-amber-400/80 shadow-lg shadow-amber-500/10',
-                                hasAlphaRadiance && 'animate-[pulse_2s_infinite] border-primary shadow-[0_0_15px_rgba(139,92,246,0.5)]'
-                            )}>
-                                {isNugget && <Gem className="absolute -top-2.5 -left-2.5 h-5 w-5 text-amber-400 [filter:drop-shadow(0_0_4px_currentColor)]" />}
-                                {message.replyingTo && (
-                                    <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs text-left">
-                                        <p className="font-bold text-slate-400">Replying to {message.replyingTo.senderName}</p>
-                                        <p className="italic text-slate-500 truncate">"{message.replyingTo.textSnippet}"</p>
-                                    </div>
-                                )}
-                                {message.type === 'poll' && message.pollData ? (
-                                    <PollMessage pollData={message.pollData} messageId={message.id}/>
-                                ) : isEditing ? (
-                                    <div className="space-y-2">
-                                        <textarea ref={textareaRef} value={editText} onChange={(e) => { setEditText(e.target.value); e.target.style.height = 'auto'; e.target.style.height = `${e.target.scrollHeight}px`; }} onKeyDown={handleKeyDown} className="w-full bg-transparent text-white border-0 focus:ring-0 resize-none p-0" />
-                                        <div className="flex justify-end gap-2 text-xs"><button onClick={() => setIsEditing(false)}>Cancel</button><button onClick={handleEditSave} className="font-bold text-primary">Save</button></div>
-                                    </div>
-                                ) : ( message.text && <ClickableMessage text={message.text} /> )}
-                                {message.editedAt && !isEditing && ( <p className="text-xs text-slate-400/70 mt-1">(edited)</p> )}
-                            </div>
+            {/* Pinned Announcement */}
+            {pinnedMessage && (
+                <div className="flex-shrink-0 z-10 p-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800/30 flex items-center gap-3 text-xs">
+                    <Pin className="h-4 w-4 text-yellow-600 flex-shrink-0" />
+                    <p className="flex-1 truncate italic">"{pinnedMessage.text}"</p>
+                    {isAdmin && <Button variant="ghost" size="icon" className="h-6 w-6 text-yellow-600" onClick={unpinMessage}><PinOff className="h-3 w-3"/></Button>}
+                </div>
+            )}
+
+            {/* Scrollable Chat Area */}
+            <ScrollArea className="flex-1 relative" viewportRef={scrollAreaRef}>
+                <div className="p-4 space-y-2 min-h-full flex flex-col justify-end">
+                    {(loading || usersLoading) && (
+                        <div className="absolute inset-0 flex justify-center items-center">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
                         </div>
-                     </PopoverTrigger>
-                     <PopoverContent className="w-auto p-0">
-                        <div className="flex items-center bg-slate-800/80 backdrop-blur-sm rounded-full shadow-lg border border-white/10 p-1">
-                             <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white"><Smile className="h-4 w-4" /></Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-1">
-                                    <div className="flex gap-1">
-                                        {REACTIONS.map(emoji => (
-                                            <Button key={emoji} variant="ghost" size="icon" className="h-8 w-8 text-xl" onClick={() => toggleReaction(message.id, emoji)}>{emoji}</Button>
-                                        ))}
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => toggleNugget(message.id)}><Gem className="h-4 w-4"/></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
-                            {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
-                            {isAdmin && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>)}
-                            {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent> <AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
-                        </div>
-                    </PopoverContent>
-                </Popover>
+                    )}
+                    {messages.map((msg, index) => {
+                        const sender = usersMap.get(msg.senderId);
+                        if (!sender) return null;
+                        const isOwn = msg.senderId === currentUser?.id;
+                        const prevMessage = messages[index - 1];
+                        const showHeader = !prevMessage || prevMessage.senderId !== msg.senderId || !isSameDay(msg.timestamp, prevMessage.timestamp);
+                        const showDate = !prevMessage || !isSameDay(msg.timestamp, prevMessage.timestamp);
 
-                 {isOwn && (<button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={clerkUser?.imageUrl} /><AvatarFallback>{clerkUser?.firstName?.charAt(0)}</AvatarFallback></Avatar></button>)}
-            </div>
-
-            {hasReactions && (
-                <div className={cn("flex flex-wrap gap-1.5 mt-1.5", isOwn ? "justify-end mr-14" : "justify-start ml-14")}>
-                    {Object.entries(reactions).map(([emoji, userIds]) => {
-                        if (userIds.length === 0) return null;
-                        const hasReacted = clerkUser && userIds.includes(clerkUser.id);
                         return (
-                             <button
-                                key={emoji}
-                                onClick={() => toggleReaction(message.id, emoji)}
-                                className={cn(
-                                    "px-2 py-0.5 rounded-full text-xs flex items-center gap-1.5 transition-colors",
-                                    hasReacted ? "bg-primary/80 text-primary-foreground border border-primary-foreground/50" : "bg-black/20 border border-white/10 text-white/80 hover:bg-black/40"
+                            <div key={msg.id}>
+                                {showDate && (
+                                    <div className="flex justify-center my-4">
+                                        <span className="px-3 py-1 bg-black/10 dark:bg-white/10 rounded-full text-[10px] font-bold text-muted-foreground uppercase">
+                                            {format(msg.timestamp, 'MMMM d, yyyy')}
+                                        </span>
+                                    </div>
                                 )}
-                            >
-                                <span>{emoji}</span>
-                                <span className="font-semibold">{userIds.length}</span>
-                            </button>
+                                <ChatMessage 
+                                    message={msg} 
+                                    sender={sender} 
+                                    isOwn={isOwn} 
+                                    showHeader={showHeader} 
+                                    onUserSelect={setSelectedUser} 
+                                    onReply={setReplyingTo}
+                                    onClaimRain={() => claimRain(msg.id)}
+                                />
+                            </div>
                         );
                     })}
                 </div>
-            )}
+            </ScrollArea>
+
+            {/* Fixed Footer */}
+            <footer className="flex-shrink-0 z-20 p-3 bg-[#ededed] dark:bg-[#1f2c34] border-t dark:border-white/5">
+                <AnimatePresence>
+                    {replyingTo && (
+                        <motion.div 
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="bg-black/5 dark:bg-white/5 rounded-t-xl p-2 border-b border-black/10 dark:border-white/10 mb-2 flex items-center justify-between"
+                        >
+                            <div className="text-xs border-l-4 border-emerald-500 pl-2">
+                                <p className="font-bold text-emerald-600 dark:text-emerald-400">Replying to {usersMap.get(replyingTo.senderId)?.displayName}</p>
+                                <p className="truncate opacity-70 italic">"{replyingTo.text || 'Action Message'}"</p>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setReplyingTo(null)}><X className="h-3 w-3" /></Button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                        <Input
+                            value={newMessage}
+                            onChange={(e) => handleTyping(e.target.value)}
+                            placeholder="Type a message..."
+                            className="h-11 rounded-full pl-4 bg-white dark:bg-[#2a3942] border-none shadow-sm text-sm"
+                        />
+                        <div className="absolute -top-5 left-4 text-[10px] text-muted-foreground font-medium italic animate-pulse">
+                            {getTypingText()}
+                        </div>
+                    </div>
+                    <Button 
+                        type="submit" 
+                        onClick={handleSendMessage}
+                        size="icon" 
+                        className="h-11 w-11 rounded-full bg-[#00a884] hover:bg-[#008f6a] text-white shadow-md" 
+                        disabled={!newMessage.trim()}
+                    >
+                        <Send className="h-5 w-5" />
+                    </Button>
+                </div>
+            </footer>
+
+            {/* Profile Dialog */}
+            <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
+                <DialogContent className="max-w-md p-0 overflow-hidden border-0">
+                    {selectedUser && <UserProfileCard user={selectedUser} />}
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
+
+function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply, onClaimRain }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void, onClaimRain: () => void }) {
+    const { isAdmin, editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget } = useWorldChat();
+    const [isEditing, setIsEditing] = useState(false);
+    const [editText, setEditText] = useState(message.text || '');
+
+    const handleEditSave = () => {
+        if(editText.trim() !== message.text) editMessage(message.id, editText);
+        setIsEditing(false);
+    };
+
+    const hasGlow = sender.inventory?.alphaGlowExpires && new Date(sender.inventory.alphaGlowExpires) > new Date();
+    const isNugget = (message.nuggetMarkedBy?.length || 0) > 0;
+
+    return (
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("flex flex-col group", isOwn ? "items-end" : "items-start")}>
+            <div className={cn("flex gap-2 max-w-[85%]", isOwn ? "flex-row-reverse" : "flex-row")}>
+                {!isOwn && (
+                    <button onClick={() => onUserSelect(sender)} className="mt-1 flex-shrink-0">
+                        <Avatar className="h-8 w-8 border border-white/10"><AvatarImage src={sender.photoURL}/><AvatarFallback>{sender.displayName?.charAt(0)}</AvatarFallback></Avatar>
+                    </button>
+                )}
+                
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <div className={cn(
+                            "relative px-3 py-2 rounded-2xl shadow-sm text-sm cursor-pointer transition-all",
+                            isOwn ? "bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none" : "bg-white dark:bg-[#202c33] rounded-tl-none",
+                            hasGlow && "ring-2 ring-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.3)]",
+                            isNugget && "border-amber-400 border-2"
+                        )}>
+                            {showHeader && !isOwn && (
+                                <p className={cn("text-[11px] font-black mb-1", getUserColor(sender.uid))}>
+                                    {sender.displayName}
+                                </p>
+                            )}
+                            
+                            {message.replyingTo && (
+                                <div className="mb-2 p-2 rounded-lg bg-black/5 dark:bg-black/20 border-l-4 border-emerald-500 text-[11px] opacity-80 italic">
+                                    <p className="font-bold not-italic">{message.replyingTo.senderName}</p>
+                                    <p className="truncate">"{message.replyingTo.textSnippet}"</p>
+                                </div>
+                            )}
+
+                            {message.type === 'rain' ? (
+                                <div className="p-4 text-center space-y-3 bg-gradient-to-br from-blue-500/20 to-cyan-500/20 rounded-xl border border-blue-400/30">
+                                    <div className="relative">
+                                        <CloudRain className="h-10 w-10 text-cyan-400 mx-auto animate-bounce" />
+                                        <Zap className="h-4 w-4 text-yellow-400 absolute top-0 right-1/3 animate-pulse"/>
+                                    </div>
+                                    <p className="font-black text-blue-600 dark:text-blue-300 italic tracking-tighter text-xl">CREDIT RAIN!</p>
+                                    <p className="text-xs opacity-80">Grab {message.rainData?.amount} credits before they're gone!</p>
+                                    <Button size="sm" onClick={(e) => { e.stopPropagation(); onClaimRain(); }} className="w-full bg-cyan-500 hover:bg-cyan-600 font-bold">
+                                        CLAIM RAIN
+                                    </Button>
+                                    <p className="text-[10px] opacity-60 uppercase font-black">{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims} TAKEN</p>
+                                </div>
+                            ) : isEditing ? (
+                                <div className="space-y-2">
+                                    <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full bg-transparent border-0 focus:ring-0 resize-none p-0 outline-none" rows={2}/>
+                                    <div className="flex justify-end gap-2 text-[10px] font-bold"><button onClick={() => setIsEditing(false)}>CANCEL</button><button onClick={handleEditSave} className="text-emerald-500">SAVE</button></div>
+                                </div>
+                            ) : (
+                                <p className="leading-relaxed select-text whitespace-pre-wrap">{message.text}</p>
+                            )}
+
+                            <div className="flex items-center justify-end gap-1 mt-1 opacity-60 text-[9px] font-bold">
+                                {message.editedAt && <span>edited</span>}
+                                <span>{format(message.timestamp, 'h:mm a')}</span>
+                            </div>
+                        </div>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-1 bg-slate-800 border-white/10 rounded-full flex gap-1 shadow-2xl">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => toggleNugget(message.id)}><Gem className={cn("h-4 w-4", isNugget && "text-amber-400")}/></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>
+                        {isAdmin && <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>}
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteMessage(message.id)}><Trash2 className="h-4 w-4"/></Button>
+                    </PopoverContent>
+                </Popover>
+            </div>
         </motion.div>
     );
 }

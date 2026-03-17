@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -30,9 +29,7 @@ function NuggetJarContent() {
     const groupedNuggets = useMemo(() => {
         return nuggets.reduce((acc, nugget) => {
             const dateStr = format(nugget.timestamp, 'yyyy-MM-dd');
-            if (!acc[dateStr]) {
-                acc[dateStr] = [];
-            }
+            if (!acc[dateStr]) acc[dateStr] = [];
             acc[dateStr].push(nugget);
             return acc;
         }, {} as Record<string, WorldChatMessage[]>);
@@ -49,51 +46,52 @@ function NuggetJarContent() {
     }
 
     return (
-        <div className="space-y-8">
-            <div>
-                 <Button asChild variant="outline" className="mb-4">
-                    <Link href="/dashboard/social"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Social Hub</Link>
+        <div className="space-y-8 p-4">
+            <div className="flex flex-col gap-4">
+                 <Button asChild variant="outline" className="w-fit">
+                    <Link href="/dashboard/world"><ArrowLeft className="mr-2 h-4 w-4"/> Back to World Chat</Link>
                 </Button>
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                  <Gem className="h-8 w-8 text-amber-500" />
-                  Wisdom Nugget Jar
-                </h1>
-                <p className="text-muted-foreground">A collection of the most helpful messages from the community.</p>
+                <div className="text-center">
+                    <Gem className="h-16 w-16 text-amber-500 mx-auto mb-2 animate-gold-shine" />
+                    <h1 className="text-4xl font-black tracking-tight uppercase">The Wisdom Nugget Jar</h1>
+                    <p className="text-muted-foreground max-w-md mx-auto">Treasured knowledge shared by our community of legends.</p>
+                </div>
             </div>
 
             {nuggets.length === 0 ? (
-                <Card className="text-center py-16 border-dashed">
-                    <CardContent>
-                        <p className="text-lg text-muted-foreground">The Nugget Jar is empty.</p>
-                        <p className="text-sm text-muted-foreground">Mark helpful messages in the World Chat to save them here!</p>
-                    </CardContent>
-                </Card>
+                <div className="text-center py-20 opacity-50">
+                    <Gem className="h-20 w-20 mx-auto mb-4" />
+                    <p className="text-xl font-bold uppercase tracking-widest">The Jar is Empty</p>
+                    <p className="text-sm">Mark helpful messages in the World Chat to see them here.</p>
+                </div>
             ) : (
-                <div className="space-y-8">
+                <div className="space-y-8 max-w-3xl mx-auto">
                     {sortedGroups.map(dateStr => {
                         const nuggetsForDay = groupedNuggets[dateStr];
                         const date = new Date(dateStr);
                         
                         return (
                             <div key={dateStr}>
-                                <h2 className="font-bold text-xl mb-4 pb-2 border-b">{formatDateHeading(date)}</h2>
+                                <div className="flex justify-center mb-6">
+                                    <span className="px-4 py-1 bg-muted rounded-full text-xs font-bold uppercase text-muted-foreground">{formatDateHeading(date)}</span>
+                                </div>
                                 <div className="space-y-4">
                                     {nuggetsForDay.map(nugget => {
                                         const sender = usersMap.get(nugget.senderId);
                                         return (
-                                            <Card key={nugget.id} className="bg-card/80">
-                                                <CardContent className="p-4 flex items-start gap-4">
-                                                     <Avatar className="h-10 w-10 border">
-                                                        <AvatarImage src={sender?.photoURL} />
-                                                        <AvatarFallback>{sender?.displayName.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    <div className="flex-1">
-                                                         <div className="flex items-center justify-between text-sm">
-                                                            <p className="font-semibold">{sender?.displayName || 'Unknown User'}</p>
-                                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(nugget.timestamp, { addSuffix: true })}</p>
+                                            <Card key={nugget.id} className="border-amber-400/30 bg-amber-400/5 shadow-xl shadow-amber-500/5 overflow-hidden">
+                                                <CardContent className="p-6">
+                                                    <div className="flex items-center gap-4 mb-4">
+                                                        <Avatar className="h-10 w-10 border-2 border-amber-400/50">
+                                                            <AvatarImage src={sender?.photoURL} />
+                                                            <AvatarFallback>{sender?.displayName?.charAt(0)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <div>
+                                                            <p className="font-black uppercase text-sm">{sender?.displayName || 'Unknown User'}</p>
+                                                            <p className="text-[10px] opacity-60">{formatDistanceToNow(nugget.timestamp, { addSuffix: true })}</p>
                                                         </div>
-                                                         <p className="text-base text-foreground mt-1 whitespace-pre-wrap">{nugget.text}</p>
                                                     </div>
+                                                    <p className="text-lg leading-relaxed font-medium italic text-foreground/90 whitespace-pre-wrap">"{nugget.text}"</p>
                                                 </CardContent>
                                             </Card>
                                         );

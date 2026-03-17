@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from 'next/link';
@@ -38,7 +36,8 @@ import {
   Megaphone,
   Fingerprint,
   ShoppingCart,
-  Film
+  Film,
+  Gem
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -63,6 +62,7 @@ const communityNav = [
   { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
   { href: '/dashboard/groups', icon: Users, label: 'Study Groups', glow: 'text-green-400' },
   { href: '/dashboard/world', icon: Globe, label: 'World Chat', glow: 'text-blue-400' },
+  { href: '/dashboard/social/nuggets', icon: Gem, label: 'Nugget Jar', glow: 'text-amber-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
 ];
@@ -109,61 +109,36 @@ export default function SidebarContent() {
   const showDevLink = isSuperAdmin || currentUserData?.isCoDev;
   
   const isActive = (href: string) => {
-    // Exact match for dashboard home, startsWith for others
     if (href === '/dashboard' && pathname === href) return true;
     if (href !== '/dashboard' && pathname.startsWith(href)) return true;
-    
-    // Special handling for merged routes
-    if (href === '/dashboard/focus' && (pathname.startsWith('/dashboard/pomodoro') || pathname.startsWith('/dashboard/tracker') || pathname.startsWith('/dashboard/tracker-insights') || pathname.startsWith('/dashboard/challenger'))) {
-      return true;
-    }
-    if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos'))) {
-        return true;
-    }
-     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin') || pathname.startsWith('/dashboard/whats-new'))) {
-        return true;
-    }
-     if (href === '/dashboard/store' && pathname.startsWith('/dashboard/store/history')) {
-        return true;
-    }
-     if (href === '/dashboard/social' && pathname.startsWith('/dashboard/groups')) {
-        return true;
-    }
-
+    if (href === '/dashboard/focus' && (pathname.startsWith('/dashboard/pomodoro') || pathname.startsWith('/dashboard/tracker') || pathname.startsWith('/dashboard/tracker-insights') || pathname.startsWith('/dashboard/challenger'))) return true;
+    if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos'))) return true;
+    if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin') || pathname.startsWith('/dashboard/whats-new'))) return true;
+    if (href === '/dashboard/store' && pathname.startsWith('/dashboard/store/history')) return true;
+    if (href === '/dashboard/social' && pathname.startsWith('/dashboard/groups')) return true;
     return false;
   };
   
   const renderNavLinks = (navItems: typeof mainNavItems) => (
     <div className="space-y-1">
-      {navItems.map((item) => {
-        return (
+      {navItems.map((item) => (
           <Link
             key={item.label}
             href={item.href}
             prefetch={true}
             className={cn(
               'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-              isActive(item.href)
-                  ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                  : 'hover:text-primary',
+              isActive(item.href) ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary',
               item.isBold && 'font-bold text-sidebar-foreground/90'
             )}
           >
-            <div className={cn(
-              "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-              isActive(item.href) ? "bg-primary" : "group-hover:scale-y-50"
-            )}></div>
+            <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive(item.href) ? "bg-primary" : "group-hover:scale-y-50")}></div>
             <item.icon className={cn("h-5 w-5", item.glow)} />
             <span className="flex-1">{item.label}</span>
-            {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && (
-              <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-            )}
-            {item.href === '/dashboard/quiz' && hasNewQuiz && (
-              <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />
-            )}
+            {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
+            {item.href === '/dashboard/quiz' && hasNewQuiz && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
           </Link>
-        )
-      })}
+      ))}
     </div>
   );
 
@@ -175,12 +150,7 @@ export default function SidebarContent() {
           <span className="text-xl">MindMate</span>
         </Link>
         <Link href="/dashboard" aria-label="Go to Home" prefetch={true}>
-            <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} className={cn(
-                "h-11 w-11 rounded-lg",
-                isActive('/dashboard') 
-                ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-lg shadow-red-500/20" 
-                : "text-muted-foreground"
-            )}>
+            <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} className={cn("h-11 w-11 rounded-lg", isActive('/dashboard') ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-lg shadow-red-500/20" : "text-muted-foreground")}>
                 <Home className="h-6 w-6" />
             </Button>
         </Link>
@@ -194,53 +164,32 @@ export default function SidebarContent() {
         )}
       </div>
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
-        <Accordion
-          type="multiple"
-          defaultValue={['main-tools', 'compete-earn', 'community-resources', 'admin-dev']}
-          className="w-full"
-        >
+        <Accordion type="multiple" defaultValue={['main-tools', 'compete-earn', 'community-resources', 'admin-dev']} className="w-full">
           <AccordionItem value="main-tools" className="border-b-0">
-            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Main
-            </AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">
-              {renderNavLinks(mainNavItems)}
-            </AccordionContent>
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Main</AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">{renderNavLinks(mainNavItems)}</AccordionContent>
           </AccordionItem>
-        
           <AccordionItem value="community-resources" className="border-b-0">
-            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Community & Resources
-            </AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">
-              {renderNavLinks(communityNav as any)}
-            </AccordionContent>
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Community & Resources</AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">{renderNavLinks(communityNav as any)}</AccordionContent>
           </AccordionItem>
-
           <AccordionItem value="compete-earn" className="border-b-0">
-            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-              Compete & Earn
-            </AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">
-              {renderNavLinks(competeNav as any)}
-            </AccordionContent>
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Compete & Earn</AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">{renderNavLinks(competeNav as any)}</AccordionContent>
           </AccordionItem>
-            
           {(isAdmin || showDevLink) && (
             <AccordionItem value="admin-dev" className="border-b-0">
-              <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">
-                Admin & Dev
-              </AccordionTrigger>
+              <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Admin & Dev</AccordionTrigger>
               <AccordionContent className="px-0 pb-2">
                 <div className="space-y-1">
                    {isAdmin && (
-                    <Link href="/dashboard/admin" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/admin') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary')}>
+                    <Link href="/dashboard/admin" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/admin') ? 'bg-primary/10 text-primary font-semibold' : 'hover:text-primary')}>
                       <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/admin') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
                       <Shield className="h-5 w-5 text-red-400"/> Admin Panel
                     </Link>
                   )}
                   {showDevLink && (
-                    <Link href="/dashboard/dev" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/dev') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary')}>
+                    <Link href="/dashboard/dev" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/dev') ? 'bg-primary/10 text-primary font-semibold' : 'hover:text-primary')}>
                       <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/dev') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
                       <Fingerprint className="h-5 w-5 text-rose-400"/> Dev Panel
                     </Link>
@@ -249,70 +198,28 @@ export default function SidebarContent() {
               </AccordionContent>
             </AccordionItem>
           )}
-
         </Accordion>
       </div>
-
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
-          <Link
-                href="/dashboard/settings"
-                prefetch={true}
-                className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-                    isActive('/dashboard/settings') 
-                        ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                        : 'hover:text-primary',
-                )}
-            >
-                <div className={cn(
-                    "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-                    isActive('/dashboard/settings') ? "bg-primary" : "group-hover:scale-y-50"
-                )}></div>
+          <Link href="/dashboard/settings" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/settings') ? 'bg-primary/10 text-primary font-semibold' : 'hover:text-primary')}>
+                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/settings') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
                 <Settings className="h-5 w-5" />
                 <span className="flex-1">Settings & Info</span>
             </Link>
-          <Link
-                href="/dashboard/help"
-                prefetch={true}
-                className={cn(
-                    'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-                    isActive('/dashboard/help') 
-                        ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' 
-                        : 'hover:text-primary',
-                )}
-            >
-                <div className={cn(
-                    "absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300",
-                    isActive('/dashboard/help') ? "bg-primary" : "group-hover:scale-y-50"
-                )}></div>
+          <Link href="/dashboard/help" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/help') ? 'bg-primary/10 text-primary font-semibold' : 'hover:text-primary')}>
+                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/help') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
                 <LifeBuoy className="h-5 w-5" />
                 <span className="flex-1">Help &amp; Support</span>
             </Link>
-          <div className="px-3 pt-2 mb-2">
-             <h2 className="text-sm font-semibold tracking-tight text-sidebar-foreground/60">Follow Us</h2>
-          </div>
-          <div className="flex items-center justify-around">
+          <div className="flex items-center justify-around pt-4">
               {socialLinks.map(link => {
                   let Icon;
                   if (link.name === 'Instagram') Icon = InstagramIcon;
                   else if (link.name === 'WhatsApp') Icon = WhatsAppIcon;
                   else if (link.name === 'YouTube') Icon = YouTubeIcon;
                   else Icon = Send;
-                  
                   return (
-                        <a 
-                            key={link.name} 
-                            href={link.href} 
-                            className={cn(
-                                "transition-opacity hover:opacity-80",
-                                link.name === 'Instagram' && 'text-[#E4405F]',
-                                link.name === 'WhatsApp' && 'text-[#25D366]',
-                                link.name === 'Telegram' && 'text-[#0088cc]',
-                                link.name === 'YouTube' && 'text-[#FF0000]'
-                            )} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                        >
+                        <a key={link.name} href={link.href} className={cn("transition-opacity hover:opacity-80", link.name === 'Instagram' && 'text-[#E4405F]', link.name === 'WhatsApp' && 'text-[#25D366]', link.name === 'Telegram' && 'text-[#0088cc]', link.name === 'YouTube' && 'text-[#FF0000]')} target="_blank" rel="noopener noreferrer">
                           {Icon ? <Icon /> : link.name}
                           <span className="sr-only">{link.name}</span>
                       </a>
@@ -320,7 +227,6 @@ export default function SidebarContent() {
               })}
           </div>
        </div>
-
     </div>
   );
 }
