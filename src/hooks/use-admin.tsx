@@ -48,11 +48,10 @@ export interface User {
   streak?: number;
   longestStreak?: number;
   lastStreakCheck?: string;
-  // Nexus Artifacts Inventory
   inventory?: {
     penaltyShields?: number;
     streakFreezes?: number;
-    alphaGlowExpires?: string; // ISO Date
+    alphaGlowExpires?: string;
   };
   gameHighScores?: {
     memoryGame?: number;
@@ -240,6 +239,7 @@ interface AppDataContextType {
     transactions: User['transactions'];
     toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
+    applyFocusPenalty: (uid: string, amount: number) => Promise<'shielded' | 'penalized'>;
     giftCreditsToAllUsers: (amount: number) => Promise<void>;
     resetUserCredits: (uid: string) => Promise<void>;
     addFreeSpinsToUser: (uid: string, amount: number) => Promise<void>;
@@ -415,7 +415,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                         if (newStreak % 30 === 0) updates.credits = increment(100);
                         else if (newStreak % 5 === 0) updates.credits = increment(50);
                     } else if (lastCheckDate && !isToday(lastCheckDate)) { 
-                        updates.streak = 1; 
+                        // Streak would break. Check for freeze.
+                        if ((data.inventory?.streakFreezes || 0) > 0) {
+                            updates['inventory.streakFreezes'] = increment(-1);
+                            // Keep current streak intact
+                        } else {
+                            updates.streak = 1; 
+                        }
                     }
                     updates.lastStreakCheck = todayStr;
                     hasUpdates = true;
@@ -485,6 +491,21 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(userDocRef, { credits: increment(amount) });
     }, []);
 
+    const applyFocusPenalty = useCallback(async (uid: string, amount: number): Promise<'shielded' | 'penalized'> => {
+        const userRef = doc(db, 'users', uid);
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) return 'penalized';
+        const data = userSnap.data() as User;
+        
+        if (data.inventory?.penaltyShields && data.inventory.penaltyShields > 0) {
+            await updateDoc(userRef, { 'inventory.penaltyShields': increment(-1) });
+            return 'shielded';
+        } else {
+            await addCreditsToUser(uid, -amount);
+            return 'penalized';
+        }
+    }, [addCreditsToUser]);
+
     const redeemStoreItem = useCallback(async (item: StoreItem) => {
         if (!authUser || !currentUserData) throw new Error("You must be logged in.");
         await runTransaction(db, async (transaction) => {
@@ -530,6 +551,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureLocks, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures,
         toggleUserBlock: (uid, isBlocked) => updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked }),
         addCreditsToUser,
+        applyFocusPenalty,
         giftCreditsToAllUsers: async (amt) => {
             const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
             const batch = writeBatch(db);
@@ -716,6 +738,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             batch.update(doc(db, 'polls', id), { [`results.${opt}`]: increment(1) });
             batch.update(doc(db, 'users', authUser.id), { [`votedPolls.${id}`]: opt });
             await batch.commit();
+        },
+        submitPollVoteInChat: async (messageId, option) => {
+            if (!authUser) return;
+            const messageRef = doc(db, 'world_chat', messageId);
+            await updateDoc(messageRef, { [`pollData.results.${option}`]: arrayUnion(authUser.id) });
         },
         submitPollComment: (id, c) => updateDoc(doc(db, 'polls', id), { comments: arrayUnion({ userId: authUser?.id, userName: currentUserData?.displayName, comment: c, createdAt: Timestamp.now() }) }),
         updateAppSettings: (s) => updateDoc(doc(db, 'appConfig', 'settings'), s),

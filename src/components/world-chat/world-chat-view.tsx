@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -45,7 +44,6 @@ const userColors = [
 ];
 
 const getUserColor = (userId: string) => {
-    // Simple hash function to get a consistent color for a user
     let hash = 0;
     for (let i = 0; i < userId.length; i++) {
         hash = userId.charCodeAt(i) + ((hash << 5) - hash);
@@ -121,7 +119,6 @@ export function WorldChatView() {
     }, []);
 
     useEffect(() => {
-        // Auto-scroll only if we are already near the bottom
         if (scrollAreaRef.current) {
             const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
             if (scrollHeight - scrollTop - clientHeight < 200) {
@@ -137,6 +134,7 @@ export function WorldChatView() {
 
         const replyContext: ReplyContext | null = replyingTo ? {
             messageId: replyingTo.id,
+            senderId: replyingTo.senderId,
             senderName: allUsers.find(u => u.uid === replyingTo.senderId)?.displayName || 'Unknown User',
             textSnippet: replyingTo.text?.substring(0, 50) || '',
         } : null;
@@ -152,15 +150,13 @@ export function WorldChatView() {
         if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
         } else {
-             // Started typing
             updateTypingStatus(true);
         }
 
         typingTimeoutRef.current = setTimeout(() => {
-            // Stopped typing
             updateTypingStatus(false);
             typingTimeoutRef.current = null;
-        }, 2000); // 2-second timeout
+        }, 2000); 
     }
     
     const usersMap = new Map(allUsers.map(u => [u.uid, u]));
@@ -218,9 +214,9 @@ export function WorldChatView() {
                 {showPinnedMessage && pinnedMessageSender && (
                     <div className="p-3 bg-primary/10 border-b border-primary/20 flex items-center gap-3 text-sm">
                         <Pin className="h-5 w-5 text-primary flex-shrink-0" />
-                        <div className="flex-1 truncate">
+                        <div className="flex-1 truncate text-white">
                             <span className="font-bold">{pinnedMessageSender.displayName}:</span>{' '}
-                            <span className="text-muted-foreground">{pinnedMessage.text}</span>
+                            <span>{pinnedMessage.text}</span>
                         </div>
                         {isAdmin && (
                              <>
@@ -329,7 +325,7 @@ const ClickableMessage = ({ text }: { text: string }) => {
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-400 hover:underline"
-                            onClick={(e) => e.stopPropagation()} // Prevents opening user profile
+                            onClick={(e) => e.stopPropagation()} 
                         >
                             {part}
                         </a>
@@ -343,14 +339,13 @@ const ClickableMessage = ({ text }: { text: string }) => {
 
 function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void }) {
     const { user: clerkUser } = useUser();
-    const { isAdmin } = useAdmin();
+    const { isAdmin } = useWorldChat();
     const { editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget } = useWorldChat();
     const { toast } = useToast();
     
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(message.text || '');
 
-    const messageRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
@@ -360,13 +355,6 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
             textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
         }
     }, [isEditing]);
-    
-    useEffect(() => {
-        if(messageRef.current){
-             messageRef.current.style.height = 'auto';
-             messageRef.current.style.height = `${messageRef.current.scrollHeight}px`;
-        }
-    },[message.text]);
     
     const handleEditSave = () => {
         if(editText.trim() !== message.text) {
@@ -403,10 +391,12 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
         sender.isCoDev && { type: 'co-dev', name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> }
     ].filter(Boolean);
 
-    if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
+    if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> } as any);
 
     const badgeToShow = ownedBadges.find(b => b.type === sender.showcasedBadge) || ownedBadges[0] || null;
     const canDelete = isOwn || isAdmin;
+
+    const hasAlphaRadiance = sender.inventory?.alphaGlowExpires && new Date(sender.inventory.alphaGlowExpires) > new Date();
 
     const reactions = message.reactions || {};
     const hasReactions = Object.keys(reactions).some(emoji => reactions[emoji]?.length > 0);
@@ -425,7 +415,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
         >
             <div className={cn("relative flex items-end gap-2", isOwn ? "justify-end" : "justify-start")}>
 
-                {!isOwn && <button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={sender.photoURL} /><AvatarFallback>{sender.displayName.charAt(0)}</AvatarFallback></Avatar></button>}
+                {!isOwn && <button onClick={() => onUserSelect(sender)} className="self-start"><Avatar className="h-10 w-10 border-2 border-white/20"><AvatarImage src={sender.photoURL} /><AvatarFallback>{sender.displayName?.charAt(0)}</AvatarFallback></Avatar></button>}
                 
                 <Popover>
                     <PopoverTrigger asChild>
@@ -433,19 +423,20 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                             {showHeader && (
                                 <div className={cn("flex items-baseline gap-2 mb-1", isOwn ? "justify-end" : "justify-start")}>
                                     {!isOwn && ( <button onClick={() => onUserSelect(sender)}><p className="text-sm font-semibold text-slate-300 hover:underline">{sender.displayName}</p></button> )}
-                                    {badgeToShow && badgeToShow.badge}
+                                    {badgeToShow && (badgeToShow as any).badge}
                                     <p className="text-xs text-slate-500">{format(message.timestamp, 'h:mm a')}</p>
                                 </div>
                             )}
                             <div className={cn(
-                                "relative p-3 rounded-2xl bg-black/30 border-2 cursor-pointer", 
+                                "relative p-3 rounded-2xl bg-black/30 border-2 cursor-pointer transition-all duration-500", 
                                 userColor, 
                                 isOwn ? "rounded-br-none" : "rounded-bl-none",
-                                isNugget && 'border-amber-400/80 shadow-lg shadow-amber-500/10'
+                                isNugget && 'border-amber-400/80 shadow-lg shadow-amber-500/10',
+                                hasAlphaRadiance && 'animate-[pulse_2s_infinite] border-primary shadow-[0_0_15px_rgba(139,92,246,0.5)]'
                             )}>
                                 {isNugget && <Gem className="absolute -top-2.5 -left-2.5 h-5 w-5 text-amber-400 [filter:drop-shadow(0_0_4px_currentColor)]" />}
                                 {message.replyingTo && (
-                                    <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs">
+                                    <div className="mb-2 p-2 rounded-md bg-black/20 border-l-2 border-slate-500 text-xs text-left">
                                         <p className="font-bold text-slate-400">Replying to {message.replyingTo.senderName}</p>
                                         <p className="italic text-slate-500 truncate">"{message.replyingTo.textSnippet}"</p>
                                     </div>
@@ -481,7 +472,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={handleCopy}><Copy className="h-4 w-4"/></Button>
                             {isEditable && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>)}
                             {isAdmin && (<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>)}
-                            {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
+                            {canDelete && (<AlertDialog><AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/50 hover:text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger><AlertDialogContent> <AlertDialogHeader><AlertDialogTitle>Delete Message?</AlertDialogTitle><AlertDialogDescription>This action cannot be undone. The message will be permanently deleted for everyone.</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteMessage(message.id)}>Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>)}
                         </div>
                     </PopoverContent>
                 </Popover>

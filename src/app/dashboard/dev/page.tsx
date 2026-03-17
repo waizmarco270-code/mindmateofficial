@@ -224,7 +224,7 @@ export default function PaymentsPanelPage() {
                             <div className="grid gap-4 py-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="pack-name">Pack Name</Label>
-                                    <Input id="pack-name" value={packName} onChange={e => setPackName(e.target.value)} />
+                                    <Input id="pack-name" value={packName} onChange={e => setName(e.target.value)} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -274,7 +274,9 @@ export default function PaymentsPanelPage() {
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => openStoreItemDialog(item)}><Edit className="h-4 w-4"/></Button>
                                 <AlertDialog>
-                                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="text-destructive"><Trash2 className="h-4 w-4"/></Button>
+                                    </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader><AlertDialogTitle>Delete this item?</AlertDialogTitle></AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -292,16 +294,16 @@ export default function PaymentsPanelPage() {
                         </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
-                                <DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Redeemable Item</DialogTitle>
+                                <DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Store Item</DialogTitle>
                             </DialogHeader>
-                                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2 text-left">
                                 <div className="space-y-2">
                                     <Label htmlFor="item-name">Item Name</Label>
-                                    <Input id="item-name" value={itemName} onChange={e => setItemName(e.target.value)} />
+                                    <Input id="item-name" value={itemName} onChange={e => setItemName(e.target.value)} placeholder="e.g. Penalty Shield" />
                                 </div>
                                     <div className="space-y-2">
                                     <Label htmlFor="item-description">Description</Label>
-                                    <Textarea id="item-description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} />
+                                    <Textarea id="item-description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} placeholder="What does this item do?" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">

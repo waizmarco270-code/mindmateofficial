@@ -79,7 +79,7 @@ export function PomodoroTimer() {
   
   const { user } = useUser();
   const { addPomodoroSession } = useTimeTracker();
-  const { addCreditsToUser, currentUserData } = useUsers();
+  const { applyFocusPenalty, addCreditsToUser, currentUserData } = useUsers();
   const { toast } = useToast();
   const { isImmersive, setIsImmersive } = useImmersive();
   
@@ -111,44 +111,47 @@ export function PomodoroTimer() {
       interval = setInterval(() => {
         const randomIndex = Math.floor(Math.random() * allThemes.length);
         setSelectedTheme(allThemes[randomIndex]);
-      }, 20000); // Change every 20 seconds
+      }, 20000); 
     }
     return () => {
       if (interval) clearInterval(interval);
     };
   }, [isSlideshowActive, allThemes, setSelectedTheme]);
 
-  const applyPenalty = useCallback(() => {
+  const handlePenalty = useCallback(async () => {
     if (!user || penaltyAppliedRef.current || !isActive) return;
 
     penaltyAppliedRef.current = true;
-    addCreditsToUser(user.id, -POMODORO_PENALTY);
-    const penaltyMessage = `You have been penalized ${POMODORO_PENALTY} credits for leaving an active Pomodoro session.`;
+    const result = await applyFocusPenalty(user.id, POMODORO_PENALTY);
+    
+    const message = result === 'shielded' 
+        ? "Your Penalty Shield saved you! One shield was consumed." 
+        : `You have been penalized ${POMODORO_PENALTY} credits for leaving an active Pomodoro session.`;
 
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem(POMODORO_PENALTY_SESSION_KEY, penaltyMessage);
+      sessionStorage.setItem(POMODORO_PENALTY_SESSION_KEY, message);
       sessionStorage.removeItem(POMODORO_SESSION_ACTIVE_KEY);
     }
     
     toast({
-      variant: 'destructive',
-      title: 'Session Interrupted',
-      description: penaltyMessage,
+      variant: result === 'shielded' ? 'default' : 'destructive',
+      title: result === 'shielded' ? 'Shield Activated' : 'Session Interrupted',
+      description: message,
     });
     
     setIsActive(false);
     setTimeLeft(settings[mode] * 60);
     if(musicAudioRef.current) musicAudioRef.current.pause();
 
-  }, [user, addCreditsToUser, toast, isActive, settings, mode]);
+  }, [user, applyFocusPenalty, toast, isActive, settings, mode]);
 
   useBeforeunload(event => {
-    if (isActive) applyPenalty();
+    if (isActive) handlePenalty();
   });
 
   useVisibilityChange(() => {
     if (isActive && document.visibilityState === 'hidden') {
-      applyPenalty();
+      handlePenalty();
     }
   });
 
@@ -238,7 +241,6 @@ export function PomodoroTimer() {
           };
           addPomodoroSession(sessionData);
 
-          // Reward logic
           const completedDuration = settings[mode];
           const reward = rewardTiers[completedDuration];
           if(mode === 'focus' && reward && user) {
@@ -251,7 +253,7 @@ export function PomodoroTimer() {
           }
 
           resetTimer();
-          return 0; // Will be reset by resetTimer effect
+          return 0; 
         }
         return prev - 1;
       });
@@ -267,16 +269,17 @@ export function PomodoroTimer() {
   }, [settings, mode, isActive]);
 
   const handleToggle = () => {
-    if (isActive) { // User is trying to stop it
-      applyPenalty();
+    if (isActive) { 
+      handlePenalty();
       return;
     }
     
-    if (currentUserData && currentUserData.credits < POMODORO_PENALTY) {
+    const hasShield = (currentUserData?.inventory?.penaltyShields || 0) > 0;
+    if (!hasShield && currentUserData && currentUserData.credits < POMODORO_PENALTY) {
         toast({
             variant: 'destructive',
             title: 'Insufficient Credits for Penalty',
-            description: `You need at least ${POMODORO_PENALTY} credits to start a session in case of a penalty.`
+            description: `You need at least ${POMODORO_PENALTY} credits or a Penalty Shield to start a session.`
         });
         return;
     }
@@ -407,6 +410,7 @@ export function PomodoroTimer() {
                             <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
                                 <li>This timer cannot be paused. Clicking STOP will incur a penalty.</li>
                                 <li>Navigating away will result in a <span className="font-bold text-destructive">-10 credit penalty</span>.</li>
+                                <li>The <span className="font-bold text-blue-500">Penalty Shield</span> artifact automatically protects you.</li>
                             </ul>
                        </div>
                         <div className="space-y-2">
@@ -620,7 +624,7 @@ export function PomodoroTimer() {
        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>Timer Settings</DialogTitle></DialogHeader>
-          <div className="space-y-6 py-4">
+          <div className="space-y-6 py-4 text-left">
               <div className="space-y-3">
                   <Label>Quick Presets</Label>
                   <div className="grid grid-cols-2 gap-2">

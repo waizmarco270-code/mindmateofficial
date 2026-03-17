@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon, Wrench } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon, Wrench, Avatar, AvatarImage, AvatarFallback } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -198,7 +198,7 @@ export default function SuperAdminPanelPage() {
                                             <div className="flex items-center gap-3">
                                                 <Avatar className="h-8 w-8">
                                                     <AvatarImage src={u.photoURL}/>
-                                                    <AvatarFallback>{u.displayName.charAt(0)}</AvatarFallback>
+                                                    <AvatarFallback>{u.displayName?.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                                 {u.displayName}
                                             </div>
@@ -212,7 +212,7 @@ export default function SuperAdminPanelPage() {
                                             {u.isCoDev && <Badge className="bg-rose-500 hover:bg-rose-600">Co-Dev</Badge>}
                                             {u.isBlocked && <Badge variant="destructive">Blocked</Badge>}
                                         </TableCell>
-                                        <TableCell>{u.credits.toLocaleString()}</TableCell>
+                                        <TableCell>{u.credits?.toLocaleString()}</TableCell>
                                         <TableCell>
                                             {hasMasterCard ? (
                                                 <Badge variant="outline" className="text-green-500 border-green-500">Active</Badge>
@@ -247,208 +247,19 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* Global Rewards */}
-        <AccordionItem value="rewards-management" className="border-b-0">
-          <Card>
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <Gift className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold">Rewards & Credits</h3>
-                  <p className="text-sm text-muted-foreground text-left">Grant rewards to users or send global gift popups.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0 space-y-6">
-                {!isCreditUnlocked ? (
-                    <form onSubmit={handleCreditPasswordSubmit} className="flex items-center gap-4 max-w-md mx-auto">
-                        <Input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} placeholder="Enter Admin Password"/>
-                        <Button type="submit">Unlock Controls</Button>
-                    </form>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        {/* Direct Grant */}
-                        <Card>
-                            <CardHeader><CardTitle>Manual Grant</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Select User</Label>
-                                    <Select onValueChange={setSelectedUserId}>
-                                        <SelectTrigger><SelectValue placeholder="Choose user..."/></SelectTrigger>
-                                        <SelectContent>{users.map(u => <SelectItem key={u.uid} value={u.uid}>{u.displayName}</SelectItem>)}</SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="space-y-2">
-                                        <Label>Credits</Label>
-                                        <Input type="number" value={creditAmount} onChange={e => setCreditAmount(Number(e.target.value))}/>
-                                        <Button size="sm" variant="outline" className="w-full" onClick={() => selectedUserId && addCreditsToUser(selectedUserId, creditAmount)} disabled={!selectedUserId}>Grant</Button>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Scratch</Label>
-                                        <Input type="number" value={spinAmount} onChange={e => setSpinAmount(Number(e.target.value))}/>
-                                        <Button size="sm" variant="outline" className="w-full" onClick={() => selectedUserId && addFreeSpinsToUser(selectedUserId, spinAmount)} disabled={!selectedUserId}>Grant</Button>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Flip</Label>
-                                        <Input type="number" value={guessAmount} onChange={e => setGuessAmount(Number(e.target.value))}/>
-                                        <Button size="sm" variant="outline" className="w-full" onClick={() => selectedUserId && addFreeGuessesToUser(selectedUserId, guessAmount)} disabled={!selectedUserId}>Grant</Button>
-                                    </div>
-                                </div>
-                                <Separator />
-                                <div className="space-y-2">
-                                    <Label>Global Reward (All Users)</Label>
-                                    <div className="flex gap-2">
-                                        <Button variant="secondary" className="flex-1" onClick={() => giftCreditsToAllUsers(50)}>+50 Credits All</Button>
-                                        <Button variant="secondary" className="flex-1" onClick={() => addSpinsToAllUsers(5)}>+5 Scratch All</Button>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Global Gift Popups */}
-                        <Card>
-                            <CardHeader><CardTitle>Global Gift Popup</CardTitle><CardDescription>Send a message and rewards that pops up for everyone.</CardDescription></CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label>Target</Label>
-                                    <Select value={popupTarget} onValueChange={(v: any) => setPopupTarget(v)}>
-                                        <SelectTrigger><SelectValue/></SelectTrigger>
-                                        <SelectContent><SelectItem value="all">All Users</SelectItem><SelectItem value="single">Single User</SelectItem></SelectContent>
-                                    </Select>
-                                </div>
-                                {popupTarget === 'single' && (
-                                    <div className="space-y-2">
-                                        <Label>User</Label>
-                                        <Select onValueChange={setPopupSingleUserId}>
-                                            <SelectTrigger><SelectValue placeholder="Choose user..."/></SelectTrigger>
-                                            <SelectContent>{users.map(u => <SelectItem key={u.uid} value={u.uid}>{u.displayName}</SelectItem>)}</SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
-                                <div className="space-y-2"><Label>Message</Label><Textarea value={popupMessage} onChange={e => setPopupMessage(e.target.value)} placeholder="Enter popup message..."/></div>
-                                <div className="grid grid-cols-3 gap-2">
-                                    <div className="space-y-1"><Label className="text-xs">Credits</Label><Input type="number" value={popupCreditAmount} onChange={e => setPopupCreditAmount(Number(e.target.value))}/></div>
-                                    <div className="space-y-1"><Label className="text-xs">Scratch</Label><Input type="number" value={popupScratchAmount} onChange={e => setPopupScratchAmount(Number(e.target.value))}/></div>
-                                    <div className="space-y-1"><Label className="text-xs">Flip</Label><Input type="number" value={popupFlipAmount} onChange={e => setPopupFlipAmount(Number(e.target.value))}/></div>
-                                </div>
-                                <Button className="w-full" onClick={() => sendGlobalGift({ message: popupMessage, target: popupTarget === 'all' ? 'all' : popupSingleUserId!, rewards: { credits: popupCreditAmount, scratch: popupScratchAmount, flip: popupFlipAmount } })}>Send Popup</Button>
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
-                
-                {/* Active/Past Gifts Table */}
-                <Card>
-                    <CardHeader><CardTitle>Manage Global Gifts</CardTitle></CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Message</TableHead><TableHead>Status</TableHead><TableHead>Claimed By</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {globalGifts.map(gift => (
-                                    <TableRow key={gift.id}>
-                                        <TableCell className="max-w-xs truncate">{gift.message}</TableCell>
-                                        <TableCell><Badge variant={gift.isActive ? 'default' : 'secondary'}>{gift.isActive ? 'Active' : 'Inactive'}</Badge></TableCell>
-                                        <TableCell>{gift.claimedBy?.length || 0} users</TableCell>
-                                        <TableCell className="text-right space-x-2">
-                                            {gift.isActive && <Button variant="outline" size="sm" onClick={() => deactivateGift(gift.id)}>Deactivate</Button>}
-                                            <Button variant="destructive" size="sm" onClick={() => deleteGlobalGift(gift.id)}><Trash2 className="h-4 w-4"/></Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
-        {/* Feature & Store Management */}
+        {/* FEATURE & STORE MANAGEMENT */}
         <AccordionItem value="feature-management" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
                <div className="flex items-center gap-3">
-                <Wrench className="h-6 w-6 text-primary" />
+                <ShoppingCart className="h-6 w-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold">App Configuration</h3>
-                  <p className="text-sm text-muted-foreground text-left">Configure feature locks, maintenance mode, and store items.</p>
+                  <h3 className="text-lg font-semibold">Store & Artifact Management</h3>
+                  <p className="text-sm text-muted-foreground text-left">Manage packs, artifacts, and app configurations.</p>
                 </div>
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0 space-y-8">
-                {/* Maintenance Mode */}
-                <Card>
-                    <CardHeader><CardTitle>Maintenance & Updates</CardTitle></CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="flex items-center justify-between p-4 border rounded-lg">
-                            <div className="space-y-0.5">
-                                <Label className="text-base">Maintenance Mode</Label>
-                                <p className="text-sm text-muted-foreground">Redirect users to a maintenance page.</p>
-                            </div>
-                            <Switch checked={isMaintenanceMode} onCheckedChange={setIsMaintenanceMode} />
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-2">
-                            <div className="space-y-2"><Label>Maintenance Message</Label><Textarea value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} /></div>
-                            <div className="space-y-2"><Label>What's New Message (Popup)</Label><Textarea value={whatsNewMessage} onChange={e => setWhatsNewMessage(e.target.value)} placeholder="Announce new features..."/></div>
-                        </div>
-                        <div className="grid gap-4 md:grid-cols-3">
-                            <div className="space-y-2"><Label>Start Time</Label><Input type="datetime-local" value={maintenanceStartTime} onChange={e => setMaintenanceStartTime(e.target.value)}/></div>
-                            <div className="space-y-2"><Label>End Time</Label><Input type="datetime-local" value={maintenanceEndTime} onChange={e => setMaintenanceEndTime(e.target.value)}/></div>
-                            <div className="space-y-2">
-                                <Label>Page Theme</Label>
-                                <Select value={maintenanceTheme} onValueChange={(v: any) => setMaintenanceTheme(v)}>
-                                    <SelectTrigger><SelectValue/></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="shiny">Shiny Purple</SelectItem>
-                                        <SelectItem value="forest">Emerald Forest</SelectItem>
-                                        <SelectItem value="sunflower">Golden Sunflower</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <Button className="w-full" onClick={handleMaintenanceUpdate}>Apply Settings</Button>
-                    </CardContent>
-                </Card>
-
-                {/* Feature Locks */}
-                <Card>
-                    <CardHeader><CardTitle>Feature Unlock Costs</CardTitle><CardDescription>Set how many credits it costs to unlock specific features.</CardDescription></CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader><TableRow><TableHead>Feature Name</TableHead><TableHead>Status</TableHead><TableHead>Unlock Cost</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                            <TableBody>
-                                {lockableFeatures.map(feature => {
-                                    const lock = featureLocks?.[feature.id];
-                                    const isLocked = lock?.isLocked ?? false;
-                                    const cost = lock?.cost ?? feature.defaultCost;
-                                    
-                                    return (
-                                        <TableRow key={feature.id}>
-                                            <TableCell className="font-medium">{feature.name}</TableCell>
-                                            <TableCell><Badge variant={isLocked ? 'destructive' : 'secondary'}>{isLocked ? 'Locked' : 'Open'}</Badge></TableCell>
-                                            <TableCell>{isLocked ? `${cost} Credits` : 'Free'}</TableCell>
-                                            <TableCell className="text-right whitespace-nowrap space-x-2">
-                                                <Dialog>
-                                                    <DialogTrigger asChild><Button variant="outline" size="sm"><Edit className="h-4 w-4 mr-2"/> Set Cost</Button></DialogTrigger>
-                                                    <DialogContent>
-                                                        <DialogHeader><DialogTitle>Configure {feature.name}</DialogTitle></DialogHeader>
-                                                        <div className="py-4 space-y-4">
-                                                            <div className="space-y-2"><Label>Unlock Cost (Credits)</Label><Input type="number" defaultValue={cost} id={`cost-${feature.id}`}/></div>
-                                                        </div>
-                                                        <DialogFooter><Button onClick={() => { const c = Number((document.getElementById(`cost-${feature.id}`) as HTMLInputElement).value); lockFeature(feature.id, c); }}>Lock with Cost</Button></DialogFooter>
-                                                    </DialogContent>
-                                                </Dialog>
-                                                {isLocked && <Button variant="ghost" size="sm" onClick={() => unlockFeature(feature.id)}>Set Free</Button>}
-                                            </TableCell>
-                                        </TableRow>
-                                    )
-                                })}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-
                 {/* Store Management */}
                 <div className="grid gap-8 md:grid-cols-2">
                     <Card>
@@ -467,11 +278,14 @@ export default function SuperAdminPanelPage() {
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><CardTitle>Store Items</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Redeemable Items (Artifacts)</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             {storeItems.map(item => (
                                 <div key={item.id} className="flex items-center justify-between p-3 rounded-md bg-muted">
-                                    <div><p className="font-bold">{item.name} {item.isFeatured && <span className="text-xs text-primary">(Featured)</span>}</p><p className="text-xs text-muted-foreground">{item.cost} Credits | Stock: {item.stock}</p></div>
+                                    <div>
+                                        <p className="font-bold">{item.name} {item.isFeatured && <span className="text-xs text-primary">(Featured)</span>}</p>
+                                        <p className="text-xs text-muted-foreground">{item.cost} Credits | Stock: {item.stock} | Type: {item.type}</p>
+                                    </div>
                                     <div className="space-x-1">
                                         <Button variant="ghost" size="icon" onClick={() => { setEditingStoreItem(item); setItemName(item.name); setItemDescription(item.description); setItemCost(item.cost); setItemType(item.type); setItemQuantity(item.quantity); setItemStock(item.stock); setItemIsFeatured(item.isFeatured); setItemBadge(item.badge); setIsStoreItemDialogOpen(true); }}><Edit className="h-4 w-4"/></Button>
                                         <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteStoreItem(item.id)}><Trash2 className="h-4 w-4"/></Button>
@@ -485,67 +299,9 @@ export default function SuperAdminPanelPage() {
             </AccordionContent>
           </Card>
         </AccordionItem>
-
-        {/* Global Chat & Leaderboards */}
-        <AccordionItem value="data-cleanup" className="border-b-0">
-          <Card>
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <ShieldCheck className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold">Data Cleanup</h3>
-                  <p className="text-sm text-muted-foreground text-left">Clear history or reset leaderboards.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="outline"><Trash2 className="mr-2 h-4 w-4"/>Clear World Chat</Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Clear All Messages?</AlertDialogTitle><AlertDialogDescription>This will delete every message from the world chat permanently.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={clearGlobalChat}>Delete Everything</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="outline"><RefreshCw className="mr-2 h-4 w-4"/>Reset Quiz Stats</Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Reset Quiz Leaderboard?</AlertDialogTitle><AlertDialogDescription>This resets perfected quizzes and attempts for all users.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={clearQuizLeaderboard}>Reset Now</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="outline"><Clock className="mr-2 h-4 w-4"/>Reset Weekly Time</Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Reset Study Time?</AlertDialogTitle><AlertDialogDescription>Clears weekly time tracker logs for all users.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={resetWeeklyStudyTime}>Reset Now</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild><Button variant="outline"><Gamepad2 className="mr-2 h-4 w-4"/>Reset Game Board</Button></AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader><AlertDialogTitle>Reset Game Scores?</AlertDialogTitle><AlertDialogDescription>Clears high scores for all arcade/puzzle games.</AlertDialogDescription></AlertDialogHeader>
-                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={resetGameZoneLeaderboard}>Reset Now</AlertDialogAction></AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
       </Accordion>
 
-      {/* Dialogs */}
-      <Dialog open={isMasterCardDialogOpen} onOpenChange={setIsMasterCardDialogOpen}>
-        <DialogContent>
-            <DialogHeader><DialogTitle>Grant Master Card</DialogTitle><DialogDescription>Give {masterCardUser?.displayName} unlimited credits for a duration.</DialogDescription></DialogHeader>
-            <div className="py-4 space-y-4">
-                <div className="space-y-2"><Label>Duration (Days)</Label><Input type="number" value={masterCardDuration} onChange={e => setMasterCardDuration(Number(e.target.value))}/></div>
-            </div>
-            <DialogFooter><Button onClick={() => { masterCardUser && grantMasterCard(masterCardUser.uid, masterCardDuration); setIsMasterCardDialogOpen(false); }}>Grant Card</Button></DialogFooter>
-        </DialogContent>
-      </Dialog>
-
+      {/* DIALOGS */}
       <Dialog open={isPackDialogOpen} onOpenChange={setIsPackDialogOpen}>
         <DialogContent>
             <DialogHeader><DialogTitle>{editingPack ? 'Edit' : 'Add'} Credit Pack</DialogTitle></DialogHeader>

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlarmClock, AlertTriangle, Award, Zap, X, Pause, Play, Music, Volume2, VolumeX, Shield, Swords, BrainCircuit, Star } from 'lucide-react';
-import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
+import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -64,7 +64,7 @@ const musicTracks = [
 
 export default function FocusModePage() {
     const { user, isSignedIn } = useUser();
-    const { currentUserData, addCreditsToUser, incrementFocusSessions } = useUsers();
+    const { currentUserData, addCreditsToUser, incrementFocusSessions, applyFocusPenalty } = useUsers();
     const { toast } = useToast();
     const pathname = usePathname();
 
@@ -79,24 +79,26 @@ export default function FocusModePage() {
     const audioRef = useRef<HTMLAudioElement>(null);
     const penaltyAppliedRef = useRef(false);
 
-    const applyPenalty = useCallback(() => {
+    const handlePenalty = useCallback(async () => {
         if (!user || penaltyAppliedRef.current) return;
         
         penaltyAppliedRef.current = true; 
-        addCreditsToUser(user.id, -PENALTY);
+        const result = await applyFocusPenalty(user.id, PENALTY);
         
-        const penaltyMessage = `You have been penalized ${PENALTY} credits for leaving an active focus session.`;
+        const message = result === 'shielded' 
+            ? "Your Penalty Shield saved you! One shield was consumed." 
+            : `You have been penalized ${PENALTY} credits for leaving an active focus session.`;
 
         // This is a reliable way to show the message on the next page load.
         if (typeof window !== 'undefined') {
-            sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, penaltyMessage);
+            sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, message);
             sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
         }
-    }, [user, addCreditsToUser]);
+    }, [user, applyFocusPenalty]);
 
 
     const handleStopSession = () => {
-        applyPenalty();
+        handlePenalty();
         setIsSessionActive(false);
         setActiveSlot(null);
         setTimeLeft(0);
@@ -104,35 +106,30 @@ export default function FocusModePage() {
         toast({
             variant: 'destructive',
             title: 'Session Stopped Early',
-            description: `You have been penalized ${PENALTY} credits.`,
+            description: 'Penalty rule applied.',
         });
     };
 
-    // New, more robust penalty logic
     useEffect(() => {
         const handleUnload = () => {
             if (isSessionActive && !isPaused) {
-                applyPenalty();
+                handlePenalty();
             }
         };
-
-        // For in-app navigation (component unmount)
         return () => {
             if (isSessionActive && !isPaused) {
                 handleUnload();
             }
         };
-    }, [isSessionActive, isPaused, applyPenalty]);
+    }, [isSessionActive, isPaused, handlePenalty]);
 
 
-    // Visibility change handler for tab switching
     useVisibilityChange(() => {
         if (isSessionActive && !isPaused && document.visibilityState === 'hidden') {
-            applyPenalty();
+            handlePenalty();
         }
     });
     
-    // Timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout | null = null;
         
@@ -164,23 +161,23 @@ export default function FocusModePage() {
     }, [isSessionActive, isPaused, timeLeft, user, activeSlot, addCreditsToUser, incrementFocusSessions, toast]);
     
     
-    // Quote rotation logic
     useEffect(() => {
         if (isSessionActive && !isPaused) {
             const quoteInterval = setInterval(() => {
                 setCurrentQuoteIndex(prev => (prev + 1) % quotes.length);
-            }, 10000); // Change quote every 10 seconds
+            }, 10000); 
             return () => clearInterval(quoteInterval);
         }
     }, [isSessionActive, isPaused]);
 
 
     const handleSelectSlot = (slot: FocusSlot) => {
-        if (currentUserData && currentUserData.credits < PENALTY) {
+        const hasShield = (currentUserData?.inventory?.penaltyShields || 0) > 0;
+        if (!hasShield && currentUserData && currentUserData.credits < PENALTY) {
             toast({
                 variant: 'destructive',
                 title: 'Insufficient Credits for Penalty',
-                description: `You must have at least ${PENALTY} credits to start a session in case of a penalty.`,
+                description: `You must have at least ${PENALTY} credits or a Penalty Shield to start a session.`,
             });
             return;
         }
@@ -188,7 +185,7 @@ export default function FocusModePage() {
         setTimeLeft(slot.duration);
         setIsSessionActive(true);
         setIsPaused(false);
-        penaltyAppliedRef.current = false; // Reset penalty lock
+        penaltyAppliedRef.current = false; 
         if (audioRef.current && !isMuted) {
             audioRef.current.play().catch(e => console.error("Audio play failed:", e));
         }
@@ -203,7 +200,6 @@ export default function FocusModePage() {
         if(audioRef.current) {
             newPausedState ? audioRef.current.pause() : audioRef.current.play();
         }
-        // Update session storage based on pause state
         if (typeof window !== 'undefined') {
             if (newPausedState) {
                 sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
@@ -422,7 +418,7 @@ export default function FocusModePage() {
                     <div>
                         <h4 className="font-bold text-destructive">Important: The Penalty Rule</h4>
                         <p className="text-sm text-destructive/80">
-                            If you start a session and decide to stop it before the timer is complete, or if you navigate to another page or browser tab, you will be penalized <span className="font-bold">{PENALTY} credits.</span> This is to encourage disciplined study habits.
+                            If you start a session and decide to stop it before the timer is complete, or if you navigate to another page or browser tab, you will be penalized <span className="font-bold">{PENALTY} credits.</span> Unless you have a <span className="font-bold text-blue-500">Penalty Shield</span> artifact.
                         </p>
                     </div>
                 </div>
