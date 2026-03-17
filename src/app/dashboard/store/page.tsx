@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -18,6 +17,25 @@ import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions/razorp
 import Script from 'next/script';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+
+const BadgeRenderer = ({ badge }: { badge?: string }) => {
+    if (!badge) return null;
+    return (
+        <div className={cn(
+            "absolute top-0 right-0 p-2 px-3 text-[10px] font-black uppercase tracking-widest rounded-bl-lg z-20 shadow-sm",
+            badge === 'popular' && "bg-orange-500 text-white",
+            badge === 'new' && "bg-blue-500 text-white",
+            badge === 'recommended' && "bg-green-500 text-white",
+            badge === 'exclusive' && "bg-purple-600 text-white",
+            badge === 'limited' && "bg-red-600 text-white animate-pulse",
+            badge === 'hot' && "bg-gradient-to-r from-orange-600 to-red-600 text-white",
+            badge === 'best-seller' && "bg-cyan-600 text-white",
+            badge === 'jackpot' && "bg-gradient-to-r from-yellow-400 to-amber-600 text-black"
+        )}>
+            {badge.replace('-', ' ')}
+        </div>
+    );
+};
 
 function CreditPacksTab() {
     const { creditPacks, loading } = useAdmin();
@@ -90,21 +108,7 @@ function CreditPacksTab() {
                 
                 {!loading && creditPacks && creditPacks.map(pack => (
                     <Card key={pack.id} className="flex flex-col relative overflow-hidden group border-primary/20 bg-gradient-to-br from-card to-muted/30 hover:border-primary/50 transition-all duration-300">
-                        {pack.badge && (
-                            <div className={cn(
-                                "absolute top-0 right-0 p-2 text-[10px] font-bold uppercase tracking-widest rounded-bl-lg z-20",
-                                pack.badge === 'popular' && "bg-orange-500 text-white",
-                                pack.badge === 'new' && "bg-blue-500 text-white",
-                                pack.badge === 'recommended' && "bg-green-500 text-white",
-                                pack.badge === 'exclusive' && "bg-purple-600 text-white",
-                                pack.badge === 'limited' && "bg-red-600 text-white animate-pulse",
-                                pack.badge === 'hot' && "bg-gradient-to-r from-orange-600 to-red-600 text-white",
-                                pack.badge === 'best-seller' && "bg-cyan-600 text-white",
-                                pack.badge === 'jackpot' && "bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-black"
-                            )}>
-                                {pack.badge.replace('-', ' ')}
-                            </div>
-                        )}
+                        <BadgeRenderer badge={pack.badge} />
                         <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_5%,transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity" />
                         <CardHeader className="text-center relative z-10">
                             <div className="mx-auto mb-4 h-20 w-20 flex items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 text-white shadow-xl shadow-amber-500/20 group-hover:scale-110 transition-transform">
@@ -230,21 +234,7 @@ function ArtifactsTab() {
                  
                  return (
                     <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2", item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted")}>
-                        {item.badge && (
-                            <div className={cn(
-                                "absolute top-0 right-0 p-2 text-[10px] font-bold uppercase tracking-widest rounded-bl-lg z-20",
-                                item.badge === 'popular' && "bg-orange-500 text-white",
-                                item.badge === 'new' && "bg-blue-500 text-white",
-                                item.badge === 'recommended' && "bg-green-500 text-white",
-                                item.badge === 'exclusive' && "bg-purple-600 text-white",
-                                item.badge === 'limited' && "bg-red-600 text-white animate-pulse",
-                                item.badge === 'hot' && "bg-gradient-to-r from-orange-600 to-red-600 text-white",
-                                item.badge === 'best-seller' && "bg-cyan-600 text-white",
-                                item.badge === 'jackpot' && "bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-black"
-                            )}>
-                                {item.badge.replace('-', ' ')}
-                            </div>
-                        )}
+                        <BadgeRenderer badge={item.badge} />
                         <CardHeader className="text-center">
                             <div className="mx-auto mb-4 p-4 rounded-full bg-muted group-hover:scale-110 transition-transform">
                                 {getIcon(item.type)}
