@@ -17,6 +17,7 @@ import { cn } from '@/lib/utils';
 import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { useRouter } from 'next/navigation';
+import { Badge } from '@/components/ui/badge';
 
 function CreditPacksTab() {
     const { creditPacks, loading } = useAdmin();
@@ -139,6 +140,8 @@ function ArtifactsTab() {
     const [isRedeeming, setIsRedeeming] = useState<string | null>(null);
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
+    const artifactItems = storeItems ? storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow'].includes(i.type)) : [];
+
     const handleRedeem = async (item: StoreItem) => {
         setIsRedeeming(item.id);
         try {
@@ -164,10 +167,22 @@ function ArtifactsTab() {
         }
     }
     
+    if (!loading && artifactItems.length === 0) {
+        return (
+            <div className="text-center py-20 border-2 border-dashed rounded-2xl bg-muted/20">
+                <ShieldIcon className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="text-xl font-bold text-muted-foreground">The Vault is Empty</h3>
+                <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
+                    Go to the <strong>Dev Panel</strong> to create items with type <strong>Penalty Shield, Streak Freeze, or Alpha Glow</strong>.
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
-             {!loading && storeItems && storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow'].includes(i.type)).map(item => {
+             {!loading && artifactItems.map(item => {
                  const canAfford = hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost;
                  return (
                     <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2", item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted")}>
