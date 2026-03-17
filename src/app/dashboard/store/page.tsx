@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdmin, type CreditPack, useUsers, type StoreItem } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles } from 'lucide-react';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
@@ -17,8 +17,6 @@ import { cn } from '@/lib/utils';
 import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { useRouter } from 'next/navigation';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { Badge } from '@/components/ui/badge';
 
 function CreditPacksTab() {
     const { creditPacks, loading } = useAdmin();
@@ -56,7 +54,7 @@ function CreditPacksTab() {
                             description: `${pack.credits} credits have been added to your account.`,
                             className: "bg-green-500/10 border-green-500/50"
                         });
-                        window.location.href = '/dashboard/store/history';
+                        window.location.replace('/dashboard/store/history');
                     } else {
                         toast({ variant: 'destructive', title: "Verification Failed", description: verification.error || "Could not verify payment." });
                         setIsProcessing(null);
@@ -67,7 +65,11 @@ function CreditPacksTab() {
                     email: user.primaryEmailAddress?.emailAddress || '',
                 },
                 theme: { color: '#8b5cf6' },
-                modal: { ondismiss: () => setIsProcessing(null), escape: false, backdropclose: false },
+                modal: { 
+                    ondismiss: () => setIsProcessing(null), 
+                    escape: false, 
+                    backdropclose: false 
+                },
                 retry: { enabled: false }
             };
             const rzp = new (window as any).Razorpay(options);
