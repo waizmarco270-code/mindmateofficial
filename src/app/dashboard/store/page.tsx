@@ -16,11 +16,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogHeader, A
 import { cn } from '@/lib/utils';
 import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions/razorpay';
 import Script from 'next/script';
+import { useRouter } from 'next/navigation';
 
 function CreditPacksTab() {
     const { creditPacks, loading } = useAdmin();
     const { user, isSignedIn } = useUser();
     const { toast } = useToast();
+    const router = useRouter();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
     const handleBuyPack = async (pack: CreditPack) => {
@@ -57,14 +59,17 @@ function CreditPacksTab() {
                             description: `${pack.credits} credits have been added to your account.`,
                             className: "bg-green-500/10 border-green-500/50"
                         });
+                        // Fix for the "Loading..." tab: Redirect the parent window
+                        // This forces the browser to focus back on the app
+                        window.location.href = '/dashboard/store/history';
                     } else {
                         toast({
                             variant: 'destructive',
                             title: "Verification Failed",
                             description: verification.error || "Could not verify payment.",
                         });
+                        setIsProcessing(null);
                     }
-                    setIsProcessing(null);
                 },
                 prefill: {
                     name: user.fullName || '',
@@ -76,7 +81,14 @@ function CreditPacksTab() {
                 modal: {
                     ondismiss: function() {
                         setIsProcessing(null);
-                    }
+                    },
+                    // Helps with mobile browser behavior
+                    escape: false,
+                    backdropclose: false
+                },
+                // Prevents some "stuck" states in certain UPI flows
+                retry: {
+                    enabled: false
                 }
             };
 
