@@ -30,6 +30,14 @@ import { Separator } from '@/components/ui/separator';
 
 const CREDIT_PASSWORD = "waizcredit";
 
+const defaultDescriptions: Record<string, string> = {
+    'scratch-card': 'Try your luck with a Premium Scratch Card! Reveal hidden treasures and win up to 500 MindMate credits instantly. Every card is a new chance to boost your balance!',
+    'card-flip': 'Test your intuition in the Card Flip Challenge! Advance through levels to multiply your winnings. A single correct choice could lead to a massive credit jackpot.',
+    'penalty-shield': 'The ultimate life-saver for focused students. This artifact automatically absorbs one credit penalty if you are forced to leave a Focus or Pomodoro session early. Study with total peace of mind.',
+    'streak-freeze': 'Protect your hard-earned progress! This artifact automatically activates if you miss a day of study, keeping your daily streak intact. Never let a busy day break your chain.',
+    'alpha-glow': 'Command attention in the MindMate community! Activating this artifact gives your name a legendary, animated radiant glow in the World Chat for 7 days. Show everyone you are a top performer.',
+};
+
 export default function SuperAdminPanelPage() {
   const { 
     isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
@@ -115,6 +123,14 @@ export default function SuperAdminPanelPage() {
   const [maintenanceStartTime, setMaintenanceStartTime] = useState(appSettings?.maintenanceStartTime || '');
   const [maintenanceEndTime, setMaintenanceEndTime] = useState(appSettings?.maintenanceEndTime || '');
   const [whatsNewMessage, setWhatsNewMessage] = useState(appSettings?.whatsNewMessage || '');
+
+  const handleTypeChange = (type: StoreItem['type']) => {
+    setItemType(type);
+    const isCurrentDescDefault = Object.values(defaultDescriptions).includes(itemDescription);
+    if (!itemDescription || isCurrentDescDefault) {
+        setItemDescription(defaultDescriptions[type] || '');
+    }
+  };
 
   const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -350,6 +366,11 @@ export default function SuperAdminPanelPage() {
                             <SelectItem value="popular">Popular</SelectItem>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="recommended">Recommended</SelectItem>
+                            <SelectItem value="exclusive">Exclusive</SelectItem>
+                            <SelectItem value="limited">Limited Edition</SelectItem>
+                            <SelectItem value="hot">Hot Deal</SelectItem>
+                            <SelectItem value="best-seller">Best Seller</SelectItem>
+                            <SelectItem value="jackpot">Jackpot</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -367,7 +388,24 @@ export default function SuperAdminPanelPage() {
             <DialogHeader><DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Store Item</DialogTitle></DialogHeader>
             <div className="py-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div className="space-y-2"><Label>Item Name</Label><Input value={itemName} onChange={e => setItemName(e.target.value)}/></div>
-                <div className="space-y-2"><Label>Description</Label><Textarea value={itemDescription} onChange={e => setItemDescription(e.target.value)}/></div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2"><Label>Type</Label>
+                        <Select value={itemType} onValueChange={(v: any) => handleTypeChange(v)}>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="scratch-card">Scratch Card</SelectItem>
+                                <SelectItem value="card-flip">Card Flip Play</SelectItem>
+                                <SelectItem value="penalty-shield">Penalty Shield (Artifact)</SelectItem>
+                                <SelectItem value="streak-freeze">Streak Freeze (Artifact)</SelectItem>
+                                <SelectItem value="alpha-glow">Alpha Glow (Artifact)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2"><Label>Stock</Label><Input type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))}/></div>
+                </div>
+
+                <div className="space-y-2"><Label>Description</Label><Textarea value={itemDescription} onChange={e => setItemDescription(e.target.value)} className="min-h-[100px]"/></div>
                 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -396,21 +434,6 @@ export default function SuperAdminPanelPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Type</Label>
-                        <Select value={itemType} onValueChange={(v: any) => setItemType(v)}>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="scratch-card">Scratch Card</SelectItem>
-                                <SelectItem value="card-flip">Card Flip Play</SelectItem>
-                                <SelectItem value="penalty-shield">Penalty Shield (Artifact)</SelectItem>
-                                <SelectItem value="streak-freeze">Streak Freeze (Artifact)</SelectItem>
-                                <SelectItem value="alpha-glow">Alpha Glow (Artifact)</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2"><Label>Stock</Label><Input type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))}/></div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Quantity (per purchase)</Label><Input type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))}/></div>
                     <div className="space-y-2">
                         <Label>Value Badge (Optional)</Label>
@@ -421,6 +444,11 @@ export default function SuperAdminPanelPage() {
                                 <SelectItem value="popular">Popular</SelectItem>
                                 <SelectItem value="new">New</SelectItem>
                                 <SelectItem value="recommended">Recommended</SelectItem>
+                                <SelectItem value="exclusive">Exclusive</SelectItem>
+                                <SelectItem value="limited">Limited Edition</SelectItem>
+                                <SelectItem value="hot">Hot Deal</SelectItem>
+                                <SelectItem value="best-seller">Best Seller</SelectItem>
+                                <SelectItem value="jackpot">Jackpot</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

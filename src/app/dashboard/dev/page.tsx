@@ -26,6 +26,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 
+const defaultDescriptions: Record<string, string> = {
+    'scratch-card': 'Try your luck with a Premium Scratch Card! Reveal hidden treasures and win up to 500 MindMate credits instantly. Every card is a new chance to boost your balance!',
+    'card-flip': 'Test your intuition in the Card Flip Challenge! Advance through levels to multiply your winnings. A single correct choice could lead to a massive credit jackpot.',
+    'penalty-shield': 'The ultimate life-saver for focused students. This artifact automatically absorbs one credit penalty if you are forced to leave a Focus or Pomodoro session early. Study with total peace of mind.',
+    'streak-freeze': 'Protect your hard-earned progress! This artifact automatically activates if you miss a day of study, keeping your daily streak intact. Never let a busy day break your chain.',
+    'alpha-glow': 'Command attention in the MindMate community! Activating this artifact gives your name a legendary, animated radiant glow in the World Chat for 7 days. Show everyone you are a top performer.',
+};
 
 export default function PaymentsPanelPage() {
     const { 
@@ -58,6 +65,15 @@ export default function PaymentsPanelPage() {
     const [itemStock, setItemStock] = useState(100);
     const [itemIsFeatured, setItemIsFeatured] = useState(false);
     const [itemBadge, setItemBadge] = useState<StoreItem['badge']>(undefined);
+
+    const handleTypeChange = (type: StoreItem['type']) => {
+        setItemType(type);
+        // Only auto-fill if the current description is empty or matches another default
+        const isCurrentDescDefault = Object.values(defaultDescriptions).includes(itemDescription);
+        if (!itemDescription || isCurrentDescDefault) {
+            setItemDescription(defaultDescriptions[type] || '');
+        }
+    };
 
     const openPackDialog = (pack: CreditPack | null) => {
         if (pack) {
@@ -253,6 +269,11 @@ export default function PaymentsPanelPage() {
                                             <SelectItem value="popular">Popular</SelectItem>
                                             <SelectItem value="new">New</SelectItem>
                                             <SelectItem value="recommended">Recommended</SelectItem>
+                                            <SelectItem value="exclusive">Exclusive</SelectItem>
+                                            <SelectItem value="limited">Limited Edition</SelectItem>
+                                            <SelectItem value="hot">Hot Deal</SelectItem>
+                                            <SelectItem value="best-seller">Best Seller</SelectItem>
+                                            <SelectItem value="jackpot">Jackpot</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -309,9 +330,28 @@ export default function PaymentsPanelPage() {
                                     <Label htmlFor="item-name">Item Name</Label>
                                     <Input id="item-name" value={itemName} onChange={e => setItemName(e.target.value)} placeholder="e.g. Penalty Shield" />
                                 </div>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
+                                        <Label htmlFor="item-type">Item Type</Label>
+                                        <Select value={itemType} onValueChange={(v: StoreItem['type']) => handleTypeChange(v)}>
+                                            <SelectTrigger id="item-type"><SelectValue/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="scratch-card">Scratch Card</SelectItem>
+                                                <SelectItem value="card-flip">Card Flip Play</SelectItem>
+                                                <SelectItem value="penalty-shield">Penalty Shield (Artifact)</SelectItem>
+                                                <SelectItem value="streak-freeze">Streak Freeze (Artifact)</SelectItem>
+                                                <SelectItem value="alpha-glow">Alpha Glow (Artifact)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="item-stock">Stock</Label>
+                                        <Input id="item-stock" type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))} />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
                                     <Label htmlFor="item-description">Description</Label>
-                                    <Textarea id="item-description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} placeholder="What does this item do?" />
+                                    <Textarea id="item-description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} placeholder="What does this item do?" className="min-h-[100px]" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -340,25 +380,6 @@ export default function PaymentsPanelPage() {
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
-                                        <Label htmlFor="item-type">Item Type</Label>
-                                        <Select value={itemType} onValueChange={(v: StoreItem['type']) => setItemType(v)}>
-                                            <SelectTrigger id="item-type"><SelectValue/></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="scratch-card">Scratch Card</SelectItem>
-                                                <SelectItem value="card-flip">Card Flip Play</SelectItem>
-                                                <SelectItem value="penalty-shield">Penalty Shield (Artifact)</SelectItem>
-                                                <SelectItem value="streak-freeze">Streak Freeze (Artifact)</SelectItem>
-                                                <SelectItem value="alpha-glow">Alpha Glow (Artifact)</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="item-stock">Stock</Label>
-                                        <Input id="item-stock" type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))} />
-                                    </div>
-                                </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
                                         <Label htmlFor="item-quantity">Quantity (per purchase)</Label>
                                         <Input id="item-quantity" type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))} />
                                     </div>
@@ -371,6 +392,11 @@ export default function PaymentsPanelPage() {
                                                 <SelectItem value="popular">Popular</SelectItem>
                                                 <SelectItem value="new">New</SelectItem>
                                                 <SelectItem value="recommended">Recommended</SelectItem>
+                                                <SelectItem value="exclusive">Exclusive</SelectItem>
+                                                <SelectItem value="limited">Limited Edition</SelectItem>
+                                                <SelectItem value="hot">Hot Deal</SelectItem>
+                                                <SelectItem value="best-seller">Best Seller</SelectItem>
+                                                <SelectItem value="jackpot">Jackpot</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>

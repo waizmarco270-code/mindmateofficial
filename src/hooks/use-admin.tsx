@@ -196,7 +196,7 @@ export interface CreditPack {
   name: string;
   credits: number;
   price: number;
-  badge?: 'popular' | 'new' | 'recommended';
+  badge?: 'popular' | 'new' | 'recommended' | 'exclusive' | 'limited' | 'hot' | 'best-seller' | 'jackpot';
   createdAt: Date;
 }
 
@@ -212,7 +212,7 @@ export interface StoreItem {
     createdAt: Date;
     stock: number;
     isFeatured: boolean;
-    badge?: 'popular' | 'new' | 'recommended';
+    badge?: 'popular' | 'new' | 'recommended' | 'exclusive' | 'limited' | 'hot' | 'best-seller' | 'jackpot';
 }
 
 export interface VideoCategory {

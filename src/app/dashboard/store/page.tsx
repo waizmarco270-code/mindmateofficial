@@ -95,9 +95,14 @@ function CreditPacksTab() {
                                 "absolute top-0 right-0 p-2 text-[10px] font-bold uppercase tracking-widest rounded-bl-lg z-20",
                                 pack.badge === 'popular' && "bg-orange-500 text-white",
                                 pack.badge === 'new' && "bg-blue-500 text-white",
-                                pack.badge === 'recommended' && "bg-green-500 text-white"
+                                pack.badge === 'recommended' && "bg-green-500 text-white",
+                                pack.badge === 'exclusive' && "bg-purple-600 text-white",
+                                pack.badge === 'limited' && "bg-red-600 text-white animate-pulse",
+                                pack.badge === 'hot' && "bg-gradient-to-r from-orange-600 to-red-600 text-white",
+                                pack.badge === 'best-seller' && "bg-cyan-600 text-white",
+                                pack.badge === 'jackpot' && "bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-black"
                             )}>
-                                {pack.badge}
+                                {pack.badge.replace('-', ' ')}
                             </div>
                         )}
                         <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_5%,transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -230,9 +235,14 @@ function ArtifactsTab() {
                                 "absolute top-0 right-0 p-2 text-[10px] font-bold uppercase tracking-widest rounded-bl-lg z-20",
                                 item.badge === 'popular' && "bg-orange-500 text-white",
                                 item.badge === 'new' && "bg-blue-500 text-white",
-                                item.badge === 'recommended' && "bg-green-500 text-white"
+                                item.badge === 'recommended' && "bg-green-500 text-white",
+                                item.badge === 'exclusive' && "bg-purple-600 text-white",
+                                item.badge === 'limited' && "bg-red-600 text-white animate-pulse",
+                                item.badge === 'hot' && "bg-gradient-to-r from-orange-600 to-red-600 text-white",
+                                item.badge === 'best-seller' && "bg-cyan-600 text-white",
+                                item.badge === 'jackpot' && "bg-gradient-to-r from-yellow-400 to-amber-600 text-black font-black"
                             )}>
-                                {item.badge}
+                                {item.badge.replace('-', ' ')}
                             </div>
                         )}
                         <CardHeader className="text-center">
