@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdmin, type CreditPack, useUsers, type StoreItem } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award } from 'lucide-react';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
@@ -17,12 +17,13 @@ import { cn } from '@/lib/utils';
 import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { useRouter } from 'next/navigation';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import { Badge } from '@/components/ui/badge';
 
 function CreditPacksTab() {
     const { creditPacks, loading } = useAdmin();
     const { user, isSignedIn } = useUser();
     const { toast } = useToast();
-    const router = useRouter();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
 
     const handleBuyPack = async (pack: CreditPack) => {
@@ -30,10 +31,7 @@ function CreditPacksTab() {
         
         setIsProcessing(pack.id);
         try {
-            // 1. Create Order via Server Action
             const order = await createRazorpayOrder(pack.price);
-
-            // 2. Open Razorpay Checkout
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                 amount: order.amount,
@@ -42,7 +40,6 @@ function CreditPacksTab() {
                 description: `Purchase ${pack.name}`,
                 order_id: order.id,
                 handler: async function (response: any) {
-                    // 3. Verify on Server on Success
                     const verification = await verifyRazorpayPayment(
                         user.id,
                         user.fullName || 'User',
@@ -59,15 +56,9 @@ function CreditPacksTab() {
                             description: `${pack.credits} credits have been added to your account.`,
                             className: "bg-green-500/10 border-green-500/50"
                         });
-                        // Fix for the "Loading..." tab: Redirect the parent window
-                        // This forces the browser to focus back on the app
                         window.location.href = '/dashboard/store/history';
                     } else {
-                        toast({
-                            variant: 'destructive',
-                            title: "Verification Failed",
-                            description: verification.error || "Could not verify payment.",
-                        });
+                        toast({ variant: 'destructive', title: "Verification Failed", description: verification.error || "Could not verify payment." });
                         setIsProcessing(null);
                     }
                 },
@@ -75,26 +66,12 @@ function CreditPacksTab() {
                     name: user.fullName || '',
                     email: user.primaryEmailAddress?.emailAddress || '',
                 },
-                theme: {
-                    color: '#8b5cf6', // Primary purple
-                },
-                modal: {
-                    ondismiss: function() {
-                        setIsProcessing(null);
-                    },
-                    // Helps with mobile browser behavior
-                    escape: false,
-                    backdropclose: false
-                },
-                // Prevents some "stuck" states in certain UPI flows
-                retry: {
-                    enabled: false
-                }
+                theme: { color: '#8b5cf6' },
+                modal: { ondismiss: () => setIsProcessing(null), escape: false, backdropclose: false },
+                retry: { enabled: false }
             };
-
             const rzp = new (window as any).Razorpay(options);
             rzp.open();
-
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Order Failed", description: error.message });
             setIsProcessing(null);
@@ -109,27 +86,39 @@ function CreditPacksTab() {
                 {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
                 
                 {!loading && creditPacks && creditPacks.map(pack => (
-                    <Card key={pack.id} className="flex flex-col relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                        <CardHeader className="text-center relative z-10">
-                            <div className="mx-auto mb-4 h-16 w-16 flex items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-yellow-500 text-white shadow-lg shadow-amber-500/20">
-                                <Gem className="h-8 w-8"/>
+                    <Card key={pack.id} className="flex flex-col relative overflow-hidden group border-primary/20 bg-gradient-to-br from-card to-muted/30 hover:border-primary/50 transition-all duration-300">
+                        {pack.badge && (
+                            <div className={cn(
+                                "absolute top-0 right-0 p-2 text-[10px] font-bold uppercase tracking-widest rounded-bl-lg z-20",
+                                pack.badge === 'popular' && "bg-orange-500 text-white",
+                                pack.badge === 'new' && "bg-blue-500 text-white",
+                                pack.badge === 'recommended' && "bg-green-500 text-white"
+                            )}>
+                                {pack.badge}
                             </div>
-                            <CardTitle className="text-2xl">{pack.name}</CardTitle>
-                            <p className="text-5xl font-bold tracking-tighter text-primary mt-2">{pack.credits.toLocaleString()}</p>
-                            <CardDescription className="font-medium">Credits</CardDescription>
+                        )}
+                        <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_5%,transparent_60%)] opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <CardHeader className="text-center relative z-10">
+                            <div className="mx-auto mb-4 h-20 w-20 flex items-center justify-center rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 text-white shadow-xl shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                                <Gem className="h-10 w-10 drop-shadow-lg"/>
+                            </div>
+                            <CardTitle className="text-2xl font-black tracking-tight">{pack.name}</CardTitle>
+                            <div className="flex flex-col mt-2">
+                                <span className="text-5xl font-black tracking-tighter text-primary">{pack.credits.toLocaleString()}</span>
+                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">MindMate Credits</span>
+                            </div>
                         </CardHeader>
                         <CardContent className="flex-1" />
-                        <CardFooter className="relative z-10">
+                        <CardFooter className="relative z-10 pt-0">
                             <Button 
-                                className="w-full text-lg h-12"
+                                className="w-full text-lg h-14 font-bold rounded-xl shadow-lg hover:shadow-primary/20 transition-all"
                                 onClick={() => handleBuyPack(pack)}
                                 disabled={!isSignedIn || isProcessing === pack.id}
                             >
                                 {isProcessing === pack.id ? (
                                     <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                                 ) : (
-                                    <ShoppingCart className="mr-2 h-5 w-5"/>
+                                    <Zap className="mr-2 h-5 w-5 fill-current"/>
                                 )}
                                 Buy for ₹{pack.price}
                             </Button>
@@ -137,18 +126,11 @@ function CreditPacksTab() {
                     </Card>
                 ))}
             </div>
-            
-            <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-start gap-3">
-                <ShieldCheck className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
-                <p className="text-sm text-blue-700 dark:text-blue-300">
-                    Your payments are secure. We use <strong>Razorpay</strong> to process transactions safely and award credits instantly to your account.
-                </p>
-            </div>
         </div>
     );
 }
 
-function RedeemItemsTab() {
+function ArtifactsTab() {
     const { storeItems, loading, redeemStoreItem } = useAdmin();
     const { currentUserData } = useUsers();
     const { toast } = useToast();
@@ -160,8 +142,8 @@ function RedeemItemsTab() {
         try {
             await redeemStoreItem(item);
             toast({
-                title: "Item Redeemed!",
-                description: `"${item.name}" has been added to your account.`,
+                title: "Artifact Secured!",
+                description: `"${item.name}" added to your Nexus Inventory.`,
                 className: "bg-green-500/10 border-green-500/50"
             });
         } catch (error: any) {
@@ -170,50 +152,67 @@ function RedeemItemsTab() {
             setIsRedeeming(null);
         }
     };
+
+    const getIcon = (type: string) => {
+        switch(type) {
+            case 'penalty-shield': return <ShieldIcon className="h-10 w-10 text-blue-400" />;
+            case 'streak-freeze': return <Snowflake className="h-10 w-10 text-cyan-400" />;
+            case 'alpha-glow': return <Sparkles className="h-10 w-10 text-fuchsia-400" />;
+            default: return <Star className="h-10 w-10 text-amber-400" />;
+        }
+    }
     
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
-             {!loading && storeItems && storeItems.map(item => {
+             {!loading && storeItems && storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow'].includes(i.type)).map(item => {
                  const canAfford = hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost;
                  return (
-                    <Card key={item.id} className={cn("flex flex-col relative overflow-hidden", item.isFeatured && "border-primary shadow-lg shadow-primary/10")}>
-                        {item.isFeatured && (
-                            <div className="absolute top-0 right-0 p-2 bg-primary text-primary-foreground text-[10px] font-bold uppercase tracking-widest rounded-bl-lg">
-                                <Award className="h-3 w-3 inline mr-1" /> Featured
+                    <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2", item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted")}>
+                        {item.badge && (
+                            <div className={cn(
+                                "absolute top-0 right-0 p-2 text-[10px] font-bold uppercase tracking-widest rounded-bl-lg z-20",
+                                item.badge === 'popular' && "bg-orange-500 text-white",
+                                item.badge === 'new' && "bg-blue-500 text-white",
+                                item.badge === 'recommended' && "bg-green-500 text-white"
+                            )}>
+                                {item.badge}
                             </div>
                         )}
                         <CardHeader className="text-center">
-                            <CardTitle className="text-2xl">{item.name}</CardTitle>
-                            <CardDescription className="min-h-[40px]">{item.description}</CardDescription>
+                            <div className="mx-auto mb-4 p-4 rounded-full bg-muted group-hover:scale-110 transition-transform">
+                                {getIcon(item.type)}
+                            </div>
+                            <CardTitle className="text-2xl font-bold">{item.name}</CardTitle>
+                            <CardDescription className="min-h-[40px] px-4">{item.description}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-1">
-                             <div className="font-bold text-3xl flex items-center justify-center gap-2 text-amber-500">
-                                <Gem className="h-6 w-6" />
+                        <CardContent className="flex-1 flex flex-col items-center justify-center">
+                             <div className="font-black text-4xl flex items-center justify-center gap-2 text-amber-500 tracking-tighter">
+                                <Gem className="h-8 w-8" />
                                 <span>{item.cost.toLocaleString()}</span>
                             </div>
-                            <p className="text-center text-xs text-muted-foreground mt-2">
-                                Stock: {item.stock > 0 ? item.stock : <span className="text-destructive font-bold">SOLD OUT</span>}
+                            <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+                                Stock: {item.stock > 0 ? item.stock : <span className="text-destructive">EXHAUSTED</span>}
                             </p>
                         </CardContent>
                         <CardFooter>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button className="w-full text-lg h-12" variant={item.stock === 0 ? "secondary" : "default"} disabled={!canAfford || isRedeeming === item.id || item.stock === 0}>
+                                    <Button className="w-full text-lg h-14 font-bold rounded-xl" variant={item.stock === 0 ? "secondary" : "default"} disabled={!canAfford || isRedeeming === item.id || item.stock === 0}>
                                          {isRedeeming === item.id ? <Loader2 className="mr-2 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
-                                        {item.stock === 0 ? "Sold Out" : "Redeem Now"}
+                                        {item.stock === 0 ? "Sold Out" : "Secure Artifact"}
                                     </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
-                                        <AlertDialogTitle>Confirm Redemption</AlertDialogTitle>
+                                        <AlertDialogTitle>Acquire Nexus Artifact</AlertDialogTitle>
                                         <AlertDialogDescription>
-                                            Redeem "{item.name}" for {item.cost} credits? This will instantly add {item.quantity} {item.type.replace('-', ' ')} to your inventory.
+                                            Do you wish to secure "{item.name}" for {item.cost} credits? It will be added to your profile inventory immediately.
                                         </AlertDialogDescription>
                                     </AlertDialogHeader>
                                      <AlertDialogFooter>
                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleRedeem(item)}>Confirm & Redeem</AlertDialogAction>
+                                        <AlertDialogAction onClick={() => handleRedeem(item)}>Confirm</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -228,34 +227,60 @@ function RedeemItemsTab() {
 export default function StorePage() {
     return (
         <div className="space-y-8">
-            <div className="flex justify-between items-start">
+            <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                        <ShoppingCart className="h-8 w-8 text-primary"/>
-                        MindMate Store
+                    <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
+                        <ShoppingCart className="h-10 w-10 text-primary drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]"/>
+                        Nexus Emporium
                     </h1>
-                    <p className="text-muted-foreground">Automated payments via Razorpay. Get credits instantly!</p>
+                    <p className="text-muted-foreground font-medium">Equip your study journey with premium credits and legendary artifacts.</p>
                 </div>
-                <Button asChild variant="outline">
+                <Button asChild variant="outline" className="rounded-full px-6 border-primary/20 hover:bg-primary/5">
                     <Link href="/dashboard/store/history">
-                        <History className="mr-2 h-4 w-4"/>
-                        Order History
+                        <History className="mr-2 h-4 w-4 text-primary"/>
+                        Transaction Log
                     </Link>
                 </Button>
             </div>
 
             <Tabs defaultValue="buy" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="buy">Buy Credits</TabsTrigger>
-                    <TabsTrigger value="redeem">Redeem Items</TabsTrigger>
-                </TabsList>
-                <TabsContent value="buy" className="mt-8">
+                <div className="flex justify-center mb-8">
+                    <TabsList className="grid w-full max-w-lg grid-cols-3 h-14 p-1 bg-muted/50 rounded-2xl border">
+                        <TabsTrigger value="buy" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">Credits</TabsTrigger>
+                        <TabsTrigger value="artifacts" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">Artifacts</TabsTrigger>
+                        <TabsTrigger value="luck" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold text-xs sm:text-sm">Luck (Reward)</TabsTrigger>
+                    </TabsList>
+                </div>
+                
+                <TabsContent value="buy" className="animate-in fade-in-50 duration-500">
                     <CreditPacksTab />
                 </TabsContent>
-                <TabsContent value="redeem" className="mt-8">
-                    <RedeemItemsTab />
+                <TabsContent value="artifacts" className="animate-in fade-in-50 duration-500">
+                    <ArtifactsTab />
+                </TabsContent>
+                <TabsContent value="luck" className="animate-in fade-in-50 duration-500">
+                    <div className="text-center py-20 space-y-4">
+                        <Gift className="h-16 w-16 text-primary mx-auto opacity-20" />
+                        <h3 className="text-xl font-bold text-muted-foreground">Looking for Scratch Cards or Card Flips?</h3>
+                        <p className="text-muted-foreground max-w-sm mx-auto">These are now part of the <strong>Reward Zone</strong> logic, but you can find them in the <strong>Store Admin Panel</strong> if they are listed for credit sale.</p>
+                        <Button asChild variant="secondary">
+                            <Link href="/dashboard/reward">Go to Reward Zone</Link>
+                        </Button>
+                    </div>
                 </TabsContent>
             </Tabs>
+
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 flex items-start gap-4 shadow-inner">
+                <div className="p-2 rounded-lg bg-blue-500/20 text-blue-500">
+                    <ShieldCheck className="h-6 w-6" />
+                </div>
+                <div>
+                    <h4 className="font-bold text-blue-700 dark:text-blue-300">Nexus Security Protocol</h4>
+                    <p className="text-sm text-blue-700/80 dark:text-blue-300/80 mt-1">
+                        All transactions are encrypted and processed via <strong>Razorpay</strong>. Credits and artifacts are bound to your unique MindMate ID and awarded instantly upon verification.
+                    </p>
+                </div>
+            </div>
         </div>
     );
 }

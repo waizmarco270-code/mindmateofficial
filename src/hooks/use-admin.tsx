@@ -48,6 +48,12 @@ export interface User {
   streak?: number;
   longestStreak?: number;
   lastStreakCheck?: string;
+  // Nexus Artifacts Inventory
+  inventory?: {
+    penaltyShields?: number;
+    streakFreezes?: number;
+    alphaGlowExpires?: string; // ISO Date
+  };
   gameHighScores?: {
     memoryGame?: number;
     emojiQuiz?: number;
@@ -191,6 +197,7 @@ export interface CreditPack {
   name: string;
   credits: number;
   price: number;
+  badge?: 'popular' | 'new' | 'recommended';
   createdAt: Date;
 }
 
@@ -199,11 +206,12 @@ export interface StoreItem {
     name: string;
     description: string;
     cost: number;
-    type: 'scratch-card' | 'card-flip';
+    type: 'scratch-card' | 'card-flip' | 'penalty-shield' | 'streak-freeze' | 'alpha-glow';
     quantity: number;
     createdAt: Date;
     stock: number;
     isFeatured: boolean;
+    badge?: 'popular' | 'new' | 'recommended';
 }
 
 export interface VideoCategory {
@@ -423,6 +431,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     friends: [], unlockedResourceSections: [], unlockedFeatures: [], unlockedThemes: [], hasAiAccess: false,
                     focusSessionsCompleted: 0, dailyTasksCompleted: 0, totalStudyTime: 0, freeRewards: 0, freeGuesses: 0,
                     streak: 1, longestStreak: 1, lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
+                    inventory: { penaltyShields: 0, streakFreezes: 0 },
                     gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0 },
                     elementQuestScores: { s: 0, p: 0, d: 0, f: 0 }, elementQuestMilestonesClaimed: [],
                 };
@@ -483,17 +492,36 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             const itemRef = doc(db, 'storeItems', item.id);
             const userSnap = await transaction.get(userRef);
             const itemSnap = await transaction.get(itemRef);
+            
             if (!userSnap.exists() || !itemSnap.exists()) throw new Error("Data error.");
-            const userData = userSnap.data();
+            
+            const userData = userSnap.data() as User;
             const currentItem = itemSnap.data() as StoreItem;
             const hasMasterCard = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+            
             if (!hasMasterCard && userData.credits < item.cost) throw new Error("Insufficient credits.");
             if (currentItem.stock <= 0) throw new Error("Sold out.");
+            
             transaction.update(itemRef, { stock: increment(-1) });
+            
             const updates: any = {};
             if (!hasMasterCard) updates.credits = increment(-item.cost);
-            if (item.type === 'scratch-card') updates.freeRewards = increment(item.quantity);
-            else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
+            
+            // Handle different item types
+            if (item.type === 'scratch-card') {
+                updates.freeRewards = increment(item.quantity);
+            } else if (item.type === 'card-flip') {
+                updates.freeGuesses = increment(item.quantity);
+            } else if (item.type === 'penalty-shield') {
+                updates['inventory.penaltyShields'] = increment(item.quantity);
+            } else if (item.type === 'streak-freeze') {
+                updates['inventory.streakFreezes'] = increment(item.quantity);
+            } else if (item.type === 'alpha-glow') {
+                const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
+                const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
+                updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
+            }
+            
             transaction.update(userRef, updates);
         });
     }, [authUser, currentUserData]);

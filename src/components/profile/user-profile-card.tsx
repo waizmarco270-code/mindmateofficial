@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock } from 'lucide-react';
+import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock, ShieldAlert, Snowflake, Sparkles } from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useFriends } from '@/hooks/use-friends';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const formatTotalStudyTime = (totalSeconds: number) => {
     if (totalSeconds < 60) return "0m";
@@ -71,50 +71,54 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
         { label: 'Focus Sessions', value: user.focusSessionsCompleted || 0, icon: Zap, color: 'text-green-500' },
         { label: 'Tasks Completed', value: user.dailyTasksCompleted || 0, icon: ListChecks, color: 'text-blue-500' },
     ];
+
+    const artifacts = [
+        { name: 'Penalty Aegis', count: user.inventory?.penaltyShields || 0, icon: ShieldAlert, color: 'text-blue-400', desc: 'Protects from Focus penalties.' },
+        { name: 'Chronos Freeze', count: user.inventory?.streakFreezes || 0, icon: Snowflake, color: 'text-cyan-400', desc: 'Saves your daily streak.' },
+        { name: 'Alpha Radiance', active: user.inventory?.alphaGlowExpires && new Date(user.inventory.alphaGlowExpires) > new Date(), icon: Sparkles, color: 'text-fuchsia-400', desc: 'Glow in World Chat.', expiry: user.inventory?.alphaGlowExpires },
+    ];
     
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-20 w-20 border-2 border-primary">
-                            <AvatarImage src={user.photoURL} />
-                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                        <div>
-                            <CardTitle className="text-3xl">{user.displayName}</CardTitle>
-                            <div className="flex flex-wrap items-center gap-2 mt-2">
-                                {showcasedBadge ? showcasedBadge.badge : <Badge variant="outline">Member</Badge>}
+            <Card className="relative overflow-hidden">
+                <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
+                <CardHeader className="relative z-10">
+                    <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                        <div className="relative group">
+                            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-full blur opacity-40 group-hover:opacity-100 transition duration-1000" />
+                            <Avatar className="h-24 w-24 border-2 border-primary relative bg-background">
+                                <AvatarImage src={user.photoURL} />
+                                <AvatarFallback className="text-3xl">{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                        <div className="flex-1">
+                            <CardTitle className="text-4xl font-black tracking-tight">{user.displayName}</CardTitle>
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
+                                {showcasedBadge ? showcasedBadge.badge : <Badge variant="outline" className="font-bold">STUDENT</Badge>}
                                 {hasMasterCard && <span className="master-card-badge"><CreditCard className="h-3 w-3"/> MASTER</span>}
                             </div>
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent>
-                    {hasMasterCard && (
-                        <div className="mb-4 p-3 rounded-lg bg-gradient-to-r from-yellow-400/10 to-amber-500/10 border border-yellow-500/30 text-center">
-                            <p className="font-bold text-sm text-yellow-400">Master Card Active!</p>
-                            <p className="text-xs text-yellow-400/80">Expires on {format(new Date(user.masterCardExpires!), 'PPP')}</p>
-                        </div>
-                    )}
+                <CardContent className="relative z-10">
                     <div className="space-y-2">
-                        <Label htmlFor="user-id">User ID</Label>
+                        <Label htmlFor="user-id" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">MindMate ID</Label>
                         <div className="flex items-center gap-2">
-                           <Input id="user-id" readOnly value={user.uid || ''} className="font-mono bg-muted"/>
-                           <Button size="icon" variant="outline" onClick={handleCopyId}>
-                                {isCopied ? <Check className="h-4 w-4"/> : <Copy className="h-4 w-4"/>}
+                           <Input id="user-id" readOnly value={user.uid || ''} className="font-mono bg-muted/50 border-primary/10 h-12"/>
+                           <Button size="icon" variant="outline" className="h-12 w-12" onClick={handleCopyId}>
+                                {isCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
                            </Button>
                         </div>
                     </div>
                     {!isOwnProfile && authUser && (
                          <div className="mt-4">
                             {friends.some(f => f.uid === user.uid) ? (
-                                <Button className="w-full" disabled> <UserCheck className="mr-2"/> Already Friends</Button>
+                                <Button className="w-full h-12 font-bold" disabled variant="secondary"> <UserCheck className="mr-2"/> Friends Forever</Button>
                             ) : sentRequests.some(r => r.receiverId === user.uid) ? (
-                                 <Button className="w-full" disabled> <UserCheck className="mr-2"/> Request Sent</Button>
+                                 <Button className="w-full h-12 font-bold" disabled> <UserCheck className="mr-2"/> Ally Request Sent</Button>
                             ) : (
-                                <Button className="w-full" onClick={() => sendFriendRequest(user.uid)}>
-                                    <UserPlus className="mr-2"/> Add Friend
+                                <Button className="w-full h-12 font-bold" onClick={() => sendFriendRequest(user.uid)}>
+                                    <UserPlus className="mr-2"/> Form Alliance
                                 </Button>
                             )}
                         </div>
@@ -122,44 +126,85 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                 </CardContent>
             </Card>
 
-            {isOwnProfile && ownedBadges.length > 1 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Showcase Your Badges</CardTitle>
-                        <CardDescription>Choose a badge to display next to your name across the app.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex flex-wrap gap-4">
-                        {ownedBadges.map(b => (
-                            <button key={b.type} onClick={() => setShowcaseBadge(user.uid, b.type)} className={cn("p-2 rounded-lg border-2 transition-all", user.showcasedBadge === b.type || (!user.showcasedBadge && b.type === (isSuperAdmin ? 'dev' : 'admin')) ? 'border-primary ring-2 ring-primary/50' : 'border-transparent hover:border-primary/50')}>
-                                {b.badge}
-                            </button>
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
+            <Tabs defaultValue="stats" className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-4 bg-muted/50 p-1 rounded-xl border">
+                    <TabsTrigger value="stats" className="rounded-lg font-bold">Statistics</TabsTrigger>
+                    <TabsTrigger value="inventory" className="rounded-lg font-bold">Nexus Artifacts</TabsTrigger>
+                </TabsList>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-4">
-                {stats.map(stat => (
-                    <Card key={stat.label}>
-                        <CardHeader className="p-4 flex-row items-center justify-between">
-                            <CardTitle className={cn("text-sm font-medium", stat.color)}>{stat.label}</CardTitle>
-                            <stat.icon className={cn("h-4 w-4 text-muted-foreground", stat.color)} />
-                        </CardHeader>
-                        <CardContent className="p-4 pt-0">
-                            <div className="text-2xl font-bold">{stat.value}</div>
-                        </CardContent>
-                    </Card>
-                ))}
-                 <Card className="col-span-2 lg:col-span-3">
-                    <CardHeader className="p-4 flex-row items-center justify-between">
-                        <CardTitle className="text-sm font-medium text-cyan-500">Total Study Time</CardTitle>
-                        <Clock className="h-4 w-4 text-cyan-500" />
-                    </CardHeader>
-                    <CardContent className="p-4 pt-0 text-center">
-                        <div className="text-4xl font-bold">{formatTotalStudyTime(user.totalStudyTime || 0)}</div>
-                    </CardContent>
-                </Card>
-            </div>
+                <TabsContent value="stats" className="space-y-6">
+                    {isOwnProfile && ownedBadges.length > 1 && (
+                        <Card className="border-primary/20">
+                            <CardHeader className="pb-2">
+                                <CardTitle className="text-base font-bold">Showcase Badge</CardTitle>
+                                <CardDescription>Display your rank to the world.</CardDescription>
+                            </CardHeader>
+                            <CardContent className="flex flex-wrap gap-3">
+                                {ownedBadges.map(b => (
+                                    <button key={b.type} onClick={() => setShowcaseBadge(user.uid, b.type)} className={cn("p-2 rounded-xl border-2 transition-all", user.showcasedBadge === b.type || (!user.showcasedBadge && b.type === (isSuperAdmin ? 'dev' : 'admin')) ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-muted')}>
+                                        {b.badge}
+                                    </button>
+                                ))}
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {stats.map(stat => (
+                            <Card key={stat.label} className="bg-gradient-to-br from-card to-muted/30">
+                                <CardHeader className="p-4 flex-row items-center justify-between pb-2">
+                                    <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</CardTitle>
+                                    <stat.icon className={cn("h-4 w-4", stat.color)} />
+                                </CardHeader>
+                                <CardContent className="p-4 pt-0">
+                                    <div className="text-3xl font-black tracking-tighter">{stat.value}</div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                        <Card className="col-span-2 md:col-span-1 bg-primary/5 border-primary/20">
+                            <CardHeader className="p-4 flex-row items-center justify-between pb-2">
+                                <CardTitle className="text-xs font-bold uppercase tracking-widest text-primary">Focused Time</CardTitle>
+                                <Clock className="h-4 w-4 text-primary" />
+                            </CardHeader>
+                            <CardContent className="p-4 pt-0">
+                                <div className="text-3xl font-black tracking-tighter text-primary">{formatTotalStudyTime(user.totalStudyTime || 0)}</div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
+                <TabsContent value="inventory">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {artifacts.map((art, i) => (
+                            <Card key={i} className="bg-muted/30 border-dashed border-2">
+                                <CardContent className="p-4 flex flex-col items-center text-center gap-2">
+                                    <div className={cn("p-3 rounded-2xl bg-background shadow-inner", art.color)}>
+                                        <art.icon className="h-8 w-8" />
+                                    </div>
+                                    <div>
+                                        <p className="font-black text-lg">{art.name}</p>
+                                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{art.desc}</p>
+                                    </div>
+                                    <div className="mt-2">
+                                        {art.expiry ? (
+                                            <Badge variant={art.active ? "default" : "secondary"}>
+                                                {art.active ? `Expires: ${format(new Date(art.expiry), 'MMM d')}` : "Expired"}
+                                            </Badge>
+                                        ) : (
+                                            <p className="text-2xl font-black text-primary">x{art.count}</p>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                    {isOwnProfile && (
+                        <Button asChild variant="outline" className="w-full mt-6 h-12 rounded-xl font-bold">
+                            <Link href="/dashboard/store">Visit Nexus Emporium</Link>
+                        </Button>
+                    )}
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

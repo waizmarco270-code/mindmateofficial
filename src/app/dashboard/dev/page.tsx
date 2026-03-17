@@ -24,6 +24,7 @@ import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogTri
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 
 
 export default function PaymentsPanelPage() {
@@ -42,6 +43,7 @@ export default function PaymentsPanelPage() {
     const [packName, setPackName] = useState('');
     const [packCredits, setPackCredits] = useState(100);
     const [packPrice, setPackPrice] = useState(10);
+    const [packBadge, setPackBadge] = useState<CreditPack['badge']>(undefined);
 
     // State for Store Items
     const [isStoreItemDialogOpen, setIsStoreItemDialogOpen] = useState(false);
@@ -53,6 +55,7 @@ export default function PaymentsPanelPage() {
     const [itemQuantity, setItemQuantity] = useState(1);
     const [itemStock, setItemStock] = useState(100);
     const [itemIsFeatured, setItemIsFeatured] = useState(false);
+    const [itemBadge, setItemBadge] = useState<StoreItem['badge']>(undefined);
 
     const openPackDialog = (pack: CreditPack | null) => {
         if (pack) {
@@ -60,11 +63,13 @@ export default function PaymentsPanelPage() {
             setPackName(pack.name);
             setPackCredits(pack.credits);
             setPackPrice(pack.price);
+            setPackBadge(pack.badge);
         } else {
             setEditingPack(null);
             setPackName('');
             setPackCredits(100);
             setPackPrice(10);
+            setPackBadge(undefined);
         }
         setIsPackDialogOpen(true);
     };
@@ -76,7 +81,7 @@ export default function PaymentsPanelPage() {
             return;
         }
         
-        const packData = { name: packName, credits: packCredits, price: packPrice };
+        const packData = { name: packName, credits: packCredits, price: packPrice, badge: packBadge };
 
         try {
             if (editingPack) {
@@ -102,6 +107,7 @@ export default function PaymentsPanelPage() {
             setItemQuantity(item.quantity);
             setItemStock(item.stock);
             setItemIsFeatured(item.isFeatured);
+            setItemBadge(item.badge);
         } else {
             setEditingStoreItem(null);
             setItemName('');
@@ -111,6 +117,7 @@ export default function PaymentsPanelPage() {
             setItemQuantity(1);
             setItemStock(100);
             setItemIsFeatured(false);
+            setItemBadge(undefined);
         }
         setIsStoreItemDialogOpen(true);
     }
@@ -130,6 +137,7 @@ export default function PaymentsPanelPage() {
             quantity: itemQuantity,
             stock: itemStock,
             isFeatured: itemIsFeatured,
+            badge: itemBadge,
         };
 
         try {
@@ -181,7 +189,7 @@ export default function PaymentsPanelPage() {
                         {creditPacks && creditPacks.map(pack => (
                             <div key={pack.id} className="flex items-center p-3 rounded-md bg-muted">
                                 <div className="flex-1">
-                                    <p className="font-semibold">{pack.name}</p>
+                                    <p className="font-semibold">{pack.name} {pack.badge && <Badge variant="outline" className="ml-2 uppercase text-[10px]">{pack.badge}</Badge>}</p>
                                     <p className="text-sm text-muted-foreground">
                                         {pack.credits.toLocaleString()} Credits for ₹{pack.price}
                                     </p>
@@ -218,13 +226,27 @@ export default function PaymentsPanelPage() {
                                     <Label htmlFor="pack-name">Pack Name</Label>
                                     <Input id="pack-name" value={packName} onChange={e => setPackName(e.target.value)} />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="pack-credits">Credits</Label>
-                                    <Input id="pack-credits" type="number" value={packCredits} onChange={e => setPackCredits(Number(e.target.value))} />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="pack-credits">Credits</Label>
+                                        <Input id="pack-credits" type="number" value={packCredits} onChange={e => setPackCredits(Number(e.target.value))} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="pack-price">Price (₹)</Label>
+                                        <Input id="pack-price" type="number" value={packPrice} onChange={e => setPackPrice(Number(e.target.value))} />
+                                    </div>
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="pack-price">Price (₹)</Label>
-                                    <Input id="pack-price" type="number" value={packPrice} onChange={e => setPackPrice(Number(e.target.value))} />
+                                    <Label>Value Badge (Optional)</Label>
+                                    <Select value={packBadge || 'none'} onValueChange={(v: any) => setPackBadge(v === 'none' ? undefined : v)}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No Badge</SelectItem>
+                                            <SelectItem value="popular">Popular</SelectItem>
+                                            <SelectItem value="new">New</SelectItem>
+                                            <SelectItem value="recommended">Recommended</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                             </div>
                             <DialogFooter>
@@ -238,7 +260,7 @@ export default function PaymentsPanelPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Manage Redeemable Items</CardTitle>
-                    <CardDescription>Manage items users can buy with credits.</CardDescription>
+                    <CardDescription>Manage items users can buy with credits (Nexus Artifacts).</CardDescription>
                 </CardHeader>
                     <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -247,7 +269,7 @@ export default function PaymentsPanelPage() {
                                 <div className="flex-1">
                                     <p className="font-semibold">{item.name} {item.isFeatured && <span className="text-xs text-primary">(Featured)</span>}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {item.cost} Credits | Stock: {item.stock}
+                                        {item.cost} Credits | Stock: {item.stock} | Type: {item.type}
                                     </p>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => openStoreItemDialog(item)}><Edit className="h-4 w-4"/></Button>
@@ -272,7 +294,7 @@ export default function PaymentsPanelPage() {
                             <DialogHeader>
                                 <DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Redeemable Item</DialogTitle>
                             </DialogHeader>
-                                <div className="grid gap-4 py-4">
+                                <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                                 <div className="space-y-2">
                                     <Label htmlFor="item-name">Item Name</Label>
                                     <Input id="item-name" value={itemName} onChange={e => setItemName(e.target.value)} />
@@ -293,6 +315,9 @@ export default function PaymentsPanelPage() {
                                             <SelectContent>
                                                 <SelectItem value="scratch-card">Scratch Card</SelectItem>
                                                 <SelectItem value="card-flip">Card Flip Play</SelectItem>
+                                                <SelectItem value="penalty-shield">Penalty Shield (Artifact)</SelectItem>
+                                                <SelectItem value="streak-freeze">Streak Freeze (Artifact)</SelectItem>
+                                                <SelectItem value="alpha-glow">Alpha Glow (Artifact)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
@@ -307,8 +332,20 @@ export default function PaymentsPanelPage() {
                                         <Input id="item-stock" type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))} />
                                     </div>
                                 </div>
+                                <div className="space-y-2">
+                                    <Label>Value Badge</Label>
+                                    <Select value={itemBadge || 'none'} onValueChange={(v: any) => setItemBadge(v === 'none' ? undefined : v)}>
+                                        <SelectTrigger><SelectValue /></SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">No Badge</SelectItem>
+                                            <SelectItem value="popular">Popular</SelectItem>
+                                            <SelectItem value="new">New</SelectItem>
+                                            <SelectItem value="recommended">Recommended</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
                                 <div className="flex items-center space-x-2">
-                                    <input type="checkbox" id="item-featured" checked={itemIsFeatured} onChange={e => setItemIsFeatured(e.target.checked)} />
+                                    <Switch id="item-featured" checked={itemIsFeatured} onCheckedChange={setItemIsFeatured} />
                                     <Label htmlFor="item-featured">Mark as Featured</Label>
                                 </div>
                             </div>
