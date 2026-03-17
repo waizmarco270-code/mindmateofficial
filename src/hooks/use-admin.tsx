@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { db, storage } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, runTransaction } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
@@ -68,7 +68,7 @@ export interface User {
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
   mathematicsLegendClaims?: Record<string, number[]>;
-  transactions?: { id: string; packName: string; credits: number; price: number; date: Date; }[];
+  transactions?: { id: string; packName: string; credits: number; price?: number; date: string; type?: string }[];
 }
 
 export interface Announcement {
@@ -194,20 +194,6 @@ export interface CreditPack {
   createdAt: Date;
 }
 
-export interface PurchaseRequest {
-  id: string;
-  userId: string;
-  userName: string;
-  packId: string;
-  packName: string;
-  credits: number;
-  price: number;
-  transactionId: string;
-  screenshotUrl?: string;
-  status: 'pending' | 'approved' | 'declined';
-  createdAt: Timestamp;
-}
-
 export interface StoreItem {
     id: string;
     name: string;
@@ -243,7 +229,7 @@ interface AppDataContextType {
     isSuperAdmin: boolean;
     users: User[];
     currentUserData: User | null;
-    transactions: PurchaseRequest[];
+    transactions: User['transactions'];
     toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
     giftCreditsToAllUsers: (amount: number) => Promise<void>;
@@ -334,10 +320,6 @@ interface AppDataContextType {
     createCreditPack: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
     updateCreditPack: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
     deleteCreditPack: (id: string) => Promise<void>;
-    purchaseRequests: PurchaseRequest[];
-    createPurchaseRequest: (pack: CreditPack, transactionId: string, screenshotFile: File | null) => Promise<void>;
-    approvePurchaseRequest: (request: PurchaseRequest) => Promise<void>;
-    declinePurchaseRequest: (requestId: string) => Promise<void>;
     storeItems: StoreItem[];
     createStoreItem: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
     updateStoreItem: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
@@ -372,14 +354,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [featureShowcases, setFeatureShowcases] = useState<FeatureShowcase[]>([]);
     const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
     const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
-    const [purchaseRequests, setPurchaseRequests] = useState<PurchaseRequest[]>([]);
-    const [transactions, setTransactions] = useState<PurchaseRequest[]>([]);
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
     const [loading, setLoading] = useState(true);
 
     const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
     const activePoll = useMemo(() => allPolls.find(p => p.isActive) || null, [allPolls]);
+
+    const transactions = useMemo(() => {
+        if (!currentUserData?.transactions) return [];
+        return [...currentUserData.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    }, [currentUserData]);
 
     useEffect(() => {
         if (isClerkLoaded && authUser && currentUserData) {
@@ -421,7 +406,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                         if (newStreak > (data.longestStreak || 0)) updates.longestStreak = newStreak;
                         if (newStreak % 30 === 0) updates.credits = increment(100);
                         else if (newStreak % 5 === 0) updates.credits = increment(50);
-                    } else { updates.streak = 1; }
+                    } else if (lastCheckDate && !isToday(lastCheckDate)) { 
+                        updates.streak = 1; 
+                    }
                     updates.lastStreakCheck = todayStr;
                     hasUpdates = true;
                 }
@@ -448,12 +435,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }, [authUser, isClerkLoaded]);
 
     useEffect(() => {
-        if (!authUser) { setTransactions([]); return; }
-        const q = query(collection(db, 'creditPurchaseRequests'), where('userId', '==', authUser.id), where('status', '==', 'approved'), orderBy('createdAt', 'desc'));
-        return onSnapshot(q, (s) => setTransactions(s.docs.map(d => ({ id: d.id, ...d.data() } as any))));
-    }, [authUser]);
-
-    useEffect(() => {
         const processWithDate = <T extends { id: string; createdAt: Date }>(snapshot: any) => 
             snapshot.docs.map((doc: any) => {
                 const data = doc.data();
@@ -468,27 +449,21 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubResources = onSnapshot(query(collection(db, 'resources'), orderBy('createdAt', 'desc')), (s) => setResources(processWithDate<Resource>(s)));
         const unsubSections = onSnapshot(query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc')), (s) => setResourceSections(processWithDate<ResourceSection>(s)));
         const unsubDailySurprises = onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(processWithDate<DailySurprise>(s)));
-        
         const unsubTickets = onSnapshot(query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc')), (s) => setSupportTickets(s.docs.map(d => ({ id: d.id, ...d.data() } as SupportTicket))));
-        
         const unsubPolls = onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc')), (s) => setAllPolls(processWithDate<Poll>(s)));
         const unsubAppSettings = onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null));
         const unsubGifts = onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(processWithDate<GlobalGift>(s)));
         const unsubLocks = onSnapshot(doc(db, 'appConfig', 'featureLocks'), (d) => setFeatureLocks(d.exists() ? d.data() as any : null));
         const unsubShowcases = onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processWithDate<FeatureShowcase>(s)));
-        
         const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), (s) => setCreditPacks(processWithDate<CreditPack>(s)));
         const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('cost', 'asc')), (s) => setStoreItems(processWithDate<StoreItem>(s)));
-        
-        const unsubPurchaseRequests = onSnapshot(query(collection(db, 'creditPurchaseRequests'), where('status', '==', 'pending'), orderBy('createdAt', 'asc')), (s) => setPurchaseRequests(s.docs.map(d => ({ id: d.id, ...d.data() } as PurchaseRequest))));
-        
         const unsubVideoCats = onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(processWithDate<VideoCategory>(s)));
         const unsubVideoLecs = onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(processWithDate<VideoLecture>(s)));
 
         return () => {
             unsubAnnouncements(); unsubResources(); unsubPolls(); unsubDailySurprises(); unsubSections();
             unsubAppSettings(); unsubGifts(); unsubTickets(); unsubLocks(); unsubShowcases();
-            unsubCreditPacks(); unsubStoreItems(); unsubPurchaseRequests(); unsubVideoCats(); unsubVideoLecs();
+            unsubCreditPacks(); unsubStoreItems(); unsubVideoCats(); unsubVideoLecs();
         };
     }, []);
 
@@ -523,35 +498,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [authUser, currentUserData]);
 
-    const createPurchaseRequest = useCallback(async (pack: CreditPack, transactionId: string, screenshotFile: File | null) => {
-        if (!currentUserData) throw new Error('User not logged in.');
-        let screenshotUrl = '';
-        if (screenshotFile) {
-            const storageRef = ref(storage, `payment_proofs/${currentUserData.uid}_${Date.now()}`);
-            const uploadResult = await uploadBytes(storageRef, screenshotFile);
-            screenshotUrl = await getDownloadURL(uploadResult.ref);
-        }
-        await addDoc(collection(db, 'creditPurchaseRequests'), {
-            userId: currentUserData.uid, userName: currentUserData.displayName, packId: pack.id,
-            packName: pack.name, credits: pack.credits, price: pack.price, transactionId,
-            screenshotUrl, status: 'pending', createdAt: serverTimestamp(),
-        });
-    }, [currentUserData]);
-
-    const approvePurchaseRequest = useCallback(async (req: PurchaseRequest) => {
-        const batch = writeBatch(db);
-        batch.update(doc(db, 'users', req.userId), { 
-            credits: increment(req.credits),
-            transactions: arrayUnion({ id: req.id, packName: req.packName, credits: req.credits, price: req.price, date: new Date() }) 
-        });
-        batch.update(doc(db, 'creditPurchaseRequests', req.id), { status: 'approved' });
-        await batch.commit();
-    }, []);
-
-    const declinePurchaseRequest = useCallback(async (id: string) => await updateDoc(doc(db, 'creditPurchaseRequests', id), { status: 'declined' }), []);
-
     const value: AppDataContextType = {
-        isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureLocks, featureShowcases, creditPacks, storeItems, purchaseRequests, videoCategories, videoLectures,
+        isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureLocks, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures,
         toggleUserBlock: (uid, isBlocked) => updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked }),
         addCreditsToUser,
         giftCreditsToAllUsers: async (amt) => {
@@ -766,9 +714,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         createCreditPack: (p) => addDoc(collection(db, 'creditPacks'), { ...p, createdAt: serverTimestamp() }),
         updateCreditPack: (id, d) => updateDoc(doc(db, 'creditPacks', id), d),
         deleteCreditPack: (id) => deleteDoc(doc(db, 'creditPacks', id)),
-        createPurchaseRequest,
-        approvePurchaseRequest,
-        declinePurchaseRequest,
         createStoreItem: (i) => addDoc(collection(db, 'storeItems'), { ...i, createdAt: serverTimestamp() }),
         updateStoreItem: (id, d) => updateDoc(doc(db, 'storeItems', id), d),
         deleteStoreItem: (id) => deleteDoc(doc(db, 'storeItems', id)),

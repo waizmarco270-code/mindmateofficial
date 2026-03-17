@@ -1,12 +1,11 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type CreditPack, type StoreItem, type PurchaseRequest } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type CreditPack, type StoreItem } from '@/hooks/use-admin';
 import {
   Table,
   TableHeader,
@@ -33,7 +32,6 @@ export default function PaymentsPanelPage() {
         appSettings, updateAppSettings,
         creditPacks, createCreditPack, updateCreditPack, deleteCreditPack,
         storeItems, createStoreItem, updateStoreItem, deleteStoreItem,
-        purchaseRequests, approvePurchaseRequest, declinePurchaseRequest,
         loading
     } = useAdmin();
     const { toast } = useToast();
@@ -92,19 +90,6 @@ export default function PaymentsPanelPage() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Operation Failed', description: error.message });
         }
-    };
-    
-     const handleQrCodeUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        const reader = new FileReader();
-        reader.onload = (event) => {
-            const base64String = event.target?.result as string;
-            updateAppSettings({ upiQrCode: base64String });
-            toast({ title: 'QR Code Updated!' });
-        };
-        reader.readAsDataURL(file);
     };
     
     const openStoreItemDialog = (item: StoreItem | null) => {
@@ -182,46 +167,11 @@ export default function PaymentsPanelPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Payments Panel</h1>
-        <p className="text-muted-foreground">Manage credit packs, store items, and approve purchase requests.</p>
+        <p className="text-muted-foreground">Manage credit packs and store items. Payments are automated via Razorpay.</p>
       </div>
-
-       <Card>
-            <CardHeader>
-                <CardTitle>Pending Purchase Requests</CardTitle>
-                <CardDescription>Review and approve/decline manual UPI payments.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead>Pack</TableHead>
-                            <TableHead>Transaction ID</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {purchaseRequests && purchaseRequests.map(req => (
-                            <TableRow key={req.id}>
-                                <TableCell>{req.userName}</TableCell>
-                                <TableCell>{req.packName} (+{req.credits} Credits)</TableCell>
-                                <TableCell className="font-mono">{req.transactionId}</TableCell>
-                                <TableCell>{req.createdAt ? format(req.createdAt.toDate(), "d MMM, h:mm a") : 'N/A'}</TableCell>
-                                <TableCell className="text-right space-x-2">
-                                    <Button variant="destructive" size="sm" onClick={() => declinePurchaseRequest && declinePurchaseRequest(req.id)}>Decline</Button>
-                                    <Button size="sm" onClick={() => approvePurchaseRequest && approvePurchaseRequest(req)}>Approve</Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        {(!purchaseRequests || purchaseRequests.length === 0) && <TableRow><TableCell colSpan={5} className="h-24 text-center">No pending requests.</TableCell></TableRow>}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-1">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
                 <CardHeader>
                     <CardTitle>Manage Credit Packs</CardTitle>
                     <CardDescription>Manage packs for buying credits with real money.</CardDescription>
@@ -285,7 +235,7 @@ export default function PaymentsPanelPage() {
                     </Dialog>
                 </CardContent>
             </Card>
-            <Card className="lg:col-span-1">
+            <Card>
                 <CardHeader>
                     <CardTitle>Manage Redeemable Items</CardTitle>
                     <CardDescription>Manage items users can buy with credits.</CardDescription>
@@ -370,29 +320,7 @@ export default function PaymentsPanelPage() {
                     </Dialog>
                 </CardContent>
             </Card>
-            <Card className="lg:col-span-1">
-                <CardHeader>
-                    <CardTitle>Manage UPI QR Code</CardTitle>
-                    <CardDescription>Upload the QR code for payments.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {appSettings?.upiQrCode ? (
-                        <div className="p-2 border bg-white rounded-lg w-48 h-48 mx-auto">
-                            <Image src={appSettings.upiQrCode} alt="Current UPI QR Code" className="w-full h-full object-contain" width={192} height={192} />
-                        </div>
-                    ) : (
-                        <div className="p-2 border bg-white rounded-lg w-48 h-48 mx-auto flex items-center justify-center">
-                            <ImageIcon className="h-10 w-10 text-muted-foreground"/>
-                        </div>
-                    )}
-                    <div className="space-y-2">
-                        <Label htmlFor="qr-upload">Upload New QR Code</Label>
-                        <Input id="qr-upload" type="file" accept="image/*" onChange={handleQrCodeUpload} />
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     </div>
   );
 }
-

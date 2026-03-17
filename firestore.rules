@@ -136,7 +136,22 @@ service cloud.firestore {
         allow read, create, update, delete: if false; // Should only be manageable via backend functions for security
     }
 
+    // Credit Purchase Requests (Legacy/Manual - kept for security but mostly unused now)
+    match /creditPurchaseRequests/{requestId} {
+      allow read: if isAdmin() || isSuperAdmin() || (isSignedIn() && request.auth.uid == resource.data.userId);
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // Video Content
+    match /videoCategories/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isSuperAdmin();
+    }
+    match /videoLectures/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin() || isSuperAdmin();
+    }
+
   }
 }
-
-    
