@@ -204,7 +204,9 @@ export interface StoreItem {
     id: string;
     name: string;
     description: string;
-    cost: number;
+    cost: number; // For credits
+    price?: number; // For real money
+    paymentType: 'credits' | 'money';
     type: 'scratch-card' | 'card-flip' | 'penalty-shield' | 'streak-freeze' | 'alpha-glow';
     quantity: number;
     createdAt: Date;
@@ -333,6 +335,7 @@ interface AppDataContextType {
     updateStoreItem: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
     deleteStoreItem: (id: string) => Promise<void>;
     redeemStoreItem: (item: StoreItem) => Promise<void>;
+    processStoreItemPayment: (item: StoreItem, transactionId: string) => Promise<void>;
     videoCategories: VideoCategory[];
     addVideoCategory: (category: Omit<VideoCategory, 'id' | 'createdAt'>) => Promise<void>;
     deleteVideoCategory: (categoryId: string) => Promise<void>;
@@ -415,10 +418,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                         if (newStreak % 30 === 0) updates.credits = increment(100);
                         else if (newStreak % 5 === 0) updates.credits = increment(50);
                     } else if (lastCheckDate && !isToday(lastCheckDate)) { 
-                        // Streak would break. Check for freeze.
                         if ((data.inventory?.streakFreezes || 0) > 0) {
                             updates['inventory.streakFreezes'] = increment(-1);
-                            // Keep current streak intact
                         } else {
                             updates.streak = 1; 
                         }
@@ -471,7 +472,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubLocks = onSnapshot(doc(db, 'appConfig', 'featureLocks'), (d) => setFeatureLocks(d.exists() ? d.data() as any : null));
         const unsubShowcases = onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processWithDate<FeatureShowcase>(s)));
         const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), (s) => setCreditPacks(processWithDate<CreditPack>(s)));
-        const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('cost', 'asc')), (s) => setStoreItems(processWithDate<StoreItem>(s)));
+        const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('createdAt', 'desc')), (s) => setStoreItems(processWithDate<StoreItem>(s)));
         const unsubVideoCats = onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(processWithDate<VideoCategory>(s)));
         const unsubVideoLecs = onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(processWithDate<VideoLecture>(s)));
 
@@ -508,6 +509,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const redeemStoreItem = useCallback(async (item: StoreItem) => {
         if (!authUser || !currentUserData) throw new Error("You must be logged in.");
+        if (item.paymentType !== 'credits') throw new Error("This item must be paid for with money.");
+
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, 'users', authUser.id);
             const itemRef = doc(db, 'storeItems', item.id);
@@ -528,16 +531,54 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             const updates: any = {};
             if (!hasMasterCard) updates.credits = increment(-item.cost);
             
-            // Handle different item types
-            if (item.type === 'scratch-card') {
-                updates.freeRewards = increment(item.quantity);
-            } else if (item.type === 'card-flip') {
-                updates.freeGuesses = increment(item.quantity);
-            } else if (item.type === 'penalty-shield') {
-                updates['inventory.penaltyShields'] = increment(item.quantity);
-            } else if (item.type === 'streak-freeze') {
-                updates['inventory.streakFreezes'] = increment(item.quantity);
-            } else if (item.type === 'alpha-glow') {
+            if (item.type === 'scratch-card') updates.freeRewards = increment(item.quantity);
+            else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
+            else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(item.quantity);
+            else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(item.quantity);
+            else if (item.type === 'alpha-glow') {
+                const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
+                const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
+                updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
+            }
+            
+            transaction.update(userRef, updates);
+        });
+    }, [authUser, currentUserData]);
+
+    const processStoreItemPayment = useCallback(async (item: StoreItem, transactionId: string) => {
+        if (!authUser || !currentUserData) return;
+        
+        await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, 'users', authUser.id);
+            const itemRef = doc(db, 'storeItems', item.id);
+            const userSnap = await transaction.get(userRef);
+            const itemSnap = await transaction.get(itemRef);
+            
+            if (!userSnap.exists() || !itemSnap.exists()) throw new Error("Data error.");
+            
+            const userData = userSnap.data() as User;
+            const currentItem = itemSnap.data() as StoreItem;
+            
+            if (currentItem.stock <= 0) throw new Error("Sold out.");
+            
+            transaction.update(itemRef, { stock: increment(-1) });
+            
+            const updates: any = {
+                transactions: arrayUnion({
+                    id: transactionId,
+                    packName: item.name,
+                    credits: 0, // It's an item purchase, not credits
+                    price: item.price,
+                    date: new Date().toISOString(),
+                    type: 'razorpay_item'
+                })
+            };
+            
+            if (item.type === 'scratch-card') updates.freeRewards = increment(item.quantity);
+            else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
+            else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(item.quantity);
+            else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(item.quantity);
+            else if (item.type === 'alpha-glow') {
                 const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
                 const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
                 updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
@@ -739,11 +780,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             batch.update(doc(db, 'users', authUser.id), { [`votedPolls.${id}`]: opt });
             await batch.commit();
         },
-        submitPollVoteInChat: async (messageId, option) => {
-            if (!authUser) return;
-            const messageRef = doc(db, 'world_chat', messageId);
-            await updateDoc(messageRef, { [`pollData.results.${option}`]: arrayUnion(authUser.id) });
-        },
         submitPollComment: (id, c) => updateDoc(doc(db, 'polls', id), { comments: arrayUnion({ userId: authUser?.id, userName: currentUserData?.displayName, comment: c, createdAt: Timestamp.now() }) }),
         updateAppSettings: (s) => updateDoc(doc(db, 'appConfig', 'settings'), s),
         sendGlobalGift: (g) => addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] }),
@@ -773,6 +809,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateStoreItem: (id, d) => updateDoc(doc(db, 'storeItems', id), d),
         deleteStoreItem: (id) => deleteDoc(doc(db, 'storeItems', id)),
         redeemStoreItem,
+        processStoreItemPayment,
         addVideoCategory: (c) => addDoc(collection(db, 'videoCategories'), { ...c, createdAt: serverTimestamp() }),
         deleteVideoCategory: async (id) => {
             const batch = writeBatch(db);

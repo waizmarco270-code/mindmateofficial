@@ -51,6 +51,8 @@ export default function PaymentsPanelPage() {
     const [itemName, setItemName] = useState('');
     const [itemDescription, setItemDescription] = useState('');
     const [itemCost, setItemCost] = useState(100);
+    const [itemPrice, setItemPrice] = useState(10);
+    const [itemPaymentType, setItemPaymentType] = useState<'credits' | 'money'>('credits');
     const [itemType, setItemType] = useState<StoreItem['type']>('scratch-card');
     const [itemQuantity, setItemQuantity] = useState(1);
     const [itemStock, setItemStock] = useState(100);
@@ -103,6 +105,8 @@ export default function PaymentsPanelPage() {
             setItemName(item.name);
             setItemDescription(item.description);
             setItemCost(item.cost);
+            setItemPrice(item.price || 10);
+            setItemPaymentType(item.paymentType || 'credits');
             setItemType(item.type);
             setItemQuantity(item.quantity);
             setItemStock(item.stock);
@@ -113,6 +117,8 @@ export default function PaymentsPanelPage() {
             setItemName('');
             setItemDescription('');
             setItemCost(100);
+            setItemPrice(10);
+            setItemPaymentType('credits');
             setItemType('scratch-card');
             setItemQuantity(1);
             setItemStock(100);
@@ -124,7 +130,7 @@ export default function PaymentsPanelPage() {
 
     const handleSaveStoreItem = async () => {
         if (!createStoreItem || !updateStoreItem) return;
-        if (!itemName.trim() || itemCost <= 0 || itemQuantity <= 0) {
+        if (!itemName.trim() || (itemPaymentType === 'credits' && itemCost <= 0) || (itemPaymentType === 'money' && itemPrice <= 0) || itemQuantity <= 0) {
             toast({ variant: 'destructive', title: 'Invalid input for store item.'});
             return;
         }
@@ -133,6 +139,8 @@ export default function PaymentsPanelPage() {
             name: itemName,
             description: itemDescription,
             cost: itemCost,
+            price: itemPrice,
+            paymentType: itemPaymentType,
             type: itemType,
             quantity: itemQuantity,
             stock: itemStock,
@@ -224,7 +232,7 @@ export default function PaymentsPanelPage() {
                             <div className="grid gap-4 py-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="pack-name">Pack Name</Label>
-                                    <Input id="pack-name" value={packName} onChange={e => setName(e.target.value)} />
+                                    <Input id="pack-name" value={packName} onChange={e => setPackName(e.target.value)} />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -260,7 +268,7 @@ export default function PaymentsPanelPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Manage Redeemable Items</CardTitle>
-                    <CardDescription>Manage items users can buy with credits (Nexus Artifacts).</CardDescription>
+                    <CardDescription>Manage items users can buy with credits or money.</CardDescription>
                 </CardHeader>
                     <CardContent className="space-y-4">
                     <div className="space-y-2">
@@ -269,7 +277,7 @@ export default function PaymentsPanelPage() {
                                 <div className="flex-1">
                                     <p className="font-semibold">{item.name} {item.isFeatured && <span className="text-xs text-primary">(Featured)</span>}</p>
                                     <p className="text-sm text-muted-foreground">
-                                        {item.cost} Credits | Stock: {item.stock} | Type: {item.type}
+                                        {item.paymentType === 'credits' ? `${item.cost} Credits` : `₹${item.price}`} | Stock: {item.stock} | Type: {item.type}
                                     </p>
                                 </div>
                                 <Button variant="ghost" size="icon" onClick={() => openStoreItemDialog(item)}><Edit className="h-4 w-4"/></Button>
@@ -306,10 +314,31 @@ export default function PaymentsPanelPage() {
                                     <Textarea id="item-description" value={itemDescription} onChange={e => setItemDescription(e.target.value)} placeholder="What does this item do?" />
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                        <Label htmlFor="item-cost">Cost (Credits)</Label>
-                                        <Input id="item-cost" type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))} />
+                                    <div className="space-y-2">
+                                        <Label>Payment Type</Label>
+                                        <Select value={itemPaymentType} onValueChange={(v: any) => setItemPaymentType(v)}>
+                                            <SelectTrigger><SelectValue/></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="credits">Credits</SelectItem>
+                                                <SelectItem value="money">Money (Razorpay)</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
+                                    <div className="space-y-2">
+                                        {itemPaymentType === 'credits' ? (
+                                            <>
+                                                <Label htmlFor="item-cost">Cost (Credits)</Label>
+                                                <Input id="item-cost" type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))} />
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Label htmlFor="item-price">Price (₹)</Label>
+                                                <Input id="item-price" type="number" value={itemPrice} onChange={e => setItemPrice(Number(e.target.value))} />
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="item-type">Item Type</Label>
                                         <Select value={itemType} onValueChange={(v: StoreItem['type']) => setItemType(v)}>
@@ -323,6 +352,10 @@ export default function PaymentsPanelPage() {
                                             </SelectContent>
                                         </Select>
                                     </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="item-stock">Stock</Label>
+                                        <Input id="item-stock" type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))} />
+                                    </div>
                                 </div>
                                     <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
@@ -330,21 +363,17 @@ export default function PaymentsPanelPage() {
                                         <Input id="item-quantity" type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))} />
                                     </div>
                                     <div className="space-y-2">
-                                        <Label htmlFor="item-stock">Stock</Label>
-                                        <Input id="item-stock" type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))} />
+                                        <Label>Value Badge</Label>
+                                        <Select value={itemBadge || 'none'} onValueChange={(v: any) => setItemBadge(v === 'none' ? undefined : v)}>
+                                            <SelectTrigger><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="none">No Badge</SelectItem>
+                                                <SelectItem value="popular">Popular</SelectItem>
+                                                <SelectItem value="new">New</SelectItem>
+                                                <SelectItem value="recommended">Recommended</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label>Value Badge</Label>
-                                    <Select value={itemBadge || 'none'} onValueChange={(v: any) => setItemBadge(v === 'none' ? undefined : v)}>
-                                        <SelectTrigger><SelectValue /></SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="none">No Badge</SelectItem>
-                                            <SelectItem value="popular">Popular</SelectItem>
-                                            <SelectItem value="new">New</SelectItem>
-                                            <SelectItem value="recommended">Recommended</SelectItem>
-                                        </SelectContent>
-                                    </Select>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <Switch id="item-featured" checked={itemIsFeatured} onCheckedChange={setItemIsFeatured} />

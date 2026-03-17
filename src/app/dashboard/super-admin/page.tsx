@@ -101,6 +101,8 @@ export default function SuperAdminPanelPage() {
   const [itemName, setItemName] = useState('');
   const [itemDescription, setItemDescription] = useState('');
   const [itemCost, setItemCost] = useState(100);
+  const [itemPrice, setItemPrice] = useState(10);
+  const [itemPaymentType, setItemPaymentType] = useState<'credits' | 'money'>('credits');
   const [itemType, setItemType] = useState<StoreItem['type']>('scratch-card');
   const [itemQuantity, setItemQuantity] = useState(1);
   const [itemStock, setItemStock] = useState(100);
@@ -284,15 +286,43 @@ export default function SuperAdminPanelPage() {
                                 <div key={item.id} className="flex items-center justify-between p-3 rounded-md bg-muted">
                                     <div>
                                         <p className="font-bold">{item.name} {item.isFeatured && <span className="text-xs text-primary">(Featured)</span>}</p>
-                                        <p className="text-xs text-muted-foreground">{item.cost} Credits | Stock: {item.stock} | Type: {item.type}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {item.paymentType === 'credits' ? `${item.cost} Credits` : `₹${item.price}`} | Stock: {item.stock} | Type: {item.type}
+                                        </p>
                                     </div>
                                     <div className="space-x-1">
-                                        <Button variant="ghost" size="icon" onClick={() => { setEditingStoreItem(item); setItemName(item.name); setItemDescription(item.description); setItemCost(item.cost); setItemType(item.type); setItemQuantity(item.quantity); setItemStock(item.stock); setItemIsFeatured(item.isFeatured); setItemBadge(item.badge); setIsStoreItemDialogOpen(true); }}><Edit className="h-4 w-4"/></Button>
+                                        <Button variant="ghost" size="icon" onClick={() => { 
+                                            setEditingStoreItem(item); 
+                                            setItemName(item.name); 
+                                            setItemDescription(item.description); 
+                                            setItemCost(item.cost); 
+                                            setItemPrice(item.price || 10);
+                                            setItemPaymentType(item.paymentType || 'credits');
+                                            setItemType(item.type); 
+                                            setItemQuantity(item.quantity); 
+                                            setItemStock(item.stock); 
+                                            setItemIsFeatured(item.isFeatured); 
+                                            setItemBadge(item.badge); 
+                                            setIsStoreItemDialogOpen(true); 
+                                        }}><Edit className="h-4 w-4"/></Button>
                                         <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteStoreItem(item.id)}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
                             ))}
-                            <Button className="w-full" onClick={() => { setEditingStoreItem(null); setItemName(''); setItemDescription(''); setItemCost(100); setItemType('scratch-card'); setItemQuantity(1); setItemStock(100); setItemIsFeatured(false); setItemBadge(undefined); setIsStoreItemDialogOpen(true); }}>Add Store Item</Button>
+                            <Button className="w-full" onClick={() => { 
+                                setEditingStoreItem(null); 
+                                setItemName(''); 
+                                setItemDescription(''); 
+                                setItemCost(100); 
+                                setItemPrice(10);
+                                setItemPaymentType('credits');
+                                setItemType('scratch-card'); 
+                                setItemQuantity(1); 
+                                setItemStock(100); 
+                                setItemIsFeatured(false); 
+                                setItemBadge(undefined); 
+                                setIsStoreItemDialogOpen(true); 
+                            }}>Add Store Item</Button>
                         </CardContent>
                     </Card>
                 </div>
@@ -338,8 +368,34 @@ export default function SuperAdminPanelPage() {
             <div className="py-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div className="space-y-2"><Label>Item Name</Label><Input value={itemName} onChange={e => setItemName(e.target.value)}/></div>
                 <div className="space-y-2"><Label>Description</Label><Textarea value={itemDescription} onChange={e => setItemDescription(e.target.value)}/></div>
+                
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Cost (Credits)</Label><Input type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))}/></div>
+                    <div className="space-y-2">
+                        <Label>Payment Type</Label>
+                        <Select value={itemPaymentType} onValueChange={(v: any) => setItemPaymentType(v)}>
+                            <SelectTrigger><SelectValue/></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="credits">Credits</SelectItem>
+                                <SelectItem value="money">Money (Razorpay)</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        {itemPaymentType === 'credits' ? (
+                            <>
+                                <Label>Cost (Credits)</Label>
+                                <Input type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))}/>
+                            </>
+                        ) : (
+                            <>
+                                <Label>Price (₹)</Label>
+                                <Input type="number" value={itemPrice} onChange={e => setItemPrice(Number(e.target.value))}/>
+                            </>
+                        )}
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Type</Label>
                         <Select value={itemType} onValueChange={(v: any) => setItemType(v)}>
                             <SelectTrigger><SelectValue/></SelectTrigger>
@@ -352,27 +408,27 @@ export default function SuperAdminPanelPage() {
                             </SelectContent>
                         </Select>
                     </div>
+                    <div className="space-y-2"><Label>Stock</Label><Input type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))}/></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Quantity (per purchase)</Label><Input type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))}/></div>
-                    <div className="space-y-2"><Label>Stock</Label><Input type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))}/></div>
-                </div>
-                <div className="space-y-2">
-                    <Label>Value Badge (Optional)</Label>
-                    <Select value={itemBadge || 'none'} onValueChange={(v: any) => setItemBadge(v === 'none' ? undefined : v)}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="none">No Badge</SelectItem>
-                            <SelectItem value="popular">Popular</SelectItem>
-                            <SelectItem value="new">New</SelectItem>
-                            <SelectItem value="recommended">Recommended</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div className="space-y-2">
+                        <Label>Value Badge (Optional)</Label>
+                        <Select value={itemBadge || 'none'} onValueChange={(v: any) => setItemBadge(v === 'none' ? undefined : v)}>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="none">No Badge</SelectItem>
+                                <SelectItem value="popular">Popular</SelectItem>
+                                <SelectItem value="new">New</SelectItem>
+                                <SelectItem value="recommended">Recommended</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2"><Switch checked={itemIsFeatured} onCheckedChange={setItemIsFeatured} /><Label>Feature this item</Label></div>
             </div>
             <DialogFooter><Button onClick={() => { 
-                const data = { name: itemName, description: itemDescription, cost: itemCost, type: itemType, quantity: itemQuantity, stock: itemStock, isFeatured: itemIsFeatured, badge: itemBadge };
+                const data = { name: itemName, description: itemDescription, cost: itemCost, price: itemPrice, paymentType: itemPaymentType, type: itemType, quantity: itemQuantity, stock: itemStock, isFeatured: itemIsFeatured, badge: itemBadge };
                 editingStoreItem ? updateStoreItem(editingStoreItem.id, data) : createStoreItem(data);
                 setIsStoreItemDialogOpen(false);
             }}>{editingStoreItem ? 'Save Changes' : 'Create Item'}</Button></DialogFooter>

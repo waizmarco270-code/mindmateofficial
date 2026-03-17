@@ -16,6 +16,7 @@ import { useFriends } from '@/hooks/use-friends';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import Link from 'next/link';
 
 const formatTotalStudyTime = (totalSeconds: number) => {
     if (totalSeconds < 60) return "0m";

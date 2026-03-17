@@ -134,16 +134,53 @@ function CreditPacksTab() {
 }
 
 function ArtifactsTab() {
-    const { storeItems, loading, redeemStoreItem } = useAdmin();
+    const { storeItems, loading, redeemStoreItem, processStoreItemPayment } = useAdmin();
     const { currentUserData } = useUsers();
+    const { user } = useUser();
     const { toast } = useToast();
-    const [isRedeeming, setIsRedeeming] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState<string | null>(null);
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
     const artifactItems = storeItems ? storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow'].includes(i.type)) : [];
 
-    const handleRedeem = async (item: StoreItem) => {
-        setIsRedeeming(item.id);
+    const handleBuyWithMoney = async (item: StoreItem) => {
+        if (!user) return;
+        setIsProcessing(item.id);
+        try {
+            const order = await createRazorpayOrder(item.price!);
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: order.amount,
+                currency: order.currency,
+                name: 'MindMate Artifact',
+                description: `Purchase ${item.name}`,
+                order_id: order.id,
+                handler: async function (response: any) {
+                    await processStoreItemPayment(item, response.razorpay_payment_id);
+                    toast({
+                        title: "Artifact Secured!",
+                        description: `"${item.name}" added to your Nexus Inventory.`,
+                        className: "bg-green-500/10 border-green-500/50"
+                    });
+                    setIsProcessing(null);
+                },
+                prefill: {
+                    name: user.fullName || '',
+                    email: user.primaryEmailAddress?.emailAddress || '',
+                },
+                theme: { color: '#8b5cf6' },
+                modal: { ondismiss: () => setIsProcessing(null) }
+            };
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Order Failed", description: error.message });
+            setIsProcessing(null);
+        }
+    };
+
+    const handleRedeemWithCredits = async (item: StoreItem) => {
+        setIsProcessing(item.id);
         try {
             await redeemStoreItem(item);
             toast({
@@ -154,7 +191,7 @@ function ArtifactsTab() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Redemption Failed", description: error.message });
         } finally {
-            setIsRedeeming(null);
+            setIsProcessing(null);
         }
     };
 
@@ -173,7 +210,7 @@ function ArtifactsTab() {
                 <ShieldIcon className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
                 <h3 className="text-xl font-bold text-muted-foreground">The Vault is Empty</h3>
                 <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
-                    Go to the <strong>Dev Panel</strong> to create items with type <strong>Penalty Shield, Streak Freeze, or Alpha Glow</strong>.
+                    Go to the <strong>Dev Panel</strong> to create artifacts.
                 </p>
             </div>
         );
@@ -183,7 +220,9 @@ function ArtifactsTab() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
              {!loading && artifactItems.map(item => {
-                 const canAfford = hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost;
+                 const isMoney = item.paymentType === 'money';
+                 const canAfford = isMoney ? true : (hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost);
+                 
                  return (
                     <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2", item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted")}>
                         {item.badge && (
@@ -205,34 +244,47 @@ function ArtifactsTab() {
                         </CardHeader>
                         <CardContent className="flex-1 flex flex-col items-center justify-center">
                              <div className="font-black text-4xl flex items-center justify-center gap-2 text-amber-500 tracking-tighter">
-                                <Gem className="h-8 w-8" />
-                                <span>{item.cost.toLocaleString()}</span>
+                                {isMoney ? (
+                                    <span>₹{item.price}</span>
+                                ) : (
+                                    <>
+                                        <Gem className="h-8 w-8" />
+                                        <span>{item.cost.toLocaleString()}</span>
+                                    </>
+                                )}
                             </div>
                             <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">
                                 Stock: {item.stock > 0 ? item.stock : <span className="text-destructive">EXHAUSTED</span>}
                             </p>
                         </CardContent>
                         <CardFooter>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button className="w-full text-lg h-14 font-bold rounded-xl" variant={item.stock === 0 ? "secondary" : "default"} disabled={!canAfford || isRedeeming === item.id || item.stock === 0}>
-                                         {isRedeeming === item.id ? <Loader2 className="mr-2 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
-                                        {item.stock === 0 ? "Sold Out" : "Secure Artifact"}
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Acquire Nexus Artifact</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            Do you wish to secure "{item.name}" for {item.cost} credits? It will be added to your profile inventory immediately.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                     <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleRedeem(item)}>Confirm</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
+                            {isMoney ? (
+                                <Button className="w-full text-lg h-14 font-bold rounded-xl" onClick={() => handleBuyWithMoney(item)} disabled={isProcessing === item.id || item.stock === 0}>
+                                    {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <Zap className="mr-2 h-5 w-5 fill-current"/>}
+                                    {item.stock === 0 ? "Sold Out" : `Buy for ₹${item.price}`}
+                                </Button>
+                            ) : (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button className="w-full text-lg h-14 font-bold rounded-xl" variant={item.stock === 0 ? "secondary" : "default"} disabled={!canAfford || isProcessing === item.id || item.stock === 0}>
+                                             {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
+                                            {item.stock === 0 ? "Sold Out" : "Secure Artifact"}
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Acquire Nexus Artifact</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Do you wish to secure "{item.name}" for {item.cost} credits?
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                         <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleRedeemWithCredits(item)}>Confirm</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
                         </CardFooter>
                     </Card>
                  )
@@ -244,6 +296,7 @@ function ArtifactsTab() {
 export default function StorePage() {
     return (
         <div className="space-y-8">
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" />
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
                     <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
@@ -279,7 +332,7 @@ export default function StorePage() {
                     <div className="text-center py-20 space-y-4">
                         <Gift className="h-16 w-16 text-primary mx-auto opacity-20" />
                         <h3 className="text-xl font-bold text-muted-foreground">Looking for Scratch Cards or Card Flips?</h3>
-                        <p className="text-muted-foreground max-w-sm mx-auto">These are now part of the <strong>Reward Zone</strong> logic, but you can find them in the <strong>Store Admin Panel</strong> if they are listed for credit sale.</p>
+                        <p className="text-muted-foreground max-w-sm mx-auto">These are part of the <strong>Reward Zone</strong> logic, and you can also find them in the <strong>Artifacts</strong> tab if available for purchase.</p>
                         <Button asChild variant="secondary">
                             <Link href="/dashboard/reward">Go to Reward Zone</Link>
                         </Button>
