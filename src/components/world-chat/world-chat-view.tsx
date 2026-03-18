@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -139,7 +140,7 @@ export function WorldChatView() {
                 </div>
             )}
 
-            {/* Scrollable Chat Area */}
+            {/* ScrollArea */}
             <ScrollArea className="flex-1 relative" viewportRef={scrollAreaRef}>
                 <div className="p-4 space-y-2 min-h-full flex flex-col justify-end">
                     {(loading || usersLoading) && (
@@ -258,7 +259,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                         <div className={cn(
                             "relative px-3 py-2 rounded-2xl shadow-sm text-sm cursor-pointer transition-all",
                             isOwn ? "bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none" : "bg-white dark:bg-[#202c33] rounded-tl-none",
-                            hasGlow && "ring-2 ring-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.3)]",
+                            hasGlow ? "alpha-rainbow-border" : "",
                             isNugget && "border-amber-400 border-2"
                         )}>
                             {showHeader && !isOwn && (

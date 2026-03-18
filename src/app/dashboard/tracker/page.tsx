@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlarmClock, AlertTriangle, Award, Zap, X, Pause, Play, Music, Volume2, VolumeX, Shield, Swords, BrainCircuit, Star } from 'lucide-react';
+import { AlarmClock, AlertTriangle, Award, Zap, X, Pause, Play, Music, Volume2, VolumeX, Shield, Swords, BrainCircuit, Star, ShieldCheck } from 'lucide-react';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +16,7 @@ import { useVisibilityChange } from '@/hooks/use-visibility-change';
 import { usePathname } from 'next/navigation';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 import Autoplay from "embla-carousel-autoplay"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 
 interface FocusSlot {
@@ -75,6 +76,7 @@ export default function FocusModePage() {
     const [isMuted, setIsMuted] = useState(false);
     const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
     const [selectedMusic, setSelectedMusic] = useState(musicTracks[0]);
+    const [penaltyResult, setPenaltyResult] = useState<{ type: 'shielded' | 'penalized', message: string } | null>(null);
 
     const audioRef = useRef<HTMLAudioElement>(null);
     const penaltyAppliedRef = useRef(false);
@@ -89,9 +91,9 @@ export default function FocusModePage() {
             ? "Your Penalty Shield saved you! One shield was consumed." 
             : `You have been penalized ${PENALTY} credits for leaving an active focus session.`;
 
-        // This is a reliable way to show the message on the next page load.
+        setPenaltyResult({ type: result, message });
+        
         if (typeof window !== 'undefined') {
-            sessionStorage.setItem(FOCUS_PENALTY_SESSION_KEY, message);
             sessionStorage.removeItem(FOCUS_SESSION_ACTIVE_KEY);
         }
     }, [user, applyFocusPenalty]);
@@ -103,11 +105,6 @@ export default function FocusModePage() {
         setActiveSlot(null);
         setTimeLeft(0);
         if(audioRef.current) audioRef.current.pause();
-        toast({
-            variant: 'destructive',
-            title: 'Session Stopped Early',
-            description: 'Penalty rule applied.',
-        });
     };
 
     useEffect(() => {
@@ -423,6 +420,36 @@ export default function FocusModePage() {
                     </div>
                 </div>
             </div>
+
+            {/* Penalty Result Dialog */}
+            <Dialog open={!!penaltyResult} onOpenChange={() => setPenaltyResult(null)}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <div className="flex justify-center mb-4">
+                            {penaltyResult?.type === 'shielded' ? (
+                                <div className="p-4 bg-blue-500/10 rounded-full">
+                                    <ShieldCheck className="h-12 w-12 text-blue-500" />
+                                </div>
+                            ) : (
+                                <div className="p-4 bg-destructive/10 rounded-full">
+                                    <AlertTriangle className="h-12 w-12 text-destructive" />
+                                </div>
+                            )}
+                        </div>
+                        <DialogTitle className="text-center text-2xl font-bold">
+                            {penaltyResult?.type === 'shielded' ? 'Artifact Activated!' : 'Penalty Applied'}
+                        </DialogTitle>
+                        <DialogDescription className="text-center text-base">
+                            {penaltyResult?.message}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button className="w-full">Got it</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

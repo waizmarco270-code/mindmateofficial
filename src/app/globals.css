@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -24,6 +23,11 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 262 80% 56%;
+    --chart-1: 262 80% 56%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
     --radius: 0.8rem;
 
     --sidebar-background: 240 10% 3.9%;
@@ -56,6 +60,86 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 262 80% 56%;
+    --chart-1: 262 80% 56%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    --sidebar-background: 240 10% 3.9%;
+    --sidebar-foreground: 0 0% 98%;
+    --sidebar-primary: 262 80% 56%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 0 0% 98%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 262 80% 56%;
+  }
+
+  .emerald-dream {
+    --background: 240 10% 98%;
+    --foreground: 224 71% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71% 4%;
+    --primary: 158 77% 39%;
+    --primary-foreground: 150 100% 98%;
+    --secondary: 150 20% 95%;
+    --secondary-foreground: 158 77% 20%;
+    --muted: 150 20% 95%;
+    --muted-foreground: 150 10% 40%;
+    --accent: 150 30% 90%;
+    --accent-foreground: 158 77% 15%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 150 10% 88%;
+    --input: 150 10% 92%;
+    --ring: 158 77% 39%;
+  }
+
+  .solar-flare {
+    --background: 20 12% 8%;
+    --foreground: 20 10% 90%;
+    --card: 20 12% 12%;
+    --card-foreground: 20 10% 90%;
+    --popover: 20 12% 8%;
+    --popover-foreground: 20 10% 90%;
+    --primary: 32 95% 55%;
+    --primary-foreground: 20 12% 5%;
+    --secondary: 20 12% 15%;
+    --secondary-foreground: 20 10% 90%;
+    --muted: 20 12% 15%;
+    --muted-foreground: 20 5% 60%;
+    --accent: 45 95% 55%;
+    --accent-foreground: 20 12% 5%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 20 12% 18%;
+    --input: 20 12% 18%;
+    --ring: 32 95% 55%;
+  }
+
+  .synthwave-sunset {
+    --background: 232 43% 11%;
+    --foreground: 230 50% 90%;
+    --card: 232 43% 14%;
+    --card-foreground: 230 50% 90%;
+    --popover: 232 43% 8%;
+    --popover-foreground: 230 50% 90%;
+    --primary: 300 100% 70%;
+    --primary-foreground: 300 50% 5%;
+    --secondary: 232 43% 20%;
+    --secondary-foreground: 230 50% 90%;
+    --muted: 232 43% 20%;
+    --muted-foreground: 230 20% 60%;
+    --accent: 180 100% 50%;
+    --accent-foreground: 180 50% 5%;
+    --destructive: 0 80% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 232 43% 25%;
+    --input: 232 43% 25%;
+    --ring: 300 100% 70%;
   }
 }
 
@@ -168,15 +252,15 @@
     100% { background-position: 0% 50%; }
   }
 
-  @keyframes night-owl-stars {
-    0%, 100% { opacity: 0.8; transform: scale(1); }
-    50% { opacity: 1; transform: scale(1.1); }
-  }
-
   @keyframes knight-metallic {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
+  }
+
+  @keyframes rainbow-border-move {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
   }
 }
 
@@ -275,6 +359,16 @@
     border: 1px solid #cbd5e1;
     box-shadow: 0 0 10px rgba(148, 163, 184, 0.4);
     animation: knight-metallic 4s ease-in-out infinite;
+  }
+
+  .alpha-rainbow-border {
+    position: relative;
+    border: 3px solid transparent;
+    background: linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+                linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #8f00ff, #ff0000) border-box;
+    background-size: 200% 100%;
+    animation: rainbow-border-move 3s linear infinite;
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
   }
 
   .blue-nebula-bg {

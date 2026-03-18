@@ -2,9 +2,9 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Edit, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info, SwatchBook, Loader2, Maximize, Minimize, Award } from 'lucide-react';
+import { Edit, RotateCcw, Palette, CheckCircle, Volume2, VolumeX, Music, AlertTriangle, Info, SwatchBook, Loader2, Maximize, Minimize, Award, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useLocalStorage } from '@/hooks/use-local-storage';
@@ -76,6 +76,7 @@ export function PomodoroTimer() {
   const [isMuted, setIsMuted] = useLocalStorage('pomodoroMuted', false);
   const [sessionsCompleted, setSessionsCompleted] = useLocalStorage('pomodoroSessionsCompleted', 0);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [penaltyResult, setPenaltyResult] = useState<{ type: 'shielded' | 'penalized', message: string } | null>(null);
   
   const { user } = useUser();
   const { addPomodoroSession } = useTimeTracker();
@@ -104,7 +105,6 @@ export function PomodoroTimer() {
 
   const allThemes = Object.values(pomodoroThemes).flat();
   
-  // Slideshow effect
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     if (isSlideshowActive) {
@@ -128,22 +128,17 @@ export function PomodoroTimer() {
         ? "Your Penalty Shield saved you! One shield was consumed." 
         : `You have been penalized ${POMODORO_PENALTY} credits for leaving an active Pomodoro session.`;
 
+    setPenaltyResult({ type: result, message });
+
     if (typeof window !== 'undefined') {
-      sessionStorage.setItem(POMODORO_PENALTY_SESSION_KEY, message);
       sessionStorage.removeItem(POMODORO_SESSION_ACTIVE_KEY);
     }
-    
-    toast({
-      variant: result === 'shielded' ? 'default' : 'destructive',
-      title: result === 'shielded' ? 'Shield Activated' : 'Session Interrupted',
-      description: message,
-    });
     
     setIsActive(false);
     setTimeLeft(settings[mode] * 60);
     if(musicAudioRef.current) musicAudioRef.current.pause();
 
-  }, [user, applyFocusPenalty, toast, isActive, settings, mode]);
+  }, [user, applyFocusPenalty, isActive, settings, mode]);
 
   useBeforeunload(event => {
     if (isActive) handlePenalty();
@@ -671,6 +666,36 @@ export function PomodoroTimer() {
             <Button onClick={handleSaveSettings}>Apply Settings</Button>
           </DialogFooter>
         </DialogContent>
+      </Dialog>
+
+      {/* Penalty Result Dialog */}
+      <Dialog open={!!penaltyResult} onOpenChange={() => setPenaltyResult(null)}>
+          <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                  <div className="flex justify-center mb-4">
+                      {penaltyResult?.type === 'shielded' ? (
+                          <div className="p-4 bg-blue-500/10 rounded-full">
+                              <ShieldCheck className="h-12 w-12 text-blue-500" />
+                          </div>
+                      ) : (
+                          <div className="p-4 bg-destructive/10 rounded-full">
+                              <AlertTriangle className="h-12 w-12 text-destructive" />
+                          </div>
+                      )}
+                  </div>
+                  <DialogTitle className="text-center text-2xl font-bold">
+                      {penaltyResult?.type === 'shielded' ? 'Artifact Activated!' : 'Penalty Applied'}
+                  </DialogTitle>
+                  <DialogDescription className="text-center text-base">
+                      {penaltyResult?.message}
+                  </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                  <DialogClose asChild>
+                      <Button className="w-full">Got it</Button>
+                  </DialogClose>
+              </DialogFooter>
+          </DialogContent>
       </Dialog>
     </div>
   );
