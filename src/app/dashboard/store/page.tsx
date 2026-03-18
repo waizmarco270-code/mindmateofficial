@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdmin, type CreditPack, useUsers, type StoreItem } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon } from 'lucide-react';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
@@ -343,12 +343,34 @@ function BadgesTab() {
         }
     };
 
-    const getIcon = (type: string) => {
+    const renderBadgePreview = (type: string) => {
         switch(type) {
-            case 'early-bird': return <Bird className="h-10 w-10 text-yellow-400" />;
-            case 'night-owl': return <Moon className="h-10 w-10 text-indigo-400" />;
-            case 'knowledge-knight': return <ShieldIcon className="h-10 w-10 text-slate-300" />;
-            default: return <Award className="h-10 w-10 text-amber-400" />;
+            case 'early-bird': 
+                return (
+                    <div className="scale-150 py-4">
+                        <span className="early-bird-badge">
+                            <Bird className="h-3 w-3" /> EARLY BIRD
+                        </span>
+                    </div>
+                );
+            case 'night-owl': 
+                return (
+                    <div className="scale-150 py-4">
+                        <span className="night-owl-badge">
+                            <Moon className="h-3 w-3" /> NIGHT OWL
+                        </span>
+                    </div>
+                );
+            case 'knowledge-knight': 
+                return (
+                    <div className="scale-150 py-4">
+                        <span className="knowledge-knight-badge">
+                            <ShieldIcon className="h-3 w-3" /> KNIGHT
+                        </span>
+                    </div>
+                );
+            default: 
+                return <Award className="h-16 w-16 text-amber-400" />;
         }
     }
 
@@ -384,8 +406,8 @@ function BadgesTab() {
                     )}>
                         <BadgeRenderer badge={item.badge} />
                         <CardHeader className="text-center">
-                            <div className="mx-auto mb-4 p-4 rounded-full bg-muted group-hover:scale-110 transition-transform">
-                                {getIcon(item.type)}
+                            <div className="mx-auto mb-6 flex items-center justify-center min-h-[80px]">
+                                {renderBadgePreview(item.type)}
                             </div>
                             <CardTitle className="text-2xl font-bold">{item.name}</CardTitle>
                             <CardDescription className="min-h-[40px] px-4">{item.description}</CardDescription>
