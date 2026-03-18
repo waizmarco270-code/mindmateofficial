@@ -1,7 +1,7 @@
 
 'use client';
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon, Wrench } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon, Wrench, Terminal, Zap, Bot, Star } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -24,7 +24,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { format, formatDistanceToNow } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogContent } from '@/components/ui/dialog';
-import Image from 'next/image';
 import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
@@ -80,22 +79,14 @@ export default function SuperAdminPanelPage() {
   
   const [isCreditUnlocked, setIsCreditUnlocked] = useState(false);
   const [creditPassword, setCreditPassword] = useState('');
-  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
-  const [creditAmount, setCreditAmount] = useState(10);
-  const [spinAmount, setSpinAmount] = useState(1);
-  const [guessAmount, setGuessAmount] = useState(1);
   
   const [popupTarget, setPopupTarget] = useState<'all' | 'single'>('all');
-  const [popupSingleUserId, setPopupSingleUserId] = useState<string | null>(null);
+  const [popupSingleUserId, setPopupSingleUserId] = useState('');
   const [popupMessage, setPopupMessage] = useState('');
   const [popupCreditAmount, setPopupCreditAmount] = useState(0);
   const [popupScratchAmount, setPopupScratchAmount] = useState(0);
   const [popupFlipAmount, setPopupFlipAmount] = useState(0);
   const [isSendingPopup, setIsSendingPopup] = useState(false);
-
-  const [devTokenUser, setDevTokenUser] = useState<string | null>(null);
-  const [generatedDevToken, setGeneratedDevToken] = useState<string | null>(null);
-  const [isGeneratingToken, setIsGeneratingToken] = useState(false);
 
   const [isMasterCardDialogOpen, setIsMasterCardDialogOpen] = useState(false);
   const [masterCardUser, setMasterCardUser] = useState<User | null>(null);
@@ -124,9 +115,17 @@ export default function SuperAdminPanelPage() {
   const [isMaintenanceMode, setIsMaintenanceMode] = useState(appSettings?.isMaintenanceMode || false);
   const [maintenanceMessage, setMaintenanceMessage] = useState(appSettings?.maintenanceMessage || '');
   const [maintenanceTheme, setMaintenanceTheme] = useState<MaintenanceTheme>(appSettings?.maintenanceTheme || 'shiny');
-  const [maintenanceStartTime, setMaintenanceStartTime] = useState(appSettings?.maintenanceStartTime || '');
-  const [maintenanceEndTime, setMaintenanceEndTime] = useState(appSettings?.maintenanceEndTime || '');
   const [whatsNewMessage, setWhatsNewMessage] = useState(appSettings?.whatsNewMessage || '');
+
+  // Sync settings when they load
+  useEffect(() => {
+    if (appSettings) {
+        setIsMaintenanceMode(appSettings.isMaintenanceMode || false);
+        setMaintenanceMessage(appSettings.maintenanceMessage || '');
+        setMaintenanceTheme(appSettings.maintenanceTheme || 'shiny');
+        setWhatsNewMessage(appSettings.whatsNewMessage || '');
+    }
+  }, [appSettings]);
 
   const handleTypeChange = (type: StoreItem['type']) => {
     setItemType(type);
@@ -140,7 +139,7 @@ export default function SuperAdminPanelPage() {
       e.preventDefault();
       if(creditPassword === CREDIT_PASSWORD){
         setIsCreditUnlocked(true);
-        toast({ title: "Admin Controls Unlocked" });
+        toast({ title: "System Overrides Unlocked" });
       } else {
         toast({ variant: 'destructive', title: "Incorrect Password" });
       }
@@ -151,12 +150,33 @@ export default function SuperAdminPanelPage() {
           isMaintenanceMode,
           maintenanceMessage,
           maintenanceTheme,
-          maintenanceStartTime: maintenanceStartTime || undefined,
-          maintenanceEndTime: maintenanceEndTime || undefined,
           whatsNewMessage,
           lastMaintenanceId: isMaintenanceMode ? Date.now().toString() : appSettings?.lastMaintenanceId,
       });
-      toast({ title: 'Maintenance settings updated!' });
+      toast({ title: 'App Configuration Updated!' });
+  };
+
+  const handleSendGlobalGift = async () => {
+      if (!popupMessage.trim()) return;
+      setIsSendingPopup(true);
+      try {
+          await sendGlobalGift({
+              message: popupMessage,
+              target: popupTarget === 'all' ? 'all' : popupSingleUserId,
+              rewards: {
+                  credits: popupCreditAmount,
+                  scratch: popupScratchAmount,
+                  flip: popupFlipAmount
+              }
+          });
+          toast({ title: "Global Gift Sent!" });
+          setPopupMessage('');
+          setPopupCreditAmount(0);
+          setPopupScratchAmount(0);
+          setPopupFlipAmount(0);
+      } finally {
+          setIsSendingPopup(false);
+      }
   };
 
   if (!isSuperAdmin) {
@@ -167,9 +187,7 @@ export default function SuperAdminPanelPage() {
             <CardTitle className="flex items-center justify-center gap-2 text-destructive">
                 <ShieldX className="h-8 w-8"/> Access Denied
             </CardTitle>
-            <CardDescription>
-                This is a restricted area.
-            </CardDescription>
+            <CardDescription>This is a restricted area.</CardDescription>
           </CardHeader>
         </Card>
       </div>
@@ -177,23 +195,23 @@ export default function SuperAdminPanelPage() {
   }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Super Admin Controls</h1>
-        <p className="text-muted-foreground">Manage user roles, credits, rewards and app settings.</p>
+        <p className="text-muted-foreground">Master controls for roles, monetization, and system state.</p>
       </div>
 
       <Accordion type="multiple" defaultValue={['user-management']} className="w-full space-y-4">
         
-        {/* User Management */}
+        {/* 1. User Management */}
         <AccordionItem value="user-management" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
                <div className="flex items-center gap-3">
                 <Users className="h-6 w-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold">User Management</h3>
-                  <p className="text-sm text-muted-foreground text-left">Manage user roles, status, and permissions.</p>
+                  <h3 className="text-lg font-semibold">User Authority</h3>
+                  <p className="text-sm text-muted-foreground text-left">Manage roles, bans, and Master Cards.</p>
                 </div>
               </div>
             </AccordionTrigger>
@@ -202,11 +220,11 @@ export default function SuperAdminPanelPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>User</TableHead>
-                                <TableHead>Role</TableHead>
+                                <TableHead>Student</TableHead>
+                                <TableHead>Badges</TableHead>
                                 <TableHead>Credits</TableHead>
-                                <TableHead>Master Card</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -222,40 +240,36 @@ export default function SuperAdminPanelPage() {
                                                     <AvatarImage src={u.photoURL}/>
                                                     <AvatarFallback>{u.displayName?.charAt(0)}</AvatarFallback>
                                                 </Avatar>
-                                                {u.displayName}
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold">{u.displayName}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-mono">{u.uid}</span>
+                                                </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap space-x-1">
-                                            {isUserSuperAdmin && <Badge className="bg-red-500 hover:bg-red-600">Dev</Badge>}
-                                            {u.isAdmin && <Badge>Admin</Badge>}
-                                            {u.isVip && <Badge className="bg-amber-500 hover:bg-amber-600">Elite</Badge>}
-                                            {u.isGM && <Badge className="bg-blue-500 hover:bg-blue-600">GM</Badge>}
-                                            {u.isChallenger && <Badge className="bg-orange-500 hover:bg-orange-600">Challenger</Badge>}
-                                            {u.isCoDev && <Badge className="bg-rose-500 hover:bg-rose-600">Co-Dev</Badge>}
-                                            {u.isBlocked && <Badge variant="destructive">Blocked</Badge>}
+                                            {isUserSuperAdmin && <Badge className="bg-red-500 text-[10px]">Dev</Badge>}
+                                            {u.isAdmin && <Badge className="text-[10px]">Admin</Badge>}
+                                            {u.isVip && <Badge className="bg-amber-500 text-[10px]">Elite</Badge>}
+                                            {u.isGM && <Badge className="bg-blue-500 text-[10px]">GM</Badge>}
+                                            {u.isCoDev && <Badge className="bg-rose-500 text-[10px]">Co-Dev</Badge>}
+                                            {hasMasterCard && <Badge variant="outline" className="text-green-500 border-green-500 text-[10px]">Master</Badge>}
                                         </TableCell>
-                                        <TableCell>{u.credits?.toLocaleString()}</TableCell>
+                                        <TableCell className="font-bold">{u.credits?.toLocaleString()}</TableCell>
                                         <TableCell>
-                                            {hasMasterCard ? (
-                                                <Badge variant="outline" className="text-green-500 border-green-500">Active</Badge>
-                                            ) : (
-                                                <span className="text-xs text-muted-foreground">None</span>
-                                            )}
+                                            {u.isBlocked ? <Badge variant="destructive">Blocked</Badge> : <Badge variant="secondary">Active</Badge>}
                                         </TableCell>
-                                        <TableCell className="text-right whitespace-nowrap space-x-2">
+                                        <TableCell className="text-right whitespace-nowrap">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild><Button variant="outline" size="sm"><UserCog className="h-4 w-4 mr-2"/> Manage</Button></DropdownMenuTrigger>
+                                                <DropdownMenuTrigger asChild><Button variant="outline" size="sm">Manage <UserCog className="h-4 w-4 ml-2"/></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-56">
-                                                    <DropdownMenuItem onClick={() => u.isAdmin ? removeUserAdmin(u.uid) : makeUserAdmin(u.uid)}>{u.isAdmin ? <UserMinus className="mr-2 h-4 w-4"/> : <ShieldCheck className="mr-2 h-4 w-4"/>} {u.isAdmin ? 'Remove Admin' : 'Make Admin'}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isVip ? removeUserVip(u.uid) : makeUserVip(u.uid)}><Crown className="mr-2 h-4 w-4"/> {u.isVip ? 'Remove Elite' : 'Make Elite'}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isGM ? removeUserGM(u.uid) : makeUserGM(u.uid)}><Gamepad2 className="mr-2 h-4 w-4"/> {u.isGM ? 'Remove GM' : 'Make GM'}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isChallenger ? removeUserChallenger(u.uid) : makeUserChallenger(u.uid)}><Swords className="mr-2 h-4 w-4"/> {u.isChallenger ? 'Remove Challenger' : 'Make Challenger'}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isCoDev ? removeUserCoDev(u.uid) : makeUserCoDev(u.uid)}><Code className="mr-2 h-4 w-4"/> {u.isCoDev ? 'Remove Co-Dev' : 'Make Co-Dev'}</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => u.isAdmin ? removeUserAdmin(u.uid) : makeUserAdmin(u.uid)}>{u.isAdmin ? "Remove Admin" : "Make Admin"}</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => u.isVip ? removeUserVip(u.uid) : makeUserVip(u.uid)}>{u.isVip ? "Remove Elite" : "Make Elite"}</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => u.isGM ? removeUserGM(u.uid) : makeUserGM(u.uid)}>{u.isGM ? "Remove GM" : "Make GM"}</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => u.isCoDev ? removeUserCoDev(u.uid) : makeUserCoDev(u.uid)}>{u.isCoDev ? "Remove Co-Dev" : "Make Co-Dev"}</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => { setMasterCardUser(u); setIsMasterCardDialogOpen(true); }}><CreditCard className="mr-2 h-4 w-4"/> Grant Master Card</DropdownMenuItem>
-                                                    {hasMasterCard && <DropdownMenuItem onClick={() => revokeMasterCard(u.uid)} className="text-destructive"><CreditCard className="mr-2 h-4 w-4"/> Revoke Master Card</DropdownMenuItem>}
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-destructive" onClick={() => toggleUserBlock(u.uid, u.isBlocked)}>{u.isBlocked ? <Unlock className="mr-2 h-4 w-4"/> : <Lock className="mr-2 h-4 w-4"/>} {u.isBlocked ? 'Unblock User' : 'Block User'}</DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-destructive" onClick={() => toggleUserBlock(u.uid, u.isBlocked)}>{u.isBlocked ? "Unblock" : "Block User"}</DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -269,67 +283,244 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* FEATURE & STORE MANAGEMENT */}
+        {/* 2. App Configuration */}
+        <AccordionItem value="app-config" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Wrench className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">App Configuration</h3>
+                  <p className="text-sm text-muted-foreground text-left">Version control and Maintenance Mode.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                    <Card className="border-amber-500/30">
+                        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Terminal/> Maintenance Mode</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
+                                <Label>Enable Global Maintenance</Label>
+                                <Switch checked={isMaintenanceMode} onCheckedChange={setIsMaintenanceMode} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Maintenance Message</Label>
+                                <Textarea value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} placeholder="Why is the app down?" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Banner Theme</Label>
+                                <Select value={maintenanceTheme} onValueChange={(v: any) => setMaintenanceTheme(v)}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="shiny">Shiny Purple</SelectItem>
+                                        <SelectItem value="forest">Forest Green</SelectItem>
+                                        <SelectItem value="sunflower">Sunflower Yellow</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-primary/30">
+                        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Megaphone/> What's New Popup</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Change Log Message</Label>
+                                <Textarea value={whatsNewMessage} onChange={e => setWhatsNewMessage(e.target.value)} placeholder="List the new features..." className="min-h-[150px]" />
+                            </div>
+                            <p className="text-[10px] text-muted-foreground italic">Updating this will show a popup to all users until they dismiss it.</p>
+                        </CardContent>
+                    </Card>
+                </div>
+                <Button onClick={handleMaintenanceUpdate} className="w-full">Save System Configuration</Button>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
+        {/* 3. Global Gifts */}
+        <AccordionItem value="global-gifts" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Gift className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Global Gifts & Alerts</h3>
+                  <p className="text-sm text-muted-foreground text-left">Send rewards or messages to everyone.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-6">
+                <div className="grid gap-6 md:grid-cols-2">
+                    <Card>
+                        <CardHeader><CardTitle className="text-base">Create Gift/Announcement</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label>Target</Label>
+                                <Select value={popupTarget} onValueChange={(v: any) => setPopupTarget(v)}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">Every Legend (All Users)</SelectItem>
+                                        <SelectItem value="single">Specific ID</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            {popupTarget === 'single' && <Input value={popupSingleUserId} onChange={e => setPopupSingleUserId(e.target.value)} placeholder="Enter User UID" />}
+                            <div className="space-y-2">
+                                <Label>Message</Label>
+                                <Input value={popupMessage} onChange={e => setPopupMessage(e.target.value)} placeholder="Happy Studying!" />
+                            </div>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div className="space-y-1"><Label className="text-[10px]">Credits</Label><Input type="number" value={popupCreditAmount} onChange={e => setPopupCreditAmount(Number(e.target.value))} /></div>
+                                <div className="space-y-1"><Label className="text-[10px]">Scratch</Label><Input type="number" value={popupScratchAmount} onChange={e => setPopupScratchAmount(Number(e.target.value))} /></div>
+                                <div className="space-y-1"><Label className="text-[10px]">Flip</Label><Input type="number" value={popupFlipAmount} onChange={e => setPopupFlipAmount(Number(e.target.value))} /></div>
+                            </div>
+                            <Button onClick={handleSendGlobalGift} disabled={isSendingPopup || !popupMessage} className="w-full">
+                                {isSendingPopup ? <Loader2 className="animate-spin" /> : <Send className="mr-2 h-4 w-4"/>} Send Gift
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader><CardTitle className="text-base">Active/Past Gifts</CardTitle></CardHeader>
+                        <CardContent>
+                            <ScrollArea className="h-64">
+                                <div className="space-y-2">
+                                    {globalGifts.map(gift => (
+                                        <div key={gift.id} className="p-3 border rounded-lg bg-muted/50 text-xs flex items-center justify-between">
+                                            <div className="flex-1 truncate pr-2">
+                                                <p className="font-bold">{gift.message}</p>
+                                                <p className="text-muted-foreground">Target: {gift.target}</p>
+                                            </div>
+                                            <div className="flex gap-1">
+                                                {gift.isActive && <Button variant="outline" size="sm" onClick={() => deactivateGift(gift.id)}>Stop</Button>}
+                                                <Button variant="destructive" size="sm" onClick={() => deleteGlobalGift(gift.id)}><Trash2 className="h-3 w-3"/></Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
+        {/* 4. Feature Monetization (Locks) */}
+        <AccordionItem value="monetization" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Lock className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Monetization & Locks</h3>
+                  <p className="text-sm text-muted-foreground text-left">Control feature access and costs.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {lockableFeatures.map(feature => {
+                        const lockData = featureLocks?.[feature.id];
+                        const isLocked = lockData?.isLocked;
+                        const cost = lockData?.cost ?? feature.defaultCost;
+
+                        return (
+                            <Card key={feature.id} className={cn("p-4 transition-all", isLocked && "border-primary/50 bg-primary/5")}>
+                                <div className="flex items-center justify-between mb-2">
+                                    <h4 className="font-bold text-sm">{feature.name}</h4>
+                                    {isLocked ? <Lock className="h-4 w-4 text-primary"/> : <Unlock className="h-4 w-4 text-muted-foreground"/>}
+                                </div>
+                                <div className="space-y-3">
+                                    <div className="flex items-center gap-2">
+                                        <Input 
+                                            type="number" 
+                                            className="h-8 text-xs" 
+                                            defaultValue={cost}
+                                            onBlur={(e) => lockFeature(feature.id, Number(e.target.value))}
+                                        />
+                                        <span className="text-[10px] font-bold text-muted-foreground">CREDITS</span>
+                                    </div>
+                                    <Button 
+                                        variant={isLocked ? "destructive" : "default"} 
+                                        size="sm" 
+                                        className="w-full h-8 text-[10px] font-bold"
+                                        onClick={() => isLocked ? unlockFeature(feature.id) : lockFeature(feature.id, cost)}
+                                    >
+                                        {isLocked ? "UNLOCK FOR ALL" : "LOCK FEATURE"}
+                                    </Button>
+                                </div>
+                            </Card>
+                        )
+                    })}
+                </div>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
+        {/* 5. Store & Artifacts (Existing but refined) */}
         <AccordionItem value="feature-management" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
                <div className="flex items-center gap-3">
                 <ShoppingCart className="h-6 w-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold">Store & Artifact Management</h3>
-                  <p className="text-sm text-muted-foreground text-left">Manage packs, artifacts, and app configurations.</p>
+                  <h3 className="text-lg font-semibold">Store & Artifacts</h3>
+                  <p className="text-sm text-muted-foreground text-left">Manage packs, items, and inventory.</p>
                 </div>
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0 space-y-8">
-                {/* Store Management */}
                 <div className="grid gap-8 md:grid-cols-2">
                     <Card>
-                        <CardHeader><CardTitle>Credit Packs</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-base">Credit Packs</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             {creditPacks.map(pack => (
                                 <div key={pack.id} className="flex items-center justify-between p-3 rounded-md bg-muted">
-                                    <div><p className="font-bold">{pack.name} {pack.badge && <Badge variant="outline" className="ml-2 uppercase text-[10px]">{pack.badge}</Badge>}</p><p className="text-xs text-muted-foreground">{pack.credits} Credits for ₹{pack.price}</p></div>
+                                    <div><p className="font-bold text-sm">{pack.name}</p><p className="text-[10px] text-muted-foreground">{pack.credits} Credits @ ₹{pack.price}</p></div>
                                     <div className="space-x-1">
                                         <Button variant="ghost" size="icon" onClick={() => { setEditingPack(pack); setPackName(pack.name); setPackCredits(pack.credits); setPackPrice(pack.price); setPackBadge(pack.badge); setIsPackDialogOpen(true); }}><Edit className="h-4 w-4"/></Button>
                                         <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteCreditPack(pack.id)}><Trash2 className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
                             ))}
-                            <Button className="w-full" onClick={() => { setEditingPack(null); setPackName(''); setPackCredits(100); setPackPrice(10); setPackBadge(undefined); setIsPackDialogOpen(true); }}>Add Credit Pack</Button>
+                            <Button className="w-full" variant="outline" onClick={() => { setEditingPack(null); setPackName(''); setPackCredits(100); setPackPrice(10); setPackBadge(undefined); setIsPackDialogOpen(true); }}>Add Credit Pack</Button>
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><CardTitle>Redeemable Items (Artifacts & Badges)</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-base">Inventory Items</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            {storeItems.map(item => (
-                                <div key={item.id} className="flex items-center justify-between p-3 rounded-md bg-muted">
-                                    <div>
-                                        <p className="font-bold">{item.name} {item.isFeatured && <span className="text-xs text-primary">(Featured)</span>}</p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {item.paymentType === 'credits' ? `${item.cost} Credits` : `₹${item.price}`} | Stock: {item.stock} | Type: {item.type}
-                                        </p>
-                                    </div>
-                                    <div className="space-x-1">
-                                        <Button variant="ghost" size="icon" onClick={() => { 
-                                            setEditingStoreItem(item); 
-                                            setItemName(item.name); 
-                                            setItemDescription(item.description); 
-                                            setItemCost(item.cost); 
-                                            setItemPrice(item.price || 10);
-                                            setItemPaymentType(item.paymentType || 'credits');
-                                            setItemType(item.type); 
-                                            setItemQuantity(item.quantity); 
-                                            setItemStock(item.stock); 
-                                            setItemIsFeatured(item.isFeatured); 
-                                            setItemBadge(item.badge); 
-                                            setIsStoreItemDialogOpen(true); 
-                                        }}><Edit className="h-4 w-4"/></Button>
-                                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteStoreItem(item.id)}><Trash2 className="h-4 w-4"/></Button>
-                                    </div>
+                            <ScrollArea className="h-64">
+                                <div className="space-y-2">
+                                    {storeItems.map(item => (
+                                        <div key={item.id} className="flex items-center justify-between p-3 rounded-md bg-muted">
+                                            <div>
+                                                <p className="font-bold text-sm">{item.name}</p>
+                                                <p className="text-[10px] text-muted-foreground">
+                                                    {item.paymentType === 'credits' ? `${item.cost} Credits` : `₹${item.price}`} | Stock: {item.stock}
+                                                </p>
+                                            </div>
+                                            <div className="space-x-1">
+                                                <Button variant="ghost" size="icon" onClick={() => { 
+                                                    setEditingStoreItem(item); 
+                                                    setItemName(item.name); 
+                                                    setItemDescription(item.description); 
+                                                    setItemCost(item.cost); 
+                                                    setItemPrice(item.price || 10);
+                                                    setItemPaymentType(item.paymentType || 'credits');
+                                                    setItemType(item.type); 
+                                                    setItemQuantity(item.quantity); 
+                                                    setItemStock(item.stock); 
+                                                    setItemIsFeatured(item.isFeatured); 
+                                                    setItemBadge(item.badge); 
+                                                    setIsStoreItemDialogOpen(true); 
+                                                }}><Edit className="h-4 w-4"/></Button>
+                                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => deleteStoreItem(item.id)}><Trash2 className="h-4 w-4"/></Button>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </div>
-                            ))}
-                            <Button className="w-full" onClick={() => { 
+                            </ScrollArea>
+                            <Button className="w-full" variant="outline" onClick={() => { 
                                 setEditingStoreItem(null); 
                                 setItemName(''); 
                                 setItemDescription(''); 
@@ -342,16 +533,88 @@ export default function SuperAdminPanelPage() {
                                 setItemIsFeatured(false); 
                                 setItemBadge(undefined); 
                                 setIsStoreItemDialogOpen(true); 
-                            }}>Add Store Item</Button>
+                            }}>Add New Store Item</Button>
                         </CardContent>
                     </Card>
                 </div>
             </AccordionContent>
           </Card>
         </AccordionItem>
+
+        {/* 6. System Overrides (Password Protected) */}
+        <AccordionItem value="overrides" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <ShieldCheck className="h-6 w-6 text-red-500" />
+                <div>
+                  <h3 className="text-lg font-semibold">System Overrides</h3>
+                  <p className="text-sm text-muted-foreground text-left">Emergency manual adjustments.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0">
+                {!isCreditUnlocked ? (
+                    <form onSubmit={handleCreditPasswordSubmit} className="flex flex-col items-center gap-4 py-10 border-2 border-dashed rounded-xl">
+                        <div className="p-4 bg-red-500/10 rounded-full"><KeyRoundIcon className="h-10 w-10 text-red-500"/></div>
+                        <div className="text-center"><h4 className="font-bold">Restricted Area</h4><p className="text-xs text-muted-foreground">Enter God-Mode Password to continue.</p></div>
+                        <Input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[200px] text-center" placeholder="••••••••" />
+                        <Button type="submit">Unlock System</Button>
+                    </form>
+                ) : (
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <Card className="border-red-500/20">
+                            <CardHeader><CardTitle className="text-sm">Manual Credit Injection</CardTitle></CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="space-y-2"><Label>Amount to Gift EVERYONE</Label><Input type="number" id="gift-all-credits" defaultValue={100} /></div>
+                                <Button className="w-full bg-red-600 hover:bg-red-700" onClick={() => {
+                                    const amt = Number((document.getElementById('gift-all-credits') as HTMLInputElement).value);
+                                    giftCreditsToAllUsers(amt);
+                                    toast({ title: "Operation Complete", description: `Gifted ${amt} credits to all active students.` });
+                                }}>Gift All Credits</Button>
+                            </CardContent>
+                        </Card>
+                        <Card>
+                            <CardHeader><CardTitle className="text-sm">System Cleanup</CardTitle></CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-2">
+                                <Button variant="outline" className="text-xs" onClick={clearGlobalChat}>Clear Global Chat</Button>
+                                <Button variant="outline" className="text-xs" onClick={clearQuizLeaderboard}>Reset Quizzes</Button>
+                                <Button variant="outline" className="text-xs" onClick={resetWeeklyStudyTime}>Reset Study Log</Button>
+                                <Button variant="outline" className="text-xs" onClick={resetGameZoneLeaderboard}>Reset Games</Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
       </Accordion>
 
-      {/* DIALOGS */}
+      {/* MODALS */}
+      <Dialog open={isMasterCardDialogOpen} onOpenChange={setIsMasterCardDialogOpen}>
+        <DialogContent>
+            <DialogHeader><DialogTitle>Grant Master Card</DialogTitle><DialogDescription>Give {masterCardUser?.displayName} unlimited credits bypass for a duration.</DialogDescription></DialogHeader>
+            <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                    <Label>Duration (Days)</Label>
+                    <Select value={String(masterCardDuration)} onValueChange={v => setMasterCardDuration(Number(v))}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="1">1 Day Trial</SelectItem>
+                            <SelectItem value="7">7 Days (Weekly)</SelectItem>
+                            <SelectItem value="30">30 Days (Monthly)</SelectItem>
+                            <SelectItem value="365">365 Days (Yearly)</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            <DialogFooter>
+                <Button onClick={() => { if(masterCardUser) grantMasterCard(masterCardUser.uid, masterCardDuration); setIsMasterCardDialogOpen(false); toast({ title: "Master Card Granted!" }); }}>Activate Master Card</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={isPackDialogOpen} onOpenChange={setIsPackDialogOpen}>
         <DialogContent>
             <DialogHeader><DialogTitle>{editingPack ? 'Edit' : 'Add'} Credit Pack</DialogTitle></DialogHeader>
@@ -362,7 +625,7 @@ export default function SuperAdminPanelPage() {
                     <div className="space-y-2"><Label>Price (₹)</Label><Input type="number" value={packPrice} onChange={e => setPackPrice(Number(e.target.value))}/></div>
                 </div>
                 <div className="space-y-2">
-                    <Label>Value Badge (Optional)</Label>
+                    <Label>Value Badge</Label>
                     <Select value={packBadge || 'none'} onValueChange={(v: any) => setPackBadge(v === 'none' ? undefined : v)}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -370,16 +633,10 @@ export default function SuperAdminPanelPage() {
                             <SelectItem value="popular">Popular</SelectItem>
                             <SelectItem value="new">New</SelectItem>
                             <SelectItem value="recommended">Recommended</SelectItem>
-                            <SelectItem value="exclusive">Exclusive</SelectItem>
                             <SelectItem value="limited">Limited Edition</SelectItem>
                             <SelectItem value="hot">Hot Deal</SelectItem>
                             <SelectItem value="best-seller">Best Seller</SelectItem>
                             <SelectItem value="jackpot">Jackpot</SelectItem>
-                            <SelectItem value="buy-or-regret">Buy or Regret</SelectItem>
-                            <SelectItem value="rare">Rare</SelectItem>
-                            <SelectItem value="worth-it">Worth It</SelectItem>
-                            <SelectItem value="loot-deal">Loot Deal</SelectItem>
-                            <SelectItem value="dev-choice">Dev Choice</SelectItem>
                             <SelectItem value="legendary">Legendary</SelectItem>
                         </SelectContent>
                     </Select>
@@ -394,7 +651,7 @@ export default function SuperAdminPanelPage() {
       </Dialog>
 
       <Dialog open={isStoreItemDialogOpen} onOpenChange={setIsStoreItemDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
             <DialogHeader><DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Store Item</DialogTitle></DialogHeader>
             <div className="py-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div className="space-y-2"><Label>Item Name</Label><Input value={itemName} onChange={e => setItemName(e.target.value)}/></div>
@@ -418,7 +675,7 @@ export default function SuperAdminPanelPage() {
                     <div className="space-y-2"><Label>Stock</Label><Input type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))}/></div>
                 </div>
 
-                <div className="space-y-2"><Label>Description</Label><Textarea value={itemDescription} onChange={e => setItemDescription(e.target.value)} className="min-h-[100px]"/></div>
+                <div className="space-y-2"><Label>Description</Label><Textarea value={itemDescription} onChange={e => setItemDescription(e.target.value)} className="min-h-[100px] text-xs"/></div>
                 
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -447,21 +704,13 @@ export default function SuperAdminPanelPage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2"><Label>Quantity (per purchase)</Label><Input type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))}/></div>
+                    <div className="space-y-2"><Label>Quantity</Label><Input type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))}/></div>
                     <div className="space-y-2">
-                        <Label>Value Badge (Optional)</Label>
+                        <Label>Value Badge</Label>
                         <Select value={itemBadge || 'none'} onValueChange={(v: any) => setItemBadge(v === 'none' ? undefined : v)}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">No Badge</SelectItem>
-                                <SelectItem value="popular">Popular</SelectItem>
-                                <SelectItem value="new">New</SelectItem>
-                                <SelectItem value="recommended">Recommended</SelectItem>
-                                <SelectItem value="exclusive">Exclusive</SelectItem>
-                                <SelectItem value="limited">Limited Edition</SelectItem>
-                                <SelectItem value="hot">Hot Deal</SelectItem>
-                                <SelectItem value="best-seller">Best Seller</SelectItem>
-                                <SelectItem value="jackpot">Jackpot</SelectItem>
                                 <SelectItem value="buy-or-regret">Buy or Regret</SelectItem>
                                 <SelectItem value="rare">Rare</SelectItem>
                                 <SelectItem value="worth-it">Worth It</SelectItem>
@@ -472,7 +721,7 @@ export default function SuperAdminPanelPage() {
                         </Select>
                     </div>
                 </div>
-                <div className="flex items-center gap-2"><Switch checked={itemIsFeatured} onCheckedChange={setItemIsFeatured} /><Label>Feature this item</Label></div>
+                <div className="flex items-center gap-2"><Switch checked={itemIsFeatured} onCheckedChange={setItemIsFeatured} /><Label>Featured Item</Label></div>
             </div>
             <DialogFooter><Button onClick={() => { 
                 const data = { name: itemName, description: itemDescription, cost: itemCost, price: itemPrice, paymentType: itemPaymentType, type: itemType, quantity: itemQuantity, stock: itemStock, isFeatured: itemIsFeatured, badge: itemBadge };
