@@ -1,11 +1,11 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdmin, type CreditPack, useUsers, type StoreItem } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon, CheckCircle } from 'lucide-react';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon, CheckCircle, Trophy, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
@@ -18,6 +18,8 @@ import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions/razorp
 import Script from 'next/script';
 import { useRouter } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const BadgeRenderer = ({ badge }: { badge?: string }) => {
     if (!badge) return null;
@@ -31,14 +33,78 @@ const BadgeRenderer = ({ badge }: { badge?: string }) => {
             badge === 'limited' && "bg-red-600 text-white animate-pulse",
             badge === 'hot' && "bg-gradient-to-r from-orange-600 to-red-600 text-white",
             badge === 'best-seller' && "bg-cyan-600 text-white",
-            badge === 'jackpot' && "bg-gradient-to-r from-yellow-400 to-amber-600 text-black"
+            badge === 'jackpot' && "bg-gradient-to-r from-yellow-400 to-amber-600 text-black",
+            // New Value Badges
+            badge === 'buy-or-regret' && "bg-black text-red-500 border-b border-l border-red-500/50 animate-pulse",
+            badge === 'rare' && "bg-blue-900 text-blue-200 border-b border-l border-blue-400",
+            badge === 'worth-it' && "bg-green-600 text-white shadow-[0_0_10px_rgba(22,163,74,0.5)]",
+            badge === 'loot-deal' && "bg-gradient-to-br from-fuchsia-600 to-purple-800 text-white italic",
+            badge === 'dev-choice' && "bg-slate-800 text-indigo-300 border-b border-l border-indigo-500",
+            badge === 'legendary' && "bg-gradient-to-r from-yellow-400 via-amber-200 to-yellow-400 text-amber-900 animate-gold-shine"
         )}>
-            {badge.replace('-', ' ')}
+            {badge.replace(/-/g, ' ')}
         </div>
     );
 };
 
-function CreditPacksTab() {
+// --- Purchase Success Dialog ---
+function PurchaseSuccessDialog({ isOpen, onOpenChange, itemName }: { isOpen: boolean, onOpenChange: (open: boolean) => void, itemName: string }) {
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md border-0 bg-transparent shadow-none p-0">
+                <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    className="relative overflow-hidden rounded-3xl bg-background border-4 border-primary/20 p-8 text-center"
+                >
+                    {/* Confetti Particles Effect */}
+                    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        {[...Array(20)].map((_, i) => (
+                            <motion.div
+                                key={i}
+                                initial={{ y: -20, x: Math.random() * 400, opacity: 1 }}
+                                animate={{ 
+                                    y: 500, 
+                                    x: (Math.random() - 0.5) * 200 + 200,
+                                    rotate: 360,
+                                    opacity: 0 
+                                }}
+                                transition={{ duration: 2 + Math.random() * 2, repeat: Infinity, delay: Math.random() * 2 }}
+                                className={cn(
+                                    "absolute h-2 w-2 rounded-full",
+                                    ["bg-yellow-400", "bg-primary", "bg-blue-400", "bg-green-400", "bg-pink-400"][Math.floor(Math.random() * 5)]
+                                )}
+                            />
+                        ))}
+                    </div>
+
+                    <div className="relative z-10 space-y-6">
+                        <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 border-4 border-primary/20 flex items-center justify-center">
+                            <Trophy className="h-12 w-12 text-primary animate-bounce" />
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <h2 className="text-3xl font-black tracking-tight text-primary">MISSION ACCOMPLISHED!</h2>
+                            <p className="text-muted-foreground font-medium">You have successfully secured the</p>
+                            <div className="inline-block px-4 py-2 rounded-xl bg-muted border font-bold text-xl">
+                                {itemName}
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-muted-foreground italic">Check your inventory in the Nexus or Profile to equip your new asset.</p>
+
+                        <Button onClick={() => onOpenChange(false)} size="lg" className="w-full h-14 text-lg font-bold rounded-2xl shadow-xl">
+                            Awesome!
+                        </Button>
+                    </div>
+                </motion.div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function CreditPacksTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const { creditPacks, loading } = useAdmin();
     const { user, isSignedIn } = useUser();
     const { toast } = useToast();
@@ -69,16 +135,11 @@ function CreditPacksTab() {
                     );
 
                     if (verification.success) {
-                        toast({
-                            title: "Payment Successful!",
-                            description: `${pack.credits} credits have been added to your account.`,
-                            className: "bg-green-500/10 border-green-500/50"
-                        });
-                        window.location.replace('/dashboard/store/history');
+                        onSuccess(pack.name);
                     } else {
                         toast({ variant: 'destructive', title: "Verification Failed", description: verification.error || "Could not verify payment." });
-                        setIsProcessing(null);
                     }
+                    setIsProcessing(null);
                 },
                 prefill: {
                     name: user.fullName || '',
@@ -141,7 +202,7 @@ function CreditPacksTab() {
     );
 }
 
-function ArtifactsTab() {
+function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const { storeItems, loading, redeemStoreItem, processStoreItemPayment } = useAdmin();
     const { currentUserData } = useUsers();
     const { user } = useUser();
@@ -165,11 +226,7 @@ function ArtifactsTab() {
                 order_id: order.id,
                 handler: async function (response: any) {
                     await processStoreItemPayment(item, response.razorpay_payment_id);
-                    toast({
-                        title: "Artifact Secured!",
-                        description: `"${item.name}" added to your Nexus Inventory.`,
-                        className: "bg-green-500/10 border-green-500/50"
-                    });
+                    onSuccess(item.name);
                     setIsProcessing(null);
                 },
                 prefill: {
@@ -177,7 +234,11 @@ function ArtifactsTab() {
                     email: user.primaryEmailAddress?.emailAddress || '',
                 },
                 theme: { color: '#8b5cf6' },
-                modal: { ondismiss: () => setIsProcessing(null) }
+                modal: { 
+                    ondismiss: () => setIsProcessing(null),
+                    escape: false,
+                    backdropclose: false
+                }
             };
             const rzp = new (window as any).Razorpay(options);
             rzp.open();
@@ -191,11 +252,7 @@ function ArtifactsTab() {
         setIsProcessing(item.id);
         try {
             await redeemStoreItem(item);
-            toast({
-                title: "Artifact Secured!",
-                description: `"${item.name}" added to your Nexus Inventory.`,
-                className: "bg-green-500/10 border-green-500/50"
-            });
+            onSuccess(item.name);
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Redemption Failed", description: error.message });
         } finally {
@@ -218,7 +275,7 @@ function ArtifactsTab() {
                 <ShieldIcon className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
                 <h3 className="text-xl font-bold text-muted-foreground">The Vault is Empty</h3>
                 <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
-                    Go to the <strong>Dev Panel</strong> to create artifacts.
+                    Check back soon for legendary study protection artifacts.
                 </p>
             </div>
         );
@@ -232,7 +289,7 @@ function ArtifactsTab() {
                  const canAfford = isMoney ? true : (hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost);
                  
                  return (
-                    <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2", item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted")}>
+                    <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2 transition-all duration-300", item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted")}>
                         <BadgeRenderer badge={item.badge} />
                         <CardHeader className="text-center">
                             <div className="mx-auto mb-4 p-4 rounded-full bg-muted group-hover:scale-110 transition-transform">
@@ -292,7 +349,7 @@ function ArtifactsTab() {
     )
 }
 
-function BadgesTab() {
+function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const { storeItems, loading, redeemStoreItem, processStoreItemPayment } = useAdmin();
     const { currentUserData } = useUsers();
     const { user } = useUser();
@@ -316,12 +373,12 @@ function BadgesTab() {
                 order_id: order.id,
                 handler: async function (response: any) {
                     await processStoreItemPayment(item, response.razorpay_payment_id);
-                    toast({ title: "Identity Unlocked!", description: `"${item.name}" badge is now yours.`, className: "bg-green-500/10 border-green-500/50" });
+                    onSuccess(item.name);
                     setIsProcessing(null);
                 },
                 prefill: { name: user.fullName || '', email: user.primaryEmailAddress?.emailAddress || '' },
                 theme: { color: '#8b5cf6' },
-                modal: { ondismiss: () => setIsProcessing(null) }
+                modal: { ondismiss: () => setIsProcessing(null), escape: false, backdropclose: false }
             };
             const rzp = new (window as any).Razorpay(options);
             rzp.open();
@@ -335,7 +392,7 @@ function BadgesTab() {
         setIsProcessing(item.id);
         try {
             await redeemStoreItem(item);
-            toast({ title: "Identity Unlocked!", description: `"${item.name}" badge added to your Profile.`, className: "bg-green-500/10 border-green-500/50" });
+            onSuccess(item.name);
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Redemption Failed", description: error.message });
         } finally {
@@ -387,7 +444,7 @@ function BadgesTab() {
             <div className="text-center py-20 border-2 border-dashed rounded-2xl bg-muted/20">
                 <Award className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
                 <h3 className="text-xl font-bold text-muted-foreground">No Badges Available</h3>
-                <p className="text-sm text-muted-foreground mt-2">Check the Dev Panel to add legendary identity badges.</p>
+                <p className="text-sm text-muted-foreground mt-2">Check back later for exclusive identity badges.</p>
             </div>
         );
     }
@@ -419,25 +476,30 @@ function BadgesTab() {
                                     <span className="font-bold uppercase tracking-widest text-xs">Unlocked</span>
                                 </div>
                              ) : (
-                                <div className="font-black text-4xl flex items-center justify-center gap-2 text-amber-500 tracking-tighter">
-                                    {isMoney ? <span>₹{item.price}</span> : <><Gem className="h-8 w-8" /><span>{item.cost.toLocaleString()}</span></>}
-                                </div>
+                                <>
+                                    <div className="font-black text-4xl flex items-center justify-center gap-2 text-amber-500 tracking-tighter">
+                                        {isMoney ? <span>₹{item.price}</span> : <><Gem className="h-8 w-8" /><span>{item.cost.toLocaleString()}</span></>}
+                                    </div>
+                                    <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">
+                                        Stock: {item.stock > 0 ? item.stock : <span className="text-destructive">OUT OF STOCK</span>}
+                                    </p>
+                                </>
                              )}
                         </CardContent>
                         <CardFooter>
                             {owned ? (
                                 <Button className="w-full" variant="outline" disabled>Owned</Button>
                             ) : isMoney ? (
-                                <Button className="w-full text-lg h-14 font-bold rounded-xl" onClick={() => handleBuyWithMoney(item)} disabled={isProcessing === item.id}>
+                                <Button className="w-full text-lg h-14 font-bold rounded-xl" onClick={() => handleBuyWithMoney(item)} disabled={isProcessing === item.id || item.stock === 0}>
                                     {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <Zap className="mr-2 h-5 w-5 fill-current"/>}
-                                    Unlock Identity
+                                    {item.stock === 0 ? "Sold Out" : "Unlock Identity"}
                                 </Button>
                             ) : (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button className="w-full text-lg h-14 font-bold rounded-xl" disabled={!canAfford || isProcessing === item.id}>
+                                        <Button className="w-full text-lg h-14 font-bold rounded-xl" disabled={!canAfford || isProcessing === item.id || item.stock === 0}>
                                              {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
-                                            Secure Badge
+                                            {item.stock === 0 ? "Sold Out" : "Secure Badge"}
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
@@ -461,9 +523,24 @@ function BadgesTab() {
 }
 
 export default function StorePage() {
+    const [successDialogOpen, setSuccessDialogOpen] = useState(false);
+    const [purchasedItemName, setPurchasedItemName] = useState('');
+
+    const handlePurchaseSuccess = (name: string) => {
+        setPurchasedItemName(name);
+        setSuccessDialogOpen(true);
+    };
+
     return (
         <div className="space-y-8">
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+            
+            <PurchaseSuccessDialog 
+                isOpen={successDialogOpen} 
+                onOpenChange={setSuccessDialogOpen} 
+                itemName={purchasedItemName} 
+            />
+
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
                     <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
@@ -491,13 +568,13 @@ export default function StorePage() {
                 </div>
                 
                 <TabsContent value="buy" className="animate-in fade-in-50 duration-500">
-                    <CreditPacksTab />
+                    <CreditPacksTab onSuccess={handlePurchaseSuccess} />
                 </TabsContent>
                 <TabsContent value="artifacts" className="animate-in fade-in-50 duration-500">
-                    <ArtifactsTab />
+                    <ArtifactsTab onSuccess={handlePurchaseSuccess} />
                 </TabsContent>
                 <TabsContent value="badges" className="animate-in fade-in-50 duration-500">
-                    <BadgesTab />
+                    <BadgesTab onSuccess={handlePurchaseSuccess} />
                 </TabsContent>
                 <TabsContent value="luck" className="animate-in fade-in-50 duration-500">
                     <div className="text-center py-20 space-y-4">

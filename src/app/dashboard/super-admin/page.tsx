@@ -36,6 +36,9 @@ const defaultDescriptions: Record<string, string> = {
     'penalty-shield': 'The ultimate life-saver for focused students. This artifact automatically absorbs one credit penalty if you are forced to leave a Focus or Pomodoro session early. Study with total peace of mind.',
     'streak-freeze': 'Protect your hard-earned progress! This artifact automatically activates if you miss a day of study, keeping your daily streak intact. Never let a busy day break your chain.',
     'alpha-glow': 'Command attention in the MindMate community! Activating this artifact gives your name a legendary, animated radiant glow in the World Chat for 7 days. Show everyone you are a top performer.',
+    'early-bird': 'Unlock the Early Bird identity badge. Let the world know you conquer your goals before sunrise!',
+    'night-owl': 'Unlock the Night Owl identity badge. Show your dedication during the quietest hours of the night.',
+    'knowledge-knight': 'The Knowledge Knight badge. A mark of an ultimate defender of study discipline.',
 };
 
 export default function SuperAdminPanelPage() {
@@ -296,7 +299,7 @@ export default function SuperAdminPanelPage() {
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><CardTitle>Redeemable Items (Artifacts)</CardTitle></CardHeader>
+                        <CardHeader><CardTitle>Redeemable Items (Artifacts & Badges)</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             {storeItems.map(item => (
                                 <div key={item.id} className="flex items-center justify-between p-3 rounded-md bg-muted">
@@ -371,6 +374,12 @@ export default function SuperAdminPanelPage() {
                             <SelectItem value="hot">Hot Deal</SelectItem>
                             <SelectItem value="best-seller">Best Seller</SelectItem>
                             <SelectItem value="jackpot">Jackpot</SelectItem>
+                            <SelectItem value="buy-or-regret">Buy or Regret</SelectItem>
+                            <SelectItem value="rare">Rare</SelectItem>
+                            <SelectItem value="worth-it">Worth It</SelectItem>
+                            <SelectItem value="loot-deal">Loot Deal</SelectItem>
+                            <SelectItem value="dev-choice">Dev Choice</SelectItem>
+                            <SelectItem value="legendary">Legendary</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -399,6 +408,9 @@ export default function SuperAdminPanelPage() {
                                 <SelectItem value="penalty-shield">Penalty Shield (Artifact)</SelectItem>
                                 <SelectItem value="streak-freeze">Streak Freeze (Artifact)</SelectItem>
                                 <SelectItem value="alpha-glow">Alpha Glow (Artifact)</SelectItem>
+                                <SelectItem value="early-bird">Early Bird (Badge)</SelectItem>
+                                <SelectItem value="night-owl">Night Owl (Badge)</SelectItem>
+                                <SelectItem value="knowledge-knight">Knowledge Knight (Badge)</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -449,6 +461,12 @@ export default function SuperAdminPanelPage() {
                                 <SelectItem value="hot">Hot Deal</SelectItem>
                                 <SelectItem value="best-seller">Best Seller</SelectItem>
                                 <SelectItem value="jackpot">Jackpot</SelectItem>
+                                <SelectItem value="buy-or-regret">Buy or Regret</SelectItem>
+                                <SelectItem value="rare">Rare</SelectItem>
+                                <SelectItem value="worth-it">Worth It</SelectItem>
+                                <SelectItem value="loot-deal">Loot Deal</SelectItem>
+                                <SelectItem value="dev-choice">Dev Choice</SelectItem>
+                                <SelectItem value="legendary">Legendary</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>

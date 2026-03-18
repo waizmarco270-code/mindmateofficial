@@ -32,9 +32,9 @@ const defaultDescriptions: Record<string, string> = {
     'penalty-shield': 'The ultimate life-saver for focused students. This artifact automatically absorbs one credit penalty if you are forced to leave a Focus or Pomodoro session early. Study with total peace of mind.',
     'streak-freeze': 'Protect your hard-earned progress! This artifact automatically activates if you miss a day of study, keeping your daily streak intact. Never let a busy day break your chain.',
     'alpha-glow': 'Command attention in the MindMate community! Activating this artifact gives your name a legendary, animated radiant glow in the World Chat for 7 days. Show everyone you are a top performer.',
-    'early-bird': 'A legendary badge for the early morning warriors. Show the world you conquer your goals while others are still dreaming.',
-    'night-owl': 'A prestigious badge for the midnight grinders. Let everyone know you own the night and work when the world is quiet.',
-    'knowledge-knight': 'A heavy-duty identity badge for those who defend their study schedule at any cost. A true mark of a MindMate protector.',
+    'early-bird': 'Unlock the Early Bird identity badge. Let the world know you conquer your goals before sunrise!',
+    'night-owl': 'Unlock the Night Owl identity badge. Show your dedication during the quietest hours of the night.',
+    'knowledge-knight': 'The Knowledge Knight badge. A mark of an ultimate defender of study discipline.',
 };
 
 export default function PaymentsPanelPage() {
@@ -276,6 +276,12 @@ export default function PaymentsPanelPage() {
                                             <SelectItem value="hot">Hot Deal</SelectItem>
                                             <SelectItem value="best-seller">Best Seller</SelectItem>
                                             <SelectItem value="jackpot">Jackpot</SelectItem>
+                                            <SelectItem value="buy-or-regret">Buy or Regret</SelectItem>
+                                            <SelectItem value="rare">Rare</SelectItem>
+                                            <SelectItem value="worth-it">Worth It</SelectItem>
+                                            <SelectItem value="loot-deal">Loot Deal</SelectItem>
+                                            <SelectItem value="dev-choice">Dev Choice</SelectItem>
+                                            <SelectItem value="legendary">Legendary</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -402,6 +408,12 @@ export default function PaymentsPanelPage() {
                                                 <SelectItem value="hot">Hot Deal</SelectItem>
                                                 <SelectItem value="best-seller">Best Seller</SelectItem>
                                                 <SelectItem value="jackpot">Jackpot</SelectItem>
+                                                <SelectItem value="buy-or-regret">Buy or Regret</SelectItem>
+                                                <SelectItem value="rare">Rare</SelectItem>
+                                                <SelectItem value="worth-it">Worth It</SelectItem>
+                                                <SelectItem value="loot-deal">Loot Deal</SelectItem>
+                                                <SelectItem value="dev-choice">Dev Choice</SelectItem>
+                                                <SelectItem value="legendary">Legendary</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
