@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -59,14 +58,9 @@ export default function SuperAdminPanelPage() {
     globalGifts,
     deactivateGift,
     deleteGlobalGift,
-    featureLocks,
-    lockFeature,
-    unlockFeature,
     appSettings,
     updateAppSettings,
-    generateDevAiAccessToken,
     grantMasterCard,
-    revokeMasterCard,
     creditPacks,
     createCreditPack,
     updateCreditPack,
@@ -194,6 +188,8 @@ export default function SuperAdminPanelPage() {
       </div>
     );
   }
+
+  const activeGlobalGift = globalGifts.find(g => g.isActive) || null;
 
   return (
     <div className="space-y-8 pb-20">
@@ -406,59 +402,7 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* 4. Feature Monetization (Locks) */}
-        <AccordionItem value="monetization" className="border-b-0">
-          <Card>
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <Lock className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-semibold">Monetization & Locks</h3>
-                  <p className="text-sm text-muted-foreground text-left">Control feature access and costs.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0">
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {lockableFeatures.map(feature => {
-                        const lockData = featureLocks?.[feature.id];
-                        const isLocked = lockData?.isLocked;
-                        const cost = lockData?.cost ?? feature.defaultCost;
-
-                        return (
-                            <Card key={feature.id} className={cn("p-4 transition-all", isLocked && "border-primary/50 bg-primary/5")}>
-                                <div className="flex items-center justify-between mb-2">
-                                    <h4 className="font-bold text-sm">{feature.name}</h4>
-                                    {isLocked ? <Lock className="h-4 w-4 text-primary"/> : <Unlock className="h-4 w-4 text-muted-foreground"/>}
-                                </div>
-                                <div className="space-y-3">
-                                    <div className="flex items-center gap-2">
-                                        <Input 
-                                            type="number" 
-                                            className="h-8 text-xs" 
-                                            defaultValue={cost}
-                                            onBlur={(e) => lockFeature(feature.id, Number(e.target.value))}
-                                        />
-                                        <span className="text-[10px] font-bold text-muted-foreground">CREDITS</span>
-                                    </div>
-                                    <Button 
-                                        variant={isLocked ? "destructive" : "default"} 
-                                        size="sm" 
-                                        className="w-full h-8 text-[10px] font-bold"
-                                        onClick={() => isLocked ? unlockFeature(feature.id) : lockFeature(feature.id, cost)}
-                                    >
-                                        {isLocked ? "UNLOCK FOR ALL" : "LOCK FEATURE"}
-                                    </Button>
-                                </div>
-                            </Card>
-                        )
-                    })}
-                </div>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
-        {/* 5. Store & Artifacts */}
+        {/* 4. Store & Artifacts */}
         <AccordionItem value="feature-management" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
@@ -542,7 +486,7 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* 6. System Overrides (Password Protected) */}
+        {/* 5. System Overrides (Password Protected) */}
         <AccordionItem value="overrides" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
