@@ -21,12 +21,13 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, addDays as dateFnsAddDays } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogContent } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const CREDIT_PASSWORD = "waizcredit";
 
@@ -457,7 +458,7 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* 5. Store & Artifacts (Existing but refined) */}
+        {/* 5. Store & Artifacts */}
         <AccordionItem value="feature-management" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
@@ -558,7 +559,7 @@ export default function SuperAdminPanelPage() {
                     <form onSubmit={handleCreditPasswordSubmit} className="flex flex-col items-center gap-4 py-10 border-2 border-dashed rounded-xl">
                         <div className="p-4 bg-red-500/10 rounded-full"><KeyRoundIcon className="h-10 w-10 text-red-500"/></div>
                         <div className="text-center"><h4 className="font-bold">Restricted Area</h4><p className="text-xs text-muted-foreground">Enter God-Mode Password to continue.</p></div>
-                        <Input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[200px] text-center" placeholder="••••••••" />
+                        <input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[200px] text-center border-2 rounded p-2" placeholder="••••••••" />
                         <Button type="submit">Unlock System</Button>
                     </form>
                 ) : (
