@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useUsers, User, SUPER_ADMIN_UID, BadgeType, useAdmin } from '@/hooks/use-admin';
@@ -6,7 +5,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard, Sigma, Settings2, Eye, EyeOff, Check, X } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard, Sigma, Settings2, Eye, EyeOff, Check, X, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -617,7 +616,7 @@ export default function LeaderboardPage() {
                 </TabsContent>
             </Tabs>
 
-             {/* Privacy Settings Dialog */}
+             {/* Participation Settings Dialog */}
              <Dialog open={isPrivacyDialogOpen} onOpenChange={setIsPrivacyDialogOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
