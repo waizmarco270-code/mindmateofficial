@@ -18,6 +18,7 @@ export interface User {
   email: string;
   photoURL?: string;
   isBlocked: boolean;
+  isLeaderboardPrivate?: boolean;
   credits: number;
   masterCardExpires?: string;
   votedPolls?: Record<string, string>;
@@ -240,6 +241,7 @@ interface AppDataContextType {
     currentUserData: User | null;
     transactions: User['transactions'];
     toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
+    toggleLeaderboardPrivacy: (uid: string, isPrivate: boolean) => Promise<void>;
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
     applyFocusPenalty: (uid: string, amount: number) => Promise<'shielded' | 'penalized'>;
     giftCreditsToAllUsers: (amount: number) => Promise<void>;
@@ -434,6 +436,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 const newUser: User = {
                     id: authUser.id, uid: authUser.id, displayName: authUser.fullName || authUser.username || 'New User',
                     email: authUser.primaryEmailAddress?.emailAddress || '', photoURL: authUser.imageUrl, isBlocked: false,
+                    isLeaderboardPrivate: false,
                     credits: 200, isAdmin: false, isVip: false, isGM: false, isChallenger: false, isCoDev: false,
                     friends: [], unlockedResourceSections: [], unlockedFeatures: [], unlockedThemes: [], hasAiAccess: false,
                     focusSessionsCompleted: 0, dailyTasksCompleted: 0, totalStudyTime: 0, freeRewards: 0, freeGuesses: 0,
@@ -591,6 +594,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const value: AppDataContextType = {
         isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureLocks, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures,
         toggleUserBlock: (uid, isBlocked) => updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked }),
+        toggleLeaderboardPrivacy: (uid, isPrivate) => updateDoc(doc(db, 'users', uid), { isLeaderboardPrivate: isPrivate }),
         addCreditsToUser,
         applyFocusPenalty,
         giftCreditsToAllUsers: async (amt) => {

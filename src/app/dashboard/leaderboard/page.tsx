@@ -1,13 +1,12 @@
 
-
 'use client';
 
-import { useUsers, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
+import { useUsers, User, SUPER_ADMIN_UID, BadgeType, useAdmin } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard, Sigma } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard, Sigma, Settings2, Eye, EyeOff, Check, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -17,8 +16,10 @@ import { startOfWeek, endOfWeek, parseISO, isWithinInterval, subWeeks, format as
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { motion } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from '@/components/ui/dialog';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 interface PomodoroSession {
   id: string;
@@ -73,11 +74,12 @@ const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
 
 export default function LeaderboardPage() {
     const { user: currentUser } = useUser();
-    const { users } = useUsers();
-    const { sessions: allSessions, pomodoroSessions } = useTimeTracker(); // Get pomodoro sessions
+    const { users, currentUserData, toggleLeaderboardPrivacy } = useUsers();
+    const { sessions: allSessions, pomodoroSessions } = useTimeTracker(); 
     const [activeTab, setActiveTab] = useState('all-time');
     const [timeLeft, setTimeLeft] = useState('');
     const [selectedUserForDetails, setSelectedUserForDetails] = useState<UserWithStats | null>(null);
+    const [isPrivacyDialogOpen, setIsPrivacyDialogOpen] = useState(false);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -121,12 +123,10 @@ export default function LeaderboardPage() {
             }
         };
 
-        // Process Time Tracker Sessions
         allSessions.forEach(session => {
-            const userId = session.subjectId; // In time tracker, subjectId is userId
+            const userId = session.userId;
             initializeUserStats(userId);
             const sessionDate = parseISO(session.startTime);
-
             const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
 
             if (isWithinInterval(sessionDate, { start: thisWeekStart, end: thisWeekEnd })) {
@@ -137,7 +137,6 @@ export default function LeaderboardPage() {
             }
         });
         
-        // Process Pomodoro Sessions
         pomodoroSessions.forEach(session => {
             const userId = session.userId;
             initializeUserStats(userId);
@@ -145,7 +144,7 @@ export default function LeaderboardPage() {
             const duration = session.duration;
             
             if (isWithinInterval(sessionDate, { start: thisWeekStart, end: thisWeekEnd })) {
-                stats[userId].thisWeek.totalTime += duration; // Add pomodoro time to total weekly time
+                stats[userId].thisWeek.totalTime += duration; 
                 stats[userId].thisWeek.pomodoro.total += duration;
                 if(session.type === 'focus') stats[userId].thisWeek.pomodoro.focus += duration;
                 if(session.type === 'shortBreak') stats[userId].thisWeek.pomodoro.shortBreak += duration;
@@ -155,7 +154,6 @@ export default function LeaderboardPage() {
             }
         });
 
-
         return stats;
     }, [allSessions, pomodoroSessions]);
     
@@ -163,6 +161,8 @@ export default function LeaderboardPage() {
     const { sortedUsers, lastWeekWeeklyWinner, lastWeekEntertainmentWinner } = useMemo(() => {
         const processedUsers: UserWithStats[] = users
             .filter(u => !u.isBlocked && !LEADERBOARD_EXCLUDED_UIDS.includes(u.uid))
+            // Filter by Privacy Preference
+            .filter(u => !u.isLeaderboardPrivate || u.uid === currentUser?.id)
             .map(user => {
                 const credits = user.credits || 0;
                 const focusSessions = user.focusSessionsCompleted || 0;
@@ -193,7 +193,7 @@ export default function LeaderboardPage() {
                     (subjectSprintHighScore * 1.1) + 
                     flappyMindHighScore + 
                     (astroAscentHighScore * 1.3) + 
-                    (mathematicsLegendHighScore * 1.4) + // Weighted contribution
+                    (mathematicsLegendHighScore * 1.4) + 
                     (elementQuestTotalScore * 0.5);
 
                 const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0) + (user.gameHighScores?.astroAscent || 0) + (user.gameHighScores?.mathematicsLegend || 0) + elementQuestTotalScore;
@@ -225,7 +225,6 @@ export default function LeaderboardPage() {
         } else if (activeTab === 'game-zone') {
             sorted = [...processedUsers].sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
         } else {
-            // Default to all-time score
             sorted = [...processedUsers].sort((a, b) => b.totalScore - a.totalScore);
         }
         
@@ -234,11 +233,11 @@ export default function LeaderboardPage() {
 
         return { sortedUsers: sorted, lastWeekWeeklyWinner, lastWeekEntertainmentWinner };
         
-    }, [users, activeTab, weeklyStats]);
+    }, [users, activeTab, weeklyStats, currentUser?.id]);
 
 
     const topThree = sortedUsers.slice(0, 3);
-    const restOfUsers = sortedUsers.slice(3, 20); // Show only top 20 users
+    const restOfUsers = sortedUsers.slice(3, 20); 
 
     const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
     
@@ -342,13 +341,6 @@ export default function LeaderboardPage() {
         );
     }
     
-    const getTrophyColor = (rank: number) => {
-        if (rank === 0) return 'text-yellow-400';
-        if (rank === 1) return 'text-slate-400';
-        if (rank === 2) return 'text-amber-700';
-        return 'text-muted-foreground';
-    };
-    
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600);
         const m = Math.floor((seconds % 3600) / 60);
@@ -381,10 +373,15 @@ export default function LeaderboardPage() {
         const CardWrapper = activeTab !== 'game-zone' ? 'button' : 'div';
         const isClickable = activeTab !== 'game-zone';
 
-        if (rank === 0) { // First Place
+        if (rank === 0) { 
             return (
-                 <CardWrapper onClick={isClickable ? () => setSelectedUserForDetails(user) : undefined} className={cn(isClickable && 'cursor-pointer hover:shadow-yellow-500/40 transition-shadow', "w-full text-left rounded-lg")}>
-                    <Card className="w-full border-2 border-yellow-400 bg-yellow-500/5 shadow-2xl shadow-yellow-500/20">
+                 <CardWrapper onClick={isClickable ? () => setSelectedUserForDetails(user) : undefined} className={cn(isClickable && 'cursor-pointer hover:shadow-yellow-500/40 transition-shadow', "w-full text-left rounded-lg group")}>
+                    <Card className="w-full border-2 border-yellow-400 bg-yellow-500/5 shadow-2xl shadow-yellow-500/20 relative overflow-hidden">
+                         {user.isLeaderboardPrivate && (
+                             <div className="absolute top-2 right-2 p-1 bg-black/50 rounded-full" title="Phantom Mode Active">
+                                <EyeOff className="h-4 w-4 text-white/70" />
+                             </div>
+                         )}
                          <CardHeader className="text-center p-6">
                             <div className="relative w-24 h-24 mx-auto">
                                 <Trophy className="absolute -top-2 -left-2 h-8 w-8 text-yellow-400 -rotate-12" />
@@ -410,7 +407,6 @@ export default function LeaderboardPage() {
             )
         }
         
-        // Second and Third Place
         const placeDetails = {
             1: { title: '2nd Place', color: 'slate-400', trophyColor: 'text-slate-400'},
             2: { title: '3rd Place', color: 'amber-700', trophyColor: 'text-amber-700' }
@@ -420,7 +416,12 @@ export default function LeaderboardPage() {
 
         return (
              <CardWrapper onClick={isClickable ? () => setSelectedUserForDetails(user) : undefined} className={cn(isClickable && 'cursor-pointer hover:bg-muted transition-colors', "w-full text-left rounded-lg")}>
-                <Card className="w-full">
+                <Card className="w-full relative overflow-hidden">
+                     {user.isLeaderboardPrivate && (
+                         <div className="absolute top-2 right-2 p-1 bg-black/50 rounded-full" title="Phantom Mode Active">
+                            <EyeOff className="h-3 w-3 text-white/70" />
+                         </div>
+                     )}
                      <CardContent className="p-4 flex flex-col gap-2">
                         <div className="flex items-center gap-4">
                             <Trophy className={cn("h-6 w-6 flex-shrink-0", placeDetails.trophyColor)} />
@@ -452,12 +453,18 @@ export default function LeaderboardPage() {
     
     const ownedBadgesForSelectedUser = selectedUserForDetails ? getOwnedBadges(selectedUserForDetails) : [];
 
+    const isParticipating = !currentUserData?.isLeaderboardPrivate;
 
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Top Achievers</h1>
-                <p className="text-muted-foreground">See who's leading the board with the highest scores and longest streaks!</p>
+            <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Top Achievers</h1>
+                    <p className="text-muted-foreground">See who's leading the board with the highest scores and longest streaks!</p>
+                </div>
+                <Button variant="outline" onClick={() => setIsPrivacyDialogOpen(true)}>
+                    <Settings2 className="mr-2 h-4 w-4"/> Participation Settings
+                </Button>
             </div>
             
             {activeTab !== 'game-zone' && (
@@ -487,7 +494,7 @@ export default function LeaderboardPage() {
                                 <h4 className="font-bold text-base flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Elite Member Status</h4>
                                 <div>
                                     <p className="text-sm text-muted-foreground font-semibold mb-2">How to achieve:</p>
-                                    <p className="text-xs text-muted-foreground">The <span className="elite-badge inline-flex items-center gap-1"><Crown className="h-3 w-3"/>ELITE</span> badge is awarded manually by admins to users who show exceptional dedication. This includes:</p>
+                                    <p className="text-xs text-muted-foreground">The <span className="elite-badge inline-flex items-center gap-1"><Crown className="h-3 w-3"/>ELITE</span> badge is awarded manually by admins to users who show exceptional dedication.</p>
                                     <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
                                         <li>Consistently placing in the top 3 of the Weekly Leaderboard.</li>
                                         <li>High daily activity (focus sessions, tasks, quizzes).</li>
@@ -498,8 +505,8 @@ export default function LeaderboardPage() {
                                     <p className="text-sm text-muted-foreground font-semibold mb-2">Exclusive Perks:</p>
                                     <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
                                         <li><span className="font-semibold text-foreground">Daily Rewards:</span> 20+ Free Credits, 5 Free Scratch Cards, and 5 Free Card Flip plays.</li>
-                                        <li><span className="font-semibold text-foreground">Special Recognition:</span> The prestigious animated Elite badge next to your name.</li>
-                                        <li><span className="font-semibold text-foreground">Early Access:</span> Be the first to try out new "Elite Features" as they are released.</li>
+                                        <li><span className="font-semibold text-foreground">Special Recognition:</span> The prestigious animated Elite badge.</li>
+                                        <li><span className="font-semibold text-foreground">Early Access:</span> Be the first to try out new "Elite Features".</li>
                                     </ul>
                                 </div>
                             </div>
@@ -538,16 +545,15 @@ export default function LeaderboardPage() {
                                      <p className="text-xs text-muted-foreground">The <span className="gm-badge inline-flex items-center gap-1">GM</span> badge is for the best players.</p>
                                     <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
                                         <li>Finish at the #1 spot on the weekly Game Zone leaderboard.</li>
-                                        <li>You must stay in the Top 3 in subsequent weeks to keep the badge.</li>
+                                        <li>Stay in the Top 3 in subsequent weeks to keep the badge.</li>
                                     </ul>
                                 </div>
                                 <div>
                                     <p className="text-sm text-muted-foreground font-semibold mb-2">GM Perks:</p>
                                     <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
                                         <li><span className="font-semibold text-foreground">Daily Rewards:</span> 20+ Free Credits.</li>
-                                        <li><span className="font-semibold text-foreground">Free Plays:</span> 5 free plays for all Reward Zone games, every day.</li>
-                                        <li><span className="font-semibold text-foreground">Special Recognition:</span> The legendary animated GM badge.</li>
-                                         <li><span className="font-semibold text-foreground">ULTIMATE PRIZE:</span> Hold the #1 spot for 4 consecutive weeks to win a ₹100 Google Play Redeem Code!</li>
+                                        <li><span className="font-semibold text-foreground">Free Plays:</span> 5 free plays for all Reward Zone games.</li>
+                                        <li><span className="font-semibold text-foreground">ULTIMATE PRIZE:</span> ₹100 Google Play Redeem Code for 4-week streak at #1!</li>
                                     </ul>
                                 </div>
                             </div>
@@ -573,7 +579,7 @@ export default function LeaderboardPage() {
                                     <Clock className="h-8 w-8 text-primary" />
                                     <div>
                                         <h4 className="font-semibold text-lg text-left">Weekly Reset</h4>
-                                        <p className="text-muted-foreground text-sm text-left">Leaderboard resets every Monday.</p>
+                                        <p className="text-muted-foreground text-sm text-left">Resets every Monday.</p>
                                     </div>
                                 </div>
                                 <div className="font-mono text-base font-bold bg-muted px-3 py-1.5 rounded-lg animate-pulse">
@@ -610,6 +616,85 @@ export default function LeaderboardPage() {
                     <LeaderboardContent topThree={topThree} restOfUsers={restOfUsers} currentUser={currentUser} sortedUsers={sortedUsers} renderPodiumCard={renderPodiumCard} renderUserStats={renderUserStats} activeTab="game-zone" onUserClick={setSelectedUserForDetails}/>
                 </TabsContent>
             </Tabs>
+
+             {/* Privacy Settings Dialog */}
+             <Dialog open={isPrivacyDialogOpen} onOpenChange={setIsPrivacyDialogOpen}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2 text-2xl">
+                            <Eye className="text-primary"/> Leaderboard Participation
+                        </DialogTitle>
+                        <DialogDescription>
+                            Decide how you want to interact with the MindMate community.
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="py-6 space-y-8">
+                        <div className="flex items-center justify-between p-6 rounded-2xl bg-muted/50 border-2 border-primary/10">
+                            <div className="space-y-1">
+                                <h4 className="text-lg font-bold">Phantom Mode</h4>
+                                <p className="text-sm text-muted-foreground">Hide your profile from the public leaderboard.</p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <span className="text-sm font-bold text-muted-foreground uppercase">{isParticipating ? 'Visible' : 'Hidden'}</span>
+                                <Switch 
+                                    checked={!isParticipating} 
+                                    onCheckedChange={(checked) => toggleLeaderboardPrivacy(currentUser!.id, checked)}
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-4 p-4 rounded-xl bg-green-500/5 border border-green-500/20">
+                                <h5 className="font-bold text-green-600 flex items-center gap-2">
+                                    <Check className="h-5 w-5"/> The Pros (Legendary)
+                                </h5>
+                                <ul className="space-y-3 text-sm text-green-700 dark:text-green-300">
+                                    <li className="flex items-start gap-2">
+                                        <Trophy className="h-4 w-4 mt-0.5 shrink-0"/>
+                                        <span>Showcase your hard work and inspire others.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <Crown className="h-4 w-4 mt-0.5 shrink-0"/>
+                                        <span>Necessary to earn the <strong>Elite Member</strong> or <strong>Game Master</strong> status.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <Users className="h-4 w-4 mt-0.5 shrink-0"/>
+                                        <span>Build your reputation in the community.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <Zap className="h-4 w-4 mt-0.5 shrink-0"/>
+                                        <span>Healthy competition boosts study focus by 40%.</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="space-y-4 p-4 rounded-xl bg-destructive/5 border border-destructive/20">
+                                <h5 className="font-bold text-destructive flex items-center gap-2">
+                                    <X className="h-5 w-5"/> The Cons
+                                </h5>
+                                <ul className="space-y-3 text-sm text-destructive/80">
+                                    <li className="flex items-start gap-2">
+                                        <Eye className="h-4 w-4 mt-0.5 shrink-0"/>
+                                        <span>Everyone can see your study hours and credits.</span>
+                                    </li>
+                                    <li className="flex items-start gap-2">
+                                        <Shield className="h-4 w-4 mt-0.5 shrink-0"/>
+                                        <span>Might feel competitive pressure to stay on top.</span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button className="w-full h-12 text-lg">Save Settings</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+             </Dialog>
+
              <Dialog open={!!selectedUserForDetails} onOpenChange={(open) => !open && handleDialogClose()}>
                 <DialogContent>
                    {selectedUserForDetails && (
@@ -761,7 +846,12 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                             const hasMasterCard = user.masterCardExpires && new Date(user.masterCardExpires) > new Date();
 
                             return (
-                                <CardWrapper key={user.uid} onClick={isClickable ? () => onUserClick(user) : undefined} className={cn("overflow-hidden text-left rounded-lg w-full", currentUser?.id === user.uid && 'border border-primary', isClickable && 'cursor-pointer hover:bg-muted/50')}>
+                                <CardWrapper key={user.uid} onClick={isClickable ? () => onUserClick(user) : undefined} className={cn("overflow-hidden text-left rounded-lg w-full relative", currentUser?.id === user.uid && 'border border-primary', isClickable && 'cursor-pointer hover:bg-muted/50')}>
+                                    {user.isLeaderboardPrivate && (
+                                        <div className="absolute top-2 right-2 p-1 bg-black/50 rounded-full" title="Phantom Mode Active">
+                                            <EyeOff className="h-3 w-3 text-white/70" />
+                                        </div>
+                                    )}
                                     <Card>
                                         <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center sm:gap-4">
                                             <div className="flex items-center gap-4 flex-1">
@@ -856,9 +946,3 @@ function LastWeekWinnerCard({ winner, score, scoreLabel = "Time" }: { winner: Us
         </motion.div>
     );
 }
-
-    
-
-    
-
-
