@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdmin, type CreditPack, useUsers, type StoreItem } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift } from 'lucide-react';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
@@ -102,10 +103,8 @@ function CreditPacksTab() {
     return (
         <div className="space-y-8">
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
-            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
-                
                 {!loading && creditPacks && creditPacks.map(pack => (
                     <Card key={pack.id} className="flex flex-col relative overflow-hidden group border-primary/20 bg-gradient-to-br from-card to-muted/30 hover:border-primary/50 transition-all duration-300">
                         <BadgeRenderer badge={pack.badge} />
@@ -293,6 +292,152 @@ function ArtifactsTab() {
     )
 }
 
+function BadgesTab() {
+    const { storeItems, loading, redeemStoreItem, processStoreItemPayment } = useAdmin();
+    const { currentUserData } = useUsers();
+    const { user } = useUser();
+    const { toast } = useToast();
+    const [isProcessing, setIsProcessing] = useState<string | null>(null);
+    const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
+    const badgeItems = storeItems ? storeItems.filter(i => ['early-bird', 'night-owl', 'knowledge-knight'].includes(i.type)) : [];
+
+    const handleBuyWithMoney = async (item: StoreItem) => {
+        if (!user) return;
+        setIsProcessing(item.id);
+        try {
+            const order = await createRazorpayOrder(item.price!);
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: order.amount,
+                currency: order.currency,
+                name: 'MindMate Identity',
+                description: `Unlock ${item.name}`,
+                order_id: order.id,
+                handler: async function (response: any) {
+                    await processStoreItemPayment(item, response.razorpay_payment_id);
+                    toast({ title: "Identity Unlocked!", description: `"${item.name}" badge is now yours.`, className: "bg-green-500/10 border-green-500/50" });
+                    setIsProcessing(null);
+                },
+                prefill: { name: user.fullName || '', email: user.primaryEmailAddress?.emailAddress || '' },
+                theme: { color: '#8b5cf6' },
+                modal: { ondismiss: () => setIsProcessing(null) }
+            };
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Order Failed", description: error.message });
+            setIsProcessing(null);
+        }
+    };
+
+    const handleRedeemWithCredits = async (item: StoreItem) => {
+        setIsProcessing(item.id);
+        try {
+            await redeemStoreItem(item);
+            toast({ title: "Identity Unlocked!", description: `"${item.name}" badge added to your Profile.`, className: "bg-green-500/10 border-green-500/50" });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Redemption Failed", description: error.message });
+        } finally {
+            setIsProcessing(null);
+        }
+    };
+
+    const getIcon = (type: string) => {
+        switch(type) {
+            case 'early-bird': return <Bird className="h-10 w-10 text-yellow-400" />;
+            case 'night-owl': return <Moon className="h-10 w-10 text-indigo-400" />;
+            case 'knowledge-knight': return <ShieldIcon className="h-10 w-10 text-slate-300" />;
+            default: return <Award className="h-10 w-10 text-amber-400" />;
+        }
+    }
+
+    const hasBadge = (type: string) => {
+        if (!currentUserData) return false;
+        if (type === 'early-bird') return currentUserData.isEarlyBird;
+        if (type === 'night-owl') return currentUserData.isNightOwl;
+        if (type === 'knowledge-knight') return currentUserData.isKnowledgeKnight;
+        return false;
+    }
+    
+    if (!loading && badgeItems.length === 0) {
+        return (
+            <div className="text-center py-20 border-2 border-dashed rounded-2xl bg-muted/20">
+                <Award className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
+                <h3 className="text-xl font-bold text-muted-foreground">No Badges Available</h3>
+                <p className="text-sm text-muted-foreground mt-2">Check the Dev Panel to add legendary identity badges.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
+             {!loading && badgeItems.map(item => {
+                 const isMoney = item.paymentType === 'money';
+                 const owned = hasBadge(item.type);
+                 const canAfford = isMoney ? true : (hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost);
+                 
+                 return (
+                    <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2 transition-all duration-500", 
+                        owned ? "border-green-500/50 bg-green-500/5 opacity-80" : item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted"
+                    )}>
+                        <BadgeRenderer badge={item.badge} />
+                        <CardHeader className="text-center">
+                            <div className="mx-auto mb-4 p-4 rounded-full bg-muted group-hover:scale-110 transition-transform">
+                                {getIcon(item.type)}
+                            </div>
+                            <CardTitle className="text-2xl font-bold">{item.name}</CardTitle>
+                            <CardDescription className="min-h-[40px] px-4">{item.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-1 flex flex-col items-center justify-center">
+                             {owned ? (
+                                <div className="flex flex-col items-center gap-2 text-green-500">
+                                    <CheckCircle className="h-10 w-10" />
+                                    <span className="font-bold uppercase tracking-widest text-xs">Unlocked</span>
+                                </div>
+                             ) : (
+                                <div className="font-black text-4xl flex items-center justify-center gap-2 text-amber-500 tracking-tighter">
+                                    {isMoney ? <span>₹{item.price}</span> : <><Gem className="h-8 w-8" /><span>{item.cost.toLocaleString()}</span></>}
+                                </div>
+                             )}
+                        </CardContent>
+                        <CardFooter>
+                            {owned ? (
+                                <Button className="w-full" variant="outline" disabled>Owned</Button>
+                            ) : isMoney ? (
+                                <Button className="w-full text-lg h-14 font-bold rounded-xl" onClick={() => handleBuyWithMoney(item)} disabled={isProcessing === item.id}>
+                                    {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <Zap className="mr-2 h-5 w-5 fill-current"/>}
+                                    Unlock Identity
+                                </Button>
+                            ) : (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button className="w-full text-lg h-14 font-bold rounded-xl" disabled={!canAfford || isProcessing === item.id}>
+                                             {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
+                                            Secure Badge
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Claim This Identity?</AlertDialogTitle>
+                                            <AlertDialogDescription>Unlock the "{item.name}" badge for {item.cost} credits. It will be yours forever!</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                         <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleRedeemWithCredits(item)}>Confirm</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                        </CardFooter>
+                    </Card>
+                 )
+            })}
+        </div>
+    )
+}
+
 export default function StorePage() {
     return (
         <div className="space-y-8">
@@ -315,10 +460,11 @@ export default function StorePage() {
 
             <Tabs defaultValue="buy" className="w-full">
                 <div className="flex justify-center mb-8">
-                    <TabsList className="grid w-full max-w-lg grid-cols-3 h-14 p-1 bg-muted/50 rounded-2xl border">
+                    <TabsList className="grid w-full max-w-xl grid-cols-4 h-14 p-1 bg-muted/50 rounded-2xl border">
                         <TabsTrigger value="buy" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">Credits</TabsTrigger>
                         <TabsTrigger value="artifacts" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">Artifacts</TabsTrigger>
-                        <TabsTrigger value="luck" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold text-xs sm:text-sm">Luck (Reward)</TabsTrigger>
+                        <TabsTrigger value="badges" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold">Badges</TabsTrigger>
+                        <TabsTrigger value="luck" className="rounded-xl data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-bold text-xs sm:text-sm">Luck</TabsTrigger>
                     </TabsList>
                 </div>
                 
@@ -327,6 +473,9 @@ export default function StorePage() {
                 </TabsContent>
                 <TabsContent value="artifacts" className="animate-in fade-in-50 duration-500">
                     <ArtifactsTab />
+                </TabsContent>
+                <TabsContent value="badges" className="animate-in fade-in-50 duration-500">
+                    <BadgesTab />
                 </TabsContent>
                 <TabsContent value="luck" className="animate-in fade-in-50 duration-500">
                     <div className="text-center py-20 space-y-4">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUsers, User, SUPER_ADMIN_UID, BadgeType, useAdmin } from '@/hooks/use-admin';
@@ -5,7 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard, Sigma, Settings2, Eye, EyeOff, Check, X, Users } from 'lucide-react';
+import { Trophy, Award, Crown, Zap, Clock, Shield, Code, Flame, ShieldCheck, Gamepad2, ListChecks, Info, Medal, BookOpen, Sparkles, ChevronRight, History, Puzzle, Brain, Orbit, BookCheck as BookCheckIcon, Bird, Timer as TimerIcon, Swords, Rocket, Atom, CreditCard, Sigma, Settings2, Eye, EyeOff, Check, X, Users, Moon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo, useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
@@ -54,12 +55,11 @@ type UserWithStats = User & {
 
 const LEADERBOARD_EXCLUDED_UIDS: string[] = [];
 
-// Weights for calculating the total score
 const SCORE_WEIGHTS = {
   credits: 1,
-  focusSessionsCompleted: 20, // Each completed focus session is worth 20 points
-  dailyTasksCompleted: 10,   // Each day of completed todos is worth 10 points
-  totalStudyTime: 0.01,       // Each second of study time is worth 0.01 points
+  focusSessionsCompleted: 20,
+  dailyTasksCompleted: 10,
+  totalStudyTime: 0.01,
 };
 
 const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
@@ -68,7 +68,10 @@ const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
     vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
     gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span> },
     challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
-    'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> }
+    'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> },
+    'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span> },
+    'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span> },
+    'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> }
 };
 
 export default function LeaderboardPage() {
@@ -109,12 +112,7 @@ export default function LeaderboardPage() {
         const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
         const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
         
-        type Stats = {
-            thisWeek: { totalTime: number; subjects: { [name: string]: number }; pomodoro: { focus: number; shortBreak: number; longBreak: number; total: number; } },
-            lastWeek: { totalTime: number }
-        };
-
-        const stats: { [uid: string]: Stats } = {};
+        const stats: { [uid: string]: any } = {};
         
         const initializeUserStats = (userId: string) => {
             if (!stats[userId]) {
@@ -160,7 +158,6 @@ export default function LeaderboardPage() {
     const { sortedUsers, lastWeekWeeklyWinner, lastWeekEntertainmentWinner } = useMemo(() => {
         const processedUsers: UserWithStats[] = users
             .filter(u => !u.isBlocked && !LEADERBOARD_EXCLUDED_UIDS.includes(u.uid))
-            // Filter by Privacy Preference
             .filter(u => !u.isLeaderboardPrivate || u.uid === currentUser?.id)
             .map(user => {
                 const credits = user.credits || 0;
@@ -238,8 +235,6 @@ export default function LeaderboardPage() {
     const topThree = sortedUsers.slice(0, 3);
     const restOfUsers = sortedUsers.slice(3, 20); 
 
-    const currentUserRank = sortedUsers.findIndex(u => u.uid === currentUser?.id);
-    
     const getOwnedBadges = (user: UserWithStats) => {
         const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
         const badges: BadgeType[] = [];
@@ -249,6 +244,9 @@ export default function LeaderboardPage() {
         if (user.isVip) badges.push('vip');
         if (user.isGM) badges.push('gm');
         if (user.isChallenger) badges.push('challenger');
+        if (user.isEarlyBird) badges.push('early-bird');
+        if (user.isNightOwl) badges.push('night-owl');
+        if (user.isKnowledgeKnight) badges.push('knowledge-knight');
         return badges;
     };
     
@@ -466,101 +464,6 @@ export default function LeaderboardPage() {
                 </Button>
             </div>
             
-            {activeTab !== 'game-zone' && (
-                <Card className="relative overflow-hidden border-yellow-400/30 bg-yellow-950/40">
-                    <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_50%,transparent_100%)]"></div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-400/10 via-transparent to-transparent"></div>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <button className="relative w-full p-6 text-left group">
-                            <div className="flex flex-col md:flex-row md:items-center gap-4">
-                                <div className="p-3 rounded-full bg-yellow-400/20 text-yellow-400 animate-pulse w-fit">
-                                    <Crown className="h-10 w-10"/>
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-xl font-bold text-yellow-400 [text-shadow:0_0_8px_hsl(var(--primary)/50%)]">Become an Elite Member</h3>
-                                    <p className="text-yellow-400/80 mt-1">Discover the benefits of being a top performer in the MindMate community.</p>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm font-semibold text-yellow-400/90 group-hover:text-yellow-300 transition-colors">
-                                    Learn More
-                                    <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                </div>
-                            </div>
-                        </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 md:w-96">
-                            <div className="space-y-4">
-                                <h4 className="font-bold text-base flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Elite Member Status</h4>
-                                <div>
-                                    <p className="text-sm text-muted-foreground font-semibold mb-2">How to achieve:</p>
-                                    <p className="text-xs text-muted-foreground">The <span className="elite-badge inline-flex items-center gap-1"><Crown className="h-3 w-3"/>ELITE</span> badge is awarded manually by admins to users who show exceptional dedication.</p>
-                                    <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
-                                        <li>Consistently placing in the top 3 of the Weekly Leaderboard.</li>
-                                        <li>High daily activity (focus sessions, tasks, quizzes).</li>
-                                        <li>Maintaining long streaks.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground font-semibold mb-2">Exclusive Perks:</p>
-                                    <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
-                                        <li><span className="font-semibold text-foreground">Daily Rewards:</span> 20+ Free Credits, 5 Free Scratch Cards, and 5 Free Card Flip plays.</li>
-                                        <li><span className="font-semibold text-foreground">Special Recognition:</span> The prestigious animated Elite badge.</li>
-                                        <li><span className="font-semibold text-foreground">Early Access:</span> Be the first to try out new "Elite Features".</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                </Card>
-            )}
-
-            {activeTab === 'game-zone' && (
-                 <Card className="relative overflow-hidden border-blue-400/30 bg-blue-950/40">
-                    <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse duration-1000 [mask-image:linear-gradient(to_bottom,white_50%,transparent_100%)]"></div>
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-400/10 via-transparent to-transparent"></div>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <button className="relative w-full p-6 text-left group">
-                            <div className="flex flex-col md:flex-row md:items-center gap-4">
-                                <div className="p-3 rounded-full bg-blue-400/20 text-blue-400 animate-pulse w-fit">
-                                    <Gamepad2 className="h-10 w-10"/>
-                                </div>
-                                <div className="flex-1">
-                                    <h3 className="text-xl font-bold text-blue-400 [text-shadow:0_0_8px_hsl(var(--primary)/50%)]">Become a Game Master</h3>
-                                    <p className="text-blue-400/80 mt-1">Dominate the games to earn the legendary GM title and its rewards.</p>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm font-semibold text-blue-400/90 group-hover:text-blue-300 transition-colors">
-                                    Learn More
-                                    <ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                                </div>
-                            </div>
-                        </button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 md:w-96">
-                            <div className="space-y-4">
-                                <h4 className="font-bold text-base flex items-center gap-2"><Sparkles className="h-5 w-5 text-primary" /> Game Master (GM) Status</h4>
-                                <div>
-                                    <p className="text-sm text-muted-foreground font-semibold mb-2">How to achieve:</p>
-                                     <p className="text-xs text-muted-foreground">The <span className="gm-badge inline-flex items-center gap-1">GM</span> badge is for the best players.</p>
-                                    <ul className="list-disc list-inside text-xs text-muted-foreground mt-2 space-y-1">
-                                        <li>Finish at the #1 spot on the weekly Game Zone leaderboard.</li>
-                                        <li>Stay in the Top 3 in subsequent weeks to keep the badge.</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-sm text-muted-foreground font-semibold mb-2">GM Perks:</p>
-                                    <ul className="list-disc list-inside text-xs text-muted-foreground space-y-1">
-                                        <li><span className="font-semibold text-foreground">Daily Rewards:</span> 20+ Free Credits.</li>
-                                        <li><span className="font-semibold text-foreground">Free Plays:</span> 5 free plays for all Reward Zone games.</li>
-                                        <li><span className="font-semibold text-foreground">ULTIMATE PRIZE:</span> ₹100 Google Play Redeem Code for 4-week streak at #1!</li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                </Card>
-            )}
-
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <TabsList className="grid w-full grid-cols-3 md:w-1/2 mx-auto">
                     <TabsTrigger value="all-time">All-Time</TabsTrigger>
@@ -616,7 +519,6 @@ export default function LeaderboardPage() {
                 </TabsContent>
             </Tabs>
 
-             {/* Participation Settings Dialog */}
              <Dialog open={isPrivacyDialogOpen} onOpenChange={setIsPrivacyDialogOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>
@@ -657,14 +559,6 @@ export default function LeaderboardPage() {
                                         <Crown className="h-4 w-4 mt-0.5 shrink-0"/>
                                         <span>Necessary to earn the <strong>Elite Member</strong> or <strong>Game Master</strong> status.</span>
                                     </li>
-                                    <li className="flex items-start gap-2">
-                                        <Users className="h-4 w-4 mt-0.5 shrink-0"/>
-                                        <span>Build your reputation in the community.</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <Zap className="h-4 w-4 mt-0.5 shrink-0"/>
-                                        <span>Healthy competition boosts study focus by 40%.</span>
-                                    </li>
                                 </ul>
                             </div>
 
@@ -676,10 +570,6 @@ export default function LeaderboardPage() {
                                     <li className="flex items-start gap-2">
                                         <Eye className="h-4 w-4 mt-0.5 shrink-0"/>
                                         <span>Everyone can see your study hours and credits.</span>
-                                    </li>
-                                    <li className="flex items-start gap-2">
-                                        <Shield className="h-4 w-4 mt-0.5 shrink-0"/>
-                                        <span>Might feel competitive pressure to stay on top.</span>
                                     </li>
                                 </ul>
                             </div>
@@ -698,75 +588,30 @@ export default function LeaderboardPage() {
                 <DialogContent>
                    {selectedUserForDetails && (
                      <>
-                        {activeTab === 'weekly' ? (
-                            <>
-                                <DialogHeader>
-                                    <DialogTitle>Weekly Study Breakdown</DialogTitle>
-                                    <DialogDescription>Time spent on each activity by {selectedUserForDetails?.displayName} this week.</DialogDescription>
-                                </DialogHeader>
-                                <div className="py-4 space-y-4">
-                                    <div className="flex items-center gap-4">
-                                        <Avatar className="h-16 w-16">
-                                            <AvatarImage src={selectedUserForDetails.photoURL ?? undefined} />
-                                            <AvatarFallback>{selectedUserForDetails.displayName.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <h3 className="text-lg font-bold">{selectedUserForDetails.displayName}</h3>
-                                            <p className="text-sm text-muted-foreground">Total This Week: <span className="font-bold text-primary">{formatTime(selectedUserForDetails.weeklyTime)}</span></p>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-4 max-h-64 overflow-y-auto pr-4">
-                                        {Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length > 0 && (
-                                            <div>
-                                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><Clock className="h-4 w-4"/> Time Tracker Subjects</h4>
-                                                <ul className="space-y-2 rounded-md border p-4">
-                                                    {Object.entries(selectedUserForDetails.weeklySubjectBreakdown)
-                                                    .sort(([, a], [, b]) => b - a)
-                                                    .map(([subject, time]) => (
-                                                        <li key={subject} className="flex justify-between items-center text-sm p-2 rounded-md bg-muted">
-                                                            <span className="font-medium">{subject}</span>
-                                                            <span className="font-mono text-muted-foreground">{formatTime(time)}</span>
-                                                        </li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        )}
-                                        {selectedUserForDetails.weeklyPomodoroBreakdown.total > 0 && (
-                                            <div>
-                                                <h4 className="font-semibold text-sm mb-2 flex items-center gap-2"><TimerIcon className="h-4 w-4"/> Pomodoro Sessions</h4>
-                                                <ul className="space-y-2 rounded-md border p-4">
-                                                    <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Focus Time</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.focus)}</span></li>
-                                                    <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Short Breaks</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.shortBreak)}</span></li>
-                                                    <li className="flex justify-between items-center text-sm p-2 rounded-md bg-muted"><span>Long Breaks</span><span className="font-mono text-muted-foreground">{formatTime(selectedUserForDetails.weeklyPomodoroBreakdown.longBreak)}</span></li>
-                                                </ul>
-                                            </div>
-                                        )}
-                                        {(Object.entries(selectedUserForDetails.weeklySubjectBreakdown).length === 0 && selectedUserForDetails.weeklyPomodoroBreakdown.total === 0) && (
-                                            <p className="text-center text-muted-foreground py-4">No specific study sessions tracked this week.</p>
-                                        )}
-                                    </div>
-                                </div>
-                             </>
-                        ) : activeTab === 'all-time' ? (
-                             <>
-                                <DialogHeader>
-                                    <DialogTitle>User Badges</DialogTitle>
-                                    <DialogDescription>All badges collected by {selectedUserForDetails.displayName}.</DialogDescription>
-                                </DialogHeader>
-                                <div className="py-4 flex flex-wrap items-center justify-center gap-4">
-                                    {ownedBadgesForSelectedUser.length > 0 ? (
-                                        ownedBadgesForSelectedUser.map(badgeType => (
-                                            <div key={badgeType} className="flex flex-col items-center gap-2 p-4 rounded-lg bg-muted border">
+                        <DialogHeader>
+                            <DialogTitle>User Stats & Badges</DialogTitle>
+                            <DialogDescription>Details for {selectedUserForDetails.displayName}</DialogDescription>
+                        </DialogHeader>
+                        <div className="py-4 space-y-4">
+                            <div className="flex items-center gap-4">
+                                <Avatar className="h-16 w-16">
+                                    <AvatarImage src={selectedUserForDetails.photoURL ?? undefined} />
+                                    <AvatarFallback>{selectedUserForDetails.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <h3 className="text-lg font-bold">{selectedUserForDetails.displayName}</h3>
+                                    <div className="flex flex-wrap gap-2 mt-1">
+                                        {ownedBadgesForSelectedUser.map(badgeType => (
+                                            <div key={badgeType} className="scale-90 origin-left">
                                                 {badgeDetails[badgeType].badge}
-                                                <span className="text-sm font-semibold">{badgeDetails[badgeType].name}</span>
                                             </div>
-                                        ))
-                                    ) : (
-                                        <p className="text-muted-foreground">This user hasn't earned any badges yet.</p>
-                                    )}
+                                        ))}
+                                    </div>
                                 </div>
-                            </>
-                        ) : null}
+                            </div>
+                            <Separator />
+                            {renderUserStats(selectedUserForDetails)}
+                        </div>
                     </>
                    )}
                 </DialogContent>
@@ -800,6 +645,9 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
         if (user.isVip) ownedBadges.push('vip');
         if (user.isGM) ownedBadges.push('gm');
         if (user.isChallenger) ownedBadges.push('challenger');
+        if (user.isEarlyBird) ownedBadges.push('early-bird');
+        if (user.isNightOwl) ownedBadges.push('night-owl');
+        if (user.isKnowledgeKnight) ownedBadges.push('knowledge-knight');
         
         if (ownedBadges.length === 0) return null;
         
@@ -879,12 +727,6 @@ const LeaderboardContent = ({ topThree, restOfUsers, currentUser, sortedUsers, r
                                 </CardWrapper>
                             )
                         })}
-                        {sortedUsers.length === 0 && (
-                             <p className="text-center text-muted-foreground py-10">No users to rank yet.</p>
-                        )}
-                        {restOfUsers.length === 0 && sortedUsers.length > 3 && (
-                            <p className="text-center text-muted-foreground py-10">Only the top 20 users are shown.</p>
-                        )}
                     </div>
                 </CardContent>
             </Card>

@@ -9,7 +9,7 @@ import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
-export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev';
+export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight';
 
 export interface User {
   id: string;
@@ -33,6 +33,9 @@ export interface User {
   isGM?: boolean;
   isChallenger?: boolean;
   isCoDev?: boolean;
+  isEarlyBird?: boolean;
+  isNightOwl?: boolean;
+  isKnowledgeKnight?: boolean;
   showcasedBadge?: BadgeType;
   friends?: string[];
   focusSessionsCompleted?: number;
@@ -208,7 +211,7 @@ export interface StoreItem {
     cost: number; // For credits
     price?: number; // For real money
     paymentType: 'credits' | 'money';
-    type: 'scratch-card' | 'card-flip' | 'penalty-shield' | 'streak-freeze' | 'alpha-glow';
+    type: 'scratch-card' | 'card-flip' | 'penalty-shield' | 'streak-freeze' | 'alpha-glow' | 'early-bird' | 'night-owl' | 'knowledge-knight';
     quantity: number;
     createdAt: Date;
     stock: number;
@@ -542,6 +545,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
                 const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
                 updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
+            } else if (item.type === 'early-bird') {
+                updates.isEarlyBird = true;
+            } else if (item.type === 'night-owl') {
+                updates.isNightOwl = true;
+            } else if (item.type === 'knowledge-knight') {
+                updates.isKnowledgeKnight = true;
             }
             
             transaction.update(userRef, updates);
@@ -570,7 +579,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 transactions: arrayUnion({
                     id: transactionId,
                     packName: item.name,
-                    credits: 0, // It's an item purchase, not credits
+                    credits: 0, 
                     price: item.price,
                     date: new Date().toISOString(),
                     type: 'razorpay_item'
@@ -585,6 +594,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
                 const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
                 updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
+            } else if (item.type === 'early-bird') {
+                updates.isEarlyBird = true;
+            } else if (item.type === 'night-owl') {
+                updates.isNightOwl = true;
+            } else if (item.type === 'knowledge-knight') {
+                updates.isKnowledgeKnight = true;
             }
             
             transaction.update(userRef, updates);

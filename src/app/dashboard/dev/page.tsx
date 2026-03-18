@@ -32,6 +32,9 @@ const defaultDescriptions: Record<string, string> = {
     'penalty-shield': 'The ultimate life-saver for focused students. This artifact automatically absorbs one credit penalty if you are forced to leave a Focus or Pomodoro session early. Study with total peace of mind.',
     'streak-freeze': 'Protect your hard-earned progress! This artifact automatically activates if you miss a day of study, keeping your daily streak intact. Never let a busy day break your chain.',
     'alpha-glow': 'Command attention in the MindMate community! Activating this artifact gives your name a legendary, animated radiant glow in the World Chat for 7 days. Show everyone you are a top performer.',
+    'early-bird': 'A legendary badge for the early morning warriors. Show the world you conquer your goals while others are still dreaming.',
+    'night-owl': 'A prestigious badge for the midnight grinders. Let everyone know you own the night and work when the world is quiet.',
+    'knowledge-knight': 'A heavy-duty identity badge for those who defend their study schedule at any cost. A true mark of a MindMate protector.',
 };
 
 export default function PaymentsPanelPage() {
@@ -68,7 +71,6 @@ export default function PaymentsPanelPage() {
 
     const handleTypeChange = (type: StoreItem['type']) => {
         setItemType(type);
-        // Only auto-fill if the current description is empty or matches another default
         const isCurrentDescDefault = Object.values(defaultDescriptions).includes(itemDescription);
         if (!itemDescription || isCurrentDescDefault) {
             setItemDescription(defaultDescriptions[type] || '');
@@ -341,6 +343,9 @@ export default function PaymentsPanelPage() {
                                                 <SelectItem value="penalty-shield">Penalty Shield (Artifact)</SelectItem>
                                                 <SelectItem value="streak-freeze">Streak Freeze (Artifact)</SelectItem>
                                                 <SelectItem value="alpha-glow">Alpha Glow (Artifact)</SelectItem>
+                                                <SelectItem value="early-bird">Early Bird (Badge)</SelectItem>
+                                                <SelectItem value="night-owl">Night Owl (Badge)</SelectItem>
+                                                <SelectItem value="knowledge-knight">Knowledge Knight (Badge)</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
