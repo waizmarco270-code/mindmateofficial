@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon } from 'lucide-react';
+import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon, Zap, TrendingUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -35,6 +35,8 @@ const defaultDescriptions: Record<string, string> = {
     'early-bird': 'Unlock the Early Bird identity badge. Let the world know you conquer your goals before sunrise!',
     'night-owl': 'Unlock the Night Owl identity badge. Show your dedication during the quietest hours of the night.',
     'knowledge-knight': 'The Knowledge Knight badge. A mark of an ultimate defender of study discipline.',
+    'clan-xp-booster': 'Instantly inject 500 XP into your Study Clan! A must-have for leaders looking to level up their team and unlock legendary benefits quickly.',
+    'clan-level-max': 'ULTRA RARE: Elevate your Clan to Level 5 (MAX) instantly for 7 days. Gain immediate access to all max-level features, custom banners, and member limits!',
 };
 
 export default function PaymentsPanelPage() {
@@ -349,6 +351,8 @@ export default function PaymentsPanelPage() {
                                                 <SelectItem value="penalty-shield">Penalty Shield (Artifact)</SelectItem>
                                                 <SelectItem value="streak-freeze">Streak Freeze (Artifact)</SelectItem>
                                                 <SelectItem value="alpha-glow">Alpha Glow (Artifact)</SelectItem>
+                                                <SelectItem value="clan-xp-booster">Clan XP Booster (Artifact)</SelectItem>
+                                                <SelectItem value="clan-level-max">Clan Level Max (Artifact)</SelectItem>
                                                 <SelectItem value="early-bird">Early Bird (Badge)</SelectItem>
                                                 <SelectItem value="night-owl">Night Owl (Badge)</SelectItem>
                                                 <SelectItem value="knowledge-knight">Knowledge Knight (Badge)</SelectItem>

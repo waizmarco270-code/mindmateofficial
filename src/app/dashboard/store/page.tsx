@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdmin, type CreditPack, useUsers, type StoreItem } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon, CheckCircle, Trophy, X } from 'lucide-react';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon, CheckCircle, Trophy, X, TrendingUp, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
@@ -34,7 +34,6 @@ const BadgeRenderer = ({ badge }: { badge?: string }) => {
             badge === 'hot' && "bg-gradient-to-r from-orange-600 to-red-600 text-white",
             badge === 'best-seller' && "bg-cyan-600 text-white",
             badge === 'jackpot' && "bg-gradient-to-r from-yellow-400 to-amber-600 text-black",
-            // New Value Badges
             badge === 'buy-or-regret' && "bg-black text-red-500 border-b border-l border-red-500/50 animate-pulse",
             badge === 'rare' && "bg-blue-900 text-blue-200 border-b border-l border-blue-400",
             badge === 'worth-it' && "bg-green-600 text-white shadow-[0_0_10px_rgba(22,163,74,0.5)]",
@@ -47,7 +46,6 @@ const BadgeRenderer = ({ badge }: { badge?: string }) => {
     );
 };
 
-// --- Purchase Success Dialog ---
 function PurchaseSuccessDialog({ isOpen, onOpenChange, itemName }: { isOpen: boolean, onOpenChange: (open: boolean) => void, itemName: string }) {
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -58,7 +56,6 @@ function PurchaseSuccessDialog({ isOpen, onOpenChange, itemName }: { isOpen: boo
                     exit={{ scale: 0.8, opacity: 0 }}
                     className="relative overflow-hidden rounded-3xl bg-background border-4 border-primary/20 p-8 text-center"
                 >
-                    {/* Confetti Particles Effect */}
                     <div className="absolute inset-0 pointer-events-none overflow-hidden">
                         {[...Array(20)].map((_, i) => (
                             <motion.div
@@ -210,7 +207,7 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
-    const artifactItems = storeItems ? storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow'].includes(i.type)) : [];
+    const artifactItems = storeItems ? storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow', 'clan-xp-booster', 'clan-level-max'].includes(i.type)) : [];
 
     const handleBuyWithMoney = async (item: StoreItem) => {
         if (!user) return;
@@ -265,6 +262,8 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
             case 'penalty-shield': return <ShieldIcon className="h-10 w-10 text-blue-400" />;
             case 'streak-freeze': return <Snowflake className="h-10 w-10 text-cyan-400" />;
             case 'alpha-glow': return <Sparkles className="h-10 w-10 text-fuchsia-400" />;
+            case 'clan-xp-booster': return <TrendingUp className="h-10 w-10 text-emerald-400" />;
+            case 'clan-level-max': return <Crown className="h-10 w-10 text-yellow-400 animate-gold-shine" />;
             default: return <Star className="h-10 w-10 text-amber-400" />;
         }
     }

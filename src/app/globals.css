@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -447,6 +448,16 @@
 
   .animate-gold-shine { animation: gold-shine 2s ease-in-out infinite; }
   .animate-flicker { animation: flicker 3s ease-in-out infinite; }
+
+  @keyframes xp-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
+    70% { box-shadow: 0 0 0 20px rgba(139, 92, 246, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+  }
+
+  .animate-xp-boost {
+    animation: xp-pulse 1.5s infinite;
+  }
 }
 
 @layer utilities {

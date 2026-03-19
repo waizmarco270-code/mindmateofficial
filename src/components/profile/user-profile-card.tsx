@@ -2,9 +2,9 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock, ShieldAlert, Snowflake, Sparkles, Bird, Moon } from 'lucide-react';
+import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock, ShieldAlert, Snowflake, Sparkles, Bird, Moon, TrendingUp } from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -80,12 +80,14 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
         { name: 'Penalty Aegis', count: user.inventory?.penaltyShields || 0, icon: ShieldAlert, color: 'text-blue-400', desc: 'Protects from Focus penalties.' },
         { name: 'Chronos Freeze', count: user.inventory?.streakFreezes || 0, icon: Snowflake, color: 'text-cyan-400', desc: 'Saves your daily streak.' },
         { name: 'Alpha Radiance', active: user.inventory?.alphaGlowExpires && new Date(user.inventory.alphaGlowExpires) > new Date(), icon: Sparkles, color: 'text-fuchsia-400', desc: 'Glow in World Chat.', expiry: user.inventory?.alphaGlowExpires },
+        { name: 'XP Booster', count: user.inventory?.clanXpBoosters || 0, icon: TrendingUp, color: 'text-emerald-400', desc: '+500 Clan XP.' },
+        { name: 'Clan Ascender', count: user.inventory?.clanLevelMaxers || 0, icon: Crown, color: 'text-yellow-400', desc: 'Instant Max Level.' },
     ];
     
     return (
         <div className="space-y-6">
             <Card className="relative overflow-hidden">
-                <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
+                <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white:10%,transparent:90%)]" />
                 <CardHeader className="relative z-10">
                     <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
                         <div className="relative group">
@@ -178,7 +180,7 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                 </TabsContent>
 
                 <TabsContent value="inventory">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                         {artifacts.map((art, i) => (
                             <Card key={i} className="bg-muted/30 border-dashed border-2">
                                 <CardContent className="p-4 flex flex-col items-center text-center gap-2">

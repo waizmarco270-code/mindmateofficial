@@ -29,9 +29,11 @@ export interface Group {
     createdBy: string;
     createdAt: Date;
     members: GroupMember[];
+    memberUids: string[];
     memberDetails?: User[];
     level: number;
     xp: number;
+    tempMaxLevelExpires?: string; // ISO string for temporary level 5
     lastMessage?: {
         text: string;
         senderId: string;
@@ -69,8 +71,8 @@ export interface GroupsContextType {
     declineJoinRequest: (requestId: string) => Promise<void>;
     addMemberToAutoJoinClan: (group: Group) => Promise<void>;
     logXp: (groupId: string, amount: number) => Promise<void>;
+    applyXpBooster: (groupId: string) => Promise<boolean>;
+    applyLevelMaxer: (groupId: string) => Promise<boolean>;
 }
 
 export const GroupsContext = createContext<GroupsContextType | undefined>(undefined);
-
-    

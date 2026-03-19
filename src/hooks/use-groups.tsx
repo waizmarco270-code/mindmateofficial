@@ -8,7 +8,8 @@ import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestam
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { GroupsContext, type GroupsContextType, type Group, type GroupJoinRequest, type GroupMember } from '@/context/groups-context';
-import { clanLevelConfig } from '@/lib/clan-levels';
+import { clanLevelConfig } from '@/app/lib/clan-levels';
+import { addDays } from 'date-fns';
 
 export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
@@ -95,13 +96,17 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         if (!groupSnap.exists()) return;
 
         const groupData = groupSnap.data() as Group;
+        
+        // If temp max level is active, we don't handle level ups via XP but we still log it.
+        const isTempMax = groupData.tempMaxLevelExpires && new Date(groupData.tempMaxLevelExpires) > new Date();
+        
         const newXp = (groupData.xp || 0) + amount;
         
         let newLevel = groupData.level;
         let xpForNextLevel = newXp;
         
         const nextLevelInfo = clanLevelConfig.find(l => l.level === groupData.level + 1);
-        if (nextLevelInfo && newXp >= nextLevelInfo.xpRequired) {
+        if (nextLevelInfo && newXp >= nextLevelInfo.xpRequired && !isTempMax) {
             newLevel++;
             xpForNextLevel = newXp - nextLevelInfo.xpRequired;
         }
@@ -116,7 +121,6 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const createGroup = useCallback(async (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => {
         if (!user || !currentUserData) throw new Error("User not found.");
 
-        // Rule: 1 User = 1 Clan
         if (groups.length > 0) {
             toast({ variant: "destructive", title: "Forbidden", description: "You are already a member of a clan. Leave your current clan to create a new one." });
             throw new Error("Already in a clan");
@@ -138,8 +142,6 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
         const initialMembers: GroupMember[] = [
             { uid: user.id, role: 'leader' },
-            // Filter out invited members who are already in other clans? 
-            // For now, we'll just add them, but ideally we should verify their status too.
             ...memberIds.map(id => ({ uid: id, role: 'member' as const }))
         ];
         
@@ -190,7 +192,6 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         if (!groupDoc.exists()) return;
         
         const groupData = groupDoc.data() as Group;
-        // Logic to remove from both structures
         const newMembers = groupData.members.filter(m => m.uid !== memberId);
         const newMemberUids = groupData.memberUids.filter(uid => uid !== memberId);
 
@@ -209,7 +210,6 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const sendJoinRequest = useCallback(async (group: Group) => {
         if (!user || !currentUserData) throw new Error("Not logged in");
         
-        // Rule Check
         if (groups.length > 0) {
             toast({ variant: "destructive", title: "Action Denied", description: "You are already in a clan. You must leave it before requesting to join another." });
             return;
@@ -230,7 +230,6 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const addMemberToAutoJoinClan = useCallback(async (group: Group) => {
         if (!user) throw new Error("Not logged in");
 
-        // Rule Check
         if (groups.length > 0) {
             toast({ variant: "destructive", title: "Action Denied", description: "You are already in a clan." });
             return;
@@ -261,10 +260,71 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "Request Declined" });
     }, [toast]);
 
+    const applyXpBooster = useCallback(async (groupId: string) => {
+        if (!user || !currentUserData) return false;
+        if ((currentUserData.inventory?.clanXpBoosters || 0) <= 0) {
+            toast({ variant: "destructive", title: "No Booster Found", description: "Purchase an XP Booster from the store to use this." });
+            return false;
+        }
+
+        try {
+            await runTransaction(db, async (transaction) => {
+                const userRef = doc(db, 'users', user.id);
+                const groupRef = doc(db, 'groups', groupId);
+                
+                const groupSnap = await transaction.get(groupRef);
+                if (!groupSnap.exists()) throw new Error("Group not found");
+                
+                transaction.update(userRef, { 'inventory.clanXpBoosters': increment(-1) });
+                
+                const groupData = groupSnap.data() as Group;
+                const newXp = (groupData.xp || 0) + 500;
+                
+                let newLevel = groupData.level;
+                let xpRemaining = newXp;
+                
+                const nextLevelInfo = clanLevelConfig.find(l => l.level === groupData.level + 1);
+                if (nextLevelInfo && newXp >= nextLevelInfo.xpRequired) {
+                    newLevel++;
+                    xpRemaining = newXp - nextLevelInfo.xpRequired;
+                }
+                
+                transaction.update(groupRef, { xp: xpRemaining, level: newLevel });
+            });
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    }, [user, currentUserData, toast]);
+
+    const applyLevelMaxer = useCallback(async (groupId: string) => {
+        if (!user || !currentUserData) return false;
+        if ((currentUserData.inventory?.clanLevelMaxers || 0) <= 0) {
+            toast({ variant: "destructive", title: "No Ascender Found", description: "Purchase a Clan Ascender from the store." });
+            return false;
+        }
+
+        try {
+            const userRef = doc(db, 'users', user.id);
+            const groupRef = doc(db, 'groups', groupId);
+            const expiry = addDays(new Date(), 7).toISOString();
+
+            const batch = writeBatch(db);
+            batch.update(userRef, { 'inventory.clanLevelMaxers': increment(-1) });
+            batch.update(groupRef, { tempMaxLevelExpires: expiry });
+            await batch.commit();
+            return true;
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    }, [user, currentUserData, toast]);
+
     const value: GroupsContextType = {
         groups, allPublicGroups, joinRequests, sentJoinRequests, loading: loading || usersLoading,
         createGroup, updateGroup, updateMemberRole, removeMember, leaveGroup, deleteGroup, sendJoinRequest, approveJoinRequest,
-        declineJoinRequest, addMemberToAutoJoinClan, logXp
+        declineJoinRequest, addMemberToAutoJoinClan, logXp, applyXpBooster, applyLevelMaxer
     };
 
     return (

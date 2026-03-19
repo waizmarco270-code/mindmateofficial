@@ -56,6 +56,8 @@ export interface User {
     penaltyShields?: number;
     streakFreezes?: number;
     alphaGlowExpires?: string;
+    clanXpBoosters?: number;
+    clanLevelMaxers?: number;
   };
   gameHighScores?: {
     memoryGame?: number;
@@ -211,7 +213,7 @@ export interface StoreItem {
     cost: number; // For credits
     price?: number; // For real money
     paymentType: 'credits' | 'money';
-    type: 'scratch-card' | 'card-flip' | 'penalty-shield' | 'streak-freeze' | 'alpha-glow' | 'early-bird' | 'night-owl' | 'knowledge-knight';
+    type: 'scratch-card' | 'card-flip' | 'penalty-shield' | 'streak-freeze' | 'alpha-glow' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'clan-xp-booster' | 'clan-level-max';
     quantity: number;
     createdAt: Date;
     stock: number;
@@ -444,7 +446,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     friends: [], unlockedResourceSections: [], unlockedFeatures: [], unlockedThemes: [], hasAiAccess: false,
                     focusSessionsCompleted: 0, dailyTasksCompleted: 0, totalStudyTime: 0, freeRewards: 0, freeGuesses: 0,
                     streak: 1, longestStreak: 1, lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
-                    inventory: { penaltyShields: 0, streakFreezes: 0 },
+                    inventory: { penaltyShields: 0, streakFreezes: 0, clanXpBoosters: 0, clanLevelMaxers: 0 },
                     gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0 },
                     elementQuestScores: { s: 0, p: 0, d: 0, f: 0 }, elementQuestMilestonesClaimed: [],
                 };
@@ -541,6 +543,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
             else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(item.quantity);
             else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(item.quantity);
+            else if (item.type === 'clan-xp-booster') updates['inventory.clanXpBoosters'] = increment(item.quantity);
+            else if (item.type === 'clan-level-max') updates['inventory.clanLevelMaxers'] = increment(item.quantity);
             else if (item.type === 'alpha-glow') {
                 const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
                 const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
@@ -590,6 +594,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
             else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(item.quantity);
             else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(item.quantity);
+            else if (item.type === 'clan-xp-booster') updates['inventory.clanXpBoosters'] = increment(item.quantity);
+            else if (item.type === 'clan-level-max') updates['inventory.clanLevelMaxers'] = increment(item.quantity);
             else if (item.type === 'alpha-glow') {
                 const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
                 const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
@@ -751,9 +757,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         resetWeeklyStudyTime: async () => {
             const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
-            const snap = await getDocs(collectionGroup(db, 'timeTrackerSessions'));
+            const snap = await getDocs(query(collectionGroup(db, 'timeTrackerSessions'), where('startTime', '>=', weekStart)));
             const batch = writeBatch(db);
-            snap.forEach(d => { if (d.data().startTime >= weekStart) batch.delete(d.ref); });
+            snap.forEach(d => batch.delete(d.ref));
             await batch.commit();
         },
         resetGameZoneLeaderboard: async () => {
