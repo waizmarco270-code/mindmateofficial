@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, GlobalGift, AppSettings, type CreditPack, type StoreItem, MaintenanceTheme } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppSettings, type CreditPack, type StoreItem, type MaintenanceTheme } from '@/hooks/use-admin';
 import {
   Table,
   TableHeader,
@@ -14,18 +14,17 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, RefreshCcw, Users, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, MinusCircle, Trash2, AlertTriangle, VenetianMask, Box, UserPlus, CheckCircle, XCircle, Palette, Crown, Code, Trophy, Gamepad2, Send, History, Lock, Unlock, Rocket, KeyRound as KeyRoundIcon, Megaphone, Edit, Swords, CreditCard, UserMinus, ShoppingCart, Upload, Layers, Image as ImageIcon, Wrench, Terminal, Zap, Bot, Star } from 'lucide-react';
+import { Gift, Users, UserCog, DollarSign, ShieldX, Trash2, Box, CreditCard, Send, Lock, KeyRound as KeyRoundIcon, Megaphone, Edit, ShoppingCart, Terminal, Zap, Star } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { format, formatDistanceToNow, addDays as dateFnsAddDays } from 'date-fns';
+import { format, addDays as dateFnsAddDays } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogContent, DialogDescription } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 const CREDIT_PASSWORD = "waizcredit";
@@ -46,12 +45,9 @@ export default function SuperAdminPanelPage() {
     isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
     makeUserVip, removeUserVip,
     makeUserGM, removeUserGM,
-    makeUserChallenger, removeUserChallenger,
     makeUserCoDev, removeUserCoDev,
-    addCreditsToUser, giftCreditsToAllUsers,
-    addFreeSpinsToUser, addSpinsToAllUsers,
-    addFreeGuessesToUser, addGuessesToAllUsers,
-    resetUserCredits, clearGlobalChat, clearQuizLeaderboard,
+    giftCreditsToAllUsers,
+    clearGlobalChat, clearQuizLeaderboard,
     resetWeeklyStudyTime,
     resetGameZoneLeaderboard,
     sendGlobalGift,
@@ -112,7 +108,6 @@ export default function SuperAdminPanelPage() {
   const [maintenanceTheme, setMaintenanceTheme] = useState<MaintenanceTheme>(appSettings?.maintenanceTheme || 'shiny');
   const [whatsNewMessage, setWhatsNewMessage] = useState(appSettings?.whatsNewMessage || '');
 
-  // Sync settings when they load
   useEffect(() => {
     if (appSettings) {
         setIsMaintenanceMode(appSettings.isMaintenanceMode || false);
@@ -188,8 +183,6 @@ export default function SuperAdminPanelPage() {
       </div>
     );
   }
-
-  const activeGlobalGift = globalGifts.find(g => g.isActive) || null;
 
   return (
     <div className="space-y-8 pb-20">
@@ -285,7 +278,7 @@ export default function SuperAdminPanelPage() {
           <Card>
             <AccordionTrigger className="p-6">
                <div className="flex items-center gap-3">
-                <Wrench className="h-6 w-6 text-primary" />
+                <Terminal className="h-6 w-6 text-primary" />
                 <div>
                   <h3 className="text-lg font-semibold">App Configuration</h3>
                   <p className="text-sm text-muted-foreground text-left">Version control and Maintenance Mode.</p>
@@ -325,7 +318,7 @@ export default function SuperAdminPanelPage() {
                                 <Label>Change Log Message</Label>
                                 <Textarea value={whatsNewMessage} onChange={e => setWhatsNewMessage(e.target.value)} placeholder="List the new features..." className="min-h-[150px]" />
                             </div>
-                            <p className="text-[10px] text-muted-foreground italic">Updating this will show a popup to all users until they dismiss it.</p>
+                            <p className="text-[10px] text-muted-foreground italic">Updating this will show a popup to all users.</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -377,7 +370,7 @@ export default function SuperAdminPanelPage() {
                         </CardContent>
                     </Card>
                     <Card>
-                        <CardHeader><CardTitle className="text-base">Active/Past Gifts</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-base">Past Gifts</CardTitle></CardHeader>
                         <CardContent>
                             <ScrollArea className="h-64">
                                 <div className="space-y-2">
@@ -402,7 +395,7 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* 4. Store & Artifacts */}
+        {/* 4. Store Management */}
         <AccordionItem value="feature-management" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
@@ -486,12 +479,12 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* 5. System Overrides (Password Protected) */}
+        {/* 5. System Overrides */}
         <AccordionItem value="overrides" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
                <div className="flex items-center gap-3">
-                <ShieldCheck className="h-6 w-6 text-red-500" />
+                <Zap className="h-6 w-6 text-red-500" />
                 <div>
                   <h3 className="text-lg font-semibold">System Overrides</h3>
                   <p className="text-sm text-muted-foreground text-left">Emergency manual adjustments.</p>
@@ -502,7 +495,7 @@ export default function SuperAdminPanelPage() {
                 {!isCreditUnlocked ? (
                     <form onSubmit={handleCreditPasswordSubmit} className="flex flex-col items-center gap-4 py-10 border-2 border-dashed rounded-xl">
                         <div className="p-4 bg-red-500/10 rounded-full"><KeyRoundIcon className="h-10 w-10 text-red-500"/></div>
-                        <div className="text-center"><h4 className="font-bold">Restricted Area</h4><p className="text-xs text-muted-foreground">Enter God-Mode Password to continue.</p></div>
+                        <div className="text-center"><h4 className="font-bold">Restricted Area</h4><p className="text-xs text-muted-foreground">Enter Password to continue.</p></div>
                         <input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[200px] text-center border-2 rounded p-2" placeholder="••••••••" />
                         <Button type="submit">Unlock System</Button>
                     </form>
@@ -515,7 +508,7 @@ export default function SuperAdminPanelPage() {
                                 <Button className="w-full bg-red-600 hover:bg-red-700" onClick={() => {
                                     const amt = Number((document.getElementById('gift-all-credits') as HTMLInputElement).value);
                                     giftCreditsToAllUsers(amt);
-                                    toast({ title: "Operation Complete", description: `Gifted ${amt} credits to all active students.` });
+                                    toast({ title: "Operation Complete", description: `Gifted ${amt} credits to all.` });
                                 }}>Gift All Credits</Button>
                             </CardContent>
                         </Card>
@@ -539,7 +532,10 @@ export default function SuperAdminPanelPage() {
       {/* MODALS */}
       <Dialog open={isMasterCardDialogOpen} onOpenChange={setIsMasterCardDialogOpen}>
         <DialogContent>
-            <DialogHeader><DialogTitle>Grant Master Card</DialogTitle><DialogDescription>Give {masterCardUser?.displayName} unlimited credits bypass for a duration.</DialogDescription></DialogHeader>
+            <DialogHeader>
+                <DialogTitle>Grant Master Card</DialogTitle>
+                <DialogDescription>Give {masterCardUser?.displayName} unlimited credits bypass for a duration.</DialogDescription>
+            </DialogHeader>
             <div className="py-4 space-y-4">
                 <div className="space-y-2">
                     <Label>Duration (Days)</Label>
@@ -600,7 +596,6 @@ export default function SuperAdminPanelPage() {
             <DialogHeader><DialogTitle>{editingStoreItem ? 'Edit' : 'Add'} Store Item</DialogTitle></DialogHeader>
             <div className="py-4 space-y-4 max-h-[70vh] overflow-y-auto pr-2">
                 <div className="space-y-2"><Label>Item Name</Label><Input value={itemName} onChange={e => setItemName(e.target.value)}/></div>
-                
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Type</Label>
                         <Select value={itemType} onValueChange={(v: any) => handleTypeChange(v)}>
@@ -619,35 +614,22 @@ export default function SuperAdminPanelPage() {
                     </div>
                     <div className="space-y-2"><Label>Stock</Label><Input type="number" value={itemStock} onChange={e => setItemStock(Number(e.target.value))}/></div>
                 </div>
-
                 <div className="space-y-2"><Label>Description</Label><Textarea value={itemDescription} onChange={e => setItemDescription(e.target.value)} className="min-h-[100px] text-xs"/></div>
-                
                 <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label>Payment Type</Label>
+                    <div className="space-y-2"><Label>Payment Type</Label>
                         <Select value={itemPaymentType} onValueChange={(v: any) => setItemPaymentType(v)}>
                             <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="credits">Credits</SelectItem>
-                                <SelectItem value="money">Money (Razorpay)</SelectItem>
-                            </SelectContent>
+                            <SelectContent><SelectItem value="credits">Credits</SelectItem><SelectItem value="money">Money</SelectItem></SelectContent>
                         </Select>
                     </div>
                     <div className="space-y-2">
                         {itemPaymentType === 'credits' ? (
-                            <>
-                                <Label>Cost (Credits)</Label>
-                                <Input type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))}/>
-                            </>
+                            <><Label>Cost (Credits)</Label><Input type="number" value={itemCost} onChange={e => setItemCost(Number(e.target.value))}/></>
                         ) : (
-                            <>
-                                <Label>Price (₹)</Label>
-                                <Input type="number" value={itemPrice} onChange={e => setItemPrice(Number(e.target.value))}/>
-                            </>
+                            <><Label>Price (₹)</Label><Input type="number" value={itemPrice} onChange={e => setItemPrice(Number(e.target.value))}/></>
                         )}
                     </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Quantity</Label><Input type="number" value={itemQuantity} onChange={e => setItemQuantity(Number(e.target.value))}/></div>
                     <div className="space-y-2">
