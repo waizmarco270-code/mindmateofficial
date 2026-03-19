@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles } from 'lucide-react';
+import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -26,6 +26,7 @@ import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogCon
 import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 const CREDIT_PASSWORD = "waizcredit";
 
@@ -46,7 +47,8 @@ export default function SuperAdminPanelPage() {
     appSettings,
     updateAppSettings,
     grantMasterCard,
-    triggerAegisPulse
+    triggerAegisPulse,
+    announcements
   } = useAdmin();
   const { toast } = useToast();
   
@@ -66,6 +68,8 @@ export default function SuperAdminPanelPage() {
 
   // Aegis State
   const [isAegisPulseRunning, setIsAegisPulseRunning] = useState(false);
+  const [aegisLastDecision, setAegisLastDecision] = useState<AegisPulseOutput | null>(null);
+  const [isDecisionDialogOpen, setIsDecisionDialogOpen] = useState(false);
 
   // User Search Logic
   const filteredUsers = useMemo(() => {
@@ -128,9 +132,11 @@ export default function SuperAdminPanelPage() {
       setIsAegisPulseRunning(true);
       try {
           const result = await triggerAegisPulse();
+          setAegisLastDecision(result);
+          setIsDecisionDialogOpen(true);
           toast({
               title: "Aegis Intelligence Pulse Complete",
-              description: `Aegis decided to: ${result.actionTaken.replace('_', ' ')}`,
+              description: `Aegis has completed its analysis.`,
           });
       } catch (error: any) {
           toast({ variant: 'destructive', title: "Aegis Error", description: error.message });
@@ -309,7 +315,7 @@ export default function SuperAdminPanelPage() {
                                                     <DropdownMenuItem onClick={() => u.isAdmin ? removeUserAdmin(u.uid) : makeUserAdmin(u.uid)}>{u.isAdmin ? "Remove Admin" : "Make Admin"}</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => u.isVip ? removeUserVip(u.uid) : makeUserVip(u.uid)}>{u.isVip ? "Remove Elite" : "Make Elite"}</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => u.isGM ? removeUserGM(u.uid) : makeUserGM(u.uid)}>{u.isGM ? "Remove GM" : "Make GM"}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isCoDev ? removeUserCoDev(u.uid) : makeUserCoDev(u.uid)}>{u.isCoDev ? "Remove Co-Dev" : "Make Co-Dev"}</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => u.isCoDev ? makeUserCoDev(u.uid) : makeUserCoDev(u.uid)}>{u.isCoDev ? "Remove Co-Dev" : "Make Co-Dev"}</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => { setMasterCardUser(u); setIsMasterCardDialogOpen(true); }}><CreditCard className="mr-2 h-4 w-4"/> Grant Master Card</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
@@ -418,7 +424,7 @@ export default function SuperAdminPanelPage() {
                                                 <Avatar className="h-6 w-6"><AvatarImage src={selectedUser.photoURL}/><AvatarFallback>U</AvatarFallback></Avatar>
                                                 <span className="text-sm font-bold">{selectedUser.displayName}</span>
                                             </div>
-                                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => {setSelectedUser(null); setPopupSingleUserId('');}}><X className="h-3 w-3"/></Button>
+                                            <button className="h-6 w-6" onClick={() => {setSelectedUser(null); setPopupSingleUserId('');}}><X className="h-3 w-3"/></button>
                                         </div>
                                     ) : (
                                         <div className="relative">
@@ -569,6 +575,86 @@ export default function SuperAdminPanelPage() {
             </div>
             <DialogFooter>
                 <Button onClick={() => { if(masterCardUser) grantMasterCard(masterCardUser.uid, masterCardDuration); setIsMasterCardDialogOpen(false); toast({ title: "Master Card Granted!" }); }}>Activate Master Card</Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Aegis Decision Dialog */}
+      <Dialog open={isDecisionDialogOpen} onOpenChange={setIsDecisionDialogOpen}>
+        <DialogContent className="max-w-2xl">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2 text-2xl">
+                    <BrainCircuit className="text-primary animate-pulse"/> Sentinel Decision Log
+                </DialogTitle>
+                <DialogDescription>
+                    Review the autonomous reasoning and actions taken by Aegis.
+                </DialogDescription>
+            </DialogHeader>
+            
+            {aegisLastDecision && (
+                <div className="py-6 space-y-6">
+                    <div className="p-4 rounded-xl bg-muted/50 border-l-4 border-primary">
+                        <div className="flex items-center gap-2 mb-2">
+                            <ScrollText className="h-4 w-4 text-primary"/>
+                            <h4 className="font-bold text-sm uppercase tracking-wider">Aegis Reasoning</h4>
+                        </div>
+                        <p className="text-sm leading-relaxed italic">"{aegisLastDecision.decision}"</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                            <h5 className="font-bold text-xs uppercase text-muted-foreground px-1">Actions Executed</h5>
+                            <div className="space-y-2">
+                                {aegisLastDecision.announcement && (
+                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                        <Megaphone className="h-4 w-4 text-blue-500"/>
+                                        <span className="text-xs font-semibold">Post Announcement</span>
+                                    </div>
+                                )}
+                                {aegisLastDecision.dailySurprise && (
+                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                        <Sparkles className="h-4 w-4 text-purple-500"/>
+                                        <span className="text-xs font-semibold">Update Daily Surprise</span>
+                                    </div>
+                                )}
+                                {aegisLastDecision.creditRain && (
+                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                                        <CloudRain className="h-4 w-4 text-cyan-500"/>
+                                        <span className="text-xs font-semibold">Trigger Credit Rain</span>
+                                    </div>
+                                )}
+                                {aegisLastDecision.globalGift && (
+                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                        <Gift className="h-4 w-4 text-amber-500"/>
+                                        <span className="text-xs font-semibold">Send Targeted Gift</span>
+                                    </div>
+                                )}
+                                {aegisLastDecision.actionTaken === 'idled' && (
+                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted border">
+                                        <X className="h-4 w-4 text-muted-foreground"/>
+                                        <span className="text-xs font-semibold">No Action Needed</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {aegisLastDecision.announcement && (
+                            <div className="space-y-3">
+                                <h5 className="font-bold text-xs uppercase text-muted-foreground px-1">Announcement Preview</h5>
+                                <div className="p-3 rounded-lg border bg-background space-y-1">
+                                    <p className="font-bold text-sm">{aegisLastDecision.announcement.title}</p>
+                                    <p className="text-[10px] text-muted-foreground line-clamp-3">{aegisLastDecision.announcement.description}</p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
+
+            <DialogFooter>
+                <DialogClose asChild>
+                    <Button className="w-full">Understood, Sentinel</Button>
+                </DialogClose>
             </DialogFooter>
         </DialogContent>
       </Dialog>
