@@ -1,8 +1,9 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db, storage } from '@/lib/firebase';
-import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, runTransaction } from 'firebase/firestore';
+import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, runTransaction, collectionGroup } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays } from 'date-fns';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
@@ -615,7 +616,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const triggerAegisPulse = useCallback(async () => {
         if (!isSuperAdmin) throw new Error("Unauthorized");
         
-        // 1. Gather Context
         const topUsersList = users
             .sort((a, b) => (b.totalStudyTime || 0) - (a.totalStudyTime || 0))
             .slice(0, 5)
@@ -629,15 +629,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             
         const recentAnnouncementsList = announcements.slice(0, 3).map(a => a.title);
         
-        // 2. Run Flow
         const result = await runAegisPulse({
             topUsers: topUsersList,
             recentAnnouncements: recentAnnouncementsList,
             totalUsers: users.length,
-            isChatQuiet: true // Simulated for now
+            isChatQuiet: true 
         });
         
-        // 3. Update Status
         await updateDoc(doc(db, 'appConfig', 'settings'), {
             lastAegisPulse: new Date().toISOString()
         });

@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileoverview This file initializes the Genkit AI instance with necessary plugins.
  * It exports a single `ai` object that should be used throughout the application
