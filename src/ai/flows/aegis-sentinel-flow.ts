@@ -9,7 +9,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, serverTimestamp, setDoc, doc, query, orderBy, limit, getDocs } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const AegisPulseInputSchema = z.object({
   topUsers: z.array(z.object({
@@ -55,6 +55,7 @@ export type AegisPulseOutput = z.infer<typeof AegisPulseOutputSchema>;
 
 const aegisPrompt = ai.definePrompt({
   name: 'aegisPrompt',
+  model: 'googleai/gemini-1.5-flash',
   input: { schema: AegisPulseInputSchema },
   output: { schema: AegisPulseOutputSchema },
   prompt: `You are Aegis, the Autonomous Sentinel and Governor of MindMate. Your goal is app health, student engagement, and reward distribution.
