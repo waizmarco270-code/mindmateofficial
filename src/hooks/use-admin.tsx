@@ -7,6 +7,7 @@ import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, g
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays } from 'date-fns';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
+import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
 export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight';
@@ -87,6 +88,7 @@ export interface Announcement {
     title: string;
     description: string;
     createdAt: Date;
+    isAegisGenerated?: boolean;
 }
 
 export interface ResourceSection {
@@ -128,6 +130,7 @@ export interface DailySurprise {
     quizOptions?: string[];
     quizCorrectAnswer?: string;
     createdAt: Date;
+    isAegisGenerated?: boolean;
     featureTitle?: string;
     featureDescription?: string;
     featureIcon?: string;
@@ -147,6 +150,8 @@ export interface AppSettings {
     maintenanceTheme?: MaintenanceTheme;
     whatsNewMessage?: string;
     lastMaintenanceId?: string;
+    isAegisMode?: boolean;
+    lastAegisPulse?: string;
 }
 
 export interface GlobalGift {
@@ -291,6 +296,7 @@ interface AppDataContextType {
     resetWeeklyStudyTime: () => Promise<void>;
     resetGameZoneLeaderboard: () => Promise<void>;
     submitSupportTicket: (message: string) => Promise<void>;
+    triggerAegisPulse: () => Promise<AegisPulseOutput>;
     announcements: Announcement[];
     addAnnouncement: (announcement: Omit<Announcement, 'id' | 'createdAt'>) => Promise<void>;
     updateAnnouncement: (id: string, data: Partial<Announcement>) => Promise<void>;
@@ -326,9 +332,6 @@ interface AppDataContextType {
     deactivateGift: (giftId: string) => Promise<void>;
     deleteGlobalGift: (giftId: string) => Promise<void>;
     claimGlobalGift: (giftId: string, userId: string) => Promise<void>;
-    featureLocks: Record<LockableFeature['id'], FeatureLock> | null;
-    lockFeature: (featureId: LockableFeature['id'], cost: number) => Promise<void>;
-    unlockFeature: (featureId: LockableFeature['id']) => Promise<void>;
     featureShowcases: FeatureShowcase[];
     addFeatureShowcase: (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => Promise<void>;
     updateFeatureShowcase: (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => Promise<void>;
@@ -368,7 +371,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [allPolls, setAllPolls] = useState<Poll[]>([]);
     const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
-    const [featureLocks, setFeatureLocks] = useState<Record<LockableFeature['id'], FeatureLock> | null>(null);
     const [featureShowcases, setFeatureShowcases] = useState<FeatureShowcase[]>([]);
     const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
     const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
@@ -477,7 +479,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubPolls = onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc')), (s) => setAllPolls(processWithDate<Poll>(s)));
         const unsubAppSettings = onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null));
         const unsubGifts = onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(processWithDate<GlobalGift>(s)));
-        const unsubLocks = onSnapshot(doc(db, 'appConfig', 'featureLocks'), (d) => setFeatureLocks(d.exists() ? d.data() as any : null));
         const unsubShowcases = onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processWithDate<FeatureShowcase>(s)));
         const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), (s) => setCreditPacks(processWithDate<CreditPack>(s)));
         const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('createdAt', 'desc')), (s) => setStoreItems(processWithDate<StoreItem>(s)));
@@ -486,7 +487,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
         return () => {
             unsubAnnouncements(); unsubResources(); unsubPolls(); unsubDailySurprises(); unsubSections();
-            unsubAppSettings(); unsubGifts(); unsubTickets(); unsubLocks(); unsubShowcases();
+            unsubAppSettings(); unsubGifts(); unsubTickets(); unsubShowcases();
             unsubCreditPacks(); unsubStoreItems(); unsubVideoCats(); unsubVideoLecs();
         };
     }, []);
@@ -612,8 +613,39 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [authUser, currentUserData]);
 
+    const triggerAegisPulse = useCallback(async () => {
+        if (!isSuperAdmin) throw new Error("Unauthorized");
+        
+        // 1. Gather Context
+        const topUsers = users
+            .sort((a, b) => (b.totalStudyTime || 0) - (a.totalStudyTime || 0))
+            .slice(0, 5)
+            .map(u => ({
+                displayName: u.displayName,
+                credits: u.credits,
+                studyTime: u.totalStudyTime || 0,
+                streak: u.streak || 0
+            }));
+            
+        const recentAnnouncements = announcements.slice(0, 3).map(a => a.title);
+        
+        // 2. Run Flow
+        const result = await runAegisPulse({
+            topUsers,
+            recentAnnouncements,
+            totalUsers: users.length
+        });
+        
+        // 3. Update Status
+        await updateDoc(doc(db, 'appConfig', 'settings'), {
+            lastAegisPulse: new Date().toISOString()
+        });
+        
+        return result;
+    }, [isSuperAdmin, users, announcements]);
+
     const value: AppDataContextType = {
-        isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureLocks, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures,
+        isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures,
         toggleUserBlock: (uid, isBlocked) => updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked }),
         toggleLeaderboardPrivacy: (uid, isPrivate) => updateDoc(doc(db, 'users', uid), { isLeaderboardPrivate: isPrivate }),
         addCreditsToUser,
@@ -694,7 +726,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         claimElementQuestMilestone: (uid, m) => updateDoc(doc(db, 'users', uid), { credits: increment(m === 100 ? 50 : m === 200 ? 100 : m === 300 ? 150 : 200), elementQuestMilestonesClaimed: arrayUnion(m) }),
         claimDimensionShiftMilestone: async (uid, m) => {
-            const snap = await getDoc(doc(db, 'users', uid));
+            const snap = await getDoc(getDoc(doc(db, 'users', uid)));
             if (!snap.exists()) return false;
             const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
             const claims = snap.data().dimensionShiftClaims?.[weekKey] || [];
@@ -756,8 +788,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             await batch.commit();
         },
         resetWeeklyStudyTime: async () => {
-            const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
-            const snap = await getDocs(query(collectionGroup(db, 'timeTrackerSessions'), where('startTime', '>=', weekStart)));
+            const snap = await getDocs(collectionGroup(db, 'timeTrackerSessions'));
             const batch = writeBatch(db);
             snap.forEach(d => batch.delete(d.ref));
             await batch.commit();
@@ -769,6 +800,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             await batch.commit();
         },
         submitSupportTicket: (msg) => addDoc(collection(db, 'supportTickets'), { userId: authUser?.id, userName: currentUserData?.displayName, message: msg, status: 'new', createdAt: serverTimestamp() }),
+        triggerAegisPulse,
         addAnnouncement: (a) => addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() }),
         updateAnnouncement: (id, d) => updateDoc(doc(db, 'announcements', id), d),
         deleteAnnouncement: (id) => deleteDoc(doc(db, 'announcements', id)),
@@ -822,8 +854,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             if (gift.rewards.flip) batch.update(doc(db, 'users', uid), { freeGuesses: increment(gift.rewards.flip) });
             await batch.commit();
         },
-        lockFeature: (fid, cost) => setDoc(doc(db, 'appConfig', 'featureLocks'), { [fid]: { id: fid, isLocked: true, cost } }, { merge: true }),
-        unlockFeature: (fid) => setDoc(doc(db, 'appConfig', 'featureLocks'), { [fid]: { id: fid, isLocked: false, cost: 0 } }, { merge: true }),
         addFeatureShowcase: (s) => addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() }),
         updateFeatureShowcase: (id, d) => updateDoc(doc(db, 'featureShowcases', id), d),
         deleteFeatureShowcase: (id) => deleteDoc(doc(db, 'featureShowcases', id)),

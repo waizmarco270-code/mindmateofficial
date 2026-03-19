@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X } from 'lucide-react';
+import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -46,6 +46,7 @@ export default function SuperAdminPanelPage() {
     appSettings,
     updateAppSettings,
     grantMasterCard,
+    triggerAegisPulse
   } = useAdmin();
   const { toast } = useToast();
   
@@ -62,6 +63,9 @@ export default function SuperAdminPanelPage() {
   const [popupScratchAmount, setPopupScratchAmount] = useState(0);
   const [popupFlipAmount, setPopupFlipAmount] = useState(0);
   const [isSendingPopup, setIsSendingPopup] = useState(false);
+
+  // Aegis State
+  const [isAegisPulseRunning, setIsAegisPulseRunning] = useState(false);
 
   // User Search Logic
   const filteredUsers = useMemo(() => {
@@ -86,6 +90,7 @@ export default function SuperAdminPanelPage() {
   const [maintenanceMessage, setMaintenanceMessage] = useState(appSettings?.maintenanceMessage || '');
   const [maintenanceTheme, setMaintenanceTheme] = useState<MaintenanceTheme>(appSettings?.maintenanceTheme || 'shiny');
   const [whatsNewMessage, setWhatsNewMessage] = useState(appSettings?.whatsNewMessage || '');
+  const [isAegisMode, setIsAegisMode] = useState(appSettings?.isAegisMode || false);
 
   useEffect(() => {
     if (appSettings) {
@@ -93,6 +98,7 @@ export default function SuperAdminPanelPage() {
         setMaintenanceMessage(appSettings.maintenanceMessage || '');
         setMaintenanceTheme(appSettings.maintenanceTheme || 'shiny');
         setWhatsNewMessage(appSettings.whatsNewMessage || '');
+        setIsAegisMode(appSettings.isAegisMode || false);
     }
   }, [appSettings]);
 
@@ -112,9 +118,25 @@ export default function SuperAdminPanelPage() {
           maintenanceMessage,
           maintenanceTheme,
           whatsNewMessage,
+          isAegisMode,
           lastMaintenanceId: isMaintenanceMode ? Date.now().toString() : appSettings?.lastMaintenanceId,
       });
       toast({ title: 'App Configuration Updated!' });
+  };
+
+  const handleAegisPulse = async () => {
+      setIsAegisPulseRunning(true);
+      try {
+          const result = await triggerAegisPulse();
+          toast({
+              title: "Aegis Intelligence Pulse Complete",
+              description: `Aegis decided to: ${result.actionTaken.replace('_', ' ')}`,
+          });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: "Aegis Error", description: error.message });
+      } finally {
+          setIsAegisPulseRunning(false);
+      }
   };
 
   const handleSendGlobalGift = async () => {
@@ -169,9 +191,63 @@ export default function SuperAdminPanelPage() {
         <p className="text-muted-foreground">Master controls for roles, monetization, and system state.</p>
       </div>
 
-      <Accordion type="multiple" defaultValue={['user-management', 'global-gifts']} className="w-full space-y-4">
+      <Accordion type="multiple" defaultValue={['user-management', 'aegis-intelligence']} className="w-full space-y-4">
         
-        {/* 1. User Management */}
+        {/* 1. Aegis Intelligence Hub */}
+        <AccordionItem value="aegis-intelligence" className="border-b-0">
+          <Card className="border-primary/30 bg-primary/5">
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <BrainCircuit className="h-6 w-6 text-primary animate-pulse" />
+                <div>
+                  <h3 className="text-lg font-semibold">Aegis Intelligence Hub</h3>
+                  <p className="text-sm text-muted-foreground text-left">Autonomous app governance & engagement agent.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-6">
+                <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
+                    <Card className="bg-background">
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2"><Zap className="text-yellow-500 h-4 w-4"/> Control System</CardTitle>
+                            <CardDescription>Configure Aegis's level of autonomy.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between p-4 border rounded-xl">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base">Auto-Pilot Mode</Label>
+                                    <p className="text-xs text-muted-foreground">Allow Aegis to post announcements and surprises independently.</p>
+                                </div>
+                                <Switch checked={isAegisMode} onCheckedChange={setIsAegisMode} />
+                            </div>
+                            <Button onClick={handleMaintenanceUpdate} variant="outline" className="w-full">Save Aegis Mode Status</Button>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-background">
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2"><Sparkles className="text-primary h-4 w-4"/> Manual Sentinel Pulse</CardTitle>
+                            <CardDescription>Force Aegis to analyze and act right now.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="p-4 rounded-xl bg-muted/50 border italic text-xs text-muted-foreground">
+                                Last Pulse: {appSettings?.lastAegisPulse ? format(new Date(appSettings.lastAegisPulse), 'PPP p') : 'Never'}
+                            </div>
+                            <Button 
+                                onClick={handleAegisPulse} 
+                                className="w-full h-12 text-lg font-bold" 
+                                disabled={isAegisPulseRunning}
+                            >
+                                {isAegisPulseRunning ? <Loader2 className="animate-spin mr-2" /> : <BrainCircuit className="mr-2" />}
+                                Trigger Intelligence Pulse
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
+        {/* 2. User Management */}
         <AccordionItem value="user-management" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
@@ -251,7 +327,7 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* 2. App Configuration */}
+        {/* 3. App Configuration */}
         <AccordionItem value="app-config" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
@@ -305,7 +381,7 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* 3. Global Gifts */}
+        {/* 4. Global Gifts */}
         <AccordionItem value="global-gifts" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
@@ -420,7 +496,7 @@ export default function SuperAdminPanelPage() {
           </Card>
         </AccordionItem>
 
-        {/* 4. System Overrides */}
+        {/* 5. System Overrides */}
         <AccordionItem value="overrides" className="border-b-0">
           <Card>
             <AccordionTrigger className="p-6">
