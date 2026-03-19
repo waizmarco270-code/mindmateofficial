@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Globe, Loader2, Plus, Users, Search, Filter, Lock } from 'lucide-react';
+import { Globe, Loader2, Plus, Users, Search, Filter, Lock, ShieldAlert } from 'lucide-react';
 import { CreateGroupModal } from '@/components/groups/create-group-modal';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
@@ -73,22 +72,28 @@ function GroupCard({ group, index }: { group: Group, index: number }) {
 }
 
 function ExploreClans() {
-    const { allPublicGroups, loading, sendJoinRequest, addMemberToAutoJoinClan, sentJoinRequests } = useGroups();
+    const { allPublicGroups, loading, sendJoinRequest, addMemberToAutoJoinClan, sentJoinRequests, groups } = useGroups();
     const { user } = useUser();
     const router = useRouter();
     const [searchTerm, setSearchTerm] = useState('');
     const [isSubmitting, setIsSubmitting] = useState('');
 
+    const alreadyInClan = groups.length > 0;
+
     const filteredGroups = allPublicGroups.filter(g => 
         g.isPublic &&
         g.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-        !g.members.includes(user?.id || '')
+        !g.memberUids?.includes(user?.id || '')
     );
     
     const topClans = [...allPublicGroups].sort((a,b) => b.members.length - a.members.length).slice(0, 5);
 
     const handleJoin = async (group: Group) => {
         if (!user) return;
+        if (alreadyInClan) {
+            router.push(`/dashboard/groups/${groups[0].id}`);
+            return;
+        }
         setIsSubmitting(group.id);
         try {
             if (group.joinMode === 'auto') {
@@ -110,6 +115,13 @@ function ExploreClans() {
 
     return (
         <div className="space-y-8">
+            {alreadyInClan && (
+                <div className="p-4 bg-primary/10 border border-primary/20 rounded-xl flex items-center gap-3">
+                    <ShieldAlert className="text-primary h-5 w-5 shrink-0" />
+                    <p className="text-sm">You are already a member of <strong>{groups[0].name}</strong>. You must leave your current clan to join another.</p>
+                </div>
+            )}
+
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                 <Input placeholder="Search for public clans..." className="pl-10 h-12" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
@@ -136,9 +148,9 @@ function ExploreClans() {
                                                 <div className="flex items-center gap-2 mt-1">
                                                     <Badge variant="outline">{group.members.length} members</Badge>
                                                     {group.joinMode === 'auto' ? (
-                                                        <Badge variant="secondary" className="bg-green-500/10 text-green-700">Open to Join</Badge>
+                                                        <Badge variant="secondary" className="bg-green-500/10 text-green-700">Open</Badge>
                                                     ) : (
-                                                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-700">Approval Required</Badge>
+                                                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-700">Request</Badge>
                                                     )}
                                                 </div>
                                             </div>
@@ -148,8 +160,9 @@ function ExploreClans() {
                                         </CardContent>
                                         <CardFooter className="grid grid-cols-2 gap-2">
                                             <Button variant="outline" onClick={() => handleInspect(group)}>Inspect</Button>
-                                            <Button onClick={() => handleJoin(group)} disabled={hasRequested || isSubmitting === group.id}>
+                                            <Button onClick={() => handleJoin(group)} disabled={hasRequested || isSubmitting === group.id || alreadyInClan}>
                                                 {isSubmitting === group.id ? <Loader2 className="h-4 w-4 animate-spin"/> :
+                                                 alreadyInClan ? "Clan Active" :
                                                  hasRequested ? "Request Sent" : "Join"}
                                             </Button>
                                         </CardFooter>
@@ -181,7 +194,7 @@ function ExploreClans() {
                                                      {group.joinMode === 'auto' ? (
                                                         <Badge variant="secondary" className="bg-green-500/10 text-green-700">Open</Badge>
                                                     ) : (
-                                                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-700">Approval</Badge>
+                                                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-700">Request</Badge>
                                                     )}
                                                 </div>
                                             </div>
@@ -191,8 +204,9 @@ function ExploreClans() {
                                         </CardContent>
                                         <CardFooter className="grid grid-cols-2 gap-2">
                                             <Button variant="outline" onClick={() => handleInspect(group)}>Inspect</Button>
-                                            <Button onClick={() => handleJoin(group)} disabled={hasRequested || isSubmitting === group.id}>
+                                            <Button onClick={() => handleJoin(group)} disabled={hasRequested || isSubmitting === group.id || alreadyInClan}>
                                                 {isSubmitting === group.id ? <Loader2 className="h-4 w-4 animate-spin"/> :
+                                                 alreadyInClan ? "Clan Active" :
                                                  hasRequested ? "Request Sent" : "Join"}
                                             </Button>
                                         </CardFooter>
@@ -219,6 +233,8 @@ function GroupsPageContent() {
         )
     }
 
+    const alreadyInClan = groups.length > 0;
+
     return (
         <div className="space-y-8">
             <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
@@ -229,9 +245,11 @@ function GroupsPageContent() {
                     </h1>
                     <p className="text-muted-foreground">Collaborate, compete, and conquer your goals together.</p>
                 </div>
-                <Button onClick={() => setIsCreateOpen(true)} disabled={!user}>
-                    <Plus className="mr-2 h-4 w-4" /> Create Clan
-                </Button>
+                {!alreadyInClan && (
+                    <Button onClick={() => setIsCreateOpen(true)} disabled={!user}>
+                        <Plus className="mr-2 h-4 w-4" /> Create Clan
+                    </Button>
+                )}
             </div>
 
             <div className="relative">
@@ -244,15 +262,15 @@ function GroupsPageContent() {
 
                 <Tabs defaultValue="my-clans">
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="my-clans">My Clans</TabsTrigger>
+                        <TabsTrigger value="my-clans">My Clan</TabsTrigger>
                         <TabsTrigger value="explore">Explore Clans</TabsTrigger>
                     </TabsList>
                     <TabsContent value="my-clans" className="mt-6">
                         {groups.length === 0 ? (
                              <Card className="text-center py-16 border-dashed">
                                 <CardHeader>
-                                    <CardTitle>No Clans Yet</CardTitle>
-                                    <CardDescription>You haven't joined or created any clans. Forge one to get started!</CardDescription>
+                                    <CardTitle>No Clan Membership</CardTitle>
+                                    <CardDescription>You are a lone wolf. Join an existing clan or forge your own to unlock team features!</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                      <Button onClick={() => setIsCreateOpen(true)} disabled={!user}>

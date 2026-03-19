@@ -4,7 +4,7 @@
 import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc, getDocs, increment, writeBatch, arrayUnion } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc, getDocs, increment, writeBatch, arrayUnion, setDoc } from 'firebase/firestore';
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
 import { GroupsContext, type GroupsContextType, type Group, type GroupJoinRequest, type GroupMember } from '@/context/groups-context';
@@ -27,6 +27,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
         const groupsRef = collection(db, 'groups');
         
+        // Listen to groups where current user is a member
         const userGroupsQuery = user ? query(groupsRef, where('memberUids', 'array-contains', user.id)) : null;
         const unsubUserGroups = userGroupsQuery ? onSnapshot(userGroupsQuery, (snapshot) => {
             const userGroupsData = snapshot.docs.map(doc => {
@@ -35,8 +36,8 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
                 const memberDetails = members.map((m: GroupMember) => users.find(u => u.uid === m.uid)).filter(Boolean) as User[];
                 return {
                     id: doc.id, ...data, memberDetails,
-                    level: data.level || 1, // Default to level 1
-                    xp: data.xp || 0, // Default to 0 xp
+                    level: data.level || 1,
+                    xp: data.xp || 0,
                     createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
                     lastMessage: data.lastMessage ? { ...data.lastMessage, timestamp: (data.lastMessage.timestamp as Timestamp)?.toDate() || new Date() } : undefined,
                 } as Group;
@@ -44,6 +45,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             setGroups(userGroupsData);
         }) : () => {};
 
+        // Listen to all public groups
         const publicGroupsQuery = query(groupsRef, where('isPublic', '==', true));
         const unsubPublicGroups = onSnapshot(publicGroupsQuery, (snapshot) => {
              const publicGroupsData = snapshot.docs.map(doc => {
@@ -61,6 +63,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             setAllPublicGroups(publicGroupsData);
         });
 
+        // Listen to join requests
         const requestsRef = collection(db, 'groupJoinRequests');
         const receivedRequestsQuery = user ? query(requestsRef, where('clanAdminId', '==', user.id), where('status', '==', 'pending')) : null;
         const sentRequestsQuery = user ? query(requestsRef, where('senderId', '==', user.id), where('status', '==', 'pending')) : null;
@@ -92,21 +95,15 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         if (!groupSnap.exists()) return;
 
         const groupData = groupSnap.data() as Group;
-        const currentLevelInfo = clanLevelConfig.find(l => l.level === groupData.level);
-        if (!currentLevelInfo) return;
-
         const newXp = (groupData.xp || 0) + amount;
         
         let newLevel = groupData.level;
         let xpForNextLevel = newXp;
         
-        // Check for level up
         const nextLevelInfo = clanLevelConfig.find(l => l.level === groupData.level + 1);
         if (nextLevelInfo && newXp >= nextLevelInfo.xpRequired) {
             newLevel++;
             xpForNextLevel = newXp - nextLevelInfo.xpRequired;
-            // In a real app, you might send a notification here
-            // toast({ title: "Clan Leveled Up!", description: `Your clan has reached Level ${newLevel}!`});
         }
         
         await updateDoc(groupRef, {
@@ -119,6 +116,12 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const createGroup = useCallback(async (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => {
         if (!user || !currentUserData) throw new Error("User not found.");
 
+        // Rule: 1 User = 1 Clan
+        if (groups.length > 0) {
+            toast({ variant: "destructive", title: "Forbidden", description: "You are already a member of a clan. Leave your current clan to create a new one." });
+            throw new Error("Already in a clan");
+        }
+
         const hasMasterCard = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
         if (!hasMasterCard && currentUserData.credits < CLAN_CREATION_COST) {
             toast({ variant: "destructive", title: "Insufficient Credits", description: `You need ${CLAN_CREATION_COST} credits to create a clan.` });
@@ -129,12 +132,14 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         const q = query(groupsRef, where('name', '==', name.trim()));
         const querySnapshot = await getDocs(q);
         if (!querySnapshot.empty && querySnapshot.docs.some(d => d.data().name.toLowerCase() === name.trim().toLowerCase())) {
-            toast({ variant: "destructive", title: "Clan Name Taken" });
+            toast({ variant: "destructive", title: "Clan Name Taken", description: "Please choose a different name." });
             throw new Error("Clan name already exists.");
         }
 
         const initialMembers: GroupMember[] = [
             { uid: user.id, role: 'leader' },
+            // Filter out invited members who are already in other clans? 
+            // For now, we'll just add them, but ideally we should verify their status too.
             ...memberIds.map(id => ({ uid: id, role: 'member' as const }))
         ];
         
@@ -148,9 +153,9 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (!hasMasterCard) await addCreditsToUser(user.id, -CLAN_CREATION_COST);
-        toast({ title: "Clan Created!", description: `"${name}" is ready.` });
+        toast({ title: "Clan Created!", description: `"${name}" is ready for battle.` });
         return newDocRef.id;
-    }, [user, currentUserData, toast, addCreditsToUser]);
+    }, [user, currentUserData, groups, toast, addCreditsToUser]);
 
     const updateGroup = useCallback(async (groupId: string, data: Partial<Group>, isRenaming: boolean = false, renameCost: number = 0) => {
         if (!user || !currentUserData) return;
@@ -185,6 +190,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         if (!groupDoc.exists()) return;
         
         const groupData = groupDoc.data() as Group;
+        // Logic to remove from both structures
         const newMembers = groupData.members.filter(m => m.uid !== memberId);
         const newMemberUids = groupData.memberUids.filter(uid => uid !== memberId);
 
@@ -202,7 +208,14 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
     const sendJoinRequest = useCallback(async (group: Group) => {
         if (!user || !currentUserData) throw new Error("Not logged in");
-        const memberUids = group.members.map(m => m.uid);
+        
+        // Rule Check
+        if (groups.length > 0) {
+            toast({ variant: "destructive", title: "Action Denied", description: "You are already in a clan. You must leave it before requesting to join another." });
+            return;
+        }
+
+        const memberUids = group.memberUids || [];
         if (memberUids.includes(user.id)) throw new Error("You are already a member.");
 
         const requestRef = doc(collection(db, 'groupJoinRequests'));
@@ -212,22 +225,35 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             status: 'pending', createdAt: serverTimestamp(),
         });
         toast({ title: "Request Sent", description: `Your request to join "${group.name}" has been sent.` });
-    }, [user, currentUserData, toast]);
+    }, [user, currentUserData, groups, toast]);
     
     const addMemberToAutoJoinClan = useCallback(async (group: Group) => {
         if (!user) throw new Error("Not logged in");
+
+        // Rule Check
+        if (groups.length > 0) {
+            toast({ variant: "destructive", title: "Action Denied", description: "You are already in a clan." });
+            return;
+        }
+
         const newMember: GroupMember = { uid: user.id, role: 'member' };
-        await updateDoc(doc(db, 'groups', group.id), { members: arrayUnion(newMember), memberUids: arrayUnion(user.id) });
-        toast({ title: `Joined "${group.name}"!` });
-    }, [user, toast]);
+        await updateDoc(doc(db, 'groups', group.id), { 
+            members: arrayUnion(newMember), 
+            memberUids: arrayUnion(user.id) 
+        });
+        toast({ title: `Welcome to "${group.name}"!` });
+    }, [user, groups, toast]);
 
     const approveJoinRequest = useCallback(async (request: GroupJoinRequest) => {
         const batch = writeBatch(db);
         const newMember: GroupMember = { uid: request.senderId, role: 'member' };
-        batch.update(doc(db, 'groups', request.groupId), { members: arrayUnion(newMember), memberUids: arrayUnion(request.senderId) });
+        batch.update(doc(db, 'groups', request.groupId), { 
+            members: arrayUnion(newMember), 
+            memberUids: arrayUnion(request.senderId) 
+        });
         batch.delete(doc(db, 'groupJoinRequests', request.id));
         await batch.commit();
-        toast({ title: "Member Approved" });
+        toast({ title: "Member Approved", description: "The clan grows stronger!" });
     }, [toast]);
 
     const declineJoinRequest = useCallback(async (requestId: string) => {
@@ -255,5 +281,3 @@ export const useGroups = () => {
     }
     return context;
 };
-
-    

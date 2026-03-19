@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useCallback, useRef } from 'react';
@@ -10,9 +9,9 @@ import { Label } from '@/components/ui/label';
 import { useFriends } from '@/hooks/use-friends';
 import { useGroups } from '@/hooks/use-groups';
 import { Checkbox } from '../ui/checkbox';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { ScrollArea } from '../ui/scroll-area';
-import { Loader2, PlusCircle, ImagePlus, Edit, AlertTriangle } from 'lucide-react';
+import { Loader2, PlusCircle, ImagePlus, Edit, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@clerk/nextjs';
 import { groupBanners } from '@/lib/group-assets';
@@ -31,7 +30,7 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
     const { user } = useUser();
     const { currentUserData } = useUsers();
     const { friends, loading: friendsLoading } = useFriends();
-    const { createGroup } = useGroups();
+    const { createGroup, groups } = useGroups();
     const { toast } = useToast();
 
     const [groupName, setGroupName] = useState('');
@@ -45,6 +44,7 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
 
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
     const hasEnoughCredits = hasMasterCard || (currentUserData?.credits ?? 0) >= CLAN_CREATION_COST;
+    const alreadyInClan = groups.length > 0;
 
     const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -78,14 +78,16 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
     }, []);
 
     const handleCreateGroup = async () => {
+        if (alreadyInClan) {
+            toast({ variant: 'destructive', title: 'Already in a Clan', description: 'You cannot create a new clan while being a member of another.' });
+            return;
+        }
         setIsCreating(true);
         try {
             await createGroup(groupName, selectedFriendIds, groupMotto, groupLogo, selectedBanner);
             onOpenChange(false);
             resetForm();
         } catch (error: any) {
-            // Errors (like insufficient funds or name taken) are now handled with toasts inside the hook.
-            // No need to show another toast here unless it's a generic fallback.
             console.error("Error creating group:", error.message);
         } finally {
             setIsCreating(false);
@@ -102,92 +104,105 @@ export function CreateGroupModal({ isOpen, onOpenChange }: CreateGroupModalProps
                     </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
-                    <div className="flex items-center gap-4">
-                        <div className="relative">
-                            <Avatar className="h-24 w-24 border-4 border-muted">
-                                {groupLogo ? (
-                                    <AvatarImage src={groupLogo} alt="Group logo preview" />
-                                ) : (
-                                     <AvatarFallback className="bg-muted">
-                                        <ImagePlus className="h-10 w-10 text-muted-foreground"/>
-                                    </AvatarFallback>
-                                )}
-                            </Avatar>
-                             <input type="file" ref={logoInputRef} onChange={handleLogoSelect} accept="image/*" className="hidden"/>
-                             <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full" onClick={() => logoInputRef.current?.click()}>
-                                <Edit className="h-4 w-4"/>
-                             </Button>
+                    {alreadyInClan ? (
+                        <div className="p-6 text-center space-y-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+                            <ShieldAlert className="h-12 w-12 text-destructive mx-auto" />
+                            <h3 className="text-xl font-bold text-destructive">Protocol Violation!</h3>
+                            <p className="text-sm text-muted-foreground">
+                                You are already serving a Clan. In MindMate, a warrior can only belong to one Clan at a time. Leave your current Clan to forge a new path.
+                            </p>
                         </div>
-                        <div className="space-y-2 flex-1">
-                            <Label htmlFor="group-name">Clan Name</Label>
-                            <Input id="group-name" value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="e.g., The Brainiacs" />
-                            <Label htmlFor="group-motto">Clan Motto</Label>
-                            <Input id="group-motto" value={groupMotto} onChange={e => setGroupMotto(e.target.value)} placeholder="e.g., Victory loves preparation." />
-                        </div>
-                    </div>
-
-                     <div className="space-y-2">
-                        <Label>Clan Banner</Label>
-                         <div className="grid grid-cols-4 gap-2">
-                            {groupBanners.map(banner => (
-                                <button key={banner.id} onClick={() => setSelectedBanner(banner.id)} className={cn("h-16 rounded-lg border-2 transition-all", selectedBanner === banner.id ? 'border-primary ring-2 ring-primary/50' : 'border-transparent hover:border-primary/50')}>
-                                    <div className={cn("w-full h-full rounded-md", banner.class)}></div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-
-                    <div className="space-y-2">
-                        <Label>Invite Friends ({selectedFriendIds.length} selected)</Label>
-                        <ScrollArea className="h-48 rounded-md border p-4">
-                            {friendsLoading ? (
-                                <div className="flex justify-center items-center h-full">
-                                    <Loader2 className="animate-spin" />
+                    ) : (
+                        <>
+                            <div className="flex items-center gap-4">
+                                <div className="relative">
+                                    <Avatar className="h-24 w-24 border-4 border-muted">
+                                        {groupLogo ? (
+                                            <AvatarImage src={groupLogo} alt="Group logo preview" />
+                                        ) : (
+                                            <AvatarFallback className="bg-muted">
+                                                <ImagePlus className="h-10 w-10 text-muted-foreground"/>
+                                            </AvatarFallback>
+                                        )}
+                                    </Avatar>
+                                    <input type="file" ref={logoInputRef} onChange={handleLogoSelect} accept="image/*" className="hidden"/>
+                                    <Button size="icon" variant="outline" className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full" onClick={() => logoInputRef.current?.click()}>
+                                        <Edit className="h-4 w-4"/>
+                                    </Button>
                                 </div>
-                            ) : friends.length > 0 ? (
-                                <div className="space-y-3">
-                                    {friends.map(friend => (
-                                        <div key={friend.uid} className="flex items-center gap-3">
-                                            <Checkbox
-                                                id={`friend-${friend.uid}`}
-                                                checked={selectedFriendIds.includes(friend.uid)}
-                                                onCheckedChange={() => handleFriendSelect(friend.uid)}
-                                            />
-                                            <Label htmlFor={`friend-${friend.uid}`} className="flex items-center gap-3 cursor-pointer">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={friend.photoURL} />
-                                                    <AvatarFallback>{friend.displayName.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <span>{friend.displayName}</span>
-                                            </Label>
-                                        </div>
+                                <div className="space-y-2 flex-1">
+                                    <Label htmlFor="group-name">Clan Name</Label>
+                                    <Input id="group-name" value={groupName} onChange={e => setGroupName(e.target.value)} placeholder="e.g., The Brainiacs" />
+                                    <Label htmlFor="group-motto">Clan Motto</Label>
+                                    <Input id="group-motto" value={groupMotto} onChange={e => setGroupMotto(e.target.value)} placeholder="e.g., Victory loves preparation." />
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label>Clan Banner</Label>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {groupBanners.map(banner => (
+                                        <button key={banner.id} onClick={() => setSelectedBanner(banner.id)} className={cn("h-16 rounded-lg border-2 transition-all", selectedBanner === banner.id ? 'border-primary ring-2 ring-primary/50' : 'border-transparent hover:border-primary/50')}>
+                                            <div className={cn("w-full h-full rounded-md", banner.class)}></div>
+                                        </button>
                                     ))}
                                 </div>
-                            ) : (
-                                <p className="text-sm text-muted-foreground text-center">You have no friends to invite yet. Add some from the Social Hub!</p>
-                            )}
-                        </ScrollArea>
-                    </div>
-                    
-                    <div className={cn("flex items-center gap-2 rounded-lg border p-3",
-                        hasEnoughCredits ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300" : "border-destructive/50 bg-destructive/10 text-destructive"
-                    )}>
-                        <AlertTriangle className="h-5 w-5 flex-shrink-0" />
-                        <p className="text-xs font-semibold">
-                            Clan creation costs {CLAN_CREATION_COST} credits. Your balance: {currentUserData?.credits ?? 0}
-                        </p>
-                    </div>
+                            </div>
 
+
+                            <div className="space-y-2">
+                                <Label>Invite Friends ({selectedFriendIds.length} selected)</Label>
+                                <ScrollArea className="h-48 rounded-md border p-4">
+                                    {friendsLoading ? (
+                                        <div className="flex justify-center items-center h-full">
+                                            <Loader2 className="animate-spin" />
+                                        </div>
+                                    ) : friends.length > 0 ? (
+                                        <div className="space-y-3">
+                                            {friends.map(friend => (
+                                                <div key={friend.uid} className="flex items-center gap-3">
+                                                    <Checkbox
+                                                        id={`friend-${friend.uid}`}
+                                                        checked={selectedFriendIds.includes(friend.uid)}
+                                                        onCheckedChange={() => handleFriendSelect(friend.uid)}
+                                                    />
+                                                    <Label htmlFor={`friend-${friend.uid}`} className="flex items-center gap-3 cursor-pointer">
+                                                        <Avatar className="h-8 w-8">
+                                                            <AvatarImage src={friend.photoURL} />
+                                                            <AvatarFallback>{friend.displayName.charAt(0)}</AvatarFallback>
+                                                        </Avatar>
+                                                        <span>{friend.displayName}</span>
+                                                    </Label>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground text-center">You have no friends to invite yet. Add some from the Social Hub!</p>
+                                    )}
+                                </ScrollArea>
+                            </div>
+                            
+                            <div className={cn("flex items-center gap-2 rounded-lg border p-3",
+                                hasEnoughCredits ? "border-amber-500/50 bg-amber-500/10 text-amber-700 dark:text-amber-300" : "border-destructive/50 bg-destructive/10 text-destructive"
+                            )}>
+                                <AlertTriangle className="h-5 w-5 flex-shrink-0" />
+                                <p className="text-xs font-semibold">
+                                    Clan creation costs {CLAN_CREATION_COST} credits. Your balance: {currentUserData?.credits ?? 0}
+                                </p>
+                            </div>
+                        </>
+                    )}
                 </div>
                 <DialogFooter>
                     <DialogClose asChild>
                         <Button variant="outline">Cancel</Button>
                     </DialogClose>
-                    <Button onClick={handleCreateGroup} disabled={isCreating || !groupName.trim() || !hasEnoughCredits}>
-                        {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                        Create Clan
-                    </Button>
+                    {!alreadyInClan && (
+                        <Button onClick={handleCreateGroup} disabled={isCreating || !groupName.trim() || !hasEnoughCredits}>
+                            {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                            Create Clan
+                        </Button>
+                    )}
                 </DialogFooter>
             </DialogContent>
         </Dialog>
