@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -617,23 +616,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (!isSuperAdmin) throw new Error("Unauthorized");
         
         // 1. Gather Context
-        const topUsers = users
+        const topUsersList = users
             .sort((a, b) => (b.totalStudyTime || 0) - (a.totalStudyTime || 0))
             .slice(0, 5)
             .map(u => ({
+                uid: u.uid,
                 displayName: u.displayName,
                 credits: u.credits,
                 studyTime: u.totalStudyTime || 0,
                 streak: u.streak || 0
             }));
             
-        const recentAnnouncements = announcements.slice(0, 3).map(a => a.title);
+        const recentAnnouncementsList = announcements.slice(0, 3).map(a => a.title);
         
         // 2. Run Flow
         const result = await runAegisPulse({
-            topUsers,
-            recentAnnouncements,
-            totalUsers: users.length
+            topUsers: topUsersList,
+            recentAnnouncements: recentAnnouncementsList,
+            totalUsers: users.length,
+            isChatQuiet: true // Simulated for now
         });
         
         // 3. Update Status
@@ -726,7 +727,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         claimElementQuestMilestone: (uid, m) => updateDoc(doc(db, 'users', uid), { credits: increment(m === 100 ? 50 : m === 200 ? 100 : m === 300 ? 150 : 200), elementQuestMilestonesClaimed: arrayUnion(m) }),
         claimDimensionShiftMilestone: async (uid, m) => {
-            const snap = await getDoc(getDoc(doc(db, 'users', uid)));
+            const snap = await getDoc(doc(db, 'users', uid));
             if (!snap.exists()) return false;
             const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
             const claims = snap.data().dimensionShiftClaims?.[weekKey] || [];
