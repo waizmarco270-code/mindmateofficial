@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -90,6 +91,7 @@ export default function GroupDetailPage() {
     }
     
     const isClanAdmin = currentUser?.id === group.createdBy;
+    const isMember = group.memberUids?.includes(currentUser?.id || '');
     
     // Level logic including temporary max level
     const isTempMax = group.tempMaxLevelExpires && new Date(group.tempMaxLevelExpires) > new Date();
@@ -109,6 +111,8 @@ export default function GroupDetailPage() {
                 setTimeout(() => setShowXpPulse(false), 2000);
                 toast({ title: "XP Boost Applied!", description: "+500 Clan XP injected successfully." });
             }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Boost Failed", description: e.message });
         } finally {
             setIsBoosting(false);
         }
@@ -122,6 +126,8 @@ export default function GroupDetailPage() {
             if (success) {
                 toast({ title: "CLAN ASCENDED!", description: "Your clan is now MAX LEVEL for the next 7 days!", className: "bg-yellow-500/10 border-yellow-500/50" });
             }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Ascension Failed", description: e.message });
         } finally {
             setIsBoosting(false);
         }
@@ -216,8 +222,8 @@ export default function GroupDetailPage() {
                     </CardContent>
                 </Card>
 
-                {/* Clan Boost Controls - Leader Only */}
-                {isClanAdmin && (
+                {/* Clan Boost Controls - All Members can now use their artifacts to help */}
+                {isMember && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {(currentUserData?.inventory?.clanXpBoosters || 0) > 0 && (
                             <Card className="bg-gradient-to-br from-primary/20 via-background to-background border-primary/30">
@@ -228,7 +234,7 @@ export default function GroupDetailPage() {
                                 <CardFooter className="p-4 pt-0">
                                     <Button size="sm" className="w-full" onClick={handleUseXpBooster} disabled={isBoosting}>
                                         {isBoosting ? <Loader2 className="animate-spin h-4 w-4"/> : <TrendingUp className="mr-2 h-4 w-4"/>}
-                                        Boost XP (x{currentUserData?.inventory?.clanXpBoosters})
+                                        Boost Clan XP (x{currentUserData?.inventory?.clanXpBoosters})
                                     </Button>
                                 </CardFooter>
                             </Card>
@@ -242,7 +248,7 @@ export default function GroupDetailPage() {
                                 <CardFooter className="p-4 pt-0">
                                     <Button variant="outline" size="sm" className="w-full border-yellow-500/50 hover:bg-yellow-500/10 text-yellow-600" onClick={handleUseLevelMaxer} disabled={isBoosting}>
                                         {isBoosting ? <Loader2 className="animate-spin h-4 w-4"/> : <Sparkles className="mr-2 h-4 w-4"/>}
-                                        Ascend (x{currentUserData?.inventory?.clanLevelMaxers})
+                                        Ascend Clan (x{currentUserData?.inventory?.clanLevelMaxers})
                                     </Button>
                                 </CardFooter>
                             </Card>
