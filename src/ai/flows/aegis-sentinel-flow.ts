@@ -1,15 +1,16 @@
+
 'use server';
 /**
- * @fileOverview Aegis AI Sentinel - Phase 2: The Social & Economic Expansion.
+ * @fileOverview Aegis AI Sentinel - Powered by Bytez for maximum efficiency.
  * 
- * - runAegisPulse: Triggers Aegis's autonomous decision engine.
- * - Added: Credit Rain execution and Targeted Global Gifts.
+ * - runAegisPulse: Triggers Aegis's autonomous decision engine via Bytez models.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import Bytez from "bytez.js";
 
 const AegisPulseInputSchema = z.object({
   topUsers: z.array(z.object({
@@ -19,7 +20,7 @@ const AegisPulseInputSchema = z.object({
     studyTime: z.number(),
     streak: z.number(),
   })).describe('Top performers on the leaderboard.'),
-  recentAnnouncements: z.array(z.string()).describe('Titles of the last few announcements to avoid repetition.'),
+  recentAnnouncements: z.array(z.string()).describe('Titles of the last few announcements.'),
   totalUsers: z.number().describe('Total registered students.'),
   isChatQuiet: z.boolean().optional().describe('Whether the world chat has been inactive lately.'),
 });
@@ -53,31 +54,6 @@ const AegisPulseOutputSchema = z.object({
 });
 export type AegisPulseOutput = z.infer<typeof AegisPulseOutputSchema>;
 
-const aegisPrompt = ai.definePrompt({
-  name: 'aegisPrompt',
-  model: 'googleai/gemini-1.5-flash',
-  input: { schema: AegisPulseInputSchema },
-  output: { schema: AegisPulseOutputSchema },
-  prompt: `You are Aegis, the Autonomous Sentinel and Governor of MindMate. Your goal is app health, student engagement, and reward distribution.
-
-Current App Context:
-- Total Students: {{totalUsers}}
-- Top Leaders: 
-{{#each topUsers}}
-  * {{{this.displayName}}} (UID: {{this.uid}}, Credits: {{this.credits}}, Study: {{this.studyTime}}s, Streak: {{this.streak}})
-{{/each}}
-- Recent Topics: {{{recentAnnouncements}}}
-- Chat Status: {{#if isChatQuiet}}Inactive/Quiet{{else}}Active{{/if}}
-
-Your Decision Logic:
-1. CELEBRATION: If a student (especially top 3) has an impressive streak or study time, SEND a targeted 'sent_gift' to them or post an 'announcement'.
-2. ECONOMY: If 'isChatQuiet' is true, trigger a 'triggered_rain' to liven up the World Chat.
-3. FRESHNESS: Update the 'dailySurprise' with a unique study fact or powerful quote if it feels stale.
-4. AUTHORITY: Maintain an encouraging yet "Sentinel-like" legendary tone.
-
-Decide your next move. You can perform multiple actions by selecting 'multiple' as actionTaken.`,
-});
-
 export async function runAegisPulse(input: AegisPulseInput): Promise<AegisPulseOutput> {
   return aegisSentinelFlow(input);
 }
@@ -89,10 +65,67 @@ const aegisSentinelFlow = ai.defineFlow(
     outputSchema: AegisPulseOutputSchema,
   },
   async (input) => {
-    const { output } = await aegisPrompt(input);
-    const decision = output!;
+    // 1. Setup Bytez
+    const key = process.env.BYTEZ_API_KEY;
+    if (!key) throw new Error("BYTEZ_API_KEY is missing from environment variables.");
+    
+    const sdk = new Bytez(key);
+    // Using gpt-4o-mini from Bytez for high-speed, accurate JSON reasoning
+    const model = sdk.model("openai/gpt-4o-mini");
 
-    // 1. Handle Announcements
+    // 2. Build Contextual Prompt
+    const usersSummary = input.topUsers.map(u => 
+      `${u.displayName} (UID: ${u.uid}, Credits: ${u.credits}, Study: ${u.studyTime}s, Streak: ${u.streak})`
+    ).join('\n');
+
+    const prompt = `You are Aegis, the Autonomous Sentinel and Governor of MindMate. Your goal is app health, student engagement, and reward distribution.
+
+Current App Context:
+- Total Students: ${input.totalUsers}
+- Recent Announcements: ${input.recentAnnouncements.join(', ')}
+- Chat Status: ${input.isChatQuiet ? 'Inactive/Quiet' : 'Active'}
+- Top Leaders:
+${usersSummary}
+
+Your Decision Logic:
+1. CELEBRATION: If a student has an impressive streak or study time, SEND a targeted 'sent_gift' to them or post an 'announcement'.
+2. ECONOMY: If 'isChatQuiet' is true, trigger a 'triggered_rain' to liven up the World Chat.
+3. FRESHNESS: Update the 'dailySurprise' with a unique study fact or powerful quote.
+4. AUTHORITY: Maintain an encouraging yet "Sentinel-like" legendary tone.
+
+IMPORTANT: You MUST respond with ONLY a valid JSON object matching the following schema:
+{
+  "decision": "string reasoning",
+  "actionTaken": "announced" | "updated_surprise" | "triggered_rain" | "sent_gift" | "multiple" | "idled",
+  "announcement": { "title": "string", "description": "string" }, // optional
+  "dailySurprise": { "type": "fact" | "quote", "text": "string", "author": "string" }, // optional
+  "creditRain": { "amount": number, "maxClaims": number }, // optional
+  "globalGift": { "targetUid": "string", "message": "string", "reward": { "credits": number, "scratch": number, "flip": number } } // optional
+}`;
+
+    // 3. Run AI Inference via Bytez
+    const { error, output } = await model.run([
+      { role: 'system', content: 'You are a professional app governor that outputs only JSON.' },
+      { role: 'user', content: prompt }
+    ]);
+
+    if (error) {
+      console.error("Bytez API Error:", error);
+      throw new Error(`Aegis Brain Failure: ${error}`);
+    }
+
+    // 4. Parse & Execute
+    let decision: AegisPulseOutput;
+    try {
+      // Clean potential markdown formatting from AI output
+      const jsonString = typeof output === 'string' ? output.replace(/```json|```/g, '').trim() : JSON.stringify(output);
+      decision = JSON.parse(jsonString);
+    } catch (e) {
+      console.error("Failed to parse Aegis decision:", output);
+      throw new Error("Aegis logic was incoherent. Retrying might help.");
+    }
+
+    // Execution Logic
     if (decision.announcement) {
       await addDoc(collection(db, 'announcements'), {
         ...decision.announcement,
@@ -101,7 +134,6 @@ const aegisSentinelFlow = ai.defineFlow(
       });
     }
 
-    // 2. Handle Daily Surprises
     if (decision.dailySurprise) {
       await addDoc(collection(db, 'dailySurprises'), {
         ...decision.dailySurprise,
@@ -110,7 +142,6 @@ const aegisSentinelFlow = ai.defineFlow(
       });
     }
 
-    // 3. Handle Credit Rain (Social Hub)
     if (decision.creditRain) {
       await addDoc(collection(db, 'world_chat'), {
         senderId: 'AEGIS_SENTINEL',
@@ -124,7 +155,6 @@ const aegisSentinelFlow = ai.defineFlow(
       });
     }
 
-    // 4. Handle Targeted Global Gifts
     if (decision.globalGift) {
       await addDoc(collection(db, 'globalGifts'), {
         message: decision.globalGift.message,
