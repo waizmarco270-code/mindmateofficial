@@ -67,13 +67,25 @@ export async function runAegisPulse(input: AegisPulseInput): Promise<AegisPulseO
 }
 
 /**
- * Robustly extracts the first JSON object from a string.
+ * Robustly extracts the first JSON object from a string, 
+ * handling Bytez specific schema suffix.
  */
 function extractJSON(str: string) {
-    const start = str.indexOf('{');
-    const end = str.lastIndexOf('}');
-    if (start === -1 || end === -1) return null;
-    return str.substring(start, end + 1);
+    const firstOpen = str.indexOf('{');
+    if (firstOpen === -1) return null;
+    
+    // Bytez often appends "Required JSON schema: ..." text after the actual JSON.
+    // We split by this marker to isolate the actual JSON string.
+    const schemaMarker = "Required JSON schema:";
+    let cleanStr = str;
+    if (str.includes(schemaMarker)) {
+        cleanStr = str.split(schemaMarker)[0];
+    }
+
+    const lastClose = cleanStr.lastIndexOf('}');
+    if (lastClose === -1) return null;
+    
+    return cleanStr.substring(firstOpen, lastClose + 1);
 }
 
 const aegisSentinelFlow = ai.defineFlow(
@@ -108,7 +120,7 @@ LOGIC:
 3. If no recent announcements, create an 'announced'.
 4. ALWAYS 'updated_surprise' with a new study fact or quote.
 
-OUTPUT: Return ONLY a raw JSON object. NO markdown, NO explanation.
+OUTPUT: Return ONLY a raw JSON object. Do not include markdown tags or any explanation after the closing brace.
 JSON format:
 {
   "decision": "Your brief reasoning",
@@ -141,8 +153,8 @@ JSON format:
         const cleanedJson = extractJSON(rawOutput);
         
         if (!cleanedJson) {
-            console.warn(`Model ${modelName} returned invalid format.`);
-            lastError = "Invalid JSON format";
+            console.warn(`Model ${modelName} returned invalid format. Output length: ${rawOutput.length}`);
+            lastError = "Invalid JSON structure";
             continue;
         }
 
