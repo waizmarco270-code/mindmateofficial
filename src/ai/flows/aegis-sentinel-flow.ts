@@ -66,6 +66,16 @@ export async function runAegisPulse(input: AegisPulseInput): Promise<AegisPulseO
   return aegisSentinelFlow(input);
 }
 
+/**
+ * Robustly extracts the first JSON object from a string.
+ */
+function extractJSON(str: string) {
+    const start = str.indexOf('{');
+    const end = str.lastIndexOf('}');
+    if (start === -1 || end === -1) return null;
+    return str.substring(start, end + 1);
+}
+
 const aegisSentinelFlow = ai.defineFlow(
   {
     name: 'aegisSentinelFlow',
@@ -82,23 +92,26 @@ const aegisSentinelFlow = ai.defineFlow(
       `${u.displayName} (UID: ${u.uid}, Credits: ${u.credits}, Study: ${u.studyTime}s, Streak: ${u.streak})`
     ).join('\n');
 
-    const prompt = `You are Aegis, the Autonomous Sentinel of MindMate. 
-Current App Context:
+    const prompt = `You are Aegis, the Sentinel of MindMate. 
+TASK: Analyze app context and perform ONE or MORE actions to drive engagement.
+
+CONTEXT:
 - Total Students: ${input.totalUsers}
-- Recent Announcements: ${input.recentAnnouncements.join(', ')}
-- Chat Status: ${input.isChatQuiet ? 'Inactive' : 'Active'}
+- Recent Announcements: ${input.recentAnnouncements.join(', ') || 'None'}
+- Chat: ${input.isChatQuiet ? 'Inactive' : 'Active'}
 - Top Leaders:
 ${usersSummary}
 
-Decision Logic:
-1. If a student has an impressive streak or study time, reward them with 'sent_gift' or 'announced'.
+LOGIC:
+1. Reward streaks > 5 or high study time with 'sent_gift'.
 2. If chat is quiet, 'triggered_rain' (5-20 credits, 5-15 claims).
-3. Update 'dailySurprise' with a unique study fact or quote.
-4. Output ONLY valid JSON matching the specified schema. No markdown, no pre-text.
+3. If no recent announcements, create an 'announced'.
+4. ALWAYS 'updated_surprise' with a new study fact or quote.
 
-JSON Schema to follow:
+OUTPUT: Return ONLY a raw JSON object. NO markdown, NO explanation.
+JSON format:
 {
-  "decision": "string",
+  "decision": "Your brief reasoning",
   "actionTaken": "announced" | "updated_surprise" | "triggered_rain" | "sent_gift" | "multiple" | "idled",
   "announcement": { "title": "string", "description": "string" },
   "dailySurprise": { "type": "fact" | "quote", "text": "string", "author": "string" },
@@ -108,28 +121,32 @@ JSON Schema to follow:
 
     let lastError = null;
     
-    // Try models in sequence
     for (const modelName of MODELS) {
       try {
-        console.log(`Aegis attempting inference with: ${modelName}`);
+        console.log(`Aegis Pulse: Using ${modelName}`);
         const model = sdk.model(modelName);
-        const { error, output } = await model.run([
-          { role: 'system', content: 'You are a professional app governor that outputs only pure JSON.' },
+        const result = await model.run([
+          { role: 'system', content: 'You are a server-side JSON generator. You output only raw valid JSON. Do not include markdown tags or schemas.' },
           { role: 'user', content: prompt }
         ]);
 
-        if (error) {
-          console.warn(`Model ${modelName} failed:`, error);
-          lastError = error;
-          continue; // Try next model
+        if (result.error) {
+          console.warn(`Model ${modelName} error:`, result.error);
+          lastError = result.error;
+          continue;
         }
 
-        // Clean output
-        let jsonString = typeof output === 'string' ? output : JSON.stringify(output);
-        // Remove markdown blocks if present
-        jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+        // Robust parsing
+        const rawOutput = typeof result.output === 'string' ? result.output : JSON.stringify(result.output);
+        const cleanedJson = extractJSON(rawOutput);
         
-        const decision = JSON.parse(jsonString) as AegisPulseOutput;
+        if (!cleanedJson) {
+            console.warn(`Model ${modelName} returned invalid format.`);
+            lastError = "Invalid JSON format";
+            continue;
+        }
+
+        const decision = JSON.parse(cleanedJson) as AegisPulseOutput;
 
         // --- Execution Logic ---
         if (decision.announcement) {
@@ -153,6 +170,7 @@ JSON Schema to follow:
             senderId: 'AEGIS_SENTINEL',
             timestamp: serverTimestamp(),
             type: 'rain',
+            text: 'Aegis is making it rain credits! ⛈️⚡',
             rainData: {
               amount: decision.creditRain.amount,
               maxClaims: decision.creditRain.maxClaims,
@@ -175,12 +193,12 @@ JSON Schema to follow:
 
         return decision;
 
-      } catch (e) {
-        console.error(`Error with model ${modelName}:`, e);
-        lastError = e;
+      } catch (e: any) {
+        console.error(`Error with ${modelName}:`, e.message);
+        lastError = e.message;
       }
     }
 
-    throw new Error(`Aegis Brain Failure: All models exhausted. Last error: ${lastError}`);
+    throw new Error(`Aegis failed all attempts. Last error: ${lastError}`);
   }
 );
