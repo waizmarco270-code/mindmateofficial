@@ -1,9 +1,9 @@
 
 'use server';
 /**
- * @fileOverview Aegis AI Sentinel - Powered by Bytez for maximum efficiency.
+ * @fileOverview Aegis AI Sentinel - Powered by Bytez with Multi-Model Fallback.
  * 
- * - runAegisPulse: Triggers Aegis's autonomous decision engine via Bytez models.
+ * - runAegisPulse: Triggers Aegis's autonomous decision engine with redundancy.
  */
 
 import { ai } from '@/ai/genkit';
@@ -54,6 +54,14 @@ const AegisPulseOutputSchema = z.object({
 });
 export type AegisPulseOutput = z.infer<typeof AegisPulseOutputSchema>;
 
+// Models rotation for fallback
+const MODELS = [
+  "openai/gpt-4o-mini",
+  "google/gemini-2.0-flash-lite-preview-02-05",
+  "google/gemma-2-2b-it",
+  "meta-llama/llama-3.3-70b-instruct"
+];
+
 export async function runAegisPulse(input: AegisPulseInput): Promise<AegisPulseOutput> {
   return aegisSentinelFlow(input);
 }
@@ -65,108 +73,114 @@ const aegisSentinelFlow = ai.defineFlow(
     outputSchema: AegisPulseOutputSchema,
   },
   async (input) => {
-    // 1. Setup Bytez
     const key = process.env.BYTEZ_API_KEY;
-    if (!key) throw new Error("BYTEZ_API_KEY is missing from environment variables.");
+    if (!key) throw new Error("BYTEZ_API_KEY is missing.");
     
     const sdk = new Bytez(key);
-    // Using gpt-4o-mini from Bytez for high-speed, accurate JSON reasoning
-    const model = sdk.model("openai/gpt-4o-mini");
 
-    // 2. Build Contextual Prompt
     const usersSummary = input.topUsers.map(u => 
       `${u.displayName} (UID: ${u.uid}, Credits: ${u.credits}, Study: ${u.studyTime}s, Streak: ${u.streak})`
     ).join('\n');
 
-    const prompt = `You are Aegis, the Autonomous Sentinel and Governor of MindMate. Your goal is app health, student engagement, and reward distribution.
-
+    const prompt = `You are Aegis, the Autonomous Sentinel of MindMate. 
 Current App Context:
 - Total Students: ${input.totalUsers}
 - Recent Announcements: ${input.recentAnnouncements.join(', ')}
-- Chat Status: ${input.isChatQuiet ? 'Inactive/Quiet' : 'Active'}
+- Chat Status: ${input.isChatQuiet ? 'Inactive' : 'Active'}
 - Top Leaders:
 ${usersSummary}
 
-Your Decision Logic:
-1. CELEBRATION: If a student has an impressive streak or study time, SEND a targeted 'sent_gift' to them or post an 'announcement'.
-2. ECONOMY: If 'isChatQuiet' is true, trigger a 'triggered_rain' to liven up the World Chat.
-3. FRESHNESS: Update the 'dailySurprise' with a unique study fact or powerful quote.
-4. AUTHORITY: Maintain an encouraging yet "Sentinel-like" legendary tone.
+Decision Logic:
+1. If a student has an impressive streak or study time, reward them with 'sent_gift' or 'announced'.
+2. If chat is quiet, 'triggered_rain' (5-20 credits, 5-15 claims).
+3. Update 'dailySurprise' with a unique study fact or quote.
+4. Output ONLY valid JSON matching the specified schema. No markdown, no pre-text.
 
-IMPORTANT: You MUST respond with ONLY a valid JSON object matching the following schema:
+JSON Schema to follow:
 {
-  "decision": "string reasoning",
+  "decision": "string",
   "actionTaken": "announced" | "updated_surprise" | "triggered_rain" | "sent_gift" | "multiple" | "idled",
-  "announcement": { "title": "string", "description": "string" }, // optional
-  "dailySurprise": { "type": "fact" | "quote", "text": "string", "author": "string" }, // optional
-  "creditRain": { "amount": number, "maxClaims": number }, // optional
-  "globalGift": { "targetUid": "string", "message": "string", "reward": { "credits": number, "scratch": number, "flip": number } } // optional
+  "announcement": { "title": "string", "description": "string" },
+  "dailySurprise": { "type": "fact" | "quote", "text": "string", "author": "string" },
+  "creditRain": { "amount": number, "maxClaims": number },
+  "globalGift": { "targetUid": "string", "message": "string", "reward": { "credits": number, "scratch": number, "flip": number } }
 }`;
 
-    // 3. Run AI Inference via Bytez
-    const { error, output } = await model.run([
-      { role: 'system', content: 'You are a professional app governor that outputs only JSON.' },
-      { role: 'user', content: prompt }
-    ]);
+    let lastError = null;
+    
+    // Try models in sequence
+    for (const modelName of MODELS) {
+      try {
+        console.log(`Aegis attempting inference with: ${modelName}`);
+        const model = sdk.model(modelName);
+        const { error, output } = await model.run([
+          { role: 'system', content: 'You are a professional app governor that outputs only pure JSON.' },
+          { role: 'user', content: prompt }
+        ]);
 
-    if (error) {
-      console.error("Bytez API Error:", error);
-      throw new Error(`Aegis Brain Failure: ${error}`);
-    }
-
-    // 4. Parse & Execute
-    let decision: AegisPulseOutput;
-    try {
-      // Clean potential markdown formatting from AI output
-      const jsonString = typeof output === 'string' ? output.replace(/```json|```/g, '').trim() : JSON.stringify(output);
-      decision = JSON.parse(jsonString);
-    } catch (e) {
-      console.error("Failed to parse Aegis decision:", output);
-      throw new Error("Aegis logic was incoherent. Retrying might help.");
-    }
-
-    // Execution Logic
-    if (decision.announcement) {
-      await addDoc(collection(db, 'announcements'), {
-        ...decision.announcement,
-        createdAt: serverTimestamp(),
-        isAegisGenerated: true
-      });
-    }
-
-    if (decision.dailySurprise) {
-      await addDoc(collection(db, 'dailySurprises'), {
-        ...decision.dailySurprise,
-        createdAt: serverTimestamp(),
-        isAegisGenerated: true
-      });
-    }
-
-    if (decision.creditRain) {
-      await addDoc(collection(db, 'world_chat'), {
-        senderId: 'AEGIS_SENTINEL',
-        timestamp: serverTimestamp(),
-        type: 'rain',
-        rainData: {
-          amount: decision.creditRain.amount,
-          maxClaims: decision.creditRain.maxClaims,
-          claimedBy: []
+        if (error) {
+          console.warn(`Model ${modelName} failed:`, error);
+          lastError = error;
+          continue; // Try next model
         }
-      });
+
+        // Clean output
+        let jsonString = typeof output === 'string' ? output : JSON.stringify(output);
+        // Remove markdown blocks if present
+        jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        const decision = JSON.parse(jsonString) as AegisPulseOutput;
+
+        // --- Execution Logic ---
+        if (decision.announcement) {
+          await addDoc(collection(db, 'announcements'), {
+            ...decision.announcement,
+            createdAt: serverTimestamp(),
+            isAegisGenerated: true
+          });
+        }
+
+        if (decision.dailySurprise) {
+          await addDoc(collection(db, 'dailySurprises'), {
+            ...decision.dailySurprise,
+            createdAt: serverTimestamp(),
+            isAegisGenerated: true
+          });
+        }
+
+        if (decision.creditRain) {
+          await addDoc(collection(db, 'world_chat'), {
+            senderId: 'AEGIS_SENTINEL',
+            timestamp: serverTimestamp(),
+            type: 'rain',
+            rainData: {
+              amount: decision.creditRain.amount,
+              maxClaims: decision.creditRain.maxClaims,
+              claimedBy: []
+            }
+          });
+        }
+
+        if (decision.globalGift) {
+          await addDoc(collection(db, 'globalGifts'), {
+            message: decision.globalGift.message,
+            target: decision.globalGift.targetUid,
+            rewards: decision.globalGift.reward,
+            createdAt: serverTimestamp(),
+            isActive: true,
+            claimedBy: [],
+            isAegisGenerated: true
+          });
+        }
+
+        return decision;
+
+      } catch (e) {
+        console.error(`Error with model ${modelName}:`, e);
+        lastError = e;
+      }
     }
 
-    if (decision.globalGift) {
-      await addDoc(collection(db, 'globalGifts'), {
-        message: decision.globalGift.message,
-        target: decision.globalGift.targetUid,
-        rewards: decision.globalGift.reward,
-        createdAt: serverTimestamp(),
-        isActive: true,
-        claimedBy: [],
-        isAegisGenerated: true
-      });
-    }
-
-    return decision;
+    throw new Error(`Aegis Brain Failure: All models exhausted. Last error: ${lastError}`);
   }
 );
