@@ -152,34 +152,34 @@ export default function SidebarContent() {
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex h-20 items-center justify-between border-b border-sidebar-border px-4">
-        <div className="flex items-center gap-2">
-            {/* Revolving Settings Icon */}
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold" prefetch={true}>
+            <Logo className="h-8 w-8" />
+            <span className="text-xl">MindMate</span>
+        </Link>
+
+        <div className="flex items-center gap-1">
+            {/* Revolving Yellow Settings Icon - Highlighted & Moved to Right */}
             <Link href="/dashboard/settings" prefetch={true}>
                 <Button variant="ghost" size="icon" className={cn(
                     "h-10 w-10 rounded-full transition-all group/settings",
                     isActive('/dashboard/settings') 
-                        ? "bg-primary/20 text-primary shadow-[0_0_15px_rgba(139,92,246,0.5)]" 
-                        : "text-muted-foreground hover:text-primary"
+                        ? "bg-yellow-400/20 text-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6)] ring-1 ring-yellow-400/50" 
+                        : "text-muted-foreground hover:text-yellow-400"
                 )}>
                     <Settings className={cn(
                         "h-6 w-6 transition-all duration-1000",
-                        "animate-[spin_8s_linear_infinite]",
-                        isActive('/dashboard/settings') && "text-primary drop-shadow-[0_0_8px_currentColor]"
+                        "animate-[spin_10s_linear_infinite]",
+                        isActive('/dashboard/settings') && "text-yellow-400 drop-shadow-[0_0_10px_currentColor]"
                     )} />
                 </Button>
             </Link>
 
-            <Link href="/dashboard" className="flex items-center gap-2 font-semibold" prefetch={true}>
-                <Logo className="h-7 w-7" />
-                <span className="text-lg">MindMate</span>
+            <Link href="/dashboard" aria-label="Go to Home" prefetch={true}>
+                <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} className={cn("h-10 w-10 rounded-lg", isActive('/dashboard') ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-lg shadow-red-500/20" : "text-muted-foreground")}>
+                    <Home className="h-5 w-5" />
+                </Button>
             </Link>
         </div>
-
-        <Link href="/dashboard" aria-label="Go to Home" prefetch={true}>
-            <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} className={cn("h-11 w-11 rounded-lg", isActive('/dashboard') ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-lg shadow-red-500/20" : "text-muted-foreground")}>
-                <Home className="h-6 w-6" />
-            </Button>
-        </Link>
       </div>
 
        <div className="p-4 border-b border-sidebar-border space-y-2">
