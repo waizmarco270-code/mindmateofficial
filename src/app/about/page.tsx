@@ -1,9 +1,9 @@
-
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { ArrowLeft, Lightbulb, Heart, Code, Copyright, Target, Rocket, Sparkles } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';

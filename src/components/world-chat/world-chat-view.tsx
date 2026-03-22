@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -120,7 +119,7 @@ export function WorldChatView() {
                     </Button>
                     <Globe className="h-6 w-6 text-emerald-400" />
                     <div>
-                        <h2 className="font-bold text-lg leading-tight">World Hub</h2>
+                        <h2 className="font-bold text-lg leading-tight">Global Forum</h2>
                         <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">Public Community</p>
                     </div>
                 </div>

@@ -1,4 +1,3 @@
-
 'use client';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,7 +7,7 @@ import { useFriends, FriendRequest } from '@/hooks/use-friends';
 import { useUsers, User } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { UserPlus, UserCheck, UserX, Check, X, Loader2 } from 'lucide-react';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
