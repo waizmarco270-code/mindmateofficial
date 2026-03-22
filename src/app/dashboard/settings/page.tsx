@@ -5,11 +5,11 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone } from 'lucide-react';
+import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone, FileText, ShieldCheck, Scale } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
-// Re-integrating components that were on separate pages
+// Internal Content Components
 import FaqContent from '../faq/page';
 import AboutContent from '../about/page';
 import RulesContent from '../rules/page';
@@ -20,6 +20,11 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// Legal Content (simplified versions for settings tab)
+import PrivacyPolicy from '@/app/privacy/page';
+import TermsAndConditions from '@/app/terms/page';
+import RefundPolicy from '@/app/refund/page';
 
 const THEME_COST = 50;
 
@@ -49,7 +54,7 @@ function AppearanceSettings() {
         }
         try {
             await unlockThemeForUser(user.id, themeToUnlock.id, THEME_COST);
-            setTheme(themeToUnlock.id); // Apply the new theme immediately
+            setTheme(themeToUnlock.id); 
             toast({ title: `Theme "${themeToUnlock.name}" Unlocked!` });
             setThemeToUnlock(null);
         } catch (error: any) {
@@ -167,19 +172,10 @@ function AccountSettings() {
                                 colorInputText: 'hsl(var(--foreground))',
                             },
                             elements: {
-                                card: {
-                                    boxShadow: 'none',
-                                    width: '100%',
-                                },
-                                scrollBox: {
-                                    padding: '1.5rem' // Corresponds to p-6
-                                },
-                                navbar: {
-                                    padding: '1.5rem',
-                                },
-                                navbarMobileMenuButton: {
-                                    color: 'hsl(var(--foreground))',
-                                }
+                                card: { boxShadow: 'none', width: '100%' },
+                                scrollBox: { padding: '1.5rem' },
+                                navbar: { padding: '1.5rem' },
+                                navbarMobileMenuButton: { color: 'hsl(var(--foreground))' }
                             }
                         }}
                     />
@@ -192,51 +188,6 @@ function AccountSettings() {
         </Card>
     );
 }
-
-function AppControls() {
-    const { toast } = useToast();
-    const handleHardRefresh = () => {
-        toast({
-            title: "Performing Hard Refresh",
-            description: "The application will now reload.",
-        });
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>App Controls</CardTitle>
-                <CardDescription>Advanced controls for managing the application state.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive">
-                            <RefreshCw className="mr-2" />
-                            Hard Refresh
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will force a hard refresh of the application, clearing any cached data. This is useful if you are experiencing display issues.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleHardRefresh}>Yes, Refresh</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </CardContent>
-        </Card>
-    );
-}
-
 
 function AdminSettings() {
     const { isSuperAdmin } = useAdmin();
@@ -259,7 +210,7 @@ function AdminSettings() {
                     </Card>
                 </Link>
                 {isSuperAdmin && (
-                    <Link href="/waizmarcoadmin" className="block">
+                    <Link href="/dashboard/super-admin" className="block">
                         <Card className="hover:bg-muted transition-colors border-amber-500/50">
                             <CardHeader className="flex-row items-center gap-4">
                                 <KeyRound className="h-8 w-8 text-amber-500"/>
@@ -287,82 +238,53 @@ export default function SettingsPage() {
                     <Settings className="h-8 w-8 text-primary" />
                     Settings & Info
                 </h1>
-                <p className="text-muted-foreground">Manage your account, preferences, and app settings.</p>
+                <p className="text-muted-foreground">Manage your account, legal preferences, and app settings.</p>
             </div>
             
-            <Link href="/dashboard/whats-new">
-                <Card className="relative overflow-hidden border-primary/20 bg-primary/5 group cursor-pointer transition-transform hover:-translate-y-1">
-                    <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)]"></div>
-                    <CardContent className="relative p-6 text-center">
-                        <p className="text-sm font-semibold text-primary/80">You are on the latest version!</p>
-                        <p className="text-5xl font-bold tracking-tighter text-shadow-glow animate-pulse" style={{"--tw-shadow-color": "hsl(var(--primary))"} as React.CSSProperties}>
-                            v1.5
-                        </p>
-                         <p className="text-sm font-semibold text-primary/80 group-hover:underline mt-2">Click to see what's new</p>
-                    </CardContent>
-                </Card>
-            </Link>
-
             <Tabs defaultValue="account" className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <TabsList className="md:col-span-1 flex flex-col h-auto bg-transparent p-0 border-r">
                     <TabsTrigger value="account" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><UserIcon className="mr-3"/> Account</TabsTrigger>
                     <TabsTrigger value="appearance" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Palette className="mr-3"/> Appearance</TabsTrigger>
                     <TabsTrigger value="about" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Info className="mr-3"/> About & FAQ</TabsTrigger>
-                     <TabsTrigger value="whats-new" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Megaphone className="mr-3"/> What's New</TabsTrigger>
-                    <TabsTrigger value="rules" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gavel className="mr-3"/> Rules & Regulations</TabsTrigger>
-                    <TabsTrigger value="app-controls" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><RefreshCw className="mr-3"/> App Controls</TabsTrigger>
+                    <TabsTrigger value="rules" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gavel className="mr-3"/> Rules</TabsTrigger>
+                    
+                    <div className="py-2 px-4 text-[10px] font-black uppercase text-muted-foreground tracking-widest border-t mt-2">Legal & Support</div>
+                    <TabsTrigger value="privacy" className="w-full justify-start text-sm py-2 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><ShieldCheck className="mr-3 h-4 w-4"/> Privacy Policy</TabsTrigger>
+                    <TabsTrigger value="terms" className="w-full justify-start text-sm py-2 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><FileText className="mr-3 h-4 w-4"/> Terms of Use</TabsTrigger>
+                    <TabsTrigger value="refund" className="w-full justify-start text-sm py-2 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Scale className="mr-3 h-4 w-4"/> Refund Policy</TabsTrigger>
+                    
+                    <div className="py-2 px-4 text-[10px] font-black uppercase text-muted-foreground tracking-widest border-t mt-2">System</div>
+                    <TabsTrigger value="app-controls" className="w-full justify-start text-sm py-2 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><RefreshCw className="mr-3 h-4 w-4"/> App Controls</TabsTrigger>
                      {showAdminTab && (
-                        <TabsTrigger value="admin" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Shield className="mr-3"/> Admin</TabsTrigger>
+                        <TabsTrigger value="admin" className="w-full justify-start text-sm py-2 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Shield className="mr-3 h-4 w-4"/> Admin</TabsTrigger>
                     )}
                 </TabsList>
                 
                 <div className="md:col-span-3">
-                     <TabsContent value="account">
-                        <AccountSettings />
-                    </TabsContent>
-                    <TabsContent value="appearance">
-                        <AppearanceSettings />
-                    </TabsContent>
+                    <TabsContent value="account"><AccountSettings /></TabsContent>
+                    <TabsContent value="appearance"><AppearanceSettings /></TabsContent>
                     <TabsContent value="about" className="space-y-8">
-                         <Card>
-                            <CardHeader><CardTitle>About MindMate</CardTitle></CardHeader>
-                            <CardContent><AboutContent /></CardContent>
-                         </Card>
-                         <Card>
-                             <CardHeader><CardTitle>Frequently Asked Questions</CardTitle></CardHeader>
-                            <CardContent><FaqContent /></CardContent>
-                        </Card>
+                         <Card><CardHeader><CardTitle>About MindMate</CardTitle></CardHeader><CardContent><AboutContent /></CardContent></Card>
+                         <Card><CardHeader><CardTitle>FAQ</CardTitle></CardHeader><CardContent><FaqContent /></CardContent></Card>
                     </TabsContent>
-                    <TabsContent value="whats-new">
-                         <Card>
-                            <CardHeader>
-                                <CardTitle>What's New in MindMate</CardTitle>
-                                <CardDescription>Check out the latest features and updates.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="text-center text-muted-foreground">Please navigate to the <Link href="/dashboard/whats-new" className="text-primary underline">What's New page</Link> to see the full version history.</p>
-                            </CardContent>
-                        </Card>
-                    </TabsContent>
-                    <TabsContent value="rules">
+                    <TabsContent value="rules"><Card><CardHeader><CardTitle>Rules & Regulations</CardTitle></CardHeader><CardContent><RulesContent /></CardContent></Card></TabsContent>
+                    
+                    {/* Legal Tabs */}
+                    <TabsContent value="privacy"><div className="rounded-lg border overflow-hidden"><PrivacyPolicy /></div></TabsContent>
+                    <TabsContent value="terms"><div className="rounded-lg border overflow-hidden"><TermsAndConditions /></div></TabsContent>
+                    <TabsContent value="refund"><div className="rounded-lg border overflow-hidden"><RefundPolicy /></div></TabsContent>
+                    
+                    <TabsContent value="app-controls">
                         <Card>
-                            <CardHeader><CardTitle>Rules & Regulations</CardTitle></CardHeader>
-                            <CardContent><RulesContent /></CardContent>
+                            <CardHeader><CardTitle>System Refresh</CardTitle><CardDescription>Force a hard refresh to clear cache and update components.</CardDescription></CardHeader>
+                            <CardContent><Button variant="destructive" onClick={() => window.location.reload()}><RefreshCw className="mr-2 h-4 w-4"/> Hard Refresh</Button></CardContent>
                         </Card>
                     </TabsContent>
-                     <TabsContent value="app-controls">
-                        <AppControls />
-                    </TabsContent>
-                    {showAdminTab && (
-                        <TabsContent value="admin">
-                            <AdminSettings />
-                        </TabsContent>
-                    )}
+                    {showAdminTab && <TabsContent value="admin"><AdminSettings /></TabsContent>}
                 </div>
             </Tabs>
         </div>
     );
 }
 
-// Dummy Label to satisfy the compiler for the nested component
 const Label = ({ children, ...props }: React.ComponentProps<'label'>) => <label {...props}>{children}</label>;
