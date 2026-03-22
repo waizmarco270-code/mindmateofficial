@@ -158,24 +158,34 @@ export default function SidebarContent() {
         </Link>
 
         <div className="flex items-center gap-1">
-            {/* Revolving Yellow Settings Icon - Highlighted & Moved to Right */}
+            {/* Always-On Revolving Yellow Settings Icon */}
             <Link href="/dashboard/settings" prefetch={true}>
                 <Button variant="ghost" size="icon" className={cn(
                     "h-10 w-10 rounded-full transition-all group/settings",
-                    isActive('/dashboard/settings') 
-                        ? "bg-yellow-400/20 text-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.6)] ring-1 ring-yellow-400/50" 
-                        : "text-muted-foreground hover:text-yellow-400"
+                    // Added default yellow styling and glow
+                    "bg-yellow-400/10 text-yellow-400/80 shadow-[0_0_15px_rgba(250,204,21,0.3)] ring-1 ring-yellow-400/30",
+                    isActive('/dashboard/settings') && "bg-yellow-400/20 text-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)] ring-2 ring-yellow-400/50"
                 )}>
                     <Settings className={cn(
                         "h-6 w-6 transition-all duration-1000",
                         "animate-[spin_10s_linear_infinite]",
+                        // Permanent shadow for depth
+                        "drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]",
                         isActive('/dashboard/settings') && "text-yellow-400 drop-shadow-[0_0_10px_currentColor]"
                     )} />
                 </Button>
             </Link>
 
             <Link href="/dashboard" aria-label="Go to Home" prefetch={true}>
-                <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} className={cn("h-10 w-10 rounded-lg", isActive('/dashboard') ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-lg shadow-red-500/20" : "text-muted-foreground")}>
+                <Button 
+                    variant="ghost" 
+                    className={cn(
+                        "h-10 w-10 rounded-lg p-0 transition-all", 
+                        // Always-On Red styling and glow
+                        "bg-red-500/10 text-red-400/80 ring-1 ring-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.3)]",
+                        isActive('/dashboard') && "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-[0_0_25px_rgba(239,68,68,0.6)]"
+                    )}
+                >
                     <Home className="h-5 w-5" />
                 </Button>
             </Link>
