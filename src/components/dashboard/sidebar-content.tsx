@@ -79,7 +79,6 @@ const competeNav = [
 const helpNav = [
     { href: '/dashboard/docs', icon: FileText, label: 'Documentation', glow: 'text-blue-400' },
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Support Center', glow: 'text-rose-400' },
-    { href: '/dashboard/settings', icon: Settings, label: 'Settings', glow: 'text-slate-400' },
 ];
 
 const socialLinks = [
@@ -153,10 +152,29 @@ export default function SidebarContent() {
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex h-20 items-center justify-between border-b border-sidebar-border px-4">
-        <Link href="/dashboard" className="flex items-center gap-3 font-semibold" prefetch={true}>
-          <Logo className="h-8 w-8" />
-          <span className="text-xl">MindMate</span>
-        </Link>
+        <div className="flex items-center gap-2">
+            {/* Revolving Settings Icon */}
+            <Link href="/dashboard/settings" prefetch={true}>
+                <Button variant="ghost" size="icon" className={cn(
+                    "h-10 w-10 rounded-full transition-all group/settings",
+                    isActive('/dashboard/settings') 
+                        ? "bg-primary/20 text-primary shadow-[0_0_15px_rgba(139,92,246,0.5)]" 
+                        : "text-muted-foreground hover:text-primary"
+                )}>
+                    <Settings className={cn(
+                        "h-6 w-6 transition-all duration-1000",
+                        "animate-[spin_8s_linear_infinite]",
+                        isActive('/dashboard/settings') && "text-primary drop-shadow-[0_0_8px_currentColor]"
+                    )} />
+                </Button>
+            </Link>
+
+            <Link href="/dashboard" className="flex items-center gap-2 font-semibold" prefetch={true}>
+                <Logo className="h-7 w-7" />
+                <span className="text-lg">MindMate</span>
+            </Link>
+        </div>
+
         <Link href="/dashboard" aria-label="Go to Home" prefetch={true}>
             <Button variant={isActive('/dashboard') ? "secondary" : "ghost"} className={cn("h-11 w-11 rounded-lg", isActive('/dashboard') ? "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-lg shadow-red-500/20" : "text-muted-foreground")}>
                 <Home className="h-6 w-6" />
