@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -154,10 +153,10 @@ export default function SidebarContent() {
       <div className="flex h-20 items-center justify-between border-b border-sidebar-border px-4">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold" prefetch={true}>
             <Logo className="h-8 w-8" />
-            <span className="text-xl">MindMate</span>
+            <span className="text-xl text-nowrap">MindMate</span>
         </Link>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-3">
             {/* Always-On Revolving Yellow Settings Icon */}
             <Link href="/dashboard/settings" prefetch={true}>
                 <Button variant="ghost" size="icon" className={cn(
