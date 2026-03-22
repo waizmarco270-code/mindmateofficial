@@ -266,8 +266,6 @@ export default function DashboardPage() {
     const streak = currentUserData?.streak ?? 0;
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
-    const isWaizMarco = isSuperAdmin;
-
     if (isRedirecting) {
         return (
             <div className="flex h-full w-full items-center justify-center">
@@ -285,10 +283,10 @@ export default function DashboardPage() {
         
         <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                {isWaizMarco ? "Greetings, Master WaizMarco! 🛡️" : `Welcome Back, ${currentUserData?.displayName || 'Student'}!`}
+                Welcome Back, {currentUserData?.displayName || 'Student'}!
             </h1>
             <p className="text-muted-foreground">
-                {isWaizMarco ? "The Sentinel is online. 60+ legends are currently studying." : "Here's a snapshot of your study world."}
+                Here's a snapshot of your study world.
             </p>
         </div>
 
@@ -403,14 +401,14 @@ export default function DashboardPage() {
                             <div className="grid grid-cols-4 gap-4 py-4">
                                 {[
                                     { title: 'Groups', href: '/dashboard/groups', icon: Users, glow: 'text-green-400' },
-                                    { title: 'Social Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
+                                    { title: 'Alliance Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
                                     { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
                                     { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
                                     { title: 'MM Nexus', href: '/dashboard/schedule', icon: Calendar, glow: 'text-blue-400' },
                                     { title: 'Roadmap', href: '/dashboard/roadmap', icon: Map, glow: 'text-orange-400' },
                                     { title: 'Resources', href: '/dashboard/resources', icon: BookOpen, glow: 'text-orange-400' },
                                     { title: 'Game Zone', href: '/dashboard/game-zone', icon: Gamepad2, glow: 'text-rose-400' },
-                                    { title: 'World Chat', href: '/dashboard/world', icon: Globe, glow: 'text-blue-400' },
+                                    { title: 'Global Forum', href: '/dashboard/world', icon: Globe, glow: 'text-blue-400' },
                                     { title: 'Reward Zone', href: '/dashboard/reward', icon: Gift, glow: 'text-pink-400' },
                                     { title: 'Leaderboard', href: '/dashboard/leaderboard', icon: Trophy, glow: 'text-amber-400' },
                                     { title: 'Invite & Earn', href: '/dashboard/refer', icon: UserPlus, glow: 'text-green-400' },
@@ -432,7 +430,7 @@ export default function DashboardPage() {
                 <CardContent className="grid grid-cols-4 gap-4 text-center">
                     {[
                         { title: 'Groups', href: '/dashboard/groups', icon: Users, glow: 'text-green-400' },
-                        { title: 'Social Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
+                        { title: 'Alliance Hub', href: '/dashboard/social', icon: Users, glow: 'text-yellow-400' },
                         { title: 'Quiz Zone', href: '/dashboard/quiz', icon: BrainCircuit, glow: 'text-purple-400' },
                         { title: 'Marco AI', href: '/dashboard/ai-assistant', icon: Bot, glow: 'text-sky-400' },
                     ].map(tool => (
