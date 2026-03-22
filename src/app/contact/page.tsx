@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import Link from 'next/link';
-import { ArrowLeft, Mail, Phone, MapPin, Send, MessageSquare, ShieldAlert, Sparkles, CreditCard, LifeBuoy } from 'lucide-react';
+import { ArrowLeft, Mail, Phone, MapPin, Send, MessageSquare, ShieldAlert, Sparkles, CreditCard, LifeBuoy, Loader2 } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -180,10 +180,11 @@ export default function ContactUs() {
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="general">General Inquiry</SelectItem>
-                      <SelectItem value="payment">Payment/Credits</SelectItem>
-                      <SelectItem value="bug">Bug Report</SelectItem>
-                      <SelectItem value="feature">Feature Request</SelectItem>
+                      <SelectItem value="general">General / Custom Inquiry</SelectItem>
+                      <SelectItem value="payment">Payment/Credits Issue</SelectItem>
+                      <SelectItem value="bug">Bug Report (Earn Rewards)</SelectItem>
+                      <SelectItem value="feature">New Feature Request</SelectItem>
+                      <SelectItem value="partnership">Collaboration / Business</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

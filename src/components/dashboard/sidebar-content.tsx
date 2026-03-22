@@ -39,7 +39,8 @@ import {
   ShoppingCart,
   Film,
   Gem,
-  Sparkles
+  Sparkles,
+  FileText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -73,6 +74,12 @@ const competeNav = [
     { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
     { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
+];
+
+const helpNav = [
+    { href: '/dashboard/docs', icon: FileText, label: 'Documentation', glow: 'text-blue-400' },
+    { href: '/dashboard/help', icon: LifeBuoy, label: 'Support Center', glow: 'text-rose-400' },
+    { href: '/dashboard/settings', icon: Settings, label: 'Settings', glow: 'text-slate-400' },
 ];
 
 const socialLinks = [
@@ -120,7 +127,7 @@ export default function SidebarContent() {
     return false;
   };
   
-  const renderNavLinks = (navItems: typeof mainNavItems) => (
+  const renderNavLinks = (navItems: any[]) => (
     <div className="space-y-1">
       {navItems.map((item) => (
           <Link
@@ -158,7 +165,6 @@ export default function SidebarContent() {
       </div>
 
        <div className="p-4 border-b border-sidebar-border space-y-2">
-          {/* ELITE LOUNGE */}
           {isSpecialUser && (
             <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
                 <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
@@ -166,14 +172,12 @@ export default function SidebarContent() {
             </Link>
           )}
 
-          {/* NEXUS EMPORIUM (STORE) - HIGHLIGHTED TOP LINK */}
           <Link href="/dashboard/store" prefetch={true} className={cn(
               'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all relative overflow-hidden',
               isActive('/dashboard/store') 
                 ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
                 : 'bg-muted/30 border-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 text-primary animate-in fade-in-50'
           )}>
-              {/* Shimmer Effect */}
               {!isActive('/dashboard/store') && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />}
               <ShoppingCart className={cn("h-5 w-5", isActive('/dashboard/store') ? "text-white" : "text-primary animate-pulse")} />
               <span className="font-black uppercase tracking-tight text-sm">Nexus Emporium</span>
@@ -182,18 +186,22 @@ export default function SidebarContent() {
       </div>
 
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
-        <Accordion type="multiple" defaultValue={['main-tools', 'community-resources', 'compete-earn', 'admin-dev']} className="w-full">
+        <Accordion type="multiple" defaultValue={['main-tools', 'community-resources', 'compete-earn', 'help-config']} className="w-full">
           <AccordionItem value="main-tools" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Main</AccordionTrigger>
             <AccordionContent className="px-0 pb-2">{renderNavLinks(mainNavItems)}</AccordionContent>
           </AccordionItem>
           <AccordionItem value="community-resources" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Community & Resources</AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">{renderNavLinks(communityNav as any)}</AccordionContent>
+            <AccordionContent className="px-0 pb-2">{renderNavLinks(communityNav)}</AccordionContent>
           </AccordionItem>
           <AccordionItem value="compete-earn" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Compete & Earn</AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">{renderNavLinks(competeNav as any)}</AccordionContent>
+            <AccordionContent className="px-0 pb-2">{renderNavLinks(competeNav)}</AccordionContent>
+          </AccordionItem>
+          <AccordionItem value="help-config" className="border-b-0">
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Config & Help</AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">{renderNavLinks(helpNav)}</AccordionContent>
           </AccordionItem>
           {(isAdmin || showDevLink) && (
             <AccordionItem value="admin-dev" className="border-b-0">
@@ -218,18 +226,8 @@ export default function SidebarContent() {
           )}
         </Accordion>
       </div>
-       <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
-          <Link href="/dashboard/settings" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/settings') ? 'bg-primary/10 text-primary font-semibold' : 'hover:text-primary')}>
-                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/settings') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
-                <Settings className="h-5 w-5" />
-                <span className="flex-1">Settings & Info</span>
-            </Link>
-          <Link href="/dashboard/help" className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/help') ? 'bg-primary/10 text-primary font-semibold' : 'hover:text-primary')}>
-                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/help') ? "bg-primary" : "group-hover:scale-y-50" )}></div>
-                <LifeBuoy className="h-5 w-5" />
-                <span className="flex-1">Help &amp; Support</span>
-            </Link>
-          <div className="flex items-center justify-around pt-4">
+       <div className="mt-auto p-4 border-t border-sidebar-border">
+          <div className="flex items-center justify-around">
               {socialLinks.map(link => {
                   let Icon;
                   if (link.name === 'Instagram') Icon = InstagramIcon;
