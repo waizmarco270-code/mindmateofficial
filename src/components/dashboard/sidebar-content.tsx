@@ -38,7 +38,8 @@ import {
   Fingerprint,
   ShoppingCart,
   Film,
-  Gem
+  Gem,
+  Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
