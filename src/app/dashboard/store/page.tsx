@@ -542,8 +542,8 @@ export default function StorePage() {
 
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
-                    <h1 className="text-4xl font-black tracking-tight flex items-center gap-3">
-                        <ShoppingCart className="h-10 w-10 text-primary drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]"/>
+                    <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-primary drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]">
+                        <ShoppingCart className="h-10 w-10"/>
                         Nexus Emporium
                     </h1>
                     <p className="text-muted-foreground font-medium">Equip your study journey with premium credits and legendary artifacts.</p>

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState } from 'react';
@@ -16,7 +15,7 @@ import { LoginWall } from '@/components/ui/login-wall';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
-export default function SocialPage() {
+export default function AllianceHubPage() {
   const [selectedFriend, setSelectedFriend] = useState<User | null>(null);
   const isMobile = useIsMobile();
 
@@ -33,8 +32,8 @@ export default function SocialPage() {
       <div className="h-full relative">
            <SignedOut>
             <LoginWall 
-                title="Join the Community!"
-                description="Sign up to connect with friends, chat with other students, and join the MindMate social hub."
+                title="Unlock the Alliance Hub!"
+                description="Sign up to connect with friends, form alliances, and chat with other scholars in our private network."
             />
           </SignedOut>
           <div className="grid h-full grid-cols-1 md:grid-cols-12 gap-6">
@@ -82,8 +81,8 @@ export default function SocialPage() {
                           <Card className="h-full flex items-center justify-center border-dashed">
                               <div className="text-center text-muted-foreground">
                                   <MessageSquare className="h-12 w-12 mx-auto mb-4"/>
-                                  <h2 className="text-lg font-semibold">Select a friend to start chatting</h2>
-                                  <p className="text-sm">Your conversations will appear here.</p>
+                                  <h2 className="text-lg font-semibold">Select an ally to start collaborating</h2>
+                                  <p className="text-sm">Your alliance conversations will appear here.</p>
                               </div>
                           </Card>
                         )}

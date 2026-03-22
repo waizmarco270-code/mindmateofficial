@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen, ShoppingCart } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
@@ -228,34 +227,41 @@ export default function Header() {
             <>
                 <AdminPanelMenu />
                 
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground">
-                            <Medal className="h-5 w-5 text-amber-500 animate-gold-shine" />
-                            <span>{credits} <span className="hidden sm:inline">Credits</span></span>
-                        </div>
-                    </PopoverTrigger>
-                    <PopoverContent className="max-w-xs p-4">
-                        <div className="space-y-3">
-                            <div>
-                                <h4 className="font-bold text-base mb-1">How to Use Credits</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Use your credits to unlock premium study resources (Class 10, JEE, Class 12) and other special features in the app.
-                                </p>
+                <div className="flex items-center gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition-all hover:bg-secondary/80">
+                                <Medal className="h-5 w-5 text-amber-500 animate-gold-shine" />
+                                <span>{credits} <span className="hidden sm:inline">Credits</span></span>
                             </div>
-                            <div>
-                                <h4 className="font-bold text-base mb-1">How to Earn Credits</h4>
-                                <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                                    <li><span className="font-semibold text-foreground">+1 Credit</span> for completing all daily tasks.</li>
-                                    <li><span className="font-semibold text-foreground">+5 Credits</span> for a perfect quiz score.</li>
-                                    <li><span className="font-semibold text-foreground">Up to +10 Credits</span> for completing focus sessions.</li>
-                                    <li><span className="font-semibold text-foreground">Play games</span> in the Reward Zone for a chance to win big!</li>
-                                </ul>
+                        </PopoverTrigger>
+                        <PopoverContent className="max-w-xs p-4">
+                            <div className="space-y-3">
+                                <div>
+                                    <h4 className="font-bold text-base mb-1">How to Use Credits</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        Use your credits to unlock premium study resources and other special features in the app.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h4 className="font-bold text-base mb-1">How to Earn Credits</h4>
+                                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
+                                        <li><span className="font-semibold text-foreground">+1 Credit</span> for daily tasks.</li>
+                                        <li><span className="font-semibold text-foreground">+5 Credits</span> for perfect quizzes.</li>
+                                        <li><span className="font-semibold text-foreground">Play games</span> in the Reward Zone!</li>
+                                    </ul>
+                                </div>
                             </div>
-                            <p className="text-xs text-amber-500 font-semibold text-center pt-2">Use them wisely!</p>
-                        </div>
-                    </PopoverContent>
-                </Popover>
+                        </PopoverContent>
+                    </Popover>
+
+                    {/* NEW STORE QUICK ACCESS */}
+                    <Link href="/dashboard/store" title="Nexus Emporium">
+                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
+                            <ShoppingCart className="h-5 w-5" />
+                        </Button>
+                    </Link>
+                </div>
                 
                 <Inbox />
 

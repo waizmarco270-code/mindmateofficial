@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,9 +37,9 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
     return (
         <Card className="h-full flex flex-col">
             <CardHeader>
-                <CardTitle>Social Hub</CardTitle>
+                <CardTitle>Alliance Hub</CardTitle>
                 <Input
-                    placeholder="Search users..."
+                    placeholder="Search scholars..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -48,10 +47,10 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
             <Tabs defaultValue="all" className="flex-1 flex flex-col min-h-0">
                 <div className="px-6">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="all">All Users</TabsTrigger>
-                        <TabsTrigger value="friends">Friends</TabsTrigger>
+                        <TabsTrigger value="all">All</TabsTrigger>
+                        <TabsTrigger value="friends">Allies</TabsTrigger>
                         <TabsTrigger value="requests">
-                            Requests
+                            Reqs
                             {friendRequests.length > 0 && <span className="ml-2 h-2 w-2 rounded-full bg-destructive animate-pulse" />}
                         </TabsTrigger>
                     </TabsList>
@@ -95,7 +94,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
 function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFriend, loading, selectedFriendId, onlineUsers }: { users: User[], friends?: User[], sentRequests?: FriendRequest[], onAddFriend?: (uid: string) => void, onSelectFriend: (user: User) => void, loading: boolean, selectedFriendId?: string | null, onlineUsers?: { uid: string }[] }) {
     const { user: currentUser } = useUser();
     if (loading) return <div className="p-4 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></div>;
-    if (users.length === 0) return <div className="p-4 text-center text-muted-foreground">No users found.</div>;
+    if (users.length === 0) return <div className="p-4 text-center text-muted-foreground">No scholars found.</div>;
 
     const isFriend = (uid: string) => friends?.some(f => f.uid === uid);
     const requestSent = (uid: string) => sentRequests?.some(r => r.receiverId === uid);
@@ -149,7 +148,7 @@ function UserListView({ users, friends, sentRequests, onAddFriend, onSelectFrien
 
 function FriendRequestList({ requests, onAccept, onDecline, loading }: { requests: FriendRequest[], onAccept: (req: FriendRequest) => void, onDecline: (req: FriendRequest) => void, loading: boolean }) {
     if (loading) return <div className="p-4 text-center text-muted-foreground"><Loader2 className="mx-auto h-6 w-6 animate-spin"/></div>;
-    if (requests.length === 0) return <div className="p-4 text-center text-muted-foreground">No pending friend requests.</div>;
+    if (requests.length === 0) return <div className="p-4 text-center text-muted-foreground">No pending requests.</div>;
 
     return (
          <ScrollArea className="h-full">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -59,9 +60,9 @@ const mainNavItems = [
 ];
 
 const communityNav = [
-  { href: '/dashboard/social', icon: Users, label: 'Social Hub', glow: 'text-yellow-400' },
+  { href: '/dashboard/social', icon: Users, label: 'Alliance Hub', glow: 'text-yellow-400' },
   { href: '/dashboard/groups', icon: Users, label: 'Study Groups', glow: 'text-green-400' },
-  { href: '/dashboard/world', icon: Globe, label: 'World Chat', glow: 'text-blue-400' },
+  { href: '/dashboard/world', icon: Globe, label: 'Global Forum', glow: 'text-blue-400' },
   { href: '/dashboard/social/nuggets', icon: Gem, label: 'Nugget Jar', glow: 'text-amber-400' },
   { href: '/dashboard/resources', icon: BookOpen, label: 'Resources', glow: 'text-orange-400' },
   { href: '/dashboard/refer', icon: UserPlus, label: 'Invite & Earn', glow: 'text-green-400' },
@@ -71,7 +72,6 @@ const competeNav = [
     { href: '/dashboard/reward', icon: Gift, label: 'Reward Zone', glow: 'text-pink-400' },
     { href: '/dashboard/quiz', icon: BrainCircuit, label: 'Quiz Zone', glow: 'text-purple-400' },
     { href: '/dashboard/game-zone', icon: Gamepad2, label: 'Game Zone', glow: 'text-rose-400' },
-    { href: '/dashboard/store', icon: ShoppingCart, label: 'Store', glow: 'text-green-400' },
 ];
 
 const socialLinks = [
@@ -155,16 +155,33 @@ export default function SidebarContent() {
             </Button>
         </Link>
       </div>
-       <div className="p-4 border-b border-sidebar-border">
+
+       <div className="p-4 border-b border-sidebar-border space-y-2">
+          {/* ELITE LOUNGE */}
           {isSpecialUser && (
             <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
                 <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
                 <Crown className="h-5 w-5"/> Elite Lounge
             </Link>
-        )}
+          )}
+
+          {/* NEXUS EMPORIUM (STORE) - HIGHLIGHTED TOP LINK */}
+          <Link href="/dashboard/store" prefetch={true} className={cn(
+              'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all relative overflow-hidden',
+              isActive('/dashboard/store') 
+                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
+                : 'bg-muted/30 border-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 text-primary animate-in fade-in-50'
+          )}>
+              {/* Shimmer Effect */}
+              {!isActive('/dashboard/store') && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />}
+              <ShoppingCart className={cn("h-5 w-5", isActive('/dashboard/store') ? "text-white" : "text-primary animate-pulse")} />
+              <span className="font-black uppercase tracking-tight text-sm">Nexus Emporium</span>
+              <Sparkles className="h-3 w-3 absolute top-1 right-2 text-yellow-400 animate-pulse" />
+          </Link>
       </div>
+
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
-        <Accordion type="multiple" defaultValue={['main-tools', 'compete-earn', 'community-resources', 'admin-dev']} className="w-full">
+        <Accordion type="multiple" defaultValue={['main-tools', 'community-resources', 'compete-earn', 'admin-dev']} className="w-full">
           <AccordionItem value="main-tools" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Main</AccordionTrigger>
             <AccordionContent className="px-0 pb-2">{renderNavLinks(mainNavItems)}</AccordionContent>
