@@ -13,6 +13,7 @@ import { LoginWall } from '@/components/ui/login-wall';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { Badge } from '@/components/ui/badge';
 
 export default function HelpPage() {
     const { user } = useUser();
@@ -177,7 +178,7 @@ export default function HelpPage() {
                                 </Link>
                             </Button>
                             <Button asChild variant="ghost" className="w-full justify-between hover:bg-primary/5 text-sm group h-12">
-                                <Link href="/dashboard/settings?tab=about">
+                                <Link href="/dashboard/settings">
                                     <span className="flex items-center gap-2"><MessageSquare className="h-4 w-4"/> Common FAQs</span>
                                     <ArrowRight className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"/>
                                 </Link>
