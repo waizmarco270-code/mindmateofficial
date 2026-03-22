@@ -1,23 +1,21 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { LifeBuoy, Send, CheckCircle, MailQuestion, AlertTriangle, Award, ShieldCheck, Sparkles, Bug, FileText, ArrowRight } from 'lucide-react';
+import { LifeBuoy, Send, CheckCircle, MailQuestion, AlertTriangle, Award, ShieldCheck, Sparkles, Bug, FileText, ArrowRight, MessageSquare, Loader2 } from 'lucide-react';
 import { useAdmin } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 
 export default function HelpPage() {
     const { user } = useUser();
-    const { submitSupportTicket, currentUserData } = useAdmin();
+    const { submitSupportTicket } = useAdmin();
     const { toast } = useToast();
     const [message, setMessage] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -55,7 +53,7 @@ export default function HelpPage() {
                         <LifeBuoy className="h-10 w-10 text-primary" />
                         Support Command Center
                     </h1>
-                    <p className="text-muted-foreground">The ultimate gateway for technical assistance and platform improvement.</p>
+                    <p className="text-muted-foreground font-medium">The ultimate gateway for technical assistance and platform improvement.</p>
                 </div>
                 <Button asChild variant="outline" className="rounded-full px-6 border-primary/20 hover:bg-primary/5">
                     <Link href="/dashboard/docs">
@@ -101,7 +99,11 @@ export default function HelpPage() {
                                 </CardContent>
                                 <CardFooter className="bg-muted/30 border-t p-4">
                                     <Button type="submit" className="w-full h-14 text-lg font-bold rounded-xl shadow-lg shadow-primary/20" disabled={isSubmitting || !message.trim()}>
-                                        {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> SECURING CHANNEL...</> : <><Send className="mr-2 h-5 w-5"/> TRANSMIT TO HIGH COUNCIL</>}
+                                        {isSubmitting ? (
+                                            <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> SECURING CHANNEL...</>
+                                        ) : (
+                                            <><Send className="mr-2 h-5 w-5"/> TRANSMIT TO HIGH COUNCIL</>
+                                        )}
                                     </Button>
                                 </CardFooter>
                             </form>
@@ -115,7 +117,7 @@ export default function HelpPage() {
                                     <ShieldCheck className="h-4 w-4"/> Protocol: Ethics
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0 text-xs text-muted-foreground">
+                            <CardContent className="p-4 pt-0 text-xs text-muted-foreground leading-relaxed">
                                 Only genuine and clear reports are processed. False transmissions result in a <span className="font-bold text-destructive">-50 Credit penalty</span> to maintain system integrity.
                             </CardContent>
                         </Card>
@@ -125,7 +127,7 @@ export default function HelpPage() {
                                     <Sparkles className="h-4 w-4"/> Bounty Status
                                 </CardTitle>
                             </CardHeader>
-                            <CardContent className="p-4 pt-0 text-xs text-muted-foreground">
+                            <CardContent className="p-4 pt-0 text-xs text-muted-foreground leading-relaxed">
                                 All reporters are eligible for the <span className="font-bold text-primary">Sentinel's Bounty</span>. High-quality bug reports are rewarded manually by WaizMarco.
                             </CardContent>
                         </Card>
