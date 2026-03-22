@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -250,7 +248,7 @@ export default function DashboardPage() {
     const router = useRouter();
     const pathname = usePathname();
     const { pinnedPage } = usePinnedPage();
-    const { currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
+    const { users, currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
     
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
@@ -268,6 +266,8 @@ export default function DashboardPage() {
     const streak = currentUserData?.streak ?? 0;
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
+    const isWaizMarco = isSuperAdmin;
+
     if (isRedirecting) {
         return (
             <div className="flex h-full w-full items-center justify-center">
@@ -284,8 +284,12 @@ export default function DashboardPage() {
         </SignedOut>
         
         <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
-            <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+                {isWaizMarco ? "Greetings, Master WaizMarco! 🛡️" : `Welcome Back, ${currentUserData?.displayName || 'Student'}!`}
+            </h1>
+            <p className="text-muted-foreground">
+                {isWaizMarco ? "The Sentinel is online. 60+ legends are currently studying." : "Here's a snapshot of your study world."}
+            </p>
         </div>
 
         <div className="flex flex-col space-y-8">

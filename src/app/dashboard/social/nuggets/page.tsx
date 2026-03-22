@@ -49,7 +49,7 @@ function NuggetJarContent() {
         <div className="space-y-8 p-4">
             <div className="flex flex-col gap-4">
                  <Button asChild variant="outline" className="w-fit">
-                    <Link href="/dashboard/world"><ArrowLeft className="mr-2 h-4 w-4"/> Back to World Chat</Link>
+                    <Link href="/dashboard/world"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Global Forum</Link>
                 </Button>
                 <div className="text-center">
                     <Gem className="h-16 w-16 text-amber-500 mx-auto mb-2 animate-gold-shine" />
@@ -62,7 +62,7 @@ function NuggetJarContent() {
                 <div className="text-center py-20 opacity-50">
                     <Gem className="h-20 w-20 mx-auto mb-4" />
                     <p className="text-xl font-bold uppercase tracking-widest">The Jar is Empty</p>
-                    <p className="text-sm">Mark helpful messages in the World Chat to see them here.</p>
+                    <p className="text-sm">Mark helpful messages in the Global Forum to see them here.</p>
                 </div>
             ) : (
                 <div className="space-y-8 max-w-3xl mx-auto">
