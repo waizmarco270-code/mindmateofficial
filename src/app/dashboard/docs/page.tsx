@@ -4,9 +4,11 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Book, Zap, Gem, Users, ShieldCheck, Rocket, Brain, Award, Clock, FileText, Heart, Crown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 const sections = [
     {
@@ -277,9 +279,3 @@ export default function DocumentationPage() {
         </div>
     );
 }
-
-const Badge = ({ children, className }: { children: React.ReactNode, className?: string }) => (
-    <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold text-white", className)}>
-        {children}
-    </span>
-);

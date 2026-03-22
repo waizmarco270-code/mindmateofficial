@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen, ShoppingCart, Palette } from 'lucide-react';
@@ -6,7 +7,7 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
-import { UserButton, useUser, SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
+import { UserButton, useUser, SignedOut, SignInButton, SignUpButton, SignedIn } from '@clerk/nextjs';
 import { ScrollArea } from '../ui/scroll-area';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Separator } from '../ui/separator';
@@ -19,7 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { useFriends, type FriendRequest } from '@/hooks/use-friends';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
-import { useRewards } from '@/hooks/use-rewards';
 import { useTheme } from 'next-themes';
 
 const availableThemes: {id: AppThemeId, name: string, bg: string, primary: string}[] = [
@@ -307,7 +307,7 @@ export default function Header() {
                     </Popover>
 
                     <Link href="/dashboard/store" title="Nexus Emporium">
-                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
+                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-green-500/20 bg-green-500/5 text-green-500 hover:bg-green-500/10">
                             <ShoppingCart className="h-5 w-5" />
                         </Button>
                     </Link>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -161,14 +162,12 @@ export default function SidebarContent() {
             <Link href="/dashboard/settings" prefetch={true}>
                 <Button variant="ghost" size="icon" className={cn(
                     "h-10 w-10 rounded-full transition-all group/settings",
-                    // Added default yellow styling and glow
                     "bg-yellow-400/10 text-yellow-400/80 shadow-[0_0_15px_rgba(250,204,21,0.3)] ring-1 ring-yellow-400/30",
                     isActive('/dashboard/settings') && "bg-yellow-400/20 text-yellow-400 shadow-[0_0_25px_rgba(250,204,21,0.6)] ring-2 ring-yellow-400/50"
                 )}>
                     <Settings className={cn(
                         "h-6 w-6 transition-all duration-1000",
                         "animate-[spin_10s_linear_infinite]",
-                        // Permanent shadow for depth
                         "drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]",
                         isActive('/dashboard/settings') && "text-yellow-400 drop-shadow-[0_0_10px_currentColor]"
                     )} />
@@ -180,7 +179,6 @@ export default function SidebarContent() {
                     variant="ghost" 
                     className={cn(
                         "h-10 w-10 rounded-lg p-0 transition-all", 
-                        // Always-On Red styling and glow
                         "bg-red-500/10 text-red-400/80 ring-1 ring-red-500/30 shadow-[0_0_15px_rgba(239,68,68,0.3)]",
                         isActive('/dashboard') && "bg-red-500/20 text-red-400 ring-2 ring-red-500/50 shadow-[0_0_25px_rgba(239,68,68,0.6)]"
                     )}
@@ -200,20 +198,20 @@ export default function SidebarContent() {
           )}
 
           <Link href="/dashboard/store" prefetch={true} className={cn(
-              'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all relative overflow-hidden',
+              'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all relative overflow-hidden border-2',
               isActive('/dashboard/store') 
-                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20' 
-                : 'bg-muted/30 border-2 border-primary/20 hover:border-primary/50 hover:bg-primary/5 text-primary animate-in fade-in-50'
+                ? 'bg-green-500 text-white border-green-400 shadow-lg shadow-green-500/30' 
+                : 'bg-green-500/10 border-green-500/20 hover:border-green-500/50 hover:bg-green-500/20 text-green-500'
           )}>
-              {!isActive('/dashboard/store') && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />}
-              <ShoppingCart className={cn("h-5 w-5", isActive('/dashboard/store') ? "text-white" : "text-primary animate-pulse")} />
+              {!isActive('/dashboard/store') && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />}
+              <ShoppingCart className={cn("h-5 w-5", isActive('/dashboard/store') ? "text-white" : "text-green-500 animate-pulse")} />
               <span className="font-black uppercase tracking-tight text-sm">Nexus Emporium</span>
               <Sparkles className="h-3 w-3 absolute top-1 right-2 text-yellow-400 animate-pulse" />
           </Link>
       </div>
 
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
-        <Accordion type="multiple" defaultValue={['main-tools', 'community-resources', 'compete-earn', 'help-config']} className="w-full">
+        <Accordion type="multiple" defaultValue={['main-tools', 'community-resources', 'compete-earn']} className="w-full">
           <AccordionItem value="main-tools" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Main</AccordionTrigger>
             <AccordionContent className="px-0 pb-2">{renderNavLinks(mainNavItems)}</AccordionContent>
@@ -225,10 +223,6 @@ export default function SidebarContent() {
           <AccordionItem value="compete-earn" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Compete & Earn</AccordionTrigger>
             <AccordionContent className="px-0 pb-2">{renderNavLinks(competeNav)}</AccordionContent>
-          </AccordionItem>
-          <AccordionItem value="help-config" className="border-b-0">
-            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Config & Help</AccordionTrigger>
-            <AccordionContent className="px-0 pb-2">{renderNavLinks(helpNav)}</AccordionContent>
           </AccordionItem>
           {(isAdmin || showDevLink) && (
             <AccordionItem value="admin-dev" className="border-b-0">
@@ -253,7 +247,21 @@ export default function SidebarContent() {
           )}
         </Accordion>
       </div>
-       <div className="mt-auto p-4 border-t border-sidebar-border">
+
+       <div className="mt-auto p-4 border-t border-sidebar-border space-y-4">
+          {/* Distinct Help Section Bottom Bar */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-muted/20 rounded-xl border border-white/5">
+              {helpNav.map(item => (
+                  <Link key={item.label} href={item.href} className={cn(
+                      "flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all",
+                      isActive(item.href) ? "bg-primary/20 text-primary" : "hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                  )}>
+                      <item.icon className="h-4 w-4" />
+                      <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label.split(' ')[0]}</span>
+                  </Link>
+              ))}
+          </div>
+
           <div className="flex items-center justify-around">
               {socialLinks.map(link => {
                   let Icon;
