@@ -1,10 +1,9 @@
-
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen, ShoppingCart } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen, ShoppingCart, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
-import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements } from '@/hooks/use-admin';
+import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 import { UserButton, useUser, SignedIn, SignedOut, SignInButton, SignUpButton } from '@clerk/nextjs';
@@ -21,7 +20,15 @@ import { useFriends, type FriendRequest } from '@/hooks/use-friends';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useRewards } from '@/hooks/use-rewards';
+import { useTheme } from 'next-themes';
 
+const availableThemes: {id: AppThemeId, name: string, bg: string, primary: string}[] = [
+    { id: 'light', name: 'Light', bg: 'bg-white', primary: 'bg-slate-900' },
+    { id: 'dark', name: 'Dark', bg: 'bg-slate-900', primary: 'bg-slate-50' },
+    { id: 'emerald-dream', name: 'Emerald', bg: 'bg-emerald-50', primary: 'bg-emerald-600' },
+    { id: 'solar-flare', name: 'Solar', bg: 'bg-gray-900', primary: 'bg-orange-500' },
+    { id: 'synthwave-sunset', name: 'Synthwave', bg: 'bg-indigo-950', primary: 'bg-fuchsia-500' },
+];
 
 function Inbox() {
     const { announcements } = useAnnouncements();
@@ -29,8 +36,23 @@ function Inbox() {
       hasUnread, hasUnreadAnnouncements, hasUnreadFriendRequests, 
       markAnnouncementsAsRead, markFriendRequestsAsRead 
     } = useUnreadMessages();
-    const { friendRequests, acceptFriendRequest, declineFriendRequest, loading: friendsLoading } = useFriends();
+    const { friendRequests, acceptFriendRequest, declineFriendRequest } = useFriends();
+    const { pinnedPage, setPinnedPage } = usePinnedPage();
+    const { theme, setTheme } = useTheme();
+    const pathname = usePathname();
     const { toast } = useToast();
+
+    const isCurrentPagePinned = pinnedPage === pathname;
+
+    const handlePinToggle = () => {
+        if (isCurrentPagePinned) {
+            setPinnedPage(null);
+            toast({ title: "Page Unpinned" });
+        } else {
+            setPinnedPage(pathname);
+            toast({ title: "Page Pinned!", description: "This will be your dashboard start page." });
+        }
+    };
 
     const handleAccept = async (request: FriendRequest) => {
         await acceptFriendRequest(request);
@@ -56,7 +78,7 @@ function Inbox() {
                         "relative h-10 w-10 rounded-full p-0 transition-all duration-300 ease-in-out",
                         hasUnread
                             ? "bg-gradient-to-br from-purple-500 to-pink-500 text-white border-purple-400 animate-pulse shadow-lg shadow-primary/30"
-                            : "bg-secondary"
+                            : "bg-secondary text-muted-foreground hover:text-foreground"
                     )}
                 >
                     <Mail className="h-5 w-5" />
@@ -68,53 +90,94 @@ function Inbox() {
                     <span className="sr-only">Inbox</span>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-96 p-0">
-                <div className="p-4 bg-muted/50 rounded-t-lg">
-                    <h4 className="font-bold text-base flex items-center gap-2"><Mail className="h-5 w-5 text-primary"/> Inbox</h4>
-                    <p className="text-sm text-muted-foreground">Your recent notifications.</p>
+            <PopoverContent className="w-[22rem] sm:w-96 p-0 overflow-hidden border-primary/20 shadow-2xl">
+                <div className="p-4 bg-primary/5 border-b border-primary/10">
+                    <h4 className="font-bold text-base flex items-center gap-2 text-primary"><Mail className="h-5 w-5"/> Control Hub</h4>
+                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Manage Notifications & Environment</p>
                 </div>
-                <Tabs defaultValue="announcements">
-                    <TabsList className="w-full justify-around rounded-none bg-muted/30">
-                        <TabsTrigger value="announcements" className="relative">
-                            Announcements
-                             {hasUnreadAnnouncements && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive"/>}
+                <Tabs defaultValue="announcements" className="w-full">
+                    <TabsList className="w-full grid grid-cols-4 rounded-none h-12 bg-muted/30">
+                        <TabsTrigger value="announcements" className="relative text-[10px] sm:text-xs">
+                            Inbox
+                             {hasUnreadAnnouncements && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-destructive animate-pulse"/>}
                         </TabsTrigger>
-                        <TabsTrigger value="requests" className="relative">
-                            Requests
-                            {hasUnreadFriendRequests && <span className="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-destructive"/>}
+                        <TabsTrigger value="requests" className="relative text-[10px] sm:text-xs">
+                            Allies
+                            {hasUnreadFriendRequests && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-destructive animate-pulse"/>}
                         </TabsTrigger>
-                        <TabsTrigger value="rewards" disabled>Rewards</TabsTrigger>
+                        <TabsTrigger value="pinned" className="text-[10px] sm:text-xs">Pinned</TabsTrigger>
+                        <TabsTrigger value="themes" className="text-[10px] sm:text-xs">Themes</TabsTrigger>
                     </TabsList>
-                    <ScrollArea className="h-[400px]">
-                        <TabsContent value="announcements" className="p-4 space-y-4">
+                    <ScrollArea className="h-[350px]">
+                        <TabsContent value="announcements" className="p-4 space-y-4 m-0">
                             {announcements.length > 0 ? announcements.map(announcement => (
-                                <div key={announcement.id} className="space-y-1 p-3 rounded-md hover:bg-muted cursor-pointer">
-                                    <p className="font-semibold text-sm">{announcement.title}</p>
-                                    <p className="text-xs text-muted-foreground">{announcement.description}</p>
-                                    <p className="text-xs text-muted-foreground/80 pt-1">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</p>
+                                <div key={announcement.id} className="group space-y-1 p-3 rounded-xl hover:bg-primary/5 border border-transparent hover:border-primary/10 transition-all cursor-pointer">
+                                    <div className="flex justify-between items-start gap-2">
+                                        <p className="font-bold text-sm line-clamp-1">{announcement.title}</p>
+                                        <Badge variant="outline" className="text-[8px] h-4 uppercase">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</Badge>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground line-clamp-2">{announcement.description}</p>
                                 </div>
-                            )) : <p className="text-sm text-muted-foreground text-center py-10">No new announcements.</p>}
+                            )) : <div className="flex flex-col items-center justify-center h-64 text-muted-foreground opacity-50"><Mail className="h-10 w-10 mb-2"/><p className="text-xs font-bold uppercase">No new alerts</p></div>}
                         </TabsContent>
-                        <TabsContent value="requests" className="p-4 space-y-2">
+
+                        <TabsContent value="requests" className="p-4 space-y-2 m-0">
                              {friendRequests.length > 0 ? friendRequests.map(req => (
-                                <div key={req.id} className="flex items-center gap-3 p-2 rounded-lg bg-background border">
-                                    <Avatar className="h-10 w-10">
+                                <div key={req.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border">
+                                    <Avatar className="h-9 w-9 border-2 border-primary/20">
                                         <AvatarImage src={req.sender.photoURL} />
                                         <AvatarFallback>{req.sender.displayName.charAt(0)}</AvatarFallback>
                                     </Avatar>
-                                    <div className="flex-1">
-                                        <p className="text-sm font-semibold">{req.sender.displayName}</p>
-                                        <p className="text-xs text-muted-foreground">sent you a friend request</p>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-bold truncate">{req.sender.displayName}</p>
+                                        <p className="text-[10px] text-muted-foreground font-medium">Wants to form an alliance</p>
                                     </div>
-                                    <div className="flex gap-1.5">
-                                        <Button size="icon" className="h-8 w-8 bg-green-500/20 text-green-600 hover:bg-green-500/30" onClick={() => handleAccept(req)}><Check/></Button>
-                                        <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => handleDecline(req)}><X/></Button>
+                                    <div className="flex gap-1">
+                                        <Button size="icon" className="h-8 w-8 rounded-full bg-green-500/20 text-green-600 hover:bg-green-500 hover:text-white transition-all" onClick={() => handleAccept(req)}><Check className="h-4 w-4"/></Button>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10" onClick={() => handleDecline(req)}><X className="h-4 w-4"/></Button>
                                     </div>
                                 </div>
-                             )) : <p className="text-sm text-muted-foreground text-center py-10">No pending friend requests.</p>}
+                             )) : <div className="flex flex-col items-center justify-center h-64 text-muted-foreground opacity-50"><Users className="h-10 w-10 mb-2"/><p className="text-xs font-bold uppercase">No pending alliances</p></div>}
                         </TabsContent>
-                         <TabsContent value="rewards">
-                           <p className="text-sm text-muted-foreground text-center py-10">Rewards notifications will appear here.</p>
+
+                        <TabsContent value="pinned" className="p-4 m-0 space-y-4">
+                            <div className="text-center space-y-4 py-6">
+                                <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto">
+                                    {isCurrentPagePinned ? <Pin className="h-10 w-10 text-primary animate-bounce"/> : <PinOff className="h-10 w-10 text-muted-foreground"/>}
+                                </div>
+                                <div>
+                                    <h5 className="font-bold">Dashboard Start Page</h5>
+                                    <p className="text-xs text-muted-foreground px-4">Pin the current page to land here every time you open MindMate.</p>
+                                </div>
+                                <Button 
+                                    variant={isCurrentPagePinned ? "destructive" : "default"} 
+                                    className="w-full rounded-xl h-12"
+                                    onClick={handlePinToggle}
+                                >
+                                    {isCurrentPagePinned ? <><PinOff className="mr-2 h-4 w-4"/> Unpin Current Page</> : <><Pin className="mr-2 h-4 w-4"/> Pin Current Page</>}
+                                </Button>
+                            </div>
+                        </TabsContent>
+
+                        <TabsContent value="themes" className="p-4 m-0 space-y-4">
+                            <div className="grid grid-cols-1 gap-2">
+                                {availableThemes.map(t => (
+                                    <button 
+                                        key={t.id} 
+                                        onClick={() => { setTheme(t.id); toast({ title: `System Refreshed`, description: `${t.name} theme applied.` }); }}
+                                        className={cn(
+                                            "flex items-center gap-3 p-3 rounded-xl border-2 transition-all",
+                                            theme === t.id ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"
+                                        )}
+                                    >
+                                        <div className={cn("h-8 w-12 rounded-lg flex items-center justify-end p-1 shadow-inner", t.bg)}>
+                                            <div className={cn("h-3 w-3 rounded-full", t.primary)}></div>
+                                        </div>
+                                        <span className="font-bold text-sm flex-1 text-left">{t.name}</span>
+                                        {theme === t.id && <CheckCircle className="h-4 w-4 text-primary"/>}
+                                    </button>
+                                ))}
+                            </div>
                         </TabsContent>
                     </ScrollArea>
                 </Tabs>
@@ -184,20 +247,8 @@ export default function Header() {
   const { setOpenMobile } = useSidebar();
   const { user, isLoaded } = useUser();
   const { currentUserData } = useUsers();
-  const { pinnedPage, setPinnedPage } = usePinnedPage();
   const pathname = usePathname();
   
-  const isCurrentPagePinned = pinnedPage === pathname;
-
-  const handlePinToggle = () => {
-    if (isCurrentPagePinned) {
-      setPinnedPage(null); // Unpin
-    } else {
-      setPinnedPage(pathname); // Pin current page
-    }
-  };
-
-
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
   
@@ -255,7 +306,6 @@ export default function Header() {
                         </PopoverContent>
                     </Popover>
 
-                    {/* NEW STORE QUICK ACCESS */}
                     <Link href="/dashboard/store" title="Nexus Emporium">
                         <Button variant="outline" size="icon" className="h-10 w-10 rounded-full border-primary/20 bg-primary/5 text-primary hover:bg-primary/10">
                             <ShoppingCart className="h-5 w-5" />
@@ -264,16 +314,6 @@ export default function Header() {
                 </div>
                 
                 <Inbox />
-
-                <Button 
-                    variant="outline" 
-                    size="icon" 
-                    onClick={handlePinToggle}
-                    className={cn("h-10 w-10 rounded-full", isCurrentPagePinned && "bg-primary text-primary-foreground hover:bg-primary/90")}
-                    title={isCurrentPagePinned ? "Unpin this page" : "Pin this as your start page"}
-                >
-                    {isCurrentPagePinned ? <PinOff className="h-5 w-5" /> : <Pin className="h-5 w-5" />}
-                </Button>
 
                 <UserButton afterSignOutUrl="/" appearance={{
                     elements: {
