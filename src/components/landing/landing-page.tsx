@@ -1,11 +1,11 @@
 
 'use client';
 
-import { Button, buttonVariants } from '@/components/ui/button';
-import { ArrowRight, Bot, BrainCircuit, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame, Award, ShieldQuestion, Swords, Gem, Anchor, ArrowLeftRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ArrowRight, Bot, Users, Zap, FileText, Heart, Star, Gamepad2, Gift, Flame, Award, ShieldQuestion, Swords, Gem, Anchor, ArrowLeftRight } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
-import { SignedIn, SignedOut, SignUpButton, SignInButton, useUser } from '@clerk/nextjs';
+import { SignedIn, SignedOut, SignUpButton, useUser } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
@@ -14,205 +14,64 @@ import { Card, CardContent } from '../ui/card';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '../ui/carousel';
 import Autoplay from "embla-carousel-autoplay"
 import Image from 'next/image';
-import { motion, useMotionValue, useTransform } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { ActivityGlobe } from './ActivityGlobe';
 
 
 const navLinks = [
     { name: 'Features', href: '#features' },
-    { name: 'Why MindMate', href: '#why-mindmate' },
+    { name: 'Our Mission', href: '#why-mindmate' },
     { name: 'Reviews', href: '#reviews' },
 ]
 
 const features = [
   {
-    name: 'AI Tutor',
-    description: 'Get instant, personalized help from Marco, your AI study partner.',
+    name: 'AI Learning Partner',
+    description: 'Get instant academic support from Marco, your personal AI tutor.',
     icon: Bot,
     color: 'text-purple-400',
     bgColor: 'bg-purple-900/20',
   },
   {
-    name: 'Game Zone',
-    description: 'Play games like Tic-Tac-Toe and Word Unscramble to earn credits while you relax.',
+    name: 'Gamified Sprints',
+    description: 'Solve academic challenges and subject-based quizzes to earn study credits.',
     icon: Gamepad2,
     color: 'text-green-400',
     bgColor: 'bg-green-900/20',
   },
   {
-    name: 'Focus Mode',
-    description: 'Eliminate distractions and get rewarded for deep, productive study sessions.',
+    name: 'Deep Focus Engine',
+    description: 'Scientific study timers to maximize retention and minimize distractions.',
     icon: Zap,
     color: 'text-yellow-400',
     bgColor: 'bg-yellow-900/20',
   },
   {
-    name: 'Daily Streaks & Rewards',
-    description: 'Build a study streak, claim daily surprises, and earn credits for your consistency.',
-    icon: Flame,
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-900/20',
-  },
-   {
-    name: 'Free Resources',
-    description: 'Access a library of curated notes, guides, and materials for various subjects.',
+    name: 'Academic Resources',
+    description: 'Access a vast library of curated notes, JEE/NEET prep materials, and board guides.',
     icon: FileText,
     color: 'text-rose-400',
     bgColor: 'bg-rose-900/20',
   },
   {
-    name: 'Invite & Earn',
-    description: 'Share MindMate with your friends and earn bonus credits when they sign up.',
-    icon: Gift,
+    name: 'Collaborative Groups',
+    description: 'Join peer-to-peer study clans to share knowledge and track progress together.',
+    icon: Users,
     color: 'text-sky-400',
     bgColor: 'bg-sky-900/20',
+  },
+  {
+    name: 'Consistency Rewards',
+    description: 'Maintain your study streak and unlock premium content through consistent effort.',
+    icon: Award,
+    color: 'text-orange-400',
+    bgColor: 'bg-orange-900/20',
   }
 ];
-
-const whyMindMate = [
-    {
-        title: "All-in-One Toolkit",
-        description: "From AI-powered assistance to focus timers and social hubs, we've integrated everything a student needs into one seamless platform."
-    },
-    {
-        title: "Gamified Learning",
-        description: "Earn credits, climb the leaderboard, and claim daily rewards. We make studying engaging and motivating, not a chore."
-    },
-    {
-        title: "Built for Community",
-        description: "You're not alone. Connect with friends, ask questions in the community hub, and grow with a network of fellow learners."
-    }
-]
-
-const testimonials = [
-    {
-        name: "Priya Sharma",
-        role: "Class 12 Student",
-        avatar: "https://picsum.photos/seed/101/100/100",
-        rating: 5,
-        review: "MindMate has been a game-changer for my board exam prep. The AI tutor helps me with doubts anytime, and the focus mode is just amazing for productivity."
-    },
-    {
-        name: "Rohan Verma",
-        role: "JEE Aspirant",
-        avatar: "https://picsum.photos/seed/102/100/100",
-        rating: 5,
-        review: "The quiz zone and leaderboard keep me motivated to study more. It feels like a healthy competition with my friends. The premium resources are also top-notch!"
-    },
-    {
-        name: "Aisha Khan",
-        role: "NEET Aspirant",
-        avatar: "https://picsum.photos/seed/103/100/100",
-        rating: 4,
-        review: "I love how organized everything is. The schedule and to-do list features help me plan my week perfectly. I feel much more in control of my studies now."
-    }
-]
-
-const challengeQuestions = [
-    {
-        icon: Gem,
-        title: "Do you want to see a beautiful, heaven-like world?",
-        description: "If yes, then MindMate is waiting for you.",
-        bgColor: "from-sky-900 to-sky-500",
-        buttonText: "Yes, Show Me"
-    },
-    {
-        icon: Swords,
-        title: "Are you feeling jealous of the toppers?",
-        description: "Don't be. Join them. It's your time to lead.",
-        bgColor: "from-red-900 to-red-500",
-        buttonText: "I Will Lead"
-    },
-    {
-        icon: ShieldQuestion,
-        title: "Do you want to explore legendary, mind-bending features?",
-        description: "If your answer is no, this app is not for you. If yes, what are you waiting for?",
-        bgColor: "from-purple-900 to-purple-500",
-        buttonText: "I Want to Explore"
-    },
-    {
-        icon: Anchor,
-        title: "Do you want to be in the top 1%?",
-        description: "This app is your anchor. Your journey to the top 1% starts here.",
-        bgColor: "from-yellow-900 to-yellow-500",
-        buttonText: "Start My Journey"
-    },
-];
-
-function BeforeAfterSlider() {
-    const [sliderPosition, setSliderPosition] = useState(50);
-    const imageContainerRef = useRef<HTMLDivElement | null>(null);
-
-    const handleMove = (clientX: number) => {
-        if (!imageContainerRef.current) return;
-
-        const rect = imageContainerRef.current.getBoundingClientRect();
-        const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
-        const percent = Math.max(0, Math.min((x / rect.width) * 100, 100));
-
-        setSliderPosition(percent);
-    };
-
-    const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
-        handleMove(event.touches[0].clientX);
-    };
-
-    const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-        handleMove(event.clientX);
-    };
-    
-    return (
-        <div ref={imageContainerRef} className="relative w-full max-w-4xl mx-auto aspect-[16/9] overflow-hidden rounded-2xl select-none group" onMouseMove={handleMouseMove} onTouchMove={handleTouchMove}>
-            {/* After Image */}
-            <Image 
-                src="https://picsum.photos/seed/after/1280/720"
-                alt="Organized desk with MindMate"
-                layout="fill"
-                objectFit="cover"
-                data-ai-hint="organized study desk laptop"
-            />
-            {/* Before Image (clipped) */}
-            <motion.div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}>
-                 <Image 
-                    src="https://picsum.photos/seed/before/1280/720"
-                    alt="Messy desk with scattered books"
-                    layout="fill"
-                    objectFit="cover"
-                    data-ai-hint="messy study desk books"
-                />
-            </motion.div>
-             {/* Slider Handle */}
-            <motion.div
-                className="absolute inset-y-0 w-1 bg-white/50 cursor-ew-resize flex items-center justify-center"
-                style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
-                drag="x"
-                dragConstraints={imageContainerRef}
-                dragElastic={0.1}
-                onDrag={(e, info) => {
-                    if (!imageContainerRef.current) return;
-                    const rect = imageContainerRef.current.getBoundingClientRect();
-                    const newSliderPosition = ((info.point.x - rect.left) / rect.width) * 100;
-                    setSliderPosition(Math.max(0, Math.min(newSliderPosition, 100)));
-                }}
-            >
-                <div className="h-10 w-10 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center text-slate-800 shadow-2xl transition-transform group-hover:scale-110">
-                    <ArrowLeftRight className="h-5 w-5" />
-                </div>
-            </motion.div>
-        </div>
-    )
-}
-
 
 export function LandingPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
-
-  useEffect(() => {
-    if (isLoaded && user) {
-      router.push('/dashboard');
-    }
-  }, [isLoaded, user, router]);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-950 text-white">
@@ -232,183 +91,54 @@ export function LandingPage() {
           </nav>
           <div className="flex items-center gap-2">
              <SignedOut>
-                 <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
+                 <SignUpButton mode="modal">
                     <Button>
-                        Get Started <ArrowRight className="ml-2 h-4 w-4" />
+                        Try MindMate Free <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                 </SignUpButton>
              </SignedOut>
              <SignedIn>
                 <Link href="/dashboard">
-                  <Button>Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Button>
+                  <Button variant="outline">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Button>
                 </Link>
              </SignedIn>
           </div>
         </div>
       </header>
 
-      {/* Main Content */}
       <main className="flex-1">
         {/* Hero Section */}
         <section className="relative overflow-hidden py-24 sm:py-32">
-            <div className="absolute inset-0 -z-10">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                    <div className="h-[40rem] w-[40rem] bg-gradient-to-tr from-purple-500 to-sky-400 opacity-20 blur-[12rem]"></div>
-                </div>
-                 <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                    <div className="particle"></div><div className="particle"></div>
-                </div>
-            </div>
             <div className="container mx-auto px-4 text-center relative">
-                <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl animate-fade-in-up" style={{animationDelay: '0.2s'}}>
-                    Unlock Your <span className="bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent">Full Potential</span>
+                <h1 className="text-4xl font-extrabold tracking-tight text-white sm:text-6xl lg:text-7xl">
+                    The Smartest Way to <span className="bg-gradient-to-r from-purple-400 to-sky-400 bg-clip-text text-transparent">Master Your Subjects</span>
                 </h1>
-                <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400 animate-fade-in-up" style={{animationDelay: '0.4s'}}>
-                    MindMate is your all-in-one study companion to learn smarter, stay focused, and connect with a community of learners.
+                <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-400">
+                    MindMate is an integrated Learning Management System designed to help students achieve academic excellence through AI assistance and focus tools.
                 </p>
-                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up" style={{animationDelay: '0.6s'}}>
-                    <SignedOut>
-                       <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
-                             <Button size="lg" className="relative group w-full sm:w-auto">
-                                <span className="absolute -inset-0.5 bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg blur opacity-75 group-hover:opacity-100 transition duration-1000 group-hover:duration-200 animate-tilt"></span>
-                                <span className="relative flex items-center">
-                                    Create Free Account <ArrowRight className="ml-2" />
-                                </span>
-                            </Button>
-                        </SignUpButton>
-                         <p className="text-sm text-amber-300 font-semibold flex items-center gap-2 mt-2 sm:hidden">
-                            <Award className="h-5 w-5" /> Sign up now and get 100 free credits!
-                        </p>
-                    </SignedOut>
-                     <SignedIn>
-                        <Link href="/dashboard">
-                            <Button size="lg">Go to Dashboard <ArrowRight className="ml-2 h-4 w-4" /></Button>
-                        </Link>
-                     </SignedIn>
-                </div>
-                 <SignedOut>
-                     <p className="text-sm text-amber-300 font-semibold items-center gap-2 mt-4 hidden sm:flex justify-center">
-                        <Award className="h-5 w-5" /> Sign up now and get 100 free credits!
-                    </p>
-                </SignedOut>
-            </div>
-        </section>
-
-        {/* Live Universe Section */}
-         <section id="universe" className="py-24 sm:py-32">
-            <div className="container mx-auto px-4">
-                 <div className="mx-auto max-w-2xl text-center">
-                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Join the MindMate Universe</h2>
-                    <p className="mt-4 text-lg text-slate-400">See our global community of learners in action. Every pulse is a student completing a quiz, starting a focus session, or connecting with friends.</p>
-                </div>
-                <div className="mt-16">
-                   <ActivityGlobe />
-                </div>
-            </div>
-        </section>
-
-        {/* Challenge Section */}
-        <section className="py-24 sm:py-32 bg-slate-900/50">
-             <div className="container mx-auto px-4">
-                <div className="mx-auto max-w-2xl text-center">
-                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">A Challenge for You</h2>
-                    <p className="mt-4 text-lg text-slate-400">Answer these questions. If you dare.</p>
-                </div>
-                <div className="mt-16">
-                     <Carousel 
-                        className="w-full max-w-xl mx-auto"
-                        plugins={[
-                            Autoplay({
-                              delay: 5000,
-                              stopOnInteraction: true,
-                            }),
-                        ]}
-                        opts={{ loop: true }}
-                    >
-                        <CarouselContent>
-                            {challengeQuestions.map((q, i) => (
-                                <CarouselItem key={i}>
-                                    <div className="p-1">
-                                        <Card className={cn("relative overflow-hidden border-white/10 bg-slate-900", q.bgColor)}>
-                                            <div className="absolute inset-0 bg-grid-slate-800/50"></div>
-                                             <CardContent className="relative z-10 flex flex-col items-center justify-center p-10 text-center min-h-[300px]">
-                                                <div className="p-4 rounded-full bg-black/20 border border-white/10 mb-4">
-                                                     <q.icon className="h-8 w-8 text-white" />
-                                                </div>
-                                                <h3 className="text-2xl font-bold text-white">{q.title}</h3>
-                                                <p className="mt-2 text-slate-300">{q.description}</p>
-                                                <SignUpButton mode="modal" afterSignUpUrl="/dashboard" afterSignInUrl="/dashboard">
-                                                    <Button variant="secondary" className="mt-6">
-                                                        {q.buttonText}
-                                                    </Button>
-                                                </SignUpButton>
-                                             </CardContent>
-                                        </Card>
-                                    </div>
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                        <CarouselPrevious className="hidden sm:flex" />
-                        <CarouselNext className="hidden sm:flex"/>
-                    </Carousel>
-                </div>
-            </div>
-        </section>
-        
-        {/* Why MindMate Section */}
-        <section id="why-mindmate" className="py-24 sm:py-32">
-            <div className="container mx-auto px-4">
-                 <div className="mx-auto max-w-2xl text-center">
-                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Why MindMate?</h2>
-                    <p className="mt-4 text-lg text-slate-400">We're more than just an app; we're your dedicated study partner.</p>
-                </div>
-                <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-                    {whyMindMate.map((point, i) => (
-                        <div key={i} className="flex flex-col items-center">
-                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 mb-4">
-                                <Heart className="h-8 w-8 text-primary" />
-                            </div>
-                            <h3 className="text-xl font-semibold text-white">{point.title}</h3>
-                            <p className="mt-2 text-base text-slate-400">{point.description}</p>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </section>
-        
-        {/* Before & After Slider Section */}
-        <section className="py-24 sm:py-32 bg-slate-900/50">
-            <div className="container mx-auto px-4">
-                <div className="mx-auto max-w-2xl text-center">
-                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">From Chaos to Control</h2>
-                    <p className="mt-4 text-lg text-slate-400">See the transformation MindMate brings to your study life.</p>
-                </div>
-                <div className="mt-16">
-                    <BeforeAfterSlider />
+                 <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <SignUpButton mode="modal">
+                        <Button size="lg" className="px-8 h-12 text-lg">Start Learning Now</Button>
+                    </SignUpButton>
+                    <Button variant="outline" size="lg" asChild className="px-8 h-12 text-lg">
+                        <Link href="/contact">Talk to Support</Link>
+                    </Button>
                 </div>
             </div>
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-24 sm:py-32">
+        <section id="features" className="py-24 bg-slate-900/50">
           <div className="container mx-auto px-4">
-            <div className="mx-auto max-w-2xl text-center">
-              <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Your Ultimate Study Toolkit</h2>
-              <p className="mt-4 text-lg text-slate-400">Everything you need to succeed, all in one place.</p>
+            <div className="mx-auto max-w-2xl text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Comprehensive EdTech Ecosystem</h2>
+              <p className="mt-4 text-lg text-slate-400">Tools engineered for modern academic challenges.</p>
             </div>
-            <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
               {features.map((feature, i) => (
-                <div 
-                  key={feature.name} 
-                  className="flex flex-col rounded-2xl border border-white/10 bg-slate-900/50 p-8 shadow-2xl shadow-slate-950/50 transition-all duration-300 hover:-translate-y-2 hover:shadow-primary/20"
-                >
+                <div key={i} className="flex flex-col rounded-2xl border border-white/10 bg-slate-950 p-8 transition-all hover:-translate-y-1">
                   <div className={cn("flex h-12 w-12 items-center justify-center rounded-lg", feature.bgColor)}>
-                    <feature.icon className={cn("h-6 w-6", feature.color)} aria-hidden="true" />
+                    <feature.icon className={cn("h-6 w-6", feature.color)} />
                   </div>
                   <h3 className="mt-6 text-lg font-semibold text-white">{feature.name}</h3>
                   <p className="mt-2 text-base text-slate-400">{feature.description}</p>
@@ -418,49 +148,53 @@ export function LandingPage() {
           </div>
         </section>
 
-        {/* Testimonials Section */}
-        <section id="reviews" className="py-24 sm:py-32 bg-slate-900">
-             <div className="container mx-auto px-4">
-                 <div className="mx-auto max-w-2xl text-center">
-                    <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Loved by Students</h2>
-                    <p className="mt-4 text-lg text-slate-400">See what fellow learners are saying about MindMate.</p>
-                </div>
-                <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {testimonials.map((testimonial, i) => (
-                        <Card key={i} className="bg-slate-800/50 border-white/10">
-                            <CardContent className="p-6">
-                                <div className="flex items-center gap-4">
-                                    <Avatar className="h-12 w-12">
-                                        <AvatarImage src={testimonial.avatar} />
-                                        <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <h4 className="font-semibold text-white">{testimonial.name}</h4>
-                                        <p className="text-sm text-slate-400">{testimonial.role}</p>
-                                    </div>
-                                </div>
-                                <div className="flex gap-0.5 mt-4">
-                                    {Array.from({ length: 5 }).map((_, starIndex) => (
-                                        <Star key={starIndex} className={cn("h-5 w-5", starIndex < testimonial.rating ? 'text-yellow-400 fill-yellow-400' : 'text-slate-600')} />
-                                    ))}
-                                </div>
-                                <blockquote className="mt-4 text-slate-300 italic border-l-2 border-primary/50 pl-4">
-                                    "{testimonial.review}"
-                                </blockquote>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
+        {/* Global Community Section */}
+        <section className="py-24">
+            <div className="container mx-auto px-4 text-center">
+                <h2 className="text-3xl font-bold mb-8">Trusted by Students Globally</h2>
+                <ActivityGlobe />
             </div>
         </section>
-
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-white/10">
-        <div className="container mx-auto px-4 py-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                <p className="text-sm text-slate-400">&copy; {new Date().getFullYear()} MindMate. All rights reserved.</p>
+      {/* Compliance Footer */}
+      <footer className="border-t border-white/10 bg-slate-950 py-12">
+        <div className="container mx-auto px-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div className="space-y-4">
+                    <div className="flex items-center gap-2 font-bold text-xl">
+                        <Logo className="h-6 w-6" />
+                        <span>MindMate</span>
+                    </div>
+                    <p className="text-sm text-slate-400">Empowering the next generation of scholars with AI-driven study tools.</p>
+                </div>
+                <div>
+                    <h4 className="font-bold mb-4">Company</h4>
+                    <ul className="space-y-2 text-sm text-slate-400">
+                        <li><Link href="/about" className="hover:text-white">About Us</Link></li>
+                        <li><Link href="/contact" className="hover:text-white">Contact Support</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold mb-4">Legal</h4>
+                    <ul className="space-y-2 text-sm text-slate-400">
+                        <li><Link href="/privacy" className="hover:text-white">Privacy Policy</Link></li>
+                        <li><Link href="/terms" className="hover:text-white">Terms of Service</Link></li>
+                        <li><Link href="/refund" className="hover:text-white">Refund & Cancellation</Link></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 className="font-bold mb-4">Secure Payments</h4>
+                    <p className="text-xs text-slate-500 mb-2">Processed by Razorpay</p>
+                    <div className="flex gap-2 opacity-50 grayscale">
+                        <Image src="https://placehold.co/40x25/png?text=Visa" alt="Visa" width={40} height={25} />
+                        <Image src="https://placehold.co/40x25/png?text=MC" alt="Mastercard" width={40} height={25} />
+                        <Image src="https://placehold.co/40x25/png?text=UPI" alt="UPI" width={40} height={25} />
+                    </div>
+                </div>
+            </div>
+            <div className="mt-12 pt-8 border-t border-white/5 text-center text-xs text-slate-500">
+                <p>&copy; {new Date().getFullYear()} MindMate EdTech Solutions. All rights reserved.</p>
             </div>
         </div>
       </footer>

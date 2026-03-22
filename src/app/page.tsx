@@ -1,8 +1,8 @@
 
-import { redirect } from 'next/navigation';
+import { LandingPage } from '@/components/landing/landing-page';
 
 export default function RootPage() {
-  // Always redirect from the root to the dashboard.
-  // The dashboard itself will handle signed-in vs. signed-out state.
-  redirect('/dashboard');
+  // Now showing the professional landing page at the root instead of redirecting.
+  // This is what Razorpay will see during review.
+  return <LandingPage />;
 }
