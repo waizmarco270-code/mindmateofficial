@@ -11,6 +11,11 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
+/**
+ * Creates a Razorpay Order
+ * We include userId and credits in the 'notes' field.
+ * This is CRITICAL because the webhook will receive these notes back.
+ */
 export async function createRazorpayOrder(amount: number, notes: { userId: string; packName: string; credits: number }) {
   try {
     const options = {
@@ -20,7 +25,7 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
       notes: {
         userId: notes.userId,
         packName: notes.packName,
-        credits: notes.credits,
+        credits: String(notes.credits), // Webhook sometimes prefers strings in notes
       }
     };
 
@@ -36,6 +41,9 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
   }
 }
 
+/**
+ * Manual verification (Frontend Fallback)
+ */
 export async function verifyRazorpayPayment(
   userId: string,
   userName: string,
@@ -46,7 +54,6 @@ export async function verifyRazorpayPayment(
   razorpay_signature: string
 ) {
   try {
-    // 1. Verify Signature
     const text = `${razorpay_order_id}|${razorpay_payment_id}`;
     const generated_signature = crypto
       .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
@@ -54,10 +61,9 @@ export async function verifyRazorpayPayment(
       .digest('hex');
 
     if (generated_signature !== razorpay_signature) {
-      throw new Error('Invalid payment signature. Potential fraud detected.');
+      throw new Error('Invalid payment signature.');
     }
 
-    // 2. Award Credits in Firestore (Manual Fallback)
     const userRef = doc(db, 'users', userId);
     
     await updateDoc(userRef, {
