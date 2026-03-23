@@ -112,7 +112,13 @@ function CreditPacksTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         
         setIsProcessing(pack.id);
         try {
-            const order = await createRazorpayOrder(pack.price);
+            // Pass order metadata in notes for webhook fulfillment
+            const order = await createRazorpayOrder(pack.price, {
+                userId: user.id,
+                packName: pack.name,
+                credits: pack.credits
+            });
+
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                 amount: order.amount,
@@ -213,7 +219,13 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         if (!user) return;
         setIsProcessing(item.id);
         try {
-            const order = await createRazorpayOrder(item.price!);
+            // Pass metadata in notes for webhook fulfillment
+            const order = await createRazorpayOrder(item.price!, {
+                userId: user.id,
+                packName: item.name,
+                credits: 0 // Artifacts are items, not credit packs
+            });
+
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                 amount: order.amount,
@@ -362,7 +374,13 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         if (!user) return;
         setIsProcessing(item.id);
         try {
-            const order = await createRazorpayOrder(item.price!);
+            // Pass metadata in notes for webhook fulfillment
+            const order = await createRazorpayOrder(item.price!, {
+                userId: user.id,
+                packName: item.name,
+                credits: 0
+            });
+
             const options = {
                 key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
                 amount: order.amount,
@@ -457,7 +475,7 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                  const canAfford = isMoney ? true : (hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost);
                  
                  return (
-                    <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2 transition-all duration-500", 
+                    <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2 transition-all duration-300", 
                         owned ? "border-green-500/50 bg-green-500/5 opacity-80" : item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted"
                     )}>
                         <BadgeRenderer badge={item.badge} />
