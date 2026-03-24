@@ -100,9 +100,15 @@ export default function HelpPage() {
                                 <CardFooter className="bg-muted/30 border-t p-4">
                                     <Button type="submit" className="w-full h-14 text-lg font-bold rounded-xl shadow-lg shadow-primary/20" disabled={isSubmitting || !message.trim()}>
                                         {isSubmitting ? (
-                                            <><Loader2 className="mr-2 h-5 w-5 animate-spin"/> SECURING CHANNEL...</>
+                                            <div className="flex items-center gap-2">
+                                                <Loader2 className="h-5 w-5 animate-spin"/>
+                                                <span>SECURING CHANNEL...</span>
+                                            </div>
                                         ) : (
-                                            <><Send className="mr-2 h-5 w-5"/> TRANSMIT TO HIGH COUNCIL</>
+                                            <div className="flex items-center gap-2">
+                                                <Send className="h-5 w-5"/>
+                                                <span>TRANSMIT TO HIGH COUNCIL</span>
+                                            </div>
                                         )}
                                     </Button>
                                 </CardFooter>
