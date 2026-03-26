@@ -855,7 +855,19 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         submitSupportTicket: (msg) => addDoc(collection(db, 'supportTickets'), { userId: authUser?.id, userName: currentUserData?.displayName, message: msg, status: 'new', createdAt: serverTimestamp() }),
         triggerAegisPulse,
-        addAnnouncement: (a) => addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() }),
+        addAnnouncement: async (a) => {
+            await addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() });
+            // Send Push Notification
+            await fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `📢 New Announcement: ${a.title}`,
+                    message: a.description,
+                    linkUrl: '/dashboard'
+                })
+            });
+        },
         updateAnnouncement: (id, d) => updateDoc(doc(db, 'announcements', id), d),
         deleteAnnouncement: (id) => deleteDoc(doc(db, 'announcements', id)),
         addResourceSection: (s) => addDoc(collection(db, 'resourceSections'), { ...s, createdAt: serverTimestamp() }),
@@ -867,7 +879,19 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             batch.delete(doc(db, 'resourceSections', id));
             await batch.commit();
         },
-        addResource: (r) => addDoc(collection(db, 'resources'), { ...r, createdAt: serverTimestamp() }),
+        addResource: async (r) => {
+            await addDoc(collection(db, 'resources'), { ...r, createdAt: serverTimestamp() });
+            // Notify about new resource
+            await fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `📚 New Resource: ${r.title}`,
+                    message: r.description,
+                    linkUrl: '/dashboard/resources'
+                })
+            });
+        },
         updateResource: (id, d) => updateDoc(doc(db, 'resources', id), d),
         deleteResource: (id) => deleteDoc(doc(db, 'resources', id)),
         addDailySurprise: (s) => addDoc(collection(db, 'dailySurprises'), { ...s, createdAt: serverTimestamp() }),
@@ -893,7 +917,21 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         submitPollComment: (id, c) => updateDoc(doc(db, 'polls', id), { comments: arrayUnion({ userId: authUser?.id, userName: currentUserData?.displayName, comment: c, createdAt: Timestamp.now() }) }),
         updateAppSettings: (s) => updateDoc(doc(db, 'appConfig', 'settings'), s),
-        sendGlobalGift: (g) => addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] }),
+        sendGlobalGift: async (g) => {
+            const docRef = await addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] });
+            
+            // Push Notification logic
+            await fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `🎁 Legendary Gift Received!`,
+                    message: g.message,
+                    userId: g.target === 'all' ? undefined : g.target,
+                    linkUrl: '/dashboard'
+                })
+            });
+        },
         deactivateGift: (id) => updateDoc(doc(db, 'globalGifts', id), { isActive: false }),
         deleteGlobalGift: (id) => deleteDoc(doc(db, 'globalGifts', id)),
         claimGlobalGift: async (id, uid) => {
@@ -908,8 +946,39 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             if (gift.rewards.flip) batch.update(doc(db, 'users', uid), { freeGuesses: increment(gift.rewards.flip) });
             await batch.commit();
         },
-        addFeatureShowcase: (s) => addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() }),
-        updateFeatureShowcase: (id, d) => updateDoc(doc(db, 'featureShowcases', id), d),
+        addFeatureShowcase: async (s) => {
+            await addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() });
+            
+            // If live, notify everyone
+            if (s.status === 'live') {
+                await fetch('/api/send-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: `✨ New Feature: ${s.title}`,
+                        message: s.description,
+                        linkUrl: s.link || '/dashboard'
+                    })
+                });
+            }
+        },
+        updateFeatureShowcase: async (id, d) => {
+            await updateDoc(doc(db, 'featureShowcases', id), d);
+            // If being set to live, notify
+            if (d.status === 'live') {
+                const snap = await getDoc(doc(db, 'featureShowcases', id));
+                const data = snap.data();
+                await fetch('/api/send-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: `🚀 Now Live: ${data?.title}`,
+                        message: data?.description,
+                        linkUrl: data?.link || '/dashboard'
+                    })
+                });
+            }
+        },
         deleteFeatureShowcase: (id) => deleteDoc(doc(db, 'featureShowcases', id)),
         createCreditPack: (p) => addDoc(collection(db, 'creditPacks'), { ...p, createdAt: serverTimestamp() }),
         updateCreditPack: (id, d) => updateDoc(doc(db, 'creditPacks', id), d),

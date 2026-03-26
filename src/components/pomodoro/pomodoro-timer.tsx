@@ -238,12 +238,35 @@ export function PomodoroTimer() {
 
           const completedDuration = settings[mode];
           const reward = rewardTiers[completedDuration];
-          if(mode === 'focus' && reward && user) {
-            addCreditsToUser(user.id, reward);
+          if(mode === 'focus' && user) {
+            if (reward) addCreditsToUser(user.id, reward);
+            
+            // Completion Notification
+            fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: "🔔 Session Complete",
+                    message: `You've finished your ${completedDuration} min Pomodoro! Time for a break.`,
+                    userId: user.id
+                })
+            });
+
             toast({
-                title: `Session Complete! +${reward} Credits`,
-                description: "Great work! Your reward has been added.",
+                title: `Session Complete! ${reward ? `+${reward} Credits` : ''}`,
+                description: "Great work! Your progress has been logged.",
                 className: "bg-green-500/10 text-green-700 border-green-500/50"
+            });
+          } else if (user) {
+             // Break complete notification
+             fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: "⏰ Break's Over!",
+                    message: "Time to get back into the flow state. Let's go!",
+                    userId: user.id
+                })
             });
           }
 
@@ -290,6 +313,20 @@ export function PomodoroTimer() {
     
     setIsActive(true);
     penaltyAppliedRef.current = false;
+    
+    // Start Notification
+    if (user) {
+        fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: "⏳ Pomodoro Started",
+                message: `Focusing for ${settings[mode]} mins. Stay on this tab to earn rewards.`,
+                userId: user.id
+            })
+        });
+    }
+
     if (typeof window !== 'undefined') {
         sessionStorage.setItem(POMODORO_SESSION_ACTIVE_KEY, 'true');
     }

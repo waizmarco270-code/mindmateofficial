@@ -138,6 +138,18 @@ export default function FocusModePage() {
             if (user && activeSlot) {
                 addCreditsToUser(user.id, activeSlot.reward);
                 incrementFocusSessions(user.id, activeSlot.duration);
+                
+                // Final Notification
+                fetch('/api/send-notification', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        title: "🎉 Session Accomplished!",
+                        message: `Mission Complete! You earned ${activeSlot.reward} credits for your dedication.`,
+                        userId: user.id
+                    })
+                });
+
                 toast({
                     title: `Session Complete! +${activeSlot.reward} Credits!`,
                     description: 'Great job on your focused study session!',
@@ -178,11 +190,26 @@ export default function FocusModePage() {
             });
             return;
         }
+        
         setActiveSlot(slot);
         setTimeLeft(slot.duration);
         setIsSessionActive(true);
         setIsPaused(false);
         penaltyAppliedRef.current = false; 
+        
+        // Background Alert
+        if (user) {
+            fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: "🔒 Focus Mode Active",
+                    message: "Don't switch tabs! Penalty system is monitoring your session.",
+                    userId: user.id
+                })
+            });
+        }
+
         if (audioRef.current && !isMuted) {
             audioRef.current.play().catch(e => console.error("Audio play failed:", e));
         }
