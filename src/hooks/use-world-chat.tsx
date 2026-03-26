@@ -1,8 +1,9 @@
+
 'use client';
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, writeBatch, increment } from 'firebase/firestore';
+import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, writeBatch, increment, getDocs, where } from 'firebase/firestore';
 import { useAdmin } from './use-admin';
 import { useToast } from './use-toast';
 
@@ -62,7 +63,7 @@ const WorldChatContext = createContext<WorldChatContextType | undefined>(undefin
 
 export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const { user: currentUser } = useUser();
-    const { users, isAdmin, currentUserData } = useAdmin();
+    const { users, isAdmin, isSuperAdmin, currentUserData } = useAdmin();
     const { toast } = useToast();
     const [messages, setMessages] = useState<WorldChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
@@ -123,6 +124,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const sendMessage = useCallback(async (text: string, replyingTo?: ReplyContext | null) => {
         if (!currentUser || !text.trim()) return;
         const messagesRef = collection(db, 'world_chat');
+        
         await addDoc(messagesRef, {
             senderId: currentUser.id,
             text,
@@ -130,10 +132,41 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
             reactions: {},
             ...(replyingTo && { replyingTo }),
         });
-    }, [currentUser]);
+
+        // Trigger notifications for mentions
+        const mentions = text.match(/@(\w+)|@all/g);
+        if (mentions) {
+            for (const mention of mentions) {
+                if (mention === '@all') {
+                    await fetch('/api/send-notification', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            title: `📢 ${currentUserData?.displayName} mentioned everyone`,
+                            message: text,
+                            linkUrl: '/dashboard/world'
+                        })
+                    });
+                } else {
+                    const targetName = mention.slice(1).toLowerCase();
+                    const targetUser = users.find(u => u.displayName.replace(/\s+/g, '').toLowerCase() === targetName);
+                    if (targetUser) {
+                        await fetch('/api/send-notification', {
+                            method: 'POST',
+                            body: JSON.stringify({
+                                title: `💬 ${currentUserData?.displayName} mentioned you`,
+                                message: text,
+                                userId: targetUser.uid,
+                                linkUrl: '/dashboard/world'
+                            })
+                        });
+                    }
+                }
+            }
+        }
+    }, [currentUser, users, currentUserData]);
 
     const sendRain = useCallback(async (amount: number, maxClaims: number) => {
-        if (!currentUser || !isAdmin) return;
+        if (!currentUser || !(isAdmin || isSuperAdmin)) return;
         const messagesRef = collection(db, 'world_chat');
         await addDoc(messagesRef, {
             senderId: currentUser.id,
@@ -145,7 +178,17 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
                 claimedBy: []
             }
         });
-    }, [currentUser, isAdmin]);
+
+        // Notification for rain
+        await fetch('/api/send-notification', {
+            method: 'POST',
+            body: JSON.stringify({
+                title: "⛈️ CREDIT RAIN IS HERE!",
+                message: `Grab ${amount} credits before they're gone!`,
+                linkUrl: '/dashboard/world'
+            })
+        });
+    }, [currentUser, isAdmin, isSuperAdmin]);
 
     const claimRain = useCallback(async (messageId: string) => {
         if (!currentUser) return;
@@ -206,21 +249,26 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, messages, toast]);
 
     const pinMessage = useCallback(async (messageId: string) => {
-        if (!isAdmin) return;
+        if (!isAdmin && !isSuperAdmin) return;
         await setDoc(doc(db, 'world_chat', 'config'), { pinnedMessageId: messageId }, { merge: true });
-    }, [isAdmin]);
+    }, [isAdmin, isSuperAdmin]);
 
     const unpinMessage = useCallback(async () => {
-        if (!isAdmin) return;
+        if (!isAdmin && !isSuperAdmin) return;
         await setDoc(doc(db, 'world_chat', 'config'), { pinnedMessageId: null }, { merge: true });
-    }, [isAdmin]);
+    }, [isAdmin, isSuperAdmin]);
     
     const updateTypingStatus = useCallback(async (isTyping: boolean) => {
         if (!currentUser) return;
         const typingRef = doc(db, 'typing_status', 'world_chat');
-        if(isTyping) {
-             await setDoc(typingRef, { users: { [currentUser.id]: { displayName: currentUserData?.displayName || 'A user', timestamp: Date.now() } } }, { merge: true });
-        }
+        await setDoc(typingRef, { 
+            users: { 
+                [currentUser.id]: { 
+                    displayName: currentUserData?.displayName || 'A user', 
+                    timestamp: isTyping ? Date.now() : 0 
+                } 
+            } 
+        }, { merge: true });
     }, [currentUser, currentUserData]);
 
     const submitPollVote = useCallback(async (messageId: string, option: string) => {

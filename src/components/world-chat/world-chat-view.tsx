@@ -1,10 +1,11 @@
+
 'use client';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem, CloudRain, Zap } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, Vote, Megaphone, BellRing } from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -12,13 +13,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { format, formatDistanceToNow, isSameDay } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { UserProfileCard } from '@/components/profile/user-profile-card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { Label } from '../ui/label';
 
 const userColors = [
     'text-red-400', 'text-orange-400', 'text-amber-400', 'text-yellow-400', 'text-lime-400', 
@@ -37,12 +39,21 @@ const getUserColor = (userId: string) => {
 
 export function WorldChatView() {
     const { messages, sendMessage, sendRain, claimRain, loading, pinnedMessage, unpinMessage, typingUsers, updateTypingStatus } = useWorldChat();
-    const { users: allUsers, loading: usersLoading, isAdmin } = useAdmin();
+    const { users: allUsers, loading: usersLoading, isAdmin, isSuperAdmin } = useAdmin();
     const { user: currentUser } = useUser();
     const { toast } = useToast();
+    
     const [newMessage, setNewMessage] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [replyingTo, setReplyingTo] = useState<WorldChatMessage | null>(null);
+    const [mentionSearch, setMentionSearch] = useState('');
+    const [showMentions, setShowMentions] = useState(false);
+    
+    // Admin Tool Modals
+    const [isRainDialogOpen, setIsRainDialogOpen] = useState(false);
+    const [rainAmount, setRainAmount] = useState(10);
+    const [rainLimit, setRainLimit] = useState(10);
+
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -56,29 +67,9 @@ export function WorldChatView() {
         scrollToBottom('auto');
     }, [loading]);
 
-    useEffect(() => {
-        if (scrollAreaRef.current) {
-            const { scrollTop, scrollHeight, clientHeight } = scrollAreaRef.current;
-            if (scrollHeight - scrollTop - clientHeight < 300) {
-                 scrollToBottom();
-            }
-        }
-    }, [messages, scrollToBottom]);
-
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim()) return;
-
-        if (isAdmin && newMessage.startsWith('/rain ')) {
-            const parts = newMessage.split(' ');
-            const amount = parseInt(parts[1]);
-            const limit = parseInt(parts[2]);
-            if (!isNaN(amount) && !isNaN(limit)) {
-                await sendRain(amount, limit);
-                setNewMessage('');
-                return;
-            }
-        }
 
         const replyContext: ReplyContext | null = replyingTo ? {
             messageId: replyingTo.id,
@@ -90,16 +81,48 @@ export function WorldChatView() {
         await sendMessage(newMessage, replyContext);
         setNewMessage('');
         setReplyingTo(null);
+        setShowMentions(false);
     };
 
     const handleTyping = (text: string) => {
         setNewMessage(text);
+        
+        // Mention logic
+        const lastWord = text.split(' ').pop() || '';
+        if (lastWord.startsWith('@')) {
+            setMentionSearch(lastWord.slice(1).toLowerCase());
+            setShowMentions(true);
+        } else {
+            setShowMentions(false);
+        }
+
         if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
         else updateTypingStatus(true);
         typingTimeoutRef.current = setTimeout(() => {
             updateTypingStatus(false);
             typingTimeoutRef.current = null;
         }, 2000); 
+    };
+
+    const insertMention = (user: User | 'all') => {
+        const words = newMessage.split(' ');
+        words.pop();
+        const mentionText = user === 'all' ? '@all ' : `@${user.displayName.replace(/\s+/g, '')} `;
+        setNewMessage(words.join(' ') + (words.length > 0 ? ' ' : '') + mentionText);
+        setShowMentions(false);
+    };
+
+    const filteredMentionUsers = useMemo(() => {
+        return allUsers.filter(u => 
+            u.displayName.toLowerCase().includes(mentionSearch) && 
+            u.uid !== currentUser?.id
+        ).slice(0, 5);
+    }, [allUsers, mentionSearch, currentUser?.id]);
+
+    const handleExecuteRain = async () => {
+        await sendRain(rainAmount, rainLimit);
+        setIsRainDialogOpen(false);
+        toast({ title: "Let it rain!", description: "Credit rain has been dispatched." });
     };
     
     const usersMap = new Map(allUsers.map(u => [u.uid, u]));
@@ -111,7 +134,6 @@ export function WorldChatView() {
 
     return (
         <div className="h-screen flex flex-col bg-whatsapp-style-bg relative overflow-hidden">
-            {/* Fixed Header */}
             <header className="flex-shrink-0 z-20 flex items-center justify-between p-4 bg-[#075e54] dark:bg-[#1f2c34] text-white shadow-md">
                 <div className="flex items-center gap-3">
                     <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/10 h-8 w-8">
@@ -130,16 +152,14 @@ export function WorldChatView() {
                 </div>
             </header>
 
-            {/* Pinned Announcement */}
             {pinnedMessage && (
                 <div className="flex-shrink-0 z-10 p-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800/30 flex items-center gap-3 text-xs">
                     <Pin className="h-4 w-4 text-yellow-600 flex-shrink-0" />
                     <p className="flex-1 truncate italic">"{pinnedMessage.text}"</p>
-                    {isAdmin && <Button variant="ghost" size="icon" className="h-6 w-6 text-yellow-600" onClick={unpinMessage}><PinOff className="h-3 w-3"/></Button>}
+                    {(isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-6 w-6 text-yellow-600" onClick={unpinMessage}><PinOff className="h-3 w-3"/></Button>}
                 </div>
             )}
 
-            {/* ScrollArea */}
             <ScrollArea className="flex-1 relative" viewportRef={scrollAreaRef}>
                 <div className="p-4 space-y-2 min-h-full flex flex-col justify-end">
                     {(loading || usersLoading) && (
@@ -179,8 +199,34 @@ export function WorldChatView() {
                 </div>
             </ScrollArea>
 
-            {/* Fixed Footer */}
-            <footer className="flex-shrink-0 z-20 p-3 bg-[#ededed] dark:bg-[#1f2c34] border-t dark:border-white/5">
+            <footer className="flex-shrink-0 z-20 p-3 bg-[#ededed] dark:bg-[#1f2c34] border-t dark:border-white/5 relative">
+                {/* Mention List */}
+                <AnimatePresence>
+                    {showMentions && (
+                        <motion.div 
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 10 }}
+                            className="absolute bottom-full left-4 mb-2 w-64 bg-background border rounded-xl shadow-2xl overflow-hidden z-50"
+                        >
+                            <div className="p-2 bg-primary/10 text-[10px] font-black uppercase text-primary border-b">Suggested Legends</div>
+                            {isSuperAdmin && (
+                                <button onClick={() => insertMention('all')} className="w-full p-3 flex items-center gap-3 hover:bg-muted text-left transition-colors border-b">
+                                    <div className="h-8 w-8 rounded-full bg-red-500 flex items-center justify-center text-white"><AtSign className="h-4 w-4"/></div>
+                                    <div><p className="text-sm font-bold">@all</p><p className="text-[10px] text-muted-foreground">Notify everyone</p></div>
+                                </button>
+                            )}
+                            {filteredMentionUsers.map(u => (
+                                <button key={u.uid} onClick={() => insertMention(u)} className="w-full p-3 flex items-center gap-3 hover:bg-muted text-left transition-colors">
+                                    <Avatar className="h-8 w-8"><AvatarImage src={u.photoURL}/><AvatarFallback>U</AvatarFallback></Avatar>
+                                    <p className="text-sm font-medium">{u.displayName}</p>
+                                </button>
+                            ))}
+                            {filteredMentionUsers.length === 0 && !isSuperAdmin && <p className="p-4 text-xs text-muted-foreground text-center">No legends found...</p>}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <AnimatePresence>
                     {replyingTo && (
                         <motion.div 
@@ -197,11 +243,38 @@ export function WorldChatView() {
                         </motion.div>
                     )}
                 </AnimatePresence>
+
                 <div className="flex items-center gap-2">
+                    {/* Admin/Dev Tools Menu */}
+                    {(isAdmin || isSuperAdmin) && (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button size="icon" className="h-11 w-11 rounded-full bg-primary text-white shadow-md flex-shrink-0">
+                                    <Plus className="h-5 w-5" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" className="w-56 p-2 rounded-2xl shadow-2xl mb-2">
+                                <div className="space-y-1">
+                                    <Button variant="ghost" onClick={() => setIsRainDialogOpen(true)} className="w-full justify-start text-blue-500 font-bold hover:bg-blue-50">
+                                        <CloudRain className="mr-2 h-4 w-4"/> Credit Rain
+                                    </Button>
+                                    <Button variant="ghost" className="w-full justify-start text-purple-500 font-bold hover:bg-purple-50">
+                                        <Vote className="mr-2 h-4 w-4"/> Create Poll
+                                    </Button>
+                                    <Button variant="ghost" className="w-full justify-start text-orange-500 font-bold hover:bg-orange-50">
+                                        <Megaphone className="mr-2 h-4 w-4"/> Announcement
+                                    </Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    )}
+
                     <div className="relative flex-1">
                         <Input
                             value={newMessage}
                             onChange={(e) => handleTyping(e.target.value)}
+                            onFocus={() => updateTypingStatus(true)}
+                            onBlur={() => updateTypingStatus(false)}
                             placeholder="Type a message..."
                             className="h-11 rounded-full pl-4 bg-white dark:bg-[#2a3942] border-none shadow-sm text-sm"
                         />
@@ -213,13 +286,40 @@ export function WorldChatView() {
                         type="submit" 
                         onClick={handleSendMessage}
                         size="icon" 
-                        className="h-11 w-11 rounded-full bg-[#00a884] hover:bg-[#008f6a] text-white shadow-md" 
+                        className="h-11 w-11 rounded-full bg-[#00a884] hover:bg-[#008f6a] text-white shadow-md flex-shrink-0" 
                         disabled={!newMessage.trim()}
                     >
                         <Send className="h-5 w-5" />
                     </Button>
                 </div>
             </footer>
+
+            {/* Admin Tool Dialogs */}
+            <Dialog open={isRainDialogOpen} onOpenChange={setIsRainDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-black text-blue-500 flex items-center gap-2">
+                            <CloudRain/> Trigger Credit Rain
+                        </DialogTitle>
+                        <DialogDescription>Shower the community with credits. This will also send a push notification to all users.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-6 space-y-6">
+                        <div className="space-y-2">
+                            <Label>Amount per Claim</Label>
+                            <Input type="number" value={rainAmount} onChange={e => setRainAmount(Number(e.target.value))} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Max Claims (Users)</Label>
+                            <Input type="number" value={rainLimit} onChange={e => setRainLimit(Number(e.target.value))} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleExecuteRain} className="w-full h-12 text-lg font-bold bg-blue-500 hover:bg-blue-600">
+                            GENERATE RAIN ⛈️
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Profile Dialog */}
             <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
@@ -232,7 +332,7 @@ export function WorldChatView() {
 }
 
 function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply, onClaimRain }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void, onClaimRain: () => void }) {
-    const { isAdmin, editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget } = useWorldChat();
+    const { isAdmin, isSuperAdmin, editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget } = useWorldChat();
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(message.text || '');
 
@@ -293,7 +393,11 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                     <div className="flex justify-end gap-2 text-[10px] font-bold"><button onClick={() => setIsEditing(false)}>CANCEL</button><button onClick={handleEditSave} className="text-emerald-500">SAVE</button></div>
                                 </div>
                             ) : (
-                                <p className="leading-relaxed select-text whitespace-pre-wrap">{message.text}</p>
+                                <p className="leading-relaxed select-text whitespace-pre-wrap">
+                                    {message.text?.split(/(@\w+|@all)/).map((part, i) => (
+                                        <span key={i} className={cn(part.startsWith('@') ? "text-blue-500 font-bold" : "")}>{part}</span>
+                                    ))}
+                                </p>
                             )}
 
                             <div className="flex items-center justify-end gap-1 mt-1 opacity-60 text-[9px] font-bold">
@@ -305,9 +409,9 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                     <PopoverContent className="w-auto p-1 bg-slate-800 border-white/10 rounded-full flex gap-1 shadow-2xl">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => toggleNugget(message.id)}><Gem className={cn("h-4 w-4", isNugget && "text-amber-400")}/></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>
-                        {isAdmin && <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>}
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteMessage(message.id)}><Trash2 className="h-4 w-4"/></Button>
+                        {(isOwn || isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>}
+                        {(isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>}
+                        {(isOwn || isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteMessage(message.id)}><Trash2 className="h-4 w-4"/></Button>}
                     </PopoverContent>
                 </Popover>
             </div>
