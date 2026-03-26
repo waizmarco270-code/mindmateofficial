@@ -1,15 +1,24 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db, storage } from '@/lib/firebase';
 import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, runTransaction, collectionGroup } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays } from 'date-fns';
+import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays, differenceInDays } from 'date-fns';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
 export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight';
+
+export interface WalletTransaction {
+    id: string;
+    amount: number;
+    type: 'topup' | 'withdrawal' | 'penalty' | 'refund';
+    status: 'completed' | 'pending' | 'failed';
+    date: string; // ISO string
+}
 
 export interface User {
   id: string;
@@ -20,6 +29,9 @@ export interface User {
   isBlocked: boolean;
   isLeaderboardPrivate?: boolean;
   credits: number;
+  walletBalance: number;
+  walletTransactions?: WalletTransaction[];
+  lastWalletDeposit?: string; // ISO string
   masterCardExpires?: string;
   votedPolls?: Record<string, string>;
   unlockedResourceSections?: string[];
@@ -351,6 +363,8 @@ interface AppDataContextType {
     videoLectures: VideoLecture[];
     addVideoLecture: (lecture: Omit<VideoLecture, 'id' | 'createdAt'>) => Promise<void>;
     deleteVideoLecture: (lectureId: string) => Promise<void>;
+    topUpWallet: (amount: number, transactionId: string) => Promise<void>;
+    requestWithdrawal: (amount: number) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -443,7 +457,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     id: authUser.id, uid: authUser.id, displayName: authUser.fullName || authUser.username || 'New User',
                     email: authUser.primaryEmailAddress?.emailAddress || '', photoURL: authUser.imageUrl, isBlocked: false,
                     isLeaderboardPrivate: false,
-                    credits: 200, isAdmin: false, isVip: false, isGM: false, isChallenger: false, isCoDev: false,
+                    credits: 200, walletBalance: 0, isAdmin: false, isVip: false, isGM: false, isChallenger: false, isCoDev: false,
                     friends: [], unlockedResourceSections: [], unlockedFeatures: [], unlockedThemes: [], hasAiAccess: false,
                     focusSessionsCompleted: 0, dailyTasksCompleted: 0, totalStudyTime: 0, freeRewards: 0, freeGuesses: 0,
                     streak: 1, longestStreak: 1, lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
@@ -499,6 +513,46 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date() && amount < 0) return;
         await updateDoc(userDocRef, { credits: increment(amount) });
     }, []);
+
+    const topUpWallet = useCallback(async (amount: number, transactionId: string) => {
+        if (!authUser) return;
+        const userRef = doc(db, 'users', authUser.id);
+        const newTx: WalletTransaction = {
+            id: transactionId,
+            amount,
+            type: 'topup',
+            status: 'completed',
+            date: new Date().toISOString()
+        };
+        await updateDoc(userRef, {
+            walletBalance: increment(amount),
+            lastWalletDeposit: new Date().toISOString(),
+            walletTransactions: arrayUnion(newTx)
+        });
+    }, [authUser]);
+
+    const requestWithdrawal = useCallback(async (amount: number) => {
+        if (!authUser || !currentUserData) return;
+        if (currentUserData.walletBalance < amount) throw new Error("Insufficient wallet balance.");
+        
+        const lastDeposit = currentUserData.lastWalletDeposit ? new Date(currentUserData.lastWalletDeposit) : new Date(0);
+        if (differenceInDays(new Date(), lastDeposit) < 7) {
+            throw new Error("Withdrawals are locked for 7 days after your last deposit.");
+        }
+
+        const userRef = doc(db, 'users', authUser.id);
+        const newTx: WalletTransaction = {
+            id: `wd-${Date.now()}`,
+            amount: -amount,
+            type: 'withdrawal',
+            status: 'pending',
+            date: new Date().toISOString()
+        };
+        await updateDoc(userRef, {
+            walletBalance: increment(-amount),
+            walletTransactions: arrayUnion(newTx)
+        });
+    }, [authUser, currentUserData]);
 
     const applyFocusPenalty = useCallback(async (uid: string, amount: number): Promise<'shielded' | 'penalized'> => {
         const userRef = doc(db, 'users', uid);
@@ -648,6 +702,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         toggleLeaderboardPrivacy: (uid, isPrivate) => updateDoc(doc(db, 'users', uid), { isLeaderboardPrivate: isPrivate }),
         addCreditsToUser,
         applyFocusPenalty,
+        topUpWallet,
+        requestWithdrawal,
         giftCreditsToAllUsers: async (amt) => {
             const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
             const batch = writeBatch(db);

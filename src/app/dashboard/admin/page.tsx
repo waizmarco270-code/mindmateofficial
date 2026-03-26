@@ -30,7 +30,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { z } from 'zod';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
-
+import PushNotification from '@/components/admin/PushNotification';
 
 interface QuizQuestion {
     text: string;
@@ -633,6 +633,24 @@ export default function AdminPanelPage() {
 
       <Accordion type="multiple" defaultValue={['content-management']} className="w-full space-y-4">
         
+        {/* Push Notification Management */}
+        <AccordionItem value="push-notification-management" className="border-b-0">
+          <Card>
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <Send className="h-6 w-6 text-primary" />
+                <div>
+                  <h3 className="text-lg font-semibold">Push Notification Management</h3>
+                  <p className="text-sm text-muted-foreground text-left">Send targeted, rich push notifications to your users.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-4">
+                <PushNotification />
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
         {/* Showcase Management */}
         <AccordionItem value="showcase-management" className="border-b-0">
           <Card>

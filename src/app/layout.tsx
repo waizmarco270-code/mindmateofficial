@@ -7,6 +7,8 @@ import { cn } from '@/lib/utils';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/react';
 import { PWAInstallPrompt } from '@/components/pwa/pwa-install-prompt';
+import NotificationHandler from '@/components/NotificationHandler';
+import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt'; // Import the new component
 
 export default function RootLayout({
   children,
@@ -54,6 +56,8 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
           >
+            <NotificationHandler />
+            <NotificationPermissionPrompt /> {/* Add the prompt here */}
             {children}
             <Toaster />
             <Analytics />

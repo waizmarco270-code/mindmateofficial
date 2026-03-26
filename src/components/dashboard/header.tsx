@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen, ShoppingCart, Palette } from 'lucide-react';
+import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen, ShoppingCart, Palette, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
@@ -247,10 +247,10 @@ export default function Header() {
   const { setOpenMobile } = useSidebar();
   const { user, isLoaded } = useUser();
   const { currentUserData } = useUsers();
-  const pathname = usePathname();
   
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
+  const walletBalance = currentUserData?.walletBalance ?? 0;
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -279,28 +279,33 @@ export default function Header() {
                 <AdminPanelMenu />
                 
                 <div className="flex items-center gap-2">
+                    {/* Wallet Section */}
+                    <Link href="/dashboard/wallet">
+                        <div className="flex cursor-pointer items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-sm font-bold text-primary transition-all hover:bg-primary/20">
+                            <Wallet className="h-4 w-4" />
+                            <span>₹{walletBalance}</span>
+                        </div>
+                    </Link>
+
+                    {/* Credits Section */}
                     <Popover>
                         <PopoverTrigger asChild>
                             <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition-all hover:bg-secondary/80">
                                 <Medal className="h-5 w-5 text-amber-500 animate-gold-shine" />
-                                <span>{credits} <span className="hidden sm:inline">Credits</span></span>
+                                <span>{credits}</span>
                             </div>
                         </PopoverTrigger>
                         <PopoverContent className="max-w-xs p-4">
                             <div className="space-y-3">
                                 <div>
-                                    <h4 className="font-bold text-base mb-1">How to Use Credits</h4>
+                                    <h4 className="font-bold text-base mb-1">Study Credits</h4>
                                     <p className="text-sm text-muted-foreground">
-                                        Use your credits to unlock premium study resources and other special features in the app.
+                                        Used to unlock premium notes and take quizzes.
                                     </p>
                                 </div>
-                                <div>
-                                    <h4 className="font-bold text-base mb-1">How to Earn Credits</h4>
-                                    <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                                        <li><span className="font-semibold text-foreground">+1 Credit</span> for daily tasks.</li>
-                                        <li><span className="font-semibold text-foreground">+5 Credits</span> for perfect quizzes.</li>
-                                        <li><span className="font-semibold text-foreground">Play games</span> in the Reward Zone!</li>
-                                    </ul>
+                                <div className="pt-2 border-t text-xs font-bold text-primary flex items-center justify-between">
+                                    <span>CREDITS AVAILABLE:</span>
+                                    <span>{credits}</span>
                                 </div>
                             </div>
                         </PopoverContent>

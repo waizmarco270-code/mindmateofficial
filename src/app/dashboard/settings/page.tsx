@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone, FileText, ShieldCheck, Scale } from 'lucide-react';
+import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone, FileText, ShieldCheck, Scale, Bell } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
@@ -25,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import PrivacyPolicy from '@/app/privacy/page';
 import TermsAndConditions from '@/app/terms/page';
 import RefundPolicy from '@/app/refund/page';
+import Notifications from '@/components/settings/Notifications';
 
 const THEME_COST = 50;
 
@@ -245,6 +246,7 @@ export default function SettingsPage() {
                 <TabsList className="md:col-span-1 flex flex-col h-auto bg-transparent p-0 border-r">
                     <TabsTrigger value="account" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><UserIcon className="mr-3"/> Account</TabsTrigger>
                     <TabsTrigger value="appearance" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Palette className="mr-3"/> Appearance</TabsTrigger>
+                    <TabsTrigger value="notifications" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Bell className="mr-3"/> Notifications</TabsTrigger>
                     <TabsTrigger value="about" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Info className="mr-3"/> About & FAQ</TabsTrigger>
                     <TabsTrigger value="rules" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gavel className="mr-3"/> Rules</TabsTrigger>
                     
@@ -263,6 +265,7 @@ export default function SettingsPage() {
                 <div className="md:col-span-3">
                     <TabsContent value="account"><AccountSettings /></TabsContent>
                     <TabsContent value="appearance"><AppearanceSettings /></TabsContent>
+                    <TabsContent value="notifications"><Notifications /></TabsContent>
                     <TabsContent value="about" className="space-y-8">
                          <Card><CardHeader><CardTitle>About MindMate</CardTitle></CardHeader><CardContent><AboutContent /></CardContent></Card>
                          <Card><CardHeader><CardTitle>FAQ</CardTitle></CardHeader><CardContent><FaqContent /></CardContent></Card>

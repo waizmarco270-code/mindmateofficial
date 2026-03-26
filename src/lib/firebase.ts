@@ -1,9 +1,8 @@
 
-
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
-import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { initializeApp, getApps, getApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import { getMessaging } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: "AIzaSyATUcEV5XGgj5oMkAv1a5Xh-6jZApOXVBw",
@@ -14,11 +13,12 @@ const firebaseConfig = {
   appId: "1:1040365164281:web:3cf995fb97fe775c33b428"
 };
 
-// Initialize Firebase App (Singleton Pattern)
-const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
-const auth = getAuth(app);
+// Initialize Firebase
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
-const storage = getStorage(app);
+const auth = getAuth(app);
 
-export { app as firebaseApp, auth, db, storage };
+// Initialize Firebase Cloud Messaging
+const messaging = typeof window !== 'undefined' ? getMessaging(app) : null;
+
+export { app as firebaseApp, db, auth, messaging };

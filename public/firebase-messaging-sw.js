@@ -1,29 +1,52 @@
 
-// This service worker file is intentionally left almost empty.
-// It's required for Firebase Cloud Messaging to work.
+importScripts("https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js");
+importScripts("https://www.gstatic.com/firebasejs/9.15.0/firebase-messaging-compat.js");
 
-// When you deploy, Firebase automatically adds the necessary
-// configuration to this file.
+const firebaseConfig = {
+  apiKey: "AIzaSyATUcEV5XGgj5oMkAv1a5Xh-6jZApOXVBw",
+  authDomain: "mindmate-80e5c.firebaseapp.com",
+  projectId: "mindmate-80e5c",
+  storageBucket: "mindmate-80e5c.appspot.com",
+  messagingSenderId: "1040365164281",
+  appId: "1:1040365164281:web:3cf995fb97fe775c33b428"
+};
 
-// For local development, you might need to add the initialization script
-// if you are testing push notifications locally, but for production builds
-// managed by Firebase Hosting, this is sufficient.
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
 
-// The `onBackgroundMessage` handler needs to be set up here if you
-// want to handle background notifications.
+// This is the handler for background notifications
+messaging.onBackgroundMessage(function(payload) {
+    console.log('Received background message ', payload);
 
-// For now, we will let Firebase handle showing the notification automatically.
-// The default behavior is to show the notification payload as it's sent.
-self.addEventListener('push', (event) => {
-    console.log('[Service Worker] Push Received.');
-    console.log(`[Service Worker] Push had this data: "${event.data.text()}"`);
-
-    const notificationData = event.data.json().notification;
-    const title = notificationData.title;
-    const options = {
-        body: notificationData.body,
-        icon: notificationData.icon || '/logo.jpg',
+    const notificationTitle = payload.notification.title;
+    const notificationOptions = {
+        body: payload.notification.body,
+        icon: '/logo.jpg',
+        badge: '/badge.png', // Your new notification badge
+        image: payload.data.imageUrl,
+        data: {
+            url: payload.data.linkUrl
+        }
     };
 
-    event.waitUntil(self.registration.showNotification(title, options));
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// This is the click handler for the notification
+self.addEventListener('notificationclick', function(event) {
+    const urlToOpen = event.notification.data.url;
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window' }).then(windowClients => {
+            for (var i = 0; i < windowClients.length; i++) {
+                var client = windowClients[i];
+                if (client.url === urlToOpen && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
+        })
+    );
 });
