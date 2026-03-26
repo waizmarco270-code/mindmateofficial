@@ -4,6 +4,8 @@ import { adminDb, adminMessaging } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   try {
     const { title, message, userId, linkUrl, scheduledAt, imageUrl } = await req.json();
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (tokens.length === 0) {
-      // Save to history even if no tokens, but mark as completed with 0 sent
+      // Save to history even if no tokens
       await adminDb.collection('sentNotifications').add({ 
           title, message, imageUrl: imageUrl || null, linkUrl: linkUrl || null, 
           sentAt: Timestamp.now(), status: 'Completed', dispatchSummary: '0 sent (no active subscribers)', target 

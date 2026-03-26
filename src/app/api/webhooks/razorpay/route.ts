@@ -4,11 +4,11 @@ import crypto from 'crypto';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
 
+export const dynamic = 'force-dynamic';
+
 /**
  * Razorpay Webhook Handler
- * Verified by Master: waiz5979mindmate@786
  */
-
 export async function POST(req: NextRequest) {
   try {
     const body = await req.text();
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // 1. Verify Authentication
+    // Verify Authentication
     const expectedSignature = crypto
       .createHmac('sha256', secret)
       .update(body)
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
 
     console.log(`Webhook Received: ${event}`);
 
-    // 2. Process 'payment.captured' event
+    // Process 'payment.captured' event
     if (event === 'payment.captured') {
       const payment = payload.payload.payment.entity;
       const { userId, credits, packName } = payment.notes;
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
       if (userId && credits) {
         const userRef = doc(db, 'users', userId);
         
-        // Double check if transaction already processed (idempotency)
+        // Idempotency check
         const userSnap = await getDoc(userRef);
         const userData = userSnap.data();
         const alreadyProcessed = userData?.transactions?.some((t: any) => t.id === payment.id);

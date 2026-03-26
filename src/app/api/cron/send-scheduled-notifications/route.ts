@@ -5,8 +5,13 @@ import { Timestamp } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 
 /**
+ * Force this route to be dynamic so it doesn't fail during Vercel build
+ */
+export const dynamic = 'force-dynamic';
+
+/**
  * CRON Job Handler
- * This route is triggered by the background heartbeat in layout.tsx
+ * This route is triggered by an external cron service or the background heartbeat.
  */
 export async function GET(req: NextRequest) {
   console.log('CRON: Heartbeat check for due notifications...');
