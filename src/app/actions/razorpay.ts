@@ -4,11 +4,11 @@
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
+import { doc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
 
-// FALLBACK TO TEST KEYS FOR DEV SERVER
-const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SSLmjZYJquny3v';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'bFXh8cQiKIWmFNsPNJ2YB9Ga';
+// ALWAYS USE TEST KEYS AS FALLBACK FOR STABILITY
+const RAZORPAY_KEY_ID = 'rzp_test_SSLmjZYJquny3v';
+const RAZORPAY_KEY_SECRET = 'bFXh8cQiKIWmFNsPNJ2YB9Ga';
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_KEY_ID,
@@ -18,7 +18,6 @@ const razorpay = new Razorpay({
 /**
  * Creates a Razorpay Order
  * We include userId and credits in the 'notes' field.
- * This is CRITICAL because the webhook will receive these notes back.
  */
 export async function createRazorpayOrder(amount: number, notes: { userId: string; packName: string; credits: number }) {
   try {
@@ -34,14 +33,16 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
     };
 
     const order = await razorpay.orders.create(options);
+    if (!order) throw new Error("Razorpay order creation returned empty response.");
+    
     return {
       id: order.id,
       amount: order.amount,
       currency: order.currency,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating Razorpay order:', error);
-    throw new Error('Could not create payment order.');
+    throw new Error(error.message || 'Could not create payment order.');
   }
 }
 

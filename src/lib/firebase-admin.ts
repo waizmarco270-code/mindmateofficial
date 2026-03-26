@@ -7,11 +7,9 @@ if (!admin.apps.length) {
   // THE CORRECT APPROACH: Check if we are inside the Firebase Emulator Suite
   if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
     console.log("Firebase Emulator detected. Initializing Admin SDK for local development...");
-    // If in the emulator, initialize without credentials. 
-    // The SDK will automatically discover the running emulators.
     admin.initializeApp({
-      projectId: 'mindmate-80e5c', // Use the actual project ID
-      storageBucket: 'mindmate-80e5c.appspot.com',
+      projectId: 'mindmate-80e5c',
+      storageBucket: 'mindmate-80e5c.firebasestorage.app',
     });
     console.log("SUCCESS: Firebase Admin SDK initialized for Emulator Suite.");
   } else {
@@ -25,7 +23,7 @@ if (!admin.apps.length) {
       const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        storageBucket: 'mindmate-80e5c.appspot.com',
+        storageBucket: 'mindmate-80e5c.firebasestorage.app', // Standard bucket format
       });
       console.log("SUCCESS: Firebase Admin SDK initialized for production from file.");
     } catch (error: any) {

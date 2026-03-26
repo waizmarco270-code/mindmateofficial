@@ -57,6 +57,7 @@ const PushNotification = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    // History Listener
     const q = query(collection(db, "sentNotifications"), orderBy("sentAt", "desc"));
     const unsubscribe = onSnapshot(q, (querySnapshot) => {
       const history: NotificationLog[] = [];
@@ -65,15 +66,28 @@ const PushNotification = () => {
       });
       setNotificationHistory(history);
       setHistoryLoading(false);
+    }, (error) => {
+        console.error("History fetch error:", error);
+        setHistoryLoading(false);
     });
 
-    const scheduledQuery = query(collection(db, "scheduledNotifications"), where("status", "==", "pending"), orderBy("scheduledAt", "asc"));
+    // Scheduled Listener - Simplifed query to avoid index errors
+    const scheduledQuery = query(collection(db, "scheduledNotifications"), where("status", "==", "pending"));
     const unsubscribeScheduled = onSnapshot(scheduledQuery, (querySnapshot) => {
         const scheduled: ScheduledNotification[] = [];
         querySnapshot.forEach((doc) => {
             scheduled.push({ id: doc.id, ...doc.data() } as ScheduledNotification);
         });
+        // Sort manually on client
+        scheduled.sort((a, b) => {
+            const dateA = a.scheduledAt instanceof Timestamp ? a.scheduledAt.toMillis() : new Date(a.scheduledAt).getTime();
+            const dateB = b.scheduledAt instanceof Timestamp ? b.scheduledAt.toMillis() : new Date(b.scheduledAt).getTime();
+            return dateA - dateB;
+        });
         setScheduledNotifications(scheduled);
+        setScheduledLoading(false);
+    }, (error) => {
+        console.error("Scheduled fetch error:", error);
         setScheduledLoading(false);
     });
 
@@ -255,7 +269,7 @@ const PushNotification = () => {
                 <Card>
                     <CardHeader><CardTitle className="text-base">Pending Missions</CardTitle></CardHeader>
                     <CardContent>
-                        {scheduledLoading ? <Loader2 className="animate-spin mx-auto"/> : scheduledNotifications.length === 0 ? <p className="text-center py-10 text-muted-foreground">No scheduled notifications.</p> : (
+                        {scheduledLoading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin h-8 w-8 text-primary"/></div> : scheduledNotifications.length === 0 ? <p className="text-center py-10 text-muted-foreground">No scheduled notifications.</p> : (
                             <Table>
                                 <TableHeader><TableRow><TableHead>Scheduled For</TableHead><TableHead>Title</TableHead><TableHead>Target</TableHead><TableHead className="text-right">Action</TableHead></TableRow></TableHeader>
                                 <TableBody>
@@ -279,7 +293,7 @@ const PushNotification = () => {
                     <CardHeader><CardTitle className="text-base">Pulse History</CardTitle></CardHeader>
                     <CardContent>
                         <ScrollArea className="h-[400px]">
-                            {historyLoading ? <Loader2 className="animate-spin mx-auto"/> : notificationHistory.length === 0 ? <p className="text-center py-10 text-muted-foreground">No history yet.</p> : (
+                            {historyLoading ? <div className="flex justify-center py-10"><Loader2 className="animate-spin h-8 w-8 text-primary"/></div> : notificationHistory.length === 0 ? <p className="text-center py-10 text-muted-foreground">No history yet.</p> : (
                                 <Table>
                                     <TableHeader><TableRow><TableHead>Sent At</TableHead><TableHead>Message</TableHead><TableHead>Results</TableHead></TableRow></TableHeader>
                                     <TableBody>
