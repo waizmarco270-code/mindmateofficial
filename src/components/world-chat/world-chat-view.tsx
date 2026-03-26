@@ -1,10 +1,11 @@
+
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, Vote, Megaphone, BellRing } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, Vote, Megaphone, BellRing, Lock, Unlock, Trash, Clock, ShieldAlert } from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -20,6 +21,7 @@ import { useLocalStorage } from '@/hooks/use-local-storage';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '../ui/label';
+import { Progress } from '../ui/progress';
 
 const userColors = [
     'text-red-400', 'text-orange-400', 'text-amber-400', 'text-yellow-400', 'text-lime-400', 
@@ -37,7 +39,7 @@ const getUserColor = (userId: string) => {
 };
 
 export function WorldChatView() {
-    const { messages, sendMessage, sendRain, claimRain, loading, pinnedMessage, unpinMessage, typingUsers, updateTypingStatus } = useWorldChat();
+    const { messages, sendMessage, sendRain, sendPoll, claimRain, loading, pinnedMessage, unpinMessage, clearMessages, toggleLock, setSlowMode, isLocked, slowMode, typingUsers, updateTypingStatus } = useWorldChat();
     const { users: allUsers, loading: usersLoading, isAdmin, isSuperAdmin } = useAdmin();
     const { user: currentUser } = useUser();
     const { toast } = useToast();
@@ -53,6 +55,10 @@ export function WorldChatView() {
     const [rainAmount, setRainAmount] = useState(10);
     const [rainLimit, setRainLimit] = useState(10);
 
+    const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
+    const [pollQuestion, setPollQuestion] = useState('');
+    const [pollOptions, setPollOptions] = useState(['', '']);
+
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -64,7 +70,7 @@ export function WorldChatView() {
 
     useEffect(() => {
         scrollToBottom('auto');
-    }, [loading]);
+    }, [messages.length, loading, scrollToBottom]);
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -113,15 +119,31 @@ export function WorldChatView() {
 
     const filteredMentionUsers = useMemo(() => {
         return allUsers.filter(u => 
-            u.displayName.toLowerCase().includes(mentionSearch) && 
+            u.displayName?.toLowerCase().includes(mentionSearch) && 
             u.uid !== currentUser?.id
         ).slice(0, 5);
     }, [allUsers, mentionSearch, currentUser?.id]);
 
     const handleExecuteRain = async () => {
+        if (rainAmount > 100) {
+            toast({ variant: 'destructive', title: "Limit Exceeded", description: "Credit rain cannot exceed 100 credits per claim." });
+            return;
+        }
         await sendRain(rainAmount, rainLimit);
         setIsRainDialogOpen(false);
         toast({ title: "Let it rain!", description: "Credit rain has been dispatched." });
+    };
+
+    const handleExecutePoll = async () => {
+        const validOptions = pollOptions.filter(o => o.trim() !== '');
+        if (!pollQuestion.trim() || validOptions.length < 2) {
+            toast({ variant: 'destructive', title: "Invalid Poll", description: "Question and at least 2 options required." });
+            return;
+        }
+        await sendPoll(pollQuestion, validOptions);
+        setIsPollDialogOpen(false);
+        setPollQuestion('');
+        setPollOptions(['', '']);
     };
     
     const usersMap = new Map(allUsers.map(u => [u.uid, u]));
@@ -145,6 +167,7 @@ export function WorldChatView() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {isLocked && <Lock className="h-4 w-4 text-amber-400 mr-2" title="Chat Locked" />}
                     <Button asChild variant="ghost" size="icon" className="text-white hover:bg-white/10">
                         <Link href="/dashboard/social/nuggets"><Gem className="h-5 w-5 text-amber-400"/></Link>
                     </Button>
@@ -154,7 +177,7 @@ export function WorldChatView() {
             {pinnedMessage && (
                 <div className="flex-shrink-0 z-10 p-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800/30 flex items-center gap-3 text-xs">
                     <Pin className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                    <p className="flex-1 truncate italic">"{pinnedMessage.text}"</p>
+                    <p className="flex-1 truncate italic">"{pinnedMessage.text || 'Action Message'}"</p>
                     {(isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-6 w-6 text-yellow-600" onClick={unpinMessage}><PinOff className="h-3 w-3"/></Button>}
                 </div>
             )}
@@ -252,17 +275,30 @@ export function WorldChatView() {
                                     <Plus className="h-5 w-5" />
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent side="top" className="w-56 p-2 rounded-2xl shadow-2xl mb-2">
+                            <PopoverContent side="top" className="w-64 p-2 rounded-2xl shadow-2xl mb-2">
                                 <div className="space-y-1">
                                     <Button variant="ghost" onClick={() => setIsRainDialogOpen(true)} className="w-full justify-start text-blue-500 font-bold hover:bg-blue-50">
                                         <CloudRain className="mr-2 h-4 w-4"/> Credit Rain
                                     </Button>
-                                    <Button variant="ghost" className="w-full justify-start text-purple-500 font-bold hover:bg-purple-50">
+                                    <Button variant="ghost" onClick={() => setIsPollDialogOpen(true)} className="w-full justify-start text-purple-500 font-bold hover:bg-purple-50">
                                         <Vote className="mr-2 h-4 w-4"/> Create Poll
                                     </Button>
-                                    <Button variant="ghost" className="w-full justify-start text-orange-500 font-bold hover:bg-orange-50">
-                                        <Megaphone className="mr-2 h-4 w-4"/> Announcement
+                                    <div className="my-1 border-t border-muted" />
+                                    <Button variant="ghost" onClick={toggleLock} className={cn("w-full justify-start font-bold", isLocked ? "text-green-500" : "text-amber-500")}>
+                                        {isLocked ? <Unlock className="mr-2 h-4 w-4"/> : <Lock className="mr-2 h-4 w-4"/>}
+                                        {isLocked ? "Unlock Chat" : "Lock Chat"}
                                     </Button>
+                                    <Button variant="ghost" onClick={clearMessages} className="w-full justify-start text-destructive font-bold">
+                                        <Trash className="mr-2 h-4 w-4"/> Clear Chat
+                                    </Button>
+                                    <div className="p-2 space-y-2">
+                                        <Label className="text-[10px] uppercase font-black text-muted-foreground">Slow Mode Cooldown</Label>
+                                        <div className="flex gap-1">
+                                            {[0, 5, 30].map(s => (
+                                                <Button key={s} size="sm" variant={slowMode === s ? "default" : "outline"} onClick={() => setSlowMode(s)} className="h-7 flex-1 text-[10px]">{s}s</Button>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             </PopoverContent>
                         </Popover>
@@ -274,8 +310,9 @@ export function WorldChatView() {
                             onChange={(e) => handleTyping(e.target.value)}
                             onFocus={() => updateTypingStatus(true)}
                             onBlur={() => updateTypingStatus(false)}
-                            placeholder="Type a message..."
+                            placeholder={isLocked && !isAdmin && !isSuperAdmin ? "Chat is locked by admin" : "Type a message..."}
                             className="h-11 rounded-full pl-4 bg-white dark:bg-[#2a3942] border-none shadow-sm text-sm"
+                            disabled={isLocked && !isAdmin && !isSuperAdmin}
                         />
                         <div className="absolute -top-5 left-4 text-[10px] text-muted-foreground font-medium italic animate-pulse">
                             {getTypingText()}
@@ -286,7 +323,7 @@ export function WorldChatView() {
                         onClick={handleSendMessage}
                         size="icon" 
                         className="h-11 w-11 rounded-full bg-[#00a884] hover:bg-[#008f6a] text-white shadow-md flex-shrink-0" 
-                        disabled={!newMessage.trim()}
+                        disabled={!newMessage.trim() || (isLocked && !isAdmin && !isSuperAdmin)}
                     >
                         <Send className="h-5 w-5" />
                     </Button>
@@ -300,12 +337,12 @@ export function WorldChatView() {
                         <DialogTitle className="text-2xl font-black text-blue-500 flex items-center gap-2">
                             <CloudRain/> Trigger Credit Rain
                         </DialogTitle>
-                        <DialogDescription>Shower the community with credits. This will also send a push notification to all users.</DialogDescription>
+                        <DialogDescription>Shower the community with credits (Max 100 per claim).</DialogDescription>
                     </DialogHeader>
                     <div className="py-6 space-y-6">
                         <div className="space-y-2">
-                            <Label>Amount per Claim</Label>
-                            <Input type="number" value={rainAmount} onChange={e => setRainAmount(Number(e.target.value))} />
+                            <Label>Amount per Claim (Max 100)</Label>
+                            <Input type="number" value={rainAmount} onChange={e => setRainAmount(Number(e.target.value))} max={100} />
                         </div>
                         <div className="space-y-2">
                             <Label>Max Claims (Users)</Label>
@@ -315,6 +352,42 @@ export function WorldChatView() {
                     <DialogFooter>
                         <Button onClick={handleExecuteRain} className="w-full h-12 text-lg font-bold bg-blue-500 hover:bg-blue-600">
                             GENERATE RAIN ⛈️
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isPollDialogOpen} onOpenChange={setIsPollDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-black text-purple-500 flex items-center gap-2">
+                            <Vote/> Create Forum Poll
+                        </DialogTitle>
+                        <DialogDescription>Ask the community a question.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label>Question</Label>
+                            <Input value={pollQuestion} onChange={e => setPollQuestion(e.target.value)} placeholder="e.g. Next feature?" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Options</Label>
+                            {pollOptions.map((opt, i) => (
+                                <div key={i} className="flex gap-2">
+                                    <Input value={opt} onChange={e => {
+                                        const newOpts = [...pollOptions];
+                                        newOpts[i] = e.target.value;
+                                        setPollOptions(newOpts);
+                                    }} placeholder={`Option ${i+1}`} />
+                                    {pollOptions.length > 2 && <Button variant="ghost" size="icon" onClick={() => setPollOptions(pollOptions.filter((_, idx) => idx !== i))}><X className="h-4 w-4"/></Button>}
+                                </div>
+                            ))}
+                            {pollOptions.length < 5 && <Button variant="outline" size="sm" onClick={() => setPollOptions([...pollOptions, ''])} className="w-full"><Plus className="h-4 w-4 mr-2"/> Add Option</Button>}
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={handleExecutePoll} className="w-full h-12 text-lg font-bold bg-purple-500 hover:bg-purple-600">
+                            POST POLL 📊
                         </Button>
                     </DialogFooter>
                 </DialogContent>
@@ -331,7 +404,8 @@ export function WorldChatView() {
 }
 
 function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply, onClaimRain }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void, onClaimRain: () => void }) {
-    const { isAdmin, isSuperAdmin, editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget } = useWorldChat();
+    const { isAdmin, isSuperAdmin, editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget, submitPollVote } = useWorldChat();
+    const { user: currentUser } = useUser();
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(message.text || '');
 
@@ -342,6 +416,46 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
 
     const hasGlow = sender.inventory?.alphaGlowExpires && new Date(sender.inventory.alphaGlowExpires) > new Date();
     const isNugget = (message.nuggetMarkedBy?.length || 0) > 0;
+
+    const renderPoll = () => {
+        if (!message.pollData) return null;
+        const data = message.pollData;
+        const totalVotes = Object.values(data.results).flat().length;
+        const hasVoted = Object.values(data.results).some(uids => uids.includes(currentUser?.id || ''));
+
+        return (
+            <div className="p-4 space-y-4 bg-muted/50 rounded-xl border-2 border-purple-500/30 min-w-[240px]">
+                <p className="font-bold text-base flex items-center gap-2 text-purple-600 dark:text-purple-400">
+                    <Vote className="h-4 w-4"/> {data.question}
+                </p>
+                <div className="space-y-3">
+                    {data.options.map(opt => {
+                        const votes = data.results[opt] || [];
+                        const percent = totalVotes > 0 ? (votes.length / totalVotes) * 100 : 0;
+                        const votedForThis = votes.includes(currentUser?.id || '');
+
+                        return (
+                            <div key={opt} className="space-y-1">
+                                <button 
+                                    onClick={() => !hasVoted && submitPollVote(message.id, opt)}
+                                    disabled={hasVoted}
+                                    className={cn(
+                                        "w-full flex items-center justify-between p-2 rounded-lg text-xs font-bold transition-all border",
+                                        votedForThis ? "bg-purple-500 text-white border-purple-400" : "bg-background border-muted hover:border-purple-500/50"
+                                    )}
+                                >
+                                    <span className="truncate">{opt}</span>
+                                    <span className="shrink-0">{percent.toFixed(0)}%</span>
+                                </button>
+                                {hasVoted && <Progress value={percent} className="h-1 bg-black/10" />}
+                            </div>
+                        );
+                    })}
+                </div>
+                <p className="text-[10px] text-center opacity-60 font-black uppercase">{totalVotes} VOTES TOTAL</p>
+            </div>
+        );
+    }
 
     return (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("flex flex-col group", isOwn ? "items-end" : "items-start")}>
@@ -386,7 +500,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                     </Button>
                                     <p className="text-[10px] opacity-60 uppercase font-black">{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims} TAKEN</p>
                                 </div>
-                            ) : isEditing ? (
+                            ) : message.type === 'poll' ? renderPoll() : isEditing ? (
                                 <div className="space-y-2">
                                     <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full bg-transparent border-0 focus:ring-0 resize-none p-0 outline-none" rows={2}/>
                                     <div className="flex justify-end gap-2 text-[10px] font-bold"><button onClick={() => setIsEditing(false)}>CANCEL</button><button onClick={handleEditSave} className="text-emerald-500">SAVE</button></div>
@@ -408,7 +522,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                     <PopoverContent className="w-auto p-1 bg-slate-800 border-white/10 rounded-full flex gap-1 shadow-2xl">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => toggleNugget(message.id)}><Gem className={cn("h-4 w-4", isNugget && "text-amber-400")}/></Button>
-                        {(isOwn || isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>}
+                        {(isOwn || isAdmin || isSuperAdmin) && !message.pollData && !message.rainData && <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>}
                         {(isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-white" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>}
                         {(isOwn || isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteMessage(message.id)}><Trash2 className="h-4 w-4"/></Button>}
                     </PopoverContent>

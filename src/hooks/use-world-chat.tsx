@@ -45,6 +45,7 @@ interface WorldChatContextType {
     messages: WorldChatMessage[];
     sendMessage: (text: string, replyingTo?: ReplyContext | null) => Promise<void>;
     sendRain: (amount: number, limit: number) => Promise<void>;
+    sendPoll: (question: string, options: string[]) => Promise<void>;
     claimRain: (messageId: string) => Promise<void>;
     editMessage: (messageId: string, newText: string) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
@@ -53,6 +54,11 @@ interface WorldChatContextType {
     submitPollVote: (messageId: string, option: string) => Promise<void>;
     pinMessage: (messageId: string) => Promise<void>;
     unpinMessage: () => Promise<void>;
+    clearMessages: () => Promise<void>;
+    toggleLock: () => Promise<void>;
+    setSlowMode: (seconds: number) => Promise<void>;
+    isLocked: boolean;
+    slowMode: number;
     pinnedMessage: WorldChatMessage | null;
     typingUsers: { id: string; displayName: string }[];
     updateTypingStatus: (isTyping: boolean) => void;
@@ -68,6 +74,8 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const [messages, setMessages] = useState<WorldChatMessage[]>([]);
     const [loading, setLoading] = useState(true);
     const [pinnedMessageId, setPinnedMessageId] = useState<string | null>(null);
+    const [isLocked, setIsLocked] = useState(false);
+    const [slowMode, setSlowModeState] = useState(0);
     const [typingUsers, setTypingUsers] = useState<{ id: string; displayName: string }[]>([]);
 
     const pinnedMessage = useMemo(() => {
@@ -79,7 +87,10 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         const configRef = doc(db, 'world_chat', 'config');
         const unsubscribe = onSnapshot(configRef, (doc) => {
             if (doc.exists()) {
-                setPinnedMessageId(doc.data().pinnedMessageId || null);
+                const data = doc.data();
+                setPinnedMessageId(data.pinnedMessageId || null);
+                setIsLocked(data.isLocked || false);
+                setSlowModeState(data.slowMode || 0);
             }
         });
         return unsubscribe;
@@ -123,6 +134,12 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
 
     const sendMessage = useCallback(async (text: string, replyingTo?: ReplyContext | null) => {
         if (!currentUser || !text.trim()) return;
+        
+        if (isLocked && !isAdmin && !isSuperAdmin) {
+            toast({ variant: 'destructive', title: "Chat Locked", description: "Only administrators can send messages right now." });
+            return;
+        }
+
         const messagesRef = collection(db, 'world_chat');
         
         await addDoc(messagesRef, {
@@ -140,6 +157,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
                 if (mention === '@all') {
                     await fetch('/api/send-notification', {
                         method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             title: `📢 ${currentUserData?.displayName} mentioned everyone`,
                             message: text,
@@ -152,6 +170,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
                     if (targetUser) {
                         await fetch('/api/send-notification', {
                             method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({
                                 title: `💬 ${currentUserData?.displayName} mentioned you`,
                                 message: text,
@@ -163,28 +182,63 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
         }
-    }, [currentUser, users, currentUserData]);
+    }, [currentUser, users, currentUserData, isLocked, isAdmin, isSuperAdmin, toast]);
 
     const sendRain = useCallback(async (amount: number, maxClaims: number) => {
         if (!currentUser || !(isAdmin || isSuperAdmin)) return;
+        
+        // Master restriction: limit rain to 100 credits
+        const finalAmount = Math.min(amount, 100);
+
         const messagesRef = collection(db, 'world_chat');
         await addDoc(messagesRef, {
             senderId: currentUser.id,
             timestamp: serverTimestamp(),
             type: 'rain',
             rainData: {
-                amount,
+                amount: finalAmount,
                 maxClaims,
                 claimedBy: []
             }
         });
 
-        // Notification for rain
         await fetch('/api/send-notification', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 title: "⛈️ CREDIT RAIN IS HERE!",
-                message: `Grab ${amount} credits before they're gone!`,
+                message: `Grab ${finalAmount} credits before they're gone!`,
+                linkUrl: '/dashboard/world'
+            })
+        });
+    }, [currentUser, isAdmin, isSuperAdmin]);
+
+    const sendPoll = useCallback(async (question: string, options: string[]) => {
+        if (!currentUser || !(isAdmin || isSuperAdmin)) return;
+        
+        const initialResults: Record<string, string[]> = {};
+        options.forEach(opt => {
+            initialResults[opt] = [];
+        });
+
+        const messagesRef = collection(db, 'world_chat');
+        await addDoc(messagesRef, {
+            senderId: currentUser.id,
+            timestamp: serverTimestamp(),
+            type: 'poll',
+            pollData: {
+                question,
+                options,
+                results: initialResults
+            }
+        });
+
+        await fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: "📊 NEW WORLD POLL",
+                message: question,
                 linkUrl: '/dashboard/world'
             })
         });
@@ -208,6 +262,26 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         batch.update(userRef, { credits: increment(data.rainData.amount) });
         await batch.commit();
         toast({ title: 'Success!', description: `You claimed ${data.rainData.amount} credits from the rain!` });
+    }, [currentUser, toast]);
+
+    const submitPollVote = useCallback(async (messageId: string, option: string) => {
+        if (!currentUser) return;
+        const messageRef = doc(db, 'world_chat', messageId);
+        
+        const snap = await getDoc(messageRef);
+        if (!snap.exists()) return;
+        const data = snap.data() as WorldChatMessage;
+        if (!data.pollData) return;
+
+        // Check if user already voted in ANY option of this poll
+        const hasVoted = Object.values(data.pollData.results).some(uids => uids.includes(currentUser.id));
+        if (hasVoted) {
+            toast({ variant: 'destructive', title: "Vote Denied", description: "You have already voted in this poll." });
+            return;
+        }
+
+        await updateDoc(messageRef, { [`pollData.results.${option}`]: arrayUnion(currentUser.id) });
+        toast({ title: "Vote Cast!", description: `You voted for: ${option}` });
     }, [currentUser, toast]);
 
     const editMessage = useCallback(async (messageId: string, newText: string) => {
@@ -251,12 +325,38 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const pinMessage = useCallback(async (messageId: string) => {
         if (!isAdmin && !isSuperAdmin) return;
         await setDoc(doc(db, 'world_chat', 'config'), { pinnedMessageId: messageId }, { merge: true });
-    }, [isAdmin, isSuperAdmin]);
+        toast({ title: "Message Pinned" });
+    }, [isAdmin, isSuperAdmin, toast]);
 
     const unpinMessage = useCallback(async () => {
         if (!isAdmin && !isSuperAdmin) return;
         await setDoc(doc(db, 'world_chat', 'config'), { pinnedMessageId: null }, { merge: true });
-    }, [isAdmin, isSuperAdmin]);
+        toast({ title: "Message Unpinned" });
+    }, [isAdmin, isSuperAdmin, toast]);
+
+    const clearMessages = useCallback(async () => {
+        if (!isAdmin && !isSuperAdmin) return;
+        const q = query(collection(db, 'world_chat'));
+        const snap = await getDocs(q);
+        const batch = writeBatch(db);
+        snap.docs.forEach(d => {
+            if (d.id !== 'config') batch.delete(d.ref);
+        });
+        await batch.commit();
+        toast({ title: "Nexus Purged", description: "All messages have been cleared." });
+    }, [isAdmin, isSuperAdmin, toast]);
+
+    const toggleLock = useCallback(async () => {
+        if (!isAdmin && !isSuperAdmin) return;
+        await setDoc(doc(db, 'world_chat', 'config'), { isLocked: !isLocked }, { merge: true });
+        toast({ title: isLocked ? "Chat Unlocked" : "Chat Locked" });
+    }, [isAdmin, isSuperAdmin, isLocked, toast]);
+
+    const setSlowMode = useCallback(async (seconds: number) => {
+        if (!isAdmin && !isSuperAdmin) return;
+        await setDoc(doc(db, 'world_chat', 'config'), { slowMode: seconds }, { merge: true });
+        toast({ title: "Slow Mode Updated", description: `${seconds}s cooldown active.` });
+    }, [isAdmin, isSuperAdmin, toast]);
     
     const updateTypingStatus = useCallback(async (isTyping: boolean) => {
         if (!currentUser) return;
@@ -271,13 +371,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         }, { merge: true });
     }, [currentUser, currentUserData]);
 
-    const submitPollVote = useCallback(async (messageId: string, option: string) => {
-        if (!currentUser) return;
-        const messageRef = doc(db, 'world_chat', messageId);
-        await updateDoc(messageRef, { [`pollData.results.${option}`]: arrayUnion(currentUser.id) });
-    }, [currentUser]);
-
-    const value = { messages, loading, sendMessage, sendRain, claimRain, editMessage, deleteMessage, toggleReaction, toggleNugget, submitPollVote, pinnedMessage, pinMessage, unpinMessage, typingUsers, updateTypingStatus };
+    const value = { messages, loading, sendMessage, sendRain, sendPoll, claimRain, editMessage, deleteMessage, toggleReaction, toggleNugget, submitPollVote, pinnedMessage, pinMessage, unpinMessage, clearMessages, toggleLock, setSlowMode, isLocked, slowMode, typingUsers, updateTypingStatus };
     return <WorldChatContext.Provider value={value}>{children}</WorldChatContext.Provider>;
 };
 
