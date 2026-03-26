@@ -7,16 +7,26 @@ import * as admin from 'firebase-admin';
 
 // Helper to upload a base64 image to Firebase Storage.
 async function uploadImageFromBase64(base64: string): Promise<string> {
-    const base64EncodedImageString = base64.replace(/^data:image\/\w+;base64,/, '');
-    const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
-    const fileId = uuidv4();
-    const filePath = `notification-images/${fileId}.png`;
-    const file = adminBucket.file(filePath);
-    await file.save(imageBuffer, { metadata: { contentType: 'image/png' }, public: true });
-    return `https://storage.googleapis.com/${adminBucket.name}/${filePath}`;
+    try {
+        const base64EncodedImageString = base64.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
+        const fileId = uuidv4();
+        const filePath = `notification-images/${fileId}.png`;
+        const file = adminBucket.file(filePath);
+        
+        await file.save(imageBuffer, { 
+            metadata: { contentType: 'image/png' }, 
+            public: true,
+            resumable: false // Better for small serverless uploads
+        });
+        
+        return `https://storage.googleapis.com/${adminBucket.name}/${filePath}`;
+    } catch (e: any) {
+        console.error("Storage Upload Error:", e.message);
+        throw new Error("Failed to upload image. Ensure Firebase Storage is initialized in your console.");
+    }
 }
 
-// API route handler for sending notifications.
 export async function POST(req: NextRequest) {
   try {
     const { title, message, userId, linkUrl, scheduledAt, imageBase64 } = await req.json();
@@ -35,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     // Handle scheduled notifications
     if (scheduledAt) {
-      await adminDb.collection('scheduledNotifications').add({
+      const docRef = await adminDb.collection('scheduledNotifications').add({
         title, 
         message, 
         imageUrl: finalImageUrl || null, 
@@ -48,7 +58,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ 
         success: true, 
         title: "Notification Scheduled!", 
-        message: `Will be sent at ${new Date(scheduledAt).toLocaleString()}` 
+        message: `Mission queued for dispatch at ${new Date(scheduledAt).toLocaleString()}` 
       });
     }
 
@@ -66,10 +76,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (tokens.length === 0) {
-      return NextResponse.json({ success: true, title: "No Users Subscribed", message: 'The notification was not sent as no users are subscribed.' });
+      return NextResponse.json({ success: true, title: "No Users Found", message: 'The alert was not dispatched as no legends are currently subscribed.' });
     }
 
-    // Construct the rich payload
     const messagePayload: admin.messaging.MulticastMessage = {
       notification: {
         title,
@@ -91,7 +100,7 @@ export async function POST(req: NextRequest) {
     };
 
     const response = await adminMessaging.sendEachForMulticast(messagePayload);
-    const status = `${response.successCount} sent, ${response.failureCount} failed`;
+    const dispatchSummary = `${response.successCount} sent, ${response.failureCount} failed`;
 
     // Save to history
     await adminDb.collection('sentNotifications').add({ 
@@ -100,18 +109,19 @@ export async function POST(req: NextRequest) {
         imageUrl: finalImageUrl || null, 
         linkUrl: linkUrl || null, 
         sentAt: Timestamp.now(), 
-        status, 
+        status: 'Completed',
+        dispatchSummary,
         target 
     });
 
     return NextResponse.json({ 
         success: true, 
-        title: "Notification Sent!", 
-        message: `Success: ${response.successCount}, Failure: ${response.failureCount}` 
+        title: "Dispatch Successful!", 
+        message: `Results: ${dispatchSummary}` 
     });
 
   } catch (error: any) {
-    console.error("Error in send-notification API:", error);
+    console.error("API Dispatch Error:", error);
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }

@@ -6,9 +6,9 @@ import crypto from 'crypto';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
 
-// ALWAYS USE TEST KEYS AS FALLBACK FOR STABILITY
-const RAZORPAY_KEY_ID = 'rzp_test_SSLmjZYJquny3v';
-const RAZORPAY_KEY_SECRET = 'bFXh8cQiKIWmFNsPNJ2YB9Ga';
+// NEW KEYS REPLACED BY MASTER
+const RAZORPAY_KEY_ID = 'rzp_test_SVrJPgT8gQO914';
+const RAZORPAY_KEY_SECRET = 'l1FBgO22yrz2eAwXDrpj7q1U';
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_KEY_ID,
@@ -17,10 +17,13 @@ const razorpay = new Razorpay({
 
 /**
  * Creates a Razorpay Order
- * We include userId and credits in the 'notes' field.
  */
 export async function createRazorpayOrder(amount: number, notes: { userId: string; packName: string; credits: number }) {
   try {
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        throw new Error("Razorpay keys are missing on the server.");
+    }
+
     const options = {
       amount: Math.round(amount * 100), // Razorpay works in paise
       currency: 'INR',
@@ -33,7 +36,7 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
     };
 
     const order = await razorpay.orders.create(options);
-    if (!order) throw new Error("Razorpay order creation returned empty response.");
+    if (!order) throw new Error("Order creation returned null.");
     
     return {
       id: order.id,
@@ -41,8 +44,8 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
       currency: order.currency,
     };
   } catch (error: any) {
-    console.error('Error creating Razorpay order:', error);
-    throw new Error(error.message || 'Could not create payment order.');
+    console.error('CRITICAL: Razorpay Order Failed:', error);
+    throw new Error(error.description || error.message || 'Payment gateway connection failed.');
   }
 }
 
