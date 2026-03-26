@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// Hardcoded for frontend init stability in dev with env support for prod
+// Use production key if available, otherwise fallback to dev test key
 const RAZORPAY_PUBLIC_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SVrJPgT8gQO914';
 
 const BadgeRenderer = ({ badge }: { badge?: string }) => {

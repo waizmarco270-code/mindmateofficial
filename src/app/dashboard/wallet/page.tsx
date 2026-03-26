@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -17,7 +16,7 @@ import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { Badge } from '@/components/ui/badge';
 
-// Hardcoded for frontend init stability in dev with env support for prod
+// Use production key if available, otherwise fallback to dev test key
 const RAZORPAY_PUBLIC_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SVrJPgT8gQO914';
 
 export default function WalletPage() {

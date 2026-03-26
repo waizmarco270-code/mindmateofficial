@@ -1,25 +1,28 @@
-
 'use server';
 
 import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { db } from '@/lib/firebase';
-import { doc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
+import { doc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
 
 // Environment variables with fallback for dev testing
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_SVrJPgT8gQO914';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'l1FBgO22yrz2eAwXDrpj7q1U';
-
-const razorpay = new Razorpay({
-  key_id: RAZORPAY_KEY_ID,
-  key_secret: RAZORPAY_KEY_SECRET,
-});
 
 /**
  * Creates a Razorpay Order
  */
 export async function createRazorpayOrder(amount: number, notes: { userId: string; packName: string; credits: number }) {
   try {
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+        throw new Error("Razorpay configuration is missing on the server.");
+    }
+
+    const razorpay = new Razorpay({
+      key_id: RAZORPAY_KEY_ID,
+      key_secret: RAZORPAY_KEY_SECRET,
+    });
+
     const options = {
       amount: Math.round(amount * 100), // Razorpay works in paise
       currency: 'INR',
@@ -41,7 +44,8 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
     };
   } catch (error: any) {
     console.error('CRITICAL: Razorpay Order Failed:', error);
-    throw new Error(error.description || error.message || 'Payment gateway connection failed.');
+    // Re-throw a cleaner error for the UI
+    throw new Error(error.description || error.message || 'Payment gateway connection failed. Please check your internet or try again later.');
   }
 }
 

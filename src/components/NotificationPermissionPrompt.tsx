@@ -13,15 +13,12 @@ const NotificationPermissionPrompt = () => {
 
   useEffect(() => {
     // Check if we should prompt the user.
-    // We only prompt if permission is `default` (not yet granted or denied)
-    // and if we haven't already prompted them in this session.
-    const alreadyPrompted = sessionStorage.getItem('notificationPrompted');
-    if (notificationPermission === 'default' && !alreadyPrompted) {
+    // MODIFIED: Removed sessionStorage check to force prompt on every load until permission is granted or denied.
+    if (notificationPermission === 'default') {
       // Wait a bit before showing the prompt to not be too intrusive.
       const timer = setTimeout(() => {
         setIsOpen(true);
-        sessionStorage.setItem('notificationPrompted', 'true');
-      }, 5000); // 5-second delay
+      }, 3000); // 3-second delay
 
       return () => clearTimeout(timer);
     }
@@ -43,25 +40,31 @@ const NotificationPermissionPrompt = () => {
 
   const handleDeny = () => {
     setIsOpen(false);
+    // Even if denied, the browser will remember the choice.
+    // If permission remains 'default', it will show again next time.
   };
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogContent>
+      <AlertDialogContent className="border-primary/20">
         <AlertDialogHeader>
             <div className="flex justify-center mb-4">
-                <div className="rounded-full bg-blue-100 dark:bg-blue-900/50 p-3">
-                    <Bell className="h-8 w-8 text-blue-500" />
+                <div className="rounded-full bg-blue-100 dark:bg-blue-900/50 p-4 animate-pulse">
+                    <Bell className="h-10 w-10 text-blue-500" />
                 </div>
             </div>
-          <AlertDialogTitle className="text-center">Stay in the Loop!</AlertDialogTitle>
-          <AlertDialogDescription className="text-center">
-            Enable push notifications to get the latest updates on new features, announcements, and community events directly on your device.
+          <AlertDialogTitle className="text-center text-2xl font-bold">Stay Connected, Legend!</AlertDialogTitle>
+          <AlertDialogDescription className="text-center text-base">
+            Enable push notifications to receive real-time alerts for <b>Announcements, Global Gifts,</b> and <b>Community Missions</b> directly on your device.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="sm:justify-center">
-          <AlertDialogCancel onClick={handleDeny}>Maybe Later</AlertDialogCancel>
-          <AlertDialogAction onClick={handleAllow}>Enable Notifications</AlertDialogAction>
+        <AlertDialogFooter className="sm:justify-center flex-col gap-2">
+          <AlertDialogAction onClick={handleAllow} className="w-full h-12 font-bold text-lg">
+            Enable Notifications
+          </AlertDialogAction>
+          <AlertDialogCancel onClick={handleDeny} className="w-full border-none text-muted-foreground hover:text-foreground">
+            Maybe Later
+          </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
