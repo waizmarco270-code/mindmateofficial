@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import * as React from 'react';
@@ -18,13 +17,29 @@ import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
 import MobileNav from '@/components/dashboard/mobile-nav';
 import { usePathname } from 'next/navigation';
 
-
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isImmersive, setIsImmersive } = useImmersive();
+  const { isImmersive } = useImmersive();
   const { openMobile, setOpenMobile } = useSidebar();
   const { appSettings, loading, isSuperAdmin, isCoDev } = useAdmin();
   const pathname = usePathname();
   
+  // Background Cron Trigger: Every time any user visits the dashboard, 
+  // try to trigger the scheduled notification dispatch.
+  React.useEffect(() => {
+    const triggerScheduledSync = async () => {
+        try {
+            await fetch('/api/cron/send-scheduled-notifications');
+        } catch (e) {
+            // Silently fail as this is a background pulse
+        }
+    };
+    
+    // Trigger on mount and then every 2 minutes while the user is active
+    triggerScheduledSync();
+    const interval = setInterval(triggerScheduledSync, 120000);
+    return () => clearInterval(interval);
+  }, []);
+
   const now = new Date();
   const maintenanceStart = appSettings?.maintenanceStartTime ? new Date(appSettings.maintenanceStartTime) : null;
   const maintenanceEnd = appSettings?.maintenanceEndTime ? new Date(appSettings.maintenanceEndTime) : null;
@@ -34,9 +49,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   const showMaintenance = (isScheduledMaintenance || isManualMaintenance) && !isSuperAdmin && !isCoDev;
 
-
   if (loading) {
-    // You can return a loading spinner here if you want
     return null;
   }
   
@@ -49,7 +62,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
       <WhatsNewPopup settings={appSettings} />
-      {/* Universal Sheet-based Sidebar for all screen sizes */}
       {!useSuperAdminStyling && (
         <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetContent side="left" className="w-[18rem] bg-sidebar/80 p-0 text-sidebar-foreground backdrop-blur-lg [&>button]:hidden">

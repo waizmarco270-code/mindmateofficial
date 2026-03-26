@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
 
-// NEW KEYS REPLACED BY MASTER
+// HARDCODED NEW TEST KEYS FOR DEV ENVIRONMENT
 const RAZORPAY_KEY_ID = 'rzp_test_SVrJPgT8gQO914';
 const RAZORPAY_KEY_SECRET = 'l1FBgO22yrz2eAwXDrpj7q1U';
 
@@ -20,10 +20,6 @@ const razorpay = new Razorpay({
  */
 export async function createRazorpayOrder(amount: number, notes: { userId: string; packName: string; credits: number }) {
   try {
-    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-        throw new Error("Razorpay keys are missing on the server.");
-    }
-
     const options = {
       amount: Math.round(amount * 100), // Razorpay works in paise
       currency: 'INR',

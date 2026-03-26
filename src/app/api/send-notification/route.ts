@@ -1,43 +1,15 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { adminDb, adminMessaging, adminBucket } from '@/lib/firebase-admin';
+import { adminDb, adminMessaging } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
-import { v4 as uuidv4 } from 'uuid';
 import * as admin from 'firebase-admin';
-
-// Helper to upload a base64 image to Firebase Storage.
-async function uploadImageFromBase64(base64: string): Promise<string> {
-    try {
-        const base64EncodedImageString = base64.replace(/^data:image\/\w+;base64,/, '');
-        const imageBuffer = Buffer.from(base64EncodedImageString, 'base64');
-        const fileId = uuidv4();
-        const filePath = `notification-images/${fileId}.png`;
-        const file = adminBucket.file(filePath);
-        
-        await file.save(imageBuffer, { 
-            metadata: { contentType: 'image/png' }, 
-            public: true,
-            resumable: false // Better for small serverless uploads
-        });
-        
-        return `https://storage.googleapis.com/${adminBucket.name}/${filePath}`;
-    } catch (e: any) {
-        console.error("Storage Upload Error:", e.message);
-        throw new Error("Failed to upload image. Ensure Firebase Storage is initialized in your console.");
-    }
-}
 
 export async function POST(req: NextRequest) {
   try {
-    const { title, message, userId, linkUrl, scheduledAt, imageBase64 } = await req.json();
+    const { title, message, userId, linkUrl, scheduledAt, imageUrl } = await req.json();
 
     if (!title || !message) {
       return NextResponse.json({ success: false, message: 'Title and message are required' }, { status: 400 });
-    }
-
-    let finalImageUrl = '';
-    if (imageBase64) {
-      finalImageUrl = await uploadImageFromBase64(imageBase64);
     }
 
     const target = userId ? `user:${userId}` : 'all';
@@ -45,10 +17,10 @@ export async function POST(req: NextRequest) {
 
     // Handle scheduled notifications
     if (scheduledAt) {
-      const docRef = await adminDb.collection('scheduledNotifications').add({
+      await adminDb.collection('scheduledNotifications').add({
         title, 
         message, 
-        imageUrl: finalImageUrl || null, 
+        imageUrl: imageUrl || null, 
         linkUrl: linkUrl || null, 
         target,
         scheduledAt: Timestamp.fromMillis(scheduledAt), 
@@ -76,20 +48,25 @@ export async function POST(req: NextRequest) {
     }
 
     if (tokens.length === 0) {
-      return NextResponse.json({ success: true, title: "No Users Found", message: 'The alert was not dispatched as no legends are currently subscribed.' });
+      // Save to history even if no tokens, but mark as completed with 0 sent
+      await adminDb.collection('sentNotifications').add({ 
+          title, message, imageUrl: imageUrl || null, linkUrl: linkUrl || null, 
+          sentAt: Timestamp.now(), status: 'Completed', dispatchSummary: '0 sent (no active subscribers)', target 
+      });
+      return NextResponse.json({ success: true, title: "No Subscribers", message: 'Alert saved but not dispatched - no active legends found.' });
     }
 
     const messagePayload: admin.messaging.MulticastMessage = {
       notification: {
         title,
         body: message,
-        imageUrl: finalImageUrl || undefined,
+        imageUrl: imageUrl || undefined,
       },
       webpush: {
         notification: {
           icon: appLogo,
           badge: appLogo,
-          image: finalImageUrl || undefined,
+          image: imageUrl || undefined,
           requireInteraction: true,
         },
         fcmOptions: {
@@ -106,7 +83,7 @@ export async function POST(req: NextRequest) {
     await adminDb.collection('sentNotifications').add({ 
         title, 
         message, 
-        imageUrl: finalImageUrl || null, 
+        imageUrl: imageUrl || null, 
         linkUrl: linkUrl || null, 
         sentAt: Timestamp.now(), 
         status: 'Completed',
