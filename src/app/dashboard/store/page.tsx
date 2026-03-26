@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -112,10 +111,11 @@ function CreditPacksTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const [quantities, setQuantities] = useState<Record<string, number>>({});
 
     const handleUpdateQuantity = (packId: string, delta: number) => {
-        setQuantities(prev => ({
-            ...prev,
-            [packId]: Math.max(1, (prev[packId] || 1) + delta)
-        }));
+        setQuantities(prev => {
+            const current = prev[packId] || 1;
+            const newVal = Math.max(1, Math.min(10, current + delta));
+            return { ...prev, [packId]: newVal };
+        });
     };
 
     const handleBuyPack = async (pack: CreditPack) => {
@@ -202,11 +202,27 @@ function CreditPacksTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                                     <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Credits</span>
                                 </div>
                             </CardHeader>
-                            <CardContent className="flex-1 flex flex-col items-center gap-4">
+                            <CardContent className="flex-1 flex flex-col items-center gap-4 relative z-10">
                                 <div className="flex items-center gap-4 bg-muted/50 p-2 rounded-xl border border-white/5">
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-primary/10" onClick={() => handleUpdateQuantity(pack.id, -1)} disabled={qty <= 1}><Minus/></Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 rounded-lg hover:bg-primary/10" 
+                                        onClick={() => handleUpdateQuantity(pack.id, -1)} 
+                                        disabled={qty <= 1}
+                                    >
+                                        <Minus className="h-4 w-4"/>
+                                    </Button>
                                     <span className="font-black text-xl w-8 text-center">{qty}</span>
-                                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-primary/10" onClick={() => handleUpdateQuantity(pack.id, 1)} disabled={qty >= 10}><Plus/></Button>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 rounded-lg hover:bg-primary/10" 
+                                        onClick={() => handleUpdateQuantity(pack.id, 1)} 
+                                        disabled={qty >= 10}
+                                    >
+                                        <Plus className="h-4 w-4"/>
+                                    </Button>
                                 </div>
                             </CardContent>
                             <CardFooter className="relative z-10 pt-0">
@@ -240,7 +256,7 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const [quantities, setQuantities] = useState<Record<string, number>>({});
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
-    const artifactItems = storeItems ? storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow', 'clan-xp-booster', 'clan-level-max'].includes(i.type)) : [];
+    const artifactItems = storeItems ? storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow', 'clan-xp-booster', 'clan-level-max', 'scratch-card', 'card-flip'].includes(i.type)) : [];
 
     const handleUpdateQuantity = (itemId: string, delta: number) => {
         setQuantities(prev => ({
@@ -282,7 +298,6 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                 const rzp = new (window as any).Razorpay(options);
                 rzp.open();
             } else {
-                // Pay with wallet
                 await processStoreItemPayment(item, qty, `wall-${Date.now()}`, 'wallet');
                 onSuccess(`${item.name} (x${qty})`);
                 setIsProcessing(null);
@@ -313,6 +328,8 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
             case 'alpha-glow': return <Sparkles className="h-10 w-10 text-fuchsia-400" />;
             case 'clan-xp-booster': return <TrendingUp className="h-10 w-10 text-emerald-400" />;
             case 'clan-level-max': return <Crown className="h-10 w-10 text-yellow-400 animate-gold-shine" />;
+            case 'scratch-card': return <Gift className="h-10 w-10 text-orange-400" />;
+            case 'card-flip': return <Zap className="h-10 w-10 text-indigo-400" />;
             default: return <Star className="h-10 w-10 text-amber-400" />;
         }
     }
@@ -409,22 +426,14 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const { user } = useUser();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
-    const [quantities, setQuantities] = useState<Record<string, number>>({});
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
     const badgeItems = storeItems ? storeItems.filter(i => ['early-bird', 'night-owl', 'knowledge-knight'].includes(i.type)) : [];
 
-    const handleUpdateQuantity = (itemId: string, delta: number) => {
-        setQuantities(prev => ({
-            ...prev,
-            [itemId]: Math.max(1, (prev[itemId] || 1) + delta)
-        }));
-    };
-
     const handleBuyWithMethod = async (item: StoreItem, method: 'razorpay' | 'wallet') => {
         if (!user) return;
-        const qty = quantities[item.id] || 1;
-        const price = item.price! * qty;
+        const qty = 1; // Force quantity to 1 for badges
+        const price = item.price!;
 
         if (method === 'wallet' && (currentUserData?.walletBalance || 0) < price) {
             toast({ variant: 'destructive', title: "Insufficient Funds" });
@@ -434,17 +443,17 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         setIsProcessing(item.id);
         try {
             if (method === 'razorpay') {
-                const order = await createRazorpayOrder(price, { userId: user.id, packName: `${item.name} (x${qty})`, credits: 0 });
+                const order = await createRazorpayOrder(price, { userId: user.id, packName: `${item.name}`, credits: 0 });
                 const options = {
                     key: RAZORPAY_PUBLIC_KEY,
                     amount: order.amount,
                     currency: order.currency,
                     name: 'MindMate Identity',
-                    description: `Unlock ${item.name} x${qty}`,
+                    description: `Unlock ${item.name}`,
                     order_id: order.id,
                     handler: async function (response: any) {
                         await processStoreItemPayment(item, qty, response.razorpay_payment_id, 'razorpay');
-                        onSuccess(`${item.name} (x${qty})`);
+                        onSuccess(`${item.name}`);
                         setIsProcessing(null);
                     },
                     prefill: { name: user.fullName || '', email: user.primaryEmailAddress?.emailAddress || '' },
@@ -455,7 +464,7 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                 rzp.open();
             } else {
                 await processStoreItemPayment(item, qty, `wall-${Date.now()}`, 'wallet');
-                onSuccess(`${item.name} (x${qty})`);
+                onSuccess(`${item.name}`);
                 setIsProcessing(null);
             }
         } catch (error: any) {
@@ -465,11 +474,11 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     };
 
     const handleRedeemWithCredits = async (item: StoreItem) => {
-        const qty = quantities[item.id] || 1;
+        const qty = 1; // Force quantity to 1
         setIsProcessing(item.id);
         try {
             await redeemStoreItem(item, qty);
-            onSuccess(`${item.name} (x${qty})`);
+            onSuccess(`${item.name}`);
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Failed", description: error.message });
         } finally {
@@ -498,10 +507,9 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {!loading && badgeItems.map(item => {
                  const isMoney = item.paymentType === 'money';
-                 const qty = quantities[item.id] || 1;
                  const owned = hasBadge(item.type);
-                 const totalCredits = item.cost * qty;
-                 const totalPrice = item.price ? item.price * qty : 0;
+                 const totalCredits = item.cost;
+                 const totalPrice = item.price ? item.price : 0;
                  const canAfford = isMoney ? true : (hasMasterCard || (currentUserData?.credits ?? 0) >= totalCredits);
                  
                  return (
@@ -522,15 +530,10 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                                 </div>
                              ) : (
                                 <>
-                                    <div className="flex items-center gap-4 bg-muted/50 p-2 rounded-xl border border-white/5">
-                                        <Button variant="ghost" size="icon" onClick={() => handleUpdateQuantity(item.id, -1)} disabled={qty <= 1}><Minus/></Button>
-                                        <span className="font-black text-xl w-8 text-center">{qty}</span>
-                                        <Button variant="ghost" size="icon" onClick={() => handleUpdateQuantity(item.id, 1)} disabled={qty >= 10}><Plus/></Button>
-                                    </div>
                                     <div className="font-black text-4xl flex items-center justify-center gap-2 text-amber-500 tracking-tighter">
                                         {isMoney ? <span>₹{totalPrice}</span> : <><Gem className="h-8 w-8" /><span>{totalCredits.toLocaleString()}</span></>}
                                     </div>
-                                    <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Stock: {item.stock > 0 ? item.stock : <span className="text-destructive">SOLD OUT</span>}</p>
+                                    <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Limited Edition</p>
                                 </>
                              )}
                         </CardContent>
@@ -541,12 +544,12 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                                 <div className="grid grid-cols-2 gap-2 w-full">
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button variant="outline" onClick={() => {}} disabled={isProcessing === item.id || item.stock < qty}><Wallet className="mr-2 h-4 w-4"/> Wallet</Button>
+                                            <Button variant="outline" onClick={() => {}} disabled={isProcessing === item.id}><Wallet className="mr-2 h-4 w-4"/> Wallet</Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Identity Acquisition</AlertDialogTitle>
-                                                <AlertDialogDescription>Unlock {qty} units of {item.name} for ₹{totalPrice} using your MindMate Wallet?</AlertDialogDescription>
+                                                <AlertDialogDescription>Unlock {item.name} for ₹{totalPrice} using your MindMate Wallet?</AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -554,20 +557,20 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
-                                    <Button onClick={() => handleBuyWithMethod(item, 'razorpay')} disabled={isProcessing === item.id || item.stock < qty}><CreditCard className="mr-2 h-4 w-4"/> Pay</Button>
+                                    <Button onClick={() => handleBuyWithMethod(item, 'razorpay')} disabled={isProcessing === item.id}><CreditCard className="mr-2 h-4 w-4"/> Pay</Button>
                                 </div>
                             ) : (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button className="w-full text-lg h-14 font-bold rounded-xl" disabled={!canAfford || isProcessing === item.id || item.stock < qty}>
+                                        <Button className="w-full text-lg h-14 font-bold rounded-xl" disabled={!canAfford || isProcessing === item.id}>
                                              {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
-                                            {item.stock < qty ? "Sold Out" : `Secure x${qty}`}
+                                            {item.stock <= 0 ? "Sold Out" : `Secure Access`}
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>Identity Claim</AlertDialogTitle>
-                                            <AlertDialogDescription>Unlock {qty} units of "{item.name}" for {totalCredits} credits?</AlertDialogDescription>
+                                            <AlertDialogDescription>Unlock "{item.name}" for {totalCredits} credits?</AlertDialogDescription>
                                         </AlertDialogHeader>
                                          <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
