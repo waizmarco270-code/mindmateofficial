@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
 
-// SECURE SERVER-SIDE KEYS
+// Environment variables with fallback for dev testing
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_SVrJPgT8gQO914';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'l1FBgO22yrz2eAwXDrpj7q1U';
 

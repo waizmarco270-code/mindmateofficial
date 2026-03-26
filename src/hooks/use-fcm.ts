@@ -5,9 +5,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import { firebaseApp, db } from '@/lib/firebase'; 
 import { useUser } from '@clerk/nextjs';
 
-// I have set your VAPID key here as requested.
-// For production, it is highly recommended to move this to your environment variables.
-const VAPID_KEY = "BKtzKIJPfG9H4t7xr7Xzj-zJ697vs3w8KHSLdcadoSgs4e7qny9hAndaAGS8N6hFB6KZQtVKzIBi7O7TIbA5Dr4";
+// VAPID key is now retrieved from environment variables with a fallback
+const VAPID_KEY = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY || "BKtzKIJPfG9H4t7xr7Xzj-zJ697vs3w8KHSLdcadoSgs4e7qny9hAndaAGS8N6hFB6KZQtVKzIBi7O7TIbA5Dr4";
 
 export const useFCM = () => {
   const { user } = useUser();
@@ -52,7 +51,7 @@ export const useFCM = () => {
   };
 
   const requestPermission = async () => {
-    if ('Notification' in window) {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
       try {
         const permission = await Notification.requestPermission();
         setNotificationPermission(permission);
