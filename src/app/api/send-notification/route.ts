@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
     }
 
     const target = userId ? `user:${userId}` : 'all';
-    const appLogo = 'https://mindmateofficial.vercel.app/logo.jpg';
+    // Use absolute URL for the logo if possible, but relative works with a proper SW
+    const appLogo = '/logo.jpg';
 
     // Handle scheduled notifications
     if (scheduledAt) {
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (tokens.length === 0) {
+      console.log(`Dispatch: No active tokens found for target: ${target}`);
       await adminDb.collection('sentNotifications').add({ 
           title, message, imageUrl: imageUrl || null, linkUrl: linkUrl || null, 
           sentAt: Timestamp.now(), status: 'Completed', dispatchSummary: '0 sent (no active subscribers)', target 
@@ -66,6 +68,12 @@ export async function POST(req: NextRequest) {
         body: message,
         imageUrl: imageUrl || undefined,
       },
+      data: {
+        title,
+        body: message,
+        image: imageUrl || '',
+        link: linkUrl || '/dashboard'
+      },
       webpush: {
         notification: {
           icon: appLogo,
@@ -74,7 +82,7 @@ export async function POST(req: NextRequest) {
           requireInteraction: true,
         },
         fcmOptions: {
-          link: linkUrl || 'https://mindmateofficial.vercel.app/dashboard'
+          link: linkUrl || '/dashboard'
         }
       },
       tokens,
@@ -82,6 +90,8 @@ export async function POST(req: NextRequest) {
 
     const response = await adminMessaging.sendEachForMulticast(messagePayload);
     const dispatchSummary = `${response.successCount} sent, ${response.failureCount} failed`;
+    
+    console.log(`FCM Multicast Result: ${dispatchSummary}`);
 
     await adminDb.collection('sentNotifications').add({ 
         title, 

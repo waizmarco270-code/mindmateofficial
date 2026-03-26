@@ -3,8 +3,8 @@ import * as admin from 'firebase-admin';
 
 /**
  * @fileOverview Secure Firebase Admin SDK Initialization
- * This implementation EXCLUSIVELY uses environment variables for security.
- * Local serviceAccountKey.json is ignored to prevent leaks.
+ * This implementation handles raw JSON strings from environment variables ONLY.
+ * IT DOES NOT USE A LOCAL FILE TO PREVENT SECURITY LEAKS.
  */
 
 if (!admin.apps.length) {
@@ -12,25 +12,30 @@ if (!admin.apps.length) {
     const serviceAccountVar = process.env.FIREBASE_SERVICE_ACCOUNT;
 
     if (serviceAccountVar) {
-      // Handle both stringified JSON and potential escaped characters from Vercel
-      const serviceAccount = serviceAccountVar.startsWith('{') 
-        ? JSON.parse(serviceAccountVar) 
-        : JSON.parse(Buffer.from(serviceAccountVar, 'base64').toString());
+      let serviceAccount;
+      try {
+        // Attempt to parse the JSON string directly
+        serviceAccount = JSON.parse(serviceAccountVar);
+      } catch (e) {
+        // Fallback: If it's Base64 encoded (some environments prefer this)
+        try {
+            serviceAccount = JSON.parse(Buffer.from(serviceAccountVar, 'base64').toString());
+        } catch (err) {
+            throw new Error("FIREBASE_SERVICE_ACCOUNT is neither valid JSON nor valid Base64 JSON.");
+        }
+      }
 
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount),
-        storageBucket: 'mindmate-80e5c.firebasestorage.app', 
+        projectId: 'mindmate-80e5c',
       });
-      console.log("Firebase Admin Initialized via Environment Variable.");
+      console.log("Firebase Admin Initialized successfully from Environment Variable.");
     } else {
-      // Fallback for local emulator development only
-      if (process.env.NODE_ENV === 'development' && process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-        admin.initializeApp({
-          projectId: 'mindmate-80e5c',
-        });
-      } else {
-        console.warn("CRITICAL: FIREBASE_SERVICE_ACCOUNT environment variable is missing.");
-      }
+      // For local development, we expect the user to have FIREBASE_SERVICE_ACCOUNT in .env.local
+      console.warn("WARNING: FIREBASE_SERVICE_ACCOUNT is missing. Notifications will not be dispatched.");
+      admin.initializeApp({
+        projectId: 'mindmate-80e5c',
+      });
     }
   } catch (error: any) {
     console.error("Firebase Admin Init Failed:", error.message);
@@ -39,6 +44,5 @@ if (!admin.apps.length) {
 
 const adminDb = admin.firestore();
 const adminMessaging = admin.messaging();
-const adminBucket = admin.storage().bucket();
 
-export { adminDb, adminMessaging, adminBucket };
+export { adminDb, adminMessaging };

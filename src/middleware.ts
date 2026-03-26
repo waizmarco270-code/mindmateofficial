@@ -4,7 +4,9 @@ import { authMiddleware } from "@clerk/nextjs/server";
 export default authMiddleware({
   publicRoutes: [
     "/",
-    "/api/cron/send-scheduled-notifications", // Made public for external cron services
+    "/sign-in(.*)",
+    "/sign-up(.*)",
+    "/api/cron/send-scheduled-notifications",
     "/api/webhooks/razorpay"
   ],
 });

@@ -1,55 +1,38 @@
-
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/theme-provider';
-import { Toaster } from '@/components/ui/toaster';
+import { Toaster } from '@/components/ui/toast';
 import { cn } from '@/lib/utils';
 import { ClerkProvider } from '@clerk/nextjs';
 import { Analytics } from '@vercel/analytics/react';
 import { PWAInstallPrompt } from '@/components/pwa/pwa-install-prompt';
 import NotificationHandler from '@/components/NotificationHandler';
-import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt'; // Import the new component
+import NotificationPermissionPrompt from '@/components/NotificationPermissionPrompt';
+
+export const metadata: Metadata = {
+  title: 'MindMate',
+  description: 'Your all-in-one study companion to learn smarter, stay focused, and connect with a community of learners.',
+  manifest: '/manifest.json',
+  icons: {
+    icon: '/logo.jpg?v=2',
+    apple: '/logo.jpg?v=2',
+  },
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-
   return (
-    <ClerkProvider>
+    <ClerkProvider publishableKey={process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}>
       <html lang="en" suppressHydrationWarning>
         <head>
-          <title>MindMate</title>
           <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-          <meta name="description" content="Your all-in-one study companion to learn smarter, stay focused, and connect with a community of learners." />
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-          <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:wght@400;700&display=swap"
-            rel="stylesheet"
-          />
-           <style
-            dangerouslySetInnerHTML={{
-              __html: `
-                @font-face {
-                  font-family: 'DSEG7-Classic';
-                  src: url('/fonts/DSEG7-Classic-Bold.woff2') format('woff2');
-                  font-weight: bold;
-                  font-style: normal;
-                  font-display: swap;
-                }
-              `,
-            }}
-          />
-           <meta name="theme-color" content="#000000" />
-           <link rel="manifest" href="/manifest.json" />
-           <link rel="icon" href="/logo.jpg?v=2" type="image/jpeg" sizes="any" />
-           <link rel="apple-touch-icon" href="/logo.jpg?v=2" />
-           <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4020763286633958" crossOrigin="anonymous"></script>
-           <script type='text/javascript' src='//www.effectivegatecpm.com/wnm53cza?key=46a2d6759dc246e7886deade36c72ba0'></script>
+          <meta name="theme-color" content="#000000" />
+          <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4020763286633958" crossOrigin="anonymous"></script>
         </head>
-        <body className={cn('font-body antialiased', 'min-h-screen bg-background font-sans select-none')}>
+        <body className={cn('antialiased min-h-screen bg-background font-sans select-none')}>
           <ThemeProvider
             attribute="class"
             defaultTheme="dark"
@@ -57,7 +40,7 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             <NotificationHandler />
-            <NotificationPermissionPrompt /> {/* Add the prompt here */}
+            <NotificationPermissionPrompt />
             {children}
             <Toaster />
             <Analytics />
