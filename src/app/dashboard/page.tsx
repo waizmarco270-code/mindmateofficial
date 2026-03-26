@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map, Settings } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -369,7 +369,7 @@ export default function DashboardPage() {
                             <Trophy className="h-8 w-8 text-amber-400" />
                             <div>
                                 <h3 className="font-bold text-lg">Leaderboard</h3>
-                                <p className="text-sm text-muted-foreground">See who's on top.</p>
+                                <p className="text-sm text-muted-foreground">See who's leading.</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -380,7 +380,7 @@ export default function DashboardPage() {
                             <Wrench className="h-8 w-8 text-lime-400" />
                             <div>
                                 <h3 className="font-bold text-lg">Tools</h3>
-                                <p className="text-sm text-muted-foreground">Student utilities.</p>
+                                <p className="text-sm text-muted-foreground">Utilities.</p>
                             </div>
                         </CardContent>
                     </Card>
@@ -414,7 +414,7 @@ export default function DashboardPage() {
                                     { title: 'Invite & Earn', href: '/dashboard/refer', icon: UserPlus, glow: 'text-green-400' },
                                     { title: 'Tools', href: '/dashboard/tools', icon: Wrench, glow: 'text-lime-400' },
                                     { title: 'Profile', href: '/dashboard/profile', icon: User, glow: 'text-teal-400' },
-                                    { title: 'Settings', href: '/dashboard/settings', icon: 'settings', glow: 'text-slate-400' },
+                                    { title: 'Settings', href: '/dashboard/settings', icon: Settings, glow: 'text-slate-400' },
                                 ].map(tool => (
                                     <Link href={tool.href} key={tool.title} className="flex flex-col items-center gap-2 group">
                                          <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
@@ -438,7 +438,7 @@ export default function DashboardPage() {
                              <div className="p-4 rounded-full bg-muted group-hover:bg-primary/10 transition-colors">
                                 <tool.icon className={cn("h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors", tool.glow)} />
                             </div>
-                            <p className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors">{tool.title}</p>
+                            <p className="text-xs font-medium text-muted-foreground group-hover:text-primary transition-colors text-center">{tool.title}</p>
                         </Link>
                     ))}
                 </CardContent>
@@ -449,8 +449,8 @@ export default function DashboardPage() {
                     <Card className="relative overflow-hidden group">
                         <CardContent className="p-4">
                             <h3 className="font-bold text-lg">Rewards</h3>
-                            <p className="text-sm text-muted-foreground">Offers & Cashbacks</p>
-                            <Badge className="mt-2 bg-primary/20 text-primary">5 New</Badge>
+                            <p className="text-sm text-muted-foreground">Offers</p>
+                            <Badge className="mt-2 bg-primary/20 text-primary">Active</Badge>
                             <Gift className="absolute -bottom-2 -right-2 h-20 w-20 text-primary/10 transition-transform duration-300 group-hover:scale-110" />
                         </CardContent>
                     </Card>

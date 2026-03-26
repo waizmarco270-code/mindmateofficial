@@ -1,4 +1,3 @@
-
 import * as admin from 'firebase-admin';
 
 /**
@@ -14,8 +13,9 @@ if (!admin.apps.length) {
     if (serviceAccountVar) {
       let serviceAccount;
       try {
-        // Attempt to parse the JSON string directly
-        serviceAccount = JSON.parse(serviceAccountVar);
+        // Handle cases where the variable might be wrapped in extra quotes or escaped
+        const cleanJson = serviceAccountVar.trim().replace(/^['"]|['"]$/g, '');
+        serviceAccount = JSON.parse(cleanJson);
       } catch (e) {
         // Fallback: If it's Base64 encoded (some environments prefer this)
         try {
@@ -31,7 +31,6 @@ if (!admin.apps.length) {
       });
       console.log("Firebase Admin Initialized successfully from Environment Variable.");
     } else {
-      // For local development, we expect the user to have FIREBASE_SERVICE_ACCOUNT in .env.local
       console.warn("WARNING: FIREBASE_SERVICE_ACCOUNT is missing. Notifications will not be dispatched.");
       admin.initializeApp({
         projectId: 'mindmate-80e5c',

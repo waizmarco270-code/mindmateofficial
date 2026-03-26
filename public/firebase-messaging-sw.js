@@ -1,7 +1,12 @@
-// MindMate Ghost Pulse - Background Service Worker
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
+/*
+ * @fileOverview Background Firebase Messaging Service Worker
+ */
+
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+
+// These are public config values, safe to include in the SW
 firebase.initializeApp({
   apiKey: "AIzaSyATUcEV5XGgj5oMkAv1a5Xh-6jZApOXVBw",
   authDomain: "mindmate-80e5c.firebaseapp.com",
@@ -17,36 +22,40 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
   
-  const notificationTitle = payload.data.title || payload.notification.title || 'MindMate Alert';
+  const notificationTitle = payload.data?.title || payload.notification?.title || 'MindMate Alert';
   const notificationOptions = {
-    body: payload.data.body || payload.notification.body || 'New update from the academy.',
+    body: payload.data?.body || payload.notification?.body || 'New message from the community!',
     icon: '/logo.jpg',
     badge: '/logo.jpg',
-    image: payload.data.image || undefined,
     data: {
-        url: payload.data.link || '/dashboard'
+        link: payload.data?.link || '/dashboard'
     }
   };
 
-  self.registration.showNotification(notificationTitle, notificationOptions);
+  if (payload.data?.image) {
+      notificationOptions.image = payload.data.image;
+  }
+
+  return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 
-// Handle notification click to redirect
+// Handle notification click
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const urlToOpen = event.notification.data.url;
-
+  const link = event.notification.data.link || '/dashboard';
+  
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (var i = 0; i < windowClients.length; i++) {
-        var client = windowClients[i];
-        if (client.url === urlToOpen && 'focus' in client) {
-          return client.focus();
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) {
+            client = clientList[i];
+          }
         }
+        return client.focus().then(c => c.navigate(link));
       }
-      if (clients.openWindow) {
-        return clients.openWindow(urlToOpen);
-      }
+      return clients.openWindow(link);
     })
   );
 });
