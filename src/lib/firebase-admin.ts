@@ -20,7 +20,9 @@ if (!admin.apps.length) {
 
       // 1. Check for Service Account JSON string in Environment Variables (Best for Vercel)
       if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+        // Vercel might escape double quotes, let's handle the string properly
+        const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
+        serviceAccount = JSON.parse(serviceAccountRaw);
       } 
       // 2. Fallback to local file (Best for local dev)
       else {
@@ -40,7 +42,8 @@ if (!admin.apps.length) {
       }
     } catch (error: any) {
       console.error("Firebase Admin Init Failed:", error.message);
-      throw error;
+      // In production, we don't want the whole app to crash if admin fails, 
+      // but notification/admin routes will fail gracefully.
     }
   }
 }
