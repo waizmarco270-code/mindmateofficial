@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useAdmin, type CreditPack, useUsers, type StoreItem } from '@/hooks/use-admin';
-import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon, CheckCircle, Trophy, X, TrendingUp, Crown } from 'lucide-react';
+import { Loader2, ShoppingCart, Gem, History, Check, ShieldCheck, ArrowRight, ShieldAlert, Award, Star, Zap, ShieldCheck as ShieldIcon, Snowflake, Sparkles, Gift, Bird, Moon, CheckCircle, Trophy, X, TrendingUp, Crown, Minus, Plus, CreditCard, Wallet } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedOut } from '@clerk/nextjs';
 import { LoginWall } from '@/components/ui/login-wall';
@@ -213,56 +213,68 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const { user } = useUser();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
+    const [quantities, setQuantities] = useState<Record<string, number>>({});
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
     const artifactItems = storeItems ? storeItems.filter(i => ['penalty-shield', 'streak-freeze', 'alpha-glow', 'clan-xp-booster', 'clan-level-max'].includes(i.type)) : [];
 
-    const handleBuyWithMoney = async (item: StoreItem) => {
+    const handleUpdateQuantity = (itemId: string, delta: number) => {
+        setQuantities(prev => ({
+            ...prev,
+            [itemId]: Math.max(1, (prev[itemId] || 1) + delta)
+        }));
+    };
+
+    const handleBuyWithMethod = async (item: StoreItem, method: 'razorpay' | 'wallet') => {
         if (!user) return;
+        const qty = quantities[item.id] || 1;
+        const totalPrice = item.price! * qty;
+
+        if (method === 'wallet' && (currentUserData?.walletBalance || 0) < totalPrice) {
+            toast({ variant: 'destructive', title: "Insufficient Funds", description: "Top up your wallet to continue." });
+            return;
+        }
+
         setIsProcessing(item.id);
         try {
-            const order = await createRazorpayOrder(item.price!, {
-                userId: user.id,
-                packName: item.name,
-                credits: 0 
-            });
-
-            const options = {
-                key: RAZORPAY_PUBLIC_KEY,
-                amount: order.amount,
-                currency: order.currency,
-                name: 'MindMate Artifact',
-                description: `Purchase ${item.name}`,
-                order_id: order.id,
-                handler: async function (response: any) {
-                    await processStoreItemPayment(item, response.razorpay_payment_id);
-                    onSuccess(item.name);
-                    setIsProcessing(null);
-                },
-                prefill: {
-                    name: user.fullName || '',
-                    email: user.primaryEmailAddress?.emailAddress || '',
-                },
-                theme: { color: '#8b5cf6' },
-                modal: { 
-                    ondismiss: () => setIsProcessing(null),
-                    escape: false,
-                    backdropclose: false
-                }
-            };
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
+            if (method === 'razorpay') {
+                const order = await createRazorpayOrder(totalPrice, { userId: user.id, packName: `${item.name} (x${qty})`, credits: 0 });
+                const options = {
+                    key: RAZORPAY_PUBLIC_KEY,
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: 'MindMate Nexus',
+                    description: `Purchase ${item.name} x${qty}`,
+                    order_id: order.id,
+                    handler: async function (response: any) {
+                        await processStoreItemPayment(item, qty, response.razorpay_payment_id, 'razorpay');
+                        onSuccess(`${item.name} (x${qty})`);
+                        setIsProcessing(null);
+                    },
+                    prefill: { name: user.fullName || '', email: user.primaryEmailAddress?.emailAddress || '' },
+                    theme: { color: '#8b5cf6' },
+                    modal: { ondismiss: () => setIsProcessing(null) }
+                };
+                const rzp = new (window as any).Razorpay(options);
+                rzp.open();
+            } else {
+                // Pay with wallet
+                await processStoreItemPayment(item, qty, `wall-${Date.now()}`, 'wallet');
+                onSuccess(`${item.name} (x${qty})`);
+                setIsProcessing(null);
+            }
         } catch (error: any) {
-            toast({ variant: 'destructive', title: "Order Failed", description: error.message });
+            toast({ variant: 'destructive', title: "Purchase Failed", description: error.message });
             setIsProcessing(null);
         }
     };
 
     const handleRedeemWithCredits = async (item: StoreItem) => {
+        const qty = quantities[item.id] || 1;
         setIsProcessing(item.id);
         try {
-            await redeemStoreItem(item);
-            onSuccess(item.name);
+            await redeemStoreItem(item, qty);
+            onSuccess(`${item.name} (x${qty})`);
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Redemption Failed", description: error.message });
         } finally {
@@ -280,25 +292,16 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
             default: return <Star className="h-10 w-10 text-amber-400" />;
         }
     }
-    
-    if (!loading && artifactItems.length === 0) {
-        return (
-            <div className="text-center py-20 border-2 border-dashed rounded-2xl bg-muted/20">
-                <ShieldIcon className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="text-xl font-bold text-muted-foreground">The Vault is Empty</h3>
-                <p className="text-sm text-muted-foreground mt-2 max-w-xs mx-auto">
-                    Check back soon for legendary study protection artifacts.
-                </p>
-            </div>
-        );
-    }
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
              {!loading && artifactItems.map(item => {
                  const isMoney = item.paymentType === 'money';
-                 const canAfford = isMoney ? true : (hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost);
+                 const qty = quantities[item.id] || 1;
+                 const totalCredits = item.cost * qty;
+                 const totalPrice = item.price ? item.price * qty : 0;
+                 const canAfford = isMoney ? true : (hasMasterCard || (currentUserData?.credits ?? 0) >= totalCredits);
                  
                  return (
                     <Card key={item.id} className={cn("flex flex-col relative overflow-hidden group border-2 transition-all duration-300", item.isFeatured ? "border-primary/40 shadow-lg shadow-primary/10" : "border-muted")}>
@@ -310,41 +313,40 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                             <CardTitle className="text-2xl font-bold">{item.name}</CardTitle>
                             <CardDescription className="min-h-[40px] px-4">{item.description}</CardDescription>
                         </CardHeader>
-                        <CardContent className="flex-1 flex flex-col items-center justify-center">
+                        <CardContent className="flex-1 flex flex-col items-center gap-4">
+                             <div className="flex items-center gap-4 bg-muted/50 p-2 rounded-xl">
+                                <Button variant="ghost" size="icon" onClick={() => handleUpdateQuantity(item.id, -1)} disabled={qty <= 1}><Minus/></Button>
+                                <span className="font-black text-xl w-8 text-center">{qty}</span>
+                                <Button variant="ghost" size="icon" onClick={() => handleUpdateQuantity(item.id, 1)} disabled={qty >= 10}><Plus/></Button>
+                             </div>
+
                              <div className="font-black text-4xl flex items-center justify-center gap-2 text-amber-500 tracking-tighter">
-                                {isMoney ? (
-                                    <span>₹{item.price}</span>
-                                ) : (
-                                    <>
-                                        <Gem className="h-8 w-8" />
-                                        <span>{item.cost.toLocaleString()}</span>
-                                    </>
-                                )}
+                                {isMoney ? <span>₹{totalPrice}</span> : <><Gem className="h-8 w-8" /><span>{totalCredits.toLocaleString()}</span></>}
                             </div>
-                            <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">
-                                Stock: {item.stock > 0 ? item.stock : <span className="text-destructive">EXHAUSTED</span>}
-                            </p>
+                            <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Stock: {item.stock > 0 ? item.stock : <span className="text-destructive">SOLD OUT</span>}</p>
                         </CardContent>
-                        <CardFooter>
+                        <CardFooter className="flex flex-col gap-2">
                             {isMoney ? (
-                                <Button className="w-full text-lg h-14 font-bold rounded-xl" onClick={() => handleBuyWithMoney(item)} disabled={isProcessing === item.id || item.stock === 0}>
-                                    {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <Zap className="mr-2 h-5 w-5 fill-current"/>}
-                                    {item.stock === 0 ? "Sold Out" : `Buy for ₹${item.price}`}
-                                </Button>
+                                <div className="grid grid-cols-2 gap-2 w-full">
+                                    <Button variant="outline" className="font-bold border-primary/20" onClick={() => handleBuyWithMethod(item, 'wallet')} disabled={isProcessing === item.id || item.stock < qty}>
+                                        <Wallet className="mr-2 h-4 w-4"/> Wallet
+                                    </Button>
+                                    <Button className="font-bold" onClick={() => handleBuyWithMethod(item, 'razorpay')} disabled={isProcessing === item.id || item.stock < qty}>
+                                        <CreditCard className="mr-2 h-4 w-4"/> Pay
+                                    </Button>
+                                </div>
                             ) : (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                        <Button className="w-full text-lg h-14 font-bold rounded-xl" variant={item.stock === 0 ? "secondary" : "default"} disabled={!canAfford || isProcessing === item.id || item.stock === 0}>
+                                        <Button className="w-full text-lg h-14 font-bold rounded-xl" disabled={!canAfford || isProcessing === item.id || item.stock < qty}>
                                              {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <ShoppingCart className="mr-2 h-5 w-5"/>}
-                                            {item.stock === 0 ? "Sold Out" : "Secure Artifact"}
+                                            {item.stock < qty ? "Sold Out" : `Secure x${qty}`}
                                         </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
-                                            <AlertDialogTitle>Acquire Nexus Artifact</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                Do you wish to secure "{item.name}" for {item.cost} credits?
-                                            </AlertDialogDescription>
+                                            <AlertDialogTitle>Bulk Acquisition</AlertDialogTitle>
+                                            <AlertDialogDescription>Secure {qty} units of "{item.name}" for {totalCredits} credits?</AlertDialogDescription>
                                         </AlertDialogHeader>
                                          <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -371,36 +373,44 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
 
     const badgeItems = storeItems ? storeItems.filter(i => ['early-bird', 'night-owl', 'knowledge-knight'].includes(i.type)) : [];
 
-    const handleBuyWithMoney = async (item: StoreItem) => {
+    const handleBuyWithMethod = async (item: StoreItem, method: 'razorpay' | 'wallet') => {
         if (!user) return;
+        const price = item.price!;
+
+        if (method === 'wallet' && (currentUserData?.walletBalance || 0) < price) {
+            toast({ variant: 'destructive', title: "Insufficient Funds" });
+            return;
+        }
+
         setIsProcessing(item.id);
         try {
-            const order = await createRazorpayOrder(item.price!, {
-                userId: user.id,
-                packName: item.name,
-                credits: 0
-            });
-
-            const options = {
-                key: RAZORPAY_PUBLIC_KEY,
-                amount: order.amount,
-                currency: order.currency,
-                name: 'MindMate Identity',
-                description: `Unlock ${item.name}`,
-                order_id: order.id,
-                handler: async function (response: any) {
-                    await processStoreItemPayment(item, response.razorpay_payment_id);
-                    onSuccess(item.name);
-                    setIsProcessing(null);
-                },
-                prefill: { name: user.fullName || '', email: user.primaryEmailAddress?.emailAddress || '' },
-                theme: { color: '#8b5cf6' },
-                modal: { ondismiss: () => setIsProcessing(null), escape: false, backdropclose: false }
-            };
-            const rzp = new (window as any).Razorpay(options);
-            rzp.open();
+            if (method === 'razorpay') {
+                const order = await createRazorpayOrder(price, { userId: user.id, packName: item.name, credits: 0 });
+                const options = {
+                    key: RAZORPAY_PUBLIC_KEY,
+                    amount: order.amount,
+                    currency: order.currency,
+                    name: 'MindMate Identity',
+                    description: `Unlock ${item.name}`,
+                    order_id: order.id,
+                    handler: async function (response: any) {
+                        await processStoreItemPayment(item, 1, response.razorpay_payment_id, 'razorpay');
+                        onSuccess(item.name);
+                        setIsProcessing(null);
+                    },
+                    prefill: { name: user.fullName || '', email: user.primaryEmailAddress?.emailAddress || '' },
+                    theme: { color: '#8b5cf6' },
+                    modal: { ondismiss: () => setIsProcessing(null) }
+                };
+                const rzp = new (window as any).Razorpay(options);
+                rzp.open();
+            } else {
+                await processStoreItemPayment(item, 1, `wall-${Date.now()}`, 'wallet');
+                onSuccess(item.name);
+                setIsProcessing(null);
+            }
         } catch (error: any) {
-            toast({ variant: 'destructive', title: "Order Failed", description: error.message });
+            toast({ variant: 'destructive', title: "Failed", description: error.message });
             setIsProcessing(null);
         }
     };
@@ -408,10 +418,10 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
     const handleRedeemWithCredits = async (item: StoreItem) => {
         setIsProcessing(item.id);
         try {
-            await redeemStoreItem(item);
+            await redeemStoreItem(item, 1);
             onSuccess(item.name);
         } catch (error: any) {
-            toast({ variant: 'destructive', title: "Redemption Failed", description: error.message });
+            toast({ variant: 'destructive', title: "Failed", description: error.message });
         } finally {
             setIsProcessing(null);
         }
@@ -419,32 +429,10 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
 
     const renderBadgePreview = (type: string) => {
         switch(type) {
-            case 'early-bird': 
-                return (
-                    <div className="scale-150 py-4">
-                        <span className="early-bird-badge">
-                            <Bird className="h-3 w-3" /> EARLY BIRD
-                        </span>
-                    </div>
-                );
-            case 'night-owl': 
-                return (
-                    <div className="scale-150 py-4">
-                        <span className="night-owl-badge">
-                            <Moon className="h-3 w-3" /> NIGHT OWL
-                        </span>
-                    </div>
-                );
-            case 'knowledge-knight': 
-                return (
-                    <div className="scale-150 py-4">
-                        <span className="knowledge-knight-badge">
-                            <ShieldIcon className="h-3 w-3" /> KNIGHT
-                        </span>
-                    </div>
-                );
-            default: 
-                return <Award className="h-16 w-16 text-amber-400" />;
+            case 'early-bird': return <div className="scale-150 py-4"><span className="early-bird-badge"><Bird className="h-3 w-3" /> EARLY BIRD</span></div>;
+            case 'night-owl': return <div className="scale-150 py-4"><span className="night-owl-badge"><Moon className="h-3 w-3" /> NIGHT OWL</span></div>;
+            case 'knowledge-knight': return <div className="scale-150 py-4"><span className="knowledge-knight-badge"><ShieldIcon className="h-3 w-3" /> KNIGHT</span></div>;
+            default: return <Award className="h-16 w-16 text-amber-400" />;
         }
     }
 
@@ -455,21 +443,10 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         if (type === 'knowledge-knight') return currentUserData.isKnowledgeKnight;
         return false;
     }
-    
-    if (!loading && badgeItems.length === 0) {
-        return (
-            <div className="text-center py-20 border-2 border-dashed rounded-2xl bg-muted/20">
-                <Award className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />
-                <h3 className="text-xl font-bold text-muted-foreground">No Badges Available</h3>
-                <p className="text-sm text-muted-foreground mt-2">Check back later for exclusive identity badges.</p>
-            </div>
-        );
-    }
 
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {loading && Array.from({length:3}).map((_, i) => <Skeleton key={i} className="h-80 w-full" />)}
-             {!loading && badgeItems.map(item => {
+            {!loading && badgeItems.map(item => {
                  const isMoney = item.paymentType === 'money';
                  const owned = hasBadge(item.type);
                  const canAfford = isMoney ? true : (hasMasterCard || (currentUserData?.credits ?? 0) >= item.cost);
@@ -480,9 +457,7 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                     )}>
                         <BadgeRenderer badge={item.badge} />
                         <CardHeader className="text-center">
-                            <div className="mx-auto mb-6 flex items-center justify-center min-h-[80px]">
-                                {renderBadgePreview(item.type)}
-                            </div>
+                            <div className="mx-auto mb-6 flex items-center justify-center min-h-[80px]">{renderBadgePreview(item.type)}</div>
                             <CardTitle className="text-2xl font-bold">{item.name}</CardTitle>
                             <CardDescription className="min-h-[40px] px-4">{item.description}</CardDescription>
                         </CardHeader>
@@ -497,9 +472,7 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                                     <div className="font-black text-4xl flex items-center justify-center gap-2 text-amber-500 tracking-tighter">
                                         {isMoney ? <span>₹{item.price}</span> : <><Gem className="h-8 w-8" /><span>{item.cost.toLocaleString()}</span></>}
                                     </div>
-                                    <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">
-                                        Stock: {item.stock > 0 ? item.stock : <span className="text-destructive">OUT OF STOCK</span>}
-                                    </p>
+                                    <p className="text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">Stock: {item.stock > 0 ? item.stock : <span className="text-destructive">SOLD OUT</span>}</p>
                                 </>
                              )}
                         </CardContent>
@@ -507,10 +480,10 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                             {owned ? (
                                 <Button className="w-full" variant="outline" disabled>Owned</Button>
                             ) : isMoney ? (
-                                <Button className="w-full text-lg h-14 font-bold rounded-xl" onClick={() => handleBuyWithMoney(item)} disabled={isProcessing === item.id || item.stock === 0}>
-                                    {isProcessing === item.id ? <Loader2 className="mr-2 animate-spin"/> : <Zap className="mr-2 h-5 w-5 fill-current"/>}
-                                    {item.stock === 0 ? "Sold Out" : "Unlock Identity"}
-                                </Button>
+                                <div className="grid grid-cols-2 gap-2 w-full">
+                                    <Button variant="outline" onClick={() => handleBuyWithMethod(item, 'wallet')} disabled={isProcessing === item.id || item.stock === 0}><Wallet className="mr-2 h-4 w-4"/> Wallet</Button>
+                                    <Button onClick={() => handleBuyWithMethod(item, 'razorpay')} disabled={isProcessing === item.id || item.stock === 0}><CreditCard className="mr-2 h-4 w-4"/> Pay</Button>
+                                </div>
                             ) : (
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -521,8 +494,8 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                         <AlertDialogHeader>
-                                            <AlertDialogTitle>Claim This Identity?</AlertDialogTitle>
-                                            <AlertDialogDescription>Unlock the "{item.name}" badge for {item.cost} credits. It will be yours forever!</AlertDialogDescription>
+                                            <AlertDialogTitle>Identity Claim</AlertDialogTitle>
+                                            <AlertDialogDescription>Unlock "{item.name}" for {item.cost} credits?</AlertDialogDescription>
                                         </AlertDialogHeader>
                                          <AlertDialogFooter>
                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -552,25 +525,17 @@ export default function StorePage() {
         <div className="space-y-8">
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
             
-            <PurchaseSuccessDialog 
-                isOpen={successDialogOpen} 
-                onOpenChange={setSuccessDialogOpen} 
-                itemName={purchasedItemName} 
-            />
+            <PurchaseSuccessDialog isOpen={successDialogOpen} onOpenChange={setSuccessDialogOpen} itemName={purchasedItemName} />
 
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                 <div>
                     <h1 className="text-4xl font-black tracking-tight flex items-center gap-3 text-primary drop-shadow-[0_0_8px_rgba(139,92,246,0.5)]">
-                        <ShoppingCart className="h-10 w-10"/>
-                        Nexus Emporium
+                        <ShoppingCart className="h-10 w-10"/> Nexus Emporium
                     </h1>
                     <p className="text-muted-foreground font-medium">Equip your study journey with premium credits and legendary artifacts.</p>
                 </div>
                 <Button asChild variant="outline" className="rounded-full px-6 border-primary/20 hover:bg-primary/5">
-                    <Link href="/dashboard/store/history">
-                        <History className="mr-2 h-4 w-4 text-primary"/>
-                        Transaction Log
-                    </Link>
+                    <Link href="/dashboard/store/history"><History className="mr-2 h-4 w-4 text-primary"/> Transaction Log</Link>
                 </Button>
             </div>
 
@@ -596,23 +561,19 @@ export default function StorePage() {
                 <TabsContent value="luck" className="animate-in fade-in-50 duration-500">
                     <div className="text-center py-20 space-y-4">
                         <Gift className="h-16 w-16 text-primary mx-auto opacity-20" />
-                        <h3 className="text-xl font-bold text-muted-foreground">Looking for Scratch Cards or Card Flips?</h3>
-                        <p className="text-muted-foreground max-w-sm mx-auto">These are part of the <strong>Reward Zone</strong> logic, and you can also find them in the <strong>Artifacts</strong> tab if available for purchase.</p>
-                        <Button asChild variant="secondary">
-                            <Link href="/dashboard/reward">Go to Reward Zone</Link>
-                        </Button>
+                        <h3 className="text-xl font-bold text-muted-foreground">Looking for Scratch Cards?</h3>
+                        <p className="text-muted-foreground max-w-sm mx-auto">They are now available in bulk in the <strong>Artifacts</strong> tab!</p>
+                        <Button asChild variant="secondary"><Link href="/dashboard/reward">Go to Reward Zone</Link></Button>
                     </div>
                 </TabsContent>
             </Tabs>
 
             <div className="p-6 rounded-2xl bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border border-blue-500/20 flex items-start gap-4 shadow-inner">
-                <div className="p-2 rounded-lg bg-blue-500/20 text-blue-500">
-                    <ShieldCheck className="h-6 w-6" />
-                </div>
+                <div className="p-2 rounded-lg bg-blue-500/20 text-blue-500"><ShieldCheck className="h-6 w-6" /></div>
                 <div>
                     <h4 className="font-bold text-blue-700 dark:text-blue-300">Nexus Security Protocol</h4>
                     <p className="text-sm text-blue-700/80 dark:text-blue-300/80 mt-1">
-                        All transactions are encrypted and processed via <strong>Razorpay</strong>. Credits and artifacts are bound to your unique MindMate ID and awarded instantly upon verification.
+                        All transactions are encrypted. You can now use your <strong>MindMate Wallet</strong> balance for instant zero-fee purchases of paid artifacts and badges.
                     </p>
                 </div>
             </div>

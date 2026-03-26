@@ -15,7 +15,7 @@ export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev'
 export interface WalletTransaction {
     id: string;
     amount: number;
-    type: 'topup' | 'withdrawal' | 'penalty' | 'refund';
+    type: 'topup' | 'withdrawal' | 'penalty' | 'purchase' | 'refund';
     status: 'completed' | 'pending' | 'failed';
     date: string; // ISO string
 }
@@ -355,8 +355,8 @@ interface AppDataContextType {
     createStoreItem: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
     updateStoreItem: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
     deleteStoreItem: (id: string) => Promise<void>;
-    redeemStoreItem: (item: StoreItem) => Promise<void>;
-    processStoreItemPayment: (item: StoreItem, transactionId: string) => Promise<void>;
+    redeemStoreItem: (item: StoreItem, quantity: number) => Promise<void>;
+    processStoreItemPayment: (item: StoreItem, quantity: number, transactionId: string, method: 'razorpay' | 'wallet') => Promise<void>;
     videoCategories: VideoCategory[];
     addVideoCategory: (category: Omit<VideoCategory, 'id' | 'createdAt'>) => Promise<void>;
     deleteVideoCategory: (categoryId: string) => Promise<void>;
@@ -569,9 +569,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [addCreditsToUser]);
 
-    const redeemStoreItem = useCallback(async (item: StoreItem) => {
+    const redeemStoreItem = useCallback(async (item: StoreItem, quantity: number) => {
         if (!authUser || !currentUserData) throw new Error("You must be logged in.");
-        if (item.paymentType !== 'credits') throw new Error("This item must be paid for with money.");
+        const totalCost = item.cost * quantity;
 
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, 'users', authUser.id);
@@ -585,39 +585,37 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             const currentItem = itemSnap.data() as StoreItem;
             const hasMasterCard = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
             
-            if (!hasMasterCard && userData.credits < item.cost) throw new Error("Insufficient credits.");
-            if (currentItem.stock <= 0) throw new Error("Sold out.");
+            if (!hasMasterCard && userData.credits < totalCost) throw new Error("Insufficient credits.");
+            if (currentItem.stock < quantity) throw new Error("Not enough stock.");
             
-            transaction.update(itemRef, { stock: increment(-1) });
+            transaction.update(itemRef, { stock: increment(-quantity) });
             
             const updates: any = {};
-            if (!hasMasterCard) updates.credits = increment(-item.cost);
+            if (!hasMasterCard) updates.credits = increment(-totalCost);
             
-            if (item.type === 'scratch-card') updates.freeRewards = increment(item.quantity);
-            else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
-            else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(item.quantity);
-            else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(item.quantity);
-            else if (item.type === 'clan-xp-booster') updates['inventory.clanXpBoosters'] = increment(item.quantity);
-            else if (item.type === 'clan-level-max') updates['inventory.clanLevelMaxers'] = increment(item.quantity);
+            const totalGrant = item.quantity * quantity;
+            if (item.type === 'scratch-card') updates.freeRewards = increment(totalGrant);
+            else if (item.type === 'card-flip') updates.freeGuesses = increment(totalGrant);
+            else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(totalGrant);
+            else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(totalGrant);
+            else if (item.type === 'clan-xp-booster') updates['inventory.clanXpBoosters'] = increment(totalGrant);
+            else if (item.type === 'clan-level-max') updates['inventory.clanLevelMaxers'] = increment(totalGrant);
             else if (item.type === 'alpha-glow') {
                 const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
-                const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
+                const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * totalGrant);
                 updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
-            } else if (item.type === 'early-bird') {
-                updates.isEarlyBird = true;
-            } else if (item.type === 'night-owl') {
-                updates.isNightOwl = true;
-            } else if (item.type === 'knowledge-knight') {
-                updates.isKnowledgeKnight = true;
-            }
+            } else if (item.type === 'early-bird') updates.isEarlyBird = true;
+            else if (item.type === 'night-owl') updates.isNightOwl = true;
+            else if (item.type === 'knowledge-knight') updates.isKnowledgeKnight = true;
             
             transaction.update(userRef, updates);
         });
     }, [authUser, currentUserData]);
 
-    const processStoreItemPayment = useCallback(async (item: StoreItem, transactionId: string) => {
+    const processStoreItemPayment = useCallback(async (item: StoreItem, quantity: number, transactionId: string, method: 'razorpay' | 'wallet') => {
         if (!authUser || !currentUserData) return;
-        
+        const totalPrice = item.price! * quantity;
+
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, 'users', authUser.id);
             const itemRef = doc(db, 'storeItems', item.id);
@@ -629,38 +627,44 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             const userData = userSnap.data() as User;
             const currentItem = itemSnap.data() as StoreItem;
             
-            if (currentItem.stock <= 0) throw new Error("Sold out.");
+            if (method === 'wallet' && userData.walletBalance < totalPrice) throw new Error("Insufficient wallet balance.");
+            if (currentItem.stock < quantity) throw new Error("Not enough stock.");
             
-            transaction.update(itemRef, { stock: increment(-1) });
+            transaction.update(itemRef, { stock: increment(-quantity) });
             
+            const totalGrant = item.quantity * quantity;
             const updates: any = {
                 transactions: arrayUnion({
                     id: transactionId,
-                    packName: item.name,
+                    packName: `${item.name} (x${quantity})`,
                     credits: 0, 
-                    price: item.price,
+                    price: totalPrice,
                     date: new Date().toISOString(),
-                    type: 'razorpay_item'
+                    type: method === 'wallet' ? 'wallet_purchase' : 'razorpay_item'
                 })
             };
+
+            if (method === 'wallet') {
+                updates.walletBalance = increment(-totalPrice);
+                const newWalletTx: WalletTransaction = {
+                    id: transactionId, amount: -totalPrice, type: 'purchase', status: 'completed', date: new Date().toISOString()
+                };
+                updates.walletTransactions = arrayUnion(newWalletTx);
+            }
             
-            if (item.type === 'scratch-card') updates.freeRewards = increment(item.quantity);
-            else if (item.type === 'card-flip') updates.freeGuesses = increment(item.quantity);
-            else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(item.quantity);
-            else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(item.quantity);
-            else if (item.type === 'clan-xp-booster') updates['inventory.clanXpBoosters'] = increment(item.quantity);
-            else if (item.type === 'clan-level-max') updates['inventory.clanLevelMaxers'] = increment(item.quantity);
+            if (item.type === 'scratch-card') updates.freeRewards = increment(totalGrant);
+            else if (item.type === 'card-flip') updates.freeGuesses = increment(totalGrant);
+            else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(totalGrant);
+            else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(totalGrant);
+            else if (item.type === 'clan-xp-booster') updates['inventory.clanXpBoosters'] = increment(totalGrant);
+            else if (item.type === 'clan-level-max') updates['inventory.clanLevelMaxers'] = increment(totalGrant);
             else if (item.type === 'alpha-glow') {
                 const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
-                const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * item.quantity);
+                const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * totalGrant);
                 updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
-            } else if (item.type === 'early-bird') {
-                updates.isEarlyBird = true;
-            } else if (item.type === 'night-owl') {
-                updates.isNightOwl = true;
-            } else if (item.type === 'knowledge-knight') {
-                updates.isKnowledgeKnight = true;
-            }
+            } else if (item.type === 'early-bird') updates.isEarlyBird = true;
+            else if (item.type === 'night-owl') updates.isNightOwl = true;
+            else if (item.type === 'knowledge-knight') updates.isKnowledgeKnight = true;
             
             transaction.update(userRef, updates);
         });
