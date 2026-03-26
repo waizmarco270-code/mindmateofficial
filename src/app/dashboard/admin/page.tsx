@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -396,6 +395,17 @@ export default function AdminPanelPage() {
               questions: quizQuestions,
               createdAt: new Date().toISOString(),
           });
+
+          // Push Notification for manual quiz
+          await fetch('/api/send-notification', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  title: `🧠 New Quiz: ${quizTitle}`,
+                  message: `A new challenge awaits in the ${quizCategory} zone. Can you get a perfect score?`,
+                  linkUrl: `/dashboard/quiz/${quizCategory}`
+              })
+          });
           
           toast({ title: "Quiz Saved!", description: "The new quiz has been added." });
           setQuizTitle('');
@@ -466,6 +476,17 @@ export default function AdminPanelPage() {
             await addDoc(collection(db, 'quizzes'), {
                 ...quizData,
                 createdAt: new Date().toISOString(),
+            });
+
+            // Push Notification for imported quiz
+            await fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `🧠 New Quiz: ${quizData.title}`,
+                    message: `A new imported challenge is live in the ${quizData.category} zone!`,
+                    linkUrl: `/dashboard/quiz/${quizData.category}`
+                })
             });
 
             toast({ title: "Quiz Imported Successfully!", description: `"${quizData.title}" has been added.` });

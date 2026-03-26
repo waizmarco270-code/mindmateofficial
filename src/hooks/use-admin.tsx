@@ -996,7 +996,19 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             batch.delete(doc(db, 'videoCategories', id));
             await batch.commit();
         },
-        addVideoLecture: (l) => addDoc(collection(db, 'videoLectures'), { ...l, createdAt: serverTimestamp() }),
+        addVideoLecture: async (l) => {
+            await addDoc(collection(db, 'videoLectures'), { ...l, createdAt: serverTimestamp() });
+            // Notify about new lecture
+            await fetch('/api/send-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    title: `🎬 New Lecture: ${l.title}`,
+                    message: l.description,
+                    linkUrl: '/dashboard/learning'
+                })
+            });
+        },
         deleteVideoLecture: (id) => deleteDoc(doc(db, 'videoLectures', id)),
     };
 
