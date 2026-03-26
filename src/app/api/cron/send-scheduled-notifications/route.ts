@@ -1,18 +1,19 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminMessaging } from '@/lib/firebase-admin';
-import { Timestamp, FieldValue } from 'firebase-admin/firestore';
+import { Timestamp } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 
 /**
  * CRON Job Handler
- * This route should be triggered periodically (e.g. every 1 minute)
+ * This route is triggered by the background heartbeat in layout.tsx
  */
 export async function GET(req: NextRequest) {
-  console.log('CRON: Checking for due notifications...');
+  console.log('CRON: Heartbeat check for due notifications...');
 
   try {
     const now = Timestamp.now();
+    // Query for pending notifications that are due
     const pendingQuery = adminDb.collection('scheduledNotifications')
       .where('status', '==', 'pending')
       .where('scheduledAt', '<=', now);
@@ -20,7 +21,7 @@ export async function GET(req: NextRequest) {
     const snapshot = await pendingQuery.get();
 
     if (snapshot.empty) {
-      return NextResponse.json({ message: 'No pending notifications due.' });
+      return NextResponse.json({ success: true, message: 'No pending notifications due.' });
     }
 
     const appLogo = 'https://mindmateofficial.vercel.app/logo.jpg';
@@ -28,21 +29,18 @@ export async function GET(req: NextRequest) {
 
     for (const doc of snapshot.docs) {
       const notif = doc.data();
-      const tokens: string[] = [];
+      let tokens: string[] = [];
 
-      // Get target tokens
+      // Identify targets
       if (notif.target === 'all') {
         const tokensSnap = await adminDb.collection('fcmTokens').get();
-        tokensSnap.docs.forEach(t => {
-            const token = t.data().token;
-            if(token) tokens.push(token);
-        });
+        tokens = tokensSnap.docs.map(t => t.data().token).filter(Boolean);
       } else if (notif.target.startsWith('user:')) {
         const userId = notif.target.split(':')[1];
         const tokenDoc = await adminDb.collection('fcmTokens').doc(userId).get();
         if (tokenDoc.exists) {
-            const token = tokenDoc.data()?.token;
-            if(token) tokens.push(token);
+            const t = tokenDoc.data()?.token;
+            if (t) tokens.push(t);
         }
       }
 
@@ -70,20 +68,27 @@ export async function GET(req: NextRequest) {
             const response = await adminMessaging.sendEachForMulticast(messagePayload);
             const summary = `${response.successCount} sent, ${response.failureCount} failed`;
             
-            // Move to history and mark as sent
+            // Mark as sent and record summary
+            await doc.ref.update({ 
+                status: 'sent', 
+                sentAt: Timestamp.now(),
+                dispatchSummary: summary 
+            });
+
+            // Add to history
             await adminDb.collection('sentNotifications').add({
                 ...notif,
                 sentAt: Timestamp.now(),
                 status: 'Completed',
                 dispatchSummary: summary
             });
-            await doc.ref.update({ status: 'sent', sentAt: Timestamp.now() });
+
             processedCount++;
         } catch (e: any) {
             await doc.ref.update({ status: 'failed', failureReason: e.message });
         }
       } else {
-        await doc.ref.update({ status: 'failed', failureReason: 'No subscriber tokens found for target.' });
+        await doc.ref.update({ status: 'failed', failureReason: 'No subscriber tokens found.' });
       }
     }
 
@@ -91,6 +96,6 @@ export async function GET(req: NextRequest) {
 
   } catch (error: any) {
     console.error("CRON Error:", error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }

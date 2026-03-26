@@ -15,6 +15,10 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
+import { Badge } from '@/components/ui/badge';
+
+// Hardcoded for frontend init stability in dev
+const RAZORPAY_PUBLIC_KEY = 'rzp_test_SVrJPgT8gQO914';
 
 export default function WalletPage() {
     const { user } = useUser();
@@ -47,7 +51,7 @@ export default function WalletPage() {
             });
 
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                key: RAZORPAY_PUBLIC_KEY,
                 amount: order.amount,
                 currency: order.currency,
                 name: 'MindMate Wallet',

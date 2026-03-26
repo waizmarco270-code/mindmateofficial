@@ -21,6 +21,9 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Hardcoded for frontend init stability in dev
+const RAZORPAY_PUBLIC_KEY = 'rzp_test_SVrJPgT8gQO914';
+
 const BadgeRenderer = ({ badge }: { badge?: string }) => {
     if (!badge) return null;
     return (
@@ -112,7 +115,6 @@ function CreditPacksTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         
         setIsProcessing(pack.id);
         try {
-            // Pass order metadata in notes for webhook fulfillment
             const order = await createRazorpayOrder(pack.price, {
                 userId: user.id,
                 packName: pack.name,
@@ -120,7 +122,7 @@ function CreditPacksTab({ onSuccess }: { onSuccess: (name: string) => void }) {
             });
 
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                key: RAZORPAY_PUBLIC_KEY,
                 amount: order.amount,
                 currency: order.currency,
                 name: 'MindMate',
@@ -219,15 +221,14 @@ function ArtifactsTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         if (!user) return;
         setIsProcessing(item.id);
         try {
-            // Pass metadata in notes for webhook fulfillment
             const order = await createRazorpayOrder(item.price!, {
                 userId: user.id,
                 packName: item.name,
-                credits: 0 // Artifacts are items, not credit packs
+                credits: 0 
             });
 
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                key: RAZORPAY_PUBLIC_KEY,
                 amount: order.amount,
                 currency: order.currency,
                 name: 'MindMate Artifact',
@@ -374,7 +375,6 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
         if (!user) return;
         setIsProcessing(item.id);
         try {
-            // Pass metadata in notes for webhook fulfillment
             const order = await createRazorpayOrder(item.price!, {
                 userId: user.id,
                 packName: item.name,
@@ -382,7 +382,7 @@ function BadgesTab({ onSuccess }: { onSuccess: (name: string) => void }) {
             });
 
             const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                key: RAZORPAY_PUBLIC_KEY,
                 amount: order.amount,
                 currency: order.currency,
                 name: 'MindMate Identity',

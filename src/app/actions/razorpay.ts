@@ -6,9 +6,9 @@ import crypto from 'crypto';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, increment, arrayUnion, getDoc } from 'firebase/firestore';
 
-// HARDCODED NEW TEST KEYS FOR DEV ENVIRONMENT
-const RAZORPAY_KEY_ID = 'rzp_test_SVrJPgT8gQO914';
-const RAZORPAY_KEY_SECRET = 'l1FBgO22yrz2eAwXDrpj7q1U';
+// SECURE SERVER-SIDE KEYS
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_SVrJPgT8gQO914';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'l1FBgO22yrz2eAwXDrpj7q1U';
 
 const razorpay = new Razorpay({
   key_id: RAZORPAY_KEY_ID,
