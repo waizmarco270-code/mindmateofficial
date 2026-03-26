@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Loader2, Send, Clock, X, Trash2, RefreshCw, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Send, Clock, X, Trash2, RefreshCw, Link as LinkIcon, Image as ImageIcon, Copy, Terminal } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { collection, query, orderBy, onSnapshot, Timestamp, where, deleteDoc, doc } from "firebase/firestore";
@@ -103,6 +103,12 @@ const PushNotification = () => {
       toast({ title: "Alert Cancelled" });
   }
 
+  const copyCronUrl = () => {
+      const url = `${window.location.origin}/api/cron/send-scheduled-notifications`;
+      navigator.clipboard.writeText(url);
+      toast({ title: "Cron URL Copied!" });
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -195,6 +201,17 @@ const PushNotification = () => {
             </TabsContent>
 
             <TabsContent value="scheduled" className="pt-4 space-y-4">
+                <div className="p-4 border rounded-xl bg-muted/20 space-y-3">
+                    <div className="flex items-center justify-between">
+                        <Label className="flex items-center gap-2 font-bold text-primary"><Terminal className="h-4 w-4"/> Cron Job URL</Label>
+                        <Button variant="ghost" size="sm" onClick={copyCronUrl} className="h-7 text-[10px]"><Copy className="h-3 w-3 mr-1"/> Copy URL</Button>
+                    </div>
+                    <div className="bg-background p-2 rounded border font-mono text-[10px] break-all text-muted-foreground select-text">
+                        {typeof window !== 'undefined' ? `${window.location.origin}/api/cron/send-scheduled-notifications` : '/api/cron/send-scheduled-notifications'}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground italic">Add this URL to an external service like cron-job.org to automate scheduled dispatches.</p>
+                </div>
+
                 <div className="flex justify-between items-center">
                     <h3 className="font-bold">Active Queued missions</h3>
                     <Button variant="outline" size="sm" onClick={handleSyncCron} disabled={isSyncing}>
