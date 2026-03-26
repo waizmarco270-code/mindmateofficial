@@ -6,9 +6,13 @@ import crypto from 'crypto';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
 
+// FALLBACK TO TEST KEYS FOR DEV SERVER
+const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SSLmjZYJquny3v';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'bFXh8cQiKIWmFNsPNJ2YB9Ga';
+
 const razorpay = new Razorpay({
-  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  key_id: RAZORPAY_KEY_ID,
+  key_secret: RAZORPAY_KEY_SECRET,
 });
 
 /**
@@ -19,13 +23,13 @@ const razorpay = new Razorpay({
 export async function createRazorpayOrder(amount: number, notes: { userId: string; packName: string; credits: number }) {
   try {
     const options = {
-      amount: amount * 100, // Razorpay works in paise
+      amount: Math.round(amount * 100), // Razorpay works in paise
       currency: 'INR',
       receipt: `receipt_${Date.now()}`,
       notes: {
         userId: notes.userId,
         packName: notes.packName,
-        credits: String(notes.credits), // Webhook sometimes prefers strings in notes
+        credits: String(notes.credits), 
       }
     };
 
@@ -56,7 +60,7 @@ export async function verifyRazorpayPayment(
   try {
     const text = `${razorpay_order_id}|${razorpay_payment_id}`;
     const generated_signature = crypto
-      .createHmac('sha256', process.env.RAZORPAY_KEY_SECRET!)
+      .createHmac('sha256', RAZORPAY_KEY_SECRET)
       .update(text)
       .digest('hex');
 

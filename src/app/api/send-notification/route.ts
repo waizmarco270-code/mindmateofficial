@@ -1,3 +1,4 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { adminDb, adminMessaging, adminBucket } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
@@ -12,14 +13,12 @@ async function uploadImageFromBase64(base64: string): Promise<string> {
     const filePath = `notification-images/${fileId}.png`;
     const file = adminBucket.file(filePath);
     await file.save(imageBuffer, { metadata: { contentType: 'image/png' }, public: true });
-    return file.publicUrl();
+    return `https://storage.googleapis.com/${adminBucket.name}/${filePath}`;
 }
 
 // API route handler for sending notifications.
 export async function POST(req: NextRequest) {
-  // This top-level try-catch is our last line of defense.
   try {
-    console.log("--- API: send-notification invoked ---");
     const { title, message, userId, linkUrl, scheduledAt, imageBase64 } = await req.json();
 
     if (!title || !message) {
@@ -28,73 +27,91 @@ export async function POST(req: NextRequest) {
 
     let finalImageUrl = '';
     if (imageBase64) {
-      console.log("Image detected, starting upload...");
       finalImageUrl = await uploadImageFromBase64(imageBase64);
-      console.log("Image upload complete. URL:", finalImageUrl);
     }
 
     const target = userId ? `user:${userId}` : 'all';
+    const appLogo = 'https://mindmateofficial.vercel.app/logo.jpg';
 
-    // Handle scheduled notifications (this part is likely not the problem).
+    // Handle scheduled notifications
     if (scheduledAt) {
-      console.log("Scheduling notification for:", new Date(scheduledAt).toISOString());
       await adminDb.collection('scheduledNotifications').add({
-        title, message, imageUrl: finalImageUrl || null, linkUrl: linkUrl || null, target,
-        scheduledAt: Timestamp.fromMillis(scheduledAt), status: 'pending',
+        title, 
+        message, 
+        imageUrl: finalImageUrl || null, 
+        linkUrl: linkUrl || null, 
+        target,
+        scheduledAt: Timestamp.fromMillis(scheduledAt), 
+        status: 'pending',
+        createdAt: Timestamp.now(),
       });
-      return NextResponse.json({ success: true, title: "Notification Scheduled!", message: `Will be sent at ${new Date(scheduledAt).toLocaleString()}` });
+      return NextResponse.json({ 
+        success: true, 
+        title: "Notification Scheduled!", 
+        message: `Will be sent at ${new Date(scheduledAt).toLocaleString()}` 
+      });
     }
 
-    // --- IMMEDIATE SENDING LOGIC ---
-    console.log("--- Starting Immediate Notification Send ---");
-
+    // IMMEDIATE SENDING LOGIC
     let tokens: string[] = [];
     if (userId) {
       const tokenDoc = await adminDb.collection('fcmTokens').doc(userId).get();
-      if (tokenDoc.exists) { const token = tokenDoc.data()!.token; if (token) tokens.push(token); }
+      if (tokenDoc.exists) { 
+        const token = tokenDoc.data()?.token; 
+        if (token) tokens.push(token); 
+      }
     } else {
       const tokensSnapshot = await adminDb.collection('fcmTokens').get();
       tokens = tokensSnapshot.docs.map(doc => doc.data().token).filter(token => token);
     }
-    console.log(`Found ${tokens.length} tokens to send to.`);
 
     if (tokens.length === 0) {
-      console.log("No subscribed users found. Storing notification as 'sent'.");
-      await adminDb.collection('sentNotifications').add({ title, message, imageUrl: finalImageUrl || null, linkUrl, sentAt: Timestamp.now(), status: 'No users subscribed', target });
       return NextResponse.json({ success: true, title: "No Users Subscribed", message: 'The notification was not sent as no users are subscribed.' });
     }
 
-    // --- PAYLOAD CONSTRUCTION (DIAGNOSTIC STEP) ---
-    // The 'data' payload has been REMOVED to isolate the problem.
-    // If the error disappears, we know the 'data' payload was the cause.
-    const notificationPayload: admin.messaging.Notification = { title, body: message };
-    if (finalImageUrl) {
-      notificationPayload.imageUrl = finalImageUrl;
-    }
-
+    // Construct the rich payload
     const messagePayload: admin.messaging.MulticastMessage = {
-      notification: notificationPayload,
+      notification: {
+        title,
+        body: message,
+        imageUrl: finalImageUrl || undefined,
+      },
+      webpush: {
+        notification: {
+          icon: appLogo,
+          badge: appLogo,
+          image: finalImageUrl || undefined,
+          requireInteraction: true,
+        },
+        fcmOptions: {
+          link: linkUrl || 'https://mindmateofficial.vercel.app/dashboard'
+        }
+      },
       tokens,
-      // The 'data' property is intentionally omitted for this test.
     };
 
-    console.log("Constructed FCM payload (DIAGNOSTIC - NO DATA):", JSON.stringify(messagePayload, null, 2));
-
     const response = await adminMessaging.sendEachForMulticast(messagePayload);
-    console.log("Successfully received response from FCM.");
     const status = `${response.successCount} sent, ${response.failureCount} failed`;
 
-    await adminDb.collection('sentNotifications').add({ title, message, imageUrl: finalImageUrl || null, linkUrl, sentAt: Timestamp.now(), status, target });
+    // Save to history
+    await adminDb.collection('sentNotifications').add({ 
+        title, 
+        message, 
+        imageUrl: finalImageUrl || null, 
+        linkUrl: linkUrl || null, 
+        sentAt: Timestamp.now(), 
+        status, 
+        target 
+    });
 
-    return NextResponse.json({ success: true, title: "Notification Sent!", message: `Success: ${response.successCount}, Failure: ${response.failureCount}` });
+    return NextResponse.json({ 
+        success: true, 
+        title: "Notification Sent!", 
+        message: `Success: ${response.successCount}, Failure: ${response.failureCount}` 
+    });
 
   } catch (error: any) {
-    // If this block runs, the user will get a proper JSON error, not a DOCTYPE error.
-    console.error("--- CATCH BLOCK TRIGGERED IN send-notification API ---");
-    console.error(`This means the crash is catchable. We are getting close.`);
-    console.error(`Error Name: ${error.name}`);
-    console.error(`Error Message: ${error.message}`);
-    console.error(`Error Stack: ${error.stack}`);
-    return NextResponse.json({ success: false, message: 'A fatal internal server error occurred. Check the server logs.' }, { status: 500 });
+    console.error("Error in send-notification API:", error);
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 }
