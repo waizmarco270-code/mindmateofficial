@@ -4,6 +4,9 @@ import { adminDb, adminMessaging } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 
+/**
+ * Force dynamic execution to prevent build-time errors with Firebase Admin
+ */
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
@@ -50,7 +53,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (tokens.length === 0) {
-      // Save to history even if no tokens
       await adminDb.collection('sentNotifications').add({ 
           title, message, imageUrl: imageUrl || null, linkUrl: linkUrl || null, 
           sentAt: Timestamp.now(), status: 'Completed', dispatchSummary: '0 sent (no active subscribers)', target 
@@ -81,7 +83,6 @@ export async function POST(req: NextRequest) {
     const response = await adminMessaging.sendEachForMulticast(messagePayload);
     const dispatchSummary = `${response.successCount} sent, ${response.failureCount} failed`;
 
-    // Save to history
     await adminDb.collection('sentNotifications').add({ 
         title, 
         message, 

@@ -1,50 +1,39 @@
 
 import * as admin from 'firebase-admin';
-import path from 'path';
-import fs from 'fs';
 
 /**
- * @fileOverview Firebase Admin SDK Initialization
- * Handles both local development (using serviceAccountKey.json) 
- * and production (using FIREBASE_SERVICE_ACCOUNT environment variable).
+ * @fileOverview Secure Firebase Admin SDK Initialization
+ * This implementation EXCLUSIVELY uses environment variables for security.
+ * Local serviceAccountKey.json is ignored to prevent leaks.
  */
 
 if (!admin.apps.length) {
-  if (process.env.FIREBASE_AUTH_EMULATOR_HOST) {
-    admin.initializeApp({
-      projectId: 'mindmate-80e5c',
-    });
-  } else {
-    try {
-      let serviceAccount;
+  try {
+    const serviceAccountVar = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-      // 1. Check for Service Account JSON string in Environment Variables (Best for Vercel)
-      if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-        // Vercel might escape double quotes, let's handle the string properly
-        const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT;
-        serviceAccount = JSON.parse(serviceAccountRaw);
-      } 
-      // 2. Fallback to local file (Best for local dev)
-      else {
-        const serviceAccountPath = path.join(process.cwd(), 'serviceAccountKey.json');
-        if (fs.existsSync(serviceAccountPath)) {
-          serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-        }
-      }
+    if (serviceAccountVar) {
+      // Handle both stringified JSON and potential escaped characters from Vercel
+      const serviceAccount = serviceAccountVar.startsWith('{') 
+        ? JSON.parse(serviceAccountVar) 
+        : JSON.parse(Buffer.from(serviceAccountVar, 'base64').toString());
 
-      if (serviceAccount) {
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+        storageBucket: 'mindmate-80e5c.firebasestorage.app', 
+      });
+      console.log("Firebase Admin Initialized via Environment Variable.");
+    } else {
+      // Fallback for local emulator development only
+      if (process.env.NODE_ENV === 'development' && process.env.FIREBASE_AUTH_EMULATOR_HOST) {
         admin.initializeApp({
-          credential: admin.credential.cert(serviceAccount),
-          storageBucket: 'mindmate-80e5c.appspot.com', 
+          projectId: 'mindmate-80e5c',
         });
       } else {
-        throw new Error("No Firebase Service Account credentials found. Set FIREBASE_SERVICE_ACCOUNT env var or add serviceAccountKey.json.");
+        console.warn("CRITICAL: FIREBASE_SERVICE_ACCOUNT environment variable is missing.");
       }
-    } catch (error: any) {
-      console.error("Firebase Admin Init Failed:", error.message);
-      // In production, we don't want the whole app to crash if admin fails, 
-      // but notification/admin routes will fail gracefully.
     }
+  } catch (error: any) {
+    console.error("Firebase Admin Init Failed:", error.message);
   }
 }
 

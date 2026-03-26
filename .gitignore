@@ -1,3 +1,4 @@
+
 # dependencies
 /node_modules
 /.pnp
@@ -27,12 +28,14 @@ yarn-error.log*
 .env
 test.env
 
-# secrets
-serviceAccountKey.json
-
 # vercel
 .vercel
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Firebase Secrets - CRITICAL
+serviceAccountKey.json
+firebase-key.json
+secrets.json
