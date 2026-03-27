@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -30,6 +29,7 @@ import { z } from 'zod';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 import PushNotification from '@/components/admin/PushNotification';
+import { usePresence } from '@/hooks/use-presence';
 
 interface QuizQuestion {
     text: string;
@@ -110,6 +110,7 @@ export default function AdminPanelPage() {
   } = useAdmin();
   const { pendingReferrals, approveReferral, declineReferral, loading: referralsLoading } = useReferrals();
   const { quizzes, deleteQuiz } = useQuizzes();
+  const { onlineUsers } = usePresence();
   const { toast } = useToast();
 
   // State for Announcement
@@ -575,6 +576,7 @@ export default function AdminPanelPage() {
     } else {
         setEditingShowcase(null);
         setShowcaseTitle('');
+        setShowcaseTitle('');
         setShowcaseDesc('');
         setShowcaseDate('');
         setShowcaseTemplate('cosmic-blue');
@@ -642,11 +644,22 @@ export default function AdminPanelPage() {
         <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>App Statistics</CardTitle>
         </CardHeader>
-        <CardContent>
-             <div className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5 text-muted-foreground" />
-                <span className="font-bold">Total Users:</span>
-                <span>{users.length}</span>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="flex items-center justify-between p-4 bg-muted/50 rounded-xl">
+                <div className="flex items-center gap-3">
+                    <Users className="h-5 w-5 text-primary" />
+                    <span className="font-bold text-lg">Total Citizens</span>
+                </div>
+                <span className="text-2xl font-black">{users.length}</span>
+            </div>
+            <div className="flex items-center justify-between p-4 bg-green-500/5 border border-green-500/10 rounded-xl">
+                <div className="flex items-center gap-3">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="font-bold text-lg text-green-600 dark:text-green-400">Online Now</span>
+                </div>
+                <span className="text-2xl font-black text-green-600 dark:text-green-400">
+                    {onlineUsers.filter(u => u.isOnline).length}
+                </span>
             </div>
         </CardContent>
       </Card>
@@ -1203,7 +1216,7 @@ export default function AdminPanelPage() {
                           <div className="space-y-4">{quizQuestions.map((q, qIndex) => (<div key={qIndex} className="p-4 border rounded-lg space-y-4 relative">{quizQuestions.length > 1 && (<Button variant="ghost" size="icon" className="absolute top-2 right-2 text-muted-foreground hover:text-destructive" onClick={() => removeQuestion(qIndex)}><Trash2 className="h-4 w-4" /></Button>)}<div className="space-y-2"><Label htmlFor={`q-text-${qIndex}`}>Question {qIndex + 1}</Label><Input id={`q-text-${qIndex}`} value={q.text} onChange={e => handleQuestionChange(qIndex, 'text', e.target.value)} placeholder="e.g. Who is the main protagonist of 'Attack on Titan'?" /></div><div className="grid grid-cols-2 gap-4">{q.options.map((opt, oIndex) => (<div className="space-y-2" key={oIndex}><Label htmlFor={`q-${qIndex}-opt-${oIndex}`}>Option {oIndex + 1}</Label><Input id={`q-${qIndex}-opt-${oIndex}`} value={opt} onChange={e => handleOptionChange(qIndex, oIndex, e.target.value)} placeholder={`Option ${oIndex + 1}`} /></div>))}</div><div className="space-y-2"><Label htmlFor={`q-correct-${qIndex}`}>Correct Answer</Label><Select value={q.correctAnswer} onValueChange={val => handleQuestionChange(qIndex, 'correctAnswer', val)}><SelectTrigger id={`q-correct-${qIndex}`}><SelectValue placeholder="Select correct answer..." /></SelectTrigger><SelectContent>{q.options.filter(o => o.trim() !== '').map((opt, oIndex) => (<SelectItem key={oIndex} value={opt}>{opt}</SelectItem>))}</SelectContent></Select></div></div>))}</div>
                           <div className="flex justify-between items-center"><Button variant="outline" onClick={addQuestion}>Add Another Question</Button><Button onClick={handleSaveQuiz} disabled={isSavingQuiz}>{isSavingQuiz ? 'Saving...' : 'Save Quiz'}</Button></div>
                       </CardContent>
-                  </Card>
+                    </Card>
                  </div>
               </AccordionContent>
             </Card>

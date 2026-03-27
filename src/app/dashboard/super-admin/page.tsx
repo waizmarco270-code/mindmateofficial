@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,6 +27,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 import { usePresence } from '@/hooks/use-presence';
+import { cn } from '@/lib/utils';
 
 const CREDIT_PASSWORD = "waizcredit";
 
