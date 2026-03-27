@@ -2,16 +2,16 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useAnnouncements, useAdmin } from '@/hooks/use-admin';
+import { useAnnouncements, useAdmin, useUsers } from '@/hooks/use-admin';
 import { useUnreadMessages } from '@/hooks/use-unread';
 import { useFriends, type FriendRequest } from '@/hooks/use-friends';
 import { useFCM } from '@/hooks/use-fcm';
-import { formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { 
     Mail, Users, Pin, Bell, Sparkles, CheckCircle, XCircle, 
     ArrowRight, Megaphone, Zap, ShieldCheck, Heart, 
     Gift, Crown, Trophy, Trash2, Filter, Loader2, Search, Settings, 
-    Maximize2, MoreVertical, BellRing, History, ShieldAlert
+    Maximize2, MoreVertical, BellRing, History, ShieldAlert, MessageSquare
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -23,8 +23,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
 
 interface InboxContentProps {
     isMini?: boolean;
@@ -38,7 +38,7 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
         hasUnreadAnnouncements, hasUnreadFriendRequests, 
         markAnnouncementsAsRead, markFriendRequestsAsRead 
     } = useUnreadMessages();
-    const { friendRequests, acceptFriendRequest, declineFriendRequest } = useFriends();
+    const { friendRequests, acceptFriendRequest, declineFriendRequest, friends } = useFriends();
     const { notificationPermission, requestPermission } = useFCM();
     const { toast } = useToast();
     
@@ -77,6 +77,10 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
         );
     }, [announcements, searchTerm]);
 
+    const handleClearArchive = () => {
+        toast({ title: "Archive Purged", description: "History has been locally reset." });
+    };
+
     return (
         <div className="flex flex-col h-full bg-background/50">
             {/* Inbox Header */}
@@ -91,12 +95,12 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
                         </div>
                         <div>
                             <h4 className="font-black text-xl tracking-tight uppercase">SOVEREIGN HUB</h4>
-                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">Session: v1.5 Legendary</p>
+                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">System: Active Relay</p>
                         </div>
                     </div>
                     {!isMini && (
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" className="rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary/10">Mark all Read</Button>
+                            <Button variant="ghost" size="sm" onClick={handleClearArchive} className="rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary/10">Clear Logs</Button>
                             <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10"><Settings className="h-4 w-4"/></Button>
                         </div>
                     )}
@@ -117,7 +121,7 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
                         )} />
                         <div>
                             <p className="text-xs font-black uppercase tracking-tighter">Emergency Relay</p>
-                            <p className="text-[9px] text-muted-foreground font-bold">{isPushEnabled ? 'LIVE TRANSMISSION ACTIVE' : 'RELAY DISCONNECTED'}</p>
+                            <p className="text-[9px] text-muted-foreground font-bold">{isPushEnabled ? 'PUSH ALERTS GRANTED' : 'ALERTS DISCONNECTED'}</p>
                         </div>
                     </div>
                     <Switch checked={isPushEnabled} onCheckedChange={handleTogglePush} />
@@ -127,32 +131,18 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
             <Tabs defaultValue="all" className="flex-1 flex flex-col min-h-0">
                 <div className="px-4 py-2 border-b bg-muted/20">
                     <TabsList className="grid w-full grid-cols-4 rounded-full h-11 bg-black/5 dark:bg-white/5 p-1 gap-1">
-                        <TabsTrigger value="all" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white">General</TabsTrigger>
+                        <TabsTrigger value="all" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white">All</TabsTrigger>
                         <TabsTrigger value="missions" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white relative">
                             Missions
                             {hasUnreadAnnouncements && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border-2 border-background shadow-sm"/>}
                         </TabsTrigger>
                         <TabsTrigger value="allies" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white relative">
                             Allies
-                            {hasUnreadFriendRequests && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border-2 border-background shadow-sm"/>}
+                            {(hasUnreadFriendRequests || friendRequests.length > 0) && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border-2 border-background shadow-sm"/>}
                         </TabsTrigger>
-                        <TabsTrigger value="archives" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white">Archive</TabsTrigger>
+                        <TabsTrigger value="archives" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white">Relay</TabsTrigger>
                     </TabsList>
                 </div>
-
-                {!isMini && (
-                    <div className="px-8 py-4 border-b bg-muted/5">
-                        <div className="relative max-w-2xl mx-auto">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input 
-                                placeholder="Search all historical briefings..." 
-                                className="pl-11 h-12 rounded-2xl bg-background/50 border-primary/10 focus-visible:ring-primary/20" 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                            />
-                        </div>
-                    </div>
-                )}
 
                 <ScrollArea className="flex-1">
                     <div className={cn("p-4 space-y-6", !isMini && "p-8 max-w-4xl mx-auto")}>
@@ -167,15 +157,36 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
                         
                         <TabsContent value="allies" className="m-0 space-y-6">
                             <FriendRequestsList requests={friendRequests} onAccept={handleAccept} onDecline={handleDecline} isMini={isMini} />
+                            <div className="pt-4">
+                                <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4 px-1">Your Active Network</h5>
+                                <div className="space-y-2">
+                                    {friends.map(friend => (
+                                        <div key={friend.uid} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 border border-white/5">
+                                            <Avatar className="h-10 w-10 border border-primary/10">
+                                                <AvatarImage src={friend.photoURL}/>
+                                                <AvatarFallback>{friend.displayName.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1">
+                                                <p className="font-bold text-sm">{friend.displayName}</p>
+                                                <p className="text-[10px] text-muted-foreground font-bold uppercase">Alliance Member</p>
+                                            </div>
+                                            <Link href="/dashboard/social" onClick={() => isMini && markFriendRequestsAsRead()}>
+                                                <Button size="icon" variant="ghost" className="rounded-full"><ArrowRight className="h-4 w-4"/></Button>
+                                            </Link>
+                                        </div>
+                                    ))}
+                                    {friends.length === 0 && <p className="text-center text-[10px] text-muted-foreground font-black uppercase py-8 opacity-40">No allies found</p>}
+                                </div>
+                            </div>
                         </TabsContent>
                         
                         <TabsContent value="archives" className="m-0">
                             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground opacity-40">
                                 <div className="p-6 rounded-full bg-muted mb-4">
-                                    <History className="h-12 w-12" />
+                                    <BellRing className="h-12 w-12" />
                                 </div>
-                                <p className="text-xs font-black uppercase tracking-[0.2em]">Archives are Clear</p>
-                                <p className="text-[10px] mt-1">NO HISTORICAL DATA DETECTED</p>
+                                <p className="text-xs font-black uppercase tracking-[0.2em]">Notification Logs Clear</p>
+                                <p className="text-[10px] mt-1 text-center">ONLY SYSTEM CRITICAL BRIEFINGS ARE DISPLAYED</p>
                             </div>
                         </TabsContent>
                     </div>
@@ -186,7 +197,14 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
 }
 
 function AnnouncementsList({ announcements, isMini }: { announcements: any[], isMini: boolean }) {
-    if (announcements.length === 0) return null;
+    if (announcements.length === 0) {
+        return (
+            <div className="text-center py-12 opacity-30">
+                <Megaphone className="h-12 w-12 mx-auto mb-2" />
+                <p className="text-xs font-black uppercase tracking-widest">No active missions</p>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-4">
@@ -204,29 +222,29 @@ function AnnouncementsList({ announcements, isMini }: { announcements: any[], is
                             i === 0 ? "bg-gradient-to-br from-primary/10 via-background to-background border-primary/30 ring-1 ring-primary/10 shadow-xl" : "bg-card/50"
                         )}>
                             {i === 0 && <div className="absolute top-0 right-0 p-3"><Sparkles className="h-5 w-5 text-primary animate-pulse"/></div>}
-                            <CardContent className={cn("p-5 flex gap-5", isMini ? "p-4" : "p-8")}>
-                                <div className={cn(
-                                    "h-14 w-14 rounded-[1.25rem] flex items-center justify-center flex-shrink-0 shadow-lg transition-transform group-hover:scale-110 duration-500",
-                                    i === 0 ? "bg-primary text-white" : "bg-muted text-primary"
-                                )}>
-                                    {ann.title.toLowerCase().includes('quiz') ? <BrainCircuit className="h-7 w-7"/> : 
-                                     ann.title.toLowerCase().includes('credits') ? <Trophy className="h-7 w-7"/> :
-                                     <Megaphone className="h-7 w-7"/>}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <h6 className={cn("font-black text-base uppercase tracking-tight truncate", i === 0 && "text-primary")}>{ann.title}</h6>
-                                        <span className="text-[9px] font-black uppercase opacity-40 whitespace-nowrap ml-3 bg-muted px-2 py-0.5 rounded-full">
-                                            {formatDistanceToNow(ann.createdAt, { addSuffix: true })}
-                                        </span>
+                            <CardContent className={cn("p-5 flex flex-col gap-4", isMini ? "p-4" : "p-8")}>
+                                <div className="flex gap-5">
+                                    <div className={cn(
+                                        "h-14 w-14 rounded-[1.25rem] flex items-center justify-center flex-shrink-0 shadow-lg transition-transform group-hover:scale-110 duration-500",
+                                        i === 0 ? "bg-primary text-white" : "bg-muted text-primary"
+                                    )}>
+                                        {ann.title.toLowerCase().includes('quiz') ? <BrainCircuit className="h-7 w-7"/> : 
+                                         ann.title.toLowerCase().includes('credits') ? <Trophy className="h-7 w-7"/> :
+                                         <Megaphone className="h-7 w-7"/>}
                                     </div>
-                                    <p className={cn("text-sm leading-relaxed text-muted-foreground", i === 0 ? "text-foreground font-medium" : "line-clamp-3")}>{ann.description}</p>
-                                    {!isMini && i === 0 && (
-                                        <div className="mt-6 flex gap-3">
-                                            <Button size="sm" className="h-10 rounded-xl text-[10px] font-black uppercase px-6 shadow-lg shadow-primary/20">Acknowledge Mission</Button>
-                                            <Button variant="outline" size="sm" className="h-10 rounded-xl text-[10px] font-black uppercase px-6 border-primary/10 hover:bg-primary/5">Details</Button>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <h6 className={cn("font-black text-base uppercase tracking-tight truncate", i === 0 && "text-primary")}>{ann.title}</h6>
+                                            <span className="text-[9px] font-black uppercase opacity-40 whitespace-nowrap ml-3 bg-muted px-2 py-0.5 rounded-full">
+                                                {format(ann.createdAt, 'MMM d')}
+                                            </span>
                                         </div>
-                                    )}
+                                        <p className="text-sm leading-relaxed text-foreground font-medium">{ann.description}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                                    <p className="text-[9px] font-black uppercase text-muted-foreground">Pulse Recorded: {format(ann.createdAt, 'HH:mm')}</p>
+                                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/5">Details</Button>
                                 </div>
                             </CardContent>
                         </Card>

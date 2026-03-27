@@ -24,30 +24,36 @@ import { useTheme } from 'next-themes';
 import { InboxContent } from '@/components/inbox/inbox-content';
 
 function Inbox() {
-    const { hasUnread } = useUnreadMessages();
+    const { hasUnread, markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
 
     return (
-        <Popover>
+        <Popover onOpenChange={(open) => {
+            if (open) {
+                // When opened, consider the briefings "checked"
+                markAnnouncementsAsRead();
+                markFriendRequestsAsRead();
+            }
+        }}>
             <PopoverTrigger asChild>
                 <Button
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        "relative h-12 w-12 rounded-full transition-all duration-300 group",
+                        "relative h-12 w-12 rounded-full transition-all duration-500 group",
                         hasUnread 
-                            ? "bg-yellow-400/20 text-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.4)] border-2 border-yellow-400/50" 
-                            : "hover:bg-muted text-muted-foreground"
+                            ? "bg-red-600 text-white shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-pulse" 
+                            : "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 border border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
                     )}
                 >
                     <div className="relative">
                         <Bell className={cn(
-                            "h-7 w-7 transition-all duration-300",
-                            hasUnread ? "text-yellow-400 drop-shadow-[0_0_8px_currentColor]" : "group-hover:rotate-12"
+                            "h-7 w-7 transition-all duration-500",
+                            hasUnread ? "text-white drop-shadow-[0_0_10px_white]" : "text-yellow-400"
                         )} />
                         {hasUnread && (
                             <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-background shadow-lg"></span>
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-4 w-4 bg-white border-2 border-red-600 shadow-lg"></span>
                             </span>
                         )}
                     </div>

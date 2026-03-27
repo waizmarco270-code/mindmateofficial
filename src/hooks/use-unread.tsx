@@ -30,10 +30,10 @@ interface GlobalChat {
 }
 
 interface LastReadTimestamps {
-    [chatId: string]: number; // Store timestamp as number for private chats
-    global_chat?: number; // Store timestamp for the global chat
-    announcements_inbox?: number; // For announcements
-    friend_requests_inbox?: number; // For friend requests
+    [chatId: string]: number; 
+    global_chat?: number;
+    announcements_inbox?: number;
+    friend_requests_inbox?: number;
 }
 
 interface UnreadMessagesContextType {
@@ -89,7 +89,6 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
              });
            }
        });
-       // Sort by timestamp descending
        userChats.sort((a, b) => (b.lastMessage?.timestamp.getTime() || 0) - (a.lastMessage?.timestamp.getTime() || 0));
        setChats(userChats);
     });
@@ -97,7 +96,6 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
     return () => unsubscribe();
   }, [user]);
   
-  // Listen to the latest message in the global chat
   useEffect(() => {
       const globalChatRef = collection(db, 'global_chat');
       const q = query(globalChatRef, orderBy('timestamp', 'desc'), limit(1));
@@ -136,12 +134,9 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
 
   const hasGlobalUnread = useMemo(() => {
     if (!user || !globalChat.lastMessage) return false;
-    // Don't show unread for your own messages
     if (globalChat.lastMessage.senderId === user.id) return false;
-
     const lastReadTime = lastReadTimestamps['global_chat'] || 0;
     return globalChat.lastMessage.timestamp.getTime() > lastReadTime;
-
   }, [globalChat, user, lastReadTimestamps]);
 
   const hasUnreadAnnouncements = useMemo(() => {
@@ -153,7 +148,8 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   
   const hasUnreadFriendRequests = useMemo(() => {
       if (friendsLoading || friendRequests.length === 0) return false;
-      const latestRequestTime = friendRequests[0].createdAt.getTime();
+      // Use the creation time of the first request
+      const latestRequestTime = new Date(friendRequests[0].createdAt).getTime();
       const lastCheckTime = lastReadTimestamps['friend_requests_inbox'] || 0;
       return latestRequestTime > lastCheckTime;
   }, [friendRequests, friendsLoading, lastReadTimestamps]);
