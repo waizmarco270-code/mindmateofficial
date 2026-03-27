@@ -39,7 +39,7 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
     const { messages, sendMessage, editMessage, deleteMessage, loading, hasMore, loadMore } = useChat(friend.uid);
     const { removeFriend } = useFriends();
     const { onlineUsers } = usePresence();
-    const { startCall, activeCall, acceptCall, rejectCall, endCall, callDuration } = useVoiceCall();
+    const { startCall, activeCall, acceptCall, rejectCall, endCall, callDuration, isMuted, toggleMute } = useVoiceCall();
     const { toast } = useToast();
     
     const [newMessage, setNewMessage] = useState('');
@@ -196,23 +196,65 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                         exit={{ opacity: 0, y: "100%" }}
                         className="absolute inset-0 z-50 bg-[#075e54] dark:bg-[#1f2c34] flex flex-col items-center justify-between p-8 text-white"
                     >
-                        <Avatar className="h-40 w-40 border-4 border-white/20 shadow-2xl">
-                            <AvatarImage src={activeCall.callerId === currentUser?.id ? activeCall.receiverPhoto : activeCall.callerPhoto} />
-                            <AvatarFallback className="text-4xl text-black">C</AvatarFallback>
-                        </Avatar>
-                        <div className="text-center">
-                            <h2 className="text-4xl font-black">{activeCall.callerId === currentUser?.id ? activeCall.receiverName : activeCall.callerName}</h2>
-                            <p className="text-xl font-mono mt-2">{activeCall.status === 'active' ? formatDuration(callDuration) : 'Calling...'}</p>
+                        <div className="w-full flex justify-between items-center text-white/80">
+                            <Button variant="ghost" size="icon" className="rounded-full text-white"><ArrowLeft/></Button>
+                            <div className="flex flex-col items-center">
+                                <p className="text-[10px] font-black uppercase tracking-widest mb-1">Encrypted Session</p>
+                                <div className="h-1 w-12 bg-white/20 rounded-full"/>
+                            </div>
+                            <Button variant="ghost" size="icon" className="rounded-full text-white" onClick={() => toast({title: "Multi-Legend Call", description: "Invite system coming in next briefing!"})}><UserPlus/></Button>
                         </div>
-                        <div className="flex gap-4">
+
+                        <div className="flex flex-col items-center">
+                            <div className="relative mb-6">
+                                <motion.div 
+                                    animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
+                                    transition={{ repeat: Infinity, duration: 2 }}
+                                    className="absolute -inset-4 bg-white/10 rounded-full blur-xl"
+                                />
+                                <Avatar className="h-40 w-40 border-4 border-white/20 shadow-2xl relative z-10">
+                                    <AvatarImage src={activeCall.callerId === currentUser?.id ? activeCall.receiverPhoto : activeCall.callerPhoto} />
+                                    <AvatarFallback className="text-4xl text-black">C</AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <h2 className="text-4xl font-black">{activeCall.callerId === currentUser?.id ? activeCall.receiverName : activeCall.callerName}</h2>
+                            <p className="text-xl font-mono mt-2 opacity-80">{activeCall.status === 'active' ? formatDuration(callDuration) : 'Establishing Uplink...'}</p>
+                        </div>
+
+                        <div className="flex items-center gap-8 mb-8">
+                            <div className="flex flex-col items-center gap-2">
+                                <Button 
+                                    size="icon" 
+                                    className={cn("h-16 w-16 rounded-full transition-all", isMuted ? "bg-white text-black" : "bg-white/10 text-white border border-white/20 hover:bg-white/20")} 
+                                    onClick={toggleMute}
+                                >
+                                    {isMuted ? <MicOff/> : <Mic/>}
+                                </Button>
+                                <span className="text-[10px] font-bold uppercase">{isMuted ? 'Unmute' : 'Mute'}</span>
+                            </div>
+
                             {activeCall.status === 'ringing' && activeCall.receiverId === currentUser?.id ? (
                                 <>
-                                    <Button size="icon" className="h-16 w-16 rounded-full bg-red-500" onClick={rejectCall}><PhoneOff/></Button>
-                                    <Button size="icon" className="h-16 w-16 rounded-full bg-green-500 animate-bounce" onClick={acceptCall}><Phone/></Button>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Button size="icon" className="h-20 w-20 rounded-full bg-red-500 shadow-xl shadow-red-500/20" onClick={rejectCall}><PhoneOff className="h-8 w-8"/></Button>
+                                        <span className="text-[10px] font-bold uppercase">Decline</span>
+                                    </div>
+                                    <div className="flex flex-col items-center gap-2">
+                                        <Button size="icon" className="h-20 w-20 rounded-full bg-green-500 shadow-xl shadow-green-500/20 animate-bounce" onClick={acceptCall}><Phone className="h-8 w-8"/></Button>
+                                        <span className="text-[10px] font-bold uppercase">Accept</span>
+                                    </div>
                                 </>
                             ) : (
-                                <Button size="icon" className="h-16 w-16 rounded-full bg-red-500" onClick={endCall}><PhoneOff/></Button>
+                                <div className="flex flex-col items-center gap-2">
+                                    <Button size="icon" className="h-20 w-20 rounded-full bg-red-500 shadow-xl shadow-red-500/20" onClick={endCall}><PhoneOff className="h-8 w-8"/></Button>
+                                    <span className="text-[10px] font-bold uppercase">End Call</span>
+                                </div>
                             )}
+
+                            <div className="flex flex-col items-center gap-2">
+                                <Button size="icon" className="h-16 w-16 rounded-full bg-white/10 text-white border border-white/20 hover:bg-white/20" onClick={() => toast({title: "Audio Routing", description: "Speaker mode active."})}><Volume2/></Button>
+                                <span className="text-[10px] font-bold uppercase">Speaker</span>
+                            </div>
                         </div>
                     </motion.div>
                 )}
@@ -249,33 +291,35 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                  </div>
             </header>
 
-            <ScrollArea className="flex-1" viewportRef={scrollAreaRef} onScroll={handleScroll}>
-                 <div className="p-4 space-y-4 flex flex-col min-h-full">
-                    {loading && hasMore && <div className="flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary opacity-50" /></div>}
-                    {messages.map((msg, index) => {
-                        const prevMsg = messages[index - 1];
-                        const showDate = !prevMsg || !isSameDay(msg.timestamp, prevMsg.timestamp);
-                        return (
-                            <div key={msg.id} className="flex flex-col gap-2">
-                                {showDate && (
-                                    <div className="flex justify-center my-4">
-                                        <span className="px-3 py-1 bg-black/10 dark:bg-white/10 rounded-full text-[10px] font-bold text-muted-foreground uppercase">
-                                            {format(msg.timestamp, 'MMMM d')}
-                                        </span>
-                                    </div>
-                                )}
-                                <MessageBubble 
-                                    message={msg} 
-                                    isOwn={msg.senderId === currentUser?.id} 
-                                    onReply={() => setReplyingTo(msg)}
-                                    onEdit={() => { setEditingMessage(msg); setNewMessage(msg.text); }}
-                                    onDelete={() => deleteMessage(msg.id)}
-                                />
-                            </div>
-                        );
-                    })}
-                </div>
-            </ScrollArea>
+            <div className="flex-1 min-h-0 relative flex flex-col">
+                <ScrollArea className="flex-1" viewportRef={scrollAreaRef} onScroll={handleScroll}>
+                    <div className="p-4 space-y-4 flex flex-col min-h-full">
+                        {loading && hasMore && <div className="flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary opacity-50" /></div>}
+                        {messages.map((msg, index) => {
+                            const prevMsg = messages[index - 1];
+                            const showDate = !prevMsg || !isSameDay(msg.timestamp, prevMsg.timestamp);
+                            return (
+                                <div key={msg.id} className="flex flex-col gap-2">
+                                    {showDate && (
+                                        <div className="flex justify-center my-4">
+                                            <span className="px-3 py-1 bg-black/10 dark:bg-white/10 rounded-full text-[10px] font-bold text-muted-foreground uppercase">
+                                                {format(msg.timestamp, 'MMMM d')}
+                                            </span>
+                                        </div>
+                                    )}
+                                    <MessageBubble 
+                                        message={msg} 
+                                        isOwn={msg.senderId === currentUser?.id} 
+                                        onReply={() => setReplyingTo(msg)}
+                                        onEdit={() => { setEditingMessage(msg); setNewMessage(msg.text); }}
+                                        onDelete={() => deleteMessage(msg.id)}
+                                    />
+                                </div>
+                            );
+                        })}
+                    </div>
+                </ScrollArea>
+            </div>
 
             <footer className="flex-shrink-0 p-3 bg-[#ededed] dark:bg-[#1f2c34] border-t dark:border-white/5 relative">
                 {/* Reply/Edit Preview */}

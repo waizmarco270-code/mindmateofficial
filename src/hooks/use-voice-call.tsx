@@ -17,6 +17,8 @@ interface VoiceCallContextType {
     localStream: MediaStream | null;
     remoteStream: MediaStream | null;
     callDuration: number;
+    isMuted: boolean;
+    toggleMute: () => void;
 }
 
 interface CallSession {
@@ -50,6 +52,7 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     const [callDuration, setCallDuration] = useState(0);
+    const [isMuted, setIsMuted] = useState(false);
     
     const pc = useRef<RTCPeerConnection | null>(null);
     const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
@@ -108,6 +111,7 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         setLocalStream(null);
         setRemoteStream(null);
         setActiveCall(null);
+        setIsMuted(false);
         if (pc.current) {
             pc.current.close();
             pc.current = null;
@@ -236,8 +240,18 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         cleanup();
     };
 
+    const toggleMute = () => {
+        if (localStream) {
+            const audioTrack = localStream.getAudioTracks()[0];
+            if (audioTrack) {
+                audioTrack.enabled = !audioTrack.enabled;
+                setIsMuted(!audioTrack.enabled);
+            }
+        }
+    };
+
     return (
-        <VoiceCallContext.Provider value={{ activeCall, startCall, acceptCall, rejectCall, endCall, localStream, remoteStream, callDuration }}>
+        <VoiceCallContext.Provider value={{ activeCall, startCall, acceptCall, rejectCall, endCall, localStream, remoteStream, callDuration, isMuted, toggleMute }}>
             {children}
         </VoiceCallContext.Provider>
     );
