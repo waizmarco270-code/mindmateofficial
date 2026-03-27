@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff, Fingerprint, Sun, Moon } from 'lucide-react';
+import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff, Fingerprint, Sun, Moon, Monitor, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
@@ -22,14 +22,6 @@ import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
 
-const availableThemes: {id: AppThemeId, name: string, bg: string, primary: string}[] = [
-    { id: 'light', name: 'Light', bg: 'bg-white', primary: 'bg-slate-900' },
-    { id: 'dark', name: 'Dark', bg: 'bg-slate-900', primary: 'bg-slate-50' },
-    { id: 'emerald-dream', name: 'Emerald', bg: 'bg-emerald-50', primary: 'bg-emerald-600' },
-    { id: 'solar-flare', name: 'Solar', bg: 'bg-gray-900', primary: 'bg-orange-500' },
-    { id: 'synthwave-sunset', name: 'Synthwave', bg: 'bg-indigo-950', primary: 'bg-fuchsia-500' },
-];
-
 function Inbox() {
     const { announcements } = useAnnouncements();
     const { 
@@ -38,7 +30,6 @@ function Inbox() {
     } = useUnreadMessages();
     const { friendRequests, acceptFriendRequest, declineFriendRequest } = useFriends();
     const { pinnedPage, setPinnedPage } = usePinnedPage();
-    const { theme, setTheme } = useTheme();
     const pathname = usePathname();
     const { toast } = useToast();
 
@@ -96,7 +87,7 @@ function Inbox() {
                     <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Manage Notifications & Environment</p>
                 </div>
                 <Tabs defaultValue="announcements" className="w-full">
-                    <TabsList className="w-full grid grid-cols-4 rounded-none h-12 bg-muted/30">
+                    <TabsList className="w-full grid grid-cols-3 rounded-none h-12 bg-muted/30">
                         <TabsTrigger value="announcements" className="relative text-[10px] sm:text-xs">
                             Inbox
                              {hasUnreadAnnouncements && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-destructive animate-pulse"/>}
@@ -106,7 +97,6 @@ function Inbox() {
                             {hasUnreadFriendRequests && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-destructive animate-pulse"/>}
                         </TabsTrigger>
                         <TabsTrigger value="pinned" className="text-[10px] sm:text-xs">Pinned</TabsTrigger>
-                        <TabsTrigger value="themes" className="text-[10px] sm:text-xs">Themes</TabsTrigger>
                     </TabsList>
                     <ScrollArea className="h-[350px]">
                         <TabsContent value="announcements" className="p-4 space-y-4 m-0">
@@ -158,27 +148,6 @@ function Inbox() {
                                 </Button>
                             </div>
                         </TabsContent>
-
-                        <TabsContent value="themes" className="p-4 m-0 space-y-4">
-                            <div className="grid grid-cols-1 gap-2">
-                                {availableThemes.map(t => (
-                                    <button 
-                                        key={t.id} 
-                                        onClick={() => { setTheme(t.id); toast({ title: `System Refreshed`, description: `${t.name} theme applied.` }); }}
-                                        className={cn(
-                                            "flex items-center gap-3 p-3 rounded-xl border-2 transition-all",
-                                            theme === t.id ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"
-                                        )}
-                                    >
-                                        <div className={cn("h-8 w-12 rounded-lg flex items-center justify-end p-1 shadow-inner", t.bg)}>
-                                            <div className={cn("h-3 w-3 rounded-full", t.primary)}></div>
-                                        </div>
-                                        <span className="font-bold text-sm flex-1 text-left">{t.name}</span>
-                                        {theme === t.id && <CheckCircle className="h-4 w-4 text-primary"/>}
-                                    </button>
-                                ))}
-                            </div>
-                        </TabsContent>
                     </ScrollArea>
                 </Tabs>
             </PopoverContent>
@@ -189,13 +158,13 @@ function Inbox() {
 export default function Header() {
   const { setOpenMobile } = useSidebar();
   const { user, isLoaded } = useUser();
-  const { theme, setTheme } = useTheme();
+  const { setTheme } = useTheme();
   const { currentUserData, isAdmin, isSuperAdmin } = useAdmin();
+  const { toast } = useToast();
   
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
   const walletBalance = currentUserData?.walletBalance ?? 0;
-  const isCoDev = currentUserData?.isCoDev || false;
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -222,7 +191,6 @@ export default function Header() {
             {isLoaded && user && (
             <>
                 <div className="flex items-center gap-2">
-                    {/* Integrated Credits & Wallet Popover */}
                     <Popover>
                         <PopoverTrigger asChild>
                             <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary hover:bg-secondary/80 px-3 py-1.5 text-sm font-bold transition-all border border-transparent hover:border-primary/20">
@@ -267,22 +235,43 @@ export default function Header() {
                 
                 <Inbox />
 
-                {/* Optimized Profile Dropdown with App Tools */}
-                <UserButton afterSignOutUrl="/">
+                <UserButton 
+                    afterSignOutUrl="/"
+                    appearance={{
+                        elements: {
+                            userButtonAvatarBox: "h-12 w-12 border-2 border-primary shadow-[0_0_15px_rgba(139,92,246,0.5)] animate-gold-shine",
+                            userButtonTrigger: "focus:shadow-none hover:scale-105 transition-transform"
+                        }
+                    }}
+                >
                     <UserButton.MenuItems>
                         <UserButton.Action 
-                            label={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"} 
-                            labelIcon={theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />} 
-                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+                            label="Dark Mode" 
+                            labelIcon={<Moon className="h-4 w-4 text-purple-400" />} 
+                            onClick={() => { setTheme('dark'); toast({ title: "Theme Switched", description: "Dark mode activated." }); }} 
+                        />
+                        <UserButton.Action 
+                            label="Light Mode" 
+                            labelIcon={<Sun className="h-4 w-4 text-amber-400" />} 
+                            onClick={() => { setTheme('light'); toast({ title: "Theme Switched", description: "Light mode activated." }); }} 
+                        />
+                        <UserButton.Action 
+                            label="System Mode" 
+                            labelIcon={<Monitor className="h-4 w-4 text-blue-400" />} 
+                            onClick={() => { setTheme('system'); toast({ title: "Theme Switched", description: "Syncing with system settings." }); }} 
                         />
                         <UserButton.Separator />
                         <UserButton.Link label="Account Settings" href="/dashboard/settings" labelIcon={<Settings className="h-4 w-4"/>} />
                         <UserButton.Link label="Help & Support" href="/dashboard/help" labelIcon={<LifeBuoy className="h-4 w-4"/>} />
+                        
                         {(isAdmin || isSuperAdmin) && (
-                            <UserButton.Link label="Admin Panel" href="/dashboard/admin" labelIcon={<ShieldCheck className="h-4 w-4 text-red-500"/>} />
+                            <>
+                                <UserButton.Separator />
+                                <UserButton.Link label="Admin Panel" href="/dashboard/admin" labelIcon={<ShieldCheck className="h-4 w-4 text-green-500"/>} />
+                            </>
                         )}
-                        {(isCoDev || isSuperAdmin) && (
-                            <UserButton.Link label="Dev Panel" href="/dashboard/dev" labelIcon={<Fingerprint className="h-4 w-4 text-rose-500"/>} />
+                        {(isSuperAdmin || currentUserData?.isCoDev) && (
+                            <UserButton.Link label="Dev & Payments" href="/dashboard/dev" labelIcon={<Fingerprint className="h-4 w-4 text-rose-500"/>} />
                         )}
                         {isSuperAdmin && (
                             <UserButton.Link label="Super Admin" href="/dashboard/super-admin" labelIcon={<KeyRound className="h-4 w-4 text-amber-500"/>} />
