@@ -33,28 +33,27 @@ function Inbox() {
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        "relative h-12 w-12 rounded-full transition-all duration-500 group",
+                        "relative h-12 w-12 rounded-full transition-all duration-300 group",
                         hasUnread 
-                            ? "bg-yellow-400/20 text-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] border-2 border-yellow-400/50" 
+                            ? "bg-yellow-400/20 text-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.4)] border-2 border-yellow-400/50" 
                             : "hover:bg-muted text-muted-foreground"
                     )}
                 >
                     <div className="relative">
-                        {hasUnread ? (
-                            <BellRing className="h-7 w-7 animate-[bounce_2s_infinite] drop-shadow-[0_0_8px_currentColor]" />
-                        ) : (
-                            <Bell className="h-7 w-7 group-hover:rotate-12 transition-transform" />
-                        )}
+                        <Bell className={cn(
+                            "h-7 w-7 transition-all duration-300",
+                            hasUnread ? "text-yellow-400 drop-shadow-[0_0_8px_currentColor]" : "group-hover:rotate-12"
+                        )} />
                         {hasUnread && (
                             <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-background shadow-sm"></span>
+                                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-background shadow-lg"></span>
                             </span>
                         )}
                     </div>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[22rem] sm:w-[26rem] p-0 overflow-hidden border-yellow-400/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-3xl">
+            <PopoverContent className="w-[22rem] sm:w-[26rem] p-0 overflow-hidden border-yellow-400/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-[2.5rem]">
                 <InboxContent isMini />
             </PopoverContent>
         </Popover>
