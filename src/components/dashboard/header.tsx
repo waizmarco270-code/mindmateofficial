@@ -1,35 +1,28 @@
 
 'use client';
 
-import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff, Fingerprint, Sun, Moon, Monitor, User as UserIcon, LogOut, BellRing, Bell } from 'lucide-react';
+import { Medal, Crown, ShieldCheck, Settings, LifeBuoy, KeyRound, Check, X, PanelLeft, ShoppingCart, User as UserIcon, LogOut, Bell, Sun, Moon, Monitor, CreditCard, Wallet, Fingerprint } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
-import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
+import { useUsers, useAdmin } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 import { useUser, useClerk, SignedOut, SignInButton, SignUpButton, SignedIn } from '@clerk/nextjs';
-import { ScrollArea } from '../ui/scroll-area';
-import { formatDistanceToNow } from 'date-fns';
-import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import { useUnreadMessages } from '@/hooks/use-unread';
-import { Badge } from '../ui/badge';
-import { usePinnedPage } from '@/hooks/use-pinned-page';
-import { usePathname } from 'next/navigation';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { useFriends, type FriendRequest } from '@/hooks/use-friends';
-import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
-import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
+import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { InboxContent } from '@/components/inbox/inbox-content';
 
 function Inbox() {
-    const { hasUnread, markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
+    const { hasInboxUnread, markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
 
     return (
         <Popover onOpenChange={(open) => {
             if (open) {
-                // When opened, consider the briefings "checked"
+                // Mark as read immediately when popover opens
                 markAnnouncementsAsRead();
                 markFriendRequestsAsRead();
             }
@@ -40,7 +33,7 @@ function Inbox() {
                     size="icon"
                     className={cn(
                         "relative h-12 w-12 rounded-full transition-all duration-500 group",
-                        hasUnread 
+                        hasInboxUnread 
                             ? "bg-red-600 text-white shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-pulse" 
                             : "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 border border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
                     )}
@@ -48,9 +41,9 @@ function Inbox() {
                     <div className="relative">
                         <Bell className={cn(
                             "h-7 w-7 transition-all duration-500",
-                            hasUnread ? "text-white drop-shadow-[0_0_10px_white]" : "text-yellow-400"
+                            hasInboxUnread ? "text-white drop-shadow-[0_0_10px_white]" : "text-yellow-400"
                         )} />
-                        {hasUnread && (
+                        {hasInboxUnread && (
                             <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-4 w-4 bg-white border-2 border-red-600 shadow-lg"></span>
@@ -113,7 +106,7 @@ function ProfileHub() {
     const { user } = useUser();
     const { signOut } = useClerk();
     const { theme, setTheme } = useTheme();
-    const { currentUserData, isSuperAdmin, isAdmin } = useAdmin();
+    const { currentUserData } = useAdmin();
     const { toast } = useToast();
 
     if (!user) return null;
@@ -188,7 +181,7 @@ function ProfileHub() {
 
 export default function Header() {
   const { setOpenMobile } = useSidebar();
-  const { currentUserData } = useAdmin();
+  const { currentUserData } = useUsers();
   
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;

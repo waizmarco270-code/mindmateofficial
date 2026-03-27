@@ -40,6 +40,7 @@ interface UnreadMessagesContextType {
   unreadChats: Set<string>;
   chatsMetadata: ChatMetadata[];
   hasUnread: boolean;
+  hasInboxUnread: boolean; // Specifically for Announcements & Friend Requests
   hasUnreadFrom: (friendId: string) => boolean;
   markAsRead: (friendId: string) => void;
   hasGlobalUnread: boolean;
@@ -148,12 +149,14 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   
   const hasUnreadFriendRequests = useMemo(() => {
       if (friendsLoading || friendRequests.length === 0) return false;
-      // Use the creation time of the first request
       const latestRequestTime = new Date(friendRequests[0].createdAt).getTime();
       const lastCheckTime = lastReadTimestamps['friend_requests_inbox'] || 0;
       return latestRequestTime > lastCheckTime;
   }, [friendRequests, friendsLoading, lastReadTimestamps]);
 
+  const hasInboxUnread = useMemo(() => {
+      return hasUnreadAnnouncements || hasUnreadFriendRequests;
+  }, [hasUnreadAnnouncements, hasUnreadFriendRequests]);
 
   const markAsRead = useCallback((friendId: string) => {
     if (!user) return;
@@ -195,7 +198,8 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   const value = {
     unreadChats,
     chatsMetadata: chats,
-    hasUnread: unreadChats.size > 0 || hasGlobalUnread || hasUnreadAnnouncements || hasUnreadFriendRequests,
+    hasUnread: unreadChats.size > 0 || hasGlobalUnread || hasInboxUnread,
+    hasInboxUnread,
     hasUnreadFrom,
     markAsRead,
     hasGlobalUnread,

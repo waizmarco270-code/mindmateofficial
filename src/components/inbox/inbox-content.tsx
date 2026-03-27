@@ -2,24 +2,21 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useAnnouncements, useAdmin, useUsers } from '@/hooks/use-admin';
+import { useAnnouncements, useAdmin } from '@/hooks/use-admin';
 import { useUnreadMessages } from '@/hooks/use-unread';
 import { useFriends, type FriendRequest } from '@/hooks/use-friends';
 import { useFCM } from '@/hooks/use-fcm';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { 
-    Mail, Users, Pin, Bell, Sparkles, CheckCircle, XCircle, 
-    ArrowRight, Megaphone, Zap, ShieldCheck, Heart, 
-    Gift, Crown, Trophy, Trash2, Filter, Loader2, Search, Settings, 
-    Maximize2, MoreVertical, BellRing, History, ShieldAlert, MessageSquare
+    Mail, ArrowRight, Megaphone, ShieldCheck, 
+    Gift, Trophy, Settings, Maximize2, BellRing, History, 
+    MessageSquare, CheckCircle, XCircle, Sparkles, BrainCircuit
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -77,10 +74,6 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
         );
     }, [announcements, searchTerm]);
 
-    const handleClearArchive = () => {
-        toast({ title: "Archive Purged", description: "History has been locally reset." });
-    };
-
     return (
         <div className="flex flex-col h-full bg-background/50">
             {/* Inbox Header */}
@@ -100,7 +93,7 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
                     </div>
                     {!isMini && (
                         <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={handleClearArchive} className="rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary/10">Clear Logs</Button>
+                            <Button variant="ghost" size="sm" onClick={() => toast({title: "Archive Purged"})} className="rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary/10">Clear Logs</Button>
                             <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10"><Settings className="h-4 w-4"/></Button>
                         </div>
                     )}
@@ -239,7 +232,8 @@ function AnnouncementsList({ announcements, isMini }: { announcements: any[], is
                                                 {format(ann.createdAt, 'MMM d')}
                                             </span>
                                         </div>
-                                        <p className="text-sm leading-relaxed text-foreground font-medium">{ann.description}</p>
+                                        {/* Display Full Description as per User Blueprint */}
+                                        <p className="text-sm leading-relaxed text-foreground font-medium whitespace-pre-wrap">{ann.description}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between pt-2 border-t border-white/5">
@@ -275,7 +269,7 @@ function FriendRequestsList({ requests, onAccept, onDecline, isMini }: { request
                         <div className="flex-1 text-center sm:text-left min-w-0">
                             <p className="font-black text-lg uppercase tracking-tight truncate">{req.sender.displayName}</p>
                             <p className="text-[10px] text-emerald-600/80 font-black uppercase tracking-[0.1em] mt-1 flex items-center justify-center sm:justify-start gap-2">
-                                <ShieldAlert className="h-3 w-3"/> NEW ALLIANCE REQUESTED
+                                <CheckCircle className="h-3 w-3"/> NEW ALLIANCE REQUESTED
                             </p>
                         </div>
                         <div className="flex items-center gap-3 w-full sm:w-auto">

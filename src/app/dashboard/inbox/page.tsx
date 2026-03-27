@@ -1,14 +1,24 @@
 
 'use client';
 
+import { useEffect } from 'react';
 import { InboxContent } from '@/components/inbox/inbox-content';
 import { Card } from '@/components/ui/card';
 import { motion } from 'framer-motion';
 import { ArrowLeft, BellRing } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useUnreadMessages } from '@/hooks/use-unread';
 
 export default function InboxPage() {
+    const { markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
+
+    useEffect(() => {
+        // Auto-mark as read when visiting the dedicated page
+        markAnnouncementsAsRead();
+        markFriendRequestsAsRead();
+    }, [markAnnouncementsAsRead, markFriendRequestsAsRead]);
+
     return (
         <div className="space-y-8 max-w-6xl mx-auto pb-20">
             <div className="flex flex-col md:flex-row justify-between items-start gap-4">
