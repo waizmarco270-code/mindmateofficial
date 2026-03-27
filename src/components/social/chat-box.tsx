@@ -10,7 +10,7 @@ import {
     Send, MoreVertical, X, Trash2, UserX, ArrowLeft, 
     ShieldCheck, Phone, PhoneOff, Mic, MicOff, 
     Check, CheckCheck, UserPlus, Clock, Paperclip, 
-    Edit, Copy, Reply, Loader2, Play, Pause
+    Edit, Copy, Reply, Loader2, Play, Pause, Volume2, VolumeX
 } from 'lucide-react';
 import { User, useUsers } from '@/hooks/use-admin';
 import { useChat, Message } from '@/hooks/use-chat';
@@ -186,8 +186,8 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
     };
 
     return (
-        <Card className="h-full flex flex-col relative overflow-hidden bg-whatsapp-style-bg border-none rounded-none md:rounded-3xl">
-            {/* Call Overlay Integrated from previous logic */}
+        <Card className="h-full max-h-full flex flex-col relative overflow-hidden bg-whatsapp-style-bg border-none rounded-none md:rounded-3xl">
+            {/* Call Overlay */}
             <AnimatePresence>
                 {activeCall && (
                     <motion.div 
@@ -197,7 +197,7 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                         className="absolute inset-0 z-50 bg-[#075e54] dark:bg-[#1f2c34] flex flex-col items-center justify-between p-8 text-white"
                     >
                         <div className="w-full flex justify-between items-center text-white/80">
-                            <Button variant="ghost" size="icon" className="rounded-full text-white"><ArrowLeft/></Button>
+                            <Button variant="ghost" size="icon" className="rounded-full text-white" onClick={onClose}><ArrowLeft/></Button>
                             <div className="flex flex-col items-center">
                                 <p className="text-[10px] font-black uppercase tracking-widest mb-1">Encrypted Session</p>
                                 <div className="h-1 w-12 bg-white/20 rounded-full"/>
@@ -217,7 +217,7 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                                     <AvatarFallback className="text-4xl text-black">C</AvatarFallback>
                                 </Avatar>
                             </div>
-                            <h2 className="text-4xl font-black">{activeCall.callerId === currentUser?.id ? activeCall.receiverName : activeCall.callerName}</h2>
+                            <h2 className="text-4xl font-black text-center">{activeCall.callerId === currentUser?.id ? activeCall.receiverName : activeCall.callerName}</h2>
                             <p className="text-xl font-mono mt-2 opacity-80">{activeCall.status === 'active' ? formatDuration(callDuration) : 'Establishing Uplink...'}</p>
                         </div>
 
@@ -291,34 +291,37 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                  </div>
             </header>
 
-            <div className="flex-1 min-h-0 relative flex flex-col">
-                <ScrollArea className="flex-1" viewportRef={scrollAreaRef} onScroll={handleScroll}>
-                    <div className="p-4 space-y-4 flex flex-col min-h-full">
-                        {loading && hasMore && <div className="flex justify-center"><Loader2 className="h-6 w-6 animate-spin text-primary opacity-50" /></div>}
-                        {messages.map((msg, index) => {
-                            const prevMsg = messages[index - 1];
-                            const showDate = !prevMsg || !isSameDay(msg.timestamp, prevMsg.timestamp);
-                            return (
-                                <div key={msg.id} className="flex flex-col gap-2">
-                                    {showDate && (
-                                        <div className="flex justify-center my-4">
-                                            <span className="px-3 py-1 bg-black/10 dark:bg-white/10 rounded-full text-[10px] font-bold text-muted-foreground uppercase">
-                                                {format(msg.timestamp, 'MMMM d')}
-                                            </span>
-                                        </div>
-                                    )}
-                                    <MessageBubble 
-                                        message={msg} 
-                                        isOwn={msg.senderId === currentUser?.id} 
-                                        onReply={() => setReplyingTo(msg)}
-                                        onEdit={() => { setEditingMessage(msg); setNewMessage(msg.text); }}
-                                        onDelete={() => deleteMessage(msg.id)}
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
-                </ScrollArea>
+            {/* MESSAGE AREA - Fixed for Desktop with native scroll */}
+            <div 
+                className="flex-1 overflow-y-auto relative bg-whatsapp-style-bg" 
+                ref={scrollAreaRef}
+                onScroll={handleScroll}
+            >
+                <div className="p-4 space-y-4 flex flex-col min-h-full">
+                    {loading && hasMore && <div className="flex justify-center p-4"><Loader2 className="h-6 w-6 animate-spin text-primary opacity-50" /></div>}
+                    {messages.map((msg, index) => {
+                        const prevMsg = messages[index - 1];
+                        const showDate = !prevMsg || !isSameDay(msg.timestamp, prevMsg.timestamp);
+                        return (
+                            <div key={msg.id} className="flex flex-col gap-2">
+                                {showDate && (
+                                    <div className="flex justify-center my-4">
+                                        <span className="px-3 py-1 bg-black/10 dark:bg-white/10 rounded-full text-[10px] font-bold text-muted-foreground uppercase">
+                                            {format(msg.timestamp, 'MMMM d')}
+                                        </span>
+                                    </div>
+                                )}
+                                <MessageBubble 
+                                    message={msg} 
+                                    isOwn={msg.senderId === currentUser?.id} 
+                                    onReply={() => setReplyingTo(msg)}
+                                    onEdit={() => { setEditingMessage(msg); setNewMessage(msg.text); }}
+                                    onDelete={() => deleteMessage(msg.id)}
+                                />
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             <footer className="flex-shrink-0 p-3 bg-[#ededed] dark:bg-[#1f2c34] border-t dark:border-white/5 relative">
