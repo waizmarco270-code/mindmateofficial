@@ -1,3 +1,4 @@
+
 'use server';
 
 import Razorpay from 'razorpay';
@@ -5,9 +6,9 @@ import crypto from 'crypto';
 import { db } from '@/lib/firebase';
 import { doc, updateDoc, increment, arrayUnion } from 'firebase/firestore';
 
-// Environment variables with fallback for dev testing
-const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || 'rzp_test_SVrJPgT8gQO914';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'l1FBgO22yrz2eAwXDrpj7q1U';
+// Environment variables should be set in Vercel/Hosting provider
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID;
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
 /**
  * Creates a Razorpay Order
@@ -15,7 +16,8 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || 'l1FBgO22yrz2eAwX
 export async function createRazorpayOrder(amount: number, notes: { userId: string; packName: string; credits: number }) {
   try {
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
-        throw new Error("Razorpay configuration is missing on the server.");
+        console.error("CRITICAL: Razorpay keys are missing in environment variables.");
+        throw new Error("Payment system configuration is missing. Please contact admin.");
     }
 
     const razorpay = new Razorpay({
@@ -26,7 +28,7 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
     const options = {
       amount: Math.round(amount * 100), // Razorpay works in paise
       currency: 'INR',
-      receipt: `receipt_${Date.now()}`,
+      receipt: `rcpt_${Date.now()}_${notes.userId.slice(-5)}`,
       notes: {
         userId: notes.userId,
         packName: notes.packName,
@@ -35,7 +37,8 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
     };
 
     const order = await razorpay.orders.create(options);
-    if (!order) throw new Error("Order creation returned null.");
+    
+    if (!order) throw new Error("Order creation failed on gateway.");
     
     return {
       id: order.id,
@@ -43,9 +46,9 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
       currency: order.currency,
     };
   } catch (error: any) {
-    console.error('CRITICAL: Razorpay Order Failed:', error);
-    // Re-throw a cleaner error for the UI
-    throw new Error(error.description || error.message || 'Payment gateway connection failed. Please check your internet or try again later.');
+    console.error('RAZORPAY_ORDER_ERROR:', error);
+    // Return a plain object to avoid serialization issues
+    throw new Error(error.message || 'Failed to connect to payment gateway.');
   }
 }
 
@@ -62,6 +65,8 @@ export async function verifyRazorpayPayment(
   razorpay_signature: string
 ) {
   try {
+    if (!RAZORPAY_KEY_SECRET) throw new Error("Verification failed: Secret missing.");
+
     const text = `${razorpay_order_id}|${razorpay_payment_id}`;
     const generated_signature = crypto
       .createHmac('sha256', RAZORPAY_KEY_SECRET)
@@ -87,7 +92,7 @@ export async function verifyRazorpayPayment(
 
     return { success: true };
   } catch (error: any) {
-    console.error('Payment verification failed:', error);
+    console.error('VERIFICATION_ERROR:', error);
     return { success: false, error: error.message };
   }
 }
