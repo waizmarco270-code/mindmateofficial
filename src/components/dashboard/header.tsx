@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff } from 'lucide-react';
+import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff, Fingerprint, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
@@ -189,6 +189,7 @@ function Inbox() {
 export default function Header() {
   const { setOpenMobile } = useSidebar();
   const { user, isLoaded } = useUser();
+  const { theme, setTheme } = useTheme();
   const { currentUserData, isAdmin, isSuperAdmin } = useAdmin();
   
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
@@ -269,6 +270,12 @@ export default function Header() {
                 {/* Optimized Profile Dropdown with App Tools */}
                 <UserButton afterSignOutUrl="/">
                     <UserButton.MenuItems>
+                        <UserButton.Action 
+                            label={theme === 'dark' ? "Switch to Light Mode" : "Switch to Dark Mode"} 
+                            labelIcon={theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />} 
+                            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} 
+                        />
+                        <UserButton.Separator />
                         <UserButton.Link label="Account Settings" href="/dashboard/settings" labelIcon={<Settings className="h-4 w-4"/>} />
                         <UserButton.Link label="Help & Support" href="/dashboard/help" labelIcon={<LifeBuoy className="h-4 w-4"/>} />
                         {(isAdmin || isSuperAdmin) && (
