@@ -49,7 +49,6 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     
     const pc = useRef<RTCPeerConnection | null>(null);
-    const callUnsub = useRef<(() => void) | null>(null);
 
     // Listen for incoming calls
     useEffect(() => {
@@ -70,22 +69,38 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         return () => unsubscribe();
     }, [user]);
 
+    const cleanup = useCallback(() => {
+        localStream?.getTracks().forEach(t => t.stop());
+        setLocalStream(null);
+        setRemoteStream(null);
+        setActiveCall(null);
+        if (pc.current) {
+            pc.current.close();
+            pc.current = null;
+        }
+    }, [localStream]);
+
     const setupPC = useCallback(async () => {
         pc.current = new RTCPeerConnection(servers);
         
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
-        setLocalStream(stream);
-        
-        stream.getTracks().forEach((track) => {
-            pc.current?.addTrack(track, stream);
-        });
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+            setLocalStream(stream);
+            
+            stream.getTracks().forEach((track) => {
+                pc.current?.addTrack(track, stream);
+            });
 
-        pc.current.ontrack = (event) => {
-            setRemoteStream(event.streams[0]);
-        };
+            pc.current.ontrack = (event) => {
+                setRemoteStream(event.streams[0]);
+            };
 
-        return stream;
-    }, []);
+            return stream;
+        } catch (e) {
+            toast({ variant: 'destructive', title: "Microphone Access Denied", description: "Please enable microphone permissions to use voice calls." });
+            throw e;
+        }
+    }, [toast]);
 
     const startCall = async (targetUser: User) => {
         if (!user) return;
@@ -144,11 +159,11 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
     };
 
     const acceptCall = async () => {
-        if (!activeCall || !pc.current) {
-            await setupPC();
-        }
+        if (!activeCall) return;
         
-        const callDoc = doc(db, 'calls', activeCall!.id);
+        await setupPC();
+        
+        const callDoc = doc(db, 'calls', activeCall.id);
         const candidatesRef = collection(callDoc, 'candidates');
 
         pc.current!.onicecandidate = (event) => {
@@ -193,15 +208,6 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         if (!activeCall) return;
         await updateDoc(doc(db, 'calls', activeCall.id), { status: 'ended' });
         cleanup();
-    };
-
-    const cleanup = () => {
-        localStream?.getTracks().forEach(t => t.stop());
-        setLocalStream(null);
-        setRemoteStream(null);
-        setActiveCall(null);
-        pc.current?.close();
-        pc.current = null;
     };
 
     return (

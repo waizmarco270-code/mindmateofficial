@@ -55,11 +55,11 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
             const friend = friendMap.get(uid);
             const meta = chatsMetadata.find(c => c.friendId === uid);
             return {
-                user: friend!,
+                user: friend,
                 meta: meta || null,
                 isUnread: meta ? unreadChats.has(meta.id) : false
             }
-        }).sort((a, b) => {
+        }).filter(item => item.user !== undefined).sort((a, b) => {
             const timeA = a.meta?.lastMessage?.timestamp.getTime() || 0;
             const timeB = b.meta?.lastMessage?.timestamp.getTime() || 0;
             return timeB - timeA;
@@ -150,6 +150,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                                         <p className="text-[10px] text-center mt-1">Start by discovering new allies</p>
                                     </div>
                                 ) : inboxList.map(({ user, meta, isUnread }) => {
+                                    if (!user) return null;
                                     const isOnline = onlineUsers.some(u => u.uid === user.uid);
                                     const isActive = selectedFriendId === user.uid;
                                     

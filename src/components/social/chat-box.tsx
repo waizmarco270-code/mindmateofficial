@@ -21,6 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { usePresence } from '@/hooks/use-presence';
 import { useVoiceCall } from '@/hooks/use-voice-call';
 import { motion, AnimatePresence } from 'framer-motion';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 interface ChatBoxProps {
     friend: User;
@@ -32,20 +34,47 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
     const { messages, sendMessage, loading } = useChat(friend.uid);
     const { removeFriend } = useFriends();
     const { onlineUsers } = usePresence();
-    const { startCall, activeCall, acceptCall, rejectCall, endCall, localStream, remoteStream } = useVoiceCall();
+    const { startCall, activeCall, acceptCall, rejectCall, endCall } = useVoiceCall();
     
     const [newMessage, setNewMessage] = useState('');
-    const [isTyping, setIsTyping] = useState(false);
+    const [isFriendTyping, setIsFriendTyping] = useState(false);
     const scrollAreaRef = useRef<HTMLDivElement>(null);
 
     const isFriendOnline = onlineUsers.some(u => u.uid === friend.uid);
+
+    // Typing Indicator Logic
+    useEffect(() => {
+        if (!currentUser || !friend.uid) return;
+        const chatId = [currentUser.id, friend.uid].sort().join('_');
+        const typingRef = doc(db, 'typing_status', chatId);
+
+        const unsubscribe = onSnapshot(typingRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                const isTyping = data[friend.uid]?.isTyping && (Date.now() - data[friend.uid]?.timestamp < 3000);
+                setIsFriendTyping(!!isTyping);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [currentUser, friend.uid]);
 
     const handleSendMessage = (e: React.FormEvent) => {
         e.preventDefault();
         if (newMessage.trim() && currentUser) {
             sendMessage(newMessage);
             setNewMessage('');
+            updateTypingStatus(false);
         }
+    };
+
+    const updateTypingStatus = async (isTyping: boolean) => {
+        if (!currentUser || !friend.uid) return;
+        const chatId = [currentUser.id, friend.uid].sort().join('_');
+        const typingRef = doc(db, 'typing_status', chatId);
+        await setDoc(typingRef, {
+            [currentUser.id]: { isTyping, timestamp: Date.now() }
+        }, { merge: true });
     };
 
     return (
@@ -117,8 +146,12 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                     </div>
                     <div className="grid gap-0.5">
                         <p className="font-semibold">{friend.displayName}</p>
-                        {isFriendOnline && (
+                        {isFriendTyping ? (
+                            <p className="text-xs text-primary font-bold animate-pulse">Typing...</p>
+                        ) : isFriendOnline ? (
                             <p className="text-xs text-green-500 font-medium">Online</p>
+                        ) : (
+                            <p className="text-xs text-muted-foreground">Offline</p>
                         )}
                     </div>
                  </div>
@@ -170,7 +203,11 @@ export function ChatBox({ friend, onClose }: ChatBoxProps) {
                 <form onSubmit={handleSendMessage} className="flex items-center w-full gap-2">
                     <Input
                         value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
+                        onChange={(e) => {
+                            setNewMessage(e.target.value);
+                            updateTypingStatus(e.target.value.length > 0);
+                        }}
+                        onBlur={() => updateTypingStatus(false)}
                         placeholder="Type a message..."
                         className="flex-1 rounded-full"
                     />
