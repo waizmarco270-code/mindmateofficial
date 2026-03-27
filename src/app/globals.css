@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -240,7 +239,7 @@
     color: #ffffff;
     border: 1px solid #7fdbff;
     text-shadow: 0 0 6px rgba(127, 219, 255, 0.7);
-    animation: gm-shimmer 4s ease infinite;
+    animation: vip-shimmer 4s ease infinite;
   }
   
   .challenger-badge {
@@ -250,7 +249,7 @@
     color: #ffffff;
     border: 1px solid #f7971e;
     text-shadow: 0 0 5px rgba(247, 151, 30, 0.8);
-    animation: challenger-shimmer 3s ease-in-out infinite;
+    animation: vip-shimmer 3s ease-in-out infinite;
   }
 
   .dev-badge {
@@ -276,7 +275,7 @@
     color: #f9fafb;
     border: 1px solid #ff4d6d;
     text-shadow: 0 0 8px rgba(255, 77, 109, 0.7);
-    animation: challenger-shimmer 5s ease-in-out infinite;
+    animation: vip-shimmer 5s ease-in-out infinite;
   }
   
   .master-card-badge {
@@ -286,7 +285,34 @@
     color: #382d0d;
     border: 1px solid #f7d06b;
     text-shadow: 0 0 6px rgba(247, 208, 107, 0.5);
-    animation: master-card-shimmer 4s ease-in-out infinite;
+    animation: vip-shimmer 4s ease-in-out infinite;
+  }
+
+  .early-bird-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(45deg, #f59e0b, #fbbf24, #f59e0b);
+    background-size: 200% 200%;
+    color: #451a03;
+    border: 1px solid #f59e0b;
+    animation: vip-shimmer 3s linear infinite;
+  }
+
+  .night-owl-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(45deg, #1e1b4b, #312e81, #1e1b4b);
+    background-size: 200% 200%;
+    color: #e0e7ff;
+    border: 1px solid #4338ca;
+    animation: vip-shimmer 4s linear infinite;
+  }
+
+  .knowledge-knight-badge {
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(45deg, #334155, #64748b, #334155);
+    background-size: 200% 200%;
+    color: #f1f5f9;
+    border: 1px solid #475569;
+    animation: vip-shimmer 5s linear infinite;
   }
 
   .rainbow-border-wrap {

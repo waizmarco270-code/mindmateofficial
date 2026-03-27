@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff, Fingerprint, Sun, Moon, Monitor, User as UserIcon, LogOut } from 'lucide-react';
@@ -306,6 +305,12 @@ export default function Header() {
         </SignedOut>
         <SignedIn>
             <div className="flex items-center gap-2">
+                <Link href="/dashboard/store">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all group">
+                        <ShoppingCart className="h-5 w-5 animate-pulse group-hover:animate-none" />
+                    </Button>
+                </Link>
+
                 <Popover>
                     <PopoverTrigger asChild>
                         <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary hover:bg-secondary/80 px-3 py-1.5 text-sm font-bold transition-all border border-transparent hover:border-primary/20">

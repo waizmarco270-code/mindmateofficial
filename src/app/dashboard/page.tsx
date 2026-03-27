@@ -82,7 +82,7 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
     };
     
      return (
-        <div>
+        <div className="relative">
             <Carousel 
                 setApi={setApi}
                 className="w-full"
@@ -99,54 +99,61 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                         const isLive = showcase.status === 'live';
                         return (
                             <CarouselItem key={showcase.id}>
-                                <Card className={cn("relative group overflow-hidden border-0", getTemplateClasses(showcase.template))}>
-                                     <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
-                                        {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
-                                    </div>
-                                     <div className="relative z-10 p-4">
-                                        <CardContent className="relative z-10 p-4 sm:p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-4 rounded-lg bg-black/20 border border-white/10">
-                                            <div className="flex-1">
-                                                 <h2 className={cn("text-sm font-bold uppercase tracking-widest", isLive ? "text-green-400" : "text-red-400")}>
-                                                    {isLive ? "New Feature" : "Coming Soon"}
-                                                </h2>
-                                                 <CardTitle className="text-2xl lg:text-3xl font-bold mt-1 text-white">{showcase.title}</CardTitle>
-                                                <CardDescription className="text-slate-300 mt-2 max-w-lg mx-auto md:mx-0">
-                                                    {showcase.description}
-                                                </CardDescription>
-                                                 {isLive && showcase.link && (
-                                                    <Button asChild className="mt-4 animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
-                                                        <Link href={showcase.link}>Go to Feature <ArrowRight className="ml-2 h-4 w-4"/></Link>
-                                                    </Button>
-                                                )}
-                                            </div>
-                                             {!isLive && showcase.launchDate && (
-                                                <div className="flex flex-col items-center bg-black/20 p-4 rounded-lg border border-white/10 w-full sm:w-auto mt-4 md:mt-0">
-                                                    <p className="text-base font-bold font-code text-cyan-300">LAUNCHING ON</p>
-                                                    <p className="text-3xl font-bold font-serif text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMMM')}</p>
+                                <motion.div 
+                                    whileHover={{ scale: 1.01 }}
+                                    transition={{ type: 'spring', stiffness: 300 }}
+                                >
+                                    <Card className={cn("relative group overflow-hidden border-0 min-h-[200px]", getTemplateClasses(showcase.template))}>
+                                        <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
+                                            {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
+                                        </div>
+                                        <div className="relative z-10 p-4 h-full flex flex-col justify-center">
+                                            <CardContent className="relative z-10 p-4 sm:p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-4 rounded-lg bg-black/30 backdrop-blur-sm border border-white/10 shadow-2xl">
+                                                <div className="flex-1">
+                                                    <h2 className={cn("text-xs font-black uppercase tracking-widest px-2 py-1 rounded bg-black/40 w-fit mx-auto md:mx-0", isLive ? "text-green-400" : "text-red-400")}>
+                                                        {isLive ? "New Feature" : "Coming Soon"}
+                                                    </h2>
+                                                    <CardTitle className="text-2xl lg:text-4xl font-black mt-2 text-white drop-shadow-lg [text-shadow:0_2px_10px_rgba(0,0,0,0.5)]">
+                                                        {showcase.title}
+                                                    </CardTitle>
+                                                    <CardDescription className="text-slate-200 mt-2 max-w-lg mx-auto md:mx-0 font-medium leading-relaxed">
+                                                        {showcase.description}
+                                                    </CardDescription>
+                                                    {isLive && showcase.link && (
+                                                        <Button asChild className="mt-6 h-12 px-8 font-bold animate-in fade-in-50 slide-in-from-bottom-4 duration-700 shadow-xl">
+                                                            <Link href={showcase.link}>Launch Experience <ArrowRight className="ml-2 h-4 w-4"/></Link>
+                                                        </Button>
+                                                    )}
                                                 </div>
-                                             )}
-                                        </CardContent>
-                                    </div>
-                                </Card>
+                                                {!isLive && showcase.launchDate && (
+                                                    <div className="flex flex-col items-center bg-black/40 backdrop-blur-md p-6 rounded-2xl border border-white/20 w-full sm:w-auto mt-4 md:mt-0 shadow-inner">
+                                                        <p className="text-[10px] font-black font-code text-cyan-300 tracking-[0.2em] uppercase">Deployment Targeted</p>
+                                                        <p className="text-4xl font-black font-serif text-white mt-1 drop-shadow-glow">{format(parseISO(showcase.launchDate), 'do MMM')}</p>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                        </div>
+                                    </Card>
+                                </motion.div>
                             </CarouselItem>
                         )
                     })}
                 </CarouselContent>
                 {showcases.length > 1 && (
                      <>
-                        <CarouselPrevious className="hidden sm:flex" />
-                        <CarouselNext className="hidden sm:flex" />
+                        <CarouselPrevious className="hidden sm:flex -left-12 bg-white/10 border-white/20 text-white hover:bg-white/20" />
+                        <CarouselNext className="hidden sm:flex -right-12 bg-white/10 border-white/20 text-white hover:bg-white/20" />
                      </>
                 )}
             </Carousel>
              {count > 1 && (
-                <div className="py-2 flex justify-center gap-2">
+                <div className="py-4 flex justify-center gap-3">
                     {Array.from({ length: count }).map((_, i) => (
                         <div
                             key={i}
                             className={cn(
-                                "h-1.5 rounded-full transition-all duration-300",
-                                i + 1 === current ? "w-6 bg-primary" : "w-3 bg-muted"
+                                "h-1.5 rounded-full transition-all duration-500",
+                                i + 1 === current ? "w-8 bg-primary shadow-[0_0_8px_rgba(139,92,246,0.5)]" : "w-2 bg-muted"
                             )}
                         />
                     ))}
@@ -163,6 +170,9 @@ const badgeDetails: Record<BadgeType, { name: string; badge: JSX.Element, icon: 
     vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>, icon: Crown, gradient: 'from-amber-400 to-yellow-500' },
     gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span>, icon: Gamepad2, gradient: 'from-blue-500 to-sky-500' },
     challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>, icon: Swords, gradient: 'from-orange-500 to-red-500' },
+    'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span>, icon: Bird, gradient: 'from-orange-400 to-yellow-500' },
+    'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span>, icon: Moon, gradient: 'from-indigo-600 to-purple-900' },
+    'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span>, icon: ShieldCheck, gradient: 'from-slate-600 to-gray-800' }
 };
 
 const appBadges = [
@@ -185,6 +195,16 @@ const appBadges = [
         badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>,
         title: "Challenger",
         description: "Awarded for successfully completing a tough challenge in the Challenger Zone."
+    },
+    {
+        badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span>,
+        title: "Early Bird",
+        description: "For those who conquer their goals before the sun rises."
+    },
+    {
+        badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span>,
+        title: "Night Owl",
+        description: "For the dedicated scholars who study through the silent hours."
     },
      {
         badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span>,
@@ -209,6 +229,9 @@ function UserBadgeDisplay() {
         (currentUserData?.isVip) && 'vip',
         (currentUserData?.isGM) && 'gm',
         (currentUserData?.isChallenger) && 'challenger',
+        (currentUserData?.isEarlyBird) && 'early-bird',
+        (currentUserData?.isNightOwl) && 'night-owl',
+        (currentUserData?.isKnowledgeKnight) && 'knowledge-knight',
     ].filter(Boolean) as BadgeType[];
 
     if (ownedBadges.length === 0) return null;
