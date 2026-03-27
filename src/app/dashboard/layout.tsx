@@ -13,6 +13,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useAdmin } from '@/hooks/use-admin';
 import { MaintenancePage } from '@/components/dashboard/maintenance-page';
+import { BannedOverlay } from '@/components/dashboard/banned-overlay';
 import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
 import MobileNav from '@/components/dashboard/mobile-nav';
 import { usePathname } from 'next/navigation';
@@ -21,19 +22,16 @@ import { usePresence } from '@/hooks/use-presence';
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
   const { openMobile, setOpenMobile } = useSidebar();
-  const { appSettings, loading, isSuperAdmin, isCoDev } = useAdmin();
-  const { updateMyPresence } = usePresence(); // Real presence heartbeat
+  const { appSettings, currentUserData, loading, isSuperAdmin, isCoDev } = useAdmin();
+  const { updateMyPresence } = usePresence(); 
   const pathname = usePathname();
   
-  // Background Cron & Presence Pulse
   React.useEffect(() => {
     const triggerBackgroundTasks = async () => {
         try {
             await fetch('/api/cron/send-scheduled-notifications');
             await updateMyPresence(true);
-        } catch (e) {
-            // Silently fail background pulse
-        }
+        } catch (e) {}
     };
     
     triggerBackgroundTasks();
@@ -50,10 +48,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   const showMaintenance = (isScheduledMaintenance || isManualMaintenance) && !isSuperAdmin && !isCoDev;
 
-  if (loading) {
-    return null;
-  }
+  if (loading) return null;
   
+  if (currentUserData?.isBlocked) {
+      return <BannedOverlay user={currentUserData} />;
+  }
+
   if (showMaintenance) {
     return <MaintenancePage settings={appSettings} />;
   }

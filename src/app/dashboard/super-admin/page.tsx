@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain } from 'lucide-react';
+import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -27,6 +27,7 @@ import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
+import { usePresence } from '@/hooks/use-presence';
 
 const CREDIT_PASSWORD = "waizcredit";
 
@@ -50,11 +51,19 @@ export default function SuperAdminPanelPage() {
     triggerAegisPulse,
     announcements
   } = useAdmin();
+  const { onlineUsers } = usePresence();
   const { toast } = useToast();
   
   const [isCreditUnlocked, setIsCreditUnlocked] = useState(false);
   const [creditPassword, setCreditPassword] = useState('');
   
+  // Ban State
+  const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
+  const [userToBan, setUserToBan] = useState<User | null>(null);
+  const [banType, setBanType] = useState<'permanent' | 'temporary'>('temporary');
+  const [banDays, setBanDays] = useState(3);
+  const [banReason, setBanReason] = useState('');
+
   // Global Gift State
   const [popupTarget, setPopupTarget] = useState<'all' | 'single'>('all');
   const [popupSingleUserId, setPopupSingleUserId] = useState('');
@@ -114,6 +123,15 @@ export default function SuperAdminPanelPage() {
       } else {
         toast({ variant: 'destructive', title: "Incorrect Password" });
       }
+  };
+
+  const handleExecuteBan = async () => {
+      if (!userToBan) return;
+      await toggleUserBlock(userToBan.uid, true, banType, banDays, banReason);
+      toast({ title: "Ban Protocol Executed", description: `${userToBan.displayName} has been excluded.` });
+      setIsBanDialogOpen(false);
+      setUserToBan(null);
+      setBanReason('');
   };
 
   const handleMaintenanceUpdate = async () => {
@@ -190,11 +208,30 @@ export default function SuperAdminPanelPage() {
     );
   }
 
+  const onlineCount = onlineUsers.filter(u => u.isOnline).length;
+
   return (
     <div className="space-y-8 pb-20">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Super Admin Controls</h1>
         <p className="text-muted-foreground">Master controls for roles, monetization, and system state.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-primary/5 border-primary/20">
+              <CardHeader className="p-4 pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">Total Citizens</CardTitle></CardHeader>
+              <CardContent className="p-4 pt-0 flex items-center justify-between">
+                  <span className="text-3xl font-black">{users.length}</span>
+                  <Users className="h-8 w-8 text-primary opacity-20"/>
+              </CardContent>
+          </Card>
+          <Card className="bg-green-500/5 border-green-500/20">
+              <CardHeader className="p-4 pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">Online Now</CardTitle></CardHeader>
+              <CardContent className="p-4 pt-0 flex items-center justify-between">
+                  <span className="text-3xl font-black">{onlineCount}</span>
+                  <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse"/>
+              </CardContent>
+          </Card>
       </div>
 
       <Accordion type="multiple" defaultValue={['user-management', 'aegis-intelligence']} className="w-full space-y-4">
@@ -270,10 +307,11 @@ export default function SuperAdminPanelPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead>Status</TableHead>
                                 <TableHead>Student</TableHead>
                                 <TableHead>Badges</TableHead>
                                 <TableHead>Credits</TableHead>
-                                <TableHead>Status</TableHead>
+                                <TableHead>Health</TableHead>
                                 <TableHead className="text-right">Action</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -281,18 +319,22 @@ export default function SuperAdminPanelPage() {
                             {users.map(u => {
                                 const isUserSuperAdmin = u.uid === SUPER_ADMIN_UID;
                                 const hasMasterCard = u.masterCardExpires && new Date(u.masterCardExpires) > new Date();
+                                const isOnline = onlineUsers.find(ou => ou.uid === u.uid)?.isOnline;
                                 
                                 return (
-                                    <TableRow key={u.uid}>
+                                    <TableRow key={u.uid} className={cn(u.isBlocked && "opacity-60 bg-red-500/5")}>
+                                        <TableCell>
+                                            <div className={cn("h-2.5 w-2.5 rounded-full", isOnline ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" : "bg-muted")} />
+                                        </TableCell>
                                         <TableCell className="font-medium whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <Avatar className="h-8 w-8">
+                                                <Avatar className="h-8 w-8 border">
                                                     <AvatarImage src={u.photoURL}/>
                                                     <AvatarFallback>{u.displayName?.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold">{u.displayName}</span>
-                                                    <span className="text-[10px] text-muted-foreground font-mono">{u.uid}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-mono">{u.uid.slice(-8)}</span>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -300,26 +342,33 @@ export default function SuperAdminPanelPage() {
                                             {isUserSuperAdmin && <Badge className="bg-red-500 text-[10px]">Dev</Badge>}
                                             {u.isAdmin && <Badge className="text-[10px]">Admin</Badge>}
                                             {u.isVip && <Badge className="bg-amber-500 text-[10px]">Elite</Badge>}
-                                            {u.isGM && <Badge className="bg-blue-500 text-[10px]">GM</Badge>}
                                             {u.isCoDev && <Badge className="bg-rose-500 text-[10px]">Co-Dev</Badge>}
                                             {hasMasterCard && <Badge variant="outline" className="text-green-500 border-green-500 text-[10px]">Master</Badge>}
                                         </TableCell>
-                                        <TableCell className="font-bold">{u.credits?.toLocaleString()}</TableCell>
+                                        <TableCell className="font-bold font-mono">{u.credits?.toLocaleString()}</TableCell>
                                         <TableCell>
-                                            {u.isBlocked ? <Badge variant="destructive">Blocked</Badge> : <Badge variant="secondary">Active</Badge>}
+                                            {u.isBlocked ? (
+                                                <Badge variant="destructive" className="animate-pulse">BANNED</Badge>
+                                            ) : (
+                                                <Badge variant="secondary">STABLE</Badge>
+                                            )}
                                         </TableCell>
                                         <TableCell className="text-right whitespace-nowrap">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild><Button variant="outline" size="sm">Manage <UserCog className="h-4 w-4 ml-2"/></Button></DropdownMenuTrigger>
+                                                <DropdownMenuTrigger asChild><Button variant="outline" size="sm">Action <UserCog className="h-4 w-4 ml-2"/></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-56">
                                                     <DropdownMenuItem onClick={() => u.isAdmin ? removeUserAdmin(u.uid) : makeUserAdmin(u.uid)}>{u.isAdmin ? "Remove Admin" : "Make Admin"}</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => u.isVip ? removeUserVip(u.uid) : makeUserVip(u.uid)}>{u.isVip ? "Remove Elite" : "Make Elite"}</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => u.isGM ? removeUserGM(u.uid) : makeUserGM(u.uid)}>{u.isGM ? "Remove GM" : "Make GM"}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isCoDev ? makeUserCoDev(u.uid) : makeUserCoDev(u.uid)}>{u.isCoDev ? "Remove Co-Dev" : "Make Co-Dev"}</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => u.isCoDev ? removeUserCoDev(u.uid) : makeUserCoDev(u.uid)}>{u.isCoDev ? "Remove Co-Dev" : "Make Co-Dev"}</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => { setMasterCardUser(u); setIsMasterCardDialogOpen(true); }}><CreditCard className="mr-2 h-4 w-4"/> Grant Master Card</DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-destructive" onClick={() => toggleUserBlock(u.uid, u.isBlocked)}>{u.isBlocked ? "Unblock" : "Block User"}</DropdownMenuItem>
+                                                    {u.isBlocked ? (
+                                                        <DropdownMenuItem onClick={() => toggleUserBlock(u.uid, false)} className="text-green-500 font-bold">REINSTATE USER</DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem className="text-destructive font-bold" onClick={() => { setUserToBan(u); setIsBanDialogOpen(true); }}><Ban className="mr-2 h-4 w-4"/> EXECUTE BAN</DropdownMenuItem>
+                                                    )}
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
@@ -382,7 +431,7 @@ export default function SuperAdminPanelPage() {
                         </CardContent>
                     </Card>
                 </div>
-                <Button onClick={handleMaintenanceUpdate} className="w-full">Save System Configuration</Button>
+                <Button onClick={handleMaintenanceUpdate} className="w-full h-12 text-lg font-bold">Save System Configuration</Button>
             </AccordionContent>
           </Card>
         </AccordionItem>
@@ -577,6 +626,70 @@ export default function SuperAdminPanelPage() {
                 <Button onClick={() => { if(masterCardUser) grantMasterCard(masterCardUser.uid, masterCardDuration); setIsMasterCardDialogOpen(false); toast({ title: "Master Card Granted!" }); }}>Activate Master Card</Button>
             </DialogFooter>
         </DialogContent>
+      </Dialog>
+
+      {/* EXECUTIONER BAN DIALOG */}
+      <Dialog open={isBanDialogOpen} onOpenChange={setIsBanDialogOpen}>
+          <DialogContent className="max-w-md border-red-600">
+              <DialogHeader>
+                  <div className="flex justify-center mb-4">
+                      <div className="p-4 bg-red-600/10 rounded-full border-2 border-red-600">
+                          <Gavel className="h-10 w-10 text-red-600" />
+                      </div>
+                  </div>
+                  <DialogTitle className="text-2xl font-black text-center text-red-600 uppercase italic">Execute Ban Protocol</DialogTitle>
+                  <DialogDescription className="text-center">
+                      Excluding <b>{userToBan?.displayName}</b> from the Sovereign Network.
+                  </DialogDescription>
+              </DialogHeader>
+              
+              <div className="py-4 space-y-6">
+                  <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest">Temporal Tier</Label>
+                      <Select value={banType} onValueChange={(v: any) => setBanType(v)}>
+                          <SelectTrigger className="h-12 border-red-600/30 font-bold">
+                              <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="temporary" className="font-bold">Temporary Suspension</SelectItem>
+                              <SelectItem value="permanent" className="text-red-600 font-bold">PERMANENT TERMINATION</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+
+                  {banType === 'temporary' && (
+                      <div className="space-y-2">
+                          <Label className="text-xs font-black uppercase tracking-widest">Duration (Days)</Label>
+                          <div className="grid grid-cols-4 gap-2">
+                              {[1, 3, 7, 30].map(d => (
+                                  <Button key={d} variant={banDays === d ? "default" : "outline"} onClick={() => setBanDays(d)} className={cn(banDays === d && "bg-red-600")}>
+                                      {d}d
+                                  </Button>
+                              ))}
+                          </div>
+                      </div>
+                  )}
+
+                  <div className="space-y-2">
+                      <Label className="text-xs font-black uppercase tracking-widest">Reason for Exclusion</Label>
+                      <Textarea 
+                        value={banReason} 
+                        onChange={e => setBanReason(e.target.value)} 
+                        placeholder="e.g., Harassment in Global Forum, attempted credit exploit..." 
+                        className="bg-muted/30"
+                      />
+                  </div>
+              </div>
+
+              <DialogFooter className="flex-col gap-2">
+                  <Button variant="destructive" onClick={handleExecuteBan} className="w-full h-14 text-lg font-black uppercase shadow-lg shadow-red-600/20">
+                      CONFIRM EXECUTION
+                  </Button>
+                  <DialogClose asChild>
+                      <Button variant="ghost" className="w-full font-bold">CANCEL</Button>
+                  </DialogClose>
+              </DialogFooter>
+          </DialogContent>
       </Dialog>
 
       {/* Aegis Decision Dialog */}

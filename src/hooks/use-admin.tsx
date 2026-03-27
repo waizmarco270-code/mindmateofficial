@@ -27,6 +27,9 @@ export interface User {
   email: string;
   photoURL?: string;
   isBlocked: boolean;
+  banType?: 'permanent' | 'temporary';
+  banExpires?: string; // ISO string
+  banReason?: string;
   isLeaderboardPrivate?: boolean;
   credits: number;
   walletBalance: number;
@@ -261,7 +264,7 @@ interface AppDataContextType {
     users: User[];
     currentUserData: User | null;
     transactions: User['transactions'];
-    toggleUserBlock: (uid: string, isBlocked: boolean) => Promise<void>;
+    toggleUserBlock: (uid: string, isBlocked: boolean, type?: 'permanent' | 'temporary', days?: number, reason?: string) => Promise<void>;
     toggleLeaderboardPrivacy: (uid: string, isPrivate: boolean) => Promise<void>;
     addCreditsToUser: (uid: string, amount: number) => Promise<void>;
     applyFocusPenalty: (uid: string, amount: number) => Promise<'shielded' | 'penalized'>;
@@ -450,8 +453,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 if (hasUpdates) {
-                    // CRITICAL: We only use updateDoc with FieldValues. 
-                    // We DO NOT merge raw FieldValues into our React state.
                     const firestoreUpdates = { ...updates };
                     if (updates.credits !== undefined) firestoreUpdates.credits = increment(updates.credits - (data.credits || 0));
                     if (updates['inventory.streakFreezes'] !== undefined) firestoreUpdates['inventory.streakFreezes'] = increment(-1);
@@ -709,7 +710,23 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const value: AppDataContextType = {
         isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures,
-        toggleUserBlock: (uid, isBlocked) => updateDoc(doc(db, 'users', uid), { isBlocked: !isBlocked }),
+        toggleUserBlock: (uid, isBlocked, type, days, reason) => {
+            const updates: any = { isBlocked };
+            if (isBlocked) {
+                updates.banType = type || 'permanent';
+                updates.banReason = reason || 'Violation of community guidelines.';
+                if (type === 'temporary' && days) {
+                    updates.banExpires = dateFnsAddDays(new Date(), days).toISOString();
+                } else {
+                    updates.banExpires = null;
+                }
+            } else {
+                updates.banType = null;
+                updates.banExpires = null;
+                updates.banReason = null;
+            }
+            return updateDoc(doc(db, 'users', uid), updates);
+        },
         toggleLeaderboardPrivacy: (uid, isPrivate) => updateDoc(doc(db, 'users', uid), { isLeaderboardPrivate: isPrivate }),
         addCreditsToUser,
         applyFocusPenalty,

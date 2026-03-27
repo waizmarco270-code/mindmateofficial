@@ -19,6 +19,7 @@ import {
     deleteDoc, 
     writeBatch 
 } from 'firebase/firestore';
+import { useUsers } from './use-admin';
 
 export interface Message {
     id: string;
@@ -45,6 +46,7 @@ const PAGE_SIZE = 30;
 
 export const useChat = (friendId: string) => {
     const { user: currentUser } = useUser();
+    const { currentUserData } = useUsers();
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(true);
@@ -146,7 +148,20 @@ export const useChat = (friendId: string) => {
                 timestamp: serverTimestamp()
             }
         });
-    }, [chatId, currentUser, friendId]);
+
+        // Trigger Push Notification
+        await fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: `💬 New message from ${currentUserData?.displayName || 'Ally'}`,
+                message: text || (imageUrl ? 'Sent an image' : 'Sent a voice note'),
+                userId: friendId,
+                linkUrl: '/dashboard/social'
+            })
+        });
+
+    }, [chatId, currentUser, friendId, currentUserData]);
 
     const editMessage = useCallback(async (messageId: string, newText: string) => {
         if (!chatId) return;

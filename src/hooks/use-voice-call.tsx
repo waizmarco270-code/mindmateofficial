@@ -6,7 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, doc, onSnapshot, setDoc, updateDoc, addDoc, serverTimestamp, getDoc, query, where, Timestamp } from 'firebase/firestore';
 import { useToast } from './use-toast';
-import { User } from './use-admin';
+import { User, useUsers } from './use-admin';
 
 interface VoiceCallContextType {
     activeCall: CallSession | null;
@@ -47,6 +47,7 @@ const servers = {
 
 export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) => {
     const { user } = useUser();
+    const { currentUserData } = useUsers();
     const { toast } = useToast();
     const [activeCall, setActiveCall] = useState<CallSession | null>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
@@ -72,7 +73,6 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         }
     }, [remoteStream]);
 
-    // Timer logic for active calls
     useEffect(() => {
         if (activeCall?.status === 'active') {
             const start = activeCall.startTime || Date.now();
@@ -152,7 +152,7 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         const callData: Omit<CallSession, 'id'> = {
             callerId: user.id,
             receiverId: targetUser.uid,
-            callerName: user.fullName || 'Legend',
+            callerName: currentUserData?.displayName || 'Legend',
             receiverName: targetUser.displayName,
             callerPhoto: user.imageUrl,
             receiverPhoto: targetUser.photoURL,
@@ -163,6 +163,18 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
 
         await setDoc(callDoc, callData);
         setActiveCall({ id: callDoc.id, ...callData } as CallSession);
+
+        // Notify Receiver
+        await fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: `📞 Incoming Voice Call`,
+                message: `${currentUserData?.displayName} is calling you. Tap to answer!`,
+                userId: targetUser.uid,
+                linkUrl: '/dashboard/social'
+            })
+        });
 
         const candidatesRef = collection(callDoc, 'candidates');
         pc.current!.onicecandidate = (event) => {
