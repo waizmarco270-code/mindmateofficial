@@ -1,53 +1,72 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { useUsers, User } from './use-admin';
+import { useState, useEffect, useCallback } from 'react';
+import { db } from '@/lib/firebase';
+import { doc, onSnapshot, setDoc, serverTimestamp, collection, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import { useUser } from '@clerk/nextjs';
+import { User } from './use-admin';
 
-export type OnlineUser = Pick<User, 'uid' | 'displayName' | 'photoURL' | 'isAdmin'>;
+export type OnlineUser = {
+    uid: string;
+    lastSeen: Date;
+    isOnline: boolean;
+};
 
-// This hook simulates a presence system. In a real app, this would
-// be replaced with a real-time service like Firebase Realtime Database.
 export const usePresence = () => {
-  const { users: allUsers, loading: usersLoading } = useUsers();
   const { user: currentUser } = useUser();
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const simulatedOnlineUsers = useMemo(() => {
-    if (usersLoading || !allUsers.length) return [];
-    
-    // Ensure the current user is always "online"
-    const currentUserData = allUsers.find(u => u.uid === currentUser?.id);
-    const online: OnlineUser[] = currentUserData ? [currentUserData] : [];
+  // Update current user's presence
+  const updateMyPresence = useCallback(async (isOnline: boolean) => {
+    if (!currentUser) return;
+    const presenceRef = doc(db, 'presence', currentUser.id);
+    await setDoc(presenceRef, {
+      uid: currentUser.id,
+      isOnline,
+      lastSeen: serverTimestamp(),
+    }, { merge: true });
+  }, [currentUser]);
 
-    // Add a few other random users to simulate them being online
-    const otherUsers = allUsers.filter(u => u.uid !== currentUser?.id);
-    const nonAdminUsers = otherUsers.filter(u => !u.isAdmin);
-
-    // Add 2-3 random non-admin users to the online list
-    const numberOfSimulatedUsers = Math.min(nonAdminUsers.length, Math.floor(Math.random() * 2) + 2);
-
-    for(let i=0; i<numberOfSimulatedUsers; i++) {
-        const randomIndex = Math.floor(Math.random() * nonAdminUsers.length);
-        const randomUser = nonAdminUsers.splice(randomIndex, 1)[0];
-        if (randomUser) {
-          online.push(randomUser);
-        }
-    }
-
-    return online;
-
-  }, [allUsers, usersLoading, currentUser]);
-
-
+  // Pulse presence every 2 minutes while active
   useEffect(() => {
-    if (!usersLoading) {
-      setOnlineUsers(simulatedOnlineUsers);
-      setLoading(false);
-    }
-  }, [usersLoading, simulatedOnlineUsers]);
+    if (!currentUser) return;
 
-  return { onlineUsers, loading };
+    updateMyPresence(true);
+    const interval = setInterval(() => updateMyPresence(true), 120000);
+
+    const handleVisibilityChange = () => {
+        updateMyPresence(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      updateMyPresence(false);
+    };
+  }, [currentUser, updateMyPresence]);
+
+  // Listen to all presence data
+  useEffect(() => {
+    const presenceRef = collection(db, 'presence');
+    const unsubscribe = onSnapshot(presenceRef, (snapshot) => {
+      const users = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          uid: doc.id,
+          isOnline: data.isOnline,
+          lastSeen: (data.lastSeen as Timestamp)?.toDate() || new Date(),
+        } as OnlineUser;
+      });
+      setOnlineUsers(users);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  return { onlineUsers, loading, updateMyPresence };
 };

@@ -28,12 +28,12 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
     const { users: allUsers } = useUsers();
     const { friends, friendRequests, sentRequests, sendFriendRequest, acceptFriendRequest, declineFriendRequest, loading: friendsLoading } = useFriends();
     const { chatsMetadata, unreadChats, markAsRead } = useUnreadMessages();
-    const { onlineUsers, loading: presenceLoading } = usePresence();
+    const { onlineUsers } = usePresence();
 
     const [discoverSearch, setDiscoverSearch] = useState('');
     const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
 
-    // Filter discovery results: Not self, not already friend
+    // Filter discovery results
     const discoverResults = useMemo(() => {
         if (!discoverSearch.trim()) return [];
         return allUsers.filter(u =>
@@ -43,12 +43,10 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
         ).slice(0, 5);
     }, [discoverSearch, allUsers, currentUser?.id, friends]);
 
-    // Construct Inbox List: Sort by activity (Last Message Time)
+    // Construct Inbox List
     const inboxList = useMemo(() => {
         const friendMap = new Map(friends.map(f => [f.uid, f]));
         const chatIds = new Set(chatsMetadata.map(c => c.friendId));
-        
-        // Add friends who haven't messaged yet
         friends.forEach(f => chatIds.add(f.uid));
 
         return Array.from(chatIds).map(uid => {
@@ -71,13 +69,19 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
         onSelectFriend(friend);
     };
 
-    const finalLoading = friendsLoading || presenceLoading;
+    const onlineCount = onlineUsers.filter(u => u.isOnline).length;
 
     return (
         <Card className="h-full flex flex-col border-none shadow-none bg-transparent">
             <CardHeader className="p-4 space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-2xl font-black tracking-tight text-foreground">ALLIANCE</h2>
+                    <div>
+                        <h2 className="text-2xl font-black tracking-tight text-foreground">ALLIANCE</h2>
+                        <div className="flex items-center gap-1.5 mt-1">
+                            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                            <span className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{onlineCount} online</span>
+                        </div>
+                    </div>
                     <Dialog open={isDiscoverOpen} onOpenChange={setIsDiscoverOpen}>
                         <DialogTrigger asChild>
                             <Button size="icon" variant="ghost" className="rounded-full bg-primary/10 text-primary">
@@ -118,9 +122,6 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                                             )}
                                         </div>
                                     ))}
-                                    {discoverSearch && discoverResults.length === 0 && (
-                                        <p className="text-center text-xs text-muted-foreground py-4">No scholars found matching "{discoverSearch}"</p>
-                                    )}
                                 </div>
                             </div>
                         </DialogContent>
@@ -131,8 +132,8 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
             <Tabs defaultValue="inbox" className="flex-1 flex flex-col min-h-0">
                 <div className="px-4 mb-2">
                     <TabsList className="grid w-full grid-cols-2 rounded-full h-10 p-1 bg-muted/50 border">
-                        <TabsTrigger value="inbox" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">Inbox</TabsTrigger>
-                        <TabsTrigger value="requests" className="rounded-full relative data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                        <TabsTrigger value="inbox" className="rounded-full">Inbox</TabsTrigger>
+                        <TabsTrigger value="requests" className="rounded-full relative">
                             Requests
                             {friendRequests.length > 0 && <span className="absolute -top-1 -right-1 h-5 w-5 bg-destructive text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-background animate-in zoom-in">{friendRequests.length}</span>}
                         </TabsTrigger>
@@ -147,11 +148,10 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                                     <div className="flex flex-col items-center justify-center py-20 text-muted-foreground opacity-50">
                                         <MessageSquare className="h-12 w-12 mb-2" />
                                         <p className="text-xs font-bold uppercase tracking-widest text-center">Your Inbox is Empty</p>
-                                        <p className="text-[10px] text-center mt-1">Start by discovering new allies</p>
                                     </div>
                                 ) : inboxList.map(({ user, meta, isUnread }) => {
                                     if (!user) return null;
-                                    const isOnline = onlineUsers.some(u => u.uid === user.uid);
+                                    const isOnline = onlineUsers.find(u => u.uid === user.uid)?.isOnline || false;
                                     const isActive = selectedFriendId === user.uid;
                                     
                                     return (
@@ -203,12 +203,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                     <TabsContent value="requests" className="h-full m-0">
                         <ScrollArea className="h-full">
                             <div className="p-4 space-y-3">
-                                {friendRequests.length === 0 ? (
-                                    <div className="text-center py-20 opacity-50">
-                                        <Clock className="h-10 w-10 mx-auto mb-2" />
-                                        <p className="text-xs font-bold uppercase tracking-widest">No Incoming Requests</p>
-                                    </div>
-                                ) : friendRequests.map(req => (
+                                {friendRequests.map(req => (
                                     <div key={req.id} className="p-4 rounded-2xl bg-muted/30 border space-y-3">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10"><AvatarImage src={req.sender.photoURL}/><AvatarFallback>U</AvatarFallback></Avatar>
@@ -218,12 +213,8 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                                             </div>
                                         </div>
                                         <div className="grid grid-cols-2 gap-2">
-                                            <Button size="sm" variant="outline" className="text-destructive hover:bg-destructive/10" onClick={() => declineFriendRequest(req)}>
-                                                <X className="h-4 w-4 mr-2"/> Decline
-                                            </Button>
-                                            <Button size="sm" className="bg-primary hover:bg-primary/90" onClick={() => acceptFriendRequest(req)}>
-                                                <Check className="h-4 w-4 mr-2"/> Accept
-                                            </Button>
+                                            <Button size="sm" variant="outline" onClick={() => declineFriendRequest(req)}>Decline</Button>
+                                            <Button size="sm" onClick={() => acceptFriendRequest(req)}>Accept</Button>
                                         </div>
                                     </div>
                                 ))}

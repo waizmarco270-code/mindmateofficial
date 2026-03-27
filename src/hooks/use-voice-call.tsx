@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, doc, onSnapshot, setDoc, updateDoc, deleteDoc, addDoc, serverTimestamp, getDoc, query, where, arrayUnion } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, updateDoc, addDoc, serverTimestamp, getDoc, query, where } from 'firebase/firestore';
 import { useToast } from './use-toast';
 import { User } from './use-admin';
 
@@ -49,8 +49,22 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
     
     const pc = useRef<RTCPeerConnection | null>(null);
+    const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
 
-    // Listen for incoming calls
+    useEffect(() => {
+        if (typeof window !== 'undefined' && !remoteAudioRef.current) {
+            const audio = document.createElement('audio');
+            audio.autoplay = true;
+            remoteAudioRef.current = audio;
+        }
+    }, []);
+
+    useEffect(() => {
+        if (remoteStream && remoteAudioRef.current) {
+            remoteAudioRef.current.srcObject = remoteStream;
+        }
+    }, [remoteStream]);
+
     useEffect(() => {
         if (!user) return;
 
@@ -97,7 +111,7 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
 
             return stream;
         } catch (e) {
-            toast({ variant: 'destructive', title: "Microphone Access Denied", description: "Please enable microphone permissions to use voice calls." });
+            toast({ variant: 'destructive', title: "Microphone Required", description: "Enable mic permissions to start calls." });
             throw e;
         }
     }, [toast]);
@@ -111,27 +125,21 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         const offerDescription = await pc.current!.createOffer();
         await pc.current!.setLocalDescription(offerDescription);
 
-        const offer = {
-            sdp: offerDescription.sdp,
-            type: offerDescription.type,
-        };
-
         const callData: Omit<CallSession, 'id'> = {
             callerId: user.id,
             receiverId: targetUser.uid,
-            callerName: user.fullName || 'User',
+            callerName: user.fullName || 'Legend',
             receiverName: targetUser.displayName,
             callerPhoto: user.imageUrl,
             receiverPhoto: targetUser.photoURL,
             status: 'ringing',
-            offer,
+            offer: { sdp: offerDescription.sdp, type: offerDescription.type },
             createdAt: serverTimestamp(),
         };
 
         await setDoc(callDoc, callData);
         setActiveCall({ id: callDoc.id, ...callData } as CallSession);
 
-        // Listen for answer and candidates
         const candidatesRef = collection(callDoc, 'candidates');
         pc.current!.onicecandidate = (event) => {
             event.candidate && addDoc(candidatesRef, { ...event.candidate.toJSON(), type: 'caller' });
@@ -140,19 +148,15 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         onSnapshot(callDoc, (snapshot) => {
             const data = snapshot.data() as CallSession;
             if (data?.answer && !pc.current!.currentRemoteDescription) {
-                const answerDescription = new RTCSessionDescription(data.answer);
-                pc.current!.setRemoteDescription(answerDescription);
+                pc.current!.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
-            if (data?.status === 'rejected' || data?.status === 'ended') {
-                cleanup();
-            }
+            if (data?.status === 'rejected' || data?.status === 'ended') cleanup();
         });
 
         onSnapshot(query(candidatesRef, where('type', '==', 'receiver')), (snapshot) => {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === 'added') {
-                    const candidate = new RTCIceCandidate(change.doc.data());
-                    pc.current!.addIceCandidate(candidate);
+                    pc.current!.addIceCandidate(new RTCIceCandidate(change.doc.data()));
                 }
             });
         });
@@ -160,7 +164,6 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
 
     const acceptCall = async () => {
         if (!activeCall) return;
-        
         await setupPC();
         
         const callDoc = doc(db, 'calls', activeCall.id);
@@ -171,24 +174,20 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         };
 
         const callData = (await getDoc(callDoc)).data() as CallSession;
-        const offerDescription = new RTCSessionDescription(callData.offer);
-        await pc.current!.setRemoteDescription(offerDescription);
+        await pc.current!.setRemoteDescription(new RTCSessionDescription(callData.offer));
 
         const answerDescription = await pc.current!.createAnswer();
         await pc.current!.setLocalDescription(answerDescription);
 
-        const answer = {
-            type: answerDescription.type,
-            sdp: answerDescription.sdp,
-        };
-
-        await updateDoc(callDoc, { answer, status: 'active' });
+        await updateDoc(callDoc, { 
+            answer: { type: answerDescription.type, sdp: answerDescription.sdp }, 
+            status: 'active' 
+        });
 
         onSnapshot(query(candidatesRef, where('type', '==', 'caller')), (snapshot) => {
             snapshot.docChanges().forEach((change) => {
                 if (change.type === 'added') {
-                    const candidate = new RTCIceCandidate(change.doc.data());
-                    pc.current!.addIceCandidate(candidate);
+                    pc.current!.addIceCandidate(new RTCIceCandidate(change.doc.data()));
                 }
             });
         });

@@ -16,29 +16,30 @@ import { MaintenancePage } from '@/components/dashboard/maintenance-page';
 import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
 import MobileNav from '@/components/dashboard/mobile-nav';
 import { usePathname } from 'next/navigation';
+import { usePresence } from '@/hooks/use-presence';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
   const { openMobile, setOpenMobile } = useSidebar();
   const { appSettings, loading, isSuperAdmin, isCoDev } = useAdmin();
+  const { updateMyPresence } = usePresence(); // Real presence heartbeat
   const pathname = usePathname();
   
-  // Background Cron Trigger: Every time any user visits the dashboard, 
-  // try to trigger the scheduled notification dispatch.
+  // Background Cron & Presence Pulse
   React.useEffect(() => {
-    const triggerScheduledSync = async () => {
+    const triggerBackgroundTasks = async () => {
         try {
             await fetch('/api/cron/send-scheduled-notifications');
+            await updateMyPresence(true);
         } catch (e) {
-            // Silently fail as this is a background pulse
+            // Silently fail background pulse
         }
     };
     
-    // Trigger on mount and then every 2 minutes while the user is active
-    triggerScheduledSync();
-    const interval = setInterval(triggerScheduledSync, 120000);
+    triggerBackgroundTasks();
+    const interval = setInterval(triggerBackgroundTasks, 120000);
     return () => clearInterval(interval);
-  }, []);
+  }, [updateMyPresence]);
 
   const now = new Date();
   const maintenanceStart = appSettings?.maintenanceStartTime ? new Date(appSettings.maintenanceStartTime) : null;
