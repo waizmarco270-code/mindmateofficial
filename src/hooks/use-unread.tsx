@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
@@ -11,8 +10,9 @@ import { useAnnouncements } from './use-admin';
 import { useFriends } from './use-friends';
 
 // Private chat interfaces
-interface Chat {
+export interface ChatMetadata {
   id: string;
+  friendId: string;
   lastMessage: {
     text: string;
     timestamp: Date;
@@ -38,6 +38,7 @@ interface LastReadTimestamps {
 
 interface UnreadMessagesContextType {
   unreadChats: Set<string>;
+  chatsMetadata: ChatMetadata[];
   hasUnread: boolean;
   hasUnreadFrom: (friendId: string) => boolean;
   markAsRead: (friendId: string) => void;
@@ -59,7 +60,7 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   const { user } = useUser();
   const { announcements, loading: announcementsLoading } = useAnnouncements();
   const { friendRequests, loading: friendsLoading } = useFriends();
-  const [chats, setChats] = useState<Chat[]>([]);
+  const [chats, setChats] = useState<ChatMetadata[]>([]);
   const [globalChat, setGlobalChat] = useState<GlobalChat>({ lastMessage: null });
   const [lastReadTimestamps, setLastReadTimestamps] = useLocalStorage<LastReadTimestamps>('lastReadTimestamps', {});
 
@@ -73,12 +74,14 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
     const q = query(chatsRef, where('users', 'array-contains', user.id));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-       const userChats: Chat[] = [];
+       const userChats: ChatMetadata[] = [];
        snapshot.forEach(doc => {
            const data = doc.data();
+           const friendId = data.users.find((u: string) => u !== user.id);
            if (data.lastMessage && data.lastMessage.timestamp) {
              userChats.push({
                  id: doc.id,
+                 friendId,
                  lastMessage: {
                      ...data.lastMessage,
                      timestamp: (data.lastMessage.timestamp as Timestamp)?.toDate()
@@ -86,6 +89,8 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
              });
            }
        });
+       // Sort by timestamp descending
+       userChats.sort((a, b) => (b.lastMessage?.timestamp.getTime() || 0) - (a.lastMessage?.timestamp.getTime() || 0));
        setChats(userChats);
     });
 
@@ -193,6 +198,7 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
 
   const value = {
     unreadChats,
+    chatsMetadata: chats,
     hasUnread: unreadChats.size > 0 || hasGlobalUnread || hasUnreadAnnouncements || hasUnreadFriendRequests,
     hasUnreadFrom,
     markAsRead,
