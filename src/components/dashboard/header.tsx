@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Award, CheckCircle, Medal, Menu, Shield, Zap, Flame, CalendarCheck, Crown, Gamepad2, ShieldCheck, Code, Mail, Vote, Swords, CreditCard, KeyRound, PinOff, Pin, Fingerprint, DollarSign, Users, Gift, PanelLeft, Check, X, BookOpen, ShoppingCart, Palette, Wallet } from 'lucide-react';
+import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
@@ -9,7 +9,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import Link from 'next/link';
 import { UserButton, useUser, SignedOut, SignInButton, SignUpButton, SignedIn } from '@clerk/nextjs';
 import { ScrollArea } from '../ui/scroll-area';
-import { formatDistanceToNow, parseISO } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import { useUnreadMessages } from '@/hooks/use-unread';
@@ -186,71 +186,15 @@ function Inbox() {
     )
 }
 
-function AdminPanelMenu() {
-    const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
-
-    const showDevLink = isSuperAdmin || currentUserData?.isCoDev;
-
-    if (!isAdmin && !isSuperAdmin && !showDevLink) {
-        return null;
-    }
-
-    return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button 
-                    variant="outline" 
-                    className="relative h-10 w-10 rounded-full p-0 bg-secondary"
-                >
-                    <Shield className="h-5 w-5 text-primary" />
-                    <span className="sr-only">Admin Panels</span>
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-56 p-2">
-                <div className="space-y-1">
-                     {showDevLink && (
-                        <Link href="/dashboard/dev">
-                             <Button variant="ghost" className="w-full justify-start">
-                                <DollarSign className="mr-2"/> Payments Panel
-                            </Button>
-                        </Link>
-                    )}
-                    {isAdmin && (
-                        <>
-                            <Link href="/dashboard/admin">
-                                <Button variant="ghost" className="w-full justify-start">
-                                    <ShieldCheck className="mr-2"/> Admin Panel
-                                </Button>
-                            </Link>
-                             <Link href="/dashboard/admin/study-panel">
-                                <Button variant="ghost" className="w-full justify-start">
-                                    <BookOpen className="mr-2"/> Study Panel
-                                </Button>
-                            </Link>
-                        </>
-                    )}
-                    {isSuperAdmin && (
-                        <Link href="/dashboard/super-admin">
-                             <Button variant="ghost" className="w-full justify-start">
-                                <KeyRound className="mr-2"/> Super Admin
-                            </Button>
-                        </Link>
-                    )}
-                </div>
-            </PopoverContent>
-        </Popover>
-    )
-}
-
-
 export default function Header() {
   const { setOpenMobile } = useSidebar();
   const { user, isLoaded } = useUser();
-  const { currentUserData } = useUsers();
+  const { currentUserData, isAdmin, isSuperAdmin } = useAdmin();
   
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
   const walletBalance = currentUserData?.walletBalance ?? 0;
+  const isCoDev = currentUserData?.isCoDev || false;
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -276,37 +220,39 @@ export default function Header() {
         <SignedIn>
             {isLoaded && user && (
             <>
-                <AdminPanelMenu />
-                
                 <div className="flex items-center gap-2">
-                    {/* Wallet Section */}
-                    <Link href="/dashboard/wallet">
-                        <div className="flex cursor-pointer items-center gap-2 rounded-full bg-primary/10 border border-primary/20 px-3 py-1.5 text-sm font-bold text-primary transition-all hover:bg-primary/20">
-                            <Wallet className="h-4 w-4" />
-                            <span>₹{walletBalance}</span>
-                        </div>
-                    </Link>
-
-                    {/* Credits Section */}
+                    {/* Integrated Credits & Wallet Popover */}
                     <Popover>
                         <PopoverTrigger asChild>
-                            <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-secondary-foreground transition-all hover:bg-secondary/80">
+                            <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary hover:bg-secondary/80 px-3 py-1.5 text-sm font-bold transition-all border border-transparent hover:border-primary/20">
                                 <Medal className="h-5 w-5 text-amber-500 animate-gold-shine" />
                                 <span>{credits}</span>
                             </div>
                         </PopoverTrigger>
-                        <PopoverContent className="max-w-xs p-4">
-                            <div className="space-y-3">
-                                <div>
-                                    <h4 className="font-bold text-base mb-1">Study Credits</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        Used to unlock premium notes and take quizzes.
-                                    </p>
+                        <PopoverContent className="w-72 p-0 overflow-hidden border-primary/20 shadow-2xl">
+                            <div className="p-4 bg-gradient-to-br from-amber-500/10 to-primary/5 border-b border-white/5">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Your Treasury</p>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                        <Medal className="h-5 w-5 text-amber-500" />
+                                        <span className="text-2xl font-black tracking-tighter">{credits} <span className="text-xs text-muted-foreground uppercase font-medium">Credits</span></span>
+                                    </div>
                                 </div>
-                                <div className="pt-2 border-t text-xs font-bold text-primary flex items-center justify-between">
-                                    <span>CREDITS AVAILABLE:</span>
-                                    <span>{credits}</span>
+                            </div>
+                            <div className="p-4 space-y-4">
+                                <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/10">
+                                    <div className="flex items-center gap-2">
+                                        <Wallet className="h-4 w-4 text-primary" />
+                                        <span className="text-sm font-bold">Wallet Balance</span>
+                                    </div>
+                                    <span className="font-black text-primary">₹{walletBalance}</span>
                                 </div>
+                                
+                                <Button asChild className="w-full rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border-none shadow-none font-bold" variant="outline">
+                                    <Link href="/dashboard/wallet">
+                                        <ShieldCheck className="mr-2 h-4 w-4"/> Visit MindMate Vault
+                                    </Link>
+                                </Button>
                             </div>
                         </PopoverContent>
                     </Popover>
@@ -320,14 +266,22 @@ export default function Header() {
                 
                 <Inbox />
 
-                <UserButton afterSignOutUrl="/" appearance={{
-                    elements: {
-                        avatarBox: {
-                            width: "2.5rem",
-                            height: "2.5rem"
-                        }
-                    }
-                }} />
+                {/* Optimized Profile Dropdown with App Tools */}
+                <UserButton afterSignOutUrl="/">
+                    <UserButton.MenuItems>
+                        <UserButton.Link label="Account Settings" href="/dashboard/settings" labelIcon={<Settings className="h-4 w-4"/>} />
+                        <UserButton.Link label="Help & Support" href="/dashboard/help" labelIcon={<LifeBuoy className="h-4 w-4"/>} />
+                        {(isAdmin || isSuperAdmin) && (
+                            <UserButton.Link label="Admin Panel" href="/dashboard/admin" labelIcon={<ShieldCheck className="h-4 w-4 text-red-500"/>} />
+                        )}
+                        {(isCoDev || isSuperAdmin) && (
+                            <UserButton.Link label="Dev Panel" href="/dashboard/dev" labelIcon={<Fingerprint className="h-4 w-4 text-rose-500"/>} />
+                        )}
+                        {isSuperAdmin && (
+                            <UserButton.Link label="Super Admin" href="/dashboard/super-admin" labelIcon={<KeyRound className="h-4 w-4 text-amber-500"/>} />
+                        )}
+                    </UserButton.MenuItems>
+                </UserButton>
             </>
             )}
         </SignedIn>
