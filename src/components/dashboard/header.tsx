@@ -1,6 +1,7 @@
+
 'use client';
 
-import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff, Fingerprint, Sun, Moon, Monitor, User as UserIcon, LogOut } from 'lucide-react';
+import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff, Fingerprint, Sun, Moon, Monitor, User as UserIcon, LogOut, BellRing, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
@@ -20,135 +21,37 @@ import { useFriends, type FriendRequest } from '@/hooks/use-friends';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { useTheme } from 'next-themes';
+import { InboxContent } from '@/components/inbox/inbox-content';
 
 function Inbox() {
-    const { announcements } = useAnnouncements();
-    const { 
-      hasUnread, hasUnreadAnnouncements, hasUnreadFriendRequests, 
-      markAnnouncementsAsRead, markFriendRequestsAsRead 
-    } = useUnreadMessages();
-    const { friendRequests, acceptFriendRequest, declineFriendRequest } = useFriends();
-    const { pinnedPage, setPinnedPage } = usePinnedPage();
-    const pathname = usePathname();
-    const { toast } = useToast();
-
-    const isCurrentPagePinned = pinnedPage === pathname;
-
-    const handlePinToggle = () => {
-        if (isCurrentPagePinned) {
-            setPinnedPage(null);
-            toast({ title: "Page Unpinned" });
-        } else {
-            setPinnedPage(pathname);
-            toast({ title: "Page Pinned!", description: "This will be your dashboard start page." });
-        }
-    };
-
-    const handleAccept = async (request: FriendRequest) => {
-        await acceptFriendRequest(request);
-        toast({ title: "Friend Added!" });
-    };
-
-    const handleDecline = async (request: FriendRequest) => {
-        await declineFriendRequest(request);
-        toast({ title: "Request Declined" });
-    };
+    const { hasUnread } = useUnreadMessages();
 
     return (
-        <Popover onOpenChange={(open) => {
-            if (open) {
-                markAnnouncementsAsRead();
-                markFriendRequestsAsRead();
-            }
-        }}>
+        <Popover>
             <PopoverTrigger asChild>
                 <Button
-                    variant="outline"
+                    variant="ghost"
+                    size="icon"
                     className={cn(
-                        "relative h-10 w-10 rounded-full p-0 transition-all duration-300 ease-in-out",
-                        hasUnread
-                            ? "bg-gradient-to-br from-purple-500 to-pink-500 text-white border-purple-400 animate-pulse shadow-lg shadow-primary/30"
-                            : "bg-secondary text-muted-foreground hover:text-foreground"
+                        "relative h-11 w-11 rounded-full transition-all duration-500",
+                        hasUnread 
+                            ? "bg-primary/10 text-primary shadow-[0_0_15px_rgba(139,92,246,0.3)] border border-primary/20" 
+                            : "hover:bg-muted text-muted-foreground"
                     )}
                 >
-                    <Mail className="h-5 w-5" />
-                    {hasUnread && (
-                         <span className="absolute top-1 right-1 flex h-2.5 w-2.5">
-                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white"></span>
-                        </span>
-                    )}
-                    <span className="sr-only">Inbox</span>
+                    <div className="relative">
+                        {hasUnread ? <BellRing className="h-6 w-6 animate-[bounce_2s_infinite]" /> : <Bell className="h-6 w-6" />}
+                        {hasUnread && (
+                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-background"></span>
+                            </span>
+                        )}
+                    </div>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[22rem] sm:w-96 p-0 overflow-hidden border-primary/20 shadow-2xl">
-                <div className="p-4 bg-primary/5 border-b border-primary/10">
-                    <h4 className="font-bold text-base flex items-center gap-2 text-primary"><Mail className="h-5 w-5"/> Control Hub</h4>
-                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">Manage Notifications & Environment</p>
-                </div>
-                <Tabs defaultValue="announcements" className="w-full">
-                    <TabsList className="w-full grid grid-cols-3 rounded-none h-12 bg-muted/30">
-                        <TabsTrigger value="announcements" className="relative text-[10px] sm:text-xs">
-                            Inbox
-                             {hasUnreadAnnouncements && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-destructive animate-pulse"/>}
-                        </TabsTrigger>
-                        <TabsTrigger value="requests" className="relative text-[10px] sm:text-xs">
-                            Allies
-                            {hasUnreadFriendRequests && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-destructive animate-pulse"/>}
-                        </TabsTrigger>
-                        <TabsTrigger value="pinned" className="text-[10px] sm:text-xs">Pinned</TabsTrigger>
-                    </TabsList>
-                    <ScrollArea className="h-[350px]">
-                        <TabsContent value="announcements" className="p-4 space-y-4 m-0">
-                            {announcements.length > 0 ? announcements.map(announcement => (
-                                <div key={announcement.id} className="group space-y-1 p-3 rounded-xl hover:bg-primary/5 border border-transparent hover:border-primary/10 transition-all cursor-pointer">
-                                    <div className="flex justify-between items-start gap-2">
-                                        <p className="font-bold text-sm line-clamp-1">{announcement.title}</p>
-                                        <Badge variant="outline" className="text-[8px] h-4 uppercase">{formatDistanceToNow(announcement.createdAt, { addSuffix: true })}</Badge>
-                                    </div>
-                                    <p className="text-xs text-muted-foreground line-clamp-2">{announcement.description}</p>
-                                </div>
-                            )) : <div className="flex flex-col items-center justify-center h-64 text-muted-foreground opacity-50"><Mail className="h-10 w-10 mb-2"/><p className="text-xs font-bold uppercase">No new alerts</p></div>}
-                        </TabsContent>
-
-                        <TabsContent value="requests" className="p-4 space-y-2 m-0">
-                             {friendRequests.length > 0 ? friendRequests.map(req => (
-                                <div key={req.id} className="flex items-center gap-3 p-3 rounded-xl bg-muted/30 border">
-                                    <Avatar className="h-9 w-9 border-2 border-primary/20">
-                                        <AvatarImage src={req.sender.photoURL} />
-                                        <AvatarFallback>{req.sender.displayName.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-bold truncate">{req.sender.displayName}</p>
-                                        <p className="text-[10px] text-muted-foreground font-medium">Wants to form an alliance</p>
-                                    </div>
-                                    <div className="flex gap-1">
-                                        <Button size="icon" className="h-8 w-8 rounded-full bg-green-500/20 text-green-600 hover:bg-green-500 hover:text-white transition-all" onClick={() => handleAccept(req)}><Check className="h-4 w-4"/></Button>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full text-destructive hover:bg-destructive/10" onClick={() => handleDecline(req)}><X className="h-4 w-4"/></Button>
-                                    </div>
-                                </div>
-                             )) : <div className="flex flex-col items-center justify-center h-64 text-muted-foreground opacity-50"><Users className="h-10 w-10 mb-2"/><p className="text-xs font-bold uppercase">No pending alliances</p></div>}
-                        </TabsContent>
-
-                        <TabsContent value="pinned" className="p-4 m-0 space-y-4">
-                            <div className="text-center space-y-4 py-6">
-                                <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto">
-                                    {isCurrentPagePinned ? <Pin className="h-10 w-10 text-primary animate-bounce"/> : <PinOff className="h-10 w-10 text-muted-foreground"/>}
-                                </div>
-                                <div>
-                                    <h5 className="font-bold">Dashboard Start Page</h5>
-                                    <p className="text-xs text-muted-foreground px-4">Pin the current page to land here every time you open MindMate.</p>
-                                </div>
-                                <Button 
-                                    variant={isCurrentPagePinned ? "destructive" : "default"} 
-                                    className="w-full rounded-xl h-12"
-                                    onClick={handlePinToggle}
-                                >
-                                    {isCurrentPagePinned ? <><PinOff className="mr-2 h-4 w-4"/> Unpin Current Page</> : <><Pin className="mr-2 h-4 w-4"/> Pin Current Page</>}
-                                </Button>
-                            </div>
-                        </TabsContent>
-                    </ScrollArea>
-                </Tabs>
+            <PopoverContent className="w-[22rem] sm:w-[26rem] p-0 overflow-hidden border-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-3xl">
+                <InboxContent isMini />
             </PopoverContent>
         </Popover>
     )
