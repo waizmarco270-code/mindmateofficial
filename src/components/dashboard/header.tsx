@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle } from 'lucide-react';
+import { Medal, Mail, Crown, ShieldCheck, Code, Settings, LifeBuoy, CreditCard, KeyRound, DollarSign, Wallet, Check, X, PanelLeft, Gift, ShoppingCart, CheckCircle, Users, Pin, PinOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin, SUPER_ADMIN_UID, useAnnouncements, AppThemeId } from '@/hooks/use-admin';
