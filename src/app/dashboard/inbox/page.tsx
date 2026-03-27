@@ -11,13 +11,18 @@ import Link from 'next/link';
 import { useUnreadMessages } from '@/hooks/use-unread';
 
 export default function InboxPage() {
-    const { markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
+    const { hasUnreadAnnouncements, hasUnreadFriendRequests, markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
 
     useEffect(() => {
-        // Auto-mark as read when visiting the dedicated page
-        markAnnouncementsAsRead();
-        markFriendRequestsAsRead();
-    }, [markAnnouncementsAsRead, markFriendRequestsAsRead]);
+        // Only trigger mark as read if there is actually unread content
+        // This prevents the "Maximum update depth exceeded" infinite loop
+        if (hasUnreadAnnouncements) {
+            markAnnouncementsAsRead();
+        }
+        if (hasUnreadFriendRequests) {
+            markFriendRequestsAsRead();
+        }
+    }, [hasUnreadAnnouncements, hasUnreadFriendRequests, markAnnouncementsAsRead, markFriendRequestsAsRead]);
 
     return (
         <div className="space-y-8 max-w-6xl mx-auto pb-20">

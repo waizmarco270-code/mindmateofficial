@@ -22,7 +22,7 @@ function Inbox() {
     return (
         <Popover onOpenChange={(open) => {
             if (open) {
-                // Mark as read immediately when popover opens
+                // Only mark as read when user manually interacts with the popover
                 markAnnouncementsAsRead();
                 markFriendRequestsAsRead();
             }
@@ -32,16 +32,16 @@ function Inbox() {
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        "relative h-12 w-12 rounded-full transition-all duration-500 group",
+                        "relative h-12 w-12 rounded-full transition-all duration-500 group border",
                         hasInboxUnread 
-                            ? "bg-red-600 text-white shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-pulse" 
-                            : "bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 border border-yellow-400/30 shadow-[0_0_15px_rgba(250,204,21,0.2)]"
+                            ? "bg-red-600 text-white border-red-500 shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-pulse" 
+                            : "bg-yellow-400/10 text-yellow-600 dark:text-yellow-400 border-yellow-400/30 hover:bg-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.2)] dark:shadow-[0_0_20px_rgba(250,204,21,0.3)]"
                     )}
                 >
                     <div className="relative">
                         <Bell className={cn(
                             "h-7 w-7 transition-all duration-500",
-                            hasInboxUnread ? "text-white drop-shadow-[0_0_10px_white]" : "text-yellow-400"
+                            hasInboxUnread ? "text-white drop-shadow-[0_0_10px_white]" : "text-yellow-600 dark:text-yellow-400 dark:drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]"
                         )} />
                         {hasInboxUnread && (
                             <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
