@@ -11,7 +11,7 @@ import {
     Mail, Users, Pin, Bell, Sparkles, CheckCircle, XCircle, 
     ArrowRight, Megaphone, Zap, ShieldCheck, Heart, 
     Gift, Crown, Trophy, Trash2, Filter, Loader2, Search, Settings, 
-    Maximize2, MoreVertical
+    Maximize2, MoreVertical, BellRing
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface InboxContentProps {
     isMini?: boolean;

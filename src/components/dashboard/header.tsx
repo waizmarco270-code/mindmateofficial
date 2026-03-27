@@ -33,24 +33,28 @@ function Inbox() {
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        "relative h-11 w-11 rounded-full transition-all duration-500",
+                        "relative h-12 w-12 rounded-full transition-all duration-500 group",
                         hasUnread 
-                            ? "bg-primary/10 text-primary shadow-[0_0_15px_rgba(139,92,246,0.3)] border border-primary/20" 
+                            ? "bg-yellow-400/20 text-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.5)] border-2 border-yellow-400/50" 
                             : "hover:bg-muted text-muted-foreground"
                     )}
                 >
                     <div className="relative">
-                        {hasUnread ? <BellRing className="h-6 w-6 animate-[bounce_2s_infinite]" /> : <Bell className="h-6 w-6" />}
+                        {hasUnread ? (
+                            <BellRing className="h-7 w-7 animate-[bounce_2s_infinite] drop-shadow-[0_0_8px_currentColor]" />
+                        ) : (
+                            <Bell className="h-7 w-7 group-hover:rotate-12 transition-transform" />
+                        )}
                         {hasUnread && (
-                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-background"></span>
+                            <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-500 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-4 w-4 bg-red-600 border-2 border-background shadow-sm"></span>
                             </span>
                         )}
                     </div>
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[22rem] sm:w-[26rem] p-0 overflow-hidden border-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-3xl">
+            <PopoverContent className="w-[22rem] sm:w-[26rem] p-0 overflow-hidden border-yellow-400/20 shadow-[0_20px_50px_rgba(0,0,0,0.3)] rounded-3xl">
                 <InboxContent isMini />
             </PopoverContent>
         </Popover>
@@ -66,7 +70,7 @@ function AdminCommandShield() {
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all">
+                <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
                     <ShieldCheck className="h-6 w-6" />
                 </Button>
             </PopoverTrigger>
@@ -207,16 +211,16 @@ export default function Header() {
             </SignUpButton>
         </SignedOut>
         <SignedIn>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 md:gap-3">
                 <Link href="/dashboard/store">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all group">
+                    <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all group shadow-sm">
                         <ShoppingCart className="h-5 w-5 animate-pulse group-hover:animate-none" />
                     </Button>
                 </Link>
 
                 <Popover>
                     <PopoverTrigger asChild>
-                        <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary hover:bg-secondary/80 px-3 py-1.5 text-sm font-bold transition-all border border-transparent hover:border-primary/20">
+                        <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary hover:bg-secondary/80 px-4 py-2 text-sm font-bold transition-all border border-transparent hover:border-primary/20 shadow-sm">
                             <Medal className="h-5 w-5 text-amber-500 animate-gold-shine" />
                             <span>{credits}</span>
                         </div>
