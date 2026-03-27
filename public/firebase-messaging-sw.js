@@ -1,12 +1,9 @@
 
-/*
- * @fileOverview Background Firebase Messaging Service Worker
- */
+// Scripts for firebase and firebase-messaging
+importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/9.0.0/firebase-messaging-compat.js');
 
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
-
-// These are public config values, safe to include in the SW
+// Initialize the Firebase app in the service worker
 firebase.initializeApp({
   apiKey: "AIzaSyATUcEV5XGgj5oMkAv1a5Xh-6jZApOXVBw",
   authDomain: "mindmate-80e5c.firebaseapp.com",
@@ -18,23 +15,19 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background messages
+// Background notification handler
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
   
-  const notificationTitle = payload.data?.title || payload.notification?.title || 'MindMate Alert';
+  const notificationTitle = payload.notification?.title || payload.data?.title || 'MindMate Alert';
   const notificationOptions = {
-    body: payload.data?.body || payload.notification?.body || 'New message from the community!',
+    body: payload.notification?.body || payload.data?.body || 'Check your dashboard for updates.',
     icon: '/logo.jpg',
     badge: '/logo.jpg',
     data: {
-        link: payload.data?.link || '/dashboard'
+        url: payload.data?.link || '/dashboard'
     }
   };
-
-  if (payload.data?.image) {
-      notificationOptions.image = payload.data.image;
-  }
 
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
@@ -42,20 +35,21 @@ messaging.onBackgroundMessage((payload) => {
 // Handle notification click
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const link = event.notification.data.link || '/dashboard';
-  
+  const urlToOpen = event.notification.data?.url || '/dashboard';
+
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      if (clientList.length > 0) {
-        let client = clientList[0];
-        for (let i = 0; i < clientList.length; i++) {
-          if (clientList[i].focused) {
-            client = clientList[i];
-          }
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
+      // Check if there is already a window open
+      for (var i = 0; i < windowClients.length; i++) {
+        var client = windowClients[i];
+        if (client.url.includes(urlToOpen) && 'focus' in client) {
+          return client.focus();
         }
-        return client.focus().then(c => c.navigate(link));
       }
-      return clients.openWindow(link);
+      // If not, open a new window
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
     })
   );
 });

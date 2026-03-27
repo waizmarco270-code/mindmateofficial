@@ -12,29 +12,27 @@ const NotificationHandler = () => {
 
   useEffect(() => {
     if (typeof window !== 'undefined' && messaging) {
+      // Listener for messages when the app is in the foreground
       const unsubscribe = onMessage(messaging, (payload) => {
-        console.log('Foreground message received.', payload);
+        console.log('Foreground message received:', payload);
         
-        // Prevent duplicate processing of the same message within a short window
         const msgId = payload.messageId || JSON.stringify(payload.data);
         if (lastHandledMsgId.current === msgId) return;
         lastHandledMsgId.current = msgId;
 
-        // Only show toast if the tab is actually active/focused
-        if (document.visibilityState === 'visible') {
-            const title = payload.data?.title || payload.notification?.title || 'New Notification';
-            const body = payload.data?.body || payload.notification?.body || 'You have a new message.';
-
-            toast({
-              title: title,
-              description: body,
-            });
-        }
+        // Extracting data robustly
+        const title = payload.notification?.title || payload.data?.title || 'MindMate Alert';
+        const body = payload.notification?.body || payload.data?.body || 'New update available.';
+        
+        // Show the toast even if the tab is visible
+        toast({
+          title: title,
+          description: body,
+          duration: 5000,
+        });
       });
 
-      return () => {
-        unsubscribe();
-      };
+      return () => unsubscribe();
     }
   }, [toast]);
 

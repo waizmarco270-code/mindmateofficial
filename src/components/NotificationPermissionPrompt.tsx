@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -12,15 +13,15 @@ const NotificationPermissionPrompt = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
-    // Check if we should prompt the user.
-    // MODIFIED: Removed sessionStorage check to force prompt on every load until permission is granted or denied.
-    if (notificationPermission === 'default') {
-      // Wait a bit before showing the prompt to not be too intrusive.
-      const timer = setTimeout(() => {
-        setIsOpen(true);
-      }, 3000); // 3-second delay
-
-      return () => clearTimeout(timer);
+    // FORCE MODE: Always show if permission is not granted or denied
+    // This will persist across refreshes and logins until the user takes action.
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'default') {
+        const timer = setTimeout(() => {
+          setIsOpen(true);
+        }, 2000); 
+        return () => clearTimeout(timer);
+      }
     }
   }, [notificationPermission]);
 
@@ -28,42 +29,42 @@ const NotificationPermissionPrompt = () => {
     setIsOpen(false);
     const permission = await requestPermission();
     if (permission === 'granted') {
-      toast({ title: 'Notifications Enabled!', description: 'You will now receive updates from MindMate.' });
-    } else {
+      toast({ title: 'Notifications Enabled!', description: 'You will now receive real-time updates.' });
+    } else if (permission === 'denied') {
       toast({
         variant: 'destructive',
-        title: 'Permission Denied',
-        description: 'You can enable notifications later in your browser settings.',
+        title: 'Permission Blocked',
+        description: 'You have disabled notifications in your browser settings.',
       });
     }
   };
 
   const handleDeny = () => {
     setIsOpen(false);
-    // Even if denied, the browser will remember the choice.
-    // If permission remains 'default', it will show again next time.
+    // Note: Since we removed the session check, it will reappear on next reload
+    // to encourage the user to enable it for the best experience.
   };
 
   return (
     <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-      <AlertDialogContent className="border-primary/20">
+      <AlertDialogContent className="border-primary/20 bg-background/95 backdrop-blur-xl">
         <AlertDialogHeader>
             <div className="flex justify-center mb-4">
-                <div className="rounded-full bg-blue-100 dark:bg-blue-900/50 p-4 animate-pulse">
-                    <Bell className="h-10 w-10 text-blue-500" />
+                <div className="rounded-full bg-primary/10 p-6 animate-pulse border-2 border-primary/20">
+                    <Bell className="h-12 w-12 text-primary" />
                 </div>
             </div>
-          <AlertDialogTitle className="text-center text-2xl font-bold">Stay Connected, Legend!</AlertDialogTitle>
-          <AlertDialogDescription className="text-center text-base">
-            Enable push notifications to receive real-time alerts for <b>Announcements, Global Gifts,</b> and <b>Community Missions</b> directly on your device.
+          <AlertDialogTitle className="text-center text-3xl font-black tracking-tight">STAY IN THE LOOP, LEGEND!</AlertDialogTitle>
+          <AlertDialogDescription className="text-center text-base text-muted-foreground">
+            Don't miss out on <b>Exclusive Gifts, Important Announcements,</b> and <b>Community Missions</b>. Enable push notifications to stay ahead of the curve.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="sm:justify-center flex-col gap-2">
-          <AlertDialogAction onClick={handleAllow} className="w-full h-12 font-bold text-lg">
-            Enable Notifications
+        <AlertDialogFooter className="sm:justify-center flex-col gap-3 mt-4">
+          <AlertDialogAction onClick={handleAllow} className="w-full h-14 font-black text-xl shadow-lg shadow-primary/20">
+            ENABLE ALERTS
           </AlertDialogAction>
-          <AlertDialogCancel onClick={handleDeny} className="w-full border-none text-muted-foreground hover:text-foreground">
-            Maybe Later
+          <AlertDialogCancel onClick={handleDeny} className="w-full border-none text-muted-foreground hover:text-foreground font-bold">
+            MAYBE LATER
           </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
