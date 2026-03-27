@@ -4,7 +4,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, doc, onSnapshot, setDoc, updateDoc, addDoc, serverTimestamp, getDoc, query, where } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, updateDoc, addDoc, serverTimestamp, getDoc, query, where, Timestamp } from 'firebase/firestore';
 import { useToast } from './use-toast';
 import { User } from './use-admin';
 
@@ -16,6 +16,7 @@ interface VoiceCallContextType {
     endCall: () => Promise<void>;
     localStream: MediaStream | null;
     remoteStream: MediaStream | null;
+    callDuration: number;
 }
 
 interface CallSession {
@@ -30,6 +31,7 @@ interface CallSession {
     offer?: any;
     answer?: any;
     createdAt: any;
+    startTime?: number;
 }
 
 const VoiceCallContext = createContext<VoiceCallContextType | undefined>(undefined);
@@ -47,9 +49,11 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
     const [activeCall, setActiveCall] = useState<CallSession | null>(null);
     const [localStream, setLocalStream] = useState<MediaStream | null>(null);
     const [remoteStream, setRemoteStream] = useState<MediaStream | null>(null);
+    const [callDuration, setCallDuration] = useState(0);
     
     const pc = useRef<RTCPeerConnection | null>(null);
     const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
         if (typeof window !== 'undefined' && !remoteAudioRef.current) {
@@ -64,6 +68,22 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
             remoteAudioRef.current.srcObject = remoteStream;
         }
     }, [remoteStream]);
+
+    // Timer logic for active calls
+    useEffect(() => {
+        if (activeCall?.status === 'active') {
+            const start = activeCall.startTime || Date.now();
+            timerIntervalRef.current = setInterval(() => {
+                setCallDuration(Math.floor((Date.now() - start) / 1000));
+            }, 1000);
+        } else {
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+            setCallDuration(0);
+        }
+        return () => {
+            if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
+        };
+    }, [activeCall?.status, activeCall?.startTime]);
 
     useEffect(() => {
         if (!user) return;
@@ -151,6 +171,9 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
                 pc.current!.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
             if (data?.status === 'rejected' || data?.status === 'ended') cleanup();
+            if (data?.status === 'active' && activeCall?.status === 'ringing') {
+                setActiveCall(prev => prev ? { ...prev, status: 'active', startTime: data.startTime || Date.now() } : null);
+            }
         });
 
         onSnapshot(query(candidatesRef, where('type', '==', 'receiver')), (snapshot) => {
@@ -179,10 +202,14 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
         const answerDescription = await pc.current!.createAnswer();
         await pc.current!.setLocalDescription(answerDescription);
 
+        const startTime = Date.now();
         await updateDoc(callDoc, { 
             answer: { type: answerDescription.type, sdp: answerDescription.sdp }, 
-            status: 'active' 
+            status: 'active',
+            startTime
         });
+
+        setActiveCall(prev => prev ? { ...prev, status: 'active', startTime } : null);
 
         onSnapshot(query(candidatesRef, where('type', '==', 'caller')), (snapshot) => {
             snapshot.docChanges().forEach((change) => {
@@ -210,7 +237,7 @@ export const VoiceCallProvider = ({ children }: { children: React.ReactNode }) =
     };
 
     return (
-        <VoiceCallContext.Provider value={{ activeCall, startCall, acceptCall, rejectCall, endCall, localStream, remoteStream }}>
+        <VoiceCallContext.Provider value={{ activeCall, startCall, acceptCall, rejectCall, endCall, localStream, remoteStream, callDuration }}>
             {children}
         </VoiceCallContext.Provider>
     );

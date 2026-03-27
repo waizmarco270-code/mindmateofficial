@@ -18,13 +18,14 @@ const getChatId = (uid1: string, uid2: string) => {
   return [uid1, uid2].sort().join('_');
 };
 
-const PAGE_SIZE = 30;
+const PAGE_SIZE = 25;
 
 export const useChat = (friendId: string) => {
     const { user: currentUser } = useUser();
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
     const [hasMore, setHasMore] = useState(true);
+    const [lastDoc, setLastDoc] = useState<any>(null);
 
     const chatId = useMemo(() => {
         if (!currentUser) return null;
@@ -52,6 +53,9 @@ export const useChat = (friendId: string) => {
             }).reverse();
             
             setMessages(fetchedMessages);
+            if (snapshot.docs.length > 0) {
+                setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
+            }
             setHasMore(snapshot.docs.length === PAGE_SIZE);
             setLoading(false);
         });
@@ -60,15 +64,15 @@ export const useChat = (friendId: string) => {
     }, [chatId]);
 
     const loadMore = useCallback(async () => {
-        if (!chatId || !hasMore || messages.length === 0) return;
+        if (!chatId || !hasMore || !lastDoc || loading) return;
 
+        setLoading(true);
         const messagesRef = collection(db, 'chats', chatId, 'messages');
-        const firstMessage = messages[0];
         
         const q = query(
             messagesRef, 
             orderBy('timestamp', 'desc'), 
-            startAfter(firstMessage.timestamp), 
+            startAfter(lastDoc), 
             limit(PAGE_SIZE)
         );
 
@@ -84,9 +88,12 @@ export const useChat = (friendId: string) => {
 
         if (olderMessages.length > 0) {
             setMessages(prev => [...olderMessages, ...prev]);
+            setLastDoc(snapshot.docs[snapshot.docs.length - 1]);
         }
+        
         setHasMore(snapshot.docs.length === PAGE_SIZE);
-    }, [chatId, hasMore, messages]);
+        setLoading(false);
+    }, [chatId, hasMore, lastDoc, loading]);
 
     const sendMessage = useCallback(async (text: string) => {
         if (!chatId || !currentUser) return;
