@@ -31,7 +31,7 @@ export interface User {
   credits: number;
   walletBalance: number;
   walletTransactions?: WalletTransaction[];
-  lastWalletDeposit?: string; // ISO string
+  lastWalletDeposit?: string; 
   masterCardExpires?: string;
   votedPolls?: Record<string, string>;
   unlockedResourceSections?: string[];
@@ -226,8 +226,8 @@ export interface StoreItem {
     id: string;
     name: string;
     description: string;
-    cost: number; // For credits
-    price?: number; // For real money
+    cost: number;
+    price?: number; 
     paymentType: 'credits' | 'money';
     type: 'scratch-card' | 'card-flip' | 'penalty-shield' | 'streak-freeze' | 'alpha-glow' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'clan-xp-booster' | 'clan-level-max';
     quantity: number;
@@ -427,21 +427,20 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             if (snap.exists()) {
                 const data = snap.data();
                 const todayStr = format(new Date(), 'yyyy-MM-dd');
-                const updates: Partial<User> = {};
+                const updates: any = {};
                 let hasUpdates = false;
 
                 if (data.lastStreakCheck !== todayStr) {
                     const lastCheckDate = data.lastStreakCheck ? new Date(data.lastStreakCheck) : null;
                     const currentStreak = data.streak || 0;
                     if (lastCheckDate && isYesterday(lastCheckDate)) {
-                        const newStreak = currentStreak + 1;
-                        updates.streak = newStreak;
-                        if (newStreak > (data.longestStreak || 0)) updates.longestStreak = newStreak;
-                        if (newStreak % 30 === 0) updates.credits = increment(100);
-                        else if (newStreak % 5 === 0) updates.credits = increment(50);
+                        updates.streak = currentStreak + 1;
+                        if (updates.streak > (data.longestStreak || 0)) updates.longestStreak = updates.streak;
+                        if (updates.streak % 30 === 0) updates.credits = (data.credits || 0) + 100;
+                        else if (updates.streak % 5 === 0) updates.credits = (data.credits || 0) + 50;
                     } else if (lastCheckDate && !isToday(lastCheckDate)) { 
                         if ((data.inventory?.streakFreezes || 0) > 0) {
-                            updates['inventory.streakFreezes'] = increment(-1);
+                            updates['inventory.streakFreezes'] = (data.inventory?.streakFreezes || 0) - 1;
                         } else {
                             updates.streak = 1; 
                         }
@@ -450,8 +449,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     hasUpdates = true;
                 }
 
-                if (hasUpdates) await updateDoc(userDocRef, updates);
-                setCurrentUserData({ id: snap.id, ...data, ...updates } as User);
+                if (hasUpdates) {
+                    // CRITICAL: We only use updateDoc with FieldValues. 
+                    // We DO NOT merge raw FieldValues into our React state.
+                    const firestoreUpdates = { ...updates };
+                    if (updates.credits !== undefined) firestoreUpdates.credits = increment(updates.credits - (data.credits || 0));
+                    if (updates['inventory.streakFreezes'] !== undefined) firestoreUpdates['inventory.streakFreezes'] = increment(-1);
+                    
+                    await updateDoc(userDocRef, firestoreUpdates);
+                }
+                setCurrentUserData({ id: snap.id, ...data } as User);
             } else {
                 const newUser: User = {
                     id: authUser.id, uid: authUser.id, displayName: authUser.fullName || authUser.username || 'New User',
@@ -861,7 +868,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         triggerAegisPulse,
         addAnnouncement: async (a) => {
             await addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() });
-            // Send Push Notification
             await fetch('/api/send-notification', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -885,7 +891,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         addResource: async (r) => {
             await addDoc(collection(db, 'resources'), { ...r, createdAt: serverTimestamp() });
-            // Notify about new resource
             await fetch('/api/send-notification', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -922,9 +927,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         submitPollComment: (id, c) => updateDoc(doc(db, 'polls', id), { comments: arrayUnion({ userId: authUser?.id, userName: currentUserData?.displayName, comment: c, createdAt: Timestamp.now() }) }),
         updateAppSettings: (s) => updateDoc(doc(db, 'appConfig', 'settings'), s),
         sendGlobalGift: async (g) => {
-            const docRef = await addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] });
-            
-            // Push Notification logic
+            await addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] });
             await fetch('/api/send-notification', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -952,8 +955,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         addFeatureShowcase: async (s) => {
             await addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() });
-            
-            // If live, notify everyone
             if (s.status === 'live') {
                 await fetch('/api/send-notification', {
                     method: 'POST',
@@ -968,7 +969,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         updateFeatureShowcase: async (id, d) => {
             await updateDoc(doc(db, 'featureShowcases', id), d);
-            // If being set to live, notify
             if (d.status === 'live') {
                 const snap = await getDoc(doc(db, 'featureShowcases', id));
                 const data = snap.data();
@@ -1002,7 +1002,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         addVideoLecture: async (l) => {
             await addDoc(collection(db, 'videoLectures'), { ...l, createdAt: serverTimestamp() });
-            // Notify about new lecture
             await fetch('/api/send-notification', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
