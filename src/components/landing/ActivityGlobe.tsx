@@ -16,8 +16,10 @@ const locations = [
 
 export function ActivityGlobe() {
   const [activeNodes, setActiveNodes] = useState<number[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const interval = setInterval(() => {
       const randomIdx = Math.floor(Math.random() * locations.length);
       setActiveNodes(prev => {
@@ -28,9 +30,11 @@ export function ActivityGlobe() {
     return () => clearInterval(interval);
   }, []);
 
+  if (!isMounted) return null;
+
   return (
     <div className="relative w-full aspect-[16/9] md:aspect-[21/9] rounded-[2.5rem] overflow-hidden glass-module shadow-[0_0_50px_rgba(0,0,0,0.5)] group">
-      {/* Real Styled Map Background */}
+      {/* Styled Map Background */}
       <div className="absolute inset-0 grayscale invert brightness-50 opacity-20 mix-blend-screen transition-opacity group-hover:opacity-40">
         <iframe
           src="https://www.google.com/maps/embed?pb=!1m14!1m12!1m3!1d15552.400000000001!2d77.5945627!3d12.9715987!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sin!4v1710000000000!5m2!1sen!2sin&maptype=satellite&disableDefaultUI=1"
@@ -83,9 +87,6 @@ export function ActivityGlobe() {
           <div className="px-5 py-2.5 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/10 flex items-center gap-3 shadow-xl">
             <div className="h-2.5 w-2.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]" />
             <span className="text-[10px] font-black uppercase tracking-[0.25em] text-white/90">Mainframe: Optimized</span>
-          </div>
-          <div className="hidden sm:flex px-5 py-2.5 rounded-2xl bg-black/80 backdrop-blur-2xl border border-white/10 items-center gap-3 shadow-xl">
-            <span className="text-[10px] font-black uppercase tracking-[0.25em] text-primary">Global Sync: 99.9%</span>
           </div>
         </div>
         <div className="flex items-center gap-3 text-white/50 italic text-[10px] font-bold uppercase tracking-widest">
