@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -121,25 +119,26 @@ function SearchUsersTab() {
                 />
             </div>
 
+            <div className="space-y-4">
+                {filteredUsers.map(user => (
+                    <Card key={user.uid} className="hover:bg-muted cursor-pointer" onClick={() => setSelectedUser(user)}>
+                        <CardContent className="p-4 flex items-center gap-4">
+                            <Avatar className="h-12 w-12">
+                                <AvatarImage src={user.photoURL} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <div>
+                                <p className="font-bold">{user.displayName}</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ))}
+                {searchTerm && filteredUsers.length === 0 && (
+                    <p className="text-center text-muted-foreground py-10">No users found.</p>
+                )}
+            </div>
+
             <Dialog open={!!selectedUser} onOpenChange={(isOpen) => !isOpen && setSelectedUser(null)}>
-                <div className="space-y-4">
-                    {filteredUsers.map(user => (
-                        <Card key={user.uid} className="hover:bg-muted cursor-pointer" onClick={() => setSelectedUser(user)}>
-                            <CardContent className="p-4 flex items-center gap-4">
-                                <Avatar className="h-12 w-12">
-                                    <AvatarImage src={user.photoURL} />
-                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <p className="font-bold">{user.displayName}</p>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                    {searchTerm && filteredUsers.length === 0 && (
-                        <p className="text-center text-muted-foreground py-10">No users found.</p>
-                    )}
-                </div>
                  <DialogContent className="max-w-md">
                     {selectedUser && (
                         <>
@@ -168,9 +167,9 @@ export default function ProfilePage() {
 
                 <Tabs defaultValue="profile" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="profile"><UserIcon className="mr-2"/> Your Profile</TabsTrigger>
-                        <TabsTrigger value="search"><Search className="mr-2"/> Search Users</TabsTrigger>
-                        <TabsTrigger value="analytics"><Star className="mr-2"/> Constellation</TabsTrigger>
+                        <TabsTrigger value="profile"><UserIcon className="mr-2 h-4 w-4"/> Your Profile</TabsTrigger>
+                        <TabsTrigger value="search"><Search className="mr-2 h-4 w-4"/> Search Users</TabsTrigger>
+                        <TabsTrigger value="analytics"><Star className="mr-2 h-4 w-4"/> Constellation</TabsTrigger>
                     </TabsList>
                     <TabsContent value="profile" className="mt-6">
                         <UserProfileCard user={currentUserData} isOwnProfile={true} />

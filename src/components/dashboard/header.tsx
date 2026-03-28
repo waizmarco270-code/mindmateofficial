@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Medal, Crown, ShieldCheck, Settings, LifeBuoy, KeyRound, Check, X, PanelLeft, ShoppingCart, User as UserIcon, LogOut, Bell, Sun, Moon, Monitor, CreditCard, Wallet, Fingerprint } from 'lucide-react';
@@ -31,21 +30,21 @@ function Inbox() {
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        "relative h-12 w-12 rounded-full transition-all duration-500 group border",
+                        "relative h-10 w-10 rounded-full transition-all duration-500 group border",
                         hasInboxUnread 
-                            ? "bg-red-600 text-white border-red-500 shadow-[0_0_25px_rgba(220,38,38,0.6)]" 
-                            : "bg-yellow-400/10 text-yellow-500 border-yellow-400/30 hover:bg-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.3)]"
+                            ? "bg-red-600 text-white border-red-500 shadow-[0_0_20px_rgba(220,38,38,0.5)]" 
+                            : "bg-yellow-400/10 text-yellow-500 border-yellow-400/20 hover:bg-yellow-400/20 shadow-sm"
                     )}
                 >
                     <div className="relative">
                         <Bell className={cn(
-                            "h-7 w-7 transition-all duration-500",
-                            hasInboxUnread ? "text-white drop-shadow-[0_0_10px_white] animate-pulse" : "text-[#facc15] drop-shadow-[0_0_12px_rgba(250,204,21,0.8)]"
+                            "h-5 w-5 transition-all duration-500",
+                            hasInboxUnread ? "text-white animate-pulse" : "text-[#facc15]"
                         )} />
                         {hasInboxUnread && (
-                            <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
+                            <span className="absolute -top-1 -right-1 flex h-3 w-3">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-4 w-4 bg-white border-2 border-red-600 shadow-lg"></span>
+                                <span className="relative inline-flex rounded-full h-3 w-3 bg-white border-2 border-red-600 shadow-lg"></span>
                             </span>
                         )}
                     </div>
@@ -67,8 +66,8 @@ function AdminCommandShield() {
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
-                    <ShieldCheck className="h-7 w-7" />
+                <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                    <ShieldCheck className="h-5 w-5" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2 rounded-2xl shadow-2xl border-emerald-500/20">
@@ -114,8 +113,8 @@ function ProfileHub() {
         <Popover>
             <PopoverTrigger asChild>
                 <button className="relative group focus:outline-none focus:ring-0">
-                    <div className="rainbow-border-wrap p-[2px]">
-                        <Avatar className="h-12 w-12 border-2 border-background">
+                    <div className="p-[2px] rounded-full border-2 border-primary/20">
+                        <Avatar className="h-10 w-10 border-2 border-background">
                             <AvatarImage src={user.imageUrl} />
                             <AvatarFallback><UserIcon /></AvatarFallback>
                         </Avatar>
@@ -184,17 +183,16 @@ export default function Header() {
   
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
-  const walletBalance = currentUserData?.walletBalance ?? 0;
   
   return (
-    <header className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
        <Button
         variant="ghost"
         size="icon"
         onClick={() => setOpenMobile(true)}
-        className="h-12 w-12"
+        className="h-10 w-10"
       >
-        <PanelLeft className="h-7 w-7" />
+        <PanelLeft className="h-6 w-6" />
         <span className="sr-only">Toggle Menu</span>
       </Button>
 
@@ -202,24 +200,24 @@ export default function Header() {
       <div className="flex items-center gap-2 md:gap-4">
         <SignedOut>
             <SignInButton mode="modal">
-              <Button variant="ghost">Sign In</Button>
+              <Button variant="ghost" size="sm">Sign In</Button>
             </SignInButton>
             <SignUpButton mode="modal">
-              <Button>Sign Up</Button>
+              <Button size="sm">Sign Up</Button>
             </SignUpButton>
         </SignedOut>
         <SignedIn>
             <div className="flex items-center gap-2 md:gap-3">
                 <Link href="/dashboard/store">
-                    <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all group shadow-sm">
-                        <ShoppingCart className="h-6 w-6 animate-pulse group-hover:animate-none" />
+                    <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all group shadow-sm">
+                        <ShoppingCart className="h-5 w-5 animate-pulse group-hover:animate-none" />
                     </Button>
                 </Link>
 
                 <Popover>
                     <PopoverTrigger asChild>
-                        <div className="flex cursor-pointer items-center gap-2 h-12 rounded-full bg-secondary hover:bg-secondary/80 px-5 py-2 text-base font-bold transition-all border border-transparent hover:border-primary/20 shadow-sm">
-                            <Medal className="h-6 w-6 text-amber-500 animate-gold-shine" />
+                        <div className="flex cursor-pointer items-center gap-2 h-10 rounded-full bg-secondary hover:bg-secondary/80 px-4 py-2 text-sm font-bold transition-all border border-transparent hover:border-primary/20 shadow-sm">
+                            <Medal className="h-5 w-5 text-amber-500 animate-gold-shine" />
                             <span>{credits}</span>
                         </div>
                     </PopoverTrigger>
@@ -234,14 +232,6 @@ export default function Header() {
                             </div>
                         </div>
                         <div className="p-4 space-y-4">
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-primary/5 border border-primary/10">
-                                <div className="flex items-center gap-2">
-                                    <Wallet className="h-4 w-4 text-primary" />
-                                    <span className="text-sm font-bold">Wallet Balance</span>
-                                </div>
-                                <span className="font-black text-primary">₹{walletBalance}</span>
-                            </div>
-                            
                             <Button asChild className="w-full rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border-none shadow-none font-bold" variant="outline">
                                 <Link href="/dashboard/wallet">
                                     <ShieldCheck className="mr-2 h-4 w-4"/> Visit MindMate Vault

@@ -20,14 +20,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 
-interface PomodoroSession {
-  id: string;
-  userId: string;
-  type: 'focus' | 'shortBreak' | 'longBreak';
-  duration: number; // in seconds
-  completedAt: string; // ISO string
-}
-
 type UserWithStats = User & { 
     totalScore: number; 
     weeklyTime: number; 
@@ -50,7 +42,6 @@ type UserWithStats = User & {
       total: number;
     };
 };
-
 
 const LEADERBOARD_EXCLUDED_UIDS: string[] = [];
 
