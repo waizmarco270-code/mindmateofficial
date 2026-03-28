@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban } from 'lucide-react';
+import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban, Link as LinkIcon, Key, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,6 +31,7 @@ import { usePresence } from '@/hooks/use-presence';
 import { cn } from '@/lib/utils';
 
 const CREDIT_PASSWORD = "waizcredit";
+const MASTER_API_KEY = "EMITYGATE_SOVEREIGN_LINK_99"; // Sync with API route
 
 export default function SuperAdminPanelPage() {
   const { 
@@ -56,6 +58,7 @@ export default function SuperAdminPanelPage() {
   
   const [isCreditUnlocked, setIsCreditUnlocked] = useState(false);
   const [creditPassword, setCreditPassword] = useState('');
+  const [isApiKeyCopied, setIsApiKeyCopied] = useState(false);
   
   // Ban State
   const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
@@ -193,6 +196,13 @@ export default function SuperAdminPanelPage() {
       }
   };
 
+  const copyApiKey = () => {
+      navigator.clipboard.writeText(MASTER_API_KEY);
+      setIsApiKeyCopied(true);
+      toast({ title: "API Key Secured" });
+      setTimeout(() => setIsApiKeyCopied(false), 2000);
+  };
+
   if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -212,30 +222,72 @@ export default function SuperAdminPanelPage() {
 
   return (
     <div className="space-y-8 pb-20">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Super Admin Controls</h1>
-        <p className="text-muted-foreground">Master controls for roles, monetization, and system state.</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+            <h1 className="text-3xl font-black tracking-tighter italic uppercase text-primary">Sovereign Command</h1>
+            <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Protocol: Mainframe Governance</p>
+        </div>
+        <div className="flex items-center gap-2">
+            <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary px-3 py-1 font-black">CORE v2.5</Badge>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-primary/5 border-primary/20">
-              <CardHeader className="p-4 pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">Total Citizens</CardTitle></CardHeader>
+              <CardHeader className="p-4 pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Citizens</CardTitle></CardHeader>
               <CardContent className="p-4 pt-0 flex items-center justify-between">
                   <span className="text-3xl font-black">{users.length}</span>
                   <Users className="h-8 w-8 text-primary opacity-20"/>
               </CardContent>
           </Card>
           <Card className="bg-green-500/5 border-green-500/20">
-              <CardHeader className="p-4 pb-2"><CardTitle className="text-xs uppercase text-muted-foreground">Online Now</CardTitle></CardHeader>
+              <CardHeader className="p-4 pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Online Now</CardTitle></CardHeader>
               <CardContent className="p-4 pt-0 flex items-center justify-between">
                   <span className="text-3xl font-black">{onlineCount}</span>
-                  <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse"/>
+                  <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"/>
               </CardContent>
           </Card>
       </div>
 
-      <Accordion type="multiple" defaultValue={['user-management', 'aegis-intelligence']} className="w-full space-y-4">
+      <Accordion type="multiple" defaultValue={['emitygate-integration', 'aegis-intelligence']} className="w-full space-y-4">
         
+        {/* 0. EmityGate Integration Hub (NEW) */}
+        <AccordionItem value="emitygate-integration" className="border-b-0">
+          <Card className="border-blue-500/30 bg-blue-500/5">
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <LinkIcon className="h-6 w-6 text-blue-500" />
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight">EmityGate Link Protocol</h3>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Cross-product synchronization & API Hub.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-6">
+                <Card className="bg-background border-blue-500/20 shadow-xl">
+                    <CardHeader>
+                        <CardTitle className="text-base flex items-center gap-2"><Key className="text-blue-500 h-4 w-4"/> Sovereign API Key</CardTitle>
+                        <CardDescription>Use this key on EmityGate.com to securely pull user statistics.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="flex items-center gap-2">
+                            <Input readOnly value={MASTER_API_KEY} className="font-mono text-xs bg-muted/50 h-12" />
+                            <Button size="icon" variant="outline" className="h-12 w-12" onClick={copyApiKey}>
+                                {isApiKeyCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
+                            </Button>
+                        </div>
+                        <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-2">
+                            <p className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest">Active Endpoint</p>
+                            <code className="text-[10px] block p-2 bg-black/20 rounded font-mono break-all text-muted-foreground">
+                                GET https://mindmate.emitygate.com/api/v1/user/[userId]
+                            </code>
+                        </div>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
         {/* 1. Aegis Intelligence Hub */}
         <AccordionItem value="aegis-intelligence" className="border-b-0">
           <Card className="border-primary/30 bg-primary/5">
@@ -243,8 +295,8 @@ export default function SuperAdminPanelPage() {
                <div className="flex items-center gap-3">
                 <BrainCircuit className="h-6 w-6 text-primary animate-pulse" />
                 <div>
-                  <h3 className="text-lg font-semibold">Aegis Intelligence Hub</h3>
-                  <p className="text-sm text-muted-foreground text-left">Autonomous app governance & engagement agent.</p>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Aegis Intelligence Hub</h3>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Autonomous app governance & engagement engine.</p>
                 </div>
               </div>
             </AccordionTrigger>
@@ -258,7 +310,7 @@ export default function SuperAdminPanelPage() {
                         <CardContent className="space-y-4">
                             <div className="flex items-center justify-between p-4 border rounded-xl">
                                 <div className="space-y-0.5">
-                                    <Label className="text-base">Auto-Pilot Mode</Label>
+                                    <Label className="text-base font-bold">Auto-Pilot Mode</Label>
                                     <p className="text-xs text-muted-foreground">Allow Aegis to post announcements and surprises independently.</p>
                                 </div>
                                 <Switch checked={isAegisMode} onCheckedChange={setIsAegisMode} />
@@ -277,7 +329,7 @@ export default function SuperAdminPanelPage() {
                             </div>
                             <Button 
                                 onClick={handleAegisPulse} 
-                                className="w-full h-12 text-lg font-bold" 
+                                className="w-full h-12 text-lg font-black uppercase shadow-lg shadow-primary/20" 
                                 disabled={isAegisPulseRunning}
                             >
                                 {isAegisPulseRunning ? <Loader2 className="animate-spin mr-2" /> : <BrainCircuit className="mr-2" />}
@@ -297,8 +349,8 @@ export default function SuperAdminPanelPage() {
                <div className="flex items-center gap-3">
                 <Users className="h-6 w-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold">User Authority</h3>
-                  <p className="text-sm text-muted-foreground text-left">Manage roles, bans, and Master Cards.</p>
+                  <h3 className="text-lg font-black uppercase tracking-tight">User Authority</h3>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Manage roles, bans, and Master Cards.</p>
                 </div>
               </div>
             </AccordionTrigger>
@@ -328,34 +380,34 @@ export default function SuperAdminPanelPage() {
                                         </TableCell>
                                         <TableCell className="font-medium whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <Avatar className="h-8 w-8 border">
+                                                <Avatar className="h-8 w-8 border shadow-sm">
                                                     <AvatarImage src={u.photoURL}/>
                                                     <AvatarFallback>{u.displayName?.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold">{u.displayName}</span>
-                                                    <span className="text-[10px] text-muted-foreground font-mono">{u.uid.slice(-8)}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">{u.uid.slice(-8)}</span>
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap space-x-1">
-                                            {isUserSuperAdmin && <Badge className="bg-red-500 text-[10px]">Dev</Badge>}
-                                            {u.isAdmin && <Badge className="text-[10px]">Admin</Badge>}
-                                            {u.isVip && <Badge className="bg-amber-500 text-[10px]">Elite</Badge>}
-                                            {u.isCoDev && <Badge className="bg-rose-500 text-[10px]">Co-Dev</Badge>}
-                                            {hasMasterCard && <Badge variant="outline" className="text-green-500 border-green-500 text-[10px]">Master</Badge>}
+                                            {isUserSuperAdmin && <Badge className="bg-red-500 text-[10px] font-black">Dev</Badge>}
+                                            {u.isAdmin && <Badge className="text-[10px] font-black">Admin</Badge>}
+                                            {u.isVip && <Badge className="bg-amber-500 text-[10px] font-black text-black">Elite</Badge>}
+                                            {u.isCoDev && <Badge className="bg-rose-500 text-[10px] font-black">Co-Dev</Badge>}
+                                            {hasMasterCard && <Badge variant="outline" className="text-green-500 border-green-500 text-[10px] font-black">Master</Badge>}
                                         </TableCell>
                                         <TableCell className="font-bold font-mono">{u.credits?.toLocaleString()}</TableCell>
                                         <TableCell>
                                             {u.isBlocked ? (
-                                                <Badge variant="destructive" className="animate-pulse">BANNED</Badge>
+                                                <Badge variant="destructive" className="animate-pulse font-black uppercase text-[10px]">BANNED</Badge>
                                             ) : (
-                                                <Badge variant="secondary">STABLE</Badge>
+                                                <Badge variant="secondary" className="font-black uppercase text-[10px]">STABLE</Badge>
                                             )}
                                         </TableCell>
                                         <TableCell className="text-right whitespace-nowrap">
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild><Button variant="outline" size="sm">Action <UserCog className="h-4 w-4 ml-2"/></Button></DropdownMenuTrigger>
+                                                <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="font-bold">Action <UserCog className="h-4 w-4 ml-2"/></Button></DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end" className="w-56">
                                                     <DropdownMenuItem onClick={() => u.isAdmin ? removeUserAdmin(u.uid) : makeUserAdmin(u.uid)}>{u.isAdmin ? "Remove Admin" : "Make Admin"}</DropdownMenuItem>
                                                     <DropdownMenuItem onClick={() => u.isVip ? removeUserVip(u.uid) : makeUserVip(u.uid)}>{u.isVip ? "Remove Elite" : "Make Elite"}</DropdownMenuItem>
@@ -389,49 +441,49 @@ export default function SuperAdminPanelPage() {
                <div className="flex items-center gap-3">
                 <Terminal className="h-6 w-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold">App Configuration</h3>
-                  <p className="text-sm text-muted-foreground text-left">Version control and Maintenance Mode.</p>
+                  <h3 className="text-lg font-black uppercase tracking-tight">App Configuration</h3>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">System states and deployment messages.</p>
                 </div>
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0 space-y-6">
                 <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
                     <Card className="border-amber-500/30">
-                        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Terminal/> Maintenance Mode</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-base flex items-center gap-2 font-black uppercase tracking-tight"><Terminal className="h-4 w-4"/> Maintenance Mode</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-3 rounded-lg bg-muted">
-                                <Label>Enable Global Maintenance</Label>
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border">
+                                <Label className="font-bold">Global Maintenance</Label>
                                 <Switch checked={isMaintenanceMode} onCheckedChange={setIsMaintenanceMode} />
                             </div>
                             <div className="space-y-2">
-                                <Label>Maintenance Message</Label>
-                                <Textarea value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} placeholder="Why is the app down?" />
+                                <Label className="text-xs font-black uppercase tracking-widest">Display Message</Label>
+                                <Textarea value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} placeholder="Mainframe upgrades in progress..." />
                             </div>
                             <div className="space-y-2">
-                                <Label>Banner Theme</Label>
+                                <Label className="text-xs font-black uppercase tracking-widest">Visual Theme</Label>
                                 <Select value={maintenanceTheme} onValueChange={(v: any) => setMaintenanceTheme(v)}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="shiny">Shiny Purple</SelectItem>
-                                        <SelectItem value="forest">Forest Green</SelectItem>
-                                        <SelectItem value="sunflower">Sunflower Yellow</SelectItem>
+                                        <SelectItem value="shiny">Shiny Purple (Animated)</SelectItem>
+                                        <SelectItem value="forest">Forest Green (Calm)</SelectItem>
+                                        <SelectItem value="sunflower">Sunflower Yellow (Warning)</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
                         </CardContent>
                     </Card>
                     <Card className="border-primary/30">
-                        <CardHeader><CardTitle className="text-base flex items-center gap-2"><Megaphone/> What's New Popup</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-base flex items-center gap-2 font-black uppercase tracking-tight"><Megaphone className="h-4 w-4"/> What's New Popup</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Change Log Message</Label>
-                                <Textarea value={whatsNewMessage} onChange={e => setWhatsNewMessage(e.target.value)} placeholder="List the new features..." className="min-h-[150px]" />
+                                <Label className="text-xs font-black uppercase tracking-widest">Protocol Changelog</Label>
+                                <Textarea value={whatsNewMessage} onChange={e => setWhatsNewMessage(e.target.value)} placeholder="Brief the citizens on the new updates..." className="min-h-[150px]" />
                             </div>
-                            <p className="text-[10px] text-muted-foreground italic">Updating this will show a popup to all users.</p>
+                            <p className="text-[10px] text-muted-foreground italic font-medium">💡 Updating this will trigger an un-dismissible popup for all active users.</p>
                         </CardContent>
                     </Card>
                 </div>
-                <Button onClick={handleMaintenanceUpdate} className="w-full h-12 text-lg font-bold">Save System Configuration</Button>
+                <Button onClick={handleMaintenanceUpdate} className="w-full h-14 text-lg font-black uppercase shadow-xl shadow-primary/20">Save System Configuration</Button>
             </AccordionContent>
           </Card>
         </AccordionItem>
@@ -443,58 +495,60 @@ export default function SuperAdminPanelPage() {
                <div className="flex items-center gap-3">
                 <Gift className="h-6 w-6 text-primary" />
                 <div>
-                  <h3 className="text-lg font-semibold">Global Gifts & Alerts</h3>
-                  <p className="text-sm text-muted-foreground text-left">Send rewards or messages to everyone.</p>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Global Gifts & Alerts</h3>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Reward citizens or announce events.</p>
                 </div>
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0 space-y-6">
                 <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
                     <Card>
-                        <CardHeader><CardTitle className="text-base">Create Gift/Announcement</CardTitle></CardHeader>
+                        <CardHeader><CardTitle className="text-base font-black uppercase">Create New Directive</CardTitle></CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                <Label>Target Audience</Label>
+                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Target Population</Label>
                                 <Select value={popupTarget} onValueChange={(v: any) => { setPopupTarget(v); if(v === 'all') setSelectedUser(null); }}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="all">Every Legend (All Users)</SelectItem>
-                                        <SelectItem value="single">Specific Student</SelectItem>
+                                        <SelectItem value="all">Every Citizen (Global)</SelectItem>
+                                        <SelectItem value="single">Targeted Individual</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
 
                             {popupTarget === 'single' && (
-                                <div className="space-y-3 p-3 rounded-lg border bg-muted/30">
-                                    <Label className="text-xs font-bold uppercase">Search Student</Label>
+                                <div className="space-y-3 p-3 rounded-xl border bg-muted/30">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Locate Scholar</Label>
                                     {selectedUser ? (
-                                        <div className="flex items-center justify-between p-2 bg-background rounded-md border border-primary/30">
+                                        <div className="flex items-center justify-between p-2 bg-background rounded-lg border border-primary/30">
                                             <div className="flex items-center gap-2">
                                                 <Avatar className="h-6 w-6"><AvatarImage src={selectedUser.photoURL}/><AvatarFallback>U</AvatarFallback></Avatar>
                                                 <span className="text-sm font-bold">{selectedUser.displayName}</span>
                                             </div>
-                                            <button className="h-6 w-6" onClick={() => {setSelectedUser(null); setPopupSingleUserId('');}}><X className="h-3 w-3"/></button>
+                                            <button className="h-6 w-6 rounded-full hover:bg-muted flex items-center justify-center" onClick={() => {setSelectedUser(null); setPopupSingleUserId('');}}><X className="h-3 w-3"/></button>
                                         </div>
                                     ) : (
                                         <div className="relative">
-                                            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
                                             <Input 
                                                 value={userSearchTerm} 
                                                 onChange={e => setUserSearchTerm(e.target.value)} 
-                                                placeholder="Type name or UID..." 
-                                                className="pl-8 h-9"
+                                                placeholder="Enter identifier..." 
+                                                className="pl-9 h-10 rounded-lg"
                                             />
                                             {filteredUsers.length > 0 && (
-                                                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border rounded-md shadow-lg overflow-hidden">
+                                                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border-2 rounded-xl shadow-2xl overflow-hidden">
                                                     {filteredUsers.map(u => (
                                                         <button 
                                                             key={u.uid} 
-                                                            className="w-full flex items-center gap-2 p-2 hover:bg-muted text-left text-sm"
+                                                            className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 text-left border-b last:border-0"
                                                             onClick={() => handleUserSelect(u)}
                                                         >
-                                                            <Avatar className="h-6 w-6"><AvatarImage src={u.photoURL}/><AvatarFallback>U</AvatarFallback></Avatar>
-                                                            <span className="flex-1 font-medium">{u.displayName}</span>
-                                                            <span className="text-[10px] text-muted-foreground">{u.uid.slice(-5)}</span>
+                                                            <Avatar className="h-8 w-8"><AvatarImage src={u.photoURL}/><AvatarFallback>U</AvatarFallback></Avatar>
+                                                            <div className="flex-1">
+                                                                <p className="text-xs font-black">{u.displayName}</p>
+                                                                <p className="text-[10px] text-muted-foreground font-mono">{u.uid.slice(-8)}</p>
+                                                            </div>
                                                         </button>
                                                     ))}
                                                 </div>
@@ -505,43 +559,61 @@ export default function SuperAdminPanelPage() {
                             )}
 
                             <div className="space-y-2">
-                                <Label>Message</Label>
-                                <Input value={popupMessage} onChange={e => setPopupMessage(e.target.value)} placeholder="Happy Studying!" />
+                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Encryption Message</Label>
+                                <Input value={popupMessage} onChange={e => setPopupMessage(e.target.value)} placeholder="Transmission content..." className="h-11" />
                             </div>
                             
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                                <div className="space-y-1"><Label className="text-[10px] uppercase font-bold">Credits</Label><Input type="number" value={popupCreditAmount} onChange={e => setPopupCreditAmount(Number(e.target.value))} className="h-9" /></div>
-                                <div className="space-y-1"><Label className="text-[10px] uppercase font-bold">Scratch</Label><Input type="number" value={popupScratchAmount} onChange={e => setPopupScratchAmount(Number(e.target.value))} className="h-9" /></div>
-                                <div className="space-y-1"><Label className="text-[10px] uppercase font-bold">Flip</Label><Input type="number" value={popupFlipAmount} onChange={e => setPopupFlipAmount(Number(e.target.value))} className="h-9" /></div>
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] uppercase font-black text-muted-foreground">Credits</Label>
+                                    <Input type="number" value={popupCreditAmount} onChange={e => setPopupCreditAmount(Number(e.target.value))} className="h-10 font-bold" />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] uppercase font-black text-muted-foreground">Scratch</Label>
+                                    <Input type="number" value={popupScratchAmount} onChange={e => setPopupScratchAmount(Number(e.target.value))} className="h-10 font-bold" />
+                                </div>
+                                <div className="space-y-1">
+                                    <Label className="text-[9px] uppercase font-black text-muted-foreground">Flip</Label>
+                                    <Input type="number" value={popupFlipAmount} onChange={e => setPopupFlipAmount(Number(e.target.value))} className="h-10 font-bold" />
+                                </div>
                             </div>
                             
-                            <Button onClick={handleSendGlobalGift} disabled={isSendingPopup || !popupMessage} className="w-full h-11 font-bold">
-                                {isSendingPopup ? <Loader2 className="animate-spin" /> : <Send className="mr-2 h-4 w-4"/>} Send Gift
+                            <Button onClick={handleSendGlobalGift} disabled={isSendingPopup || !popupMessage} className="w-full h-12 font-black uppercase tracking-widest">
+                                {isSendingPopup ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4"/>} Dispatch Assets
                             </Button>
                         </CardContent>
                     </Card>
                     
-                    <Card>
-                        <CardHeader><CardTitle className="text-base">Active & Past Gifts</CardTitle></CardHeader>
+                    <Card className="border-primary/10">
+                        <CardHeader><CardTitle className="text-base font-black uppercase">Active Transmissions</CardTitle></CardHeader>
                         <CardContent>
-                            <ScrollArea className="h-[280px]">
-                                <div className="space-y-2">
+                            <ScrollArea className="h-[320px]">
+                                <div className="space-y-3 pr-4">
                                     {globalGifts.map(gift => (
-                                        <div key={gift.id} className="p-3 border rounded-lg bg-muted/50 text-xs flex items-center justify-between">
+                                        <div key={gift.id} className="p-4 border-2 rounded-2xl bg-muted/30 text-xs flex items-center justify-between group transition-all hover:border-primary/20">
                                             <div className="flex-1 truncate pr-2">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    {gift.isActive ? <Badge className="bg-green-500 h-2 w-2 p-0 rounded-full" /> : <Badge className="bg-muted h-2 w-2 p-0 rounded-full" />}
-                                                    <p className="font-bold">{gift.message}</p>
+                                                <div className="flex items-center gap-2 mb-1.5">
+                                                    {gift.isActive ? <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> : <div className="h-2 w-2 rounded-full bg-muted" />}
+                                                    <p className="font-black text-sm uppercase tracking-tight truncate">{gift.message}</p>
                                                 </div>
-                                                <p className="text-muted-foreground">Target: {gift.target === 'all' ? 'All Users' : gift.target.slice(0, 10) + '...'}</p>
+                                                <div className="flex items-center gap-2 opacity-60 font-bold uppercase text-[9px] tracking-widest">
+                                                    <span>TARGET: {gift.target === 'all' ? 'GLOBAL' : gift.target.slice(-8)}</span>
+                                                    <span>•</span>
+                                                    <span>SENT: {format(gift.createdAt, 'MMM d, p')}</span>
+                                                </div>
                                             </div>
-                                            <div className="flex gap-1">
-                                                {gift.isActive && <Button variant="outline" size="sm" className="h-7 text-[10px]" onClick={() => deactivateGift(gift.id)}>Stop</Button>}
-                                                <Button variant="destructive" size="sm" className="h-7 w-7 p-0" onClick={() => deleteGlobalGift(gift.id)}><Trash2 className="h-3.5 w-3.5"/></Button>
+                                            <div className="flex gap-2">
+                                                {gift.isActive && <Button variant="outline" size="sm" className="h-8 text-[9px] font-black uppercase border-primary/20" onClick={() => deactivateGift(gift.id)}>HALT</Button>}
+                                                <Button variant="destructive" size="icon" className="h-8 w-8 rounded-lg shadow-lg" onClick={() => deleteGlobalGift(gift.id)}><Trash2 className="h-4 w-4"/></Button>
                                             </div>
                                         </div>
                                     ))}
-                                    {globalGifts.length === 0 && <p className="text-center text-muted-foreground py-10 text-sm italic">No gifts sent yet.</p>}
+                                    {globalGifts.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center h-48 opacity-20">
+                                            <Gift className="h-12 w-12 mb-2" />
+                                            <p className="font-black uppercase tracking-[0.2em] text-[10px]">No active gifts</p>
+                                        </div>
+                                    )}
                                 </div>
                             </ScrollArea>
                         </CardContent>
@@ -558,39 +630,45 @@ export default function SuperAdminPanelPage() {
                <div className="flex items-center gap-3">
                 <Zap className="h-6 w-6 text-red-500" />
                 <div>
-                  <h3 className="text-lg font-semibold">System Overrides</h3>
-                  <p className="text-sm text-muted-foreground text-left">Emergency manual adjustments.</p>
+                  <h3 className="text-lg font-black uppercase tracking-tight">System Overrides</h3>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Emergency manual adjustments.</p>
                 </div>
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0">
                 {!isCreditUnlocked ? (
-                    <form onSubmit={handleCreditPasswordSubmit} className="flex flex-col items-center gap-4 py-10 border-2 border-dashed rounded-xl">
-                        <div className="p-4 bg-red-500/10 rounded-full"><KeyRoundIcon className="h-10 w-10 text-red-500"/></div>
-                        <div className="text-center"><h4 className="font-bold">Restricted Area</h4><p className="text-xs text-muted-foreground">Enter Password to continue.</p></div>
-                        <input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[200px] text-center border-2 rounded p-2 bg-background" placeholder="••••••••" />
-                        <Button type="submit">Unlock System</Button>
+                    <form onSubmit={handleCreditPasswordSubmit} className="flex flex-col items-center gap-4 py-16 border-2 border-dashed rounded-3xl bg-red-500/5">
+                        <div className="p-5 bg-red-500/10 rounded-full border-2 border-red-500/30"><KeyRoundIcon className="h-12 w-12 text-red-500"/></div>
+                        <div className="text-center space-y-1">
+                            <h4 className="font-black text-xl uppercase italic">RESTRICTED ZONE</h4>
+                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.3em]">Credentials Required</p>
+                        </div>
+                        <Input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[240px] h-14 text-center text-2xl font-black rounded-2xl bg-background border-2" placeholder="••••••••" />
+                        <Button type="submit" size="lg" className="h-12 px-10 font-black uppercase shadow-lg shadow-primary/20">AUTHORIZE ACCESS</Button>
                     </form>
                 ) : (
                     <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                        <Card className="border-red-500/20">
-                            <CardHeader><CardTitle className="text-sm">Manual Credit Injection</CardTitle></CardHeader>
+                        <Card className="border-red-500/20 bg-red-500/5">
+                            <CardHeader><CardTitle className="text-sm font-black uppercase tracking-widest">Manual Credit Injection</CardTitle></CardHeader>
                             <CardContent className="space-y-4">
-                                <div className="space-y-2"><Label>Amount to Gift EVERYONE</Label><Input type="number" id="gift-all-credits" defaultValue={100} /></div>
-                                <Button className="w-full bg-red-600 hover:bg-red-700" onClick={() => {
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest">Injection Amount (Global)</Label>
+                                    <Input type="number" id="gift-all-credits" defaultValue={100} className="h-12 text-xl font-black" />
+                                </div>
+                                <Button className="w-full h-12 bg-red-600 hover:bg-red-700 font-black uppercase" onClick={() => {
                                     const amt = Number((document.getElementById('gift-all-credits') as HTMLInputElement).value);
                                     giftCreditsToAllUsers(amt);
-                                    toast({ title: "Operation Complete", description: `Gifted ${amt} credits to all.` });
-                                }}>Gift All Credits</Button>
+                                    toast({ title: "Injected Successfully", description: `Briefed ${amt} credits to the population.` });
+                                }}>EXECUTE INJECTION</Button>
                             </CardContent>
                         </Card>
-                        <Card>
-                            <CardHeader><CardTitle className="text-sm">System Cleanup</CardTitle></CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-2">
-                                <Button variant="outline" className="text-xs" onClick={clearGlobalChat}>Clear Global Chat</Button>
-                                <Button variant="outline" className="text-xs" onClick={clearQuizLeaderboard}>Reset Quizzes</Button>
-                                <Button variant="outline" className="text-xs" onClick={resetWeeklyStudyTime}>Reset Study Log</Button>
-                                <Button variant="outline" className="text-xs" onClick={resetGameZoneLeaderboard}>Reset Games</Button>
+                        <Card className="border-primary/20">
+                            <CardHeader><CardTitle className="text-sm font-black uppercase tracking-widest">System Maintenance</CardTitle></CardHeader>
+                            <CardContent className="grid grid-cols-2 gap-3">
+                                <Button variant="outline" className="text-[10px] font-black uppercase h-12 border-primary/20" onClick={clearGlobalChat}>PURGE WORLD CHAT</Button>
+                                <Button variant="outline" className="text-[10px] font-black uppercase h-12 border-primary/20" onClick={clearQuizLeaderboard}>RESET QUIZ DATA</Button>
+                                <Button variant="outline" className="text-[10px] font-black uppercase h-12 border-primary/20" onClick={resetWeeklyStudyTime}>RESET TIME LOGS</Button>
+                                <Button variant="outline" className="text-[10px] font-black uppercase h-12 border-primary/20" onClick={resetGameZoneLeaderboard}>RESET GAMES</Button>
                             </CardContent>
                         </Card>
                     </div>
@@ -603,27 +681,30 @@ export default function SuperAdminPanelPage() {
 
       {/* MODALS */}
       <Dialog open={isMasterCardDialogOpen} onOpenChange={setIsMasterCardDialogOpen}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
             <DialogHeader>
-                <DialogTitle>Grant Master Card</DialogTitle>
-                <DialogDescription>Give {masterCardUser?.displayName} unlimited credits bypass for a duration.</DialogDescription>
+                <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-2"><CreditCard className="text-green-500"/> Grant Master Card</DialogTitle>
+                <DialogDescription className="font-medium">Bestow unlimited system bypass upon <b>{masterCardUser?.displayName}</b>.</DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-4 text-left">
+            <div className="py-6 space-y-4 text-left">
                 <div className="space-y-2">
-                    <Label>Duration (Days)</Label>
+                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Protocol Duration</Label>
                     <Select value={String(masterCardDuration)} onValueChange={v => setMasterCardDuration(Number(v))}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="h-12 font-bold"><SelectValue /></SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="1">1 Day Trial</SelectItem>
-                            <SelectItem value="7">7 Days (Weekly)</SelectItem>
-                            <SelectItem value="30">30 Days (Monthly)</SelectItem>
-                            <SelectItem value="365">365 Days (Yearly)</SelectItem>
+                            <SelectItem value="1" className="font-bold uppercase text-xs">1 Day Trial</SelectItem>
+                            <SelectItem value="7" className="font-bold uppercase text-xs">7 Days (Weekly Access)</SelectItem>
+                            <SelectItem value="30" className="font-bold uppercase text-xs">30 Days (Monthly Tier)</SelectItem>
+                            <SelectItem value="365" className="font-bold uppercase text-xs">365 Days (Eternal Citizen)</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
+                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-xs font-medium text-green-700 dark:text-green-300 leading-relaxed">
+                    💡 Master Cards allow users to bypass all credit costs for focus sessions, quizzes, and theme unlocks. Use only for High Council members or top-tier testers.
+                </div>
             </div>
             <DialogFooter>
-                <Button onClick={() => { if(masterCardUser) grantMasterCard(masterCardUser.uid, masterCardDuration); setIsMasterCardDialogOpen(false); toast({ title: "Master Card Granted!" }); }}>Activate Master Card</Button>
+                <Button className="w-full h-14 text-lg font-black uppercase shadow-xl shadow-green-500/20" onClick={() => { if(masterCardUser) grantMasterCard(masterCardUser.uid, masterCardDuration); setIsMasterCardDialogOpen(false); toast({ title: "Master Protocol Activated", description: `Card granted to ${masterCardUser?.displayName}` }); }}>AUTHORIZE MASTER CARD</Button>
             </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -686,7 +767,7 @@ export default function SuperAdminPanelPage() {
                       CONFIRM EXECUTION
                   </Button>
                   <DialogClose asChild>
-                      <Button variant="ghost" className="w-full font-bold">CANCEL</Button>
+                      <Button variant="ghost" className="w-full font-bold uppercase text-[10px] tracking-widest text-muted-foreground hover:text-foreground">CANCEL PROTOCOL</Button>
                   </DialogClose>
               </DialogFooter>
           </DialogContent>
@@ -696,56 +777,56 @@ export default function SuperAdminPanelPage() {
       <Dialog open={isDecisionDialogOpen} onOpenChange={setIsDecisionDialogOpen}>
         <DialogContent className="max-w-2xl">
             <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-2xl">
+                <DialogTitle className="flex items-center gap-2 text-2xl font-black uppercase tracking-tight">
                     <BrainCircuit className="text-primary animate-pulse"/> Sentinel Decision Log
                 </DialogTitle>
-                <DialogDescription>
-                    Review the autonomous reasoning and actions taken by Aegis.
+                <DialogDescription className="font-medium uppercase text-[10px] tracking-widest opacity-60">
+                    Reviewing autonomous reasoning and actions taken by Aegis.
                 </DialogDescription>
             </DialogHeader>
             
             {aegisLastDecision && (
                 <div className="py-6 space-y-6">
-                    <div className="p-4 rounded-xl bg-muted/50 border-l-4 border-primary">
+                    <div className="p-5 rounded-2xl bg-muted/50 border-l-4 border-primary shadow-inner">
                         <div className="flex items-center gap-2 mb-2">
                             <ScrollText className="h-4 w-4 text-primary"/>
-                            <h4 className="font-bold text-sm uppercase tracking-wider">Aegis Reasoning</h4>
+                            <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-primary">Aegis Intelligence Feed</h4>
                         </div>
-                        <p className="text-sm leading-relaxed italic">"{aegisLastDecision.decision}"</p>
+                        <p className="text-sm leading-relaxed font-medium text-foreground/90 italic">"{aegisLastDecision.decision}"</p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-3">
-                            <h5 className="font-bold text-xs uppercase text-muted-foreground px-1">Actions Executed</h5>
+                            <h5 className="font-black text-[9px] uppercase tracking-widest text-muted-foreground px-1">Actions Dispatched</h5>
                             <div className="space-y-2">
                                 {aegisLastDecision.announcement && (
-                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
                                         <Megaphone className="h-4 w-4 text-blue-500"/>
-                                        <span className="text-xs font-semibold">Post Announcement</span>
+                                        <span className="text-[10px] font-black uppercase tracking-tight">Post Announcement</span>
                                     </div>
                                 )}
                                 {aegisLastDecision.dailySurprise && (
-                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
                                         <Sparkles className="h-4 w-4 text-purple-500"/>
-                                        <span className="text-xs font-semibold">Update Daily Surprise</span>
+                                        <span className="text-[10px] font-black uppercase tracking-tight">Sync Daily Surprise</span>
                                     </div>
                                 )}
                                 {aegisLastDecision.creditRain && (
-                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-cyan-500/10 border border-cyan-500/20">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
                                         <CloudRain className="h-4 w-4 text-cyan-500"/>
-                                        <span className="text-xs font-semibold">Trigger Credit Rain</span>
+                                        <span className="text-[10px] font-black uppercase tracking-tight">Execute Credit Rain</span>
                                     </div>
                                 )}
                                 {aegisLastDecision.globalGift && (
-                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
                                         <Gift className="h-4 w-4 text-amber-500"/>
-                                        <span className="text-xs font-semibold">Send Targeted Gift</span>
+                                        <span className="text-[10px] font-black uppercase tracking-tight">Targeted Reward Send</span>
                                     </div>
                                 )}
                                 {aegisLastDecision.actionTaken === 'idled' && (
-                                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted border">
+                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted border">
                                         <X className="h-4 w-4 text-muted-foreground"/>
-                                        <span className="text-xs font-semibold">No Action Needed</span>
+                                        <span className="text-[10px] font-black uppercase tracking-tight">Sentinel Idle (Optimal)</span>
                                     </div>
                                 )}
                             </div>
@@ -753,10 +834,10 @@ export default function SuperAdminPanelPage() {
 
                         {aegisLastDecision.announcement && (
                             <div className="space-y-3">
-                                <h5 className="font-bold text-xs uppercase text-muted-foreground px-1">Announcement Preview</h5>
-                                <div className="p-3 rounded-lg border bg-background space-y-1">
-                                    <p className="font-bold text-sm">{aegisLastDecision.announcement.title}</p>
-                                    <p className="text-[10px] text-muted-foreground line-clamp-3">{aegisLastDecision.announcement.description}</p>
+                                <h5 className="font-black text-[9px] uppercase tracking-widest text-muted-foreground px-1">Briefing Preview</h5>
+                                <div className="p-4 rounded-2xl border bg-background space-y-2 shadow-inner">
+                                    <p className="font-black text-xs uppercase text-primary leading-tight">{aegisLastDecision.announcement.title}</p>
+                                    <p className="text-[10px] text-muted-foreground font-medium leading-relaxed line-clamp-4">{aegisLastDecision.announcement.description}</p>
                                 </div>
                             </div>
                         )}
@@ -766,7 +847,7 @@ export default function SuperAdminPanelPage() {
 
             <DialogFooter>
                 <DialogClose asChild>
-                    <Button className="w-full">Understood, Sentinel</Button>
+                    <Button className="w-full h-12 font-black uppercase tracking-widest">Understood, Sentinel</Button>
                 </DialogClose>
             </DialogFooter>
         </DialogContent>
