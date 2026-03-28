@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2 } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -104,16 +104,13 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                                     transition={{ type: 'spring', stiffness: 300 }}
                                 >
                                     <Card className={cn("relative group overflow-hidden border-0 min-h-[200px]", getTemplateClasses(showcase.template))}>
-                                        <div id="particle-container" className="[mask-image:linear-gradient(to_bottom,white_20%,transparent_75%)]">
-                                            {[...Array(12)].map((_, i) => <div key={i} className="particle"></div>)}
-                                        </div>
                                         <div className="relative z-10 p-4 h-full flex flex-col justify-center">
                                             <CardContent className="relative z-10 p-4 sm:p-6 flex flex-col md:flex-row items-center text-center md:text-left gap-4 rounded-lg bg-black/30 backdrop-blur-sm border border-white/10 shadow-2xl">
                                                 <div className="flex-1">
                                                     <h2 className={cn("text-xs font-black uppercase tracking-widest px-2 py-1 rounded bg-black/40 w-fit mx-auto md:mx-0", isLive ? "text-green-400" : "text-red-400")}>
                                                         {isLive ? "New Feature" : "Coming Soon"}
                                                     </h2>
-                                                    <CardTitle className="text-2xl lg:text-4xl font-black mt-2 text-white drop-shadow-lg [text-shadow:0_2px_10px_rgba(0,0,0,0.5)]">
+                                                    <CardTitle className="text-2xl lg:text-4xl font-black mt-2 text-white drop-shadow-lg">
                                                         {showcase.title}
                                                     </CardTitle>
                                                     <CardDescription className="text-slate-200 mt-2 max-w-lg mx-auto md:mx-0 font-medium leading-relaxed">
@@ -127,8 +124,8 @@ function ShowcaseView({ showcases }: { showcases: FeatureShowcase[] }) {
                                                 </div>
                                                 {!isLive && showcase.launchDate && (
                                                     <div className="flex flex-col items-center bg-black/40 backdrop-blur-md p-6 rounded-2xl border border-white/20 w-full sm:w-auto mt-4 md:mt-0 shadow-inner">
-                                                        <p className="text-[10px] font-black font-code text-cyan-300 tracking-[0.2em] uppercase">Deployment Targeted</p>
-                                                        <p className="text-4xl font-black font-serif text-white mt-1 drop-shadow-glow">{format(parseISO(showcase.launchDate), 'do MMM')}</p>
+                                                        <p className="text-[10px] font-black text-cyan-300 tracking-[0.2em] uppercase">Deployment Targeted</p>
+                                                        <p className="text-4xl font-black text-white mt-1">{format(parseISO(showcase.launchDate), 'do MMM')}</p>
                                                     </div>
                                                 )}
                                             </CardContent>
@@ -325,22 +322,18 @@ export default function DashboardPage() {
             </SignedIn>
 
             <div className="grid grid-cols-2 gap-4">
-                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-yellow-500/20 transition-shadow duration-300 flex flex-col justify-center">
-                    <div className="absolute inset-0 bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
-                    <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Card className="group relative text-white overflow-hidden rounded-xl bg-gradient-to-br from-yellow-800 via-slate-900 to-slate-900 shadow-lg shadow-yellow-500/20 flex flex-col justify-center">
                     <CardContent className="p-4 text-center relative z-10">
                         <Medal className="h-10 w-10 mx-auto mb-2 text-yellow-400 animate-gold-shine"/>
                         <h3 className="text-base font-semibold">Your Credits</h3>
-                        <p className="text-4xl font-bold text-yellow-400 [text-shadow:0_0_8px_currentColor]">{hasMasterCard ? '∞' : credits}</p>
+                        <p className="text-4xl font-bold text-yellow-400">{hasMasterCard ? '∞' : credits}</p>
                     </CardContent>
                 </Card>
-                <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:shadow-orange-500/20 transition-shadow duration-300 flex flex-col justify-center">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-800 via-slate-900 to-slate-900 z-0 opacity-80"></div>
-                    <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Card className="group relative text-white overflow-hidden rounded-xl bg-gradient-to-br from-orange-800 via-slate-900 to-slate-900 shadow-lg shadow-orange-500/20 flex flex-col justify-center">
                     <CardContent className="p-4 text-center relative z-10">
                         <Flame className="h-10 w-10 mx-auto mb-2 text-orange-400 animate-flicker"/>
                         <h3 className="text-base font-semibold">Day Streak</h3>
-                        <p className="text-4xl font-bold text-orange-400 [text-shadow:0_0_8px_currentColor]">{streak}</p>
+                        <p className="text-4xl font-bold text-orange-400">{streak}</p>
                     </CardContent>
                 </Card>
             </div>
@@ -496,7 +489,6 @@ export default function DashboardPage() {
                 className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-green-400/20 via-teal-500/20 to-emerald-600/20 border-green-500/20 hover:border-green-500/40 transition-all duration-300"
                 onClick={() => setIsSurpriseRevealed(true)}
             >
-                <div className="absolute -inset-2 bg-grid-slate-800 animate-pulse" style={{ animationDuration: '4s' }}></div>
                 <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center">
                     <div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-green-500/20 rounded-full blur-3xl"></div>
                     <div className="relative flex flex-col items-center">
@@ -504,7 +496,7 @@ export default function DashboardPage() {
                             animate={{ y: [0, -10, 0], scale: [1, 1.1, 1] }}
                             transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
                         >
-                            <Gift className="h-10 w-10 text-green-400 [filter:drop-shadow(0_0_8px_currentColor)]"/>
+                            <Gift className="h-10 w-10 text-green-400"/>
                         </motion.div>
                     <h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3>
                     <p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p>

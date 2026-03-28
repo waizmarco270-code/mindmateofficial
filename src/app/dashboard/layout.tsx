@@ -71,7 +71,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
         </Sheet>
       )}
 
-      <div className={cn("flex flex-1 size-full flex-col bg-transparent", useSuperAdminStyling && "bg-muted")}>
+      <div className={cn("flex flex-1 size-full flex-col bg-background", useSuperAdminStyling && "bg-muted")}>
         {!isImmersive && !useSuperAdminStyling && <Header />}
         <main className={cn(
             "relative flex-1 overflow-y-auto focus:outline-none flex flex-col",

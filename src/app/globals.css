@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -23,11 +24,6 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 262 80% 56%;
-    --chart-1: 262 80% 56%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
     --radius: 0.8rem;
 
     --sidebar-background: 240 10% 3.9%;
@@ -60,30 +56,19 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 262 80% 56%;
-    --chart-1: 262 80% 56%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 262 80% 56%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 262 80% 56%;
   }
 }
 
 @layer base {
   * {
     @apply border-border;
+    -webkit-tap-highlight-color: transparent;
   }
   
   html, body {
     height: 100%;
+    margin: 0;
+    padding: 0;
   }
 
   body {
@@ -91,109 +76,48 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior-y: contain;
+    overscroll-behavior-x: none;
+    -webkit-touch-callout: none;
     user-select: none;
   }
 
   input, textarea, .select-text {
+    -webkit-touch-callout: default;
     user-select: text;
   }
 }
 
-@layer utilities {
-  .bg-grid-animate {
-    background-size: 4rem 4rem;
-    background-image:
-      linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
-    animation: grid-scroll 20s linear infinite;
-  }
-
-  @keyframes grid-scroll {
-    from { background-position: 0 0; }
-    to { background-position: 0 4rem; }
-  }
-
-  .blue-nebula-bg {
-    background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
-  }
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
-  }
-
-  .animate-float {
-    animation: float 6s ease-in-out infinite;
-  }
-
-  @keyframes zoom-pan {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1) translate(1%, 1%); }
-    100% { transform: scale(1); }
-  }
-
-  .animate-zoom-pan {
-    animation: zoom-pan 30s ease-in-out infinite;
-  }
-
-  @keyframes gold-shine {
-      0% { filter: drop-shadow(0 0 2px #f59e0b); }
-      50% { filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 12px #f59e0b); }
-      100% { filter: drop-shadow(0 0 2px #f59e0b); }
-  }
-
-  @keyframes vip-shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-
-  @keyframes gm-shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-  
-  @keyframes challenger-shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-
-  @keyframes master-card-shimmer {
-    0% { background-position: -200% 0; }
-    100% { background-position: 200% 0; }
-  }
-
+@layer components {
+  /* LEGENDARY BADGE STYLES */
   .elite-badge {
-    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight;
-    background: linear-gradient(45deg, #f0b90b, #fbda61, #ffc371, #ff5f6d, #ffc371, #fbda61, #f0b90b);
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(45deg, #f0b90b, #fbda61, #ffc371, #f0b90b);
     background-size: 200% 200%;
     color: #613400;
     border: 1px solid #f0b90b;
-    text-shadow: 0 0 4px rgba(0,0,0,0.2);
     animation: vip-shimmer 3s linear infinite;
   }
 
   .gm-badge {
-    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight;
-    background: linear-gradient(45deg, #001f3f, #0074d9, #7fdbff, #39cccc, #0074d9, #001f3f);
-    background-size: 250% 250%;
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(45deg, #001f3f, #0074d9, #7fdbff, #001f3f);
+    background-size: 200% 200%;
     color: #ffffff;
     border: 1px solid #7fdbff;
-    text-shadow: 0 0 6px rgba(127, 219, 255, 0.7);
-    animation: gm-shimmer 4s ease infinite;
+    animation: vip-shimmer 4s ease infinite;
   }
   
   .challenger-badge {
-    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight;
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
     background: linear-gradient(135deg, #ff4e00, #f7971e, #ff4e00);
     background-size: 200% 200%;
     color: #ffffff;
     border: 1px solid #f7971e;
-    text-shadow: 0 0 5px rgba(247, 151, 30, 0.8);
-    animation: challenger-shimmer 3s ease-in-out infinite;
+    animation: vip-shimmer 3s ease-in-out infinite;
   }
 
   .dev-badge {
-    @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight;
+    @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
     background-color: #ef4444;
     color: #f8fafc;
     border: 1px solid #dc2626;
@@ -201,42 +125,28 @@
   }
   
   .admin-badge {
-    @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight;
+    @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
     background-color: #166534;
     color: #f0fdf4;
     border: 1px solid #15803d;
     box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
   }
-   
-  .co-dev-badge {
-    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight;
-    background: linear-gradient(135deg, #DC143C, #1a1a1a, #DC143C);
-    background-size: 200% 200%;
-    color: #f9fafb;
-    border: 1px solid #ff4d6d;
-    text-shadow: 0 0 8px rgba(255, 77, 109, 0.7);
-    animation: challenger-shimmer 5s ease-in-out infinite;
-  }
   
   .master-card-badge {
-    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight;
-    background: linear-gradient(110deg, #d4af37, #f7d06b, #d4af37, #b48811, #d4af37, #f7d06b, #d4af37);
+    @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+    background: linear-gradient(110deg, #d4af37, #f7d06b, #d4af37);
     background-size: 250% 250%;
     color: #382d0d;
     border: 1px solid #f7d06b;
-    text-shadow: 0 0 6px rgba(247, 208, 107, 0.5);
-    animation: master-card-shimmer 4s ease-in-out infinite;
+    animation: vip-shimmer 4s ease-in-out infinite;
   }
 
-  .early-bird-badge {
-    @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight bg-orange-100 text-orange-700 border border-orange-200;
+  .clan-badge-legendary {
+    @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-amber-400/10 text-amber-400 border border-amber-400/50 shadow-lg shadow-amber-400/10 animate-gold-shine;
   }
 
-  .night-owl-badge {
-    @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight bg-indigo-100 text-indigo-700 border border-indigo-200;
-  }
-
-  .knowledge-knight-badge {
-    @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-tight bg-slate-100 text-slate-700 border border-slate-200;
+  @keyframes vip-shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
   }
 }
