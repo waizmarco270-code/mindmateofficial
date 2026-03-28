@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Medal, Crown, ShieldCheck, Settings, LifeBuoy, KeyRound, Check, X, PanelLeft, ShoppingCart, User as UserIcon, LogOut, Bell, Sun, Moon, Monitor, CreditCard, Wallet, Fingerprint } from 'lucide-react';
@@ -183,6 +184,7 @@ export default function Header() {
   
   const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
   const credits = hasMasterCard ? '∞' : currentUserData?.credits ?? 0;
+  const walletBalance = currentUserData?.walletBalance ?? 0;
   
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
@@ -232,7 +234,14 @@ export default function Header() {
                             </div>
                         </div>
                         <div className="p-4 space-y-4">
-                            <Button asChild className="w-full rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border-none shadow-none font-bold" variant="outline">
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-white/5">
+                                <div className="flex items-center gap-2">
+                                    <Wallet className="h-4 w-4 text-primary" />
+                                    <span className="text-xs font-bold uppercase text-muted-foreground">Vault Assets</span>
+                                </div>
+                                <span className="font-black text-lg text-foreground">₹{walletBalance.toLocaleString()}</span>
+                            </div>
+                            <Button asChild className="w-full h-11 rounded-xl bg-primary/10 hover:bg-primary/20 text-primary border-none shadow-none font-bold" variant="outline">
                                 <Link href="/dashboard/wallet">
                                     <ShieldCheck className="mr-2 h-4 w-4"/> Visit MindMate Vault
                                 </Link>
