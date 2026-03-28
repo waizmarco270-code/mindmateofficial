@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -141,7 +140,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
             timestamp: serverTimestamp(),
             type: 'rain',
             rainData: {
-                amount: amount, // Command bypasses the 100 limit
+                amount: amount,
                 maxClaims,
                 claimedBy: []
             }
@@ -161,14 +160,14 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const sendMessage = useCallback(async (text: string, replyingTo?: ReplyContext | null) => {
         if (!currentUser || !text.trim()) return;
         
-        // Secret Rain Command Protocol
+        // Secret Rain Command Protocol - ONLY SUPER ADMIN
         if (text.startsWith('/rain') && currentUser.id === SUPER_ADMIN_UID) {
             const parts = text.split(' ');
             const amt = parseInt(parts[1]);
             const clm = parseInt(parts[2]);
             if (!isNaN(amt) && !isNaN(clm)) {
                 await sendRain(amt, clm);
-                return; // Consume command, don't send text
+                return;
             }
         }
 
@@ -178,7 +177,6 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const messagesRef = collection(db, 'world_chat');
-        
         await addDoc(messagesRef, {
             senderId: currentUser.id,
             text,
@@ -187,7 +185,6 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
             ...(replyingTo && { replyingTo }),
         });
 
-        // Trigger notifications for mentions
         const mentions = text.match(/@(\w+)|@all/g);
         if (mentions) {
             for (const mention of mentions) {
@@ -255,15 +252,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const claimRain = useCallback(async (messageId: string) => {
         if (!currentUser || !currentUserData) return;
         
-        // Economic Safeguard: Balance Cap
-        if (currentUserData.credits >= 1000) {
-            toast({ 
-                variant: 'destructive', 
-                title: "Protocol Blocked", 
-                description: "You already have 1000+ credits. Let other scholars claim this rain!" 
-            });
-            return;
-        }
+        // LIMIT REMOVED PER MASTER DIRECTIVE - EVERYONE CAN CLAIM
 
         const messageRef = doc(db, 'world_chat', messageId);
         const userRef = doc(db, 'users', currentUser.id);
@@ -280,7 +269,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         batch.update(messageRef, { 'rainData.claimedBy': arrayUnion(currentUser.id) });
         batch.update(userRef, { credits: increment(data.rainData.amount) });
         await batch.commit();
-        toast({ title: 'Success!', description: `You claimed ${data.rainData.amount} credits from the rain!` });
+        toast({ title: 'Success!', description: `You claimed ${data.rainData.amount} credits from the rain!`, className: "bg-green-500/10 border-green-500/50" });
     }, [currentUser, currentUserData, toast]);
 
     const submitPollVote = useCallback(async (messageId: string, option: string) => {
@@ -292,7 +281,6 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         const data = snap.data() as WorldChatMessage;
         if (!data.pollData) return;
 
-        // Check if user already voted in ANY option of this poll
         const hasVoted = Object.values(data.pollData.results).some(uids => uids.includes(currentUser.id));
         if (hasVoted) {
             toast({ variant: 'destructive', title: "Vote Denied", description: "You have already voted in this poll." });

@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -38,9 +37,6 @@ const getUserColor = (userId: string) => {
     return userColors[Math.abs(hash) % userColors.length];
 };
 
-/**
- * Parses text to detect and style URLs
- */
 function SmartText({ text }: { text?: string }) {
     if (!text) return null;
     
@@ -65,7 +61,6 @@ function SmartText({ text }: { text?: string }) {
                     );
                 }
                 
-                // Also handle mentions separately within the text parts
                 return part.split(/(@\w+|@all)/).map((subPart, j) => (
                     <span key={`${i}-${j}`} className={cn(subPart.startsWith('@') ? "text-blue-500 font-bold" : "")}>
                         {subPart}
@@ -77,7 +72,7 @@ function SmartText({ text }: { text?: string }) {
 }
 
 export function WorldChatView() {
-    const { messages, sendMessage, sendRain, sendPoll, claimRain, loading, pinnedMessage, unpinMessage, clearMessages, toggleLock, setSlowMode, isLocked, slowMode, typingUsers, updateTypingStatus } = useWorldChat();
+    const { messages, sendMessage, sendPoll, claimRain, loading, pinnedMessage, unpinMessage, clearMessages, toggleLock, setSlowMode, isLocked, slowMode, typingUsers, updateTypingStatus } = useWorldChat();
     const { users: allUsers, loading: usersLoading, isAdmin, isSuperAdmin } = useAdmin();
     const { user: currentUser } = useUser();
     const { toast } = useToast();
@@ -88,11 +83,6 @@ export function WorldChatView() {
     const [mentionSearch, setMentionSearch] = useState('');
     const [showMentions, setShowMentions] = useState(false);
     
-    // Admin Tool Modals
-    const [isRainDialogOpen, setIsRainDialogOpen] = useState(false);
-    const [rainAmount, setRainAmount] = useState(10);
-    const [rainLimit, setRainLimit] = useState(10);
-
     const [isPollDialogOpen, setIsPollDialogOpen] = useState(false);
     const [pollQuestion, setPollQuestion] = useState('');
     const [pollOptions, setPollOptions] = useState(['', '']);
@@ -130,7 +120,6 @@ export function WorldChatView() {
     const handleTyping = (text: string) => {
         setNewMessage(text);
         
-        // Mention logic
         const lastWord = text.split(' ').pop() || '';
         if (lastWord.startsWith('@')) {
             setMentionSearch(lastWord.slice(1).toLowerCase());
@@ -161,12 +150,6 @@ export function WorldChatView() {
             u.uid !== currentUser?.id
         ).slice(0, 5);
     }, [allUsers, mentionSearch, currentUser?.id]);
-
-    const handleExecuteRain = async () => {
-        await sendRain(rainAmount, rainLimit);
-        setIsRainDialogOpen(false);
-        toast({ title: "Let it rain!", description: "Credit rain has been dispatched." });
-    };
 
     const handleExecutePoll = async () => {
         const validOptions = pollOptions.filter(o => o.trim() !== '');
@@ -314,9 +297,6 @@ export function WorldChatView() {
                             </PopoverTrigger>
                             <PopoverContent side="top" className="w-64 p-2 rounded-2xl shadow-2xl mb-2">
                                 <div className="space-y-1">
-                                    <Button variant="ghost" onClick={() => setIsRainDialogOpen(true)} className="w-full justify-start text-blue-500 font-bold hover:bg-blue-50">
-                                        <CloudRain className="mr-2 h-4 w-4"/> Credit Rain
-                                    </Button>
                                     <Button variant="ghost" onClick={() => setIsPollDialogOpen(true)} className="w-full justify-start text-purple-500 font-bold hover:bg-purple-50">
                                         <Vote className="mr-2 h-4 w-4"/> Create Poll
                                     </Button>
@@ -366,33 +346,6 @@ export function WorldChatView() {
                     </Button>
                 </div>
             </footer>
-
-            {/* Admin Tool Dialogs */}
-            <Dialog open={isRainDialogOpen} onOpenChange={setIsRainDialogOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-black text-blue-500 flex items-center gap-2">
-                            <CloudRain/> Trigger Credit Rain
-                        </DialogTitle>
-                        <DialogDescription>Shower the community with credits (Limit enforced for standard admins).</DialogDescription>
-                    </DialogHeader>
-                    <div className="py-6 space-y-6">
-                        <div className="space-y-2">
-                            <Label>Amount per Claim (Max 100)</Label>
-                            <Input type="number" value={rainAmount} onChange={e => setRainAmount(Number(e.target.value))} max={100} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Max Claims (Users)</Label>
-                            <Input type="number" value={rainLimit} onChange={e => setRainLimit(Number(e.target.value))} />
-                        </div>
-                    </div>
-                    <DialogFooter>
-                        <Button onClick={handleExecuteRain} className="w-full h-12 text-lg font-bold bg-blue-500 hover:bg-blue-600">
-                            GENERATE RAIN ⛈️
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
 
             <Dialog open={isPollDialogOpen} onOpenChange={setIsPollDialogOpen}>
                 <DialogContent>
@@ -534,15 +487,15 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                         <Zap className="h-6 w-6 text-yellow-300 absolute -top-2 right-1/4 animate-pulse"/>
                                     </div>
                                     <div className="space-y-1">
-                                        <p className="font-black text-white italic tracking-tighter text-3xl drop-shadow-md">CREDIT RAIN</p>
-                                        <p className="text-xs text-white/90 font-bold uppercase tracking-widest">Atmospheric Anomaly Detected</p>
+                                        <p className="font-black text-white italic tracking-tighter text-3xl drop-shadow-md uppercase">CREDIT RAIN</p>
+                                        <p className="text-[10px] text-white/90 font-bold uppercase tracking-widest">Sovereign Atmospheric Anomaly</p>
                                     </div>
                                     <Button size="lg" onClick={(e) => { e.stopPropagation(); onClaimRain(); }} className="w-full bg-white text-blue-600 hover:bg-slate-100 font-black text-lg rounded-xl shadow-xl transition-all active:scale-95">
                                         CLAIM {message.rainData?.amount} CREDITS
                                     </Button>
                                     <div className="flex flex-col gap-1">
                                         <Progress value={(message.rainData?.claimedBy.length || 0) / (message.rainData?.maxClaims || 1) * 100} className="h-1.5 bg-black/20" indicatorClassName="bg-white" />
-                                        <p className="text-[10px] text-white/80 font-black uppercase tracking-tighter">{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims} HARVESTED</p>
+                                        <p className="text-[9px] text-white/80 font-black uppercase tracking-tighter">{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims} HARVESTED</p>
                                     </div>
                                 </div>
                             ) : message.type === 'poll' ? renderPoll() : isEditing ? (
