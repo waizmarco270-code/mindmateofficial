@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,12 +15,13 @@ import {
   TableHead,
   TableCell,
 } from '@/components/ui/table';
-import { Film, Trash2 } from 'lucide-react';
+import { Film, Trash2, Book, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import Link from 'next/link';
 
-export default function StudyPanelPage() {
+export default function GuideManagementPage() {
     const {
         videoCategories, addVideoCategory, deleteVideoCategory,
         videoLectures, addVideoLecture, deleteVideoLecture
@@ -46,7 +46,7 @@ export default function StudyPanelPage() {
             await addVideoCategory({ name: newVideoCategory, description: newVideoCategoryDesc });
             setNewVideoCategory('');
             setNewVideoCategoryDesc('');
-            toast({ title: 'Video Category Added' });
+            toast({ title: 'Guide Section Created' });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
         } finally {
@@ -79,9 +79,9 @@ export default function StudyPanelPage() {
             setNewVideoUrl('');
             setNewVideoThumbnail('');
             setNewVideoCategoryId('');
-            toast({ title: 'Video Lecture Added' });
+            toast({ title: 'Guide Briefing Published' });
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error Adding Lecture', description: error.message });
+            toast({ variant: 'destructive', title: 'Error Adding Guide', description: error.message });
         } finally {
             setIsAddingLecture(false);
         }
@@ -89,36 +89,41 @@ export default function StudyPanelPage() {
     
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Study Panel</h1>
-                <p className="text-muted-foreground">Manage video lectures and categories for the Learning Hub.</p>
+            <div className="flex items-center justify-between">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight">Guide Command Center</h1>
+                    <p className="text-muted-foreground">Manage tutorial briefings and sections for the Sovereign Guide.</p>
+                </div>
+                <Button asChild variant="outline">
+                    <Link href="/dashboard/admin"><ArrowLeft className="mr-2 h-4 w-4"/> Back to Admin</Link>
+                </Button>
             </div>
             
             <div className="grid gap-8 grid-cols-1 lg:grid-cols-2">
                 <Card>
-                    <CardHeader><CardTitle>Video Categories</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Guide Sections</CardTitle><CardDescription>Group briefings by app feature (e.g. Focus Mastery, Wallet Assets).</CardDescription></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="cat-name">New Category Name</Label>
-                            <Input id="cat-name" value={newVideoCategory} onChange={e => setNewVideoCategory(e.target.value)} />
+                            <Label htmlFor="cat-name">Section Name</Label>
+                            <Input id="cat-name" value={newVideoCategory} onChange={e => setNewVideoCategory(e.target.value)} placeholder="e.g. Focus mastery" />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="cat-desc">Description</Label>
-                            <Textarea id="cat-desc" value={newVideoCategoryDesc} onChange={e => setNewVideoCategoryDesc(e.target.value)} />
+                            <Label htmlFor="cat-desc">Context Summary</Label>
+                            <Textarea id="cat-desc" value={newVideoCategoryDesc} onChange={e => setNewVideoCategoryDesc(e.target.value)} placeholder="What will legends learn here?" />
                         </div>
-                        <Button onClick={handleAddVideoCategory} disabled={isAddingCategory}>{isAddingCategory ? 'Adding...' : 'Add Category'}</Button>
+                        <Button onClick={handleAddVideoCategory} disabled={isAddingCategory} className="w-full">{isAddingCategory ? 'Initializing...' : 'Create Section'}</Button>
                         <Table>
-                            <TableHeader><TableRow><TableHead>Name</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                            <TableHeader><TableRow><TableHead>Section Name</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                             <TableBody>
                                 {videoCategories && videoCategories.map(cat => (
                                     <TableRow key={cat.id}>
-                                        <TableCell>{cat.name}</TableCell>
+                                        <TableCell className="font-bold">{cat.name}</TableCell>
                                         <TableCell className="text-right">
                                             <AlertDialog>
                                                 <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
                                                 <AlertDialogContent>
-                                                    <AlertDialogHeader><AlertDialogTitle>Delete this category?</AlertDialogTitle><AlertDialogDescription>This will also delete all lectures inside it. This action is permanent.</AlertDialogDescription></AlertDialogHeader>
-                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteVideoCategory(cat.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                    <AlertDialogHeader><AlertDialogTitle>Delete this section?</AlertDialogTitle><AlertDialogDescription>This will purge all briefings inside it. This protocol is irreversible.</AlertDialogDescription></AccordionItem>
+                                                    <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteVideoCategory(cat.id)}>Confirm Delete</AlertDialogAction></AlertDialogFooter>
                                                 </AlertDialogContent>
                                             </AlertDialog>
                                         </TableCell>
@@ -129,51 +134,51 @@ export default function StudyPanelPage() {
                     </CardContent>
                 </Card>
                 <Card>
-                    <CardHeader><CardTitle>Add New Lecture</CardTitle></CardHeader>
+                    <CardHeader><CardTitle>Add New Guide Briefing</CardTitle><CardDescription>Upload an operational tutorial for the community.</CardDescription></CardHeader>
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="lec-title">Title</Label>
+                            <Label htmlFor="lec-title">Briefing Title</Label>
                             <Input id="lec-title" value={newVideoTitle} onChange={e => setNewVideoTitle(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="lec-desc">Description</Label>
+                            <Label htmlFor="lec-desc">Detailed Instructions</Label>
                             <Textarea id="lec-desc" value={newVideoDesc} onChange={e => setNewVideoDesc(e.target.value)} />
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="lec-url">YouTube URL</Label>
+                            <Label htmlFor="lec-url">YouTube Link</Label>
                             <Input id="lec-url" value={newVideoUrl} onChange={e => setNewVideoUrl(e.target.value)} placeholder="https://www.youtube.com/watch?v=..."/>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="lec-thumb">Thumbnail URL (Optional)</Label>
-                            <Input id="lec-thumb" value={newVideoThumbnail} onChange={e => setNewVideoThumbnail(e.target.value)} placeholder="Auto-generated if left blank"/>
+                            <Label htmlFor="lec-thumb">Custom Cover (Optional)</Label>
+                            <Input id="lec-thumb" value={newVideoThumbnail} onChange={e => setNewVideoThumbnail(e.target.value)} placeholder="Auto-generated from YouTube if blank"/>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="lec-cat">Category</Label>
+                            <Label htmlFor="lec-cat">Target Section</Label>
                              <Select value={newVideoCategoryId} onValueChange={setNewVideoCategoryId}>
-                                <SelectTrigger id="lec-cat"><SelectValue placeholder="Select a category..." /></SelectTrigger>
+                                <SelectTrigger id="lec-cat"><SelectValue placeholder="Select section..." /></SelectTrigger>
                                 <SelectContent>{videoCategories && videoCategories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
                             </Select>
                         </div>
-                         <Button onClick={handleAddVideoLecture} disabled={isAddingLecture}>{isAddingLecture ? 'Adding...' : 'Add Lecture'}</Button>
+                         <Button onClick={handleAddVideoLecture} disabled={isAddingLecture} className="w-full">{isAddingLecture ? 'Dispatching...' : 'Publish Briefing'}</Button>
                     </CardContent>
                 </Card>
             </div>
             <Card>
-                <CardHeader><CardTitle>Existing Lectures</CardTitle></CardHeader>
+                <CardHeader><CardTitle>Operational Guide Library</CardTitle></CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader><TableRow><TableHead>Title</TableHead><TableHead>Category</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                        <TableHeader><TableRow><TableHead>Briefing Title</TableHead><TableHead>Target Section</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                         <TableBody>
                             {videoLectures && videoLectures.map(lec => (
                                 <TableRow key={lec.id}>
-                                    <TableCell>{lec.title}</TableCell>
-                                    <TableCell>{videoCategories?.find(c => c.id === lec.categoryId)?.name || 'N/A'}</TableCell>
+                                    <TableCell className="font-medium">{lec.title}</TableCell>
+                                    <TableCell><Badge variant="secondary">{videoCategories?.find(c => c.id === lec.categoryId)?.name || 'N/A'}</Badge></TableCell>
                                     <TableCell className="text-right">
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild><Button variant="destructive" size="sm"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
                                             <AlertDialogContent>
-                                                <AlertDialogHeader><AlertDialogTitle>Delete this lecture?</AlertDialogTitle></AlertDialogHeader>
-                                                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteVideoLecture(lec.id)}>Delete</AlertDialogAction></AlertDialogFooter>
+                                                <AlertDialogHeader><AlertDialogTitle>Purge this briefing?</AlertDialogTitle></AlertDialogHeader>
+                                                <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => deleteVideoLecture(lec.id)}>Confirm Purge</AlertDialogAction></AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
                                     </TableCell>
@@ -186,4 +191,3 @@ export default function StudyPanelPage() {
         </div>
     );
 }
-

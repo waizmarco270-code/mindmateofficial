@@ -42,7 +42,8 @@ import {
   Sparkles,
   FileText,
   Mail,
-  BellRing
+  BellRing,
+  Book
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -54,8 +55,7 @@ import { Button } from '../ui/button';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
-  { href: '/dashboard/learning', icon: Film, label: 'Learning Hub', glow: 'text-red-400' },
-  { href: '/dashboard/inbox', icon: Mail, label: 'Inbox', glow: 'text-blue-400' },
+  { href: '/dashboard/guide', icon: Book, label: 'App Guide', glow: 'text-emerald-400' },
   { href: '/dashboard/roadmap', icon: Map, label: 'Roadmap', glow: 'text-orange-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-purple-400' },
@@ -145,7 +145,6 @@ export default function SidebarContent() {
             <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive(item.href) ? "bg-primary" : "group-hover:scale-y-50")}></div>
             <item.icon className={cn("h-5 w-5", item.glow)} />
             <span className="flex-1">{item.label}</span>
-            {(item.href === '/dashboard/inbox' && hasUnread) && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
             {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
             {item.href === '/dashboard/quiz' && hasNewQuiz && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
           </Link>
@@ -162,7 +161,6 @@ export default function SidebarContent() {
         </Link>
 
         <div className="flex items-center gap-3">
-            {/* Always-On Revolving Yellow Settings Icon */}
             <Link href="/dashboard/settings" prefetch={true}>
                 <Button variant="ghost" size="icon" className={cn(
                     "h-10 w-10 rounded-full transition-all group/settings",
