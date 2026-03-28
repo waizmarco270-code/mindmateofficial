@@ -208,7 +208,9 @@ export default function SuperAdminPanelPage() {
   const handleExportMemory = () => {
       setIsExportingMemory(true);
       try {
-          const blob = new Blob([PROJECT_MEMORY], { type: 'text/plain' });
+          // Wrap in a professional mission-briefing format
+          const exportContent = `MINDMATE PROJECT MISSION BRIEFING\nGENESIS DATE: OCTOBER 2025\nCONTINUITY PROTOCOL: v2.5\n\n${PROJECT_MEMORY}`;
+          const blob = new Blob([exportContent], { type: 'text/plain' });
           const url = window.URL.createObjectURL(blob);
           const link = document.createElement('a');
           link.href = url;
@@ -273,7 +275,7 @@ export default function SuperAdminPanelPage() {
 
       <Accordion type="multiple" defaultValue={['project-continuity', 'emitygate-integration']} className="w-full space-y-4">
         
-        {/* continuity. Project Continuity Archive (NEW) */}
+        {/* continuity. Project Continuity Archive (ENHANCED) */}
         <AccordionItem value="project-continuity" className="border-b-0">
           <Card className="border-amber-500/30 bg-amber-500/5">
             <AccordionTrigger className="p-6">
@@ -281,7 +283,7 @@ export default function SuperAdminPanelPage() {
                 <HardDrive className="h-6 w-6 text-amber-500" />
                 <div>
                   <h3 className="text-lg font-black uppercase tracking-tight">Sovereign Continuity Protocol</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Intelligence backup for 2027 migration.</p>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Complete technical & logical backup for 2027 migration.</p>
                 </div>
               </div>
             </AccordionTrigger>
@@ -289,39 +291,43 @@ export default function SuperAdminPanelPage() {
                 <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
                     <Card className="bg-background border-amber-500/20 shadow-xl">
                         <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2 text-amber-500"><Cpu className="h-4 w-4"/> AI Intelligence Archive</CardTitle>
-                            <CardDescription>Download the comprehensive project "Memory" to train future agents.</CardDescription>
+                            <CardTitle className="text-base flex items-center gap-2 text-amber-500"><Cpu className="h-4 w-4"/> Intelligence Core Archive</CardTitle>
+                            <CardDescription>Secure the absolute blueprint of MindMate to train future agents with 100% precision.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="p-4 rounded-xl bg-muted/50 border border-amber-500/10 space-y-3">
                                 <div className="flex items-start gap-3">
                                     <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
-                                    <p className="text-xs font-medium">Marco Persona Definition Included</p>
+                                    <p className="text-xs font-medium text-foreground/80"><b>Full File Topography</b>: Component & Hook Map included.</p>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
-                                    <p className="text-xs font-medium">Streak & Reward Logic Encoded</p>
+                                    <p className="text-xs font-medium text-foreground/80"><b>Logical DNA</b>: Streak math & Penalty system rules encoded.</p>
                                 </div>
                                 <div className="flex items-start gap-3">
                                     <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
-                                    <p className="text-xs font-medium">Database Collection Map</p>
+                                    <p className="text-xs font-medium text-foreground/80"><b>Persona Core</b>: Marco's exact tone & behavior protocols.</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
+                                    <p className="text-xs font-medium text-foreground/80"><b>Architecture Map</b>: Firebase + Clerk + Bytez stack guide.</p>
                                 </div>
                             </div>
                             <Button onClick={handleExportMemory} disabled={isExportingMemory} className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-amber-950 font-black text-lg shadow-xl shadow-amber-500/20">
                                 {isExportingMemory ? <Loader2 className="animate-spin mr-2"/> : <Download className="mr-2"/>}
-                                EXPORT PROJECT MEMORY
+                                EXPORT SOVEREIGN MEMORY
                             </Button>
                         </CardContent>
                     </Card>
 
                     <Card className="bg-background border-primary/20">
                         <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2"><ScrollText className="text-primary h-4 w-4"/> Memory Preview</CardTitle>
-                            <CardDescription>Current snapshot of the Project Intelligence string.</CardDescription>
+                            <CardTitle className="text-base flex items-center gap-2"><ScrollText className="text-primary h-4 w-4"/> Intelligence Snapshot</CardTitle>
+                            <CardDescription>Current preview of the encoded continuity string.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ScrollArea className="h-48 bg-muted rounded-xl p-4 border border-white/5">
-                                <pre className="text-[10px] font-mono leading-relaxed opacity-80 whitespace-pre-wrap">
+                            <ScrollArea className="h-64 bg-muted rounded-xl p-4 border border-white/5">
+                                <pre className="text-[10px] font-mono leading-relaxed opacity-80 whitespace-pre-wrap select-text">
                                     {PROJECT_MEMORY}
                                 </pre>
                             </ScrollArea>
@@ -492,7 +498,7 @@ const fetchUserStats = async (uid) => {
                                                 </Avatar>
                                                 <div className="flex flex-col">
                                                     <span className="text-sm font-bold">{u.displayName}</span>
-                                                    <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">{u.uid.slice(-8)}</span>
+                                                    <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">{u.mindMateId || u.uid.slice(-8)}</span>
                                                 </div>
                                             </div>
                                         </TableCell>
