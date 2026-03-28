@@ -6,7 +6,9 @@ import {
     ArrowRight, Bot, Users, Zap, Award, 
     Globe, Sparkles, ShieldCheck, 
     Instagram, Youtube, Send, 
-    Code, CreditCard, Clock, Gem, Vault
+    Code, CreditCard, Clock, Gem, Vault,
+    MessageSquare, ExternalLink, ShieldAlert,
+    BookOpen, FileText, ChevronDown
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
@@ -136,7 +138,7 @@ export function LandingPage() {
     const scrollBuffer = useRef(0);
     const touchStartY = useRef(0);
 
-    const totalSlides = 4;
+    const totalSlides = 5;
 
     const goTo = useCallback((index: number) => {
         if (isAnimating || index === currentSlide || index < 0 || index >= totalSlides) return;
@@ -219,7 +221,8 @@ export function LandingPage() {
         { color: "255,77,109", density: 52, glow: 0.55, speed: 0.35, accent: "#ff4d6d" },
         { color: "180,138,255", density: 38, glow: 0.70, speed: 0.28, accent: "#b48aff" },
         { color: "54,255,184", density: 28, glow: 0.45, speed: 0.22, accent: "#36ffb8" },
-        { color: "75,200,255", density: 60, glow: 0.75, speed: 0.40, accent: "#4bc8ff" }
+        { color: "75,200,255", density: 60, glow: 0.75, speed: 0.40, accent: "#4bc8ff" },
+        { color: "255,255,255", density: 30, glow: 0.30, speed: 0.15, accent: "#ffffff" }
     ];
 
     return (
@@ -236,7 +239,7 @@ export function LandingPage() {
                     <nav className="hidden lg:flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
                         <button onClick={() => goTo(1)} className="nav-link">Modules</button>
                         <button onClick={() => goTo(2)} className="nav-link">Intelligence</button>
-                        <Link href="/about" className="nav-link">Mission</Link>
+                        <button onClick={() => goTo(4)} className="nav-link">Contact</button>
                     </nav>
                     <div className="flex items-center gap-4">
                         <SignInButton mode="modal">
@@ -321,68 +324,99 @@ export function LandingPage() {
                     </div>
                 </section>
 
-                {/* SLIDE 3: MISSION & FOOTER */}
-                <section className={cn("slide slide-3", currentSlide === 3 ? "active" : currentSlide < 3 ? "below" : "instant")}>
+                {/* SLIDE 3: CTA */}
+                <section className={cn("slide slide-3", currentSlide === 3 ? "active" : currentSlide > 3 ? "above" : currentSlide < 3 ? "below" : "instant")}>
                     <PlexusCanvas {...slideConfigs[3]} active={currentSlide === 3} mouse={mouse} />
-                    <div className="slide-content w-full h-full flex flex-col pt-32">
-                        <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8 text-white">SECURE YOUR <br />LEGACY.</h2>
-                            <SignUpButton mode="modal">
-                                <Button size="lg" className="h-20 px-16 rounded-3xl ingress-btn text-xl shadow-2xl">Claim Your Mainframe</Button>
-                            </SignUpButton>
+                    <div className="slide-content flex flex-col items-center justify-center text-center px-6">
+                        <h2 className="text-6xl md:text-8xl font-black uppercase tracking-tighter mb-8 text-white">SECURE YOUR <br />LEGACY.</h2>
+                        <SignUpButton mode="modal">
+                            <Button size="lg" className="h-20 px-16 rounded-3xl ingress-btn text-xl shadow-2xl">Claim Your Mainframe</Button>
+                        </SignUpButton>
+                        <div className="mt-12 animate-bounce opacity-40">
+                            <ChevronDown className="h-8 w-8" />
                         </div>
+                    </div>
+                </section>
 
-                        {/* Institutional Footer */}
-                        <footer className="w-full bg-black/40 backdrop-blur-3xl border-t border-white/5 p-12 lg:p-20">
-                            <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-                                <div className="space-y-6 text-left">
+                {/* SLIDE 4: ULTIMATE FOOTER */}
+                <section className={cn("slide slide-4", currentSlide === 4 ? "active" : currentSlide < 4 ? "below" : "instant")}>
+                    <PlexusCanvas {...slideConfigs[4]} active={currentSlide === 4} mouse={mouse} />
+                    <div className="slide-content w-full h-full flex flex-col">
+                        <div className="flex-1 container mx-auto px-6 flex flex-col justify-center py-20">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
+                                <div className="space-y-8 text-left">
                                     <div className="flex items-center gap-3">
-                                        <Logo className="h-10 w-10" />
-                                        <span className="font-black text-2xl uppercase tracking-tighter text-white">MindMate</span>
+                                        <Logo className="h-12 w-12" />
+                                        <span className="font-black text-3xl uppercase tracking-tighter text-white">MindMate</span>
                                     </div>
-                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-loose">
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-loose max-w-xs">
                                         Empowering the next generation of scholars through strategic automation and collective intelligence.
                                     </p>
-                                </div>
-                                <div className="text-left">
-                                    <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-6">Mainframe</h5>
-                                    <ul className="space-y-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                        <li><Link href="https://emitygate.com" className="hover:text-primary transition-colors">EmityGate Solutions</Link></li>
-                                        <li><Link href="/about" className="hover:text-primary transition-colors">Strategic Mission</Link></li>
-                                        <li><Link href="/dashboard/docs" className="hover:text-primary transition-colors">Sovereign Docs</Link></li>
-                                    </ul>
-                                </div>
-                                <div className="text-left">
-                                    <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-6">Protocols</h5>
-                                    <ul className="space-y-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
-                                        <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Shield</Link></li>
-                                        <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-                                        <li><Link href="/refund" className="hover:text-primary transition-colors">Asset Protection</Link></li>
-                                    </ul>
-                                </div>
-                                <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 space-y-4 text-left">
-                                    <div className="flex items-center gap-3">
-                                        <ShieldCheck className="h-8 w-8 text-emerald-500" />
-                                        <div className="text-[10px] font-black uppercase">
-                                            <p className="text-slate-400">Validated Ingress</p>
-                                            <p className="text-white mt-0.5">Razorpay Secure</p>
+                                    <div className="p-6 rounded-[2.5rem] bg-white/[0.03] border border-white/5 space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <ShieldCheck className="h-8 w-8 text-emerald-500" />
+                                            <div className="text-[10px] font-black uppercase">
+                                                <p className="text-slate-400">Validated Ingress</p>
+                                                <p className="text-white mt-0.5">Razorpay Secure</p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Instagram className="h-4 w-4 text-slate-500 hover:text-white cursor-pointer" />
-                                        <Youtube className="h-4 w-4 text-slate-500 hover:text-white cursor-pointer" />
-                                        <Send className="h-4 w-4 text-slate-500 hover:text-white cursor-pointer" />
+                                </div>
+
+                                <div className="text-left">
+                                    <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Mainframe</h5>
+                                    <ul className="space-y-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                        <li><Link href="https://emitygate.com" target="_blank" className="nav-link flex items-center gap-2">EmityGate Solutions <ExternalLink className="h-3 w-3"/></Link></li>
+                                        <li><Link href="/about" className="nav-link">Strategic Mission</Link></li>
+                                        <li><Link href="/dashboard/docs" className="nav-link flex items-center gap-2">Sovereign Docs <BookOpen className="h-3 w-3"/></Link></li>
+                                        <li><Link href="/contact" className="nav-link flex items-center gap-2">Relay Signal <MessageSquare className="h-3 w-3"/></Link></li>
+                                    </ul>
+                                </div>
+
+                                <div className="text-left">
+                                    <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Protocols</h5>
+                                    <ul className="space-y-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                                        <li><Link href="/privacy" className="nav-link flex items-center gap-2">Privacy Shield <ShieldCheck className="h-3 w-3"/></Link></li>
+                                        <li><Link href="/terms" className="nav-link flex items-center gap-2">Terms of Service <FileText className="h-3 w-3"/></Link></li>
+                                        <li><Link href="/refund" className="nav-link flex items-center gap-2">Asset Protection <ShieldAlert className="h-3 w-3"/></Link></li>
+                                    </ul>
+                                </div>
+
+                                <div className="text-left">
+                                    <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Alliance Hub</h5>
+                                    <div className="flex flex-col gap-6">
+                                        <div className="flex gap-4">
+                                            <Link href="https://www.instagram.com/mindmatehq?igsh=MWd6dXJjbjVva2dlYg==" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                                                <Instagram className="h-5 w-5" />
+                                            </Link>
+                                            <Link href="https://youtube.com/@mindmateofficials?si=_PpffdhhQFGCTi47" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                                                <Youtube className="h-5 w-5" />
+                                            </Link>
+                                            <Link href="https://t.me/emitygate" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                                                <Send className="h-5 w-5" />
+                                            </Link>
+                                            <Link href="https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                                                <Globe className="h-5 w-5" />
+                                            </Link>
+                                        </div>
+                                        <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20">
+                                            <p className="text-[8px] font-black uppercase text-primary mb-1">Official Status</p>
+                                            <p className="text-[10px] font-bold text-white">NETWORK OPERATIONAL</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">
-                                <p>© {new Date().getFullYear()} EmityGate Solutions. All Rights Reserved.</p>
-                                <div className="flex gap-8">
-                                    <span>Status: Operational</span>
-                                    <span>Network: Stable</span>
+
+                            <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                                <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">
+                                    © {new Date().getFullYear()} EmityGate Solutions. All Rights Reserved.
+                                </p>
+                                <div className="flex gap-12 text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">
+                                    <span>Status: Stable</span>
+                                    <span>Version: 2.5.0</span>
                                 </div>
                             </div>
-                        </footer>
+                        </div>
                     </div>
                 </section>
             </div>
