@@ -55,7 +55,7 @@ function SovereignHub() {
                     </div>
                 </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl h-[90vh] md:h-[80vh] p-0 overflow-hidden border-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-[2.5rem] bg-transparent backdrop-blur-2xl">
+            <DialogContent className="max-w-none sm:max-w-4xl w-full h-full sm:h-[85vh] p-0 overflow-hidden border-none sm:border sm:border-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-none sm:rounded-[2.5rem] bg-transparent backdrop-blur-2xl transition-all duration-500">
                 <InboxContent onClose={() => setIsOpen(false)} />
             </DialogContent>
         </Dialog>
