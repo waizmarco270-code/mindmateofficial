@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -53,7 +54,7 @@ function SmartText({ text }: { text?: string }) {
                             href={part} 
                             target="_blank" 
                             rel="noopener noreferrer" 
-                            className="text-cyan-400 font-bold hover:underline inline-flex items-center gap-1 group/link"
+                            className="text-cyan-400 font-black hover:underline inline-flex items-center gap-1 group/link"
                         >
                             {part}
                             <ExternalLink className="h-3 w-3 opacity-50 group-hover/link:opacity-100 transition-opacity" />
@@ -196,13 +197,29 @@ export function WorldChatView() {
                 </div>
             </header>
 
-            {pinnedMessage && (
-                <div className="flex-shrink-0 z-10 p-2 bg-yellow-50 dark:bg-yellow-900/20 border-b border-yellow-200 dark:border-yellow-800/30 flex items-center gap-3 text-xs">
-                    <Pin className="h-4 w-4 text-yellow-600 flex-shrink-0" />
-                    <p className="flex-1 truncate italic">"{pinnedMessage.text || 'Action Message'}"</p>
-                    {(isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-6 w-6 text-yellow-600" onClick={unpinMessage}><PinOff className="h-3 w-3"/></Button>}
-                </div>
-            )}
+            <AnimatePresence>
+                {pinnedMessage && (
+                    <motion.div 
+                        initial={{ y: -50, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: -50, opacity: 0 }}
+                        className="flex-shrink-0 z-10 p-3 bg-yellow-400/10 dark:bg-yellow-400/5 border-b border-yellow-400/30 backdrop-blur-xl flex items-center gap-4 group/pin shadow-lg"
+                    >
+                        <div className="p-2 rounded-full bg-yellow-400 text-black shadow-lg shadow-yellow-400/20">
+                            <Pin className="h-4 w-4" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-yellow-600 dark:text-yellow-400 mb-0.5">Sovereign Directive</p>
+                            <p className="text-xs font-bold truncate text-foreground/90 italic">"{pinnedMessage.text || 'Action Briefing'}"</p>
+                        </div>
+                        {(isAdmin || isSuperAdmin) && (
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors" onClick={unpinMessage}>
+                                <X className="h-4 w-4"/>
+                            </Button>
+                        )}
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             <ScrollArea className="flex-1 relative" viewportRef={scrollAreaRef}>
                 <div className="p-4 space-y-2 min-h-full flex flex-col justify-end">
@@ -447,6 +464,9 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
         );
     }
 
+    // Special content wrapper to avoid Popover interception
+    const ContentWrapper = message.type === 'rain' ? 'div' : PopoverTrigger;
+
     return (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("flex flex-col group", isOwn ? "items-end" : "items-start")}>
             <div className={cn("flex gap-2 max-w-[85%]", isOwn ? "flex-row-reverse" : "flex-row")}>
@@ -457,7 +477,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                 )}
                 
                 <Popover>
-                    <PopoverTrigger asChild>
+                    <ContentWrapper asChild>
                         <div className={cn(
                             "relative px-3 py-2 rounded-2xl shadow-sm text-sm cursor-pointer transition-all border-2 border-transparent",
                             isOwn ? "bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none" : "bg-white dark:bg-[#202c33] rounded-tl-none",
@@ -497,6 +517,11 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                         <Progress value={(message.rainData?.claimedBy.length || 0) / (message.rainData?.maxClaims || 1) * 100} className="h-1.5 bg-black/20" indicatorClassName="bg-white" />
                                         <p className="text-[9px] text-white/80 font-black uppercase tracking-tighter">{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims} HARVESTED</p>
                                     </div>
+                                    { (isAdmin || isSuperAdmin) && (
+                                        <div className="absolute top-2 right-2">
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-white/50 hover:text-white" onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}><Trash2 className="h-3 w-3"/></Button>
+                                        </div>
+                                    )}
                                 </div>
                             ) : message.type === 'poll' ? renderPoll() : isEditing ? (
                                 <div className="space-y-2">
@@ -512,13 +537,13 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                 <span>{format(message.timestamp, 'h:mm a')}</span>
                             </div>
                         </div>
-                    </PopoverTrigger>
+                    </ContentWrapper>
                     <PopoverContent className="w-auto p-1 bg-slate-800 border-white/10 rounded-full flex gap-1 shadow-2xl">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => onReply(message)}><Reply className="h-4 w-4"/></Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => toggleNugget(message.id)}><Gem className={cn("h-4 w-4", isNugget && "text-amber-400")}/></Button>
-                        {(isOwn || isAdmin || isSuperAdmin) && !message.pollData && !message.rainData && <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => setIsEditing(true)}><Edit className="h-4 w-4"/></Button>}
-                        {(isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => pinMessage(message.id)}><Pin className="h-4 w-4"/></Button>}
-                        {(isOwn || isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-full" onClick={() => deleteMessage(message.id)}><Trash2 className="h-4 w-4"/></Button>}
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => onReply(message)} title="Reply"><Reply className="h-4 w-4"/></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => toggleNugget(message.id)} title="Wisdom Nugget"><Gem className={cn("h-4 w-4", isNugget && "text-amber-400")}/></Button>
+                        {(isOwn || isAdmin || isSuperAdmin) && !message.pollData && !message.rainData && <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => setIsEditing(true)} title="Edit"><Edit className="h-4 w-4"/></Button>}
+                        {(isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => pinMessage(message.id)} title="Pin Message"><Pin className="h-4 w-4"/></Button>}
+                        {(isOwn || isAdmin || isSuperAdmin) && <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-full" onClick={() => deleteMessage(message.id)} title="Delete"><Trash2 className="h-4 w-4"/></Button>}
                     </PopoverContent>
                 </Popover>
             </div>

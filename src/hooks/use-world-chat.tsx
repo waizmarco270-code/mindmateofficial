@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback, useMemo, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -252,24 +253,33 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const claimRain = useCallback(async (messageId: string) => {
         if (!currentUser || !currentUserData) return;
         
-        // LIMIT REMOVED PER MASTER DIRECTIVE - EVERYONE CAN CLAIM
-
         const messageRef = doc(db, 'world_chat', messageId);
         const userRef = doc(db, 'users', currentUser.id);
 
         const messageSnap = await getDoc(messageRef);
         if (!messageSnap.exists()) return;
         const data = messageSnap.data() as WorldChatMessage;
-        if (!data.rainData || data.rainData.claimedBy.includes(currentUser.id) || data.rainData.claimedBy.length >= data.rainData.maxClaims) {
-            toast({ variant: 'destructive', title: 'Already claimed or rain ended!' });
+        
+        if (!data.rainData) return;
+        if (data.rainData.claimedBy.includes(currentUser.id)) {
+            toast({ variant: 'destructive', title: 'Already Claimed', description: 'You have already harvested your credits from this rain.' });
+            return;
+        }
+        if (data.rainData.claimedBy.length >= data.rainData.maxClaims) {
+            toast({ variant: 'destructive', title: 'Rain Ended', description: 'All available credits have been harvested.' });
             return;
         }
 
         const batch = writeBatch(db);
         batch.update(messageRef, { 'rainData.claimedBy': arrayUnion(currentUser.id) });
         batch.update(userRef, { credits: increment(data.rainData.amount) });
-        await batch.commit();
-        toast({ title: 'Success!', description: `You claimed ${data.rainData.amount} credits from the rain!`, className: "bg-green-500/10 border-green-500/50" });
+        
+        try {
+            await batch.commit();
+            toast({ title: 'Success!', description: `You claimed ${data.rainData.amount} credits from the rain!`, className: "bg-green-500/10 border-green-500/50" });
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Sovereign Error', description: 'Failed to claim credits. Chat may be restricted.' });
+        }
     }, [currentUser, currentUserData, toast]);
 
     const submitPollVote = useCallback(async (messageId: string, option: string) => {

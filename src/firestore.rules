@@ -43,6 +43,15 @@ service cloud.firestore {
       }
     }
     
+    // Calls Collection (Voice Calls)
+    match /calls/{callId} {
+      allow read, write: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.receiverId || request.auth.uid == request.resource.data.callerId);
+      
+      match /candidates/{candidateId} {
+        allow read, write: if isSignedIn();
+      }
+    }
+    
     // Global Read-Only Collections
     match /announcements/{docId} {
       allow read: if isSignedIn();
@@ -103,10 +112,11 @@ service cloud.firestore {
         allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
     }
     
-    // Global Chat
-    match /global_chat/{messageId} {
+    // World Chat (Global Chat)
+    match /world_chat/{messageId} {
         allow read, create: if isSignedIn();
-        allow update: if false;
+        // Allow updates specifically for rain claims and poll votes
+        allow update: if isSignedIn(); 
         allow delete: if isOwner(resource.data.senderId) || isAdmin() || isSuperAdmin();
     }
     
