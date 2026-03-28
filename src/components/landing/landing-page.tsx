@@ -9,7 +9,7 @@ import {
     MessageSquare, ChevronDown, 
     Instagram, Youtube, Send, 
     ExternalLink, Code, Shield, 
-    CreditCard, Info
+    CreditCard, Info, Clock, X, Terminal, Cpu
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
@@ -23,46 +23,64 @@ import { ThreeDCore } from './ThreeDCore';
 
 const features = [
   {
+    id: 'ai',
     name: 'AI Study Assistant',
     description: 'Get instant, structured explanations and tactical help from your dedicated AI tutor.',
     icon: Bot,
     color: 'text-purple-400',
     bgColor: 'bg-purple-900/20',
+    previewTitle: 'MARCO AI INTERFACE',
+    previewContent: 'Initializing Neural Context... \nAnalyzing Syllabus Complexity... \nReady for Academic Ingress.'
   },
   {
+    id: 'gamified',
     name: 'Gamified Growth',
     description: 'Earn credits, claim badges, and compete on global leaderboards.',
     icon: Sparkles,
     color: 'text-sky-400',
     bgColor: 'bg-sky-900/20',
+    previewTitle: 'REWARD REPOSITORY',
+    previewContent: 'Total Credits: 1,250 \nRank: Legendary Scholar \nStreak: 42 Days'
   },
   {
+    id: 'focus',
     name: 'Deep Focus Engine',
     description: 'Calibrated focus timers with penalty systems to protect your productivity.',
     icon: Zap,
     color: 'text-yellow-400',
     bgColor: 'bg-yellow-900/20',
+    previewTitle: 'FOCUS CALIBRATION',
+    previewContent: 'Protocol: Deep Work \nTimer: 45:00 \nDistraction Shield: ACTIVE'
   },
   {
+    id: 'resources',
     name: 'Unified Resources',
     description: 'A central repository of high-level exam notes and study materials.',
     icon: FileText,
     color: 'text-rose-400',
     bgColor: 'bg-rose-900/20',
+    previewTitle: 'NEXUS ARCHIVES',
+    previewContent: 'Accessing JEE Physics... \nDecrypting Advanced Notes... \nUplink Complete.'
   },
   {
+    id: 'clans',
     name: 'Study Clans',
     description: 'Team up with allies, sync schedules, and conquer milestones as a unit.',
     icon: Users,
     color: 'text-emerald-400',
     bgColor: 'bg-emerald-900/20',
+    previewTitle: 'CLAN SYNCHRONIZATION',
+    previewContent: 'Alliance: The Titans \nLevel: 5 (MAX) \nMembers: 24 Online'
   },
   {
+    id: 'ledger',
     name: 'Academic Ledger',
     description: 'Powerful analytics to maintain your consistency and track your streaks.',
     icon: Award,
     color: 'text-orange-400',
     bgColor: 'bg-orange-900/20',
+    previewTitle: 'PROGRESS ANALYTICS',
+    previewContent: 'Productivity: +15% \nEfficiency: Peak \nStatus: Mission Ready'
   }
 ];
 
@@ -91,11 +109,7 @@ function NeuralBackground() {
     return (
         <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
             <div className="absolute inset-0 bg-black" />
-            
-            {/* Animated Grid */}
             <div className="absolute inset-0 bg-grid-animate opacity-10" />
-            
-            {/* Neural Synapse Branches */}
             <svg className="absolute inset-0 w-full h-full opacity-20">
                 <filter id="glow-path">
                     <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -104,12 +118,10 @@ function NeuralBackground() {
                         <feMergeNode in="SourceGraphic"/>
                     </feMerge>
                 </filter>
-                
-                {/* Synaptic Tree Paths */}
                 {[...Array(5)].map((_, i) => (
                     <motion.path
                         key={i}
-                        d={`M ${200 * i},1000 Q ${400 + i * 50},500 ${window.innerWidth / 2},${window.innerHeight / 2} T ${window.innerWidth - (i * 200)},0`}
+                        d={`M ${200 * i},1000 Q ${400 + i * 50},500 ${1000},${500} T ${1500},0`}
                         fill="none"
                         stroke="rgba(139,92,246,0.2)"
                         strokeWidth="1"
@@ -119,33 +131,98 @@ function NeuralBackground() {
                         transition={{ duration: 10 + i * 2, repeat: Infinity, ease: "easeInOut" }}
                     />
                 ))}
-
-                {/* Random Pulsing Synapses */}
-                {[...Array(15)].map((_, i) => (
-                    <motion.circle
-                        key={`node-${i}`}
-                        r={Math.random() * 2 + 1}
-                        fill="rgba(139,92,246,0.6)"
-                        animate={{ 
-                            opacity: [0, 1, 0],
-                            scale: [0.5, 1.2, 0.5]
-                        }}
-                        transition={{ 
-                            duration: 3 + Math.random() * 4, 
-                            repeat: Infinity, 
-                            delay: Math.random() * 5 
-                        }}
-                        cx={`${Math.random() * 100}%`}
-                        cy={`${Math.random() * 100}%`}
-                    />
-                ))}
             </svg>
         </div>
     );
 }
 
+function HolographicPreview({ feature, onClose }: { feature: typeof features[0], onClose: () => void }) {
+    return (
+        <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+            onClick={onClose}
+        >
+            <motion.div 
+                initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                className="relative w-full max-w-2xl aspect-video bg-white/5 border border-white/10 rounded-[2.5rem] shadow-[0_0_100px_rgba(139,92,246,0.2)] overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Scanner Line */}
+                <motion.div 
+                    animate={{ y: [0, 400, 0] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-x-0 h-px bg-primary/40 shadow-[0_0_15px_#8b5cf6] z-20"
+                />
+
+                <div className="absolute inset-0 bg-grid-animate opacity-5" />
+                
+                <div className="relative h-full flex flex-col p-8 md:p-12">
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-4">
+                            <div className={cn("p-3 rounded-2xl", feature.bgColor)}>
+                                <feature.icon className={cn("h-8 w-8", feature.color)} />
+                            </div>
+                            <div>
+                                <h3 className="font-black text-2xl tracking-tighter uppercase italic">{feature.previewTitle}</h3>
+                                <p className="text-[10px] font-black text-primary tracking-[0.3em] uppercase">Status: Non-Interactive Simulation</p>
+                            </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
+                            <X className="h-6 w-6" />
+                        </Button>
+                    </div>
+
+                    <div className="flex-1 flex flex-col justify-center gap-6">
+                        <div className="space-y-4">
+                            {feature.previewContent.split('\n').map((line, i) => (
+                                <motion.p 
+                                    key={i}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: 0.2 + (i * 0.1) }}
+                                    className="font-mono text-sm md:text-lg flex items-center gap-3 text-slate-300"
+                                >
+                                    <span className="text-primary">></span> {line}
+                                </motion.p>
+                            ))}
+                        </div>
+
+                        {/* Abstract Visual Elements */}
+                        <div className="mt-8 flex gap-4">
+                            <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
+                                <motion.div 
+                                    animate={{ width: ['0%', '100%', '0%'] }}
+                                    transition={{ duration: 3, repeat: Infinity }}
+                                    className="h-full bg-primary/40"
+                                />
+                            </div>
+                            <div className="h-1.5 w-24 bg-white/5 rounded-full overflow-hidden">
+                                <motion.div 
+                                    animate={{ width: ['100%', '30%', '100%'] }}
+                                    transition={{ duration: 2, repeat: Infinity }}
+                                    className="h-full bg-cyan-400/40"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="absolute bottom-8 right-8 pointer-events-none opacity-20">
+                        <p className="text-[40px] font-black tracking-tighter uppercase italic rotate-[-5deg]">System Preview</p>
+                    </div>
+                </div>
+            </motion.div>
+        </motion.div>
+    );
+}
+
 export function LandingPage() {
   const [isMounted, setIsMounted] = useState(false);
+  const [activePreview, setActivePreview] = useState<typeof features[0] | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -156,6 +233,15 @@ export function LandingPage() {
   return (
     <div className="flex min-h-screen flex-col bg-black overflow-x-hidden selection:bg-primary/30 text-slate-200">
       <NeuralBackground />
+
+      <AnimatePresence>
+        {activePreview && (
+            <HolographicPreview 
+                feature={activePreview} 
+                onClose={() => setActivePreview(null)} 
+            />
+        )}
+      </AnimatePresence>
 
       {/* Header */}
       <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-black/40 backdrop-blur-xl">
@@ -246,6 +332,7 @@ export function LandingPage() {
             <div className="flex flex-col items-center text-center mb-24">
               <h2 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter mb-4 italic font-serif text-white">Elite Modules</h2>
               <div className="h-1.5 w-16 bg-primary rounded-full shadow-[0_0_15px_#8b5cf6]" />
+              <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-4">Click to project holographic briefing</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -256,6 +343,7 @@ export function LandingPage() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.05 }}
+                    onClick={() => setActivePreview(feature)}
                     className="relative group p-10 rounded-[2.5rem] bg-white/[0.02] backdrop-blur-2xl border border-white/5 hover:border-primary/30 hover:bg-white/[0.04] transition-all duration-700 cursor-pointer overflow-hidden"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
