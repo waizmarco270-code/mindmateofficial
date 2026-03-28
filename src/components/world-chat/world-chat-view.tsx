@@ -5,7 +5,7 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, Vote, Megaphone, BellRing, Lock, Unlock, Trash, Clock, ShieldAlert, ExternalLink } from 'lucide-react';
+import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, Vote, Megaphone, BellRing, Lock, Unlock, Trash, Clock, ShieldAlert, ExternalLink, CheckCircle } from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -104,6 +104,18 @@ export function WorldChatView() {
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!newMessage.trim()) return;
+
+        // Command Protocol: Secret Rain
+        if (newMessage.startsWith('/rain') && currentUser?.id === SUPER_ADMIN_UID) {
+            const parts = newMessage.split(' ');
+            const amt = parseInt(parts[1]);
+            const clm = parseInt(parts[2]);
+            if (!isNaN(amt) && !isNaN(clm)) {
+                await sendMessage(newMessage); // The hook handles the /rain check
+                setNewMessage('');
+                return;
+            }
+        }
 
         const replyContext: ReplyContext | null = replyingTo ? {
             messageId: replyingTo.id,
@@ -414,6 +426,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
     const { user: currentUser } = useUser();
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(message.text || '');
+    const [isClaiming, setIsClaiming] = useState(false);
 
     const handleEditSave = () => {
         if(editText.trim() !== message.text) editMessage(message.id, editText);
@@ -465,45 +478,65 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
     }
 
     if (message.type === 'rain') {
+        const hasClaimed = message.rainData?.claimedBy.includes(currentUser?.id || '');
+        const isFull = (message.rainData?.claimedBy.length || 0) >= (message.rainData?.maxClaims || 1);
+
         return (
-            <div className={cn("flex w-full mb-4", isOwn ? "justify-end" : "justify-start")}>
-                <div className="p-6 text-center space-y-4 bg-gradient-to-br from-black via-red-950 to-red-900 rounded-3xl border-4 border-red-600/50 shadow-[0_0_30px_rgba(220,38,38,0.3)] overflow-hidden relative group/rain min-w-[280px] max-w-[320px]">
-                    <div className="absolute inset-0 bg-grid-slate-800/20 [mask-image:radial-gradient(white,transparent_70%)]" />
-                    <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-30" />
-                    
-                    <div className="relative">
-                        <motion.div animate={{ y: [0, 5, 0], scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                            <CloudRain className="h-16 w-16 text-red-500 mx-auto drop-shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
-                        </motion.div>
-                        <Zap className="h-8 w-8 text-yellow-400 absolute -top-2 right-1/4 animate-flicker"/>
-                    </div>
+            <div className={cn("flex w-full mb-4 px-2", isOwn ? "justify-end" : "justify-start")}>
+                <Card className="w-full max-w-[320px] overflow-hidden rounded-3xl border-2 border-primary/20 shadow-xl bg-card">
+                    <div className="p-1 bg-gradient-to-r from-blue-600 via-primary to-indigo-600" />
+                    <CardContent className="p-6 space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="p-3 rounded-2xl bg-primary/10 text-primary">
+                                <CloudRain className="h-8 w-8" />
+                            </div>
+                            <div className="text-right">
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Sovereign Protocol</p>
+                                <p className="font-bold text-sm text-primary">Active Credit Rain</p>
+                            </div>
+                        </div>
 
-                    <div className="space-y-1">
-                        <p className="font-black text-white italic tracking-tighter text-4xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">CREDIT RAIN</p>
-                        <p className="text-[10px] text-red-400 font-black uppercase tracking-[0.3em] animate-pulse">Sovereign Malice Protocol</p>
-                    </div>
+                        <div className="space-y-1">
+                            <h3 className="text-2xl font-black tracking-tight leading-none uppercase italic">The Treasury is Open</h3>
+                            <p className="text-xs text-muted-foreground font-medium">Harvest your share of the legend's bounty.</p>
+                        </div>
 
-                    <Button 
-                        size="lg" 
-                        onClick={onClaimRain} 
-                        className="w-full bg-red-600 hover:bg-red-700 text-white font-black text-xl rounded-2xl shadow-[0_5px_15px_rgba(220,38,38,0.4)] transition-all active:scale-95 h-16 border-b-4 border-red-900"
-                    >
-                        CLAIM {message.rainData?.amount} CREDITS
-                    </Button>
+                        <div className="relative z-50">
+                            <Button 
+                                size="lg" 
+                                disabled={hasClaimed || isFull || isClaiming}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsClaiming(true);
+                                    onClaimRain();
+                                    setTimeout(() => setIsClaiming(false), 2000);
+                                }}
+                                className={cn(
+                                    "w-full h-14 font-black text-lg rounded-2xl shadow-lg transition-all active:scale-95",
+                                    hasClaimed ? "bg-muted text-muted-foreground" : "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
+                                )}
+                            >
+                                {isClaiming ? <Loader2 className="animate-spin h-5 w-5 mr-2"/> : hasClaimed ? <CheckCircle className="mr-2 h-5 w-5"/> : <Gem className="mr-2 h-5 w-5"/>}
+                                {hasClaimed ? 'HARVESTED' : isFull ? 'EMPTY' : `CLAIM ${message.rainData?.amount} CREDITS`}
+                            </Button>
+                        </div>
 
-                    <div className="flex flex-col gap-1.5 mt-2">
-                        <Progress value={(message.rainData?.claimedBy.length || 0) / (message.rainData?.maxClaims || 1) * 100} className="h-2 bg-black/40 border border-white/5" indicatorClassName="bg-red-500 shadow-[0_0_10px_#ef4444]" />
-                        <p className="text-[10px] text-red-200/70 font-black uppercase tracking-widest">{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims} HARVESTED</p>
-                    </div>
-
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-[10px] font-black uppercase tracking-widest">
+                                <span>Harvest Progress</span>
+                                <span>{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims}</span>
+                            </div>
+                            <Progress value={(message.rainData?.claimedBy.length || 0) / (message.rainData?.maxClaims || 1) * 100} className="h-1.5" />
+                        </div>
+                    </CardContent>
                     {(isAdmin || isSuperAdmin) && (
-                        <div className="absolute top-2 right-2">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-black/40 text-white/50 hover:text-red-500 transition-colors" onClick={() => deleteMessage(message.id)}>
+                        <div className="bg-muted/30 p-2 flex justify-end">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}>
                                 <Trash2 className="h-4 w-4"/>
                             </Button>
                         </div>
                     )}
-                </div>
+                </Card>
             </div>
         );
     }
