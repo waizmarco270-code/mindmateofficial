@@ -29,14 +29,14 @@ export default function GuideCenterPage() {
 
         return videoCategories
             .map(category => {
-                const lectures = videoLectures.filter(lec =>
+                const lectures = (videoLectures || []).filter(lec =>
                     lec.categoryId === category.id &&
                     (lec.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
                      category.name.toLowerCase().includes(searchTerm.toLowerCase()))
                 );
                 return { ...category, lectures };
             })
-            .filter(category => category.lectures.length > 0);
+            .filter(category => category.lectures && category.lectures.length > 0);
     }, [videoCategories, videoLectures, searchTerm]);
 
     const containerVariants = {

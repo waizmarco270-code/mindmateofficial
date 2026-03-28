@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban, Link as LinkIcon, Key, Copy, Check } from 'lucide-react';
+import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban, Link as LinkIcon, Key, Copy, Check, Terminal as CodeIcon } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -86,7 +86,7 @@ export default function SuperAdminPanelPage() {
   // User Search Logic
   const filteredUsers = useMemo(() => {
     if (!userSearchTerm.trim()) return [];
-    return users.filter(u => 
+    return (users || []).filter(u => 
         u.displayName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
         u.uid.toLowerCase() === userSearchTerm.toLowerCase()
     ).slice(0, 5);
@@ -218,7 +218,7 @@ export default function SuperAdminPanelPage() {
     );
   }
 
-  const onlineCount = onlineUsers.filter(u => u.isOnline).length;
+  const onlineCount = (onlineUsers || []).filter(u => u.isOnline).length;
 
   return (
     <div className="space-y-8 pb-20">
@@ -264,26 +264,51 @@ export default function SuperAdminPanelPage() {
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-6 pt-0 space-y-6">
-                <Card className="bg-background border-blue-500/20 shadow-xl">
-                    <CardHeader>
-                        <CardTitle className="text-base flex items-center gap-2"><Key className="text-blue-500 h-4 w-4"/> Sovereign API Key</CardTitle>
-                        <CardDescription>Use this key on EmityGate.com to securely pull user statistics.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-2">
-                            <Input readOnly value={MASTER_API_KEY} className="font-mono text-xs bg-muted/50 h-12" />
-                            <Button size="icon" variant="outline" className="h-12 w-12" onClick={copyApiKey}>
-                                {isApiKeyCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
-                            </Button>
-                        </div>
-                        <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-2">
-                            <p className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest">Active Endpoint</p>
-                            <code className="text-[10px] block p-2 bg-black/20 rounded font-mono break-all text-muted-foreground">
-                                GET https://mindmate.emitygate.com/api/v1/user/[userId]
-                            </code>
-                        </div>
-                    </CardContent>
-                </Card>
+                <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+                    <Card className="bg-background border-blue-500/20 shadow-xl">
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2"><Key className="text-blue-500 h-4 w-4"/> Sovereign API Key</CardTitle>
+                            <CardDescription>Use this key on EmityGate.com to securely pull user statistics.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <Input readOnly value={MASTER_API_KEY} className="font-mono text-xs bg-muted/50 h-12" />
+                                <Button size="icon" variant="outline" className="h-12 w-12" onClick={copyApiKey}>
+                                    {isApiKeyCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
+                                </Button>
+                            </div>
+                            <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-2">
+                                <p className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest">Active Endpoint</p>
+                                <code className="text-[10px] block p-2 bg-black/20 rounded font-mono break-all text-muted-foreground">
+                                    GET https://mindmate.emitygate.com/api/v1/user/[userId]
+                                </code>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-background border-primary/20">
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2"><CodeIcon className="text-primary h-4 w-4"/> Integration Intel</CardTitle>
+                            <CardDescription>How to talk to the MindMate mainframe.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrollArea className="h-48 bg-muted rounded-xl p-4 border border-white/5">
+                                <pre className="text-[10px] font-mono leading-relaxed opacity-80">
+{`// Implementation Blueprint
+const fetchUserStats = async (uid) => {
+  const response = await fetch(\`https://mindmate.emitygate.com/api/v1/user/\${uid}\`, {
+    headers: {
+      'x-api-key': 'YOUR_KEY_HERE',
+      'Content-Type': 'application/json'
+    }
+  });
+  return response.json();
+};`}
+                                </pre>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
             </AccordionContent>
           </Card>
         </AccordionItem>
@@ -371,7 +396,7 @@ export default function SuperAdminPanelPage() {
                             {users.map(u => {
                                 const isUserSuperAdmin = u.uid === SUPER_ADMIN_UID;
                                 const hasMasterCard = u.masterCardExpires && new Date(u.masterCardExpires) > new Date();
-                                const isOnline = onlineUsers.find(ou => ou.uid === u.uid)?.isOnline;
+                                const isOnline = (onlineUsers || []).find(ou => ou.uid === u.uid)?.isOnline;
                                 
                                 return (
                                     <TableRow key={u.uid} className={cn(u.isBlocked && "opacity-60 bg-red-500/5")}>
