@@ -20,6 +20,7 @@ import { cn } from '@/lib/utils';
 import { ActivityGlobe } from './ActivityGlobe';
 import NextImage from 'next/image';
 import { ThreeDCore } from './ThreeDCore';
+import placeholderData from '@/app/lib/placeholder-images.json';
 
 const features = [
   {
@@ -105,33 +106,20 @@ const testimonials = [
     }
 ];
 
-function NeuralBackground() {
+function LegendaryBackground() {
     return (
-        <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
             <div className="absolute inset-0 bg-black" />
-            <div className="absolute inset-0 bg-grid-animate opacity-10" />
-            <svg className="absolute inset-0 w-full h-full opacity-20">
-                <filter id="glow-path">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-                    <feMerge>
-                        <feMergeNode in="coloredBlur"/>
-                        <feMergeNode in="SourceGraphic"/>
-                    </feMerge>
-                </filter>
-                {[...Array(5)].map((_, i) => (
-                    <motion.path
-                        key={i}
-                        d={`M ${200 * i},1000 Q ${400 + i * 50},500 ${1000},${500} T ${1500},0`}
-                        fill="none"
-                        stroke="rgba(139,92,246,0.2)"
-                        strokeWidth="1"
-                        filter="url(#glow-path)"
-                        initial={{ pathLength: 0 }}
-                        animate={{ pathLength: [0, 1, 0] }}
-                        transition={{ duration: 10 + i * 2, repeat: Infinity, ease: "easeInOut" }}
-                    />
-                ))}
-            </svg>
+            <NextImage 
+                src={placeholderData.landing.background.src}
+                alt="MindMate Universe"
+                fill
+                priority
+                className="object-cover opacity-40 animate-zoom-pan"
+                data-ai-hint={placeholderData.landing.background['data-ai-hint']}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
+            <div className="absolute inset-0 bg-grid-animate opacity-5" />
         </div>
     );
 }
@@ -230,9 +218,16 @@ export function LandingPage() {
 
   if (!isMounted) return <div className="min-h-screen bg-black" />;
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-black overflow-x-hidden selection:bg-primary/30 text-slate-200">
-      <NeuralBackground />
+      <LegendaryBackground />
 
       <AnimatePresence>
         {activePreview && (
@@ -251,21 +246,19 @@ export function LandingPage() {
             <span className="font-black text-2xl tracking-tighter text-white uppercase italic">MindMate</span>
           </Link>
 
-          <div className="hidden lg:flex items-center gap-6">
-             <div className="px-5 py-2 rounded-full bg-primary/10 border border-primary/20 flex items-center gap-3 hover:bg-primary/20 transition-all cursor-pointer group/banner">
-                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
-                <span className="text-[10px] font-black uppercase tracking-widest text-primary">Join the v2.5 Beta Cycle</span>
-                <ArrowRight className="h-3.5 w-3.5 text-primary transition-transform group-hover/banner:translate-x-1" />
-             </div>
-          </div>
+          <nav className="hidden lg:flex items-center gap-8">
+            <button onClick={() => scrollToSection('modules')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Elite Modules</button>
+            <button onClick={() => scrollToSection('global')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Global Intelligence</button>
+            <button onClick={() => scrollToSection('briefings')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Briefings</button>
+            <Link href="/about" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Strategic Mission</Link>
+          </nav>
 
           <div className="flex items-center gap-4">
-             <SignInButton mode="modal">
-                <Button variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-colors">Sign In</Button>
+            <SignInButton mode="modal">
+                <Button className="h-11 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 hover:opacity-90 shadow-2xl shadow-purple-500/20 transition-all hover:scale-[1.02]">
+                    Login to MindMate
+                </Button>
             </SignInButton>
-            <SignUpButton mode="modal">
-                <Button className="h-11 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-primary hover:bg-primary/90 shadow-2xl shadow-primary/20 transition-all hover:-translate-y-0.5">Initialize</Button>
-            </SignUpButton>
           </div>
         </div>
       </header>
@@ -328,7 +321,7 @@ export function LandingPage() {
         </section>
 
         {/* Features Bento Grid */}
-        <section className="container mx-auto py-32 px-6 sm:px-12">
+        <section id="modules" className="container mx-auto py-32 px-6 sm:px-12 scroll-mt-20">
             <div className="flex flex-col items-center text-center mb-24">
               <h2 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter mb-4 italic font-serif text-white">Elite Modules</h2>
               <div className="h-1.5 w-16 bg-primary rounded-full shadow-[0_0_15px_#8b5cf6]" />
@@ -358,7 +351,7 @@ export function LandingPage() {
         </section>
 
         {/* Global Intelligence Feed */}
-        <section className="bg-white/[0.01] border-y border-white/5 py-32 px-6 sm:px-12 relative overflow-hidden">
+        <section id="global" className="bg-white/[0.01] border-y border-white/5 py-32 px-6 sm:px-12 relative overflow-hidden scroll-mt-20">
             <div className="absolute inset-0 bg-grid-slate-800 opacity-5" />
             <div className="container mx-auto relative z-10">
                 <div className="text-center mb-20">
@@ -370,7 +363,7 @@ export function LandingPage() {
         </section>
 
         {/* Testimonials */}
-        <section className="container mx-auto py-32 px-6 sm:px-12">
+        <section id="briefings" className="container mx-auto py-32 px-6 sm:px-12 scroll-mt-20">
             <div className="text-center mb-24">
                 <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-widest text-white italic font-serif">Citizen Briefings</h2>
             </div>

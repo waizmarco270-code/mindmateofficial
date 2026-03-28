@@ -1,4 +1,12 @@
+
 {
+  "landing": {
+    "background": {
+      "id": "legendary-bg",
+      "src": "https://picsum.photos/seed/mindmate-universe/1920/1080",
+      "data-ai-hint": "deep space nebula cyberpunk galaxy"
+    }
+  },
   "pomodoroThemes": {
     "nature": [
       { "id": "nature-1", "src": "https://picsum.photos/seed/n1/1080/1920", "data-ai-hint": "aurora borealis over snowy mountains" },
