@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight, X } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -224,7 +224,7 @@ function UserBadgeDisplay() {
     if (!badge) return null;
     return (
         <div className="space-y-4">
-            <Link href="/dashboard/profile" className="group block">
+            <Link href="/dashboard/badges" className="group block">
                 <Card className={cn("relative overflow-hidden border-0 transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1", badge.gradient)}>
                     <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/50"></div>
                     <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
@@ -246,6 +246,50 @@ function UserBadgeDisplay() {
             </Button>
         </div>
     )
+}
+
+function BadgeCarousel() {
+    return (
+        <div className="space-y-4">
+            <div className="flex items-center justify-between px-1">
+                <h2 className="text-xl font-black uppercase tracking-tight italic">Hall of Ranks</h2>
+                <Link href="/dashboard/badges" className="text-[10px] font-black text-primary uppercase tracking-[0.2em] hover:underline">View Treasury</Link>
+            </div>
+            <Carousel
+                opts={{
+                    align: "start",
+                    loop: true,
+                }}
+                plugins={[
+                    Autoplay({
+                        delay: 3000,
+                    }),
+                ]}
+                className="w-full"
+            >
+                <CarouselContent className="-ml-4">
+                    {Object.entries(badgeDetails).map(([key, badge]) => (
+                        <CarouselItem key={key} className="pl-4 basis-1/2 sm:basis-1/3 lg:basis-1/4">
+                            <Link href="/dashboard/badges" className="block h-full group">
+                                <Card className={cn("relative overflow-hidden border-0 h-32 rounded-2xl transition-all duration-500 hover:scale-105 shadow-lg shadow-black/5 hover:shadow-primary/20", badge.gradient)}>
+                                    <div className="absolute inset-0 bg-black/10 group-hover:bg-black/30 transition-colors" />
+                                    <CardContent className="relative h-full p-4 flex flex-col items-center justify-center text-center gap-2">
+                                        <div className="p-2 rounded-full bg-white/10 group-hover:scale-110 transition-transform duration-500 shadow-inner border border-white/5">
+                                            <badge.icon className="h-6 w-6 text-white drop-shadow-lg" />
+                                        </div>
+                                        <div className="space-y-0.5">
+                                            <p className="text-[10px] font-black text-white uppercase tracking-tighter line-clamp-1">{badge.name}</p>
+                                            <p className="text-[8px] font-black text-white/60 uppercase tracking-[0.2em] group-hover:text-white transition-colors">View Detail</p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </Link>
+                        </CarouselItem>
+                    ))}
+                </CarouselContent>
+            </Carousel>
+        </div>
+    );
 }
 
 export default function DashboardPage() {
@@ -273,7 +317,7 @@ export default function DashboardPage() {
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
     return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20">
         <SignedOut><WelcomeDialog /></SignedOut>
         <StreakMilestonesDialog isOpen={isStreakDialogOpen} onOpenChange={setIsStreakDialogOpen} currentStreak={streak} />
         <div>
@@ -355,6 +399,7 @@ export default function DashboardPage() {
             </Card>
             )}
             <CommunityPoll />
+            <BadgeCarousel />
         </div>
       </div>
   );
