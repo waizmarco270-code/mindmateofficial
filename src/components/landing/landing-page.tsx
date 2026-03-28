@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -115,7 +114,6 @@ function PlexusCanvas({ color, density, glow, speed, active, mouse }: any) {
 // --- STAT COUNTER ---
 function StatCounter({ target, suffix = "" }: { target: number, suffix?: string }) {
     const [count, setCount] = useState(0);
-    const nodeRef = useRef(null);
 
     useEffect(() => {
         let startTime: number;
@@ -251,7 +249,7 @@ export function LandingPage() {
                             <SignUpButton mode="modal">
                                 <Button size="lg" className="h-16 px-10 rounded-2xl bg-white text-black font-black uppercase tracking-widest hover:bg-slate-200">Initialize</Button>
                             </SignUpButton>
-                            <Button variant="outline" onClick={() => goTo(1)} className="h-16 px-10 rounded-2xl border-white/10 font-black uppercase tracking-widest">Explore</Button>
+                            <Button variant="outline" onClick={() => goTo(1)} className="h-16 px-10 rounded-2xl border-white/10 font-black uppercase tracking-widest text-white">Explore</Button>
                         </div>
                     </div>
                 </section>
@@ -262,7 +260,7 @@ export function LandingPage() {
                     <div className="slide-content container px-6">
                         <div className="text-center mb-16">
                             <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">Elite Modules</h2>
-                            <p className="text-slate-400 mt-4 max-w-xl mx-auto">Proprietary systems designed for absolute academic dominance.</p>
+                            <p className="text-slate-400 mt-4 max-w-xl mx-auto font-medium">Proprietary systems designed for absolute academic dominance.</p>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                             {[
@@ -271,13 +269,13 @@ export function LandingPage() {
                                 { title: 'Credit Economy', icon: Gem, desc: 'Earn universal credits via high-focus study.' },
                                 { title: 'Deep Focus', icon: Zap, desc: 'Calibrated timers with penalty enforcement.' }
                             ].map((f, i) => (
-                                <Card key={i} className="bg-white/[0.03] backdrop-blur-3xl border-white/5 p-8 rounded-[2rem] hover:border-primary/30 transition-all hover:-translate-y-2">
+                                <div key={i} className="glass-module p-8 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-3xl transition-all hover:-translate-y-2">
                                     <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center mb-6">
                                         <f.icon className="h-6 w-6 text-primary" />
                                     </div>
-                                    <h4 className="font-black uppercase text-lg mb-2">{f.title}</h4>
-                                    <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
-                                </Card>
+                                    <h4 className="font-black uppercase text-lg mb-2 text-white">{f.title}</h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed font-medium">{f.desc}</p>
+                                </div>
                             ))}
                         </div>
                     </div>
@@ -311,7 +309,7 @@ export function LandingPage() {
                     <PlexusCanvas {...slideConfigs[3]} active={currentSlide === 3} mouse={mouse} />
                     <div className="slide-content w-full h-full flex flex-col pt-32">
                         <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
-                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8">SECURE YOUR <br />LEGACY.</h2>
+                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8 text-white">SECURE YOUR <br />LEGACY.</h2>
                             <SignUpButton mode="modal">
                                 <Button size="lg" className="h-20 px-16 rounded-3xl ingress-btn text-xl shadow-2xl">Claim Your Mainframe</Button>
                             </SignUpButton>
@@ -323,7 +321,7 @@ export function LandingPage() {
                                 <div className="space-y-6">
                                     <div className="flex items-center gap-3">
                                         <Logo className="h-10 w-10" />
-                                        <span className="font-black text-2xl uppercase tracking-tighter">MindMate</span>
+                                        <span className="font-black text-2xl uppercase tracking-tighter text-white">MindMate</span>
                                     </div>
                                     <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-loose">
                                         Empowering the next generation of scholars through strategic automation and collective intelligence.
