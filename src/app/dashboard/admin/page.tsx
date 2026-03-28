@@ -643,7 +643,7 @@ export default function AdminPanelPage() {
             <p className="text-muted-foreground">Manage application content and settings.</p>
         </div>
         <Button asChild variant="outline" className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
-            <Link href="/dashboard/admin/study-panel">Manage Guides <Book className="ml-2 h-4 w-4"/></Link>
+            <Link href="/dashboard/spanel">Manage Guides <Book className="ml-2 h-4 w-4"/></Link>
         </Button>
       </div>
       
@@ -1245,7 +1245,7 @@ export default function AdminPanelPage() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Pending Referral Requests</CardTitle>
-                        <CardDescription>Approve requests to grant 50 credits to the referrer.</CardDescription>
+                        <CardDescription>Approve requests to grant 50 credits to the fee-er.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Table>
@@ -1408,7 +1408,7 @@ export default function AdminPanelPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="sc-date">Launch Date (Optional)</Label>
-                            <Input id="sc-date" type="date" value={showcaseDate} onChange={e => setShowcaseDate(e.target.value)} />
+                            <Input id="sc-date" type="date" value={showcaseDate} onChange={e => showcaseDate(e.target.value)} />
                         </div>
                     </div>
                      <div className="space-y-2">

@@ -35,13 +35,13 @@ function Inbox() {
                         "relative h-12 w-12 rounded-full transition-all duration-500 group border",
                         hasInboxUnread 
                             ? "bg-red-600 text-white border-red-500 shadow-[0_0_25px_rgba(220,38,38,0.6)] animate-pulse" 
-                            : "bg-yellow-400/10 text-yellow-600 dark:text-yellow-400 border-yellow-400/30 hover:bg-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.2)] dark:shadow-[0_0_20px_rgba(250,204,21,0.3)]"
+                            : "bg-yellow-400/10 text-yellow-500 border-yellow-400/30 hover:bg-yellow-400/20 shadow-[0_0_15px_rgba(250,204,21,0.3)] dark:shadow-[0_0_20px_rgba(250,204,21,0.4)]"
                     )}
                 >
                     <div className="relative">
                         <Bell className={cn(
                             "h-7 w-7 transition-all duration-500",
-                            hasInboxUnread ? "text-white drop-shadow-[0_0_10px_white]" : "text-yellow-600 dark:text-yellow-400 dark:drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]"
+                            hasInboxUnread ? "text-white drop-shadow-[0_0_10px_white]" : "text-yellow-500 drop-shadow-[0_0_8px_rgba(250,204,21,0.6)]"
                         )} />
                         {hasInboxUnread && (
                             <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4">
