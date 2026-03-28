@@ -4,6 +4,7 @@
 import { useState, useMemo } from 'react';
 import { useAdmin } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { BookOpen, Search, Sparkles, Zap, Map, Users, Gem, ShieldCheck, Play, ArrowRight, Book } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
