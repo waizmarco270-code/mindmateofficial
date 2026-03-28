@@ -1,3 +1,4 @@
+
 'use client';
 
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
@@ -5,7 +6,8 @@ import {
     ArrowRight, Bot, Users, Zap, FileText, Award, 
     Globe, Sparkles, Quote, ShieldCheck, 
     MessageSquare, BookOpen, Clock, Mail, Map as MapIcon,
-    ChevronDown, Rocket, Smartphone, Layout
+    ChevronDown, Rocket, Smartphone, Layout,
+    Info, Instagram, Youtube, Send
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
@@ -377,14 +379,21 @@ export function LandingPage() {
                         <span className="font-black text-3xl tracking-tighter uppercase italic bg-gradient-to-r from-white to-slate-500 bg-clip-text text-transparent">MindMate</span>
                     </Link>
                     <p className="text-base text-slate-500 font-medium leading-relaxed max-w-xs mx-auto sm:mx-0">
-                        The definitive study mainframe engineered for academic dominance. A subsidiary of <span className="text-white font-bold">EmityGate Solutions</span>.
+                        The definitive study mainframe engineered for academic dominance. A subsidiary of <Link href="https://emitygate.com" target="_blank" className="text-white font-bold hover:underline">EmityGate Solutions</Link>.
                     </p>
                     <div className="flex justify-center sm:justify-start gap-5">
-                        {[Smartphone, Layout, ShieldCheck, Zap].map((Icon, i) => (
-                            <div key={i} className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/50 transition-colors flex items-center justify-center group cursor-pointer">
-                                <Icon className="h-5 w-5 text-slate-500 group-hover:text-primary transition-colors" />
-                            </div>
-                        ))}
+                        <a href="https://www.instagram.com/mindmatehq?igsh=MWd6dXJjbjVva2dlYg==" target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/50 transition-colors flex items-center justify-center group cursor-pointer">
+                            <Instagram className="h-5 w-5 text-slate-500 group-hover:text-primary transition-colors" />
+                        </a>
+                        <a href="https://youtube.com/@mindmateofficials?si=_PpffdhhQFGCTi47" target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/50 transition-colors flex items-center justify-center group cursor-pointer">
+                            <Youtube className="h-5 w-5 text-slate-500 group-hover:text-primary transition-colors" />
+                        </a>
+                        <a href="https://t.me/emitygate" target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/50 transition-colors flex items-center justify-center group cursor-pointer">
+                            <Send className="h-5 w-5 text-slate-500 group-hover:text-primary transition-colors" />
+                        </a>
+                        <a href="https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H" target="_blank" rel="noopener noreferrer" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 hover:border-primary/50 transition-colors flex items-center justify-center group cursor-pointer">
+                            <MessageSquare className="h-5 w-5 text-slate-500 group-hover:text-primary transition-colors" />
+                        </a>
                     </div>
                 </div>
 
@@ -418,9 +427,12 @@ export function LandingPage() {
                                 <p className="text-[11px] text-emerald-500 font-bold tracking-tighter">STABLE MAINNET</p>
                             </div>
                         </div>
-                        <div className="flex justify-center sm:justify-start gap-5 opacity-40 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
-                            <NextImage src="https://placehold.co/80x50/000000/FFFFFF/png?text=SSL" alt="SSL" width={80} height={50} className="rounded-2xl border border-white/10" />
-                            <NextImage src="https://placehold.co/80x50/000000/FFFFFF/png?text=UPI" alt="UPI" width={80} height={50} className="rounded-2xl border border-white/10" />
+                        <div className="flex flex-col gap-4">
+                            <div className="flex justify-center sm:justify-start gap-5 opacity-40 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+                                <NextImage src="https://placehold.co/80x50/000000/FFFFFF/png?text=SSL" alt="SSL" width={80} height={50} className="rounded-2xl border border-white/10" />
+                                <NextImage src="https://placehold.co/120x50/000000/FFFFFF/png?text=Razorpay" alt="Razorpay" width={120} height={50} className="rounded-2xl border border-white/10" />
+                            </div>
+                            <p className="text-[9px] font-black uppercase text-slate-600 tracking-widest text-center sm:text-left">Secure Payments Powered by Razorpay</p>
                         </div>
                     </div>
                 </div>
@@ -429,7 +441,7 @@ export function LandingPage() {
             <div className="pt-16 border-t border-white/5 flex flex-col lg:flex-row justify-between items-center gap-12 text-[10px] font-black uppercase tracking-[0.6em] text-slate-600">
                 <p className="text-center lg:text-left leading-relaxed">© {new Date().getFullYear()} EMITYGATE SOLUTIONS. UNIFIED INTELLIGENCE EDIFICE.</p>
                 <div className="flex flex-wrap justify-center gap-10">
-                    <span className="flex items-center gap-3 transition-colors hover:text-white"><MonitorIcon className="h-4 w-4 text-primary" /> INFRA: OPTIMIZED</span>
+                    <span className="flex items-center gap-3 transition-colors hover:text-white"><Globe className="h-4 w-4 text-primary" /> INFRA: OPTIMIZED</span>
                     <span className="flex items-center gap-3 transition-colors hover:text-white"><ShieldCheck className="h-4 w-4 text-primary" /> SEC: RSA-ACTIVE</span>
                     <span className="flex items-center gap-3 transition-colors hover:text-white"><Zap className="h-4 w-4 text-primary" /> LATENCY: 12MS</span>
                 </div>

@@ -71,10 +71,10 @@ const competeNav = [
 ];
 
 const socialLinks = [
-    { name: 'Instagram', href: 'https://www.instagram.com/reel/DOoLvLCERLG/?igsh=eHd4d2tjbm10bmRx' },
+    { name: 'Instagram', href: 'https://www.instagram.com/mindmatehq?igsh=MWd6dXJjbjVva2dlYg==' },
     { name: 'WhatsApp', href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H' },
-    { name: 'Telegram', href: 'https://t.me/EmityGate' },
-    { name: 'YouTube', href: 'https://youtube.com/@mindmateofficial21?si=M0klgblbBT0gF37X' },
+    { name: 'Telegram', href: 'https://t.me/emitygate' },
+    { name: 'YouTube', href: 'https://youtube.com/@mindmateofficials?si=_PpffdhhQFGCTi47' },
 ];
 
 const InstagramIcon = () => (
