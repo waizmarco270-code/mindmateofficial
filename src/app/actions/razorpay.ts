@@ -12,6 +12,7 @@ const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
 
 /**
  * Creates a Razorpay Order
+ * Now returns the keyId used, ensuring the frontend and backend are always in sync.
  */
 export async function createRazorpayOrder(amount: number, notes: { userId: string; packName: string; credits: number }) {
   try {
@@ -25,8 +26,12 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
       key_secret: RAZORPAY_KEY_SECRET,
     });
 
+    // Razorpay amount is in paise (smallest currency unit)
+    // Using Math.round to ensure it's an integer
+    const finalAmount = Math.round(amount * 100);
+
     const options = {
-      amount: Math.round(amount * 100), // Razorpay works in paise
+      amount: finalAmount,
       currency: 'INR',
       receipt: `rcpt_${Date.now()}_${notes.userId.slice(-5)}`,
       notes: {
@@ -44,10 +49,10 @@ export async function createRazorpayOrder(amount: number, notes: { userId: strin
       id: order.id,
       amount: order.amount,
       currency: order.currency,
+      keyId: RAZORPAY_KEY_ID // Pass this to the frontend to ensure sync
     };
   } catch (error: any) {
     console.error('RAZORPAY_ORDER_ERROR:', error);
-    // Return a plain object to avoid serialization issues
     throw new Error(error.message || 'Failed to connect to payment gateway.');
   }
 }

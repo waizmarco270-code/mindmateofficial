@@ -17,7 +17,7 @@ import Script from 'next/script';
 import { Badge } from '@/components/ui/badge';
 import { motion } from 'framer-motion';
 
-// Use production key if available, otherwise fallback to dev test key
+// Environment variable for public key, though we now prefer the synced key from order
 const RAZORPAY_PUBLIC_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || 'rzp_test_SVrJPgT8gQO914';
 
 export default function WalletPage() {
@@ -47,7 +47,7 @@ export default function WalletPage() {
             });
 
             const options = {
-                key: RAZORPAY_PUBLIC_KEY,
+                key: order.keyId, // USE THE SYNCED KEY FROM SERVER
                 amount: order.amount,
                 currency: order.currency,
                 name: 'MindMate Vault',
@@ -72,6 +72,10 @@ export default function WalletPage() {
                 retry: { enabled: false }
             };
             const rzp = new (window as any).Razorpay(options);
+            rzp.on('payment.failed', function (response: any) {
+                toast({ variant: 'destructive', title: "Deposit Failed", description: response.error.description });
+                setIsProcessing(false);
+            });
             rzp.open();
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Vault Error", description: error.message || "Failed to initiate payment." });
