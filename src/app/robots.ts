@@ -1,9 +1,8 @@
-
 import { MetadataRoute } from 'next';
 
 /**
  * @fileOverview Robots.txt configuration for MindMate.emitygate.com
- * Optimized for top-tier Google SEO ranking.
+ * Optimized for top-tier Google SEO ranking and authority.
  */
 export default function robots(): MetadataRoute.Robots {
   return {

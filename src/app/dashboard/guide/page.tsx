@@ -1,23 +1,21 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { useAdmin } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Search, Sparkles, Zap, Map as MapIcon, Users, Gem, ShieldCheck, Play, ArrowRight, Book, Loader2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { BookOpen, Search, Play, ArrowRight, Book, Loader2 } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 const iconMap: Record<string, any> = {
-    'Focus & Study': Zap,
-    'Nexus & Tasks': MapIcon,
-    'Social & Clans': Users,
-    'Economy & Rewards': Gem,
-    'System & Rules': ShieldCheck,
+    'Focus & Study': Book,
+    'Nexus & Tasks': Book,
+    'Social & Clans': Book,
+    'Economy & Rewards': Book,
+    'System & Rules': Book,
 };
 
 export default function GuideCenterPage() {
@@ -64,9 +62,6 @@ export default function GuideCenterPage() {
         <div className="space-y-12 pb-20 relative">
             <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
                 <div className="absolute inset-0 blue-nebula-bg opacity-30" />
-                <div id="particle-container">
-                    {[...Array(15)].map((_, i) => <div key={i} className="particle" />)}
-                </div>
             </div>
 
             <motion.div 
@@ -77,7 +72,7 @@ export default function GuideCenterPage() {
                 <div className="mx-auto w-24 h-24 bg-primary/10 rounded-[2rem] flex items-center justify-center border-2 border-primary/20 shadow-2xl backdrop-blur-md">
                     <Book className="h-12 w-12 text-primary" />
                 </div>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent uppercase italic">
+                <h1 className="text-5xl md:text-7xl font-black tracking-tighter bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent uppercase italic text-shadow-glow">
                     SOVEREIGN GUIDE
                 </h1>
                 <p className="text-slate-400 text-lg max-w-2xl mx-auto font-medium leading-relaxed">
@@ -165,22 +160,6 @@ export default function GuideCenterPage() {
                     })}
                 </motion.div>
             )}
-
-            <motion.div 
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                viewport={{ once: true }}
-                className="p-12 rounded-[4rem] bg-gradient-to-br from-primary/20 via-black/40 to-black border border-white/5 text-center space-y-6 relative z-10 mx-4 shadow-2xl backdrop-blur-xl"
-            >
-                <div className="p-5 rounded-full bg-white/5 border border-white/10 w-fit mx-auto shadow-inner">
-                    <ShieldCheck className="h-16 w-16 text-primary" />
-                </div>
-                <h3 className="text-4xl font-black uppercase italic tracking-tight">Need direct assistance?</h3>
-                <p className="text-slate-400 text-lg max-w-lg mx-auto font-medium">Our tactical support commanders are available for high-priority inquiries.</p>
-                <Button asChild size="lg" className="rounded-2xl h-16 px-12 text-lg font-black uppercase italic shadow-2xl shadow-primary/20 hover:scale-105 transition-transform">
-                    <Link href="/dashboard/help">Contact Support Command</Link>
-                </Button>
-            </motion.div>
         </div>
     );
 }

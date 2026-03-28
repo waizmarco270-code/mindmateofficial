@@ -1,12 +1,11 @@
 
-
 'use client';
 
 import { NexusView } from '@/components/schedule/nexus-view';
 import { TodoList } from '@/components/todos/todo-list';
 import { useState } from 'react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, ListTodo, Map, ArrowLeft } from 'lucide-react';
+import { Calendar, ListTodo, Map as MapIcon, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';

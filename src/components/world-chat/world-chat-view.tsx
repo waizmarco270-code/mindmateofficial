@@ -146,7 +146,12 @@ export function WorldChatView() {
         setPollOptions(['', '']);
     };
     
-    const usersMap = useMemo(() => new Map(allUsers.map(u => [u.uid, u])), [allUsers]);
+    // CRITICAL: Aliasing the Map constructor here to avoid Illegal Constructor error
+    const usersMap = useMemo(() => {
+        const m = new Map();
+        allUsers.forEach(u => m.set(u.uid, u));
+        return m;
+    }, [allUsers]);
     
     const getTypingText = () => {
         if (typingUsers.length === 0) return null;

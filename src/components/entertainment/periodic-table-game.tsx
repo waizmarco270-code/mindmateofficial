@@ -14,6 +14,7 @@ import { useImmersive } from '@/hooks/use-immersive';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { useUsers } from '@/hooks/use-admin';
 
+// CRITICAL: Rename Element interface to PeriodicElement to avoid conflict with native browser Element constructor
 interface PeriodicElement {
     atomicNumber: number;
     symbol: string;
@@ -264,7 +265,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
 
 
     return (
-        <div className="space-y-4 p-4 bg-background">
+        <div className="space-y-4 p-4 bg-background h-full overflow-y-auto">
             <Dialog open={!!selectedElement} onOpenChange={() => setSelectedElement(null)}>
                 <DialogContent className="max-w-md">
                     {selectedElement && (
@@ -353,7 +354,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                         </Card>
                      )}
                     
-                    <div className="flex justify-center overflow-x-auto">
+                    <div className="flex justify-center overflow-x-auto pb-8">
                         <div className="grid gap-2 p-1" style={gridStyles}>
                              {gridTemplate.flat().map((el, index) => renderGridCell(el, index))}
                         </div>
