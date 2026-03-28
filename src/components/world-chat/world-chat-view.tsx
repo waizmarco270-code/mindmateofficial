@@ -92,7 +92,7 @@ function SmartText({ text }: { text?: string }) {
 
 export function WorldChatView() {
     const { messages, sendMessage, sendPoll, claimRain, loading, pinnedMessage, unpinMessage, clearMessages, toggleLock, setSlowMode, isLocked, slowMode, typingUsers, updateTypingStatus } = useWorldChat();
-    const { users: allUsers, loading: usersLoading, isAdmin, isSuperAdmin } = useAdmin();
+    const { users: allUsers, loading: usersLoading, isAdmin, isSuperAdmin, currentUserData } = useAdmin();
     const { user: currentUser } = useUser();
     const { toast } = useToast();
     
@@ -109,6 +109,22 @@ export function WorldChatView() {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    // Smart Virtual Presence Engine
+    const [fakeOnlineCount, setFakeOnlineCount] = useState(1240);
+    useEffect(() => {
+        const generateSmartCount = () => {
+            const now = new Date();
+            const hour = now.getHours();
+            // Busy hours (6 PM - 1 AM) vs quiet hours
+            const base = (hour >= 18 || hour <= 1) ? 3500 : 1200;
+            const variance = Math.floor(Math.random() * 1000);
+            setFakeOnlineCount(base + variance);
+        };
+        generateSmartCount();
+        const interval = setInterval(generateSmartCount, 30000);
+        return () => clearInterval(interval);
+    }, []);
+
     const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
         if (scrollAreaRef.current) {
             scrollAreaRef.current.scrollTo({ top: scrollAreaRef.current.scrollHeight, behavior });
@@ -123,7 +139,6 @@ export function WorldChatView() {
         e.preventDefault();
         if (!newMessage.trim()) return;
 
-        // Command Protocol: Secret Rain
         if (newMessage.startsWith('/rain') && currentUser?.id === SUPER_ADMIN_UID) {
             const parts = newMessage.split(' ');
             const amt = parseInt(parts[1]);
@@ -216,7 +231,10 @@ export function WorldChatView() {
                     <Globe className="h-6 w-6 text-emerald-400" />
                     <div>
                         <h2 className="font-bold text-lg leading-tight">Global Forum</h2>
-                        <p className="text-[10px] opacity-80 uppercase tracking-widest font-bold">Public Community</p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_5px_#22c55e]" />
+                            <p className="text-[9px] font-black uppercase tracking-[0.15em]">{fakeOnlineCount.toLocaleString()} ONLINE</p>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -517,7 +535,19 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
 
         return (
             <div className={cn("flex w-full mb-4 px-2", isOwn ? "justify-end" : "justify-start")}>
-                <Card className="w-full max-w-[320px] overflow-hidden rounded-3xl border-2 border-primary/20 shadow-xl bg-card">
+                <Card className="w-full max-w-[320px] overflow-hidden rounded-3xl border-2 border-primary/20 shadow-xl bg-card relative">
+                    {/* Admin Purge Button */}
+                    {(isAdmin || isSuperAdmin) && (
+                        <Button 
+                            variant="destructive" 
+                            size="icon" 
+                            className="absolute top-2 right-2 h-8 w-8 rounded-full z-50 shadow-lg" 
+                            onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}
+                        >
+                            <Trash2 className="h-4 w-4"/>
+                        </Button>
+                    )}
+                    
                     <div className="p-1 bg-gradient-to-r from-blue-600 via-primary to-indigo-600" />
                     <CardContent className="p-6 space-y-4">
                         <div className="flex items-center justify-between">
@@ -535,7 +565,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                             <p className="text-xs text-muted-foreground font-medium">Harvest your share of the legend's bounty.</p>
                         </div>
 
-                        <div className="relative z-50">
+                        <div className="relative z-10">
                             <Button 
                                 size="lg" 
                                 disabled={hasClaimed || isFull || isClaiming}
@@ -563,13 +593,6 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                             <Progress value={(message.rainData?.claimedBy.length || 0) / (message.rainData?.maxClaims || 1) * 100} className="h-1.5" />
                         </div>
                     </CardContent>
-                    {(isAdmin || isSuperAdmin) && (
-                        <div className="bg-muted/30 p-2 flex justify-end">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-full hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}>
-                                <Trash2 className="h-4 w-4"/>
-                            </Button>
-                        </div>
-                    )}
                 </Card>
             </div>
         );

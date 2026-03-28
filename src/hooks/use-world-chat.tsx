@@ -161,7 +161,6 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     const sendMessage = useCallback(async (text: string, replyingTo?: ReplyContext | null) => {
         if (!currentUser || !text.trim()) return;
         
-        // Secret Rain Command Protocol - ONLY SUPER ADMIN
         if (text.startsWith('/rain') && currentUser.id === SUPER_ADMIN_UID) {
             const parts = text.split(' ');
             const amt = parseInt(parts[1]);
