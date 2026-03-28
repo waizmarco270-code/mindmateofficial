@@ -1,0 +1,6 @@
+/* ALPHA RAINBOW BORDER ARTIFACT */
+.alpha-rainbow-border {
+  border: 3px solid transparent !important;
+  animation: alpha-rainbow 3s linear infinite !important;
+  background-clip: padding-box;
+}

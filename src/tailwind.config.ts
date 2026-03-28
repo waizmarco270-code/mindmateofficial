@@ -1,4 +1,3 @@
-
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -86,9 +85,8 @@ export default {
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
         'gold-shine': {
-          '0%': { filter: 'drop-shadow(0 0 2px #f59e0b)' },
+          '0%, 100%': { filter: 'drop-shadow(0 0 2px #f59e0b)' },
           '50%': { filter: 'drop-shadow(0 0 6px #fde047) drop-shadow(0 0 12px #f59e0b)' },
-          '100%': { filter: 'drop-shadow(0 0 2px #f59e0b)' },
         },
         'flicker': {
           '0%, 100%': { filter: 'drop-shadow(0 0 3px hsl(var(--primary)))' },
@@ -98,11 +96,31 @@ export default {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
+        'alpha-rainbow': {
+          '0%': { borderColor: '#ff0000', boxShadow: '0 0 10px #ff0000' },
+          '20%': { borderColor: '#ffff00', boxShadow: '0 0 10px #ffff00' },
+          '40%': { borderColor: '#00ff00', boxShadow: '0 0 10px #00ff00' },
+          '60%': { borderColor: '#00ffff', boxShadow: '0 0 10px #00ffff' },
+          '80%': { borderColor: '#0000ff', boxShadow: '0 0 10px #0000ff' },
+          '100%': { borderColor: '#ff00ff', boxShadow: '0 0 10px #ff00ff' },
+        },
         tilt: {
           '0%, 50%, 100%': { transform: 'rotate(0deg)' },
           '25%': { transform: 'rotate(0.5deg)' },
           '75%': { transform: 'rotate(-0.5deg)' },
         },
+        'nebula-animation': {
+          '0%, 100%': { backgroundPosition: '0% 50%' },
+          '50%': { backgroundPosition: '100% 50%' },
+        },
+        'rotate-angle': {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        'red-pulse': {
+          '0%, 100%': { boxShadow: '0 0 0 0 rgba(239, 68, 68, 0.7)' },
+          '70%': { boxShadow: '0 0 0 10px rgba(239, 68, 68, 0)' },
+        }
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -112,6 +130,10 @@ export default {
         'flicker': 'flicker 3s infinite',
         'vip-shimmer': 'vip-shimmer 3s linear infinite',
         'tilt': 'tilt 10s infinite linear',
+        'alpha-rainbow': 'alpha-rainbow 3s linear infinite',
+        'nebula-animation': 'nebula-animation 20s ease infinite',
+        'rotate-angle': 'rotate-angle 8s linear infinite',
+        'red-pulse': 'red-pulse 2s infinite',
       },
     },
   },

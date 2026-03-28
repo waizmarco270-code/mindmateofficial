@@ -1,0 +1,86 @@
+.elite-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(45deg, #f0b90b, #fbda61, #ffc371, #f0b90b);
+  background-size: 200% 200%;
+  color: #613400;
+  border: 1px solid #f0b90b;
+  animation: vip-shimmer 3s linear infinite;
+}
+
+.gm-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(45deg, #001f3f, #0074d9, #7fdbff, #001f3f);
+  background-size: 200% 200%;
+  color: #ffffff;
+  border: 1px solid #7fdbff;
+  animation: vip-shimmer 4s ease infinite;
+}
+
+.challenger-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(135deg, #ff4e00, #f7971e, #ff4e00);
+  background-size: 200% 200%;
+  color: #ffffff;
+  border: 1px solid #f7971e;
+  animation: vip-shimmer 3s ease-in-out infinite;
+}
+
+.dev-badge {
+  @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
+  background-color: #ef4444;
+  color: #f8fafc;
+  border: 1px solid #dc2626;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+.admin-badge {
+  @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
+  background-color: #166534;
+  color: #f0fdf4;
+  border: 1px solid #15803d;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+}
+
+.co-dev-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(135deg, #DC143C, #1a1a1a, #DC143C);
+  background-size: 200% 200%;
+  color: #f9fafb;
+  border: 1px solid #ff4d6d;
+  animation: vip-shimmer 5s ease-in-out infinite;
+}
+
+.early-bird-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(45deg, #f59e0b, #fbbf24, #f59e0b);
+  color: #451a03;
+  border: 1px solid #fbbf24;
+}
+
+.night-owl-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(45deg, #1e1b4b, #4338ca, #1e1b4b);
+  color: #e0e7ff;
+  border: 1px solid #4338ca;
+}
+
+.knowledge-knight-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(45deg, #334155, #64748b, #334155);
+  color: #f1f5f9;
+  border: 1px solid #64748b;
+}
+
+.master-card-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(110deg, #d4af37, #f7d06b, #d4af37);
+  background-size: 250% 250%;
+  color: #382d0d;
+  border: 1px solid #f7d06b;
+  animation: vip-shimmer 4s ease-in-out infinite;
+}
+
+.clan-badge-pro { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-400/50 shadow-lg shadow-blue-500/10 animate-[pulse-pro_2s_infinite]; }
+.clan-badge-alpha { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-red-500/10 text-red-400 border border-red-400/50 shadow-lg shadow-red-500/10 animate-[pulse-alpha_2s_infinite]; }
+.clan-badge-warrior { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-slate-500/10 text-slate-400 border border-slate-400/50 shadow-lg shadow-slate-500/10 animate-[pulse-warrior_2s_infinite]; }
+.clan-badge-legendary { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-amber-400/10 text-amber-400 border border-amber-400/50 shadow-lg shadow-amber-400/10 animate-gold-shine; }

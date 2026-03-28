@@ -1,0 +1,30 @@
+#particle-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.particle {
+    position: absolute;
+    border-radius: 50%;
+    background: #fff;
+    opacity: 0;
+    animation: move 10s linear infinite;
+}
+
+/* Particle Variance */
+.particle:nth-child(1) { left: 15%; top: 20%; width: 2px; height: 2px; animation-delay: -1s; animation-duration: 12s; }
+.particle:nth-child(2) { left: 45%; top: 80%; width: 1px; height: 1px; animation-delay: -2s; animation-duration: 15s; }
+.particle:nth-child(3) { left: 85%; top: 30%; width: 3px; height: 3px; animation-delay: -3s; animation-duration: 10s; }
+.particle:nth-child(4) { left: 5%; top: 50%; width: 1px; height: 1px; animation-delay: -4s; animation-duration: 18s; }
+.particle:nth-child(5) { left: 95%; top: 90%; width: 2px; height: 2px; animation-delay: -5s; animation-duration: 9s; }
+.particle:nth-child(6) { left: 50%; top: 10%; width: 2px; height: 2px; animation-delay: -6s; animation-duration: 20s; }
+
+.select-none { user-select: none; }
+.bg-grid-slate-800 {
+  background-image: 
+    linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px);
+  background-size: 4rem 4rem;
+}
