@@ -1,11 +1,10 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { 
     ArrowRight, Bot, Users, Zap, FileText, Award, 
-    Gamepad2, ShieldCheck, Globe, Zap as Flash,
-    Sparkles, ChevronDown, Monitor, Rocket, BrainCircuit,
+    Gamepad2, ShieldCheck, Globe, Zap as FlashIcon,
+    Sparkles, ChevronDown, Monitor as MonitorIcon, Rocket, BrainCircuit,
     Star, Crown, CheckCircle2, Shield
 } from 'lucide-react';
 import Link from 'next/link';
@@ -15,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { ActivityGlobe } from './ActivityGlobe';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
-import Image from 'next/image';
+import NextImage from 'next/image';
 
 const features = [
   {
@@ -229,7 +228,7 @@ export function LandingPage() {
                   
                   <div className="mt-10 pt-8 border-t border-white/5 flex items-center justify-between opacity-40 group-hover:opacity-100 transition-opacity">
                     <span className="text-[10px] font-black uppercase tracking-widest">Protocol: Active</span>
-                    <Flash className={cn("h-4 w-4", feature.color)} />
+                    <FlashIcon className={cn("h-4 w-4", feature.color)} />
                   </div>
                 </motion.div>
               ))}
@@ -255,32 +254,6 @@ export function LandingPage() {
                 
                 <div className="mt-20">
                     <ActivityGlobe />
-                </div>
-            </div>
-        </section>
-
-        {/* Trust / Stats Section */}
-        <section className="py-32 border-y border-white/5">
-            <div className="container mx-auto px-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-                    {[
-                        { label: 'Network Uptime', val: '99.9%', icon: ShieldCheck },
-                        { label: 'Active Legends', val: '50K+', icon: Users },
-                        { label: 'Quizzes Solved', val: '1.2M', icon: BrainCircuit },
-                        { label: 'Focus Hours', val: '800K', icon: Zap },
-                    ].map((stat, i) => (
-                        <motion.div 
-                            key={i}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="space-y-2"
-                        >
-                            <stat.icon className="h-6 w-6 text-primary mx-auto mb-4 opacity-50" />
-                            <p className="text-4xl md:text-6xl font-black tracking-tighter text-white">{stat.val}</p>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-slate-500">{stat.label}</p>
-                        </motion.div>
-                    ))}
                 </div>
             </div>
         </section>
@@ -347,12 +320,12 @@ export function LandingPage() {
                     <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
                             <ShieldCheck className="h-5 w-5 text-emerald-500" />
-                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Razorpay Stable v2.0</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">SECURE PORTAL v2.0</span>
                         </div>
                         <div className="flex gap-3 opacity-30 grayscale hover:opacity-100 hover:grayscale-0 transition-all duration-500">
-                            <Image src="https://placehold.co/50x30/png?text=VISA" alt="Visa" width={50} height={30} className="rounded" />
-                            <Image src="https://placehold.co/50x30/png?text=UPI" alt="UPI" width={50} height={30} className="rounded" />
-                            <Image src="https://placehold.co/50x30/png?text=SSL" alt="SSL" width={50} height={30} className="rounded" />
+                            <NextImage src="https://placehold.co/50x30/png?text=VISA" alt="Visa" width={50} height={30} className="rounded" />
+                            <NextImage src="https://placehold.co/50x30/png?text=UPI" alt="UPI" width={50} height={30} className="rounded" />
+                            <NextImage src="https://placehold.co/50x30/png?text=SSL" alt="SSL" width={50} height={30} className="rounded" />
                         </div>
                     </div>
                 </div>
@@ -360,8 +333,8 @@ export function LandingPage() {
             <div className="mt-20 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-4 text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">
                 <p>&copy; {new Date().getFullYear()} EMITYGATE SOLUTIONS. ALL RIGHTS RESERVED.</p>
                 <div className="flex gap-8">
-                    <span className="flex items-center gap-2"><Monitor className="h-3 w-3" /> INFRA: MAINNET</span>
-                    <span className="flex items-center gap-2"><Lock className="h-3 w-3" /> SEC: ENCRYPTED</span>
+                    <span className="flex items-center gap-2"><MonitorIcon className="h-3 w-3" /> INFRA: MAINNET</span>
+                    <span className="flex items-center gap-2"><Shield className="h-3 w-3" /> SEC: ENCRYPTED</span>
                 </div>
             </div>
         </div>

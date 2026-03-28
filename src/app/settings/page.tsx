@@ -1,18 +1,18 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone, Fingerprint, Server } from 'lucide-react';
+import { Settings as SettingsIcon, User as UserIcon, Palette, LifeBuoy, ArrowRight, Sun, Moon, Info, Gavel, Monitor as MonitorIcon, Shield, KeyRound, Lock, CheckCircle, RefreshCw, Megaphone, Fingerprint, Server } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import Link from 'next/link';
 
-// Re-integrating components that were on separate pages
-import FaqContent from '@/app/dashboard/faq/page';
-import AboutContent from '@/app/dashboard/about/page';
-import RulesContent from '@/app/dashboard/rules/page';
+// Info Content Components
+import FaqContent from '@/components/info/faq-content';
+import AboutContent from '@/components/info/about-content';
+import RulesContent from '@/components/info/rules-content';
+
 import { useAdmin, useUsers, SUPER_ADMIN_UID, AppThemeId } from '@/hooks/use-admin';
 import { useUser, UserProfile, useClerk } from '@clerk/nextjs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -80,7 +80,7 @@ function AppearanceSettings() {
                             size="icon"
                             onClick={() => setTheme('system')}
                         >
-                            <Monitor className="h-5 w-5" />
+                            <MonitorIcon className="h-5 w-5" />
                         </Button>
                     </div>
                  </div>
@@ -204,7 +204,7 @@ export default function SettingsPage() {
         <div className="space-y-8">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                    <Settings className="h-8 w-8 text-primary" />
+                    <SettingsIcon className="h-8 w-8 text-primary" />
                     Settings & Info
                 </h1>
                 <p className="text-muted-foreground">Manage your account, preferences, and app settings.</p>

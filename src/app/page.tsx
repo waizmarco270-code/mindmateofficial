@@ -1,10 +1,9 @@
-
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { LandingPage } from '@/components/landing/landing-page';
 
 /**
- * @fileOverview Sovereign Root Ingress
+ * @fileOverview Sovereign Ingress Router
  * Implements Smart Protocol: Logged-in users are automatically 
  * fast-forwarded to the dashboard to ensure a seamless "Mission Ready" experience.
  */
@@ -15,7 +14,7 @@ export default function RootPage() {
   const { userId } = auth();
 
   // Smart Protocol: If user is authenticated, bypass the landing page entirely.
-  // This happens at the server level to prevent any UI flicker.
+  // This happens at the server level to prevent any UI flicker or 404 conflicts.
   if (userId) {
     redirect("/dashboard");
   }
