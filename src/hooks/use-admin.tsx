@@ -10,7 +10,7 @@ import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
-export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight';
+export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker';
 
 export interface WalletTransaction {
     id: string;
@@ -23,7 +23,7 @@ export interface WalletTransaction {
 export interface User {
   id: string;
   uid: string;
-  mindMateId?: string; // New: MM-XXXXXX format
+  mindMateId?: string; // MM-XXXXXX format
   displayName: string;
   email: string;
   photoURL?: string;
@@ -52,6 +52,7 @@ export interface User {
   isEarlyBird?: boolean;
   isNightOwl?: boolean;
   isKnowledgeKnight?: boolean;
+  isStreaker?: boolean;
   showcasedBadge?: BadgeType;
   friends?: string[];
   focusSessionsCompleted?: number;
@@ -440,19 +441,39 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     hasUpdates = true;
                 }
 
-                // 2. Streak Maintenance
+                // 2. Streak Maintenance Protocol v2.5
                 if (data.lastStreakCheck !== todayStr) {
                     const lastCheckDate = data.lastStreakCheck ? new Date(data.lastStreakCheck) : null;
-                    const currentStreak = data.streak || 0;
-                    if (lastCheckDate && isYesterday(lastCheckDate)) {
-                        updates.streak = currentStreak + 1;
-                        if (updates.streak > (data.longestStreak || 0)) updates.longestStreak = updates.streak;
-                        if (updates.streak % 30 === 0) updates.credits = (data.credits || 0) + 100;
-                        else if (updates.streak % 5 === 0) updates.credits = (data.credits || 0) + 50;
-                    } else if (lastCheckDate && !isToday(lastCheckDate)) { 
+                    let currentStreak = data.streak || 0;
+                    
+                    if (!lastCheckDate) {
+                        // First time login
+                        updates.streak = 1;
+                        updates.longestStreak = 1;
+                    } else if (isYesterday(lastCheckDate)) {
+                        // Regular daily login
+                        const nextStreak = currentStreak + 1;
+                        updates.streak = nextStreak;
+                        if (nextStreak > (data.longestStreak || 0)) updates.longestStreak = nextStreak;
+                        
+                        // Milestone Rewards: 3, 7, 14, 30
+                        if (nextStreak === 3) updates.credits = (data.credits || 0) + 50;
+                        else if (nextStreak === 7) updates.credits = (data.credits || 0) + 150;
+                        else if (nextStreak === 14) updates.credits = (data.credits || 0) + 500;
+                        else if (nextStreak === 30) {
+                            updates.credits = (data.credits || 0) + 1000;
+                            updates.isStreaker = true;
+                            // Loop logic: reset streak count to 0 after day 30 so next login is day 1
+                            updates.streak = 0; 
+                        }
+                    } else if (!isToday(lastCheckDate)) { 
+                        // Missed a day
                         if ((data.inventory?.streakFreezes || 0) > 0) {
+                            // PROTECTED by artifact
                             updates['inventory.streakFreezes'] = (data.inventory?.streakFreezes || 0) - 1;
+                            updates.streak = currentStreak + 1; // Count today as active but didn't reset
                         } else {
+                            // FAILED - Reset to 0 as requested (next day login will make it 1)
                             updates.streak = 1; 
                         }
                     }
@@ -461,11 +482,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 if (hasUpdates) {
-                    const firestoreUpdates = { ...updates };
-                    if (updates.credits !== undefined) firestoreUpdates.credits = increment(updates.credits - (data.credits || 0));
-                    if (updates['inventory.streakFreezes'] !== undefined) firestoreUpdates['inventory.streakFreezes'] = increment(-1);
-                    
-                    await updateDoc(userDocRef, firestoreUpdates);
+                    await updateDoc(userDocRef, updates);
                 }
                 setCurrentUserData({ id: snap.id, ...data } as User);
             } else {

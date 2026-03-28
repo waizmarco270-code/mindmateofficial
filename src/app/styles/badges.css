@@ -1,3 +1,4 @@
+
 .elite-badge {
   @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
   background: linear-gradient(45deg, #f0b90b, #fbda61, #ffc371, #f0b90b);
@@ -78,6 +79,16 @@
   color: #382d0d;
   border: 1px solid #f7d06b;
   animation: vip-shimmer 4s ease-in-out infinite;
+}
+
+.streaker-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(to right, #ff4500, #ff8c00, #ff4500);
+  background-size: 200% 200%;
+  color: #fff;
+  border: 1px solid #ff8c00;
+  box-shadow: 0 0 15px rgba(255, 69, 0, 0.6), inset 0 0 10px rgba(255, 140, 0, 0.4);
+  animation: fire-shimmer 2s ease infinite, fire-flicker 0.1s infinite;
 }
 
 .clan-badge-pro { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-400/50 shadow-lg shadow-blue-500/10 animate-[pulse-pro_2s_infinite]; }

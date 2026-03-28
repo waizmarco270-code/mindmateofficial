@@ -33,6 +33,19 @@ const formatTotalStudyTime = (totalSeconds: number) => {
     return parts.join(' ');
 }
 
+const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
+    dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
+    admin: { name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+    vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+    gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+    challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
+    'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> },
+    'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span> },
+    'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span> },
+    'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> },
+    streaker: { name: 'Streaker', badge: <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span> }
+};
+
 export function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProfile?: boolean }) {
     const { user: authUser } = useUser();
     const { friends, sendFriendRequest, sentRequests } = useFriends();
@@ -53,20 +66,23 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
     const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
     const hasMasterCard = user.masterCardExpires && new Date(user.masterCardExpires) > new Date();
 
-    const ownedBadges = [
-        (isSuperAdmin || user.isAdmin) && { type: 'admin', name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
-        user.isVip && { type: 'vip', name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
-        user.isGM && { type: 'gm', name: 'Game Master', badge: <span className="gm-badge">GM</span> },
-        user.isChallenger && { type: 'challenger', name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
-        user.isCoDev && { type: 'co-dev', name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> },
-        user.isEarlyBird && { type: 'early-bird', name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span> },
-        user.isNightOwl && { type: 'night-owl', name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span> },
-        user.isKnowledgeKnight && { type: 'knowledge-knight', name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> }
-    ].filter(Boolean) as { type: BadgeType, name: string, badge: JSX.Element }[];
+    const ownedBadgesList = [
+        (isSuperAdmin || user.isAdmin) && 'admin',
+        user.isVip && 'vip',
+        user.isGM && 'gm',
+        user.isChallenger && 'challenger',
+        user.isStreaker && 'streaker',
+        user.isCoDev && 'co-dev',
+        user.isEarlyBird && 'early-bird',
+        user.isNightOwl && 'night-owl',
+        user.isKnowledgeKnight && 'knowledge-knight'
+    ].filter(Boolean) as BadgeType[];
     
-    if(isSuperAdmin) ownedBadges.unshift({ type: 'dev', name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> });
+    if(isSuperAdmin) ownedBadgesList.unshift('dev');
 
-    const showcasedBadge = ownedBadges.find(b => b.type === user.showcasedBadge) || ownedBadges[0] || null;
+    const showcasedBadgeType = user.showcasedBadge && ownedBadgesList.includes(user.showcasedBadge) 
+        ? user.showcasedBadge 
+        : ownedBadgesList[0] || null;
 
     const stats = [
         { label: 'Total Credits', value: hasMasterCard ? '∞' : user.credits.toLocaleString(), icon: Medal, color: 'text-amber-500' },
@@ -100,7 +116,7 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                         <div className="flex-1 min-w-0">
                             <CardTitle className="text-2xl sm:text-4xl font-black tracking-tight truncate">{user.displayName}</CardTitle>
                             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
-                                {showcasedBadge ? showcasedBadge.badge : <Badge variant="outline" className="font-bold">STUDENT</Badge>}
+                                {showcasedBadgeType ? badgeDetails[showcasedBadgeType].badge : <Badge variant="outline" className="font-bold">STUDENT</Badge>}
                                 {hasMasterCard && <span className="master-card-badge"><CreditCard className="h-3 w-3"/> MASTER</span>}
                             </div>
                         </div>
@@ -139,16 +155,16 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                 </TabsList>
 
                 <TabsContent value="stats" className="space-y-6">
-                    {isOwnProfile && ownedBadges.length > 1 && (
+                    {isOwnProfile && ownedBadgesList.length > 1 && (
                         <Card className="border-primary/20">
                             <CardHeader className="pb-2 p-4 sm:p-6">
                                 <CardTitle className="text-base font-bold">Showcase Badge</CardTitle>
                                 <CardDescription>Display your rank to the world.</CardDescription>
                             </CardHeader>
                             <CardContent className="flex flex-wrap gap-2 p-4 sm:p-6 pt-0">
-                                {ownedBadges.map(b => (
-                                    <button key={b.type} onClick={() => setShowcaseBadge(user.uid, b.type)} className={cn("p-1.5 rounded-xl border-2 transition-all", user.showcasedBadge === b.type || (!user.showcasedBadge && b.type === (isSuperAdmin ? 'dev' : 'admin')) ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-muted')}>
-                                        <div className="scale-90">{b.badge}</div>
+                                {ownedBadgesList.map(type => (
+                                    <button key={type} onClick={() => setShowcaseBadge(user.uid, type)} className={cn("p-1.5 rounded-xl border-2 transition-all", user.showcasedBadge === type || (!user.showcasedBadge && type === (isSuperAdmin ? 'dev' : 'admin')) ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-muted')}>
+                                        <div className="scale-90">{badgeDetails[type].badge}</div>
                                     </button>
                                 ))}
                             </CardContent>
