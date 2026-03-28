@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban, Link as LinkIcon, Key, Copy, Check, Terminal as CodeIcon } from 'lucide-react';
+import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban, Link as LinkIcon, Key, Copy, Check, Terminal as CodeIcon, Download, Database, HardDrive, Cpu } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,6 +29,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 import { usePresence } from '@/hooks/use-presence';
 import { cn } from '@/lib/utils';
+import { PROJECT_MEMORY } from '@/app/lib/project-memory';
 
 const CREDIT_PASSWORD = "waizcredit";
 const MASTER_API_KEY = "EMITYGATE_SOVEREIGN_LINK_99"; // Sync with API route
@@ -59,6 +60,7 @@ export default function SuperAdminPanelPage() {
   const [isCreditUnlocked, setIsCreditUnlocked] = useState(false);
   const [creditPassword, setCreditPassword] = useState('');
   const [isApiKeyCopied, setIsApiKeyCopied] = useState(false);
+  const [isExportingMemory, setIsExportingMemory] = useState(false);
   
   // Ban State
   const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
@@ -203,6 +205,26 @@ export default function SuperAdminPanelPage() {
       setTimeout(() => setIsApiKeyCopied(false), 2000);
   };
 
+  const handleExportMemory = () => {
+      setIsExportingMemory(true);
+      try {
+          const blob = new Blob([PROJECT_MEMORY], { type: 'text/plain' });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `memorymindmate.txt`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+          toast({ title: "Memory Archive Exported", description: "Sovereign intelligence secured for continuity." });
+      } catch (e) {
+          toast({ variant: 'destructive', title: "Export Failed" });
+      } finally {
+          setIsExportingMemory(false);
+      }
+  };
+
   if (!isSuperAdmin) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-center">
@@ -249,9 +271,68 @@ export default function SuperAdminPanelPage() {
           </Card>
       </div>
 
-      <Accordion type="multiple" defaultValue={['emitygate-integration', 'aegis-intelligence']} className="w-full space-y-4">
+      <Accordion type="multiple" defaultValue={['project-continuity', 'emitygate-integration']} className="w-full space-y-4">
         
-        {/* 0. EmityGate Integration Hub (NEW) */}
+        {/* continuity. Project Continuity Archive (NEW) */}
+        <AccordionItem value="project-continuity" className="border-b-0">
+          <Card className="border-amber-500/30 bg-amber-500/5">
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <HardDrive className="h-6 w-6 text-amber-500" />
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Sovereign Continuity Protocol</h3>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Intelligence backup for 2027 migration.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-6">
+                <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
+                    <Card className="bg-background border-amber-500/20 shadow-xl">
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2 text-amber-500"><Cpu className="h-4 w-4"/> AI Intelligence Archive</CardTitle>
+                            <CardDescription>Download the comprehensive project "Memory" to train future agents.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="p-4 rounded-xl bg-muted/50 border border-amber-500/10 space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
+                                    <p className="text-xs font-medium">Marco Persona Definition Included</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
+                                    <p className="text-xs font-medium">Streak & Reward Logic Encoded</p>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
+                                    <p className="text-xs font-medium">Database Collection Map</p>
+                                </div>
+                            </div>
+                            <Button onClick={handleExportMemory} disabled={isExportingMemory} className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-amber-950 font-black text-lg shadow-xl shadow-amber-500/20">
+                                {isExportingMemory ? <Loader2 className="animate-spin mr-2"/> : <Download className="mr-2"/>}
+                                EXPORT PROJECT MEMORY
+                            </Button>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-background border-primary/20">
+                        <CardHeader>
+                            <CardTitle className="text-base flex items-center gap-2"><ScrollText className="text-primary h-4 w-4"/> Memory Preview</CardTitle>
+                            <CardDescription>Current snapshot of the Project Intelligence string.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <ScrollArea className="h-48 bg-muted rounded-xl p-4 border border-white/5">
+                                <pre className="text-[10px] font-mono leading-relaxed opacity-80 whitespace-pre-wrap">
+                                    {PROJECT_MEMORY}
+                                </pre>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
+        {/* 0. EmityGate Integration Hub */}
         <AccordionItem value="emitygate-integration" className="border-b-0">
           <Card className="border-blue-500/30 bg-blue-500/5">
             <AccordionTrigger className="p-6">
@@ -668,7 +749,7 @@ const fetchUserStats = async (uid) => {
                             <h4 className="font-black text-xl uppercase italic">RESTRICTED ZONE</h4>
                             <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.3em]">Credentials Required</p>
                         </div>
-                        <Input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[240px] h-14 text-center text-2xl font-black rounded-2xl bg-background border-2" placeholder="••••••••" />
+                        <input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[240px] h-14 text-center text-2xl font-black rounded-2xl bg-background border-2 outline-none focus:border-red-500 transition-colors" placeholder="••••••••" />
                         <Button type="submit" size="lg" className="h-12 px-10 font-black uppercase shadow-lg shadow-primary/20">AUTHORIZE ACCESS</Button>
                     </form>
                 ) : (
