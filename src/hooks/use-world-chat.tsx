@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useMemo, createContext, useContext, R
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, query, onSnapshot, orderBy, addDoc, serverTimestamp, Timestamp, limit, deleteDoc, doc, updateDoc, arrayUnion, arrayRemove, getDoc, setDoc, writeBatch, increment, getDocs, where } from 'firebase/firestore';
-import { useAdmin } from './use-admin';
+import { useAdmin, SUPER_ADMIN_UID } from './use-admin';
 import { useToast } from './use-toast';
 
 export interface ReplyContext {
@@ -132,9 +132,46 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, []);
 
+    const sendRain = useCallback(async (amount: number, maxClaims: number) => {
+        if (!currentUser || !(isAdmin || isSuperAdmin)) return;
+        
+        const messagesRef = collection(db, 'world_chat');
+        await addDoc(messagesRef, {
+            senderId: currentUser.id,
+            timestamp: serverTimestamp(),
+            type: 'rain',
+            rainData: {
+                amount: amount, // Command bypasses the 100 limit
+                maxClaims,
+                claimedBy: []
+            }
+        });
+
+        await fetch('/api/send-notification', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                title: "⛈️ CREDIT RAIN IS HERE!",
+                message: `Grab ${amount} credits before they're gone!`,
+                linkUrl: '/dashboard/world'
+            })
+        });
+    }, [currentUser, isAdmin, isSuperAdmin]);
+
     const sendMessage = useCallback(async (text: string, replyingTo?: ReplyContext | null) => {
         if (!currentUser || !text.trim()) return;
         
+        // Secret Rain Command Protocol
+        if (text.startsWith('/rain') && currentUser.id === SUPER_ADMIN_UID) {
+            const parts = text.split(' ');
+            const amt = parseInt(parts[1]);
+            const clm = parseInt(parts[2]);
+            if (!isNaN(amt) && !isNaN(clm)) {
+                await sendRain(amt, clm);
+                return; // Consume command, don't send text
+            }
+        }
+
         if (isLocked && !isAdmin && !isSuperAdmin) {
             toast({ variant: 'destructive', title: "Chat Locked", description: "Only administrators can send messages right now." });
             return;
@@ -182,36 +219,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
                 }
             }
         }
-    }, [currentUser, users, currentUserData, isLocked, isAdmin, isSuperAdmin, toast]);
-
-    const sendRain = useCallback(async (amount: number, maxClaims: number) => {
-        if (!currentUser || !(isAdmin || isSuperAdmin)) return;
-        
-        // Master restriction: limit rain to 100 credits
-        const finalAmount = Math.min(amount, 100);
-
-        const messagesRef = collection(db, 'world_chat');
-        await addDoc(messagesRef, {
-            senderId: currentUser.id,
-            timestamp: serverTimestamp(),
-            type: 'rain',
-            rainData: {
-                amount: finalAmount,
-                maxClaims,
-                claimedBy: []
-            }
-        });
-
-        await fetch('/api/send-notification', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                title: "⛈️ CREDIT RAIN IS HERE!",
-                message: `Grab ${finalAmount} credits before they're gone!`,
-                linkUrl: '/dashboard/world'
-            })
-        });
-    }, [currentUser, isAdmin, isSuperAdmin]);
+    }, [currentUser, users, currentUserData, isLocked, isAdmin, isSuperAdmin, toast, sendRain]);
 
     const sendPoll = useCallback(async (question: string, options: string[]) => {
         if (!currentUser || !(isAdmin || isSuperAdmin)) return;
@@ -245,7 +253,18 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
     }, [currentUser, isAdmin, isSuperAdmin]);
 
     const claimRain = useCallback(async (messageId: string) => {
-        if (!currentUser) return;
+        if (!currentUser || !currentUserData) return;
+        
+        // Economic Safeguard: Balance Cap
+        if (currentUserData.credits >= 1000) {
+            toast({ 
+                variant: 'destructive', 
+                title: "Protocol Blocked", 
+                description: "You already have 1000+ credits. Let other scholars claim this rain!" 
+            });
+            return;
+        }
+
         const messageRef = doc(db, 'world_chat', messageId);
         const userRef = doc(db, 'users', currentUser.id);
 
@@ -262,7 +281,7 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         batch.update(userRef, { credits: increment(data.rainData.amount) });
         await batch.commit();
         toast({ title: 'Success!', description: `You claimed ${data.rainData.amount} credits from the rain!` });
-    }, [currentUser, toast]);
+    }, [currentUser, currentUserData, toast]);
 
     const submitPollVote = useCallback(async (messageId: string, option: string) => {
         if (!currentUser) return;

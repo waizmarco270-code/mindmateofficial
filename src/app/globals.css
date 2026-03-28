@@ -88,6 +88,22 @@
 }
 
 @layer components {
+  /* ALPHA RAINBOW BORDER ARTIFACT */
+  @keyframes alpha-rainbow {
+    0% { border-color: #ff0000; box-shadow: 0 0 8px #ff0000; }
+    20% { border-color: #ffff00; box-shadow: 0 0 8px #ffff00; }
+    40% { border-color: #00ff00; box-shadow: 0 0 8px #00ff00; }
+    60% { border-color: #00ffff; box-shadow: 0 0 8px #00ffff; }
+    80% { border-color: #0000ff; box-shadow: 0 0 8px #0000ff; }
+    100% { border-color: #ff00ff; box-shadow: 0 0 8px #ff00ff; }
+  }
+
+  .alpha-rainbow-border {
+    border: 3px solid transparent;
+    animation: alpha-rainbow 4s linear infinite;
+    background-clip: padding-box;
+  }
+
   /* LEGENDARY BADGE STYLES */
   .elite-badge {
     @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
