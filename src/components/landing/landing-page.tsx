@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ArrowRight, Bot, Users, Zap, FileText, Award, 
@@ -9,459 +9,394 @@ import {
     MessageSquare, ChevronDown, 
     Instagram, Youtube, Send, 
     ExternalLink, Code, Shield, 
-    CreditCard, Info, Clock, X, Terminal, Cpu
+    CreditCard, Info, Clock, X, Terminal, Cpu, Gem, Vault
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
 import { SignUpButton, SignInButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { ActivityGlobe } from './ActivityGlobe';
-import NextImage from 'next/image';
-import { ThreeDCore } from './ThreeDCore';
-import placeholderData from '@/app/lib/placeholder-images.json';
+import '@/app/landing.css';
 
-const features = [
-  {
-    id: 'ai',
-    name: 'AI Study Assistant',
-    description: 'Get instant, structured explanations and tactical help from your dedicated AI tutor.',
-    icon: Bot,
-    color: 'text-purple-400',
-    bgColor: 'bg-purple-900/20',
-    previewTitle: 'MARCO AI INTERFACE',
-    previewContent: 'Initializing Neural Context... \nAnalyzing Syllabus Complexity... \nReady for Academic Ingress.'
-  },
-  {
-    id: 'gamified',
-    name: 'Gamified Growth',
-    description: 'Earn credits, claim badges, and compete on global leaderboards.',
-    icon: Sparkles,
-    color: 'text-sky-400',
-    bgColor: 'bg-sky-900/20',
-    previewTitle: 'REWARD REPOSITORY',
-    previewContent: 'Total Credits: 1,250 \nRank: Legendary Scholar \nStreak: 42 Days'
-  },
-  {
-    id: 'focus',
-    name: 'Deep Focus Engine',
-    description: 'Calibrated focus timers with penalty systems to protect your productivity.',
-    icon: Zap,
-    color: 'text-yellow-400',
-    bgColor: 'bg-yellow-900/20',
-    previewTitle: 'FOCUS CALIBRATION',
-    previewContent: 'Protocol: Deep Work \nTimer: 45:00 \nDistraction Shield: ACTIVE'
-  },
-  {
-    id: 'resources',
-    name: 'Unified Resources',
-    description: 'A central repository of high-level exam notes and study materials.',
-    icon: FileText,
-    color: 'text-rose-400',
-    bgColor: 'bg-rose-900/20',
-    previewTitle: 'NEXUS ARCHIVES',
-    previewContent: 'Accessing JEE Physics... \nDecrypting Advanced Notes... \nUplink Complete.'
-  },
-  {
-    id: 'clans',
-    name: 'Study Clans',
-    description: 'Team up with allies, sync schedules, and conquer milestones as a unit.',
-    icon: Users,
-    color: 'text-emerald-400',
-    bgColor: 'bg-emerald-900/20',
-    previewTitle: 'CLAN SYNCHRONIZATION',
-    previewContent: 'Alliance: The Titans \nLevel: 5 (MAX) \nMembers: 24 Online'
-  },
-  {
-    id: 'ledger',
-    name: 'Academic Ledger',
-    description: 'Powerful analytics to maintain your consistency and track your streaks.',
-    icon: Award,
-    color: 'text-orange-400',
-    bgColor: 'bg-orange-900/20',
-    previewTitle: 'PROGRESS ANALYTICS',
-    previewContent: 'Productivity: +15% \nEfficiency: Peak \nStatus: Mission Ready'
-  }
-];
-
-const testimonials = [
-    {
-        name: "Aryan Gupta",
-        rank: "Legendary Scholar",
-        text: "MindMate transformed my prep. The focus mode is a life-saver for consistency!",
-        avatar: "https://picsum.photos/seed/aryan/100"
-    },
-    {
-        name: "Sneha Reddy",
-        rank: "Elite Member",
-        text: "The AI tutor feels so human. It explains things better than my textbooks!",
-        avatar: "https://picsum.photos/seed/sneha/100"
-    },
-    {
-        name: "Vikram Singh",
-        rank: "Clan Leader",
-        text: "Studying with a clan makes it feel like a mission. We never miss a goal now.",
-        avatar: "https://picsum.photos/seed/vikram/100"
+// --- PLEXUS ENGINE ---
+class Node {
+    x: number; y: number; vx: number; vy: number; r: number; alpha: number;
+    constructor(w: number, h: number, speed: number) {
+        this.x = Math.random() * w;
+        this.y = Math.random() * h;
+        this.vx = (Math.random() - 0.5) * speed;
+        this.vy = (Math.random() - 0.5) * speed;
+        this.r = 0.5 + Math.random() * 1.7;
+        this.alpha = 0.25 + Math.random() * 0.45;
     }
-];
+    update(w: number, h: number, mx?: number, my?: number) {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > w) this.vx *= -1;
+        if (this.y < 0 || this.y > h) this.vy *= -1;
 
-function LegendaryBackground() {
-    return (
-        <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-            <div className="absolute inset-0 bg-black" />
-            <NextImage 
-                src={placeholderData.landing.background.src}
-                alt="MindMate Universe"
-                fill
-                priority
-                className="object-cover opacity-40 animate-zoom-pan"
-                data-ai-hint={placeholderData.landing.background['data-ai-hint']}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black via-transparent to-black" />
-            <div className="absolute inset-0 bg-grid-animate opacity-5" />
-        </div>
-    );
+        if (mx !== undefined && my !== undefined) {
+            const dx = this.x - mx;
+            const dy = this.y - my;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 110) {
+                const force = (110 - dist) / 110 * 2.2;
+                this.vx += (dx / dist) * force;
+                this.vy += (dy / dist) * force;
+            }
+        }
+        this.vx *= 0.97;
+        this.vy *= 0.97;
+    }
 }
 
-function HolographicPreview({ feature, onClose }: { feature: typeof features[0], onClose: () => void }) {
+function PlexusCanvas({ color, density, glow, speed, active, mouse }: any) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const nodes = useRef<Node[]>([]);
+
+    const init = useCallback(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const w = canvas.width = window.innerWidth;
+        const h = canvas.height = window.innerHeight;
+        const count = Math.floor((w * h / 18000) * (density / 45));
+        nodes.current = Array.from({ length: count }, () => new Node(w, h, speed));
+    }, [density, speed]);
+
+    useEffect(() => {
+        init();
+        window.addEventListener('resize', init);
+        return () => window.removeEventListener('resize', init);
+    }, [init]);
+
+    useEffect(() => {
+        if (!active) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!ctx || !canvas) return;
+
+        let frame: number;
+        const render = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            nodes.current.forEach(n => {
+                n.update(canvas.width, canvas.height, mouse.x, mouse.y);
+                ctx.beginPath();
+                ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${color}, ${n.alpha})`;
+                ctx.shadowBlur = 6 * glow;
+                ctx.shadowColor = `rgba(${color}, 0.5)`;
+                ctx.fill();
+            });
+
+            ctx.lineWidth = 0.5;
+            for (let i = 0; i < nodes.current.length; i++) {
+                for (let j = i + 1; j < nodes.current.length; j++) {
+                    const n1 = nodes.current[i];
+                    const n2 = nodes.current[j];
+                    const dist = Math.sqrt((n1.x - n2.x)**2 + (n1.y - n2.y)**2);
+                    if (dist < 145) {
+                        ctx.beginPath();
+                        ctx.moveTo(n1.x, n1.y);
+                        ctx.lineTo(n2.x, n2.y);
+                        ctx.strokeStyle = `rgba(${color}, ${(1 - dist/145) * 0.28 * glow})`;
+                        ctx.stroke();
+                    }
+                }
+            }
+            frame = requestAnimationFrame(render);
+        };
+        render();
+        return () => cancelAnimationFrame(frame);
+    }, [active, color, glow, mouse]);
+
+    return <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none opacity-40" />;
+}
+
+// --- STAT COUNTER ---
+function StatCounter({ target, suffix = "" }: { target: number, suffix?: string }) {
+    const [count, setCount] = useState(0);
+    const nodeRef = useRef(null);
+
+    useEffect(() => {
+        let startTime: number;
+        const animate = (now: number) => {
+            if (!startTime) startTime = now;
+            const progress = Math.min((now - startTime) / 1800, 1);
+            const ease = 1 - Math.pow(1 - progress, 4);
+            setCount(Math.floor(ease * target));
+            if (progress < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+    }, [target]);
+
+    return <span>{count.toLocaleString()}{suffix}</span>;
+}
+
+// --- MAIN PAGE ---
+export function LandingPage() {
+    const [currentSlide, setCurrentSlide] = useState(0);
+    const [isAnimating, setIsAnimating] = useState(false);
+    const [mouse, setMouse] = useState({ x: 0, y: 0 });
+    const scrollBuffer = useRef(0);
+
+    const totalSlides = 4;
+
+    const goTo = useCallback((index: number) => {
+        if (isAnimating || index === currentSlide || index < 0 || index >= totalSlides) return;
+        setIsAnimating(true);
+        setCurrentSlide(index);
+        setTimeout(() => setIsAnimating(false), 950);
+    }, [currentSlide, isAnimating]);
+
+    useEffect(() => {
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            scrollBuffer.current += e.deltaY;
+            if (Math.abs(scrollBuffer.current) > 55) {
+                if (scrollBuffer.current > 0) goTo(currentSlide + 1);
+                else goTo(currentSlide - 1);
+                scrollBuffer.current = 0;
+            }
+        };
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowDown' || e.key === 'PageDown') goTo(currentSlide + 1);
+            if (e.key === 'ArrowUp' || e.key === 'PageUp') goTo(currentSlide - 1);
+        };
+
+        window.addEventListener('wheel', handleWheel, { passive: false });
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('wheel', handleWheel);
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [currentSlide, goTo]);
+
+    // Cursor Follow
+    useEffect(() => {
+        const ring = document.getElementById('cursor-ring');
+        const dot = document.getElementById('cursor-dot');
+        let rx = 0, ry = 0;
+
+        const move = (e: MouseEvent) => {
+            const { clientX: mx, clientY: my } = e;
+            setMouse({ x: mx, y: my });
+            if (dot) {
+                dot.style.left = `${mx}px`;
+                dot.style.top = `${my}px`;
+            }
+            
+            const animate = () => {
+                rx += (mx - rx) * 0.12;
+                ry += (my - ry) * 0.12;
+                if (ring) {
+                    ring.style.left = `${rx}px`;
+                    ring.style.top = `${ry}px`;
+                }
+                requestAnimationFrame(animate);
+            };
+        };
+        window.addEventListener('mousemove', move);
+        return () => window.removeEventListener('mousemove', move);
+    }, []);
+
+    const slideConfigs = [
+        { color: "255,77,109", density: 52, glow: 0.55, speed: 0.35, accent: "#ff4d6d" },
+        { color: "180,138,255", density: 38, glow: 0.70, speed: 0.28, accent: "#b48aff" },
+        { color: "54,255,184", density: 28, glow: 0.45, speed: 0.22, accent: "#36ffb8" },
+        { color: "75,200,255", density: 60, glow: 0.75, speed: 0.40, accent: "#4bc8ff" }
+    ];
+
     return (
-        <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
-            onClick={onClose}
-        >
-            <motion.div 
-                initial={{ scale: 0.9, y: 20, opacity: 0 }}
-                animate={{ scale: 1, y: 0, opacity: 1 }}
-                exit={{ scale: 0.9, y: 20, opacity: 0 }}
-                className="relative w-full max-w-2xl aspect-video bg-white/5 border border-white/10 rounded-[2.5rem] shadow-[0_0_100px_rgba(139,92,246,0.2)] overflow-hidden"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Scanner Line */}
-                <motion.div 
-                    animate={{ y: [0, 400, 0] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-x-0 h-px bg-primary/40 shadow-[0_0_15px_#8b5cf6] z-20"
-                />
+        <div className="landing-root">
+            <div id="cursor-dot" className="cursor-dot" />
+            <div id="cursor-ring" className="cursor-ring" />
 
-                <div className="absolute inset-0 bg-grid-animate opacity-5" />
-                
-                <div className="relative h-full flex flex-col p-8 md:p-12">
-                    <div className="flex items-center justify-between mb-8">
-                        <div className="flex items-center gap-4">
-                            <div className={cn("p-3 rounded-2xl", feature.bgColor)}>
-                                <feature.icon className={cn("h-8 w-8", feature.color)} />
-                            </div>
-                            <div>
-                                <h3 className="font-black text-2xl tracking-tighter uppercase italic">{feature.previewTitle}</h3>
-                                <p className="text-[10px] font-black text-primary tracking-[0.3em] uppercase">Status: Non-Interactive Simulation</p>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-white/10">
-                            <X className="h-6 w-6" />
-                        </Button>
+            <header className="fixed top-0 left-0 w-full z-[1000] border-b border-white/5 bg-black/30 backdrop-blur-md">
+                <div className="container mx-auto h-20 flex items-center justify-between px-6">
+                    <div className="flex items-center gap-3">
+                        <Logo className="h-10 w-10" />
+                        <span className="logo-text font-black text-2xl tracking-tighter text-white uppercase">MindMate</span>
                     </div>
+                    <nav className="hidden lg:flex gap-8 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <button onClick={() => goTo(1)} className="nav-link">Modules</button>
+                        <button onClick={() => goTo(2)} className="nav-link">Intelligence</button>
+                        <Link href="/about" className="nav-link">Mission</Link>
+                    </nav>
+                    <div className="flex items-center gap-4">
+                        <SignInButton mode="modal">
+                            <Button className="ingress-btn h-11 px-8">Login to MindMate</Button>
+                        </SignInButton>
+                    </div>
+                </div>
+            </header>
 
-                    <div className="flex-1 flex flex-col justify-center gap-6">
-                        <div className="space-y-4">
-                            {feature.previewContent.split('\n').map((line, i) => (
-                                <motion.p 
-                                    key={i}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: 0.2 + (i * 0.1) }}
-                                    className="font-mono text-sm md:text-lg flex items-center gap-3 text-slate-300"
-                                >
-                                    <span className="text-primary">></span> {line}
-                                </motion.p>
+            <div className="slide-container">
+                {/* SLIDE 0: HERO */}
+                <section className={cn("slide slide-0", currentSlide === 0 ? "active" : currentSlide > 0 ? "above" : "below")}>
+                    <PlexusCanvas {...slideConfigs[0]} active={currentSlide === 0} mouse={mouse} />
+                    <div className="slide-content max-w-4xl flex flex-col items-center text-center">
+                        <div className="flex gap-3 mb-8">
+                            <span className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest">🤖 AI Native</span>
+                            <span className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest">🛡️ Secure Vault</span>
+                        </div>
+                        <h1 className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] uppercase mb-8">
+                            ASCEND TO <br />
+                            <span className="keyword-glow">GREATNESS.</span>
+                        </h1>
+                        <p className="text-lg text-slate-400 max-w-xl leading-relaxed mb-10 opacity-60">
+                            The integrated study ecosystem for elite scholars. Tactical AI guidance, deep focus protocols, and collective mastery.
+                        </p>
+                        <div className="flex gap-4">
+                            <SignUpButton mode="modal">
+                                <Button size="lg" className="h-16 px-10 rounded-2xl bg-white text-black font-black uppercase tracking-widest hover:bg-slate-200">Initialize</Button>
+                            </SignUpButton>
+                            <Button variant="outline" onClick={() => goTo(1)} className="h-16 px-10 rounded-2xl border-white/10 font-black uppercase tracking-widest">Explore</Button>
+                        </div>
+                    </div>
+                </section>
+
+                {/* SLIDE 1: FEATURES */}
+                <section className={cn("slide slide-1", currentSlide === 1 ? "active" : currentSlide > 1 ? "above" : currentSlide < 1 ? "below" : "instant")}>
+                    <PlexusCanvas {...slideConfigs[1]} active={currentSlide === 1} mouse={mouse} />
+                    <div className="slide-content container px-6">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter">Elite Modules</h2>
+                            <p className="text-slate-400 mt-4 max-w-xl mx-auto">Proprietary systems designed for absolute academic dominance.</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {[
+                                { title: 'Marco AI', icon: Bot, desc: 'Neural study partner for instant tactical help.' },
+                                { title: 'Sovereign Vault', icon: Vault, desc: 'Secure repository for your intellectual assets.' },
+                                { title: 'Credit Economy', icon: Gem, desc: 'Earn universal credits via high-focus study.' },
+                                { title: 'Deep Focus', icon: Zap, desc: 'Calibrated timers with penalty enforcement.' }
+                            ].map((f, i) => (
+                                <Card key={i} className="bg-white/[0.03] backdrop-blur-3xl border-white/5 p-8 rounded-[2rem] hover:border-primary/30 transition-all hover:-translate-y-2">
+                                    <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center mb-6">
+                                        <f.icon className="h-6 w-6 text-primary" />
+                                    </div>
+                                    <h4 className="font-black uppercase text-lg mb-2">{f.title}</h4>
+                                    <p className="text-sm text-slate-400 leading-relaxed">{f.desc}</p>
+                                </Card>
                             ))}
                         </div>
+                    </div>
+                </section>
 
-                        {/* Abstract Visual Elements */}
-                        <div className="mt-8 flex gap-4">
-                            <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
-                                <motion.div 
-                                    animate={{ width: ['0%', '100%', '0%'] }}
-                                    transition={{ duration: 3, repeat: Infinity }}
-                                    className="h-full bg-primary/40"
-                                />
-                            </div>
-                            <div className="h-1.5 w-24 bg-white/5 rounded-full overflow-hidden">
-                                <motion.div 
-                                    animate={{ width: ['100%', '30%', '100%'] }}
-                                    transition={{ duration: 2, repeat: Infinity }}
-                                    className="h-full bg-cyan-400/40"
-                                />
-                            </div>
+                {/* SLIDE 2: STATS */}
+                <section className={cn("slide slide-2", currentSlide === 2 ? "active" : currentSlide > 2 ? "above" : currentSlide < 2 ? "below" : "instant")}>
+                    <PlexusCanvas {...slideConfigs[2]} active={currentSlide === 2} mouse={mouse} />
+                    <div className="slide-content container px-6 text-center">
+                        <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tighter mb-20">Mission Metrics</h2>
+                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-12">
+                            {[
+                                { label: 'Active Scholars', target: 12500, suffix: '+' },
+                                { label: 'Hours Focused', target: 850000, suffix: '+' },
+                                { label: 'AI Responses', target: 2400000, suffix: '+' },
+                                { label: 'Vaults Created', target: 4500, suffix: '' }
+                            ].map((s, i) => (
+                                <div key={i} className="flex flex-col">
+                                    <span className="text-5xl md:text-7xl font-black tracking-tighter text-primary">
+                                        {currentSlide === 2 && <StatCounter target={s.target} suffix={s.suffix} />}
+                                    </span>
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 mt-4">{s.label}</span>
+                                </div>
+                            ))}
                         </div>
                     </div>
+                </section>
 
-                    <div className="absolute bottom-8 right-8 pointer-events-none opacity-20">
-                        <p className="text-[40px] font-black tracking-tighter uppercase italic rotate-[-5deg]">System Preview</p>
-                    </div>
-                </div>
-            </motion.div>
-        </motion.div>
-    );
-}
-
-export function LandingPage() {
-  const [isMounted, setIsMounted] = useState(false);
-  const [activePreview, setActivePreview] = useState<typeof features[0] | null>(null);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  if (!isMounted) return <div className="min-h-screen bg-black" />;
-
-  const scrollToSection = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
-  return (
-    <div className="flex min-h-screen flex-col bg-black overflow-x-hidden selection:bg-primary/30 text-slate-200">
-      <LegendaryBackground />
-
-      <AnimatePresence>
-        {activePreview && (
-            <HolographicPreview 
-                feature={activePreview} 
-                onClose={() => setActivePreview(null)} 
-            />
-        )}
-      </AnimatePresence>
-
-      {/* Header */}
-      <header className="fixed top-0 z-50 w-full border-b border-white/5 bg-black/40 backdrop-blur-xl">
-        <div className="container mx-auto flex h-20 items-center justify-between px-6 sm:px-12">
-          <Link href="/" className="flex items-center gap-3 group">
-            <Logo className="h-10 w-10 transition-transform group-hover:scale-110" />
-            <span className="font-black text-2xl tracking-tighter text-white uppercase italic">MindMate</span>
-          </Link>
-
-          <nav className="hidden lg:flex items-center gap-8">
-            <button onClick={() => scrollToSection('modules')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Elite Modules</button>
-            <button onClick={() => scrollToSection('global')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Global Intelligence</button>
-            <button onClick={() => scrollToSection('briefings')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Briefings</button>
-            <Link href="/about" className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-primary transition-colors">Strategic Mission</Link>
-          </nav>
-
-          <div className="flex items-center gap-4">
-            <SignInButton mode="modal">
-                <Button className="h-11 px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 hover:opacity-90 shadow-2xl shadow-purple-500/20 transition-all hover:scale-[1.02]">
-                    Login to MindMate
-                </Button>
-            </SignInButton>
-          </div>
-        </div>
-      </header>
-
-      <main className="flex-1 relative z-10">
-        {/* Hero Section */}
-        <section className="container mx-auto min-h-screen flex flex-col lg:flex-row items-center justify-center px-6 sm:px-12 pt-20 gap-12 text-center lg:text-left">
-            <div className="flex-1 space-y-8">
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="inline-flex p-px rounded-full bg-gradient-to-r from-primary/50 via-white/10 to-transparent"
-                >
-                    <div className="px-4 py-1 rounded-full bg-black/80 backdrop-blur-md text-[10px] font-black uppercase tracking-[0.3em] text-primary">
-                        Cognitive Fortress v2.5
-                    </div>
-                </motion.div>
-
-                <motion.h1 
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    className="text-5xl sm:text-7xl lg:text-8xl font-black tracking-tighter uppercase leading-[0.9] mb-8"
-                >
-                    <span className="text-white drop-shadow-[0_0_30px_rgba(139,92,246,0.3)]">Ascend to</span><br />
-                    <span className="bg-gradient-to-b from-white to-slate-500 bg-clip-text text-transparent italic font-serif pr-4">Greatness.</span>
-                </motion.h1>
-
-                <motion.p 
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.1 }}
-                    className="max-w-xl text-lg text-slate-400 font-medium leading-relaxed"
-                >
-                    Forge your legacy with our integrated study ecosystem. Calibrated deep-focus protocols, tactical AI tutoring, and collaborative mastery systems.
-                </motion.p>
-
-                <motion.div 
-                    initial={{ y: 20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="flex flex-col sm:flex-row items-center gap-4 w-full max-w-sm"
-                >
-                    <SignUpButton mode="modal">
-                        <Button size="lg" className="w-full h-16 text-xs font-black uppercase tracking-widest rounded-2xl shadow-[0_20px_50px_rgba(139,92,246,0.3)] bg-primary hover:bg-primary/90 group transition-all hover:scale-[1.02]">
-                            Initialize MindMate for free
-                            <ArrowRight className="ml-3 h-5 w-5 transition-transform group-hover:translate-x-2" />
-                        </Button>
-                    </SignUpButton>
-                </motion.div>
-            </div>
-
-            <motion.div 
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 1, delay: 0.3 }}
-                className="flex-1 flex justify-center items-center"
-            >
-                <ThreeDCore />
-            </motion.div>
-        </section>
-
-        {/* Features Bento Grid */}
-        <section id="modules" className="container mx-auto py-32 px-6 sm:px-12 scroll-mt-20">
-            <div className="flex flex-col items-center text-center mb-24">
-              <h2 className="text-4xl sm:text-5xl font-black uppercase tracking-tighter mb-4 italic font-serif text-white">Elite Modules</h2>
-              <div className="h-1.5 w-16 bg-primary rounded-full shadow-[0_0_15px_#8b5cf6]" />
-              <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mt-4">Click to project holographic briefing</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature, i) => (
-                <motion.div 
-                    key={i} 
-                    initial={{ opacity: 0, y: 20 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: true }}
-                    transition={{ delay: i * 0.05 }}
-                    onClick={() => setActivePreview(feature)}
-                    className="relative group p-10 rounded-[2.5rem] bg-white/[0.02] backdrop-blur-2xl border border-white/5 hover:border-primary/30 hover:bg-white/[0.04] transition-all duration-700 cursor-pointer overflow-hidden"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-                  <div className={cn("flex h-14 w-14 items-center justify-center rounded-2xl mb-8 shadow-2xl relative z-10", feature.bgColor)}>
-                    <feature.icon className={cn("h-7 w-7", feature.color)} />
-                  </div>
-                  <h3 className="text-xl font-black text-white mb-4 uppercase tracking-tight relative z-10">{feature.name}</h3>
-                  <p className="text-slate-400 text-sm leading-relaxed font-medium relative z-10">{feature.description}</p>
-                </motion.div>
-              ))}
-            </div>
-        </section>
-
-        {/* Global Intelligence Feed */}
-        <section id="global" className="bg-white/[0.01] border-y border-white/5 py-32 px-6 sm:px-12 relative overflow-hidden scroll-mt-20">
-            <div className="absolute inset-0 bg-grid-slate-800 opacity-5" />
-            <div className="container mx-auto relative z-10">
-                <div className="text-center mb-20">
-                    <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-widest italic font-serif text-white">Global Intelligence Feed</h2>
-                    <p className="text-slate-500 mt-4 text-[10px] font-black uppercase tracking-[0.3em]">Real-time study uplinks from active legends</p>
-                </div>
-                <ActivityGlobe />
-            </div>
-        </section>
-
-        {/* Testimonials */}
-        <section id="briefings" className="container mx-auto py-32 px-6 sm:px-12 scroll-mt-20">
-            <div className="text-center mb-24">
-                <h2 className="text-3xl sm:text-4xl font-black uppercase tracking-widest text-white italic font-serif">Citizen Briefings</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {testimonials.map((t, i) => (
-                    <Card key={i} className="bg-white/[0.02] backdrop-blur-3xl border-white/5 rounded-[3rem] p-10 shadow-2xl hover:border-primary/20 transition-all duration-500 group">
-                        <div className="flex items-center gap-5 mb-8">
-                            <div className="relative">
-                                <div className="absolute -inset-1 bg-primary/20 rounded-full blur opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <NextImage src={t.avatar} alt={t.name} width={50} height={50} className="rounded-full border-2 border-primary/20 relative z-10" />
-                            </div>
-                            <div>
-                                <p className="font-black text-md text-white uppercase tracking-tight">{t.name}</p>
-                                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{t.rank}</p>
-                            </div>
+                {/* SLIDE 3: MISSION & FOOTER */}
+                <section className={cn("slide slide-3", currentSlide === 3 ? "active" : currentSlide < 3 ? "below" : "instant")}>
+                    <PlexusCanvas {...slideConfigs[3]} active={currentSlide === 3} mouse={mouse} />
+                    <div className="slide-content w-full h-full flex flex-col pt-32">
+                        <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
+                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-8">SECURE YOUR <br />LEGACY.</h2>
+                            <SignUpButton mode="modal">
+                                <Button size="lg" className="h-20 px-16 rounded-3xl ingress-btn text-xl shadow-2xl">Claim Your Mainframe</Button>
+                            </SignUpButton>
                         </div>
-                        <p className="text-slate-400 text-sm italic leading-relaxed font-medium">"{t.text}"</p>
-                    </Card>
+
+                        {/* Institutional Footer */}
+                        <footer className="w-full bg-black/40 backdrop-blur-3xl border-t border-white/5 p-12 lg:p-20">
+                            <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-3">
+                                        <Logo className="h-10 w-10" />
+                                        <span className="font-black text-2xl uppercase tracking-tighter">MindMate</span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-loose">
+                                        Empowering the next generation of scholars through strategic automation and collective intelligence.
+                                    </p>
+                                </div>
+                                <div>
+                                    <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-6">Mainframe</h5>
+                                    <ul className="space-y-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                        <li><Link href="https://emitygate.com" className="hover:text-primary transition-colors">EmityGate Solutions</Link></li>
+                                        <li><Link href="/about" className="hover:text-primary transition-colors">Strategic Mission</Link></li>
+                                        <li><Link href="/dashboard/docs" className="hover:text-primary transition-colors">Sovereign Docs</Link></li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-6">Protocols</h5>
+                                    <ul className="space-y-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
+                                        <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Shield</Link></li>
+                                        <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                                        <li><Link href="/refund" className="hover:text-primary transition-colors">Asset Protection</Link></li>
+                                    </ul>
+                                </div>
+                                <div className="p-6 rounded-[2.5rem] bg-white/[0.03] border border-white/5 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <ShieldCheck className="h-8 w-8 text-emerald-500" />
+                                        <div className="text-[10px] font-black uppercase">
+                                            <p className="text-slate-400">Validated Ingress</p>
+                                            <p className="text-white mt-0.5">Razorpay Secure</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                        <Instagram className="h-4 w-4 text-slate-500 hover:text-white cursor-pointer" />
+                                        <Youtube className="h-4 w-4 text-slate-500 hover:text-white cursor-pointer" />
+                                        <Send className="h-4 w-4 text-slate-500 hover:text-white cursor-pointer" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex flex-col md:flex-row justify-between items-center gap-4 text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">
+                                <p>© {new Date().getFullYear()} EmityGate Solutions. All Rights Reserved.</p>
+                                <div className="flex gap-8">
+                                    <span>Status: Operational</span>
+                                    <span>Network: Stable</span>
+                                </div>
+                            </div>
+                        </footer>
+                    </div>
+                </section>
+            </div>
+
+            {/* Navigation Chrome */}
+            <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[1000]">
+                {Array.from({ length: totalSlides }).map((_, i) => (
+                    <button
+                        key={i}
+                        onClick={() => goTo(i)}
+                        className={cn(
+                            "h-2 w-2 rounded-full transition-all duration-500",
+                            currentSlide === i ? "bg-white scale-150 shadow-[0_0_10px_white]" : "bg-white/20 hover:bg-white/40"
+                        )}
+                    />
                 ))}
             </div>
-        </section>
-      </main>
 
-      {/* Enterprise Footer */}
-      <footer className="border-t border-white/5 bg-black backdrop-blur-3xl pt-32 pb-16 px-6 sm:px-12 relative z-10">
-        <div className="container mx-auto">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-16 mb-24">
-                <div className="space-y-8">
-                    <div className="flex items-center gap-3">
-                        <Logo className="h-12 w-12" />
-                        <span className="font-black text-3xl text-white tracking-tighter italic uppercase">MindMate</span>
-                    </div>
-                    <p className="text-xs text-slate-500 leading-relaxed font-medium max-w-xs uppercase tracking-wider">
-                        The definitive AI-powered study command center. Empowering students through tactical automation and gamified mastery.
-                    </p>
-                    <div className="flex gap-4">
-                        {[
-                            { icon: Instagram, href: 'https://www.instagram.com/mindmatehq?igsh=MWd6dXJjbjVva2dlYg==' },
-                            { icon: Youtube, href: 'https://youtube.com/@mindmateofficials?si=_PpffdhhQFGCTi47' },
-                            { icon: Send, href: 'https://t.me/emitygate' },
-                            { icon: MessageSquare, href: 'https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H' }
-                        ].map((social, idx) => (
-                            <a key={idx} href={social.href} target="_blank" className="p-3 rounded-2xl bg-white/5 hover:bg-primary/20 text-slate-400 hover:text-primary transition-all border border-white/5 shadow-xl">
-                                <social.icon className="h-5 w-5" />
-                            </a>
-                        ))}
-                    </div>
-                </div>
-
-                <div>
-                    <h4 className="font-black text-white uppercase text-[10px] tracking-[0.4em] mb-8 opacity-40">Intelligence</h4>
-                    <ul className="space-y-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                        <li><Link href="https://emitygate.com" target="_blank" className="hover:text-primary transition-colors flex items-center gap-2">EmityGate Mainframe <ExternalLink className="h-3 w-3"/></Link></li>
-                        <li><Link href="/about" className="hover:text-white transition-colors">Strategic Mission</Link></li>
-                        <li><Link href="/dashboard/guide" className="hover:text-white transition-colors">Tactical Briefings</Link></li>
-                        <li><Link href="/contact" className="hover:text-white transition-colors">Uplink Support</Link></li>
-                    </ul>
-                </div>
-
-                <div>
-                    <h4 className="font-black text-white uppercase text-[10px] tracking-[0.4em] mb-8 opacity-40">Protocols</h4>
-                    <ul className="space-y-5 text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">
-                        <li><Link href="/privacy" className="hover:text-white transition-colors">Privacy Shield</Link></li>
-                        <li><Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link></li>
-                        <li><Link href="/refund" className="hover:text-white transition-colors">Asset Protection</Link></li>
-                        <li><Link href="/faq" className="hover:text-white transition-colors">System FAQ</Link></li>
-                    </ul>
-                </div>
-
-                <div className="space-y-8">
-                    <h4 className="font-black text-white uppercase text-[10px] tracking-[0.4em] mb-8 opacity-40">Secure Settlement</h4>
-                    <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/10 space-y-4 shadow-inner">
-                        <div className="flex items-center gap-4">
-                            <ShieldCheck className="h-10 w-10 text-emerald-500" />
-                            <div className="text-[9px] font-black uppercase text-slate-400 leading-tight tracking-widest">
-                                Validated Payments <br />
-                                <span className="text-white text-[11px] mt-1 block">Powered by Razorpay</span>
-                            </div>
-                        </div>
-                        <div className="flex gap-3 opacity-40 group-hover:opacity-100 transition-opacity">
-                            <div className="px-2 py-1 rounded bg-white/10 text-[8px] font-black text-white">VISA</div>
-                            <div className="px-2 py-1 rounded bg-white/10 text-[8px] font-black text-white">UPI</div>
-                            <div className="px-2 py-1 rounded bg-white/10 text-[8px] font-black text-white">MASTER</div>
-                        </div>
-                    </div>
-                </div>
+            <div className="fixed left-8 bottom-8 z-[1000] font-black text-[10px] uppercase tracking-widest text-slate-500">
+                {String(currentSlide + 1).padStart(2, '0')} / {String(totalSlides).padStart(2, '0')}
             </div>
 
-            <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[9px] font-black text-slate-600 uppercase tracking-[0.4em]">
-                <p>© {new Date().getFullYear()} EmityGate Solutions. All Rights Reserved.</p>
-                <div className="flex gap-10">
-                    <span className="flex items-center gap-2.5"><Globe className="h-3 w-3 text-primary animate-pulse" /> Network Operational</span>
-                    <span className="flex items-center gap-2.5"><Clock className="h-3 w-3" /> Uptime 99.9%</span>
-                </div>
-            </div>
+            <div className="fixed top-0 left-0 h-0.5 z-[2000] transition-all duration-900" 
+                 style={{ 
+                    width: `${(currentSlide / (totalSlides - 1)) * 100}%`,
+                    background: slideConfigs[currentSlide].accent,
+                    boxShadow: `0 0 10px ${slideConfigs[currentSlide].accent}`
+                 }} 
+            />
         </div>
-      </footer>
-    </div>
-  );
+    );
 }

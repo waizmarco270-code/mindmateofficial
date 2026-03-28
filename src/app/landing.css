@@ -1,0 +1,170 @@
+
+/* SOVEREIGN LANDING ISOLATION STYLES */
+
+.landing-root {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+  font-family: 'Inter', sans-serif;
+  color: #fff;
+  z-index: 9999;
+  cursor: none;
+}
+
+.slide-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.slide {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.9s cubic-bezier(0.87, 0, 0.13, 1);
+  overflow: hidden;
+}
+
+.slide.active {
+  transform: translateY(0);
+  z-index: 10;
+}
+
+.slide.above {
+  transform: translateY(0);
+  z-index: 1;
+}
+
+.slide.below {
+  transform: translateY(100%);
+  z-index: 20;
+}
+
+.slide.instant {
+  transform: translateY(100%);
+  transition: none;
+  z-index: 5;
+}
+
+/* Background Gradients */
+.slide-0 { background: radial-gradient(ellipse at 30% 50%, #2a0a1a, #120508, #000); }
+.slide-1 { background: radial-gradient(ellipse at 70% 40%, #160a2e, #0a0018, #000); }
+.slide-2 { background: radial-gradient(ellipse at 40% 60%, #002a1a, #001008, #000); }
+.slide-3 { background: radial-gradient(ellipse at 50% 30%, #001a2e, #000d18, #000); }
+
+/* Custom Cursor */
+.cursor-dot, .cursor-ring {
+  position: fixed;
+  pointer-events: none;
+  z-index: 10000;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+.cursor-dot { width: 6px; height: 6px; background: #fff; mix-blend-mode: difference; }
+.cursor-ring { 
+  width: 36px; height: 36px; 
+  border: 1px solid rgba(255,255,255,0.4); 
+  transition: width 0.3s, height 0.3s, border-color 0.3s; 
+}
+
+/* Premium Ingress Button */
+.ingress-btn {
+  background: linear-gradient(45deg, #ff4d6d, #8b5cf6, #ec4899);
+  background-size: 200% 200%;
+  animation: ingress-shine 3s linear infinite;
+  border: none;
+  color: white !important;
+  font-weight: 900 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  box-shadow: 0 0 20px rgba(236, 72, 153, 0.4);
+  border-radius: 1rem !important;
+}
+
+@keyframes ingress-shine {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Staggered Animations */
+.slide-content > * {
+  opacity: 0;
+  transform: translateY(28px);
+  transition: opacity 0.55s ease, transform 0.55s ease;
+}
+
+.active .slide-content > * {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.active .slide-content > *:nth-child(1) { transition-delay: 0.15s; }
+.active .slide-content > *:nth-child(2) { transition-delay: 0.25s; }
+.active .slide-content > *:nth-child(3) { transition-delay: 0.35s; }
+.active .slide-content > *:nth-child(4) { transition-delay: 0.45s; }
+.active .slide-content > *:nth-child(5) { transition-delay: 0.52s; }
+
+/* Pulse Glow */
+.keyword-glow {
+  background: linear-gradient(to right, #ff4d6d, #ec4899, #8b5cf6);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: pulse-glow 2s infinite alternate;
+}
+
+@keyframes pulse-glow {
+  from { filter: drop-shadow(0 0 2px rgba(236, 72, 153, 0.5)); }
+  to { filter: drop-shadow(0 0 8px rgba(236, 72, 153, 0.8)); }
+}
+
+.nav-link {
+  position: relative;
+  transition: color 0.3s;
+}
+.nav-link::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: #ec4899;
+  transition: width 0.3s;
+}
+.nav-link:hover::after { width: 100%; }
+.nav-link:hover { color: #fff; }
+
+/* Ticker */
+.ticker-wrap {
+  width: 100%;
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
+}
+.ticker {
+  display: flex;
+  gap: 2rem;
+  width: max-content;
+  animation: ticker-anim 32s linear infinite;
+}
+.ticker:hover { animation-play-state: paused; }
+
+@keyframes ticker-anim {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* Mobile Fixes */
+@media (max-width: 768px) {
+  .slide-content { padding: 0 1.5rem; text-align: center; }
+  .logo-text { display: none; }
+}
