@@ -1,11 +1,12 @@
 
 'use client';
 
-import { Medal, Crown, ShieldCheck, Settings, LifeBuoy, KeyRound, Check, X, PanelLeft, ShoppingCart, User as UserIcon, LogOut, Bell, Sun, Moon, Monitor, CreditCard, Wallet, Fingerprint } from 'lucide-react';
+import { Medal, Crown, ShieldCheck, Settings, LifeBuoy, KeyRound, Check, X, PanelLeft, ShoppingCart, User as UserIcon, LogOut, Bell, Sun, Moon, Monitor, CreditCard, Wallet, Fingerprint, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin } from '@/hooks/use-admin';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import Link from 'next/link';
 import { useUser, useClerk, SignedOut, SignInButton, SignUpButton, SignedIn } from '@clerk/nextjs';
 import { cn } from '@/lib/utils';
@@ -15,18 +16,21 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { InboxContent } from '@/components/inbox/inbox-content';
+import { useState } from 'react';
 
-function Inbox() {
+function SovereignHub() {
     const { hasInboxUnread, markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
+    const [isOpen, setIsOpen] = useState(false);
 
     return (
-        <Popover onOpenChange={(open) => {
+        <Dialog open={isOpen} onOpenChange={(open) => {
+            setIsOpen(open);
             if (open) {
                 markAnnouncementsAsRead();
                 markFriendRequestsAsRead();
             }
         }}>
-            <PopoverTrigger asChild>
+            <DialogTrigger asChild>
                 <Button
                     variant="ghost"
                     size="icon"
@@ -50,11 +54,11 @@ function Inbox() {
                         )}
                     </div>
                 </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-[22rem] sm:w-[26rem] p-0 overflow-hidden border-yellow-400/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-[2.5rem]">
-                <InboxContent isMini />
-            </PopoverContent>
-        </Popover>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl h-[90vh] md:h-[80vh] p-0 overflow-hidden border-primary/20 shadow-[0_20px_50px_rgba(0,0,0,0.4)] rounded-[2.5rem] bg-transparent backdrop-blur-2xl">
+                <InboxContent onClose={() => setIsOpen(false)} />
+            </DialogContent>
+        </Dialog>
     )
 }
 
@@ -131,7 +135,7 @@ function ProfileHub() {
                         </Avatar>
                         <div className="flex-1 min-w-0">
                             <p className="font-black text-lg truncate leading-tight">{currentUserData?.displayName || user.fullName}</p>
-                            <p className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-tighter">{user.primaryEmailAddress?.emailAddress}</p>
+                            <p className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-tighter">{currentUserData?.mindMateId || user.primaryEmailAddress?.emailAddress}</p>
                         </div>
                     </div>
                 </div>
@@ -251,7 +255,7 @@ export default function Header() {
                 </Popover>
 
                 <AdminCommandShield />
-                <Inbox />
+                <SovereignHub />
                 <ProfileHub />
             </div>
         </SignedIn>

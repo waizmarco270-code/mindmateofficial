@@ -10,7 +10,7 @@ import { format } from 'date-fns';
 import { 
     Mail, ArrowRight, Megaphone, ShieldCheck, 
     Gift, Trophy, Settings, Maximize2, BellRing, History, 
-    MessageSquare, CheckCircle, XCircle, Sparkles, BrainCircuit
+    MessageSquare, CheckCircle, XCircle, Sparkles, BrainCircuit, X
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -25,11 +25,12 @@ import Link from 'next/link';
 
 interface InboxContentProps {
     isMini?: boolean;
+    onClose?: () => void;
 }
 
 type NotificationType = 'all' | 'missions' | 'allies' | 'archives';
 
-export function InboxContent({ isMini = false }: InboxContentProps) {
+export function InboxContent({ isMini = false, onClose }: InboxContentProps) {
     const { announcements } = useAnnouncements();
     const { 
         hasUnreadAnnouncements, hasUnreadFriendRequests, 
@@ -39,7 +40,6 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
     const { notificationPermission, requestPermission } = useFCM();
     const { toast } = useToast();
     
-    const [activeTab, setActiveTab] = useState<NotificationType>('all');
     const [searchTerm, setSearchTerm] = useState('');
 
     const handleAccept = async (request: FriendRequest) => {
@@ -74,8 +74,16 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
         );
     }, [announcements, searchTerm]);
 
+    const handleCheckMissions = () => {
+        if (hasUnreadAnnouncements) markAnnouncementsAsRead();
+    };
+
+    const handleCheckAllies = () => {
+        if (hasUnreadFriendRequests) markFriendRequestsAsRead();
+    };
+
     return (
-        <div className="flex flex-col h-full bg-background/50">
+        <div className="flex flex-col h-full bg-background/50 relative">
             {/* Inbox Header */}
             <div className={cn(
                 "p-6 border-b flex flex-col gap-4 bg-primary/5",
@@ -87,23 +95,20 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
                             <Mail className="h-6 w-6" />
                         </div>
                         <div>
-                            <h4 className="font-black text-xl tracking-tight uppercase">SOVEREIGN HUB</h4>
-                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">System: Active Relay</p>
+                            <h4 className="font-black text-xl tracking-tight uppercase italic">SOVEREIGN HUB</h4>
+                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest opacity-60">Mainframe Intelligence Relay</p>
                         </div>
                     </div>
-                    {!isMini && (
-                        <div className="flex items-center gap-2">
-                            <Button variant="ghost" size="sm" onClick={() => toast({title: "Archive Purged"})} className="rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary/10">Clear Logs</Button>
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10"><Settings className="h-4 w-4"/></Button>
-                        </div>
-                    )}
-                    {isMini && (
-                        <Link href="/dashboard/inbox" onClick={() => { if(hasUnreadAnnouncements) markAnnouncementsAsRead(); }}>
-                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/10">
-                                <Maximize2 className="h-4 w-4 text-primary" />
+                    <div className="flex items-center gap-2">
+                        {!isMini && (
+                            <Button variant="ghost" size="sm" onClick={() => { markAnnouncementsAsRead(); markFriendRequestsAsRead(); toast({title: "Pulse Stabilized"}); }} className="rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 border border-primary/10 px-4">Clear Pulse</Button>
+                        )}
+                        {onClose && (
+                            <Button variant="ghost" size="icon" className="rounded-full hover:bg-destructive/10 text-muted-foreground hover:text-destructive" onClick={onClose}>
+                                <X className="h-5 w-5" />
                             </Button>
-                        </Link>
-                    )}
+                        )}
+                    </div>
                 </div>
 
                 <div className="flex items-center justify-between p-4 rounded-3xl bg-background/80 border border-primary/10 shadow-inner">
@@ -125,61 +130,63 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
                 <div className="px-4 py-2 border-b bg-muted/20">
                     <TabsList className="grid w-full grid-cols-4 rounded-full h-11 bg-black/5 dark:bg-white/5 p-1 gap-1">
                         <TabsTrigger value="all" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white">All</TabsTrigger>
-                        <TabsTrigger value="missions" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white relative">
+                        <TabsTrigger value="missions" onClick={handleCheckMissions} className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white relative">
                             Missions
-                            {hasUnreadAnnouncements && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border-2 border-background shadow-sm"/>}
+                            {hasUnreadAnnouncements && <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse shadow-sm"/>}
                         </TabsTrigger>
-                        <TabsTrigger value="allies" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white relative">
+                        <TabsTrigger value="allies" onClick={handleCheckAllies} className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white relative">
                             Allies
-                            {(hasUnreadFriendRequests || friendRequests.length > 0) && <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-red-500 border-2 border-background shadow-sm"/>}
+                            {(hasUnreadFriendRequests || friendRequests.length > 0) && <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse shadow-sm"/>}
                         </TabsTrigger>
-                        <TabsTrigger value="archives" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white">Relay</TabsTrigger>
+                        <TabsTrigger value="archives" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white">Archives</TabsTrigger>
                     </TabsList>
                 </div>
 
                 <ScrollArea className="flex-1">
                     <div className={cn("p-4 space-y-6", !isMini && "p-8 max-w-4xl mx-auto")}>
                         <TabsContent value="all" className="m-0 space-y-6">
-                            <AnnouncementsList announcements={filteredAnnouncements} isMini={isMini} />
+                            <AnnouncementsList announcements={filteredAnnouncements} isMini={isMini} onCheck={handleCheckMissions} />
                             <FriendRequestsList requests={friendRequests} onAccept={handleAccept} onDecline={handleDecline} isMini={isMini} />
                         </TabsContent>
                         
                         <TabsContent value="missions" className="m-0 space-y-6">
-                            <AnnouncementsList announcements={filteredAnnouncements} isMini={isMini} />
+                            <AnnouncementsList announcements={filteredAnnouncements} isMini={isMini} onCheck={handleCheckMissions} />
                         </TabsContent>
                         
                         <TabsContent value="allies" className="m-0 space-y-6">
                             <FriendRequestsList requests={friendRequests} onAccept={handleAccept} onDecline={handleDecline} isMini={isMini} />
                             <div className="pt-4">
-                                <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4 px-1">Your Active Network</h5>
-                                <div className="space-y-2">
+                                <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4 px-1 flex items-center gap-2">
+                                    <Users className="h-3 w-3"/> Your Network
+                                </h5>
+                                <div className="space-y-2 pb-10">
                                     {friends.map(friend => (
-                                        <div key={friend.uid} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 border border-white/5">
+                                        <div key={friend.uid} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 border border-white/5 group hover:border-primary/20 transition-all">
                                             <Avatar className="h-10 w-10 border border-primary/10">
                                                 <AvatarImage src={friend.photoURL}/>
                                                 <AvatarFallback>{friend.displayName.charAt(0)}</AvatarFallback>
                                             </Avatar>
-                                            <div className="flex-1">
+                                            <div className="flex-1 min-w-0">
                                                 <p className="font-bold text-sm">{friend.displayName}</p>
-                                                <p className="text-[10px] text-muted-foreground font-bold uppercase">Alliance Member</p>
+                                                <p className="text-[9px] text-muted-foreground font-black uppercase tracking-widest">{friend.mindMateId || 'LEGEND'}</p>
                                             </div>
-                                            <Link href="/dashboard/social" onClick={() => isMini && markFriendRequestsAsRead()}>
-                                                <Button size="icon" variant="ghost" className="rounded-full"><ArrowRight className="h-4 w-4"/></Button>
+                                            <Link href="/dashboard/social" onClick={() => { if(isMini) markFriendRequestsAsRead(); if(onClose) onClose(); }}>
+                                                <Button size="icon" variant="ghost" className="rounded-full opacity-0 group-hover:opacity-100 transition-opacity"><ArrowRight className="h-4 w-4"/></Button>
                                             </Link>
                                         </div>
                                     ))}
-                                    {friends.length === 0 && <p className="text-center text-[10px] text-muted-foreground font-black uppercase py-8 opacity-40">No allies found</p>}
+                                    {friends.length === 0 && <p className="text-center text-[10px] text-muted-foreground font-black uppercase py-8 opacity-40">Network Offline</p>}
                                 </div>
                             </div>
                         </TabsContent>
                         
                         <TabsContent value="archives" className="m-0">
                             <div className="flex flex-col items-center justify-center py-24 text-muted-foreground opacity-40">
-                                <div className="p-6 rounded-full bg-muted mb-4">
+                                <div className="p-6 rounded-[2rem] bg-muted mb-4 border border-dashed border-primary/20">
                                     <BellRing className="h-12 w-12" />
                                 </div>
-                                <p className="text-xs font-black uppercase tracking-[0.2em]">Notification Logs Clear</p>
-                                <p className="text-[10px] mt-1 text-center">ONLY SYSTEM CRITICAL BRIEFINGS ARE DISPLAYED</p>
+                                <p className="text-xs font-black uppercase tracking-[0.2em]">Relay Archive Clean</p>
+                                <p className="text-[10px] mt-1 text-center font-bold">ALL HISTORICAL MISSIONS HAVE BEEN LOGGED</p>
                             </div>
                         </TabsContent>
                     </div>
@@ -189,19 +196,19 @@ export function InboxContent({ isMini = false }: InboxContentProps) {
     );
 }
 
-function AnnouncementsList({ announcements, isMini }: { announcements: any[], isMini: boolean }) {
+function AnnouncementsList({ announcements, isMini, onCheck }: { announcements: any[], isMini: boolean, onCheck: () => void }) {
     if (announcements.length === 0) {
         return (
             <div className="text-center py-12 opacity-30">
                 <Megaphone className="h-12 w-12 mx-auto mb-2" />
-                <p className="text-xs font-black uppercase tracking-widest">No active missions</p>
+                <p className="text-xs font-black uppercase tracking-widest">No active briefings</p>
             </div>
         );
     }
 
     return (
         <div className="space-y-4">
-            {!isMini && <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-4 px-1">Global Intelligence Feed</h5>}
+            {!isMini && <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-4 px-1 flex items-center gap-2"><Sparkles className="h-3 w-3"/> Global Directive Feed</h5>}
             <AnimatePresence mode="popLayout">
                 {announcements.map((ann, i) => (
                     <motion.div 
@@ -211,10 +218,10 @@ function AnnouncementsList({ announcements, isMini }: { announcements: any[], is
                         transition={{ delay: i * 0.05 }}
                     >
                         <Card className={cn(
-                            "relative overflow-hidden group transition-all duration-500 hover:shadow-2xl border-primary/5",
+                            "relative overflow-hidden group transition-all duration-500 hover:shadow-2xl border-primary/5 rounded-3xl",
                             i === 0 ? "bg-gradient-to-br from-primary/10 via-background to-background border-primary/30 ring-1 ring-primary/10 shadow-xl" : "bg-card/50"
                         )}>
-                            {i === 0 && <div className="absolute top-0 right-0 p-3"><Sparkles className="h-5 w-5 text-primary animate-pulse"/></div>}
+                            {i === 0 && <div className="absolute top-0 right-0 p-3"><div className="h-2 w-2 rounded-full bg-red-500 animate-pulse shadow-[0_0_8px_#ef4444]"/></div>}
                             <CardContent className={cn("p-5 flex flex-col gap-4", isMini ? "p-4" : "p-8")}>
                                 <div className="flex gap-5">
                                     <div className={cn(
@@ -228,17 +235,16 @@ function AnnouncementsList({ announcements, isMini }: { announcements: any[], is
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-2">
                                             <h6 className={cn("font-black text-base uppercase tracking-tight truncate", i === 0 && "text-primary")}>{ann.title}</h6>
-                                            <span className="text-[9px] font-black uppercase opacity-40 whitespace-nowrap ml-3 bg-muted px-2 py-0.5 rounded-full">
+                                            <span className="text-[9px] font-black uppercase opacity-40 whitespace-nowrap ml-3 bg-muted px-2 py-0.5 rounded-full border border-white/5">
                                                 {format(ann.createdAt, 'MMM d')}
                                             </span>
                                         </div>
-                                        {/* Display Full Description as per User Blueprint */}
-                                        <p className="text-sm leading-relaxed text-foreground font-medium whitespace-pre-wrap">{ann.description}</p>
+                                        <p className="text-sm leading-relaxed text-foreground font-medium whitespace-pre-wrap opacity-90">{ann.description}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                                    <p className="text-[9px] font-black uppercase text-muted-foreground">Pulse Recorded: {format(ann.createdAt, 'HH:mm')}</p>
-                                    <Button variant="ghost" size="sm" className="h-7 text-[9px] font-black uppercase tracking-widest text-primary hover:bg-primary/5">Details</Button>
+                                    <p className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">Pulse: {format(ann.createdAt, 'HH:mm:ss')}</p>
+                                    <Button variant="ghost" size="sm" onClick={onCheck} className="h-7 text-[9px] font-black uppercase tracking-[0.2em] text-primary hover:bg-primary/10 rounded-full px-4 border border-transparent hover:border-primary/20">Checked</Button>
                                 </div>
                             </CardContent>
                         </Card>
@@ -254,9 +260,9 @@ function FriendRequestsList({ requests, onAccept, onDecline, isMini }: { request
 
     return (
         <div className="space-y-4">
-            {!isMini && <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/60 mb-4 px-1">Alliance Directives</h5>}
+            {!isMini && <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-emerald-500/60 mb-4 px-1 flex items-center gap-2"><CheckCircle className="h-3 w-3"/> New Alliances</h5>}
             {requests.map((req, i) => (
-                <Card key={req.id} className="bg-emerald-500/5 border-emerald-500/20 overflow-hidden relative group">
+                <Card key={req.id} className="bg-emerald-500/5 border-emerald-500/20 overflow-hidden relative group rounded-3xl">
                     <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-emerald-500 group-hover:w-2 transition-all duration-300" />
                     <CardContent className={cn("p-5 flex flex-col sm:flex-row items-center gap-5", isMini ? "p-4" : "p-8")}>
                         <div className="relative">
@@ -269,13 +275,13 @@ function FriendRequestsList({ requests, onAccept, onDecline, isMini }: { request
                         <div className="flex-1 text-center sm:text-left min-w-0">
                             <p className="font-black text-lg uppercase tracking-tight truncate">{req.sender.displayName}</p>
                             <p className="text-[10px] text-emerald-600/80 font-black uppercase tracking-[0.1em] mt-1 flex items-center justify-center sm:justify-start gap-2">
-                                <CheckCircle className="h-3 w-3"/> NEW ALLIANCE REQUESTED
+                                <CheckCircle className="h-3 w-3"/> UPLINK PENDING
                             </p>
                         </div>
                         <div className="flex items-center gap-3 w-full sm:w-auto">
                             <Button size="icon" variant="ghost" className="h-12 w-12 rounded-2xl text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20" onClick={() => onDecline(req)}><XCircle className="h-6 w-6"/></Button>
                             <Button size={isMini ? "icon" : "default"} className="h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-600 shadow-xl shadow-emerald-500/20 px-6" onClick={() => onAccept(req)}>
-                                {isMini ? <CheckCircle className="h-6 w-6"/> : <span className="font-black uppercase text-xs flex items-center gap-2 tracking-widest"><ShieldCheck className="h-5 w-5"/>Confirm Alliance</span>}
+                                {isMini ? <CheckCircle className="h-6 w-6"/> : <span className="font-black uppercase text-xs flex items-center gap-2 tracking-widest"><ShieldCheck className="h-5 w-5"/>Confirm</span>}
                             </Button>
                         </div>
                     </CardContent>

@@ -39,7 +39,9 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
         return allUsers.filter(u =>
             u.uid !== currentUser?.id && 
             !friends.some(f => f.uid === u.uid) &&
-            (u.displayName.toLowerCase().includes(discoverSearch.toLowerCase()) || u.uid === discoverSearch)
+            (u.displayName.toLowerCase().includes(discoverSearch.toLowerCase()) || 
+             u.mindMateId?.toLowerCase() === discoverSearch.toLowerCase() ||
+             u.uid === discoverSearch)
         ).slice(0, 5);
     }, [discoverSearch, allUsers, currentUser?.id, friends]);
 
@@ -97,7 +99,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                                 <div className="relative">
                                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                     <Input 
-                                        placeholder="Search name or UID..." 
+                                        placeholder="Search name or MM-ID..." 
                                         className="pl-9 h-12"
                                         value={discoverSearch}
                                         onChange={(e) => setDiscoverSearch(e.target.value)}
@@ -110,7 +112,7 @@ export function UserList({ onSelectFriend, selectedFriendId }: UserListProps) {
                                                 <Avatar><AvatarImage src={user.photoURL}/><AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback></Avatar>
                                                 <div>
                                                     <p className="font-bold text-sm">{user.displayName}</p>
-                                                    <p className="text-[10px] text-muted-foreground uppercase font-mono">{user.uid.slice(-8)}</p>
+                                                    <p className="text-[10px] text-muted-foreground uppercase font-mono">{user.mindMateId || user.uid.slice(-8)}</p>
                                                 </div>
                                             </div>
                                             {sentRequests.some(r => r.receiverId === user.uid) ? (

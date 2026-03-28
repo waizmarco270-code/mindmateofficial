@@ -44,9 +44,9 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
     
     const handleCopyId = () => {
         if (!user) return;
-        navigator.clipboard.writeText(user.uid || '');
+        navigator.clipboard.writeText(user.mindMateId || user.uid || '');
         setIsCopied(true);
-        toast({ title: "User ID copied!" });
+        toast({ title: "MindMate ID copied!" });
         setTimeout(() => setIsCopied(false), 2000);
     }
     
@@ -110,7 +110,7 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                     <div className="space-y-2">
                         <Label htmlFor="user-id" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">MindMate ID</Label>
                         <div className="flex items-center gap-2">
-                           <Input id="user-id" readOnly value={user.uid || ''} className="font-mono bg-muted/50 border-primary/10 h-11 text-xs sm:text-sm"/>
+                           <Input id="user-id" readOnly value={user.mindMateId || 'GENESIS...'} className="font-mono bg-muted/50 border-primary/10 h-11 text-xs sm:text-sm"/>
                            <Button size="icon" variant="outline" className="h-11 w-11 shrink-0" onClick={handleCopyId}>
                                 {isCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
                            </Button>

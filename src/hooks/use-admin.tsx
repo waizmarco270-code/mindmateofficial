@@ -23,6 +23,7 @@ export interface WalletTransaction {
 export interface User {
   id: string;
   uid: string;
+  mindMateId?: string; // New: MM-XXXXXX format
   displayName: string;
   email: string;
   photoURL?: string;
@@ -433,6 +434,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 const updates: any = {};
                 let hasUpdates = false;
 
+                // 1. MindMate ID Genesis
+                if (!data.mindMateId) {
+                    updates.mindMateId = `MM-${Math.floor(100000 + Math.random() * 900000)}`;
+                    hasUpdates = true;
+                }
+
+                // 2. Streak Maintenance
                 if (data.lastStreakCheck !== todayStr) {
                     const lastCheckDate = data.lastStreakCheck ? new Date(data.lastStreakCheck) : null;
                     const currentStreak = data.streak || 0;
@@ -462,7 +470,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 setCurrentUserData({ id: snap.id, ...data } as User);
             } else {
                 const newUser: User = {
-                    id: authUser.id, uid: authUser.id, displayName: authUser.fullName || authUser.username || 'New User',
+                    id: authUser.id, uid: authUser.id, 
+                    mindMateId: `MM-${Math.floor(100000 + Math.random() * 900000)}`,
+                    displayName: authUser.fullName || authUser.username || 'New User',
                     email: authUser.primaryEmailAddress?.emailAddress || '', photoURL: authUser.imageUrl, isBlocked: false,
                     isLeaderboardPrivate: false,
                     credits: 200, walletBalance: 0, isAdmin: false, isVip: false, isGM: false, isChallenger: false, isCoDev: false,
