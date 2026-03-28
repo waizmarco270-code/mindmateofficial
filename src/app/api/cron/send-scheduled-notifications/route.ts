@@ -4,21 +4,11 @@ import { adminDb, adminMessaging } from '@/lib/firebase-admin';
 import { Timestamp } from 'firebase-admin/firestore';
 import * as admin from 'firebase-admin';
 
-/**
- * Force this route to be dynamic so it doesn't fail during Vercel build
- */
 export const dynamic = 'force-dynamic';
 
-/**
- * CRON Job Handler
- * This route is triggered by an external cron service or the background heartbeat.
- */
 export async function GET(req: NextRequest) {
-  console.log('CRON: Heartbeat check for due notifications...');
-
   try {
     const now = Timestamp.now();
-    // Query for pending notifications that are due
     const pendingQuery = adminDb.collection('scheduledNotifications')
       .where('status', '==', 'pending')
       .where('scheduledAt', '<=', now);
@@ -29,14 +19,14 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ success: true, message: 'No pending notifications due.' });
     }
 
-    const appLogo = 'https://mindmateofficial.vercel.app/logo.jpg';
+    const SITE_URL = 'https://mindmate.emitygate.com';
+    const appLogo = `${SITE_URL}/logo.jpg`;
     let processedCount = 0;
 
     for (const doc of snapshot.docs) {
       const notif = doc.data();
       let tokens: string[] = [];
 
-      // Identify targets
       if (notif.target === 'all') {
         const tokensSnap = await adminDb.collection('fcmTokens').get();
         tokens = tokensSnap.docs.map(t => t.data().token).filter(Boolean);
@@ -64,7 +54,7 @@ export async function GET(req: NextRequest) {
                         image: notif.imageUrl || undefined,
                     },
                     fcmOptions: {
-                        link: notif.linkUrl || 'https://mindmateofficial.vercel.app/dashboard'
+                        link: notif.linkUrl ? `${SITE_URL}${notif.linkUrl}` : `${SITE_URL}/dashboard`
                     }
                 },
                 tokens,
@@ -73,14 +63,12 @@ export async function GET(req: NextRequest) {
             const response = await adminMessaging.sendEachForMulticast(messagePayload);
             const summary = `${response.successCount} sent, ${response.failureCount} failed`;
             
-            // Mark as sent and record summary
             await doc.ref.update({ 
                 status: 'sent', 
                 sentAt: Timestamp.now(),
                 dispatchSummary: summary 
             });
 
-            // Add to history
             await adminDb.collection('sentNotifications').add({
                 ...notif,
                 sentAt: Timestamp.now(),

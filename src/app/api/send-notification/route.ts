@@ -18,8 +18,9 @@ export async function POST(req: NextRequest) {
     }
 
     const target = userId ? `user:${userId}` : 'all';
-    // Use absolute URL for the logo if possible, but relative works with a proper SW
-    const appLogo = '/logo.jpg';
+    // Sovereign Branding URL
+    const SITE_URL = 'https://mindmate.emitygate.com';
+    const appLogo = `${SITE_URL}/logo.jpg`;
 
     // Handle scheduled notifications
     if (scheduledAt) {
@@ -54,11 +55,6 @@ export async function POST(req: NextRequest) {
     }
 
     if (tokens.length === 0) {
-      console.log(`Dispatch: No active tokens found for target: ${target}`);
-      await adminDb.collection('sentNotifications').add({ 
-          title, message, imageUrl: imageUrl || null, linkUrl: linkUrl || null, 
-          sentAt: Timestamp.now(), status: 'Completed', dispatchSummary: '0 sent (no active subscribers)', target 
-      });
       return NextResponse.json({ success: true, title: "No Subscribers", message: 'Alert saved but not dispatched - no active legends found.' });
     }
 
@@ -77,12 +73,12 @@ export async function POST(req: NextRequest) {
       webpush: {
         notification: {
           icon: appLogo,
-          badge: appLogo,
+          badge: appLogo, // For Android status bar
           image: imageUrl || undefined,
           requireInteraction: true,
         },
         fcmOptions: {
-          link: linkUrl || '/dashboard'
+          link: linkUrl ? `${SITE_URL}${linkUrl}` : `${SITE_URL}/dashboard`
         }
       },
       tokens,
@@ -91,8 +87,6 @@ export async function POST(req: NextRequest) {
     const response = await adminMessaging.sendEachForMulticast(messagePayload);
     const dispatchSummary = `${response.successCount} sent, ${response.failureCount} failed`;
     
-    console.log(`FCM Multicast Result: ${dispatchSummary}`);
-
     await adminDb.collection('sentNotifications').add({ 
         title, 
         message, 
