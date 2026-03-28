@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -21,6 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Label } from '@/components/ui/label';
+import NotificationsTab from '@/components/settings/Notifications';
 
 const THEME_COST = 50;
 
@@ -50,7 +51,7 @@ function AppearanceSettings() {
         }
         try {
             await unlockThemeForUser(user.id, themeToUnlock.id, THEME_COST);
-            setTheme(themeToUnlock.id); // Apply the new theme immediately
+            setTheme(themeToUnlock.id); 
             toast({ title: `Theme "${themeToUnlock.name}" Unlocked!` });
             setThemeToUnlock(null);
         } catch (error: any) {
@@ -173,7 +174,7 @@ function AccountSettings() {
                                     width: '100%',
                                 },
                                 scrollBox: {
-                                    padding: '1.5rem' // Corresponds to p-6
+                                    padding: '1.5rem' 
                                 },
                                 navbar: {
                                     padding: '1.5rem',
@@ -194,164 +195,6 @@ function AccountSettings() {
     );
 }
 
-function AppControls() {
-    const { toast } = useToast();
-    const handleHardRefresh = () => {
-        toast({
-            title: "Performing Hard Refresh",
-            description: "The application will now reload.",
-        });
-        setTimeout(() => {
-            window.location.reload();
-        }, 1500);
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>App Controls</CardTitle>
-                <CardDescription>Advanced controls for managing the application state.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive">
-                            <RefreshCw className="mr-2" />
-                            Hard Refresh
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will force a hard refresh of the application, clearing any cached data. This is useful if you are experiencing display issues.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleHardRefresh}>Yes, Refresh</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </CardContent>
-        </Card>
-    );
-}
-
-
-function AdminSettings() {
-    const { isSuperAdmin } = useAdmin();
-    return (
-         <Card>
-            <CardHeader>
-                <CardTitle>Admin Access</CardTitle>
-                <CardDescription>Access administrative panels.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <Link href="/dashboard/admin" className="block">
-                    <Card className="hover:bg-muted transition-colors">
-                        <CardHeader className="flex-row items-center gap-4">
-                            <Shield className="h-8 w-8 text-primary"/>
-                            <div>
-                                <CardTitle className="text-lg">Admin Panel</CardTitle>
-                                <CardDescription>Manage application content and users.</CardDescription>
-                            </div>
-                        </CardHeader>
-                    </Card>
-                </Link>
-                {isSuperAdmin && (
-                    <Link href="/waizmarcoadmin" className="block">
-                        <Card className="hover:bg-muted transition-colors border-amber-500/50">
-                            <CardHeader className="flex-row items-center gap-4">
-                                <KeyRound className="h-8 w-8 text-amber-500"/>
-                                <div>
-                                    <CardTitle className="text-lg">Super Admin Panel</CardTitle>
-                                    <CardDescription>Access root-level application controls.</CardDescription>
-                                </div>
-                            </CardHeader>
-                        </Card>
-                    </Link>
-                )}
-            </CardContent>
-        </Card>
-    );
-}
-
-
-const InfoRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
-    <div className="flex justify-between items-center border-b py-3">
-        <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        <p className="text-sm font-mono font-semibold text-right">{value || 'Not Set'}</p>
-    </div>
-);
-
-function DevExplorer() {
-    const { user: clerkUser, isLoaded, isSignedIn } = useUser();
-    const { session } = useClerk();
-    const { isAdmin, isSuperAdmin, currentUserData, appSettings, loading } = useAdmin();
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Dev Explorer</CardTitle>
-                <CardDescription>Live application state for debugging purposes.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base"><UserIcon/> Clerk Auth State</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <InfoRow label="Is Loaded" value={isLoaded ? 'true' : 'false'} />
-                            <InfoRow label="Is Signed In" value={isSignedIn ? 'true' : 'false'} />
-                            <InfoRow label="Clerk User ID" value={clerkUser?.id} />
-                            <InfoRow label="Session ID" value={session?.id} />
-                            <InfoRow label="Full Name" value={clerkUser?.fullName} />
-                            <InfoRow label="Primary Email" value={clerkUser?.primaryEmailAddress?.emailAddress} />
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base"><Fingerprint/> MindMate Profile</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <InfoRow label="Is Loading" value={loading ? 'true' : 'false'} />
-                            <InfoRow label="Firestore UID" value={currentUserData?.uid} />
-                            <InfoRow label="Display Name" value={currentUserData?.displayName} />
-                            <InfoRow label="Credits" value={String(currentUserData?.credits)} />
-                            <InfoRow label="Streak" value={String(currentUserData?.streak)} />
-                            <InfoRow label="Is Blocked" value={currentUserData?.isBlocked ? 'true' : 'false'} />
-                        </CardContent>
-                    </Card>
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base"><ShieldCheck/> Roles & Permissions</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <InfoRow label="Is Admin" value={isAdmin ? 'true' : 'false'} />
-                            <InfoRow label="Is Super Admin" value={isSuperAdmin ? 'true' : 'false'} />
-                            <InfoRow label="Is VIP" value={currentUserData?.isVip ? 'true' : 'false'} />
-                            <InfoRow label="Is Co-Dev" value={currentUserData?.isCoDev ? 'true' : 'false'} />
-                        </CardContent>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-base"><Server/> App Settings</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <InfoRow label="Marco AI Status" value={appSettings?.marcoAiLaunchStatus || 'loading...'} />
-                        </CardContent>
-                    </Card>
-                </div>
-            </CardContent>
-        </Card>
-    );
-}
-
 export default function SettingsPage() {
     const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
     const showAdminTab = isAdmin || isSuperAdmin;
@@ -367,19 +210,6 @@ export default function SettingsPage() {
                 <p className="text-muted-foreground">Manage your account, preferences, and app settings.</p>
             </div>
             
-            <Link href="/dashboard/whats-new">
-                <Card className="relative overflow-hidden border-primary/20 bg-primary/5 group cursor-pointer transition-transform hover:-translate-y-1">
-                    <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_70%)]"></div>
-                    <CardContent className="relative p-6 text-center">
-                        <p className="text-sm font-semibold text-primary/80">You are on the latest version!</p>
-                        <p className="text-5xl font-bold tracking-tighter text-shadow-glow animate-pulse" style={{"--tw-shadow-color": "hsl(var(--primary))"} as React.CSSProperties}>
-                            v1.5
-                        </p>
-                         <p className="text-sm font-semibold text-primary/80 group-hover:underline mt-2">Click to see what's new</p>
-                    </CardContent>
-                </Card>
-            </Link>
-
             <Tabs defaultValue="account" className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <TabsList className="md:col-span-1 flex flex-col h-auto bg-transparent p-0 border-r">
                     <TabsTrigger value="account" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><UserIcon className="mr-3"/> Account</TabsTrigger>
@@ -388,12 +218,6 @@ export default function SettingsPage() {
                      <TabsTrigger value="whats-new" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Megaphone className="mr-3"/> What's New</TabsTrigger>
                     <TabsTrigger value="rules" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Gavel className="mr-3"/> Rules & Regulations</TabsTrigger>
                     <TabsTrigger value="app-controls" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><RefreshCw className="mr-3"/> App Controls</TabsTrigger>
-                     {showAdminTab && (
-                        <TabsTrigger value="admin" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Shield className="mr-3"/> Admin</TabsTrigger>
-                    )}
-                    {showDevTab && (
-                        <TabsTrigger value="dev" className="w-full justify-start text-base py-3 px-4 rounded-r-none data-[state=active]:border-r-2 data-[state=active]:border-primary"><Fingerprint className="mr-3"/> Dev</TabsTrigger>
-                    )}
                 </TabsList>
                 
                 <div className="md:col-span-3">
@@ -431,23 +255,13 @@ export default function SettingsPage() {
                         </Card>
                     </TabsContent>
                      <TabsContent value="app-controls">
-                        <AppControls />
+                        <Card>
+                            <CardHeader><CardTitle>System Refresh</CardTitle><CardDescription>Force a hard refresh to clear cache and update components.</CardDescription></CardHeader>
+                            <CardContent><Button variant="destructive" onClick={() => window.location.reload()}><RefreshCw className="mr-2 h-4 w-4"/> Hard Refresh</Button></CardContent>
+                        </Card>
                     </TabsContent>
-                    {showAdminTab && (
-                        <TabsContent value="admin">
-                            <AdminSettings />
-                        </TabsContent>
-                    )}
-                    {showDevTab && (
-                        <TabsContent value="dev">
-                            <DevExplorer />
-                        </TabsContent>
-                    )}
                 </div>
             </Tabs>
         </div>
     );
 }
-
-// Dummy Label to satisfy the compiler for the nested component
-const Label = ({ children, ...props }: React.ComponentProps<'label'>) => <label {...props}>{children}</label>;

@@ -6,10 +6,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAdmin } from '@/hooks/use-admin';
 import { useImmersive } from '@/hooks/use-immersive';
 import { Loader2, ArrowLeft, ChevronsRight, MonitorPlay, BookOpen, ShieldCheck, Zap } from 'lucide-react';
+import { CardFooter } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export default function GuideDetailPage() {
     const { setIsImmersive } = useImmersive();
@@ -93,7 +94,7 @@ export default function GuideDetailPage() {
                     <ShieldCheck className="h-5 w-5 text-primary opacity-50" />
                 </div>
 
-                <ScrollArea className="flex-1">
+                <SimpleScrollArea className="flex-1">
                     <div className="p-8 space-y-8">
                         <motion.div 
                             initial={{ opacity: 0, x: 20 }}
@@ -127,7 +128,7 @@ export default function GuideDetailPage() {
                             </ul>
                         </div>
                     </div>
-                </ScrollArea>
+                </SimpleScrollArea>
 
                 {nextGuide && (
                     <div className="p-6 border-t border-primary/10 bg-primary/5">
@@ -144,6 +145,6 @@ export default function GuideDetailPage() {
     );
 }
 
-function ScrollArea({ children, className }: { children: React.ReactNode, className?: string }) {
+function SimpleScrollArea({ children, className }: { children: React.ReactNode, className?: string }) {
     return <div className={cn("overflow-y-auto", className)}>{children}</div>;
 }

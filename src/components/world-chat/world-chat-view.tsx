@@ -146,7 +146,8 @@ export function WorldChatView() {
         setPollOptions(['', '']);
     };
     
-    const usersMap = new Map(allUsers.map(u => [u.uid, u]));
+    const usersMap = useMemo(() => new Map(allUsers.map(u => [u.uid, u])), [allUsers]);
+    
     const getTypingText = () => {
         if (typingUsers.length === 0) return null;
         if (typingUsers.length === 1) return `${typingUsers[0].displayName} is typing...`;
@@ -404,7 +405,7 @@ export function WorldChatView() {
 }
 
 function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply, onClaimRain }: { message: WorldChatMessage, sender: User, isOwn: boolean, showHeader: boolean, onUserSelect: (user: User) => void, onReply: (message: WorldChatMessage) => void, onClaimRain: () => void }) {
-    const { isAdmin, isSuperAdmin, editMessage, deleteMessage, toggleReaction, pinMessage, toggleNugget, submitPollVote } = useWorldChat();
+    const { isAdmin, isSuperAdmin, editMessage, deleteMessage, pinMessage, toggleNugget, submitPollVote } = useWorldChat();
     const { user: currentUser } = useUser();
     const [isEditing, setIsEditing] = useState(false);
     const [editText, setEditText] = useState(message.text || '');

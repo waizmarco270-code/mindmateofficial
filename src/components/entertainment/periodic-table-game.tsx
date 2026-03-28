@@ -14,7 +14,7 @@ import { useImmersive } from '@/hooks/use-immersive';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { useUsers } from '@/hooks/use-admin';
 
-interface Element {
+interface PeriodicElement {
     atomicNumber: number;
     symbol: string;
     name: string;
@@ -29,11 +29,10 @@ interface Element {
     category: string;
 }
 
-const allElements = periodicTableData.elements as Element[];
+const allElements = periodicTableData.elements as PeriodicElement[];
 const MAX_LIVES = 3;
 
-// Max time in seconds for 100% efficient completion. Anything over this gets a diminishing score.
-const MAX_TIME_LIMITS: Record<Element['block'], number> = { s: 60, p: 240, d: 300, f: 360 };
+const MAX_TIME_LIMITS: Record<PeriodicElement['block'], number> = { s: 60, p: 240, d: 300, f: 360 };
 
 const categoryColors: Record<string, string> = {
     'alkali metal': 'from-red-500 to-red-700 border-red-400',
@@ -51,7 +50,7 @@ const categoryColors: Record<string, string> = {
 
 
 interface GameProps {
-    blockToPlay: Element['block'];
+    blockToPlay: PeriodicElement['block'];
     mode: 'challenge' | 'learn' | 'practice';
 }
 
@@ -61,12 +60,12 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
     const { toast } = useToast();
     const { setIsImmersive } = useImmersive();
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [selectedElement, setSelectedElement] = useState<Element | null>(null);
+    const [selectedElement, setSelectedElement] = useState<PeriodicElement | null>(null);
 
     const [gameState, setGameState] = useState<'playing' | 'gameOver'>('playing');
-    const [elementsToPlace, setElementsToPlace] = useState<Element[]>([]);
-    const [currentElement, setCurrentElement] = useState<Element | null>(null);
-    const [placedElements, setPlacedElements] = useState<Record<number, Element>>({});
+    const [elementsToPlace, setElementsToPlace] = useState<PeriodicElement[]>([]);
+    const [currentElement, setCurrentElement] = useState<PeriodicElement | null>(null);
+    const [placedElements, setPlacedElements] = useState<Record<number, PeriodicElement>>({});
     const [lives, setLives] = useState(MAX_LIVES);
     const [finalScore, setFinalScore] = useState(0);
     const [elapsedTime, setElapsedTime] = useState(0);
@@ -80,18 +79,18 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
     const { blockElements, gridTemplate, gridStyles } = useMemo(() => {
         const elements = allElements.filter(e => {
             if (blockToPlay === 'f') return e.category === 'lanthanide' || e.category === 'actinide';
-            if (e.block === 's' && e.atomicNumber === 2 && blockToPlay === 's') return true; // Include Helium in S-block game
+            if (e.block === 's' && e.atomicNumber === 2 && blockToPlay === 's') return true; 
             return e.block === blockToPlay && e.category !== 'lanthanide' && e.category !== 'actinide';
         });
         
-        let gridRows: (Element | null)[][] = [];
+        let gridRows: (PeriodicElement | null)[][] = [];
         let styles = {};
 
          if (blockToPlay === 's') {
             styles = { gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' };
             gridRows = Array.from({ length: 7 }, () => Array(2).fill(null));
             elements.forEach(el => {
-                const groupIndex = el.group === 18 ? 1 : el.group - 1; // Helium case
+                const groupIndex = el.group === 18 ? 1 : el.group - 1; 
                 if (el.period >= 1 && el.period <= 7 && groupIndex >= 0 && groupIndex <= 1) {
                     gridRows[el.period - 1][groupIndex] = el;
                 }
@@ -181,7 +180,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
         startGame();
     }, [startGame]);
 
-    const handleCellClick = (element: Element | null) => {
+    const handleCellClick = (element: PeriodicElement | null) => {
         if (mode === 'learn') {
             if(element) setSelectedElement(element);
             return;
@@ -202,7 +201,6 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
                  stopTimer();
                  setGameState('gameOver');
                  const maxTime = MAX_TIME_LIMITS[blockToPlay];
-                 // Score decreases linearly. Finishes in 0s = 100. Finishes at maxTime = 1. Finishes after maxTime = 1.
                  const calculatedScore = Math.max(1, Math.round(100 * (1 - (elapsedTime / maxTime))));
                  setFinalScore(calculatedScore);
                  if(user) updateElementQuestScore(user.id, blockToPlay, calculatedScore);
@@ -223,7 +221,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
         }
     };
     
-    const renderGridCell = (element: Element | null, cellIndex: number) => {
+    const renderGridCell = (element: PeriodicElement | null, cellIndex: number) => {
         const isPlaced = element && (placedElements[element.atomicNumber] || mode === 'learn');
         const categoryClass = isPlaced ? categoryColors[element.category] || categoryColors.unknown : '';
 
@@ -266,7 +264,7 @@ export function PeriodicTableGame({ blockToPlay, mode }: GameProps) {
 
 
     return (
-        <div ref={gameContainerRef} className="space-y-4 p-4 bg-background">
+        <div className="space-y-4 p-4 bg-background">
             <Dialog open={!!selectedElement} onOpenChange={() => setSelectedElement(null)}>
                 <DialogContent className="max-w-md">
                     {selectedElement && (

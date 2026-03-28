@@ -32,7 +32,7 @@ import {
   Crown,
   HelpCircle,
   Info,
-  Map,
+  Map as MapIcon,
   Bot,
   Megaphone,
   Fingerprint,
@@ -56,7 +56,7 @@ import { Button } from '../ui/button';
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
   { href: '/dashboard/guide', icon: Book, label: 'App Guide', glow: 'text-emerald-400' },
-  { href: '/dashboard/roadmap', icon: Map, label: 'Roadmap', glow: 'text-orange-400' },
+  { href: '/dashboard/roadmap', icon: MapIcon, label: 'Roadmap', glow: 'text-orange-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-purple-400' },
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },

@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { useAdmin } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Search, Sparkles, Zap, Map, Users, Gem, ShieldCheck, Play, ArrowRight, Book, Loader2 } from 'lucide-react';
+import { BookOpen, Search, Sparkles, Zap, Map as MapIcon, Users, Gem, ShieldCheck, Play, ArrowRight, Book, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import Link from 'next/link';
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 
 const iconMap: Record<string, any> = {
     'Focus & Study': Zap,
-    'Nexus & Tasks': Map,
+    'Nexus & Tasks': MapIcon,
     'Social & Clans': Users,
     'Economy & Rewards': Gem,
     'System & Rules': ShieldCheck,
