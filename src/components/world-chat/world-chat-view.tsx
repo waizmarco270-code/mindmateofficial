@@ -5,9 +5,15 @@ import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card'
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, Vote, Megaphone, BellRing, Lock, Unlock, Trash, Clock, ShieldAlert, ExternalLink, CheckCircle } from 'lucide-react';
+import { 
+    Send, Globe, Loader2, Code, Crown, ShieldCheck, Gamepad2, 
+    Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, 
+    Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, 
+    Vote, Megaphone, BellRing, Lock, Unlock, Trash, Clock, 
+    ShieldAlert, ExternalLink, CheckCircle, Bird, Moon
+} from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
-import { useAdmin, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
+import { useAdmin, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
@@ -36,6 +42,18 @@ const getUserColor = (userId: string) => {
         hash = userId.charCodeAt(i) + ((hash << 5) - hash);
     }
     return userColors[Math.abs(hash) % userColors.length];
+};
+
+const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
+    dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
+    admin: { name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+    vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+    gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+    challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
+    'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> },
+    'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span> },
+    'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span> },
+    'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> }
 };
 
 function SmartText({ text }: { text?: string }) {
@@ -111,7 +129,7 @@ export function WorldChatView() {
             const amt = parseInt(parts[1]);
             const clm = parseInt(parts[2]);
             if (!isNaN(amt) && !isNaN(clm)) {
-                await sendMessage(newMessage); // The hook handles the /rain check
+                await sendMessage(newMessage); 
                 setNewMessage('');
                 return;
             }
@@ -413,7 +431,7 @@ export function WorldChatView() {
             </Dialog>
 
             <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-                <DialogContent className="max-w-md p-0 overflow-hidden border-0">
+                <DialogContent className="max-w-md p-0 overflow-hidden border-0 max-h-[90vh] overflow-y-auto">
                     {selectedUser && <UserProfileCard user={selectedUser} />}
                 </DialogContent>
             </Dialog>
@@ -436,6 +454,22 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
     const alphaExpiry = sender.inventory?.alphaGlowExpires ? new Date(sender.inventory.alphaGlowExpires) : null;
     const hasGlow = alphaExpiry && alphaExpiry > new Date();
     const isNugget = (message.nuggetMarkedBy?.length || 0) > 0;
+
+    const ownedBadges = [
+        (sender.uid === SUPER_ADMIN_UID) && 'dev',
+        (sender.isCoDev) && 'co-dev',
+        (sender.isAdmin) && 'admin',
+        (sender.isVip) && 'vip',
+        (sender.isGM) && 'gm',
+        (sender.isChallenger) && 'challenger',
+        (sender.isEarlyBird) && 'early-bird',
+        (sender.isNightOwl) && 'night-owl',
+        (sender.isKnowledgeKnight) && 'knowledge-knight',
+    ].filter(Boolean) as BadgeType[];
+
+    const showcasedBadge = sender.showcasedBadge && ownedBadges.includes(sender.showcasedBadge) 
+        ? badgeDetails[sender.showcasedBadge]?.badge 
+        : (ownedBadges.length > 0 ? badgeDetails[ownedBadges[0]]?.badge : null);
 
     const renderPoll = () => {
         if (!message.pollData) return null;
@@ -531,7 +565,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                     </CardContent>
                     {(isAdmin || isSuperAdmin) && (
                         <div className="bg-muted/30 p-2 flex justify-end">
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-full hover:bg-destructive/10" onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}>
                                 <Trash2 className="h-4 w-4"/>
                             </Button>
                         </div>
@@ -559,9 +593,14 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                             isNugget && "border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]"
                         )}>
                             {showHeader && !isOwn && (
-                                <p className={cn("text-[11px] font-black mb-1", getUserColor(sender.uid))}>
-                                    {sender.displayName}
-                                </p>
+                                <div className="flex items-center gap-2 mb-1">
+                                    <p className={cn("text-[11px] font-black truncate max-w-[100px]", getUserColor(sender.uid))}>
+                                        {sender.displayName}
+                                    </p>
+                                    <div className="scale-75 origin-left">
+                                        {showcasedBadge}
+                                    </div>
+                                </div>
                             )}
                             
                             {message.replyingTo && (

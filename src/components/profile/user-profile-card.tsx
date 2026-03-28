@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -84,20 +85,20 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
     ];
     
     return (
-        <div className="space-y-6">
-            <Card className="relative overflow-hidden">
+        <div className="space-y-6 w-full max-w-full">
+            <Card className="relative overflow-hidden w-full">
                 <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white:10%,transparent:90%)]" />
-                <CardHeader className="relative z-10">
-                    <div className="flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
-                        <div className="relative group">
+                <CardHeader className="relative z-10 p-4 sm:p-6">
+                    <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
+                        <div className="relative group shrink-0">
                             <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-full blur opacity-40 group-hover:opacity-100 transition duration-1000" />
-                            <Avatar className="h-24 w-24 border-2 border-primary relative bg-background">
+                            <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-primary relative bg-background">
                                 <AvatarImage src={user.photoURL} />
                                 <AvatarFallback className="text-3xl">{user.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
                         </div>
-                        <div className="flex-1">
-                            <CardTitle className="text-4xl font-black tracking-tight">{user.displayName}</CardTitle>
+                        <div className="flex-1 min-w-0">
+                            <CardTitle className="text-2xl sm:text-4xl font-black tracking-tight truncate">{user.displayName}</CardTitle>
                             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
                                 {showcasedBadge ? showcasedBadge.badge : <Badge variant="outline" className="font-bold">STUDENT</Badge>}
                                 {hasMasterCard && <span className="master-card-badge"><CreditCard className="h-3 w-3"/> MASTER</span>}
@@ -105,12 +106,12 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                         </div>
                     </div>
                 </CardHeader>
-                <CardContent className="relative z-10">
+                <CardContent className="relative z-10 p-4 sm:p-6 pt-0">
                     <div className="space-y-2">
                         <Label htmlFor="user-id" className="font-bold text-xs uppercase tracking-widest text-muted-foreground">MindMate ID</Label>
                         <div className="flex items-center gap-2">
-                           <Input id="user-id" readOnly value={user.uid || ''} className="font-mono bg-muted/50 border-primary/10 h-12"/>
-                           <Button size="icon" variant="outline" className="h-12 w-12" onClick={handleCopyId}>
+                           <Input id="user-id" readOnly value={user.uid || ''} className="font-mono bg-muted/50 border-primary/10 h-11 text-xs sm:text-sm"/>
+                           <Button size="icon" variant="outline" className="h-11 w-11 shrink-0" onClick={handleCopyId}>
                                 {isCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
                            </Button>
                         </div>
@@ -118,12 +119,12 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                     {!isOwnProfile && authUser && (
                          <div className="mt-4">
                             {friends.some(f => f.uid === user.uid) ? (
-                                <Button className="w-full h-12 font-bold" disabled variant="secondary"> <UserCheck className="mr-2"/> Friends Forever</Button>
+                                <Button className="w-full h-11 font-bold" disabled variant="secondary"> <UserCheck className="mr-2 h-4 w-4"/> Friends Forever</Button>
                             ) : sentRequests.some(r => r.receiverId === user.uid) ? (
-                                 <Button className="w-full h-12 font-bold" disabled> <UserCheck className="mr-2"/> Ally Request Sent</Button>
+                                 <Button className="w-full h-11 font-bold" disabled> <UserCheck className="mr-2 h-4 w-4"/> Ally Request Sent</Button>
                             ) : (
-                                <Button className="w-full h-12 font-bold" onClick={() => sendFriendRequest(user.uid)}>
-                                    <UserPlus className="mr-2"/> Form Alliance
+                                <Button className="w-full h-11 font-bold" onClick={() => sendFriendRequest(user.uid)}>
+                                    <UserPlus className="mr-2 h-4 w-4"/> Form Alliance
                                 </Button>
                             )}
                         </div>
@@ -134,69 +135,69 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
             <Tabs defaultValue="stats" className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-4 bg-muted/50 p-1 rounded-xl border">
                     <TabsTrigger value="stats" className="rounded-lg font-bold">Statistics</TabsTrigger>
-                    <TabsTrigger value="inventory" className="rounded-lg font-bold">Nexus Artifacts</TabsTrigger>
+                    <TabsTrigger value="inventory" className="rounded-lg font-bold">Artifacts</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="stats" className="space-y-6">
                     {isOwnProfile && ownedBadges.length > 1 && (
                         <Card className="border-primary/20">
-                            <CardHeader className="pb-2">
+                            <CardHeader className="pb-2 p-4 sm:p-6">
                                 <CardTitle className="text-base font-bold">Showcase Badge</CardTitle>
                                 <CardDescription>Display your rank to the world.</CardDescription>
                             </CardHeader>
-                            <CardContent className="flex flex-wrap gap-3">
+                            <CardContent className="flex flex-wrap gap-2 p-4 sm:p-6 pt-0">
                                 {ownedBadges.map(b => (
-                                    <button key={b.type} onClick={() => setShowcaseBadge(user.uid, b.type)} className={cn("p-2 rounded-xl border-2 transition-all", user.showcasedBadge === b.type || (!user.showcasedBadge && b.type === (isSuperAdmin ? 'dev' : 'admin')) ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-muted')}>
-                                        {b.badge}
+                                    <button key={b.type} onClick={() => setShowcaseBadge(user.uid, b.type)} className={cn("p-1.5 rounded-xl border-2 transition-all", user.showcasedBadge === b.type || (!user.showcasedBadge && b.type === (isSuperAdmin ? 'dev' : 'admin')) ? 'border-primary bg-primary/10' : 'border-transparent hover:bg-muted')}>
+                                        <div className="scale-90">{b.badge}</div>
                                     </button>
                                 ))}
                             </CardContent>
                         </Card>
                     )}
 
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
                         {stats.map(stat => (
                             <Card key={stat.label} className="bg-gradient-to-br from-card to-muted/30">
-                                <CardHeader className="p-4 flex-row items-center justify-between pb-2">
-                                    <CardTitle className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</CardTitle>
-                                    <stat.icon className={cn("h-4 w-4", stat.color)} />
+                                <CardHeader className="p-3 sm:p-4 flex-row items-center justify-between pb-1">
+                                    <CardTitle className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-muted-foreground line-clamp-1">{stat.label}</CardTitle>
+                                    <stat.icon className={cn("h-3 w-3 sm:h-4 sm:w-4 shrink-0", stat.color)} />
                                 </CardHeader>
-                                <CardContent className="p-4 pt-0">
-                                    <div className="text-3xl font-black tracking-tighter">{stat.value}</div>
+                                <CardContent className="p-3 sm:p-4 pt-0">
+                                    <div className="text-xl sm:text-3xl font-black tracking-tighter">{stat.value}</div>
                                 </CardContent>
                             </Card>
                         ))}
-                        <Card className="col-span-2 md:col-span-1 bg-primary/5 border-primary/20">
-                            <CardHeader className="p-4 flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-xs font-bold uppercase tracking-widest text-primary">Focused Time</CardTitle>
-                                <Clock className="h-4 w-4 text-primary" />
+                        <Card className="col-span-2 bg-primary/5 border-primary/20">
+                            <CardHeader className="p-3 sm:p-4 flex-row items-center justify-between pb-1">
+                                <CardTitle className="text-[10px] sm:text-xs font-bold uppercase tracking-widest text-primary">Focused Time</CardTitle>
+                                <Clock className="h-3 w-3 sm:h-4 sm:w-4 text-primary shrink-0" />
                             </CardHeader>
-                            <CardContent className="p-4 pt-0">
-                                <div className="text-3xl font-black tracking-tighter text-primary">{formatTotalStudyTime(user.totalStudyTime || 0)}</div>
+                            <CardContent className="p-3 sm:p-4 pt-0">
+                                <div className="text-xl sm:text-3xl font-black tracking-tighter text-primary">{formatTotalStudyTime(user.totalStudyTime || 0)}</div>
                             </CardContent>
                         </Card>
                     </div>
                 </TabsContent>
 
-                <TabsContent value="inventory">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                <TabsContent value="inventory" className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {artifacts.map((art, i) => (
                             <Card key={i} className="bg-muted/30 border-dashed border-2">
-                                <CardContent className="p-4 flex flex-col items-center text-center gap-2">
-                                    <div className={cn("p-3 rounded-2xl bg-background shadow-inner", art.color)}>
-                                        <art.icon className="h-8 w-8" />
+                                <CardContent className="p-3 sm:p-4 flex items-center gap-3">
+                                    <div className={cn("p-2 rounded-xl bg-background shadow-inner shrink-0", art.color)}>
+                                        <art.icon className="h-5 w-5 sm:h-6 sm:w-6" />
                                     </div>
-                                    <div>
-                                        <p className="font-black text-lg">{art.name}</p>
-                                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-wider">{art.desc}</p>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-black text-sm sm:text-base truncate">{art.name}</p>
+                                        <p className="text-[9px] sm:text-[10px] text-muted-foreground font-bold uppercase tracking-wider line-clamp-1">{art.desc}</p>
                                     </div>
-                                    <div className="mt-2">
+                                    <div className="shrink-0">
                                         {art.expiry ? (
-                                            <Badge variant={art.active ? "default" : "secondary"}>
-                                                {art.active ? `Expires: ${format(new Date(art.expiry), 'MMM d')}` : "Expired"}
+                                            <Badge variant={art.active ? "default" : "secondary"} className="text-[9px] px-1.5 py-0">
+                                                {art.active ? `Active` : "Expired"}
                                             </Badge>
                                         ) : (
-                                            <p className="text-2xl font-black text-primary">x{art.count}</p>
+                                            <p className="text-lg sm:text-xl font-black text-primary">x{art.count}</p>
                                         )}
                                     </div>
                                 </CardContent>
@@ -204,7 +205,7 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                         ))}
                     </div>
                     {isOwnProfile && (
-                        <Button asChild variant="outline" className="w-full mt-6 h-12 rounded-xl font-bold">
+                        <Button asChild variant="outline" className="w-full h-11 rounded-xl font-bold text-sm">
                             <Link href="/dashboard/store">Visit Nexus Emporium</Link>
                         </Button>
                     )}
