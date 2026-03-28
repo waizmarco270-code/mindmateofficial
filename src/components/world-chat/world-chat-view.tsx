@@ -45,7 +45,7 @@ function SmartText({ text }: { text?: string }) {
     const parts = text.split(urlRegex);
 
     return (
-        <p className="leading-relaxed select-text whitespace-pre-wrap">
+        <div className="leading-relaxed select-text whitespace-pre-wrap">
             {parts.map((part, i) => {
                 if (part.match(urlRegex)) {
                     return (
@@ -68,7 +68,7 @@ function SmartText({ text }: { text?: string }) {
                     </span>
                 ));
             })}
-        </p>
+        </div>
     );
 }
 
@@ -464,8 +464,49 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
         );
     }
 
-    // Special content wrapper to avoid Popover interception
-    const ContentWrapper = message.type === 'rain' ? 'div' : PopoverTrigger;
+    if (message.type === 'rain') {
+        return (
+            <div className={cn("flex w-full mb-4", isOwn ? "justify-end" : "justify-start")}>
+                <div className="p-6 text-center space-y-4 bg-gradient-to-br from-black via-red-950 to-red-900 rounded-3xl border-4 border-red-600/50 shadow-[0_0_30px_rgba(220,38,38,0.3)] overflow-hidden relative group/rain min-w-[280px] max-w-[320px]">
+                    <div className="absolute inset-0 bg-grid-slate-800/20 [mask-image:radial-gradient(white,transparent_70%)]" />
+                    <motion.div animate={{ opacity: [0.3, 0.6, 0.3] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-30" />
+                    
+                    <div className="relative">
+                        <motion.div animate={{ y: [0, 5, 0], scale: [1, 1.1, 1] }} transition={{ repeat: Infinity, duration: 1.5 }}>
+                            <CloudRain className="h-16 w-16 text-red-500 mx-auto drop-shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
+                        </motion.div>
+                        <Zap className="h-8 w-8 text-yellow-400 absolute -top-2 right-1/4 animate-flicker"/>
+                    </div>
+
+                    <div className="space-y-1">
+                        <p className="font-black text-white italic tracking-tighter text-4xl drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)] uppercase">CREDIT RAIN</p>
+                        <p className="text-[10px] text-red-400 font-black uppercase tracking-[0.3em] animate-pulse">Sovereign Malice Protocol</p>
+                    </div>
+
+                    <Button 
+                        size="lg" 
+                        onClick={onClaimRain} 
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-black text-xl rounded-2xl shadow-[0_5px_15px_rgba(220,38,38,0.4)] transition-all active:scale-95 h-16 border-b-4 border-red-900"
+                    >
+                        CLAIM {message.rainData?.amount} CREDITS
+                    </Button>
+
+                    <div className="flex flex-col gap-1.5 mt-2">
+                        <Progress value={(message.rainData?.claimedBy.length || 0) / (message.rainData?.maxClaims || 1) * 100} className="h-2 bg-black/40 border border-white/5" indicatorClassName="bg-red-500 shadow-[0_0_10px_#ef4444]" />
+                        <p className="text-[10px] text-red-200/70 font-black uppercase tracking-widest">{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims} HARVESTED</p>
+                    </div>
+
+                    {(isAdmin || isSuperAdmin) && (
+                        <div className="absolute top-2 right-2">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full bg-black/40 text-white/50 hover:text-red-500 transition-colors" onClick={() => deleteMessage(message.id)}>
+                                <Trash2 className="h-4 w-4"/>
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        );
+    }
 
     return (
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={cn("flex flex-col group", isOwn ? "items-end" : "items-start")}>
@@ -477,12 +518,12 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                 )}
                 
                 <Popover>
-                    <ContentWrapper asChild>
+                    <PopoverTrigger asChild>
                         <div className={cn(
                             "relative px-3 py-2 rounded-2xl shadow-sm text-sm cursor-pointer transition-all border-2 border-transparent",
                             isOwn ? "bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none" : "bg-white dark:bg-[#202c33] rounded-tl-none",
                             hasGlow ? "alpha-rainbow-border" : "",
-                            isNugget && "border-amber-400"
+                            isNugget && "border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]"
                         )}>
                             {showHeader && !isOwn && (
                                 <p className={cn("text-[11px] font-black mb-1", getUserColor(sender.uid))}>
@@ -497,33 +538,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                 </div>
                             )}
 
-                            {message.type === 'rain' ? (
-                                <div className="p-6 text-center space-y-4 bg-gradient-to-br from-blue-600 via-cyan-500 to-indigo-600 rounded-2xl border-4 border-white/20 shadow-2xl overflow-hidden relative group/rain">
-                                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover/rain:opacity-100 transition-opacity" />
-                                    <div className="relative">
-                                        <motion.div animate={{ y: [0, 5, 0] }} transition={{ repeat: Infinity, duration: 1 }}>
-                                            <CloudRain className="h-14 w-14 text-white mx-auto drop-shadow-lg" />
-                                        </motion.div>
-                                        <Zap className="h-6 w-6 text-yellow-300 absolute -top-2 right-1/4 animate-pulse"/>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="font-black text-white italic tracking-tighter text-3xl drop-shadow-md uppercase">CREDIT RAIN</p>
-                                        <p className="text-[10px] text-white/90 font-bold uppercase tracking-widest">Sovereign Atmospheric Anomaly</p>
-                                    </div>
-                                    <Button size="lg" onClick={(e) => { e.stopPropagation(); onClaimRain(); }} className="w-full bg-white text-blue-600 hover:bg-slate-100 font-black text-lg rounded-xl shadow-xl transition-all active:scale-95">
-                                        CLAIM {message.rainData?.amount} CREDITS
-                                    </Button>
-                                    <div className="flex flex-col gap-1">
-                                        <Progress value={(message.rainData?.claimedBy.length || 0) / (message.rainData?.maxClaims || 1) * 100} className="h-1.5 bg-black/20" indicatorClassName="bg-white" />
-                                        <p className="text-[9px] text-white/80 font-black uppercase tracking-tighter">{message.rainData?.claimedBy.length} / {message.rainData?.maxClaims} HARVESTED</p>
-                                    </div>
-                                    { (isAdmin || isSuperAdmin) && (
-                                        <div className="absolute top-2 right-2">
-                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-white/50 hover:text-white" onClick={(e) => { e.stopPropagation(); deleteMessage(message.id); }}><Trash2 className="h-3 w-3"/></Button>
-                                        </div>
-                                    )}
-                                </div>
-                            ) : message.type === 'poll' ? renderPoll() : isEditing ? (
+                            {message.type === 'poll' ? renderPoll() : isEditing ? (
                                 <div className="space-y-2">
                                     <textarea value={editText} onChange={(e) => setEditText(e.target.value)} className="w-full bg-transparent border-0 focus:ring-0 resize-none p-0 outline-none" rows={2}/>
                                     <div className="flex justify-end gap-2 text-[10px] font-bold"><button onClick={() => setIsEditing(false)}>CANCEL</button><button onClick={handleEditSave} className="text-emerald-500">SAVE</button></div>
@@ -537,7 +552,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                                 <span>{format(message.timestamp, 'h:mm a')}</span>
                             </div>
                         </div>
-                    </ContentWrapper>
+                    </PopoverTrigger>
                     <PopoverContent className="w-auto p-1 bg-slate-800 border-white/10 rounded-full flex gap-1 shadow-2xl">
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => onReply(message)} title="Reply"><Reply className="h-4 w-4"/></Button>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-white rounded-full" onClick={() => toggleNugget(message.id)} title="Wisdom Nugget"><Gem className={cn("h-4 w-4", isNugget && "text-amber-400")}/></Button>
