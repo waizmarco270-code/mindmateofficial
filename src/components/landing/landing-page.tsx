@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import {
     ArrowRight, Bot, Users, Zap, FileText, Award, 
     Gamepad2, ShieldCheck, Globe, Zap as FlashIcon,
     Sparkles, ChevronDown, Monitor as MonitorIcon, Rocket, BrainCircuit,
-    Star, Crown, CheckCircle2, Shield
+    Star, Crown, CheckCircle2, Shield, Quote, Code, Mail, GraduationCap
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
@@ -65,6 +66,27 @@ const features = [
     bgColor: 'bg-orange-900/20',
     border: 'border-orange-500/20'
   }
+];
+
+const testimonials = [
+    {
+        name: "Aryan Sharma",
+        rank: "Elite Member",
+        text: "The Focus Mode changed everything. I used to procrastinate for hours, but now the penalty system keeps me locked in. Highly recommended for JEE prep.",
+        avatar: "https://picsum.photos/seed/aryan/100"
+    },
+    {
+        name: "Jessica Patel",
+        rank: "Scholar",
+        text: "The AI briefing module is like having a private tutor 24/7. It explains complex biology concepts in seconds. Simply legendary.",
+        avatar: "https://picsum.photos/seed/jessica/100"
+    },
+    {
+        name: "Rahul Verma",
+        rank: "Clan Leader",
+        text: "MindMate isn't just an app; it's a movement. Building a study clan with my friends has made the grind actually fun.",
+        avatar: "https://picsum.photos/seed/rahul/100"
+    }
 ];
 
 const containerVariants = {
@@ -136,8 +158,8 @@ export function LandingPage() {
                 transition={{ delay: 0.4, duration: 0.8 }}
                 className="mx-auto mt-8 max-w-2xl text-lg md:text-2xl text-slate-400 font-medium leading-relaxed"
             >
-                The Sovereign Study Mainframe by <span className="text-white font-bold">EmityGate</span>. 
-                Intelligence meets discipline in the ultimate academic edifice.
+                MindMate is not just an app; it's a <span className="text-white font-bold">Cognitive Fortress</span>. 
+                Structure your study, track every second of focus, and conquer your destiny.
             </motion.p>
 
             <motion.div 
@@ -148,7 +170,7 @@ export function LandingPage() {
             >
                 <SignUpButton mode="modal">
                     <Button size="lg" className="group px-10 h-16 text-xl font-black rounded-2xl shadow-2xl shadow-primary/20 uppercase italic transition-all hover:scale-105 active:scale-95">
-                        Initialize Ascent
+                        Establish Uplink
                         <ArrowRight className="ml-2 h-6 w-6 transition-transform group-hover:translate-x-2" />
                     </Button>
                 </SignUpButton>
@@ -200,7 +222,7 @@ export function LandingPage() {
             >
               <h2 className="text-4xl font-black tracking-tight text-white sm:text-6xl uppercase italic">The Mainframe Modules</h2>
               <div className="h-1.5 w-24 bg-primary mx-auto mt-6 rounded-full shadow-[0_0_15px_hsl(var(--primary))]" />
-              <p className="mt-8 text-xl text-slate-400 font-medium">Engineered for peak cognitive output.</p>
+              <p className="mt-8 text-xl text-slate-400 font-medium">Engineered for peak cognitive output and academic dominance.</p>
             </motion.div>
 
             <motion.div 
@@ -258,6 +280,40 @@ export function LandingPage() {
             </div>
         </section>
 
+        {/* Testimonials Section */}
+        <section className="py-32 relative overflow-hidden bg-black/20">
+            <div className="container mx-auto px-4">
+                <div className="text-center mb-20 space-y-4">
+                    <div className="p-3 bg-primary/10 rounded-2xl w-fit mx-auto border border-primary/20">
+                        <Quote className="h-8 w-8 text-primary" />
+                    </div>
+                    <h2 className="text-4xl md:text-6xl font-black tracking-tight uppercase italic">Citizen Briefings</h2>
+                    <p className="text-slate-400 font-medium">Voices from the high-performing elite.</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {testimonials.map((t, i) => (
+                        <motion.div
+                            key={i}
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.1 }}
+                            className="p-8 rounded-[2.5rem] bg-white/5 border border-white/10 backdrop-blur-xl relative"
+                        >
+                            <div className="flex items-center gap-4 mb-6">
+                                <NextImage src={t.avatar} alt={t.name} width={60} height={60} className="rounded-2xl border-2 border-primary/30" />
+                                <div>
+                                    <p className="font-black text-lg uppercase tracking-tight">{t.name}</p>
+                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest">{t.rank}</p>
+                                </div>
+                            </div>
+                            <p className="text-slate-300 leading-relaxed italic">"{t.text}"</p>
+                        </motion.div>
+                    ))}
+                </div>
+            </div>
+        </section>
+
         {/* CTA Section */}
         <section className="py-40 relative">
             <div className="container mx-auto px-4 text-center relative z-10">
@@ -286,17 +342,16 @@ export function LandingPage() {
       {/* Compliance Footer */}
       <footer className="border-t border-white/5 bg-slate-950 py-20">
         <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12 text-center md:text-left">
                 <div className="space-y-6">
-                    <div className="flex items-center gap-2 font-bold text-2xl">
+                    <div className="flex items-center justify-center md:justify-start gap-2 font-bold text-2xl">
                         <div className="p-1 rounded-lg bg-primary/10">
                             <Logo className="h-8 w-8" />
                         </div>
                         <span className="tracking-tighter uppercase italic">MindMate</span>
                     </div>
                     <p className="text-sm text-slate-400 font-medium leading-relaxed">
-                        A flagship subsidiary of <span className="text-white font-bold">EmityGate Solutions</span>. 
-                        Defining the next epoch of intelligent learning ecosystems.
+                        The ultimate study mainframe engineered for dominance. A flagship subsidiary of <span className="text-white font-bold">EmityGate Solutions</span>.
                     </p>
                 </div>
                 <div>
@@ -317,8 +372,8 @@ export function LandingPage() {
                 </div>
                 <div>
                     <h4 className="font-black text-[10px] uppercase tracking-[0.3em] mb-8 text-primary">Cyber-Security</h4>
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10">
+                    <div className="flex flex-col gap-4 items-center md:items-start">
+                        <div className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/10 w-full max-w-[200px]">
                             <ShieldCheck className="h-5 w-5 text-emerald-500" />
                             <span className="text-[10px] font-bold uppercase tracking-widest text-slate-300">SECURE PORTAL v2.0</span>
                         </div>
