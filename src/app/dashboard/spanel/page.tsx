@@ -111,7 +111,7 @@ export default function GuideManagementPage() {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="cat-name">Section Name</Label>
-                            <Input id="cat-name" value={newVideoCategory} onChange={e => setNewVideoCategory(e.target.value)} placeholder="e.g. Focus mastery" />
+                            <Input id="cat-name" value={newVideoCategory} onChange={e => setNewVideoCategory(e.target.value)} placeholder="e.g. Focus Mastery" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="cat-desc">Context Summary</Label>
@@ -122,14 +122,21 @@ export default function GuideManagementPage() {
                         </Button>
                         <div className="pt-4 mt-4 border-t border-white/5">
                             <Table>
-                                <TableHeader><TableRow><TableHead>Section Name</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Section Name</TableHead>
+                                        <TableHead className="text-right">Actions</TableHead>
+                                    </TableRow>
+                                </TableHeader>
                                 <TableBody>
                                     {videoCategories && videoCategories.map(cat => (
                                         <TableRow key={cat.id}>
                                             <TableCell className="font-bold text-sm">{cat.name}</TableCell>
                                             <TableCell className="text-right">
                                                 <AlertDialog>
-                                                    <AlertDialogTrigger asChild><Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></Button></AlertDialogTrigger>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10"><Trash2 className="h-4 w-4"/></Button>
+                                                    </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>Delete this section?</AlertDialogTitle>
@@ -173,8 +180,14 @@ export default function GuideManagementPage() {
                         <div className="space-y-2">
                             <Label htmlFor="lec-cat">Target Section</Label>
                              <Select value={newVideoCategoryId} onValueChange={setNewVideoCategoryId}>
-                                <SelectTrigger id="lec-cat"><SelectValue placeholder="Select section..." /></SelectTrigger>
-                                <SelectContent>{videoCategories && videoCategories.map(cat => <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>)}</SelectContent>
+                                <SelectTrigger id="lec-cat">
+                                    <SelectValue placeholder="Select section..." />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {videoCategories && videoCategories.map(cat => (
+                                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                    ))}
+                                </SelectContent>
                             </Select>
                         </div>
                          <Button onClick={handleAddVideoLecture} disabled={isAddingLecture} className="w-full font-bold uppercase tracking-widest h-12">
@@ -190,7 +203,13 @@ export default function GuideManagementPage() {
                 </CardHeader>
                 <CardContent>
                     <Table>
-                        <TableHeader><TableRow><TableHead>Briefing Title</TableHead><TableHead>Target Section</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Briefing Title</TableHead>
+                                <TableHead>Target Section</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
                         <TableBody>
                             {videoLectures && videoLectures.map(lec => (
                                 <TableRow key={lec.id}>
@@ -215,7 +234,11 @@ export default function GuideManagementPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                            {videoLectures.length === 0 && <TableRow><TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic">No briefings recorded in the mainframe.</TableCell></TableRow>}
+                            {videoLectures.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center py-10 text-muted-foreground italic">No briefings recorded in the mainframe.</TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
                 </CardContent>

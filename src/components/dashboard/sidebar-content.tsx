@@ -116,7 +116,6 @@ export default function SidebarContent() {
   const isVip = currentUserData?.isVip || false;
   const isGM = currentUserData?.isGM || false;
   const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
-  const showDevLink = isSuperAdmin || currentUserData?.isCoDev;
   
   const isActive = (href: string) => {
     if (href === '/dashboard' && pathname === href) return true;

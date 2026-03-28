@@ -22,7 +22,6 @@ function Inbox() {
     return (
         <Popover onOpenChange={(open) => {
             if (open) {
-                // Only mark as read when user manually interacts with the popover
                 markAnnouncementsAsRead();
                 markFriendRequestsAsRead();
             }
@@ -68,8 +67,8 @@ function AdminCommandShield() {
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
-                    <ShieldCheck className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-500 hover:text-white transition-all shadow-sm">
+                    <ShieldCheck className="h-7 w-7" />
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-64 p-2 rounded-2xl shadow-2xl border-emerald-500/20">
@@ -115,7 +114,7 @@ function ProfileHub() {
         <Popover>
             <PopoverTrigger asChild>
                 <button className="relative group focus:outline-none focus:ring-0">
-                    <div className="rainbow-border-wrap">
+                    <div className="rainbow-border-wrap p-[2px]">
                         <Avatar className="h-12 w-12 border-2 border-background">
                             <AvatarImage src={user.imageUrl} />
                             <AvatarFallback><UserIcon /></AvatarFallback>
@@ -188,13 +187,14 @@ export default function Header() {
   const walletBalance = currentUserData?.walletBalance ?? 0;
   
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
+    <header className="sticky top-0 z-30 flex h-20 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-lg sm:px-6">
        <Button
         variant="ghost"
         size="icon"
         onClick={() => setOpenMobile(true)}
+        className="h-12 w-12"
       >
-        <PanelLeft className="h-6 w-6" />
+        <PanelLeft className="h-7 w-7" />
         <span className="sr-only">Toggle Menu</span>
       </Button>
 
@@ -211,19 +211,19 @@ export default function Header() {
         <SignedIn>
             <div className="flex items-center gap-2 md:gap-3">
                 <Link href="/dashboard/store">
-                    <Button variant="ghost" size="icon" className="h-11 w-11 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all group shadow-sm">
-                        <ShoppingCart className="h-5 w-5 animate-pulse group-hover:animate-none" />
+                    <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500 hover:text-white transition-all group shadow-sm">
+                        <ShoppingCart className="h-6 w-6 animate-pulse group-hover:animate-none" />
                     </Button>
                 </Link>
 
                 <Popover>
                     <PopoverTrigger asChild>
-                        <div className="flex cursor-pointer items-center gap-2 rounded-full bg-secondary hover:bg-secondary/80 px-4 py-2 text-sm font-bold transition-all border border-transparent hover:border-primary/20 shadow-sm">
-                            <Medal className="h-5 w-5 text-amber-500 animate-gold-shine" />
+                        <div className="flex cursor-pointer items-center gap-2 h-12 rounded-full bg-secondary hover:bg-secondary/80 px-5 py-2 text-base font-bold transition-all border border-transparent hover:border-primary/20 shadow-sm">
+                            <Medal className="h-6 w-6 text-amber-500 animate-gold-shine" />
                             <span>{credits}</span>
                         </div>
                     </PopoverTrigger>
-                    <PopoverContent className="w-72 p-0 overflow-hidden border-primary/20 shadow-2xl">
+                    <PopoverContent className="w-72 p-0 overflow-hidden border-primary/20 shadow-2xl rounded-2xl">
                         <div className="p-4 bg-gradient-to-br from-amber-500/10 to-primary/5 border-b border-white/5">
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">Your Treasury</p>
                             <div className="flex items-center justify-between">

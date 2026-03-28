@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map, Settings, Bird, Moon } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, Puzzle as PuzzleIcon, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map, Settings, Bird, Moon, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -27,7 +28,6 @@ import versionHistory from '@/app/lib/version-history.json';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { usePinnedPage } from '@/hooks/use-pinned-page';
 import { useRouter, usePathname } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
 
 
 const LATEST_VERSION = versionHistory[0].version;
@@ -267,19 +267,19 @@ function UserBadgeDisplay() {
 }
 
 export default function DashboardPage() {
-    const { user } = useUser();
     const router = useRouter();
     const pathname = usePathname();
     const { pinnedPage } = usePinnedPage();
-    const { users, currentUserData, featureLocks, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
+    const { currentUserData, isAdmin, isSuperAdmin, featureShowcases } = useAdmin();
     
     const [isSurpriseRevealed, setIsSurpriseRevealed] = useState(false);
     const [featureToUnlock, setFeatureToUnlock] = useState<LockableFeature | null>(null);
     const [isRedirecting, setIsRedirecting] = useState(true);
 
     useEffect(() => {
-        if (pinnedPage && pathname === '/dashboard') {
-            router.replace(pinnedPage);
+        if (pinnedPage && (pathname === '/dashboard' || pathname === '/dashboard/learning')) {
+            const redirectPath = pathname === '/dashboard/learning' ? '/dashboard/guide' : pinnedPage;
+            router.replace(redirectPath);
         } else {
             setIsRedirecting(false);
         }

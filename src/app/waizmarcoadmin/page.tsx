@@ -12,10 +12,10 @@ export default function SuperAdminRedirectPage() {
   }, [router]);
 
   return (
-    <div className="flex h-full w-full items-center justify-center">
-      <div className="flex flex-col items-center gap-2 text-muted-foreground">
-        <Loader2 className="h-8 w-8 animate-spin" />
-        <p>Redirecting to Super Admin Panel...</p>
+    <div className="flex h-full w-full items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-4 text-primary">
+        <Loader2 className="h-16 w-16 animate-spin" />
+        <p className="font-black uppercase tracking-[0.3em] text-xs">Redirecting to Mainframe...</p>
       </div>
     </div>
   );

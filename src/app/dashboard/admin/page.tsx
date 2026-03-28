@@ -17,7 +17,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image as ImageIcon, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, BookOpen as BookOpenIcon, Clock, LineChart, Upload, History, MailQuestion, CheckCircle, Star, Swords, UserPlus, XCircle, Book } from 'lucide-react';
+import { PlusCircle, Send, Trash2, MinusCircle, Vote, AlertTriangle, Edit, Lock, Unlock, Gift, RefreshCcw, Users, Megaphone, BookOpen, ClipboardCheck, KeyRound, ShieldCheck, UserCog, DollarSign, Wallet, ShieldX, Lightbulb, Image as ImageIcon, Mic, MessageSquare, FolderPlus, Sparkles, Loader2, Gamepad, Award, Zap, Gamepad2 as Gamepad2Icon, BrainCircuit, Trophy, Clock, LineChart, Upload, History, MailQuestion, CheckCircle, Star, Swords, UserPlus, XCircle, Book } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { db } from '@/lib/firebase';
 import { addDoc, collection } from 'firebase/firestore';
@@ -49,7 +49,7 @@ const availableIcons = {
     "Gift": Gift,
     "BrainCircuit": BrainCircuit,
     "Trophy": Trophy,
-    "BookOpen": BookOpenIcon,
+    "BookOpen": BookOpen,
     "Clock": Clock,
     "LineChart": LineChart,
 } as const;
@@ -577,7 +577,6 @@ export default function AdminPanelPage() {
         setShowcaseLink(showcase.link || '');
     } else {
         setEditingShowcase(null);
-        setShowcaseTitle('');
         setShowcaseTitle('');
         setShowcaseDesc('');
         setShowcaseDate('');
@@ -1408,7 +1407,7 @@ export default function AdminPanelPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="sc-date">Launch Date (Optional)</Label>
-                            <Input id="sc-date" type="date" value={showcaseDate} onChange={e => showcaseDate(e.target.value)} />
+                            <Input id="sc-date" type="date" value={showcaseDate} onChange={e => setShowcaseDate(e.target.value)} />
                         </div>
                     </div>
                      <div className="space-y-2">
