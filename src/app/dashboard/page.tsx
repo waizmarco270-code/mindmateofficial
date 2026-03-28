@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -35,7 +35,7 @@ const streakMilestones = [
     { day: 3, reward: 50, label: 'Disciplined' },
     { day: 7, reward: 150, label: 'Consistent' },
     { day: 14, reward: 500, label: 'Warrior' },
-    { day: 30, reward: 1000, label: 'Legendary Streaker', isSpecial: true }
+    { day: 30, reward: 1000, label: 'Legendary Streaker', isSpecial: true, hasBadge: true }
 ];
 
 function StreakMilestonesDialog({ isOpen, onOpenChange, currentStreak }: { isOpen: boolean, onOpenChange: (o: boolean) => void, currentStreak: number }) {
@@ -68,7 +68,14 @@ function StreakMilestonesDialog({ isOpen, onOpenChange, currentStreak }: { isOpe
                                     </div>
                                     <div>
                                         <p className="font-black uppercase text-xs tracking-widest">{ms.label}</p>
-                                        <p className="font-bold text-lg">{ms.day} Day Streak</p>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-bold text-lg">{ms.day} Day Streak</p>
+                                            {ms.hasBadge && (
+                                                <div className="scale-75 origin-left">
+                                                    <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                                 <div className="text-right">
@@ -216,19 +223,28 @@ function UserBadgeDisplay() {
     const badge = badgeDetails[badgeToShowKey];
     if (!badge) return null;
     return (
-        <Link href="/dashboard/profile" className="group block">
-            <Card className={cn("relative overflow-hidden border-0 transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1", badge.gradient)}>
-                <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/50"></div>
-                 <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
-                    <div className="p-3 sm:p-4 rounded-full bg-black/20 border-2 border-white/20"><badge.icon className="h-8 w-8 sm:h-10 sm:w-10 text-white"/></div>
-                    <div className="flex-1 text-left">
-                        <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Your Rank</p>
-                        <CardTitle className="text-xl sm:text-2xl font-bold text-white">{badge.name}</CardTitle>
-                    </div>
-                    <div className="transition-transform group-hover:translate-x-1">{badge.badge}</div>
-                </CardContent>
-            </Card>
-        </Link>
+        <div className="space-y-4">
+            <Link href="/dashboard/profile" className="group block">
+                <Card className={cn("relative overflow-hidden border-0 transition-all duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1", badge.gradient)}>
+                    <div className="absolute inset-0 bg-gradient-to-br from-black/20 to-black/50"></div>
+                    <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
+                        <div className="p-3 sm:p-4 rounded-full bg-black/20 border-2 border-white/20"><badge.icon className="h-8 w-8 sm:h-10 sm:w-10 text-white"/></div>
+                        <div className="flex-1 text-left">
+                            <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Your Rank</p>
+                            <CardTitle className="text-xl sm:text-2xl font-bold text-white">{badge.name}</CardTitle>
+                        </div>
+                        <div className="transition-transform group-hover:translate-x-1">{badge.badge}</div>
+                    </CardContent>
+                </Card>
+            </Link>
+            <Button asChild variant="outline" className="w-full h-12 border-primary/20 bg-primary/5 hover:bg-primary/10 group rounded-2xl">
+                <Link href="/dashboard/badges">
+                    <Info className="mr-2 h-4 w-4 text-primary" />
+                    <span className="font-bold">Know about Badges in MindMate</span>
+                    <ChevronRight className="ml-auto h-4 w-4 opacity-0 group-hover:opacity-100 transition-all translate-x-[-10px] group-hover:translate-x-0" />
+                </Link>
+            </Button>
+        </div>
     )
 }
 
@@ -335,7 +351,7 @@ export default function DashboardPage() {
             </div>
             {isSurpriseRevealed ? <DailySurpriseCard /> : (
             <Card className="relative overflow-hidden cursor-pointer group bg-gradient-to-tr from-green-400/20 via-teal-500/20 to-emerald-600/20 border-green-500/20 hover:border-green-500/40 transition-all duration-300" onClick={() => setIsSurpriseRevealed(true)}>
-                <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center"><div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-green-500/20 rounded-full blur-3xl"></div><div className="relative flex flex-col items-center"><motion.div animate={{ y: [0, -10, 0], scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}><Gift className="h-10 w-10 text-green-400"/></motion.div><h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3><p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p></div></CardContent>
+                <CardContent className="relative p-6 text-center min-h-[170px] flex flex-col justify-center"><div className="animate-pulse absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-48 w-48 bg-green-500/20 rounded-full blur-3xl"></div><div className="relative flex flex-col items-center"><motion.div animate={{ y: [0, -10, 0], scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}><GiftIcon className="h-10 w-10 text-green-400"/></motion.div><h3 className="text-2xl font-bold mt-2">Click To See Today's Surprise</h3><p className="text-sm text-muted-foreground">A new surprise awaits you every day!</p></div></CardContent>
             </Card>
             )}
             <CommunityPoll />
