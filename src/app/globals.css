@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -100,26 +101,25 @@
 }
 
 @layer utilities {
-  .space-grid {
-    background-image: 
-      linear-gradient(to right, rgba(139, 92, 246, 0.1) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(139, 92, 246, 0.1) 1px, transparent 1px);
-    background-size: 50px 50px;
-    mask-image: radial-gradient(circle at 50% 50%, black, transparent 80%);
+  .bg-grid-animate {
+    background-size: 4rem 4rem;
+    background-image:
+      linear-gradient(to right, rgba(139, 92, 246, 0.05) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(139, 92, 246, 0.05) 1px, transparent 1px);
     animation: grid-scroll 20s linear infinite;
   }
 
   @keyframes grid-scroll {
     from { background-position: 0 0; }
-    to { background-position: 0 100%; }
+    to { background-position: 0 4rem; }
   }
 
   .glass-module {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-2xl;
+    @apply bg-white/5 backdrop-blur-2xl border border-white/10 shadow-2xl;
   }
 
   .blue-nebula-bg {
-    background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 100%);
+    background: radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 100%);
   }
 
   @keyframes float {
@@ -129,5 +129,15 @@
 
   .animate-float {
     animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes zoom-pan {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1) translate(1%, 1%); }
+    100% { transform: scale(1); }
+  }
+
+  .animate-zoom-pan {
+    animation: zoom-pan 30s ease-in-out infinite;
   }
 }
