@@ -3,12 +3,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    ArrowRight, Bot, Users, Zap, FileText, Award, 
+    ArrowRight, Bot, Users, Zap, Award, 
     Globe, Sparkles, ShieldCheck, 
-    MessageSquare, ChevronDown, 
     Instagram, Youtube, Send, 
-    ExternalLink, Code, Shield, 
-    CreditCard, Info, Clock, X, Terminal, Cpu, Gem, Vault
+    Code, CreditCard, Clock, Gem, Vault
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '../ui/logo';
@@ -136,6 +134,7 @@ export function LandingPage() {
     const [isAnimating, setIsAnimating] = useState(false);
     const [mouse, setMouse] = useState({ x: 0, y: 0 });
     const scrollBuffer = useRef(0);
+    const touchStartY = useRef(0);
 
     const totalSlides = 4;
 
@@ -157,15 +156,33 @@ export function LandingPage() {
             }
         };
 
+        const handleTouchStart = (e: TouchEvent) => {
+            touchStartY.current = e.touches[0].clientY;
+        };
+
+        const handleTouchEnd = (e: TouchEvent) => {
+            const touchEndY = e.changedTouches[0].clientY;
+            const deltaY = touchStartY.current - touchEndY;
+            
+            if (Math.abs(deltaY) > 50) {
+                if (deltaY > 0) goTo(currentSlide + 1);
+                else goTo(currentSlide - 1);
+            }
+        };
+
         const handleKeyDown = (e: KeyboardEvent) => {
             if (e.key === 'ArrowDown' || e.key === 'PageDown') goTo(currentSlide + 1);
             if (e.key === 'ArrowUp' || e.key === 'PageUp') goTo(currentSlide - 1);
         };
 
         window.addEventListener('wheel', handleWheel, { passive: false });
+        window.addEventListener('touchstart', handleTouchStart);
+        window.addEventListener('touchend', handleTouchEnd);
         window.addEventListener('keydown', handleKeyDown);
         return () => {
             window.removeEventListener('wheel', handleWheel);
+            window.removeEventListener('touchstart', handleTouchStart);
+            window.removeEventListener('touchend', handleTouchEnd);
             window.removeEventListener('keydown', handleKeyDown);
         };
     }, [currentSlide, goTo]);
@@ -223,7 +240,7 @@ export function LandingPage() {
                     </nav>
                     <div className="flex items-center gap-4">
                         <SignInButton mode="modal">
-                            <Button className="ingress-btn h-11 px-8">Login to MindMate</Button>
+                            <Button className="ingress-btn h-11 px-8 shadow-[0_0_15px_rgba(236,72,153,0.3)]">Login to MindMate</Button>
                         </SignInButton>
                     </div>
                 </div>
@@ -269,7 +286,7 @@ export function LandingPage() {
                                 { title: 'Credit Economy', icon: Gem, desc: 'Earn universal credits via high-focus study.' },
                                 { title: 'Deep Focus', icon: Zap, desc: 'Calibrated timers with penalty enforcement.' }
                             ].map((f, i) => (
-                                <div key={i} className="glass-module p-8 rounded-[2rem] border border-white/5 bg-white/[0.03] backdrop-blur-3xl transition-all hover:-translate-y-2">
+                                <div key={i} className="glass-module">
                                     <div className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center mb-6">
                                         <f.icon className="h-6 w-6 text-primary" />
                                     </div>
@@ -293,7 +310,7 @@ export function LandingPage() {
                                 { label: 'AI Responses', target: 2400000, suffix: '+' },
                                 { label: 'Vaults Created', target: 4500, suffix: '' }
                             ].map((s, i) => (
-                                <div key={i} className="flex flex-col">
+                                <div key={i} className="stat-node">
                                     <span className="text-5xl md:text-7xl font-black tracking-tighter text-primary">
                                         {currentSlide === 2 && <StatCounter target={s.target} suffix={s.suffix} />}
                                     </span>
@@ -318,7 +335,7 @@ export function LandingPage() {
                         {/* Institutional Footer */}
                         <footer className="w-full bg-black/40 backdrop-blur-3xl border-t border-white/5 p-12 lg:p-20">
                             <div className="container mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
-                                <div className="space-y-6">
+                                <div className="space-y-6 text-left">
                                     <div className="flex items-center gap-3">
                                         <Logo className="h-10 w-10" />
                                         <span className="font-black text-2xl uppercase tracking-tighter text-white">MindMate</span>
@@ -327,7 +344,7 @@ export function LandingPage() {
                                         Empowering the next generation of scholars through strategic automation and collective intelligence.
                                     </p>
                                 </div>
-                                <div>
+                                <div className="text-left">
                                     <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-6">Mainframe</h5>
                                     <ul className="space-y-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
                                         <li><Link href="https://emitygate.com" className="hover:text-primary transition-colors">EmityGate Solutions</Link></li>
@@ -335,7 +352,7 @@ export function LandingPage() {
                                         <li><Link href="/dashboard/docs" className="hover:text-primary transition-colors">Sovereign Docs</Link></li>
                                     </ul>
                                 </div>
-                                <div>
+                                <div className="text-left">
                                     <h5 className="text-[10px] font-black uppercase tracking-widest text-slate-300 mb-6">Protocols</h5>
                                     <ul className="space-y-4 text-[10px] font-black uppercase tracking-widest text-slate-500">
                                         <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Shield</Link></li>
@@ -343,7 +360,7 @@ export function LandingPage() {
                                         <li><Link href="/refund" className="hover:text-primary transition-colors">Asset Protection</Link></li>
                                     </ul>
                                 </div>
-                                <div className="p-6 rounded-[2.5rem] bg-white/[0.03] border border-white/5 space-y-4">
+                                <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 space-y-4 text-left">
                                     <div className="flex items-center gap-3">
                                         <ShieldCheck className="h-8 w-8 text-emerald-500" />
                                         <div className="text-[10px] font-black uppercase">
@@ -370,7 +387,7 @@ export function LandingPage() {
                 </section>
             </div>
 
-            {/* Navigation Chrome */}
+            {/* Navigation Dots */}
             <div className="fixed right-8 top-1/2 -translate-y-1/2 flex flex-col gap-4 z-[1000]">
                 {Array.from({ length: totalSlides }).map((_, i) => (
                     <button
