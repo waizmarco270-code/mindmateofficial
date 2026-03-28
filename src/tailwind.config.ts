@@ -1,4 +1,3 @@
-
 import type {Config} from 'tailwindcss';
 const plugin = require('tailwindcss/plugin')
 
@@ -116,6 +115,18 @@ export default {
           '0%': { 'background-position': '-200% 0' },
           '100%': { 'background-position': '200% 0' },
         },
+        'gold-shine': {
+          '0%': { filter: 'drop-shadow(0 0 2px #f59e0b)' },
+          '50%': { filter: 'drop-shadow(0 0 6px #fde047) drop-shadow(0 0 12px #f59e0b)' },
+          '100%': { filter: 'drop-shadow(0 0 2px #f59e0b)' },
+        },
+        flicker: {
+          '0%, 100%': { filter: 'drop-shadow(0 0 3px hsl(var(--primary))) drop-shadow(0 0 6px hsl(var(--primary)/0.8))' },
+          '20%': { filter: 'drop-shadow(0 0 4px hsl(var(--primary)/0.9)) drop-shadow(0 0 8px hsl(var(--primary)/0.6))' },
+          '40%': { filter: 'drop-shadow(0 0 2px hsl(var(--primary))) drop-shadow(0 0 5px hsl(var(--primary)/0.8))' },
+          '60%': { filter: 'drop-shadow(0 0 5px hsl(var(--primary)/0.9)) drop-shadow(0 0 10px hsl(var(--primary)/0.6))' },
+          '80%': { filter: 'drop-shadow(0 0 3px hsl(var(--primary))) drop-shadow(0 0 7px hsl(var(--primary)/0.8))' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
@@ -123,6 +134,8 @@ export default {
         'fade-in-up': 'fade-in-up 0.6s ease-out forwards',
         'tilt': 'tilt 10s infinite linear',
         'shimmer': 'shimmer 4s ease-in-out infinite',
+        'gold-shine': 'gold-shine 2s ease-in-out infinite',
+        'flicker': 'flicker 3s infinite',
       },
     },
   },
