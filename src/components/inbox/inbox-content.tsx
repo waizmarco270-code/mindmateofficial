@@ -10,7 +10,8 @@ import { format } from 'date-fns';
 import { 
     Mail, ArrowRight, Megaphone, ShieldCheck, 
     Gift, Trophy, Settings, Maximize2, BellRing, History, 
-    MessageSquare, CheckCircle, XCircle, Sparkles, BrainCircuit, X
+    MessageSquare, CheckCircle, XCircle, Sparkles, BrainCircuit, X,
+    Users
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -27,8 +28,6 @@ interface InboxContentProps {
     isMini?: boolean;
     onClose?: () => void;
 }
-
-type NotificationType = 'all' | 'missions' | 'allies' | 'archives';
 
 export function InboxContent({ isMini = false, onClose }: InboxContentProps) {
     const { announcements } = useAnnouncements();
@@ -136,7 +135,7 @@ export function InboxContent({ isMini = false, onClose }: InboxContentProps) {
                         </TabsTrigger>
                         <TabsTrigger value="allies" onClick={handleCheckAllies} className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white relative">
                             Allies
-                            {(hasUnreadFriendRequests || friendRequests.length > 0) && <span className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-red-500 border-2 border-background animate-pulse shadow-sm"/>}
+                            {(hasUnreadFriendRequests || friendRequests.length > 0) && <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-[10px] font-black rounded-full flex items-center justify-center border-2 border-background animate-pulse">{friendRequests.length || '!'}</span>}
                         </TabsTrigger>
                         <TabsTrigger value="archives" className="rounded-full text-[10px] font-black uppercase data-[state=active]:bg-primary data-[state=active]:text-white">Archives</TabsTrigger>
                     </TabsList>
