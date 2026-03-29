@@ -160,7 +160,8 @@ export default function IsolationHub() {
     };
 
     const handleYtUplink = () => {
-        const idMatch = ytInput.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/);
+        // Advanced Regex supporting: standard, short, live, embed, and youtu.be
+        const idMatch = ytInput.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/))([\w-]{11})/);
         if (idMatch && idMatch[1]) {
             setSessionVideoId(idMatch[1]);
             setYtInput('');
@@ -245,13 +246,13 @@ export default function IsolationHub() {
                                         </div>
                                         <div className="space-y-1">
                                             <h4 className="font-bold text-white">Tactical Video Uplink</h4>
-                                            <p className="text-xs text-muted-foreground">Paste a YouTube link to watch lectures without leaving the Terminal.</p>
+                                            <p className="text-xs text-muted-foreground">Paste any YouTube link (Standard, Shorts, or Live) to watch without leaving.</p>
                                         </div>
                                         <div className="flex gap-2 w-full max-w-md">
                                             <Input 
                                                 value={ytInput}
                                                 onChange={e => setYtInput(e.target.value)}
-                                                placeholder="https://youtube.com/watch?v=..."
+                                                placeholder="https://youtube.com/live/..."
                                                 className="bg-black/40 border-white/10 rounded-xl"
                                             />
                                             <Button onClick={handleYtUplink} className="rounded-xl"><LinkIcon className="h-4 w-4"/></Button>
