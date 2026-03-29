@@ -42,6 +42,7 @@ export interface ActiveIsolation {
     endTime: string; // ISO
     totalTargetSeconds: number;
     accumulatedSeconds: number;
+    dailyLogs?: Record<string, number>; // { 'YYYY-MM-DD': seconds }
     status: 'active' | 'completed' | 'failed';
     lastHeartbeat: string; // ISO
     currentVideoId?: string | null;
@@ -79,6 +80,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
                 const data = snap.data() as ActiveIsolation;
                 const lastBeat = new Date(data.lastHeartbeat);
                 const now = new Date();
+                // If no heartbeat for 24 hours, fail the session
                 if (data.status === 'active' && differenceInSeconds(now, lastBeat) > 86400) {
                     updateDoc(sessionRef, { status: 'failed' });
                 }
@@ -105,6 +107,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
             endTime: end.toISOString(),
             totalTargetSeconds: config.targetHours * 3600,
             accumulatedSeconds: 0,
+            dailyLogs: { [format(now, 'yyyy-MM-dd')]: 0 },
             status: 'active',
             lastHeartbeat: now.toISOString(),
             currentVideoId: null
@@ -130,9 +133,12 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
     const updateProgress = async (seconds: number) => {
         if (!user || !activeSession || activeSession.status !== 'active') return;
         
+        const todayKey = format(new Date(), 'yyyy-MM-dd');
         const sessionRef = doc(db, 'users', user.id, 'isolation', 'current');
+        
         await updateDoc(sessionRef, {
             accumulatedSeconds: increment(seconds),
+            [`dailyLogs.${todayKey}`]: increment(seconds),
             lastHeartbeat: new Date().toISOString()
         });
     };
