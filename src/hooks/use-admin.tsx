@@ -188,8 +188,15 @@ export interface GlobalGift {
         credits: number;
         scratch: number;
         flip: number;
+        wallet?: number;
+        shields?: number;
+        freezes?: number;
+        boosters?: number;
+        maxers?: number;
+        badge?: BadgeType;
     };
     target: 'all' | string;
+    maxClaims?: number;
     createdAt: Date;
     isActive: boolean;
     claimedBy?: string[];
@@ -924,7 +931,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         removeUserCoDev: (uid) => updateDoc(doc(db, 'users', uid), { isCoDev: false }),
         setShowcaseBadge: (uid, badge) => updateDoc(doc(db, 'users', uid), { showcasedBadge: badge }),
         clearGlobalChat: async () => {
-            const snap = await getDocs(collection(db, 'global_chat'));
+            const snap = await getDocs(collection(db, 'world_chat'));
             const batch = writeBatch(db);
             snap.docs.forEach(d => batch.delete(d.ref));
             await batch.commit();
@@ -1010,13 +1017,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         submitPollComment: (id, c) => updateDoc(doc(db, 'polls', id), { comments: arrayUnion({ userId: authUser?.id, userName: currentUserData?.displayName, comment: c, createdAt: Timestamp.now() }) }),
         updateAppSettings: (s) => updateDoc(doc(db, 'appConfig', 'settings'), s),
         sendGlobalGift: async (g) => {
-            await addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] });
+            const docRef = await addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] });
+            
+            // Build smart notification message
+            const r = g.rewards;
+            const rewardsList = [];
+            if (r.credits) rewardsList.push(`${r.credits} Credits`);
+            if (r.wallet) rewardsList.push(`₹${r.wallet} Vault Balance`);
+            if (r.badge) rewardsList.push(`${r.badge.toUpperCase()} Badge`);
+            if (r.shields) rewardsList.push(`${r.shields} Penalty Aegis`);
+            if (r.freezes) rewardsList.push(`${r.freezes} Chronos Freezes`);
+            
+            const notifyMsg = `Master sent you ${rewardsList.join(', ')}! Claim it fast before the supply is gone.`;
+
             await fetch('/api/send-notification', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    title: `🎁 Legendary Gift Received!`,
-                    message: g.message,
+                    title: `🎁 Legendary Gift Dispatched!`,
+                    message: notifyMsg,
                     userId: g.target === 'all' ? undefined : g.target,
                     linkUrl: '/dashboard'
                 })
@@ -1024,17 +1043,52 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         deactivateGift: (id) => updateDoc(doc(db, 'globalGifts', id), { isActive: false }),
         deleteGlobalGift: (id) => deleteDoc(doc(db, 'globalGifts', id)),
-        claimGlobalGift: async (id, uid) => {
-            const giftRef = doc(db, 'globalGifts', id);
-            const giftSnap = await getDoc(giftRef);
-            if (!giftSnap.exists() || giftSnap.data().claimedBy?.includes(uid)) return;
-            const gift = giftSnap.data();
-            const batch = writeBatch(db);
-            batch.update(giftRef, { claimedBy: arrayUnion(uid) });
-            if (gift.rewards.credits) batch.update(doc(db, 'users', uid), { credits: increment(gift.rewards.credits) });
-            if (gift.rewards.scratch) batch.update(doc(db, 'users', uid), { freeRewards: increment(gift.rewards.scratch) });
-            if (gift.rewards.flip) batch.update(doc(db, 'users', uid), { freeGuesses: increment(gift.rewards.flip) });
-            await batch.commit();
+        claimGlobalGift: async (giftId, userId) => {
+            await runTransaction(db, async (transaction) => {
+                const giftRef = doc(db, 'globalGifts', giftId);
+                const userRef = doc(db, 'users', userId);
+                
+                const giftSnap = await transaction.get(giftRef);
+                const userSnap = await transaction.get(userRef);
+                
+                if (!giftSnap.exists()) throw new Error("Gift deleted.");
+                
+                const gift = giftSnap.data() as GlobalGift;
+                const userData = userSnap.data() as User;
+                
+                if (!gift.isActive) throw new Error("Gift expired.");
+                if (gift.claimedBy?.includes(userId)) throw new Error("Already claimed.");
+                
+                if (gift.maxClaims && gift.claimedBy && gift.claimedBy.length >= gift.maxClaims) {
+                    transaction.update(giftRef, { isActive: false });
+                    throw new Error("Gift stock empty.");
+                }
+
+                // Apply rewards
+                const updates: any = {};
+                const r = gift.rewards;
+                if (r.credits) updates.credits = increment(r.credits);
+                if (r.scratch) updates.freeRewards = increment(r.scratch);
+                if (r.flip) updates.freeGuesses = increment(r.flip);
+                if (r.wallet) {
+                    updates.walletBalance = increment(r.wallet);
+                    const walletTx: WalletTransaction = {
+                        id: `gift-${Date.now()}`, amount: r.wallet, type: 'topup', status: 'completed', date: new Date().toISOString()
+                    };
+                    updates.walletTransactions = arrayUnion(walletTx);
+                }
+                if (r.shields) updates['inventory.penaltyShields'] = increment(r.shields);
+                if (r.freezes) updates['inventory.streakFreezes'] = increment(r.freezes);
+                if (r.boosters) updates['inventory.clanXpBoosters'] = increment(r.boosters);
+                if (r.maxers) updates['inventory.clanLevelMaxers'] = increment(r.maxers);
+                if (r.badge) {
+                    const badgeKey = `is${r.badge.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')}`;
+                    updates[badgeKey] = true;
+                }
+
+                transaction.update(giftRef, { claimedBy: arrayUnion(userId) });
+                transaction.update(userRef, updates);
+            });
         },
         addFeatureShowcase: async (s) => {
             await addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() });
