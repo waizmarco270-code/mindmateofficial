@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -11,14 +10,14 @@ import {
     MessageSquare, Send, Check, Code, Swords, Bird, Moon,
     Youtube, Link as LinkIcon, PlayCircle, WifiOff,
     ChevronLeft, ChevronRight, Calendar, BarChart3, Timer,
-    PanelLeftClose, PanelLeftOpen, LayoutDashboard
+    PanelLeftClose, PanelLeftOpen, LayoutDashboard, Sparkles
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useIsolation, ISOLATION_CONFIGS, type IsolationDuration, type ActiveIsolation } from '@/hooks/use-isolation';
-import { useUsers } from '@/hooks/use-admin';
+import { useUsers, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -32,12 +31,26 @@ import { TaskTerminal } from '@/components/isolation/task-terminal';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
 
 const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
+    dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
+    admin: { name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
+    vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
+    gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span> },
+    challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
+    'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> },
+    'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span> },
+    'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span> },
+    'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> },
+    streaker: { name: 'Streaker', badge: <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span> },
     isolater: { name: 'Isolater', badge: <span className="isolater-badge">ISOLATER</span> },
     'iso-warrior': { name: 'ISO-Warrior', badge: <span className="iso-warrior-badge">ISO-WARRIOR</span> },
     warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
     'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
     sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> }
 };
+
+function Flame({ className }: { className?: string }) {
+    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.21 1.14-3.027L8.5 14.5Z"/></svg>;
+}
 
 const formatSecondsToTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600);
@@ -48,8 +61,8 @@ const formatSecondsToTime = (totalSeconds: number) => {
 
 export default function IsolationHub() {
     const { user } = useUser();
-    const { activeSession, startIsolation, updateProgress, setSessionVideoId, emergeVictory, failIsolation, loading, payForEarlyExit } = useIsolation();
-    const { currentUserData } = useUsers();
+    const { activeSession, startIsolation, updateProgress, setSessionVideoId, emergeVictory, failIsolation, loading, payForEarlyExit, addIsolationTask, toggleIsolationTask } = useIsolation();
+    const { currentUserData, addCreditsToUser } = useUsers();
     const { toast } = useToast();
 
     const [selectedDuration, setSelectedDuration] = useState<IsolationDuration | null>(null);
@@ -58,11 +71,9 @@ export default function IsolationHub() {
     const [viewingDate, setViewingDate] = useState<Date>(new Date());
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
-    // Vigilance Monitor
     const [isRestDialogOpen, setIsRestDialogOpen] = useState(false);
     const lastInteractionTime = useRef<number>(Date.now());
 
-    // Extraction State
     const [isExtractionOpen, setIsExtractionOpen] = useState(false);
     const [extractionMode, setExtractionMode] = useState<'selection' | 'credits' | 'money'>('selection');
     const [isProcessingExit, setIsProcessingExit] = useState(false);
@@ -70,7 +81,6 @@ export default function IsolationHub() {
     const [ytInput, setYtInput] = useState('');
     const lastTickRef = useRef<number>(Date.now());
 
-    // Presence Tracking
     useEffect(() => {
         const resetInteraction = () => {
             lastInteractionTime.current = Date.now();
@@ -83,15 +93,12 @@ export default function IsolationHub() {
         };
     }, []);
 
-    // Heartbeat & Vigilance Loop
     useEffect(() => {
         if (!timerActive || activeSession?.status !== 'active') return;
 
         const interval = setInterval(() => {
             if (document.visibilityState === 'visible') {
                 const now = Date.now();
-                
-                // Vigilance Check: 3 Hours (10800 seconds)
                 if (now - lastInteractionTime.current > 10800000) {
                     setTimerActive(false);
                     setIsRestDialogOpen(true);
@@ -112,7 +119,7 @@ export default function IsolationHub() {
         return () => clearInterval(interval);
     }, [timerActive, activeSession, updateProgress, toast]);
 
-    const handleIngress = async (method: 'credits' | 'money') => {
+    const handleIngress = async (method: 'credits' | 'money' | 'free') => {
         if (!selectedDuration || !user) return;
         setIsStarting(true);
         try {
@@ -134,7 +141,7 @@ export default function IsolationHub() {
                 const rzp = new (window as any).Razorpay(options);
                 rzp.open();
             } else {
-                await startIsolation(selectedDuration, 'credits');
+                await startIsolation(selectedDuration, method);
             }
         } catch (e: any) {
             toast({ variant: 'destructive', title: "Ingress Failed", description: e.message });
@@ -204,12 +211,7 @@ export default function IsolationHub() {
         const viewingDayHours = viewingDaySeconds / 3600;
         const targetMet = viewingDayHours >= 10;
 
-        // Task Status Analysis
-        const tasks = activeSession.dailyTasks?.[viewingDateKey] || [];
-        const tasksDone = tasks.length > 0 && tasks.every(t => t.completed);
         const dayIsCurrent = isToday(viewingDate);
-        const dayIsPast = isPast(viewingDate) && !dayIsCurrent;
-        const tasksFailed = dayIsPast && tasks.length > 0 && !tasksDone;
 
         return (
             <div className="min-h-screen bg-[#050505] p-4 sm:p-8 flex flex-col items-center overflow-y-auto">
@@ -227,7 +229,6 @@ export default function IsolationHub() {
                     <Card className="bg-slate-900/50 border-primary/20 backdrop-blur-3xl rounded-[2.5rem] overflow-hidden">
                         <motion.div layout className="grid grid-cols-1 lg:grid-cols-12 gap-0 border-b border-white/5 relative">
                             
-                            {/* COLLAPSIBLE SIDEBAR: ANALYTICS & OBJECTIVES */}
                             <motion.div 
                                 layout
                                 initial={false}
@@ -303,7 +304,6 @@ export default function IsolationHub() {
                                 </AnimatePresence>
                             </motion.div>
 
-                            {/* CENTER AREA: MAIN GOAL (Responsive Expansion) */}
                             <motion.div 
                                 layout
                                 className={cn(
@@ -327,7 +327,6 @@ export default function IsolationHub() {
                                 </div>
                             </motion.div>
 
-                            {/* RIGHT AREA: MISSION TIMELINE */}
                             <div className="lg:col-span-3 p-6 space-y-6 border-l border-white/5 bg-black/10">
                                 <div className="flex items-center justify-between">
                                     <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2"><Calendar className="h-3 w-3"/> Temporal Path</p>
@@ -480,11 +479,44 @@ export default function IsolationHub() {
                 <div className="lg:col-span-2 space-y-6">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{(Object.entries(ISOLATION_CONFIGS)).map(([id, config]) => (<button key={id} onClick={() => setSelectedDuration(id as IsolationDuration)} className={cn("p-6 rounded-[2rem] border-2 transition-all text-left space-y-4 group", selectedDuration === id ? "bg-primary/10 border-primary shadow-xl" : "bg-muted/30 border-white/5 hover:border-primary/30")}><div className="flex justify-between items-start"><div className="p-3 rounded-2xl bg-black/20 border border-white/5 group-hover:scale-110 transition-transform"><Clock className="h-6 w-6 text-primary" /></div>{id === '1y' && <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 animate-pulse" />}</div><div><h3 className="text-2xl font-black tracking-tighter uppercase">{config.label}</h3><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{config.targetHours} Study Hours</p></div></button>))}</div>
                     {selectedDuration && (
-                        <Card className="border-primary/30 bg-primary/5 animate-in slide-in-from-bottom-4 rounded-[2rem]"><CardHeader><CardTitle>Protocol: {ISOLATION_CONFIGS[selectedDuration].label}</CardTitle><CardDescription>Confirm your ingress method to begin the lockdown.</CardDescription></CardHeader><CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4"><Button size="lg" variant="outline" className="h-24 flex-col gap-2 rounded-2xl border-primary/20 hover:bg-primary/10" onClick={() => handleIngress('credits')} disabled={isStarting}><div className="flex items-center gap-2 font-black text-lg"><Gem className="text-primary" /> {ISOLATION_CONFIGS[selectedDuration].creditCost}</div><span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Sovereign Credits</span></Button><Button size="lg" className="h-24 flex-col gap-2 rounded-2xl bg-gradient-to-br from-primary to-purple-600 shadow-xl shadow-primary/20" onClick={() => handleIngress('money')} disabled={isStarting}><div className="flex items-center gap-2 font-black text-lg">₹{ISOLATION_CONFIGS[selectedDuration].moneyCost}</div><span className="text-[10px] font-bold uppercase tracking-widest text-white/70">Real-World Ingress</span></Button></CardContent></Card>
+                        <Card className="border-primary/30 bg-primary/5 animate-in slide-in-from-bottom-4 rounded-[2rem]"><CardHeader><CardTitle>Protocol: {ISOLATION_CONFIGS[selectedDuration].label}</CardTitle><CardDescription>Confirm your ingress method to begin the lockdown.</CardDescription></CardHeader>
+                        <CardContent className={cn("grid gap-4", currentUserData?.hasFreeIsolation !== false ? "grid-cols-1 md:grid-cols-3" : "grid-cols-1 md:grid-cols-2")}>
+                            {currentUserData?.hasFreeIsolation !== false && (
+                                <Button size="lg" variant="outline" className="h-24 flex-col gap-2 rounded-2xl border-emerald-500/50 bg-emerald-500/10 hover:bg-emerald-500/20 shadow-xl shadow-emerald-500/10" onClick={() => handleIngress('free')} disabled={isStarting}>
+                                    <div className="flex items-center gap-2 font-black text-lg text-emerald-500"><Sparkles className="h-5 w-5"/> FREE CHANCE</div>
+                                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">One-Time Gift</span>
+                                </Button>
+                            )}
+                            <Button size="lg" variant="outline" className="h-24 flex-col gap-2 rounded-2xl border-primary/20 hover:bg-primary/10" onClick={() => handleIngress('credits')} disabled={isStarting}>
+                                <div className="flex items-center gap-2 font-black text-lg"><Gem className="text-primary" /> {ISOLATION_CONFIGS[selectedDuration].creditCost}</div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest opacity-60">Sovereign Credits</span>
+                            </Button>
+                            <Button size="lg" className="h-24 flex-col gap-2 rounded-2xl bg-gradient-to-br from-primary to-purple-600 shadow-xl shadow-primary/20" onClick={() => handleIngress('money')} disabled={isStarting}>
+                                <div className="flex items-center gap-2 font-black text-lg">₹{ISOLATION_CONFIGS[selectedDuration].moneyCost}</div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">Real-World Ingress</span>
+                            </Button>
+                        </CardContent>
+                        </Card>
                     )}
                 </div>
                 <div className="space-y-6">
-                    <Card className="border-red-500/30 bg-red-500/5 rounded-[2rem]"><CardHeader><CardTitle className="text-sm font-black uppercase text-red-500 tracking-widest flex items-center gap-2"><ShieldAlert className="h-4 w-4" /> THE DEADLY RULES</CardTitle></CardHeader><CardContent className="space-y-4 text-xs leading-relaxed text-muted-foreground font-medium"><div className="flex items-start gap-3 p-3 bg-black/20 rounded-xl"><Smartphone className="h-4 w-4 text-primary shrink-0" /><p><b>Hard Lockdown</b>: Navigation disabled. No World Chat or Games.</p></div><div className="flex items-start gap-3 p-3 bg-black/20 rounded-xl"><Trophy className="h-4 w-4 text-primary shrink-0" /><p><b>Proof of Work</b>: Must meet 10h/day target or rewards forfeit.</p></div></CardContent></Card>
+                    <Card className="border-red-500/30 bg-red-500/5 rounded-[2rem]">
+                        <CardHeader>
+                            <CardTitle className="text-sm font-black uppercase text-red-500 tracking-widest flex items-center gap-2">
+                                <ShieldAlert className="h-4 w-4" /> THE DEADLY RULES
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 text-xs leading-relaxed text-muted-foreground font-medium">
+                            <div className="flex items-start gap-3 p-3 bg-black/20 rounded-xl">
+                                <Smartphone className="h-4 w-4 text-primary shrink-0" />
+                                <p><b>Hard Lockdown</b>: Navigation disabled. No World Chat or Games.</p>
+                            </div>
+                            <div className="flex items-start gap-3 p-3 bg-black/20 rounded-xl">
+                                <Trophy className="h-4 w-4 text-primary shrink-0" />
+                                <p><b>Proof of Work</b>: Must meet 10h/day target or rewards forfeit.</p>
+                            </div>
+                        </CardContent>
+                    </Card>
                     <Card className="bg-muted/30 border-dashed border-2 rounded-[2rem]"><CardHeader className="text-center pb-2"><CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Emergence Bounty</CardTitle></CardHeader><CardContent className="space-y-4">{selectedDuration ? (<div className="space-y-3"><div className="flex justify-between items-center bg-background p-3 rounded-xl border"><div className="flex items-center gap-2"><Gem className="h-4 w-4 text-primary"/><span className="text-xs font-bold uppercase">Credits</span></div><span className="font-black text-green-500">+{ISOLATION_CONFIGS[selectedDuration].rewardCredits}</span></div><div className="flex justify-between items-center bg-background p-3 rounded-xl border"><div className="flex items-center gap-2"><Wallet className="h-4 w-4 text-primary"/><span className="text-xs font-bold uppercase">Vault</span></div><span className="font-black text-green-500">+₹{ISOLATION_CONFIGS[selectedDuration].rewardWallet}</span></div><div className="flex flex-col items-center p-6 bg-primary/5 rounded-2xl border border-primary/20 group"><div className="scale-125 mb-4 group-hover:scale-150 transition-transform duration-500">{badgeDetails[ISOLATION_CONFIGS[selectedDuration].badge]?.badge}</div><p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Elite Identity Rank</p></div></div>) : (<div className="text-center py-10 opacity-30"><Trophy className="h-12 w-12 mx-auto mb-2" /><p className="text-[10px] font-black uppercase tracking-widest">Select Phase</p></div>)}</CardContent></Card>
                 </div>
             </div>

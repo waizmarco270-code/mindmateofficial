@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
@@ -59,7 +58,7 @@ export interface ActiveIsolation {
 interface IsolationContextType {
     activeSession: ActiveIsolation | null;
     loading: boolean;
-    startIsolation: (duration: IsolationDuration, method: 'credits' | 'money', transactionId?: string) => Promise<void>;
+    startIsolation: (duration: IsolationDuration, method: 'credits' | 'money' | 'free', transactionId?: string) => Promise<void>;
     updateProgress: (seconds: number) => Promise<void>;
     setSessionVideoId: (videoId: string | null) => Promise<void>;
     addIsolationTask: (dateKey: string, text: string) => Promise<void>;
@@ -103,7 +102,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, [user]);
 
-    const startIsolation = async (durationId: IsolationDuration, method: 'credits' | 'money', transactionId?: string) => {
+    const startIsolation = async (durationId: IsolationDuration, method: 'credits' | 'money' | 'free', transactionId?: string) => {
         if (!user || !currentUserData) return;
         
         const config = ISOLATION_CONFIGS[durationId];
@@ -129,6 +128,11 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
                 throw new Error("Insufficient credits for isolation ingress.");
             }
             if (!hasMaster) await addCreditsToUser(user.id, -config.creditCost);
+        } else if (method === 'free') {
+            if (currentUserData.hasFreeIsolation === false) {
+                throw new Error("Free chance already utilized.");
+            }
+            await updateDoc(doc(db, 'users', user.id), { hasFreeIsolation: false });
         }
 
         await setDoc(doc(db, 'users', user.id, 'isolation', 'current'), newSession);

@@ -46,6 +46,7 @@ export interface User {
   unlockedFeatures?: string[];
   unlockedThemes?: AppThemeId[];
   hasAiAccess?: boolean;
+  hasFreeIsolation?: boolean;
   perfectedQuizzes?: string[];
   quizAttempts?: Record<string, number>;
   isAdmin?: boolean;
