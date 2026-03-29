@@ -99,7 +99,7 @@ export default function SchedulePage() {
         }
 
         return (
-             <div className="space-y-4">
+             <div className="space-y-4 w-full">
                 <Button variant="outline" onClick={() => setView('grid')} className="rounded-full px-6">
                     <ArrowLeft className="mr-2 h-4 w-4" /> Back to Nexus
                 </Button>
@@ -115,7 +115,7 @@ export default function SchedulePage() {
     }
 
     return (
-        <div className="space-y-8 pb-20 max-w-6xl mx-auto">
+        <div className="space-y-8 pb-20 w-full">
             <div className="relative">
                 <div className="absolute -top-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl opacity-50" />
                 <h1 className="text-4xl md:text-5xl font-black tracking-tighter flex items-center gap-3 italic uppercase text-shadow-glow">
@@ -127,7 +127,7 @@ export default function SchedulePage() {
                 <p className="text-lg text-muted-foreground mt-3 font-medium max-w-2xl">Study Command Center. Initialize mission protocols and master your schedule.</p>
             </div>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 relative z-10 w-full">
                 {featureCards.map((card, i) => (
                     <motion.div
                         key={card.id}
@@ -137,16 +137,16 @@ export default function SchedulePage() {
                         custom={i}
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
+                        className="w-full"
                     >
                          <button onClick={() => handleCardClick(card.id as NexusViewType)} className="w-full h-full text-left group">
                             <Card className={cn(
-                                "relative h-full w-full overflow-hidden rounded-[2.5rem] border-2 transition-all duration-500 bg-card/50 backdrop-blur-xl min-h-[220px]",
+                                "relative h-full w-full overflow-hidden rounded-[2.5rem] border-2 transition-all duration-500 bg-card/50 backdrop-blur-xl min-h-[250px]",
                                 card.border,
                                 card.glow
                             )}>
-                                 {/* Dynamic Background Effect */}
                                  <div className={cn("absolute inset-0 bg-gradient-to-br opacity-40 group-hover:opacity-60 transition-opacity", card.gradient)} />
-                                 <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
+                                 <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white:10%,transparent:90%)]" />
                                  
                                  <CardContent className="relative z-10 flex h-full flex-col justify-between p-8">
                                      <div className="space-y-4">

@@ -149,8 +149,8 @@ export function BlurtingSprint() {
     if (isFinished) {
         return (
             <div className="flex items-center justify-center min-h-screen p-4 bg-background">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                    <Card className="max-w-2xl w-full border-primary/20 shadow-2xl rounded-[2.5rem] overflow-hidden">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-4xl">
+                    <Card className="w-full border-primary/20 shadow-2xl rounded-[2.5rem] overflow-hidden">
                         <CardHeader className="text-center p-8 bg-primary/5">
                             <div className="mx-auto w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mb-4 border-2 border-green-500/20">
                                 <CheckCircle className="h-12 w-12 text-green-500 animate-bounce" />
@@ -180,7 +180,7 @@ export function BlurtingSprint() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-background text-foreground select-none">
+        <div className="flex flex-col min-h-screen bg-background text-foreground select-none w-full">
             <header className="p-4 border-b bg-card/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
@@ -196,8 +196,8 @@ export function BlurtingSprint() {
                 </Button>
             </header>
 
-            <main className="flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full space-y-6 pb-24">
-                <Card className={cn("border-none shadow-2xl transition-all duration-700 rounded-[2.5rem] overflow-hidden", config.bg)}>
+            <main className="flex-1 p-4 md:p-6 w-full space-y-6 pb-24">
+                <Card className={cn("border-none shadow-2xl transition-all duration-700 rounded-[2.5rem] overflow-hidden w-full", config.bg)}>
                     <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
                     <CardHeader className="text-center relative z-10 p-6 sm:p-8">
                         <div className="flex justify-center mb-4">
@@ -220,9 +220,9 @@ export function BlurtingSprint() {
                     <CardContent className="flex flex-col items-center gap-6 py-0 pb-8 relative z-10">
                         <div className="relative h-48 w-48 flex items-center justify-center">
                             <svg className="absolute inset-0 h-full w-full drop-shadow-xl" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" strokeWidth="1.5" className="text-white/5" />
+                                <circle cx="50" cy="50" r={46} fill="transparent" stroke="currentColor" strokeWidth="1.5" className="text-white/5" />
                                 <motion.circle
-                                    cx="50" cy="50" r="46"
+                                    cx="50" cy="50" r={46}
                                     fill="transparent"
                                     stroke="currentColor"
                                     strokeWidth="4"
@@ -249,14 +249,14 @@ export function BlurtingSprint() {
                     </CardContent>
                 </Card>
 
-                <div className="relative">
+                <div className="relative w-full">
                     <AnimatePresence mode="wait">
                         {stage === 'blurt' ? (
                             <motion.div 
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -20 }}
-                                className="space-y-4"
+                                className="space-y-4 w-full"
                             >
                                 <div className="flex items-center justify-between px-4">
                                     <div className="flex items-center gap-3">
@@ -271,14 +271,14 @@ export function BlurtingSprint() {
                                     value={blurtText}
                                     onChange={(e) => setBlurtText(e.target.value)}
                                     placeholder="EMPTY YOUR CONSCIOUSNESS HERE. Every fact, date, and concept. No cheating. Just your mind."
-                                    className="min-h-[300px] text-lg font-medium leading-relaxed bg-emerald-500/5 border-2 border-emerald-500/20 rounded-[2rem] p-6 focus-visible:ring-emerald-500/30 shadow-inner select-text"
+                                    className="min-h-[400px] text-lg font-medium leading-relaxed bg-emerald-500/5 border-2 border-emerald-500/20 rounded-[2rem] p-6 focus-visible:ring-emerald-500/30 shadow-inner select-text"
                                 />
                             </motion.div>
                         ) : (
                             <motion.div 
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="py-16 text-center border-4 border-dashed rounded-[3rem] opacity-20 border-primary/20"
+                                className="py-24 text-center border-4 border-dashed rounded-[3rem] opacity-20 border-primary/20 w-full"
                             >
                                 <ShieldCheck className="h-16 w-16 mx-auto mb-4" />
                                 <p className="text-xl font-black uppercase tracking-[0.3em]">Terminal Offline</p>
@@ -294,8 +294,8 @@ export function BlurtingSprint() {
                     <div 
                         key={s} 
                         className={cn(
-                            "h-1 flex-1 max-w-[80px] rounded-full transition-all duration-500",
-                            stage === s ? "bg-primary w-10" : "bg-muted w-3"
+                            "h-1 flex-1 max-w-[120px] rounded-full transition-all duration-500",
+                            stage === s ? "bg-primary w-16" : "bg-muted w-4"
                         )} 
                     />
                 ))}
