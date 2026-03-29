@@ -1,7 +1,8 @@
 
+'use server';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, setDoc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
-import { format, addDays, isYesterday, isToday } from 'date-fns';
+import { format, addDays } from 'date-fns';
 import { SUPER_ADMIN_UID, type User, type BadgeType } from '../use-admin';
 
 export const useUserActions = (db: any, toast: any) => {
@@ -61,6 +62,58 @@ export const useUserActions = (db: any, toast: any) => {
     const removeUserGM = (uid: string) => updateDoc(doc(db, 'users', uid), { isGM: false });
     const makeUserCoDev = (uid: string) => updateDoc(doc(db, 'users', uid), { isCoDev: true });
     const removeUserCoDev = (uid: string) => updateDoc(doc(db, 'users', uid), { isCoDev: false });
+
+    const generateAiAccessToken = async (userId: string) => {
+        const userRef = doc(db, 'users', userId);
+        const token = `MM-AI-${Math.random().toString(36).substring(2, 15).toUpperCase()}`;
+        const batch = writeBatch(db);
+        batch.update(userRef, { hasAiAccess: true });
+        batch.set(doc(db, 'ai_access_tokens', token), { userId, createdAt: serverTimestamp() });
+        await batch.commit();
+        return token;
+    };
+
+    const unlockResourceSection = async (userId: string, sectionId: string, cost: number) => {
+        const userRef = doc(db, 'users', userId);
+        const userData = (await getDoc(userRef)).data() as User;
+        const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+        if (!hasMaster) {
+            await updateDoc(userRef, { 
+                credits: increment(-cost),
+                unlockedResourceSections: arrayUnion(sectionId)
+            });
+        } else {
+            await updateDoc(userRef, { unlockedResourceSections: arrayUnion(sectionId) });
+        }
+    };
+
+    const unlockFeatureForUser = async (userId: string, featureId: string, cost: number) => {
+        const userRef = doc(db, 'users', userId);
+        const userData = (await getDoc(userRef)).data() as User;
+        const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+        if (!hasMaster) {
+            await updateDoc(userRef, { 
+                credits: increment(-cost),
+                unlockedFeatures: arrayUnion(featureId)
+            });
+        } else {
+            await updateDoc(userRef, { unlockedFeatures: arrayUnion(featureId) });
+        }
+    };
+
+    const unlockThemeForUser = async (userId: string, themeId: string, cost: number) => {
+        const userRef = doc(db, 'users', userId);
+        const userData = (await getDoc(userRef)).data() as User;
+        const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+        if (!hasMaster) {
+            await updateDoc(userRef, { 
+                credits: increment(-cost),
+                unlockedThemes: arrayUnion(themeId)
+            });
+        } else {
+            await updateDoc(userRef, { unlockedThemes: arrayUnion(themeId) });
+        }
+    };
 
     const addPerfectedQuiz = (uid: string, qid: string) => updateDoc(doc(db, 'users', uid), { perfectedQuizzes: arrayUnion(qid) });
     const incrementQuizAttempt = (uid: string, qid: string) => updateDoc(doc(db, 'users', uid), { [`quizAttempts.${qid}`]: increment(1) });
@@ -140,6 +193,7 @@ export const useUserActions = (db: any, toast: any) => {
         incrementQuizAttempt, incrementFocusSessions, claimDailyTaskReward, claimEliteDailyReward,
         updateGameHighScore, updateElementQuestScore, claimElementQuestMilestone,
         claimDimensionShiftMilestone, claimFlappyMindMilestone, claimAstroAscentMilestone,
-        claimMathematicsLegendMilestone
+        claimMathematicsLegendMilestone, generateAiAccessToken, unlockResourceSection,
+        unlockFeatureForUser, unlockThemeForUser
     };
 };

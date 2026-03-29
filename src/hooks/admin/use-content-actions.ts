@@ -1,7 +1,7 @@
 
+'use server';
 import { db } from '@/lib/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, getDocs, query, where, Timestamp, increment } from 'firebase/firestore';
-import { type Announcement, type Resource, type ResourceSection, type Poll, type VideoCategory, type VideoLecture } from '../use-admin';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, getDocs, query, where, Timestamp, increment, arrayUnion } from 'firebase/firestore';
 
 export const useContentActions = (db: any, toast: any) => {
     const addAnnouncement = (a: any) => addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() });
@@ -61,7 +61,3 @@ export const useContentActions = (db: any, toast: any) => {
         addVideoCategory, deleteVideoCategory, addVideoLecture, deleteVideoLecture
     };
 };
-
-function arrayUnion(arg0: { userId: string; userName: string; comment: string; createdAt: Timestamp; }) {
-    throw new Error('Function not implemented.');
-}

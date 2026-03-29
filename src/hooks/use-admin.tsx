@@ -6,11 +6,11 @@ import { db } from '@/lib/firebase';
 import { 
     collection, doc, onSnapshot, query, where, orderBy, limit, Timestamp, collectionGroup 
 } from 'firebase/firestore';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format } from 'date-fns';
 import { type LockableFeature } from '@/lib/features';
 import { useToast } from './use-toast';
 
-// Module Imports
+// Modular Logic Imports
 import { useUserActions } from './admin/use-user-actions';
 import { useContentActions } from './admin/use-content-actions';
 import { useStoreActions } from './admin/use-store-actions';
@@ -181,7 +181,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const storeActions = useStoreActions(db, toast);
     const systemActions = useSystemActions(db, toast);
 
-    // Snapshot Listeners
+    // Global Registry Listeners
     useEffect(() => {
         const process = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate() || new Date() }));
         const unsubs = [
@@ -204,6 +204,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubs.forEach(u => u());
     }, []);
 
+    // Current Citizen Sync
     useEffect(() => {
         if (!isClerkLoaded) return;
         if (!authUser) { setCurrentUserData(null); setLoading(false); return; }
@@ -230,10 +231,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             totalUsers: users.length,
             isChatQuiet: true
         }),
-        generateAiAccessToken: () => userActions.generateAiAccessToken(authUser?.id),
-        unlockResourceSection: (sid: string, c: number) => userActions.unlockResourceSection(authUser?.id, sid, c),
-        unlockFeatureForUser: (fid: any, c: number) => userActions.unlockFeatureForUser(authUser?.id, fid, c),
-        unlockThemeForUser: (tid: any, c: number) => userActions.unlockThemeForUser(authUser?.id, tid, c),
+        generateAiAccessToken: () => userActions.generateAiAccessToken(authUser?.id!),
+        unlockResourceSection: (sid: string, c: number) => userActions.unlockResourceSection(authUser?.id!, sid, c),
+        unlockFeatureForUser: (fid: any, c: number) => userActions.unlockFeatureForUser(authUser?.id!, fid, c),
+        unlockThemeForUser: (tid: any, c: number) => userActions.unlockThemeForUser(authUser?.id!, tid, c),
         submitPollVote: (pid: string, opt: string) => contentActions.submitPollVote(pid, opt, authUser!.id),
         submitPollComment: (pid: string, c: string) => contentActions.submitPollComment(pid, c, authUser!.id, currentUserData!.displayName),
         redeemStoreItem: (i: any, q: number) => storeActions.redeemStoreItem(i, q, authUser!.id),

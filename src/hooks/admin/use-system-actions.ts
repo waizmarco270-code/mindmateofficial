@@ -1,32 +1,48 @@
 
+'use server';
 import { db } from '@/lib/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, increment, query, where, getDocs, collectionGroup } from 'firebase/firestore';
-import { SUPER_ADMIN_UID, type GlobalGift, type BadgeType, type User } from '../use-admin';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, increment, query, where, getDocs, collectionGroup, getDoc, writeBatch } from 'firebase/firestore';
+import { type GlobalGift, type User } from '../use-admin';
 import { addDays } from 'date-fns';
 
 export const useSystemActions = (db: any, toast: any) => {
     const updateAppSettings = (s: any) => updateDoc(doc(db, 'appConfig', 'settings'), s);
 
     const sendGlobalGift = async (gift: any) => {
-        const sanitizedGift = { ...gift };
+        // STERILIZATION PULSE: Remove undefined values from rewards object before Firestore upload
+        const sanitizedRewards: any = {};
+        if (gift.rewards) {
+            Object.entries(gift.rewards).forEach(([key, value]) => {
+                if (value !== undefined && value !== null && value !== 0 && value !== 'none') {
+                    sanitizedRewards[key] = value;
+                }
+            });
+        }
+
+        const sanitizedGift = { 
+            ...gift,
+            rewards: sanitizedRewards
+        };
+        
         if (!sanitizedGift.maxClaims) delete sanitizedGift.maxClaims;
         
-        await addDoc(collection(db, 'globalGifts'), {
+        const docRef = await addDoc(collection(db, 'globalGifts'), {
             ...sanitizedGift,
             createdAt: serverTimestamp(),
             isActive: true,
             claimedBy: []
         });
 
-        // Smart Notification
+        // Smart Notification Relay
         const r = gift.rewards;
         const rewardsList = [];
         if (r.credits) rewardsList.push(`${r.credits} Credits`);
         if (r.wallet) rewardsList.push(`₹${r.wallet} Vault`);
-        if (r.badge) rewardsList.push(`${r.badge.toUpperCase()} Badge`);
-        if (r.alphaGlowWeeks) rewardsList.push(`${r.alphaGlowWeeks} Weeks of Alpha Radiance`);
+        if (r.badge) rewardsList.push(`${r.badge.toUpperCase()} Rank`);
+        if (r.alphaGlowWeeks) rewardsList.push(`${r.alphaGlowWeeks} Weeks Alpha Radiance`);
+        if (r.shields) rewardsList.push(`${r.shields} Penalty Shields`);
         
-        const msg = `Master sent you ${rewardsList.join(', ')}! Claim now.`;
+        const msg = `Master sent you: ${rewardsList.join(', ')}! Claim now.`;
 
         const notificationData: any = {
             title: "🎁 Legendary Gift Pulse!",
@@ -35,20 +51,12 @@ export const useSystemActions = (db: any, toast: any) => {
         };
 
         if (gift.target !== 'all') {
-            if (Array.isArray(gift.target)) {
-                for (const t of gift.target) {
-                    await fetch('/api/send-notification', { 
-                        method: 'POST', 
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ ...notificationData, userId: t }) 
-                    });
-                }
-            } else {
-                notificationData.userId = gift.target;
+            const targets = Array.isArray(gift.target) ? gift.target : [gift.target];
+            for (const t of targets) {
                 await fetch('/api/send-notification', { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(notificationData) 
+                    body: JSON.stringify({ ...notificationData, userId: t }) 
                 });
             }
         } else {
@@ -96,7 +104,7 @@ export const useSystemActions = (db: any, toast: any) => {
                 updates['inventory.alphaGlowExpires'] = next.toISOString();
             }
             if (r.badge) {
-                const badgeKey = `is${r.badge.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')}`;
+                const badgeKey = `is${r.badge.split('-').map((s:string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')}`;
                 updates[badgeKey] = true;
             }
 
