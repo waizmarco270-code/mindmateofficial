@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppSettings, type MaintenanceTheme } from '@/hooks/use-admin';
+import { useAdmin, SUPER_ADMIN_UID, type User, type AppSettings, type MaintenanceTheme, type IsolationExitRequest } from '@/hooks/use-admin';
 import {
   Table,
   TableHeader,
@@ -15,7 +15,7 @@ import {
   TableCell,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban, Link as LinkIcon, Key, Copy, Check, Terminal as CodeIcon, Download, Database, HardDrive, Cpu } from 'lucide-react';
+import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban, Link as LinkIcon, Key, Copy, Check, Terminal as CodeIcon, Download, Database, HardDrive, Cpu, ShieldAlert, DoorOpen } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -32,7 +32,7 @@ import { cn } from '@/lib/utils';
 import { PROJECT_MEMORY } from '@/app/lib/project-memory';
 
 const CREDIT_PASSWORD = "waizcredit";
-const MASTER_API_KEY = "EMITYGATE_SOVEREIGN_LINK_99"; // Sync with API route
+const MASTER_API_KEY = "EMITYGATE_SOVEREIGN_LINK_99";
 
 export default function SuperAdminPanelPage() {
   const { 
@@ -52,7 +52,10 @@ export default function SuperAdminPanelPage() {
     updateAppSettings,
     grantMasterCard,
     triggerAegisPulse,
-    announcements
+    announcements,
+    isolationExitRequests,
+    approveIsolationExit,
+    declineIsolationExit
   } = useAdmin();
   const { onlineUsers } = usePresence();
   const { toast } = useToast();
@@ -208,7 +211,6 @@ export default function SuperAdminPanelPage() {
   const handleExportMemory = () => {
       setIsExportingMemory(true);
       try {
-          // Wrap in a professional mission-briefing format
           const exportContent = `MINDMATE PROJECT MISSION BRIEFING\nGENESIS DATE: OCTOBER 2025\nCONTINUITY PROTOCOL: v2.5\n\n${PROJECT_MEMORY}`;
           const blob = new Blob([exportContent], { type: 'text/plain' });
           const url = window.URL.createObjectURL(blob);
@@ -273,9 +275,60 @@ export default function SuperAdminPanelPage() {
           </Card>
       </div>
 
-      <Accordion type="multiple" defaultValue={['project-continuity', 'emitygate-integration']} className="w-full space-y-4">
+      <Accordion type="multiple" defaultValue={['project-continuity', 'isolation-appeals']} className="w-full space-y-4">
         
-        {/* continuity. Project Continuity Archive (ENHANCED) */}
+        {/* Isolation Emergency Appeals Module */}
+        <AccordionItem value="isolation-appeals" className="border-b-0">
+          <Card className="border-red-500/30 bg-red-500/5">
+            <AccordionTrigger className="p-6">
+               <div className="flex items-center gap-3">
+                <ShieldAlert className="h-6 w-6 text-red-500" />
+                <div>
+                  <h3 className="text-lg font-black uppercase tracking-tight">Isolation Emergency Appeals</h3>
+                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Review requests to breach the monastery protocol.</p>
+                </div>
+              </div>
+            </AccordionTrigger>
+            <AccordionContent className="p-6 pt-0 space-y-4">
+                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                    {isolationExitRequests.map(req => (
+                        <Card key={req.id} className="bg-background border-red-500/20 overflow-hidden group">
+                            <CardHeader className="p-4 pb-2 flex-row items-center gap-3">
+                                <Avatar className="h-10 w-10 border-2 border-red-500/20">
+                                    <AvatarImage src={req.userPhoto} />
+                                    <AvatarFallback>{req.userName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-black text-sm truncate uppercase">{req.userName}</p>
+                                    <p className="text-[9px] font-bold text-red-500 uppercase tracking-widest">Protocol: {req.durationId}</p>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-3">
+                                <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/10 italic text-xs text-slate-300 min-h-[60px]">
+                                    "{req.message}"
+                                </div>
+                                <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground uppercase">
+                                    <Clock className="h-3 w-3"/> Sent {format(req.createdAt.toDate(), 'PPP p')}
+                                </div>
+                            </CardContent>
+                            <CardFooter className="p-4 pt-0 grid grid-cols-2 gap-2">
+                                <Button variant="ghost" size="sm" className="h-10 text-[10px] font-black uppercase" onClick={() => declineIsolationExit(req.id)}>DENY APPEAL</Button>
+                                <Button size="sm" className="h-10 text-[10px] font-black uppercase bg-red-600 hover:bg-red-700" onClick={() => approveIsolationExit(req.id)}>APPROVE BREACH</Button>
+                            </CardFooter>
+                        </Card>
+                    ))}
+                    {isolationExitRequests.length === 0 && (
+                        <div className="lg:col-span-3 py-16 text-center opacity-30 border-2 border-dashed rounded-[2rem]">
+                            <ShieldCheck className="h-12 w-12 mx-auto mb-2" />
+                            <p className="font-black uppercase tracking-[0.2em] text-[10px]">No active appeals in the mainframe</p>
+                        </div>
+                    )}
+                </div>
+            </AccordionContent>
+          </Card>
+        </AccordionItem>
+
+        {/* 1. Project Continuity Archive */}
         <AccordionItem value="project-continuity" className="border-b-0">
           <Card className="border-amber-500/30 bg-amber-500/5">
             <AccordionTrigger className="p-6">
@@ -308,10 +361,6 @@ export default function SuperAdminPanelPage() {
                                     <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
                                     <p className="text-xs font-medium text-foreground/80"><b>Persona Core</b>: Marco's exact tone & behavior protocols.</p>
                                 </div>
-                                <div className="flex items-start gap-3">
-                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
-                                    <p className="text-xs font-medium text-foreground/80"><b>Architecture Map</b>: Firebase + Clerk + Bytez stack guide.</p>
-                                </div>
                             </div>
                             <Button onClick={handleExportMemory} disabled={isExportingMemory} className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-amber-950 font-black text-lg shadow-xl shadow-amber-500/20">
                                 {isExportingMemory ? <Loader2 className="animate-spin mr-2"/> : <Download className="mr-2"/>}
@@ -331,122 +380,6 @@ export default function SuperAdminPanelPage() {
                                     {PROJECT_MEMORY}
                                 </pre>
                             </ScrollArea>
-                        </CardContent>
-                    </Card>
-                </div>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
-        {/* 0. EmityGate Integration Hub */}
-        <AccordionItem value="emitygate-integration" className="border-b-0">
-          <Card className="border-blue-500/30 bg-blue-500/5">
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <LinkIcon className="h-6 w-6 text-blue-500" />
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">EmityGate Link Protocol</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Cross-product synchronization & API Hub.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0 space-y-6">
-                <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-                    <Card className="bg-background border-blue-500/20 shadow-xl">
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2"><Key className="text-blue-500 h-4 w-4"/> Sovereign API Key</CardTitle>
-                            <CardDescription>Use this key on EmityGate.com to securely pull user statistics.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center gap-2">
-                                <Input readOnly value={MASTER_API_KEY} className="font-mono text-xs bg-muted/50 h-12" />
-                                <Button size="icon" variant="outline" className="h-12 w-12" onClick={copyApiKey}>
-                                    {isApiKeyCopied ? <Check className="h-4 w-4 text-green-500"/> : <Copy className="h-4 w-4"/>}
-                                </Button>
-                            </div>
-                            <div className="p-4 rounded-xl bg-blue-500/10 border border-blue-500/20 space-y-2">
-                                <p className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 tracking-widest">Active Endpoint</p>
-                                <code className="text-[10px] block p-2 bg-black/20 rounded font-mono break-all text-muted-foreground">
-                                    GET https://mindmate.emitygate.com/api/v1/user/[userId]
-                                </code>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="bg-background border-primary/20">
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2"><CodeIcon className="text-primary h-4 w-4"/> Integration Intel</CardTitle>
-                            <CardDescription>How to talk to the MindMate mainframe.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <ScrollArea className="h-48 bg-muted rounded-xl p-4 border border-white/5">
-                                <pre className="text-[10px] font-mono leading-relaxed opacity-80">
-{`// Implementation Blueprint
-const fetchUserStats = async (uid) => {
-  const response = await fetch(\`https://mindmate.emitygate.com/api/v1/user/\${uid}\`, {
-    headers: {
-      'x-api-key': 'YOUR_KEY_HERE',
-      'Content-Type': 'application/json'
-    }
-  });
-  return response.json();
-};`}
-                                </pre>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-                </div>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
-        {/* 1. Aegis Intelligence Hub */}
-        <AccordionItem value="aegis-intelligence" className="border-b-0">
-          <Card className="border-primary/30 bg-primary/5">
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <BrainCircuit className="h-6 w-6 text-primary animate-pulse" />
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">Aegis Intelligence Hub</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Autonomous app governance & engagement engine.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0 space-y-6">
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                    <Card className="bg-background">
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2"><Zap className="text-yellow-500 h-4 w-4"/> Control System</CardTitle>
-                            <CardDescription>Configure Aegis's level of autonomy.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-4 border rounded-xl">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base font-bold">Auto-Pilot Mode</Label>
-                                    <p className="text-xs text-muted-foreground">Allow Aegis to post announcements and surprises independently.</p>
-                                </div>
-                                <Switch checked={isAegisMode} onCheckedChange={setIsAegisMode} />
-                            </div>
-                            <Button onClick={handleMaintenanceUpdate} variant="outline" className="w-full">Save Aegis Mode Status</Button>
-                        </CardContent>
-                    </Card>
-                    <Card className="bg-background">
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2"><Sparkles className="text-primary h-4 w-4"/> Manual Sentinel Pulse</CardTitle>
-                            <CardDescription>Force Aegis to analyze and act right now.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="p-4 rounded-xl bg-muted/50 border italic text-xs text-muted-foreground">
-                                Last Pulse: {appSettings?.lastAegisPulse ? format(new Date(appSettings.lastAegisPulse), 'PPP p') : 'Never'}
-                            </div>
-                            <Button 
-                                onClick={handleAegisPulse} 
-                                className="w-full h-12 text-lg font-black uppercase shadow-lg shadow-primary/20" 
-                                disabled={isAegisPulseRunning}
-                            >
-                                {isAegisPulseRunning ? <Loader2 className="animate-spin mr-2" /> : <BrainCircuit className="mr-2" />}
-                                Trigger Intelligence Pulse
-                            </Button>
                         </CardContent>
                     </Card>
                 </div>
@@ -571,17 +504,6 @@ const fetchUserStats = async (uid) => {
                                 <Label className="text-xs font-black uppercase tracking-widest">Display Message</Label>
                                 <Textarea value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} placeholder="Mainframe upgrades in progress..." />
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-black uppercase tracking-widest">Visual Theme</Label>
-                                <Select value={maintenanceTheme} onValueChange={(v: any) => setMaintenanceTheme(v)}>
-                                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="shiny">Shiny Purple (Animated)</SelectItem>
-                                        <SelectItem value="forest">Forest Green (Calm)</SelectItem>
-                                        <SelectItem value="sunflower">Sunflower Yellow (Warning)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
                         </CardContent>
                     </Card>
                     <Card className="border-primary/30">
@@ -591,7 +513,6 @@ const fetchUserStats = async (uid) => {
                                 <Label className="text-xs font-black uppercase tracking-widest">Protocol Changelog</Label>
                                 <Textarea value={whatsNewMessage} onChange={e => setWhatsNewMessage(e.target.value)} placeholder="Brief the citizens on the new updates..." className="min-h-[150px]" />
                             </div>
-                            <p className="text-[10px] text-muted-foreground italic font-medium">💡 Updating this will trigger an un-dismissible popup for all active users.</p>
                         </CardContent>
                     </Card>
                 </div>
@@ -599,196 +520,6 @@ const fetchUserStats = async (uid) => {
             </AccordionContent>
           </Card>
         </AccordionItem>
-
-        {/* 4. Global Gifts */}
-        <AccordionItem value="global-gifts" className="border-b-0">
-          <Card>
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <Gift className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">Global Gifts & Alerts</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Reward citizens or announce events.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0 space-y-6">
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                    <Card>
-                        <CardHeader><CardTitle className="text-base font-black uppercase">Create New Directive</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Target Population</Label>
-                                <Select value={popupTarget} onValueChange={(v: any) => { setPopupTarget(v); if(v === 'all') setSelectedUser(null); }}>
-                                    <SelectTrigger className="h-11"><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Every Citizen (Global)</SelectItem>
-                                        <SelectItem value="single">Targeted Individual</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            {popupTarget === 'single' && (
-                                <div className="space-y-3 p-3 rounded-xl border bg-muted/30">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-primary">Locate Scholar</Label>
-                                    {selectedUser ? (
-                                        <div className="flex items-center justify-between p-2 bg-background rounded-lg border border-primary/30">
-                                            <div className="flex items-center gap-2">
-                                                <Avatar className="h-6 w-6"><AvatarImage src={selectedUser.photoURL}/><AvatarFallback>U</AvatarFallback></Avatar>
-                                                <span className="text-sm font-bold">{selectedUser.displayName}</span>
-                                            </div>
-                                            <button className="h-6 w-6 rounded-full hover:bg-muted flex items-center justify-center" onClick={() => {setSelectedUser(null); setPopupSingleUserId('');}}><X className="h-3 w-3"/></button>
-                                        </div>
-                                    ) : (
-                                        <div className="relative">
-                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/>
-                                            <Input 
-                                                value={userSearchTerm} 
-                                                onChange={e => setUserSearchTerm(e.target.value)} 
-                                                placeholder="Enter identifier..." 
-                                                className="pl-9 h-10 rounded-lg"
-                                            />
-                                            {filteredUsers.length > 0 && (
-                                                <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-background border-2 rounded-xl shadow-2xl overflow-hidden">
-                                                    {filteredUsers.map(u => (
-                                                        <button 
-                                                            key={u.uid} 
-                                                            className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 text-left border-b last:border-0"
-                                                            onClick={() => handleUserSelect(u)}
-                                                        >
-                                                            <Avatar className="h-8 w-8"><AvatarImage src={u.photoURL}/><AvatarFallback>U</AvatarFallback></Avatar>
-                                                            <div className="flex-1">
-                                                                <p className="text-xs font-black">{u.displayName}</p>
-                                                                <p className="text-[10px] text-muted-foreground font-mono">{u.uid.slice(-8)}</p>
-                                                            </div>
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Encryption Message</Label>
-                                <Input value={popupMessage} onChange={e => setPopupMessage(e.target.value)} placeholder="Transmission content..." className="h-11" />
-                            </div>
-                            
-                            <div className="grid grid-cols-3 gap-3">
-                                <div className="space-y-1">
-                                    <Label className="text-[9px] uppercase font-black text-muted-foreground">Credits</Label>
-                                    <Input type="number" value={popupCreditAmount} onChange={e => setPopupCreditAmount(Number(e.target.value))} className="h-10 font-bold" />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-[9px] uppercase font-black text-muted-foreground">Scratch</Label>
-                                    <Input type="number" value={popupScratchAmount} onChange={e => setPopupScratchAmount(Number(e.target.value))} className="h-10 font-bold" />
-                                </div>
-                                <div className="space-y-1">
-                                    <Label className="text-[9px] uppercase font-black text-muted-foreground">Flip</Label>
-                                    <Input type="number" value={popupFlipAmount} onChange={e => setPopupFlipAmount(Number(e.target.value))} className="h-10 font-bold" />
-                                </div>
-                            </div>
-                            
-                            <Button onClick={handleSendGlobalGift} disabled={isSendingPopup || !popupMessage} className="w-full h-12 font-black uppercase tracking-widest">
-                                {isSendingPopup ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Send className="mr-2 h-4 w-4"/>} Dispatch Assets
-                            </Button>
-                        </CardContent>
-                    </Card>
-                    
-                    <Card className="border-primary/10">
-                        <CardHeader><CardTitle className="text-base font-black uppercase">Active Transmissions</CardTitle></CardHeader>
-                        <CardContent>
-                            <ScrollArea className="h-[320px]">
-                                <div className="space-y-3 pr-4">
-                                    {globalGifts.map(gift => (
-                                        <div key={gift.id} className="p-4 border-2 rounded-2xl bg-muted/30 text-xs flex items-center justify-between group transition-all hover:border-primary/20">
-                                            <div className="flex-1 truncate pr-2">
-                                                <div className="flex items-center gap-2 mb-1.5">
-                                                    {gift.isActive ? <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" /> : <div className="h-2 w-2 rounded-full bg-muted" />}
-                                                    <p className="font-black text-sm uppercase tracking-tight truncate">{gift.message}</p>
-                                                </div>
-                                                <div className="flex items-center gap-2 opacity-60 font-bold uppercase text-[9px] tracking-widest">
-                                                    <span>TARGET: {gift.target === 'all' ? 'GLOBAL' : gift.target.slice(-8)}</span>
-                                                    <span>•</span>
-                                                    <span>SENT: {format(gift.createdAt, 'MMM d, p')}</span>
-                                                </div>
-                                            </div>
-                                            <div className="flex gap-2">
-                                                {gift.isActive && <Button variant="outline" size="sm" className="h-8 text-[9px] font-black uppercase border-primary/20" onClick={() => deactivateGift(gift.id)}>HALT</Button>}
-                                                <Button variant="destructive" size="icon" className="h-8 w-8 rounded-lg shadow-lg" onClick={() => deleteGlobalGift(gift.id)}><Trash2 className="h-4 w-4"/></Button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {globalGifts.length === 0 && (
-                                        <div className="flex flex-col items-center justify-center h-48 opacity-20">
-                                            <Gift className="h-12 w-12 mb-2" />
-                                            <p className="font-black uppercase tracking-[0.2em] text-[10px]">No active gifts</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-                </div>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
-        {/* 5. System Overrides */}
-        <AccordionItem value="overrides" className="border-b-0">
-          <Card>
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <Zap className="h-6 w-6 text-red-500" />
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">System Overrides</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Emergency manual adjustments.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0">
-                {!isCreditUnlocked ? (
-                    <form onSubmit={handleCreditPasswordSubmit} className="flex flex-col items-center gap-4 py-16 border-2 border-dashed rounded-3xl bg-red-500/5">
-                        <div className="p-5 bg-red-500/10 rounded-full border-2 border-red-500/30"><KeyRoundIcon className="h-12 w-12 text-red-500"/></div>
-                        <div className="text-center space-y-1">
-                            <h4 className="font-black text-xl uppercase italic">RESTRICTED ZONE</h4>
-                            <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-[0.3em]">Credentials Required</p>
-                        </div>
-                        <input type="password" value={creditPassword} onChange={e => setCreditPassword(e.target.value)} className="max-w-[240px] h-14 text-center text-2xl font-black rounded-2xl bg-background border-2 outline-none focus:border-red-500 transition-colors" placeholder="••••••••" />
-                        <Button type="submit" size="lg" className="h-12 px-10 font-black uppercase shadow-lg shadow-primary/20">AUTHORIZE ACCESS</Button>
-                    </form>
-                ) : (
-                    <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                        <Card className="border-red-500/20 bg-red-500/5">
-                            <CardHeader><CardTitle className="text-sm font-black uppercase tracking-widest">Manual Credit Injection</CardTitle></CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest">Injection Amount (Global)</Label>
-                                    <Input type="number" id="gift-all-credits" defaultValue={100} className="h-12 text-xl font-black" />
-                                </div>
-                                <Button className="w-full h-12 bg-red-600 hover:bg-red-700 font-black uppercase" onClick={() => {
-                                    const amt = Number((document.getElementById('gift-all-credits') as HTMLInputElement).value);
-                                    giftCreditsToAllUsers(amt);
-                                    toast({ title: "Injected Successfully", description: `Briefed ${amt} credits to the population.` });
-                                }}>EXECUTE INJECTION</Button>
-                            </CardContent>
-                        </Card>
-                        <Card className="border-primary/20">
-                            <CardHeader><CardTitle className="text-sm font-black uppercase tracking-widest">System Maintenance</CardTitle></CardHeader>
-                            <CardContent className="grid grid-cols-2 gap-3">
-                                <Button variant="outline" className="text-[10px] font-black uppercase h-12 border-primary/20" onClick={clearGlobalChat}>PURGE WORLD CHAT</Button>
-                                <Button variant="outline" className="text-[10px] font-black uppercase h-12 border-primary/20" onClick={clearQuizLeaderboard}>RESET QUIZ DATA</Button>
-                                <Button variant="outline" className="text-[10px] font-black uppercase h-12 border-primary/20" onClick={resetWeeklyStudyTime}>RESET TIME LOGS</Button>
-                                <Button variant="outline" className="text-[10px] font-black uppercase h-12 border-primary/20" onClick={resetGameZoneLeaderboard}>RESET GAMES</Button>
-                            </CardContent>
-                        </Card>
-                    </div>
-                )}
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
       </Accordion>
 
       {/* MODALS */}
@@ -810,9 +541,6 @@ const fetchUserStats = async (uid) => {
                             <SelectItem value="365" className="font-bold uppercase text-xs">365 Days (Eternal Citizen)</SelectItem>
                         </SelectContent>
                     </Select>
-                </div>
-                <div className="p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-xs font-medium text-green-700 dark:text-green-300 leading-relaxed">
-                    💡 Master Cards allow users to bypass all credit costs for focus sessions, quizzes, and theme unlocks. Use only for High Council members or top-tier testers.
                 </div>
             </div>
             <DialogFooter>
@@ -836,7 +564,7 @@ const fetchUserStats = async (uid) => {
                   </DialogDescription>
               </DialogHeader>
               
-              <div className="py-4 space-y-6">
+              <div className="py-4 space-y-6 text-left">
                   <div className="space-y-2">
                       <Label className="text-xs font-black uppercase tracking-widest">Temporal Tier</Label>
                       <Select value={banType} onValueChange={(v: any) => setBanType(v)}>
@@ -868,7 +596,7 @@ const fetchUserStats = async (uid) => {
                       <Textarea 
                         value={banReason} 
                         onChange={e => setBanReason(e.target.value)} 
-                        placeholder="e.g., Harassment in Global Forum, attempted credit exploit..." 
+                        placeholder="e.g., Harassment, credit exploit..." 
                         className="bg-muted/30"
                       />
                   </div>
@@ -883,86 +611,6 @@ const fetchUserStats = async (uid) => {
                   </DialogClose>
               </DialogFooter>
           </DialogContent>
-      </Dialog>
-
-      {/* Aegis Decision Dialog */}
-      <Dialog open={isDecisionDialogOpen} onOpenChange={setIsDecisionDialogOpen}>
-        <DialogContent className="max-w-2xl">
-            <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 text-2xl font-black uppercase tracking-tight">
-                    <BrainCircuit className="text-primary animate-pulse"/> Sentinel Decision Log
-                </DialogTitle>
-                <DialogDescription className="font-medium uppercase text-[10px] tracking-widest opacity-60">
-                    Reviewing autonomous reasoning and actions taken by Aegis.
-                </DialogDescription>
-            </DialogHeader>
-            
-            {aegisLastDecision && (
-                <div className="py-6 space-y-6">
-                    <div className="p-5 rounded-2xl bg-muted/50 border-l-4 border-primary shadow-inner">
-                        <div className="flex items-center gap-2 mb-2">
-                            <ScrollText className="h-4 w-4 text-primary"/>
-                            <h4 className="font-black text-[10px] uppercase tracking-[0.2em] text-primary">Aegis Intelligence Feed</h4>
-                        </div>
-                        <p className="text-sm leading-relaxed font-medium text-foreground/90 italic">"{aegisLastDecision.decision}"</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-3">
-                            <h5 className="font-black text-[9px] uppercase tracking-widest text-muted-foreground px-1">Actions Dispatched</h5>
-                            <div className="space-y-2">
-                                {aegisLastDecision.announcement && (
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                                        <Megaphone className="h-4 w-4 text-blue-500"/>
-                                        <span className="text-[10px] font-black uppercase tracking-tight">Post Announcement</span>
-                                    </div>
-                                )}
-                                {aegisLastDecision.dailySurprise && (
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                                        <Sparkles className="h-4 w-4 text-purple-500"/>
-                                        <span className="text-[10px] font-black uppercase tracking-tight">Sync Daily Surprise</span>
-                                    </div>
-                                )}
-                                {aegisLastDecision.creditRain && (
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-                                        <CloudRain className="h-4 w-4 text-cyan-500"/>
-                                        <span className="text-[10px] font-black uppercase tracking-tight">Execute Credit Rain</span>
-                                    </div>
-                                )}
-                                {aegisLastDecision.globalGift && (
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                                        <Gift className="h-4 w-4 text-amber-500"/>
-                                        <span className="text-[10px] font-black uppercase tracking-tight">Targeted Reward Send</span>
-                                    </div>
-                                )}
-                                {aegisLastDecision.actionTaken === 'idled' && (
-                                    <div className="flex items-center gap-3 p-3 rounded-xl bg-muted border">
-                                        <X className="h-4 w-4 text-muted-foreground"/>
-                                        <span className="text-[10px] font-black uppercase tracking-tight">Sentinel Idle (Optimal)</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {aegisLastDecision.announcement && (
-                            <div className="space-y-3">
-                                <h5 className="font-black text-[9px] uppercase tracking-widest text-muted-foreground px-1">Briefing Preview</h5>
-                                <div className="p-4 rounded-2xl border bg-background space-y-2 shadow-inner">
-                                    <p className="font-black text-xs uppercase text-primary leading-tight">{aegisLastDecision.announcement.title}</p>
-                                    <p className="text-[10px] text-muted-foreground font-medium leading-relaxed line-clamp-4">{aegisLastDecision.announcement.description}</p>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            <DialogFooter>
-                <DialogClose asChild>
-                    <Button className="w-full h-12 font-black uppercase tracking-widest">Understood, Sentinel</Button>
-                </DialogClose>
-            </DialogFooter>
-        </DialogContent>
       </Dialog>
     </div>
   );

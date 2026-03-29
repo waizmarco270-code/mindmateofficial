@@ -99,6 +99,17 @@ export interface User {
   transactions?: { id: string; packName: string; credits: number; price?: number; date: string; type?: string }[];
 }
 
+export interface IsolationExitRequest {
+    id: string;
+    userId: string;
+    userName: string;
+    userPhoto?: string;
+    durationId: string;
+    message: string;
+    status: 'pending' | 'approved' | 'declined';
+    createdAt: Timestamp;
+}
+
 export interface Announcement {
     id: string;
     title: string;
@@ -371,6 +382,9 @@ interface AppDataContextType {
     deleteVideoLecture: (lectureId: string) => Promise<void>;
     topUpWallet: (amount: number, transactionId: string) => Promise<void>;
     requestWithdrawal: (amount: number) => Promise<void>;
+    isolationExitRequests: IsolationExitRequest[];
+    approveIsolationExit: (requestId: string) => Promise<void>;
+    declineIsolationExit: (requestId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -395,6 +409,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
+    const [isolationExitRequests, setIsolationExitRequests] = useState<IsolationExitRequest[]>([]);
     const [loading, setLoading] = useState(true);
 
     const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
@@ -524,12 +539,37 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('createdAt', 'desc')), (s) => setStoreItems(processWithDate<StoreItem>(s)));
         const unsubVideoCats = onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(processWithDate<VideoCategory>(s)));
         const unsubVideoLecs = onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(processWithDate<VideoLecture>(s)));
+        const unsubExitReqs = onSnapshot(query(collection(db, 'isolationExitRequests'), where('status', '==', 'pending')), (s) => setIsolationExitRequests(s.docs.map(d => ({ id: d.id, ...d.data() } as IsolationExitRequest))));
 
         return () => {
             unsubAnnouncements(); unsubResources(); unsubPolls(); unsubDailySurprises(); unsubSections();
             unsubAppSettings(); unsubGifts(); unsubTickets(); unsubShowcases();
-            unsubCreditPacks(); unsubStoreItems(); unsubVideoCats(); unsubVideoLecs();
+            unsubCreditPacks(); unsubStoreItems(); unsubVideoCats(); unsubVideoLecs(); unsubExitReqs();
         };
+    }, []);
+
+    const approveIsolationExit = useCallback(async (requestId: string) => {
+        const reqRef = doc(db, 'isolationExitRequests', requestId);
+        const reqSnap = await getDoc(reqRef);
+        if (!reqSnap.exists()) return;
+        const data = reqSnap.data() as IsolationExitRequest;
+
+        const batch = writeBatch(db);
+        batch.delete(doc(db, 'users', data.userId, 'isolation', 'current'));
+        batch.update(reqRef, { status: 'approved' });
+        await batch.commit();
+    }, []);
+
+    const declineIsolationExit = useCallback(async (requestId: string) => {
+        const reqRef = doc(db, 'isolationExitRequests', requestId);
+        const reqSnap = await getDoc(reqRef);
+        if (!reqSnap.exists()) return;
+        const data = reqSnap.data() as IsolationExitRequest;
+
+        const batch = writeBatch(db);
+        batch.update(doc(db, 'users', data.userId, 'isolation', 'current'), { status: 'active', emergencyRequest: null });
+        batch.update(reqRef, { status: 'declined' });
+        await batch.commit();
     }, []);
 
     const addCreditsToUser = useCallback(async (uid: string, amount: number) => {
@@ -728,7 +768,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     }, [isSuperAdmin, users, announcements]);
 
     const value: AppDataContextType = {
-        isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures,
+        isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, isolationExitRequests,
+        approveIsolationExit, declineIsolationExit,
         toggleUserBlock: (uid, isBlocked, type, days, reason) => {
             const updates: any = { isBlocked };
             if (isBlocked) {
