@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useImmersive } from '@/hooks/use-immersive';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type SprintStage = 'prep' | 'blurt' | 'verify';
 
@@ -47,7 +48,7 @@ const STAGE_CONFIG = {
 };
 
 const BLURTING_PENALTY = 20;
-const BLURTING_REWARD = 10; // Increased reward for 30 min session
+const BLURTING_REWARD = 10; 
 
 export function BlurtingSprint() {
     const { user } = useUser();
@@ -180,7 +181,7 @@ export function BlurtingSprint() {
 
     return (
         <div className="flex flex-col min-h-screen bg-background text-foreground select-none">
-            <header className="p-4 border-b bg-card/50 backdrop-blur-md flex items-center justify-between">
+            <header className="p-4 border-b bg-card/50 backdrop-blur-md flex items-center justify-between flex-shrink-0">
                 <div className="flex items-center gap-3">
                     <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
                         <Brain className="h-6 w-6" />
@@ -195,30 +196,30 @@ export function BlurtingSprint() {
                 </Button>
             </header>
 
-            <main className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full space-y-8 pb-24">
-                <Card className={cn("border-none shadow-2xl transition-all duration-700 rounded-[3rem] overflow-hidden", config.bg)}>
+            <main className="flex-1 p-4 md:p-6 max-w-5xl mx-auto w-full space-y-6 pb-24">
+                <Card className={cn("border-none shadow-2xl transition-all duration-700 rounded-[2.5rem] overflow-hidden", config.bg)}>
                     <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
-                    <CardHeader className="text-center relative z-10 p-8 sm:p-12">
-                        <div className="flex justify-center mb-6">
+                    <CardHeader className="text-center relative z-10 p-6 sm:p-8">
+                        <div className="flex justify-center mb-4">
                             <div className={cn(
-                                "flex items-center gap-3 px-6 py-2 rounded-full border-2 shadow-inner transition-colors duration-500",
+                                "flex items-center gap-2 px-4 py-1.5 rounded-full border shadow-inner transition-colors duration-500",
                                 isActive ? "bg-background/80 border-green-500/30 text-green-500" : "bg-background/80 border-red-500/30 text-red-500"
                             )}>
-                                <div className={cn("h-2.5 w-2.5 rounded-full animate-pulse", isActive ? "bg-green-500" : "bg-red-500")} />
-                                <span className="text-xs font-black uppercase tracking-[0.2em]">{isActive ? 'Uplink Synchronized' : 'Protocol Suspended'}</span>
+                                <div className={cn("h-2 w-2 rounded-full animate-pulse", isActive ? "bg-green-500" : "bg-red-500")} />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em]">{isActive ? 'Uplink Active' : 'Protocol Paused'}</span>
                             </div>
                         </div>
-                        <CardTitle className={cn("text-3xl md:text-5xl font-black italic uppercase tracking-tighter leading-none", config.color)}>
+                        <CardTitle className={cn("text-2xl md:text-4xl font-black italic uppercase tracking-tighter leading-none", config.color)}>
                             {config.title}
                         </CardTitle>
-                        <CardDescription className="text-base sm:text-lg font-bold mt-4 max-w-2xl mx-auto leading-relaxed opacity-80">
+                        <CardDescription className="text-sm sm:text-base font-bold mt-2 max-w-xl mx-auto leading-relaxed opacity-80">
                             {config.desc}
                         </CardDescription>
                     </CardHeader>
                     
-                    <CardContent className="flex flex-col items-center gap-10 py-0 pb-12 relative z-10">
-                        <div className="relative h-64 w-64 flex items-center justify-center">
-                            <svg className="absolute inset-0 h-full w-full drop-shadow-2xl" viewBox="0 0 100 100">
+                    <CardContent className="flex flex-col items-center gap-6 py-0 pb-8 relative z-10">
+                        <div className="relative h-48 w-48 flex items-center justify-center">
+                            <svg className="absolute inset-0 h-full w-full drop-shadow-xl" viewBox="0 0 100 100">
                                 <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" strokeWidth="1.5" className="text-white/5" />
                                 <motion.circle
                                     cx="50" cy="50" r="46"
@@ -232,70 +233,69 @@ export function BlurtingSprint() {
                                 />
                             </svg>
                             <div className="flex flex-col items-center">
-                                <span className="text-6xl font-black tabular-nums tracking-tighter text-foreground drop-shadow-lg">
+                                <span className="text-4xl font-black tabular-nums tracking-tighter text-foreground drop-shadow-lg">
                                     {formatTime(timeLeft)}
                                 </span>
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Remaining</span>
+                                <span className="text-[8px] font-black uppercase tracking-[0.3em] opacity-40">Timer</span>
                             </div>
                         </div>
 
-                        <div className="flex gap-4 w-full max-w-md">
-                            <Button className="flex-1 h-16 rounded-2xl font-black text-lg shadow-xl" onClick={() => setIsActive(!isActive)}>
-                                {isActive ? <Pause className="mr-2 h-6 w-6" /> : <Play className="mr-2 h-6 w-6" />}
-                                {isActive ? 'PAUSE' : 'INITIALIZE'}
+                        <div className="flex gap-4 w-full max-w-xs">
+                            <Button className="flex-1 h-14 rounded-2xl font-black text-base shadow-xl" onClick={() => setIsActive(!isActive)}>
+                                {isActive ? <Pause className="mr-2 h-5 w-5" /> : <Play className="mr-2 h-5 w-5" />}
+                                {isActive ? 'PAUSE' : 'START'}
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
 
-                <div className="relative pt-4">
+                <div className="relative">
                     <AnimatePresence mode="wait">
                         {stage === 'blurt' ? (
                             <motion.div 
-                                initial={{ opacity: 0, y: 30 }}
+                                initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -30 }}
-                                className="space-y-6"
+                                exit={{ opacity: 0, y: -20 }}
+                                className="space-y-4"
                             >
                                 <div className="flex items-center justify-between px-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
-                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Recall Terminal Active</h3>
+                                        <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
+                                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">Recall Terminal Active</h3>
                                     </div>
-                                    <div className="text-[10px] font-black text-muted-foreground uppercase flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full border border-white/5">
+                                    <div className="text-[8px] font-black text-muted-foreground uppercase flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full border border-white/5">
                                         <ShieldCheck className="h-3 w-3 text-emerald-500" /> Integrity Guarded
                                     </div>
                                 </div>
                                 <Textarea 
                                     value={blurtText}
                                     onChange={(e) => setBlurtText(e.target.value)}
-                                    placeholder="EMPTY YOUR CONSCIOUSNESS HERE. Every fact, date, diagram description, and concept. No cheating. No notes. Just your mind."
-                                    className="min-h-[400px] text-xl font-medium leading-relaxed bg-emerald-500/5 border-2 border-emerald-500/20 rounded-[2.5rem] p-8 focus-visible:ring-emerald-500/30 shadow-inner select-text"
+                                    placeholder="EMPTY YOUR CONSCIOUSNESS HERE. Every fact, date, and concept. No cheating. Just your mind."
+                                    className="min-h-[300px] text-lg font-medium leading-relaxed bg-emerald-500/5 border-2 border-emerald-500/20 rounded-[2rem] p-6 focus-visible:ring-emerald-500/30 shadow-inner select-text"
                                 />
                             </motion.div>
                         ) : (
                             <motion.div 
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="py-24 text-center border-4 border-dashed rounded-[4rem] opacity-20 border-primary/20"
+                                className="py-16 text-center border-4 border-dashed rounded-[3rem] opacity-20 border-primary/20"
                             >
-                                <ShieldCheck className="h-24 w-24 mx-auto mb-6" />
-                                <p className="text-2xl font-black uppercase tracking-[0.3em]">Terminal Offline</p>
-                                <p className="text-sm mt-3 font-bold">{stage === 'prep' ? 'PROTOCOL: DEEP STUDY MODE' : 'PROTOCOL: VERIFICATION MODE'}</p>
+                                <ShieldCheck className="h-16 w-16 mx-auto mb-4" />
+                                <p className="text-xl font-black uppercase tracking-[0.3em]">Terminal Offline</p>
+                                <p className="text-xs mt-2 font-bold">{stage === 'prep' ? 'PROTOCOL: DEEP STUDY MODE' : 'PROTOCOL: VERIFICATION MODE'}</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
             </main>
 
-            {/* Stage Indicator Mobile Dock */}
             <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t flex justify-center gap-2 z-40">
                 {(['prep', 'blurt', 'verify'] as const).map((s) => (
                     <div 
                         key={s} 
                         className={cn(
-                            "h-1.5 flex-1 max-w-[100px] rounded-full transition-all duration-500",
-                            stage === s ? "bg-primary w-12" : "bg-muted w-4"
+                            "h-1 flex-1 max-w-[80px] rounded-full transition-all duration-500",
+                            stage === s ? "bg-primary w-10" : "bg-muted w-3"
                         )} 
                     />
                 ))}

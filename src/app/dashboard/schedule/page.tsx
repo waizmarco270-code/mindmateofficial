@@ -115,19 +115,19 @@ export default function SchedulePage() {
     }
 
     return (
-        <div className="space-y-8 pb-20 max-w-5xl mx-auto">
+        <div className="space-y-8 pb-20 max-w-6xl mx-auto">
             <div className="relative">
                 <div className="absolute -top-10 -left-10 w-40 h-40 bg-primary/10 rounded-full blur-3xl opacity-50" />
-                <h1 className="text-3xl md:text-4xl font-black tracking-tighter flex items-center gap-3 italic uppercase">
-                    <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-                        <Calendar className="h-7 w-7 text-primary" />
+                <h1 className="text-4xl md:text-5xl font-black tracking-tighter flex items-center gap-3 italic uppercase text-shadow-glow">
+                    <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-xl shadow-primary/5">
+                        <Calendar className="h-8 w-8 text-primary" />
                     </div>
                     MindMate Nexus
                 </h1>
-                <p className="text-muted-foreground mt-2 font-medium">Study Command Center. Initialize mission protocols.</p>
+                <p className="text-lg text-muted-foreground mt-3 font-medium max-w-2xl">Study Command Center. Initialize mission protocols and master your schedule.</p>
             </div>
             
-            <div className="grid grid-cols-2 gap-3 md:gap-6 relative z-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8 relative z-10">
                 {featureCards.map((card, i) => (
                     <motion.div
                         key={card.id}
@@ -140,7 +140,7 @@ export default function SchedulePage() {
                     >
                          <button onClick={() => handleCardClick(card.id as NexusViewType)} className="w-full h-full text-left group">
                             <Card className={cn(
-                                "relative h-full w-full overflow-hidden rounded-[1.5rem] md:rounded-[2rem] border-2 transition-all duration-500 bg-card/50 backdrop-blur-xl",
+                                "relative h-full w-full overflow-hidden rounded-[2.5rem] border-2 transition-all duration-500 bg-card/50 backdrop-blur-xl min-h-[220px]",
                                 card.border,
                                 card.glow
                             )}>
@@ -148,24 +148,24 @@ export default function SchedulePage() {
                                  <div className={cn("absolute inset-0 bg-gradient-to-br opacity-40 group-hover:opacity-60 transition-opacity", card.gradient)} />
                                  <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
                                  
-                                 <CardContent className="relative z-10 flex h-full flex-col justify-between p-4 md:p-6">
-                                     <div className="space-y-3">
-                                        <div className={cn("p-2.5 rounded-xl bg-black/20 backdrop-blur-md w-fit border border-white/5 shadow-xl transition-transform duration-500 group-hover:scale-110", card.iconColor)}>
-                                            <card.icon className="h-6 w-6 md:h-7 md:w-7" />
+                                 <CardContent className="relative z-10 flex h-full flex-col justify-between p-8">
+                                     <div className="space-y-4">
+                                        <div className={cn("p-3 rounded-2xl bg-black/20 backdrop-blur-md w-fit border border-white/5 shadow-xl transition-transform duration-500 group-hover:scale-110", card.iconColor)}>
+                                            <card.icon className="h-8 w-8" />
                                         </div>
-                                        <div className="space-y-1">
-                                            <h3 className="text-base md:text-xl font-black text-foreground uppercase tracking-tight italic leading-tight">{card.title}</h3>
-                                            <p className="text-[10px] md:text-xs text-muted-foreground font-medium line-clamp-2 leading-relaxed opacity-80">{card.description}</p>
+                                        <div className="space-y-1.5">
+                                            <h3 className="text-2xl font-black text-foreground uppercase tracking-tight italic leading-tight">{card.title}</h3>
+                                            <p className="text-sm text-muted-foreground font-medium line-clamp-2 leading-relaxed opacity-80">{card.description}</p>
                                         </div>
                                     </div>
                                     
-                                    <div className="mt-4 md:mt-6 flex items-center justify-between">
-                                        <div className="flex items-center gap-1.5">
-                                            <Sparkles className={cn("h-3 w-3 animate-pulse", card.iconColor)} />
-                                            <span className="text-[8px] font-black uppercase tracking-[0.2em] opacity-40">Protocol</span>
+                                    <div className="mt-8 flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                            <Sparkles className={cn("h-4 w-4 animate-pulse", card.iconColor)} />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Protocol</span>
                                         </div>
-                                        <div className={cn("text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full bg-white/5 border border-white/10", card.iconColor)}>
-                                            Enter
+                                        <div className={cn("text-[10px] font-black uppercase tracking-[0.2em] px-4 py-1.5 rounded-full bg-white/5 border border-white/10 group-hover:bg-white group-hover:text-black transition-colors duration-300", card.iconColor)}>
+                                            Initialize
                                         </div>
                                     </div>
                                 </CardContent>
