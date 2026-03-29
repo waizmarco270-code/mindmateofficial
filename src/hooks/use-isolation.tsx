@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, increment, setDoc, Timestamp, getDoc, serverTimestamp, writeBatch, collection, addDoc, deleteDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, increment, setDoc, Timestamp, getDoc, serverTimestamp, writeBatch, collection, addDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
 import { useUsers, User, BadgeType } from './use-admin';
 import { useToast } from './use-toast';
 import { format, addDays, isPast, differenceInSeconds } from 'date-fns';
@@ -36,6 +36,13 @@ export const ISOLATION_CONFIGS: Record<IsolationDuration, IsolationConfig> = {
     '1y': { id: '1y', label: '1 Year', days: 365, targetHours: 3650, creditCost: 15000, moneyCost: 4999, exitCreditCost: 14999, exitMoneyCost: 699, rewardCredits: 100000, rewardWallet: 5000, badge: 'sovereign', badgeName: 'Sovereign' },
 };
 
+export interface IsolationTask {
+    id: string;
+    text: string;
+    completed: boolean;
+    createdAt: string; // ISO
+}
+
 export interface ActiveIsolation {
     durationId: IsolationDuration;
     startTime: string; // ISO
@@ -43,6 +50,7 @@ export interface ActiveIsolation {
     totalTargetSeconds: number;
     accumulatedSeconds: number;
     dailyLogs?: Record<string, number>; // { 'YYYY-MM-DD': seconds }
+    dailyTasks?: Record<string, IsolationTask[]>; // { 'YYYY-MM-DD': tasks }
     status: 'active' | 'completed' | 'failed';
     lastHeartbeat: string; // ISO
     currentVideoId?: string | null;
@@ -54,6 +62,8 @@ interface IsolationContextType {
     startIsolation: (duration: IsolationDuration, method: 'credits' | 'money', transactionId?: string) => Promise<void>;
     updateProgress: (seconds: number) => Promise<void>;
     setSessionVideoId: (videoId: string | null) => Promise<void>;
+    addIsolationTask: (dateKey: string, text: string) => Promise<void>;
+    toggleIsolationTask: (dateKey: string, taskId: string) => Promise<void>;
     failIsolation: () => Promise<void>;
     emergeVictory: () => Promise<void>;
     payForEarlyExit: (method: 'credits' | 'wallet' | 'razorpay', transactionId?: string) => Promise<void>;
@@ -80,7 +90,6 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
                 const data = snap.data() as ActiveIsolation;
                 const lastBeat = new Date(data.lastHeartbeat);
                 const now = new Date();
-                // If no heartbeat for 24 hours, fail the session
                 if (data.status === 'active' && differenceInSeconds(now, lastBeat) > 86400) {
                     updateDoc(sessionRef, { status: 'failed' });
                 }
@@ -108,6 +117,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
             totalTargetSeconds: config.targetHours * 3600,
             accumulatedSeconds: 0,
             dailyLogs: { [format(now, 'yyyy-MM-dd')]: 0 },
+            dailyTasks: { [format(now, 'yyyy-MM-dd')]: [] },
             status: 'active',
             lastHeartbeat: now.toISOString(),
             currentVideoId: null
@@ -140,6 +150,38 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
             accumulatedSeconds: increment(seconds),
             [`dailyLogs.${todayKey}`]: increment(seconds),
             lastHeartbeat: new Date().toISOString()
+        });
+    };
+
+    const addIsolationTask = async (dateKey: string, text: string) => {
+        if (!user || !activeSession) return;
+        const sessionRef = doc(db, 'users', user.id, 'isolation', 'current');
+        const newTask: IsolationTask = {
+            id: `task-${Date.now()}`,
+            text,
+            completed: false,
+            createdAt: new Date().toISOString()
+        };
+        
+        await updateDoc(sessionRef, {
+            [`dailyTasks.${dateKey}`]: arrayUnion(newTask)
+        });
+    };
+
+    const toggleIsolationTask = async (dateKey: string, taskId: string) => {
+        if (!user || !activeSession) return;
+        const sessionRef = doc(db, 'users', user.id, 'isolation', 'current');
+        const currentTasks = activeSession.dailyTasks?.[dateKey] || [];
+        
+        const updatedTasks = currentTasks.map(t => {
+            if (t.id === taskId) {
+                return { ...t, completed: !t.completed };
+            }
+            return t;
+        });
+
+        await updateDoc(sessionRef, {
+            [`dailyTasks.${dateKey}`]: updatedTasks
         });
     };
 
@@ -196,7 +238,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <IsolationContext.Provider value={{ activeSession, loading, startIsolation, updateProgress, setSessionVideoId, failIsolation, emergeVictory, payForEarlyExit }}>
+        <IsolationContext.Provider value={{ activeSession, loading, startIsolation, updateProgress, setSessionVideoId, addIsolationTask, toggleIsolationTask, failIsolation, emergeVictory, payForEarlyExit }}>
             {children}
         </IsolationContext.Provider>
     );
