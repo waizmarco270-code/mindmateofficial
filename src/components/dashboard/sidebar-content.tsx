@@ -43,7 +43,9 @@ import {
   FileText,
   Mail,
   BellRing,
-  Book
+  Book,
+  ShieldAlert,
+  Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -61,6 +63,10 @@ const mainNavItems = [
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },
+];
+
+const disciplineNav = [
+  { href: '/dashboard/focus/isolation', icon: ShieldAlert, label: 'Isolation Mode', glow: 'text-red-500', isBold: true },
 ];
 
 const communityNav = [
@@ -137,7 +143,7 @@ export default function SidebarContent() {
             className={cn(
               'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
               isActive(item.href) ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary',
-              item.isBold && 'font-bold text-sidebar-foreground/90'
+              item.isBold && 'font-black text-sidebar-foreground/90'
             )}
           >
             <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive(item.href) ? "bg-primary" : "group-hover:scale-y-50")}></div>
@@ -211,11 +217,17 @@ export default function SidebarContent() {
       </div>
 
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
-        <Accordion type="multiple" defaultValue={['main-tools', 'community-resources', 'compete-earn']} className="w-full">
+        <Accordion type="multiple" defaultValue={['main-tools', 'discipline-protocols', 'community-resources', 'compete-earn']} className="w-full">
           <AccordionItem value="main-tools" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Main</AccordionTrigger>
             <AccordionContent className="px-0 pb-2">{renderNavLinks(mainNavItems)}</AccordionContent>
           </AccordionItem>
+
+          <AccordionItem value="discipline-protocols" className="border-b-0">
+            <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Sovereign Protocols</AccordionTrigger>
+            <AccordionContent className="px-0 pb-2">{renderNavLinks(disciplineNav)}</AccordionContent>
+          </AccordionItem>
+
           <AccordionItem value="community-resources" className="border-b-0">
             <AccordionTrigger className="px-1 py-2 hover:no-underline text-sidebar-foreground/60 text-sm font-semibold tracking-tight">Community & Resources</AccordionTrigger>
             <AccordionContent className="px-0 pb-2">{renderNavLinks(communityNav)}</AccordionContent>
