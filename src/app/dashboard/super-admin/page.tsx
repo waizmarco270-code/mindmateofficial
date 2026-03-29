@@ -1,617 +1,73 @@
 
 'use client';
-import { useState, useEffect, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { useAdmin, SUPER_ADMIN_UID, type User, type AppSettings, type MaintenanceTheme, type IsolationExitRequest } from '@/hooks/use-admin';
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableRow,
-  TableHead,
-  TableCell,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Gift, Users, UserCog, ShieldX, Trash2, CreditCard, Send, KeyRound as KeyRoundIcon, Megaphone, Terminal, Zap, Search, CheckCircle2, X, BrainCircuit, Loader2, Sparkles, ScrollText, MessageSquare, CloudRain, Gavel, Timer, Ban, Link as LinkIcon, Key, Copy, Check, Terminal as CodeIcon, Download, Database, HardDrive, Cpu, ShieldAlert, DoorOpen, ShieldCheck, Clock } from 'lucide-react';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { useToast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { format, addDays as dateFnsAddDays } from 'date-fns';
-import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogClose, DialogFooter, DialogHeader, DialogTitle, DialogContent, DialogDescription } from '@/components/ui/dialog';
-import { Switch } from '@/components/ui/switch';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
+
+import { useAdmin } from '@/hooks/use-admin';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { 
+    Users, ShieldAlert, Terminal, Gift, 
+    Key, Zap, TrendingUp, Clock, ShieldCheck
+} from 'lucide-react';
+import Link from 'next/link';
 import { usePresence } from '@/hooks/use-presence';
-import { cn } from '@/lib/utils';
-import { PROJECT_MEMORY } from '@/app/lib/project-memory';
+import { Badge } from '@/components/ui/badge';
 
-const CREDIT_PASSWORD = "waizcredit";
-const MASTER_API_KEY = "EMITYGATE_SOVEREIGN_LINK_99";
+export default function SuperAdminHub() {
+    const { users, isolationExitRequests } = useAdmin();
+    const { onlineUsers } = usePresence();
+    const onlineCount = (onlineUsers || []).filter(u => u.isOnline).length;
 
-export default function SuperAdminPanelPage() {
-  const { 
-    isSuperAdmin, users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
-    makeUserVip, removeUserVip,
-    makeUserGM, removeUserGM,
-    makeUserCoDev, removeUserCoDev,
-    giftCreditsToAllUsers,
-    clearGlobalChat, clearQuizLeaderboard,
-    resetWeeklyStudyTime,
-    resetGameZoneLeaderboard,
-    sendGlobalGift,
-    globalGifts,
-    deactivateGift,
-    deleteGlobalGift,
-    appSettings,
-    updateAppSettings,
-    grantMasterCard,
-    triggerAegisPulse,
-    announcements,
-    isolationExitRequests,
-    approveIsolationExit,
-    declineIsolationExit
-  } = useAdmin();
-  const { onlineUsers } = usePresence();
-  const { toast } = useToast();
-  
-  const [isCreditUnlocked, setIsCreditUnlocked] = useState(false);
-  const [creditPassword, setCreditPassword] = useState('');
-  const [isApiKeyCopied, setIsApiKeyCopied] = useState(false);
-  const [isExportingMemory, setIsExportingMemory] = useState(false);
-  
-  // Ban State
-  const [isBanDialogOpen, setIsBanDialogOpen] = useState(false);
-  const [userToBan, setUserToBan] = useState<User | null>(null);
-  const [banType, setBanType] = useState<'permanent' | 'temporary'>('temporary');
-  const [banDays, setBanDays] = useState(3);
-  const [banReason, setBanReason] = useState('');
+    const stats = [
+        { label: 'Total Citizens', value: users.length, icon: Users, color: 'text-primary' },
+        { label: 'Online Legends', value: onlineCount, icon: Zap, color: 'text-green-500', isPulse: true },
+        { label: 'Active Appeals', value: isolationExitRequests.length, icon: ShieldAlert, color: 'text-red-500' },
+        { label: 'System Health', value: 'Stable', icon: ShieldCheck, color: 'text-blue-500' },
+    ];
 
-  // Global Gift State
-  const [popupTarget, setPopupTarget] = useState<'all' | 'single'>('all');
-  const [popupSingleUserId, setPopupSingleUserId] = useState('');
-  const [userSearchTerm, setUserSearchTerm] = useState('');
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [popupMessage, setPopupMessage] = useState('');
-  const [popupCreditAmount, setPopupCreditAmount] = useState(0);
-  const [popupScratchAmount, setPopupScratchAmount] = useState(0);
-  const [popupFlipAmount, setPopupFlipAmount] = useState(0);
-  const [isSendingPopup, setIsSendingPopup] = useState(false);
+    const modules = [
+        { href: '/dashboard/super-admin/users', title: 'User Authority', desc: 'Roles, Bans & Master Cards', icon: Users, color: 'bg-primary/10 text-primary' },
+        { href: '/dashboard/super-admin/appeals', title: 'Isolation Appeals', desc: 'Review breach requests', icon: ShieldAlert, color: 'bg-red-500/10 text-red-500' },
+        { href: '/dashboard/super-admin/maintenance', title: 'Config & Briefings', desc: 'Lockdown & Changelogs', icon: Terminal, color: 'bg-amber-500/10 text-amber-500' },
+        { href: '/dashboard/super-admin/gifts', title: 'Global Gifts', desc: 'Dispatch rewards to all', icon: Gift, color: 'bg-pink-500/10 text-pink-500' },
+        { href: '/dashboard/super-admin/api', title: 'API & Continuity', desc: 'Memory & External Links', icon: Key, color: 'bg-cyan-500/10 text-cyan-500' },
+        { href: '/dashboard/super-admin/overrides', title: 'System Overrides', desc: 'Intelligence & Credits', icon: Zap, color: 'bg-indigo-500/10 text-indigo-500' },
+    ];
 
-  // Aegis State
-  const [isAegisPulseRunning, setIsAegisPulseRunning] = useState(false);
-  const [aegisLastDecision, setAegisLastDecision] = useState<AegisPulseOutput | null>(null);
-  const [isDecisionDialogOpen, setIsDecisionDialogOpen] = useState(false);
-
-  // User Search Logic
-  const filteredUsers = useMemo(() => {
-    if (!userSearchTerm.trim()) return [];
-    return (users || []).filter(u => 
-        u.displayName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
-        u.uid.toLowerCase() === userSearchTerm.toLowerCase()
-    ).slice(0, 5);
-  }, [users, userSearchTerm]);
-
-  const handleUserSelect = (user: User) => {
-    setSelectedUser(user);
-    setPopupSingleUserId(user.uid);
-    setUserSearchTerm('');
-  };
-
-  const [isMasterCardDialogOpen, setIsMasterCardDialogOpen] = useState(false);
-  const [masterCardUser, setMasterCardUser] = useState<User | null>(null);
-  const [masterCardDuration, setMasterCardDuration] = useState(7);
-
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(appSettings?.isMaintenanceMode || false);
-  const [maintenanceMessage, setMaintenanceMessage] = useState(appSettings?.maintenanceMessage || '');
-  const [maintenanceTheme, setMaintenanceTheme] = useState<MaintenanceTheme>(appSettings?.maintenanceTheme || 'shiny');
-  const [whatsNewMessage, setWhatsNewMessage] = useState(appSettings?.whatsNewMessage || '');
-  const [isAegisMode, setIsAegisMode] = useState(appSettings?.isAegisMode || false);
-
-  useEffect(() => {
-    if (appSettings) {
-        setIsMaintenanceMode(appSettings.isMaintenanceMode || false);
-        setMaintenanceMessage(appSettings.maintenanceMessage || '');
-        setMaintenanceTheme(appSettings.maintenanceTheme || 'shiny');
-        setWhatsNewMessage(appSettings.whatsNewMessage || '');
-        setIsAegisMode(appSettings.isAegisMode || false);
-    }
-  }, [appSettings]);
-
-  const handleCreditPasswordSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-      e.preventDefault();
-      if(creditPassword === CREDIT_PASSWORD){
-        setIsCreditUnlocked(true);
-        toast({ title: "System Overrides Unlocked" });
-      } else {
-        toast({ variant: 'destructive', title: "Incorrect Password" });
-      }
-  };
-
-  const handleExecuteBan = async () => {
-      if (!userToBan) return;
-      await toggleUserBlock(userToBan.uid, true, banType, banDays, banReason);
-      toast({ title: "Ban Protocol Executed", description: `${userToBan.displayName} has been excluded.` });
-      setIsBanDialogOpen(false);
-      setUserToBan(null);
-      setBanReason('');
-  };
-
-  const handleMaintenanceUpdate = async () => {
-      await updateAppSettings({
-          isMaintenanceMode,
-          maintenanceMessage,
-          maintenanceTheme,
-          whatsNewMessage,
-          isAegisMode,
-          lastMaintenanceId: isMaintenanceMode ? Date.now().toString() : appSettings?.lastMaintenanceId,
-      });
-      toast({ title: 'App Configuration Updated!' });
-  };
-
-  const handleAegisPulse = async () => {
-      setIsAegisPulseRunning(true);
-      try {
-          const result = await triggerAegisPulse();
-          setAegisLastDecision(result);
-          setIsDecisionDialogOpen(true);
-          toast({
-              title: "Aegis Intelligence Pulse Complete",
-              description: `Aegis has completed its analysis.`,
-          });
-      } catch (error: any) {
-          toast({ variant: 'destructive', title: "Aegis Error", description: error.message });
-      } finally {
-          setIsAegisPulseRunning(false);
-      }
-  };
-
-  const handleSendGlobalGift = async () => {
-      if (!popupMessage.trim()) return;
-      if (popupTarget === 'single' && !popupSingleUserId) {
-          toast({ variant: 'destructive', title: "Error", description: "Please select a user." });
-          return;
-      }
-
-      setIsSendingPopup(true);
-      try {
-          await sendGlobalGift({
-              message: popupMessage,
-              target: popupTarget === 'all' ? 'all' : popupSingleUserId,
-              rewards: {
-                  credits: popupCreditAmount,
-                  scratch: popupScratchAmount,
-                  flip: popupFlipAmount
-              }
-          });
-          toast({ title: "Global Gift Sent!" });
-          setPopupMessage('');
-          setPopupCreditAmount(0);
-          setPopupScratchAmount(0);
-          setPopupFlipAmount(0);
-          setSelectedUser(null);
-          setPopupSingleUserId('');
-      } finally {
-          setIsSendingPopup(false);
-      }
-  };
-
-  const copyApiKey = () => {
-      navigator.clipboard.writeText(MASTER_API_KEY);
-      setIsApiKeyCopied(true);
-      toast({ title: "API Key Secured" });
-      setTimeout(() => setIsApiKeyCopied(false), 2000);
-  };
-
-  const handleExportMemory = () => {
-      setIsExportingMemory(true);
-      try {
-          const exportContent = `MINDMATE PROJECT MISSION BRIEFING\nGENESIS DATE: OCTOBER 2025\nCONTINUITY PROTOCOL: v2.5\n\n${PROJECT_MEMORY}`;
-          const blob = new Blob([exportContent], { type: 'text/plain' });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = `memorymindmate.txt`;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          window.URL.revokeObjectURL(url);
-          toast({ title: "Memory Archive Exported", description: "Sovereign intelligence secured for continuity." });
-      } catch (e) {
-          toast({ variant: 'destructive', title: "Export Failed" });
-      } finally {
-          setIsExportingMemory(false);
-      }
-  };
-
-  if (!isSuperAdmin) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-center">
-        <Card className="w-full max-w-md border-destructive/50">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-center gap-2 text-destructive">
-                <ShieldX className="h-8 w-8"/> Access Denied
-            </CardTitle>
-            <CardDescription>This is a restricted area.</CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
-
-  const onlineCount = (onlineUsers || []).filter(u => u.isOnline).length;
-
-  return (
-    <div className="space-y-8 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-            <h1 className="text-3xl font-black tracking-tighter italic uppercase text-primary">Sovereign Command</h1>
-            <p className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Protocol: Mainframe Governance</p>
-        </div>
-        <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-primary/5 border-primary/20 text-primary px-3 py-1 font-black">CORE v2.5</Badge>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="bg-primary/5 border-primary/20">
-              <CardHeader className="p-4 pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Citizens</CardTitle></CardHeader>
-              <CardContent className="p-4 pt-0 flex items-center justify-between">
-                  <span className="text-3xl font-black">{users.length}</span>
-                  <Users className="h-8 w-8 text-primary opacity-20"/>
-              </CardContent>
-          </Card>
-          <Card className="bg-green-500/5 border-green-500/20">
-              <CardHeader className="p-4 pb-2"><CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Online Now</CardTitle></CardHeader>
-              <CardContent className="p-4 pt-0 flex items-center justify-between">
-                  <span className="text-3xl font-black">{onlineCount}</span>
-                  <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"/>
-              </CardContent>
-          </Card>
-      </div>
-
-      <Accordion type="multiple" defaultValue={['project-continuity', 'isolation-appeals']} className="w-full space-y-4">
-        
-        {/* Isolation Emergency Appeals Module */}
-        <AccordionItem value="isolation-appeals" className="border-b-0">
-          <Card className="border-red-500/30 bg-red-500/5">
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <ShieldAlert className="h-6 w-6 text-red-500" />
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">Isolation Emergency Appeals</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Review requests to breach the monastery protocol.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0 space-y-4">
-                <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-                    {isolationExitRequests.map(req => (
-                        <Card key={req.id} className="bg-background border-red-500/20 overflow-hidden group">
-                            <CardHeader className="p-4 pb-2 flex-row items-center gap-3">
-                                <Avatar className="h-10 w-10 border-2 border-red-500/20">
-                                    <AvatarImage src={req.userPhoto} />
-                                    <AvatarFallback>{req.userName.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-black text-sm truncate uppercase">{req.userName}</p>
-                                    <p className="text-[9px] font-bold text-red-500 uppercase tracking-widest">Protocol: {req.durationId}</p>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="p-4 space-y-3">
-                                <div className="p-3 rounded-xl bg-red-500/5 border border-red-500/10 italic text-xs text-slate-300 min-h-[60px]">
-                                    "{req.message}"
-                                </div>
-                                <div className="flex items-center gap-2 text-[9px] font-bold text-muted-foreground uppercase">
-                                    <Clock className="h-3 w-3"/> Sent {format(req.createdAt.toDate(), 'PPP p')}
-                                </div>
-                            </CardContent>
-                            <CardFooter className="p-4 pt-0 grid grid-cols-2 gap-2">
-                                <Button variant="ghost" size="sm" className="h-10 text-[10px] font-black uppercase" onClick={() => declineIsolationExit(req.id)}>DENY APPEAL</Button>
-                                <Button size="sm" className="h-10 text-[10px] font-black uppercase bg-red-600 hover:bg-red-700" onClick={() => approveIsolationExit(req.id)}>APPROVE BREACH</Button>
-                            </CardFooter>
-                        </Card>
-                    ))}
-                    {isolationExitRequests.length === 0 && (
-                        <div className="lg:col-span-3 py-16 text-center opacity-30 border-2 border-dashed rounded-[2rem]">
-                            <ShieldCheck className="h-12 w-12 mx-auto mb-2" />
-                            <p className="font-black uppercase tracking-[0.2em] text-[10px]">No active appeals in the mainframe</p>
-                        </div>
-                    )}
-                </div>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
-        {/* 1. Project Continuity Archive */}
-        <AccordionItem value="project-continuity" className="border-b-0">
-          <Card className="border-amber-500/30 bg-amber-500/5">
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <HardDrive className="h-6 w-6 text-amber-500" />
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">Sovereign Continuity Protocol</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Complete technical & logical backup for 2027 migration.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0 space-y-6">
-                <div className="grid gap-6 grid-cols-1 lg:grid-cols-2">
-                    <Card className="bg-background border-amber-500/20 shadow-xl">
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2 text-amber-500"><Cpu className="h-4 w-4"/> Intelligence Core Archive</CardTitle>
-                            <CardDescription>Secure the absolute blueprint of MindMate to train future agents with 100% precision.</CardDescription>
+        <div className="space-y-8 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {stats.map(s => (
+                    <Card key={s.label} className="bg-card/50 backdrop-blur-sm">
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{s.label}</CardTitle>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="p-4 rounded-xl bg-muted/50 border border-amber-500/10 space-y-3">
-                                <div className="flex items-start gap-3">
-                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
-                                    <p className="text-xs font-medium text-foreground/80"><b>Full File Topography</b>: Component & Hook Map included.</p>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
-                                    <p className="text-xs font-medium text-foreground/80"><b>Logical DNA</b>: Streak math & Penalty system rules encoded.</p>
-                                </div>
-                                <div className="flex items-start gap-3">
-                                    <CheckCircle2 className="h-4 w-4 text-green-500 mt-0.5 shrink-0"/>
-                                    <p className="text-xs font-medium text-foreground/80"><b>Persona Core</b>: Marco's exact tone & behavior protocols.</p>
-                                </div>
-                            </div>
-                            <Button onClick={handleExportMemory} disabled={isExportingMemory} className="w-full h-14 bg-amber-500 hover:bg-amber-600 text-amber-950 font-black text-lg shadow-xl shadow-amber-500/20">
-                                {isExportingMemory ? <Loader2 className="animate-spin mr-2"/> : <Download className="mr-2"/>}
-                                EXPORT SOVEREIGN MEMORY
-                            </Button>
+                        <CardContent className="p-4 pt-0 flex items-center justify-between">
+                            <span className="text-3xl font-black">{s.value}</span>
+                            <s.icon className={cn("h-6 w-6 opacity-20", s.color, s.isPulse && "animate-pulse")} />
                         </CardContent>
                     </Card>
-
-                    <Card className="bg-background border-primary/20">
-                        <CardHeader>
-                            <CardTitle className="text-base flex items-center gap-2"><ScrollText className="text-primary h-4 w-4"/> Intelligence Snapshot</CardTitle>
-                            <CardDescription>Current preview of the encoded continuity string.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <ScrollArea className="h-64 bg-muted rounded-xl p-4 border border-white/5">
-                                <pre className="text-[10px] font-mono leading-relaxed opacity-80 whitespace-pre-wrap select-text">
-                                    {PROJECT_MEMORY}
-                                </pre>
-                            </ScrollArea>
-                        </CardContent>
-                    </Card>
-                </div>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
-        {/* 2. User Management */}
-        <AccordionItem value="user-management" className="border-b-0">
-          <Card>
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <Users className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">User Authority</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">Manage roles, bans, and Master Cards.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0">
-                <div className="max-w-full overflow-x-auto">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Student</TableHead>
-                                <TableHead>Badges</TableHead>
-                                <TableHead>Credits</TableHead>
-                                <TableHead>Health</TableHead>
-                                <TableHead className="text-right">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {users.map(u => {
-                                const isUserSuperAdmin = u.uid === SUPER_ADMIN_UID;
-                                const hasMasterCard = u.masterCardExpires && new Date(u.masterCardExpires) > new Date();
-                                const isOnline = (onlineUsers || []).find(ou => ou.uid === u.uid)?.isOnline;
-                                
-                                return (
-                                    <TableRow key={u.uid} className={cn(u.isBlocked && "opacity-60 bg-red-500/5")}>
-                                        <TableCell>
-                                            <div className={cn("h-2.5 w-2.5 rounded-full", isOnline ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)] animate-pulse" : "bg-muted")} />
-                                        </TableCell>
-                                        <TableCell className="font-medium whitespace-nowrap">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-8 w-8 border shadow-sm">
-                                                    <AvatarImage src={u.photoURL}/>
-                                                    <AvatarFallback>{u.displayName?.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <div className="flex flex-col">
-                                                    <span className="text-sm font-bold">{u.displayName}</span>
-                                                    <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest">{u.mindMateId || u.uid.slice(-8)}</span>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="whitespace-nowrap space-x-1">
-                                            {isUserSuperAdmin && <Badge className="bg-red-500 text-[10px] font-black">Dev</Badge>}
-                                            {u.isAdmin && <Badge className="text-[10px] font-black">Admin</Badge>}
-                                            {u.isVip && <Badge className="bg-amber-500 text-[10px] font-black text-black">Elite</Badge>}
-                                            {u.isCoDev && <Badge className="bg-rose-500 text-[10px] font-black">Co-Dev</Badge>}
-                                            {hasMasterCard && <Badge variant="outline" className="text-green-500 border-green-500 text-[10px] font-black">Master</Badge>}
-                                        </TableCell>
-                                        <TableCell className="font-bold font-mono">{u.credits?.toLocaleString()}</TableCell>
-                                        <TableCell>
-                                            {u.isBlocked ? (
-                                                <Badge variant="destructive" className="animate-pulse font-black uppercase text-[10px]">BANNED</Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="font-black uppercase text-[10px]">STABLE</Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right whitespace-nowrap">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild><Button variant="outline" size="sm" className="font-bold">Action <UserCog className="h-4 w-4 ml-2"/></Button></DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="w-56">
-                                                    <DropdownMenuItem onClick={() => u.isAdmin ? removeUserAdmin(u.uid) : makeUserAdmin(u.uid)}>{u.isAdmin ? "Remove Admin" : "Make Admin"}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isVip ? removeUserVip(u.uid) : makeUserVip(u.uid)}>{u.isVip ? "Remove Elite" : "Make Elite"}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isGM ? removeUserGM(u.uid) : makeUserGM(u.uid)}>{u.isGM ? "Remove GM" : "Make GM"}</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => u.isCoDev ? removeUserCoDev(u.uid) : makeUserCoDev(u.uid)}>{u.isCoDev ? "Remove Co-Dev" : "Make Co-Dev"}</DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => { setMasterCardUser(u); setIsMasterCardDialogOpen(true); }}><CreditCard className="mr-2 h-4 w-4"/> Grant Master Card</DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    {u.isBlocked ? (
-                                                        <DropdownMenuItem onClick={() => toggleUserBlock(u.uid, false)} className="text-green-500 font-bold">REINSTATE USER</DropdownMenuItem>
-                                                    ) : (
-                                                        <DropdownMenuItem className="text-destructive font-bold" onClick={() => { setUserToBan(u); setIsBanDialogOpen(true); }}><Ban className="mr-2 h-4 w-4"/> EXECUTE BAN</DropdownMenuItem>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                )
-                            })}
-                        </TableBody>
-                    </Table>
-                </div>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-
-        {/* 3. App Configuration */}
-        <AccordionItem value="app-config" className="border-b-0">
-          <Card>
-            <AccordionTrigger className="p-6">
-               <div className="flex items-center gap-3">
-                <Terminal className="h-6 w-6 text-primary" />
-                <div>
-                  <h3 className="text-lg font-black uppercase tracking-tight">App Configuration</h3>
-                  <p className="text-xs text-muted-foreground text-left font-bold uppercase opacity-60">System states and deployment messages.</p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="p-6 pt-0 space-y-6">
-                <div className="grid gap-6 grid-cols-1 md:grid-cols-2">
-                    <Card className="border-amber-500/30">
-                        <CardHeader><CardTitle className="text-base flex items-center gap-2 font-black uppercase tracking-tight"><Terminal className="h-4 w-4"/> Maintenance Mode</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border">
-                                <Label className="font-bold">Global Maintenance</Label>
-                                <Switch checked={isMaintenanceMode} onCheckedChange={setIsMaintenanceMode} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-xs font-black uppercase tracking-widest">Display Message</Label>
-                                <Textarea value={maintenanceMessage} onChange={e => setMaintenanceMessage(e.target.value)} placeholder="Mainframe upgrades in progress..." />
-                            </div>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-primary/30">
-                        <CardHeader><CardTitle className="text-base flex items-center gap-2 font-black uppercase tracking-tight"><Megaphone className="h-4 w-4"/> What's New Popup</CardTitle></CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-xs font-black uppercase tracking-widest">Protocol Changelog</Label>
-                                <Textarea value={whatsNewMessage} onChange={e => setWhatsNewMessage(e.target.value)} placeholder="Brief the citizens on the new updates..." className="min-h-[150px]" />
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-                <Button onClick={handleMaintenanceUpdate} className="w-full h-14 text-lg font-black uppercase shadow-xl shadow-primary/20">Save System Configuration</Button>
-            </AccordionContent>
-          </Card>
-        </AccordionItem>
-      </Accordion>
-
-      {/* MODALS */}
-      <Dialog open={isMasterCardDialogOpen} onOpenChange={setIsMasterCardDialogOpen}>
-        <DialogContent className="max-w-md">
-            <DialogHeader>
-                <DialogTitle className="text-2xl font-black uppercase tracking-tight flex items-center gap-2"><CreditCard className="text-green-500"/> Grant Master Card</DialogTitle>
-                <DialogDescription className="font-medium">Bestow unlimited system bypass upon <b>{masterCardUser?.displayName}</b>.</DialogDescription>
-            </DialogHeader>
-            <div className="py-6 space-y-4 text-left">
-                <div className="space-y-2">
-                    <Label className="text-xs font-black uppercase tracking-widest text-muted-foreground">Protocol Duration</Label>
-                    <Select value={String(masterCardDuration)} onValueChange={v => setMasterCardDuration(Number(v))}>
-                        <SelectTrigger className="h-12 font-bold"><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="1" className="font-bold uppercase text-xs">1 Day Trial</SelectItem>
-                            <SelectItem value="7" className="font-bold uppercase text-xs">7 Days (Weekly Access)</SelectItem>
-                            <SelectItem value="30" className="font-bold uppercase text-xs">30 Days (Monthly Tier)</SelectItem>
-                            <SelectItem value="365" className="font-bold uppercase text-xs">365 Days (Eternal Citizen)</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                ))}
             </div>
-            <DialogFooter>
-                <Button className="w-full h-14 text-lg font-black uppercase shadow-xl shadow-green-500/20" onClick={() => { if(masterCardUser) grantMasterCard(masterCardUser.uid, masterCardDuration); setIsMasterCardDialogOpen(false); toast({ title: "Master Protocol Activated", description: `Card granted to ${masterCardUser?.displayName}` }); }}>AUTHORIZE MASTER CARD</Button>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* EXECUTIONER BAN DIALOG */}
-      <Dialog open={isBanDialogOpen} onOpenChange={setIsBanDialogOpen}>
-          <DialogContent className="max-w-md border-red-600">
-              <DialogHeader>
-                  <div className="flex justify-center mb-4">
-                      <div className="p-4 bg-red-600/10 rounded-full border-2 border-red-600">
-                          <Gavel className="h-10 w-10 text-red-600" />
-                      </div>
-                  </div>
-                  <DialogTitle className="text-2xl font-black text-center text-red-600 uppercase italic">Execute Ban Protocol</DialogTitle>
-                  <DialogDescription className="text-center">
-                      Excluding <b>{userToBan?.displayName}</b> from the Sovereign Network.
-                  </DialogDescription>
-              </DialogHeader>
-              
-              <div className="py-4 space-y-6 text-left">
-                  <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest">Temporal Tier</Label>
-                      <Select value={banType} onValueChange={(v: any) => setBanType(v)}>
-                          <SelectTrigger className="h-12 border-red-600/30 font-bold">
-                              <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="temporary" className="font-bold">Temporary Suspension</SelectItem>
-                              <SelectItem value="permanent" className="text-red-600 font-bold">PERMANENT TERMINATION</SelectItem>
-                          </SelectContent>
-                      </Select>
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {modules.map(mod => (
+                    <Link key={mod.href} href={mod.href}>
+                        <Card className="h-full hover:border-primary/50 transition-all group cursor-pointer overflow-hidden relative">
+                            <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
+                            <CardHeader className="relative z-10">
+                                <div className={cn("p-3 rounded-2xl w-fit mb-4", mod.color)}>
+                                    <mod.icon className="h-6 w-6" />
+                                </div>
+                                <CardTitle className="text-xl font-bold uppercase italic">{mod.title}</CardTitle>
+                                <CardDescription className="font-medium">{mod.desc}</CardDescription>
+                            </CardHeader>
+                        </Card>
+                    </Link>
+                ))}
+            </div>
+        </div>
+    );
+}
 
-                  {banType === 'temporary' && (
-                      <div className="space-y-2">
-                          <Label className="text-xs font-black uppercase tracking-widest">Duration (Days)</Label>
-                          <div className="grid grid-cols-4 gap-2">
-                              {[1, 3, 7, 30].map(d => (
-                                  <Button key={d} variant={banDays === d ? "default" : "outline"} onClick={() => setBanDays(d)} className={cn(banDays === d && "bg-red-600")}>
-                                      {d}d
-                                  </Button>
-                              ))}
-                          </div>
-                      </div>
-                  )}
-
-                  <div className="space-y-2">
-                      <Label className="text-xs font-black uppercase tracking-widest">Reason for Exclusion</Label>
-                      <Textarea 
-                        value={banReason} 
-                        onChange={e => setBanReason(e.target.value)} 
-                        placeholder="e.g., Harassment, credit exploit..." 
-                        className="bg-muted/30"
-                      />
-                  </div>
-              </div>
-
-              <DialogFooter className="flex-col gap-2">
-                  <Button variant="destructive" onClick={handleExecuteBan} className="w-full h-14 text-lg font-black uppercase shadow-lg shadow-red-600/20">
-                      CONFIRM EXECUTION
-                  </Button>
-                  <DialogClose asChild>
-                      <Button variant="ghost" className="w-full font-bold uppercase text-[10px] tracking-widest text-muted-foreground hover:text-foreground">CANCEL PROTOCOL</Button>
-                  </DialogClose>
-              </DialogFooter>
-          </DialogContent>
-      </Dialog>
-    </div>
-  );
+function cn(...inputs: any[]) {
+    return inputs.filter(Boolean).join(' ');
 }
