@@ -8,7 +8,8 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
     Code, ShieldCheck, Crown, Gamepad2, Swords, Bird, Moon, Flame, 
-    Users, Trophy, Star, ChevronRight, Search, Info, Loader2, Sparkles 
+    Users, Trophy, Star, ChevronRight, Search, Info, Loader2, Sparkles,
+    ShieldAlert, Anchor, Lock, Zap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -104,6 +105,46 @@ const badgeMeta: Record<BadgeType, {
         description: 'Possessors of the Eternal Flame. Absolute masters of consistency.',
         requirement: 'Achieve and complete a full 30-day study streak.',
         badge: <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span>
+    },
+    isolater: {
+        name: 'Isolater',
+        icon: Anchor,
+        gradient: 'from-cyan-600 to-blue-600',
+        description: 'Scholars who have survived 7 days of total digital isolation.',
+        requirement: 'Complete a 7-Day Isolation Protocol.',
+        badge: <span className="isolater-badge">ISOLATER</span>
+    },
+    'iso-warrior': {
+        name: 'ISO-Warrior',
+        icon: ShieldAlert,
+        gradient: 'from-indigo-600 to-purple-600',
+        description: 'Disciplined warriors who have conquered 14 days of isolation.',
+        requirement: 'Complete a 14-Day Isolation Protocol.',
+        badge: <span className="iso-warrior-badge">ISO-WARRIOR</span>
+    },
+    warrior: {
+        name: 'Warrior',
+        icon: Swords,
+        gradient: 'from-slate-700 to-slate-900',
+        description: 'A mark of severe discipline and extreme study stamina.',
+        requirement: 'Complete a 21 or 30-Day Isolation Protocol.',
+        badge: <span className="warrior-badge">WARRIOR</span>
+    },
+    'iso-master': {
+        name: 'ISO-Master',
+        icon: Zap,
+        gradient: 'from-emerald-600 to-green-800',
+        description: 'Master scholars who have existed in total focus for months.',
+        requirement: 'Complete a 3 or 6-Month Isolation Protocol.',
+        badge: <span className="iso-master-badge">ISO-MASTER</span>
+    },
+    sovereign: {
+        name: 'Sovereign',
+        icon: Lock,
+        gradient: 'from-yellow-400 via-amber-200 to-yellow-400',
+        description: 'The ultimate rank. A citizen who has surrendered a year to focus.',
+        requirement: 'Successfully emerge from a 1-Year Isolation Protocol.',
+        badge: <span className="sovereign-badge">Sovereign</span>
     }
 };
 
@@ -123,6 +164,11 @@ function BadgeDetailsDialog({ badgeKey, isOpen, onOpenChange, users }: { badgeKe
             if (badgeKey === 'early-bird') return u.isEarlyBird;
             if (badgeKey === 'night-owl') return u.isNightOwl;
             if (badgeKey === 'knowledge-knight') return u.isKnowledgeKnight;
+            if (badgeKey === 'isolater') return u.isIsolater;
+            if (badgeKey === 'iso-warrior') return u.isIsoWarrior;
+            if (badgeKey === 'warrior') return u.isWarrior;
+            if (badgeKey === 'iso-master') return u.isIsoMaster;
+            if (badgeKey === 'sovereign') return u.isSovereign;
             return false;
         }).sort((a, b) => (b.credits || 0) - (a.credits || 0));
     }, [badgeKey, users]);
@@ -251,6 +297,11 @@ export default function BadgesTreasuryPage() {
                         if (key === 'early-bird') return u.isEarlyBird;
                         if (key === 'night-owl') return u.isNightOwl;
                         if (key === 'knowledge-knight') return u.isKnowledgeKnight;
+                        if (key === 'isolater') return u.isIsolater;
+                        if (key === 'iso-warrior') return u.isIsoWarrior;
+                        if (key === 'warrior') return u.isWarrior;
+                        if (key === 'iso-master') return u.isIsoMaster;
+                        if (key === 'sovereign') return u.isSovereign;
                         return false;
                     }).length;
 

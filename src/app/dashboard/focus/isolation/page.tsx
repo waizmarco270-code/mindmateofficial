@@ -12,6 +12,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
 import { useIsolation, ISOLATION_CONFIGS, type IsolationDuration } from '@/hooks/use-isolation';
 import { useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
@@ -48,13 +49,11 @@ export default function IsolationHub() {
                     lastTickRef.current = now;
                     heartbeatRef.current += delta;
                     
-                    // Periodic persistence check
                     if (heartbeatRef.current >= 60) {
                         heartbeatRef.current = 0;
                     }
                 }
             } else {
-                // Backgrounded: Auto-Pause
                 setTimerActive(false);
                 toast({ title: "Timer Paused", description: "Isolation requires active presence. Return to continue." });
             }

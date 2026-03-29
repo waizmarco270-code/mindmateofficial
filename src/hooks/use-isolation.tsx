@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { doc, onSnapshot, updateDoc, increment, setDoc, Timestamp, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, increment, setDoc, Timestamp, getDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { useUsers, User, BadgeType } from './use-admin';
 import { useToast } from './use-toast';
 import { format, addDays, isPast, differenceInSeconds } from 'date-fns';
@@ -25,13 +25,13 @@ export interface IsolationConfig {
 }
 
 export const ISOLATION_CONFIGS: Record<IsolationDuration, IsolationConfig> = {
-    '7d': { id: '7d', label: '7 Days', days: 7, targetHours: 70, creditCost: 500, moneyCost: 99, rewardCredits: 1000, rewardWallet: 50, badge: 'challenger', badgeName: 'Seven-Day Sentinel' },
-    '14d': { id: '14d', label: '14 Days', days: 14, targetHours: 140, creditCost: 1000, moneyCost: 199, rewardCredits: 2500, rewardWallet: 100, badge: 'challenger', badgeName: 'Fortnight Fortress' },
-    '21d': { id: '21d', label: '21 Days', days: 21, targetHours: 210, creditCost: 1500, moneyCost: 299, rewardCredits: 4000, rewardWallet: 150, badge: 'challenger', badgeName: 'Ascetic Monk' },
-    '30d': { id: '30d', label: '30 Days', days: 30, targetHours: 300, creditCost: 2000, moneyCost: 499, rewardCredits: 6000, rewardWallet: 250, badge: 'streaker', badgeName: 'Isolation Elite' },
-    '3m': { id: '3m', label: '3 Months', days: 90, targetHours: 900, creditCost: 5000, moneyCost: 1299, rewardCredits: 15000, rewardWallet: 750, badge: 'streaker', badgeName: 'Iron Will' },
-    '6m': { id: '6m', label: '6 Months', days: 180, targetHours: 1800, creditCost: 8000, moneyCost: 2499, rewardCredits: 30000, rewardWallet: 1500, badge: 'vip', badgeName: 'Sovereign Hermit' },
-    '1y': { id: '1y', label: '1 Year', days: 365, targetHours: 3650, creditCost: 15000, moneyCost: 4999, rewardCredits: 100000, rewardWallet: 5000, badge: 'dev', badgeName: 'The Eternal Legend' },
+    '7d': { id: '7d', label: '7 Days', days: 7, targetHours: 70, creditCost: 500, moneyCost: 99, rewardCredits: 1000, rewardWallet: 50, badge: 'isolater', badgeName: 'ISOLATER' },
+    '14d': { id: '14d', label: '14 Days', days: 14, targetHours: 140, creditCost: 1000, moneyCost: 199, rewardCredits: 2500, rewardWallet: 100, badge: 'iso-warrior', badgeName: 'ISO-WARRIOR' },
+    '21d': { id: '21d', label: '21 Days', days: 21, targetHours: 210, creditCost: 1500, moneyCost: 299, rewardCredits: 4000, rewardWallet: 150, badge: 'warrior', badgeName: 'WARRIOR' },
+    '30d': { id: '30d', label: '30 Days', days: 30, targetHours: 300, creditCost: 2000, moneyCost: 499, rewardCredits: 6000, rewardWallet: 250, badge: 'warrior', badgeName: 'WARRIOR' },
+    '3m': { id: '3m', label: '3 Months', days: 90, targetHours: 900, creditCost: 5000, moneyCost: 1299, rewardCredits: 15000, rewardWallet: 750, badge: 'iso-master', badgeName: 'ISO-MASTER' },
+    '6m': { id: '6m', label: '6 Months', days: 180, targetHours: 1800, creditCost: 8000, moneyCost: 2499, rewardCredits: 30000, rewardWallet: 1500, badge: 'iso-master', badgeName: 'ISO-MASTER' },
+    '1y': { id: '1y', label: '1 Year', days: 365, targetHours: 3650, creditCost: 15000, moneyCost: 4999, rewardCredits: 100000, rewardWallet: 5000, badge: 'sovereign', badgeName: 'Sovereign' },
 };
 
 export interface ActiveIsolation {
@@ -72,11 +72,9 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribe = onSnapshot(sessionRef, (snap) => {
             if (snap.exists()) {
                 const data = snap.data() as ActiveIsolation;
-                // Auto-fail logic: If more than 24 hours since last heartbeat
                 const lastBeat = new Date(data.lastHeartbeat);
                 const now = new Date();
                 if (data.status === 'active' && differenceInSeconds(now, lastBeat) > 86400) {
-                    // Logic for failing due to abandonment
                     updateDoc(sessionRef, { status: 'failed' });
                 }
                 setActiveSession(data);
@@ -151,7 +149,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
             credits: increment(config.rewardCredits),
             walletBalance: increment(config.rewardWallet),
             showcasedBadge: config.badge,
-            [`is${config.badge.charAt(0).toUpperCase() + config.badge.slice(1)}`]: true
+            [`is${config.badge.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')}`]: true
         });
         
         batch.update(sessionRef, { status: 'completed' });
@@ -172,8 +170,3 @@ export const useIsolation = () => {
     if (!context) throw new Error('useIsolation must be used within an IsolationProvider');
     return context;
 };
-
-function writeBatch(db: any) {
-    const { writeBatch } = require('firebase/firestore');
-    return writeBatch(db);
-}

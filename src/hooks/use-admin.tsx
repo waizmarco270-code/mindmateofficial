@@ -10,7 +10,7 @@ import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
-export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker';
+export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign';
 
 export interface WalletTransaction {
     id: string;
@@ -278,6 +278,7 @@ interface AppDataContextType {
     addGuessesToAllUsers: (amount: number) => Promise<void>;
     unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
     unlockFeatureForUser: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
+    unlockFeatureForUserV2: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
     unlockThemeForUser: (uid: string, themeId: AppThemeId, cost: number) => Promise<void>;
     generateAiAccessToken: (uid: string) => Promise<string | null>;
     generateDevAiAccessToken: (uid: string) => Promise<string | null>;
@@ -435,45 +436,36 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 const updates: any = {};
                 let hasUpdates = false;
 
-                // 1. MindMate ID Genesis
                 if (!data.mindMateId) {
                     updates.mindMateId = `MM-${Math.floor(100000 + Math.random() * 900000)}`;
                     hasUpdates = true;
                 }
 
-                // 2. Streak Maintenance Protocol v2.5
                 if (data.lastStreakCheck !== todayStr) {
                     const lastCheckDate = data.lastStreakCheck ? new Date(data.lastStreakCheck) : null;
                     let currentStreak = data.streak || 0;
                     
                     if (!lastCheckDate) {
-                        // First time login
                         updates.streak = 1;
                         updates.longestStreak = 1;
                     } else if (isYesterday(lastCheckDate)) {
-                        // Regular daily login
                         const nextStreak = currentStreak + 1;
                         updates.streak = nextStreak;
                         if (nextStreak > (data.longestStreak || 0)) updates.longestStreak = nextStreak;
                         
-                        // Milestone Rewards: 3, 7, 14, 30
                         if (nextStreak === 3) updates.credits = (data.credits || 0) + 50;
                         else if (nextStreak === 7) updates.credits = (data.credits || 0) + 150;
                         else if (nextStreak === 14) updates.credits = (data.credits || 0) + 500;
                         else if (nextStreak === 30) {
                             updates.credits = (data.credits || 0) + 1000;
                             updates.isStreaker = true;
-                            // Loop logic: reset streak count to 0 after day 30 so next login is day 1
                             updates.streak = 0; 
                         }
                     } else if (!isToday(lastCheckDate)) { 
-                        // Missed a day
                         if ((data.inventory?.streakFreezes || 0) > 0) {
-                            // PROTECTED by artifact
                             updates['inventory.streakFreezes'] = (data.inventory?.streakFreezes || 0) - 1;
-                            updates.streak = currentStreak + 1; // Count today as active but didn't reset
+                            updates.streak = currentStreak + 1; 
                         } else {
-                            // FAILED - Reset to 0 as requested (next day login will make it 1)
                             updates.streak = 1; 
                         }
                     }
@@ -787,6 +779,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             await updateDoc(userRef, { unlockedResourceSections: arrayUnion(sid), credits: hasMaster ? increment(0) : increment(-cost) });
         },
         unlockFeatureForUser: async (uid, fid, cost) => {
+            const userRef = doc(db, 'users', uid);
+            const userSnap = await getDoc(userRef);
+            const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
+            await updateDoc(userRef, { unlockedFeatures: arrayUnion(fid), credits: hasMaster ? increment(0) : increment(-cost) });
+        },
+        unlockFeatureForUserV2: async (uid, fid, cost) => {
             const userRef = doc(db, 'users', uid);
             const userSnap = await getDoc(userRef);
             const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
