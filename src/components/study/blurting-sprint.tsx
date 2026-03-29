@@ -24,22 +24,22 @@ type SprintStage = 'prep' | 'blurt' | 'verify';
 
 const STAGE_CONFIG = {
     prep: { 
-        title: 'Stage 1: Survey & Read', 
-        desc: 'Actively read your notes. Create a mental map of the key concepts.', 
-        duration: 300, // 5 mins
+        title: 'Stage 1: Survey & Deep Read', 
+        desc: '10 Minutes: Actively read your notes. Absorb every detail and construct a mental framework.', 
+        duration: 600, // 10 mins
         color: 'text-blue-400',
         bg: 'bg-blue-500/10'
     },
     blurt: { 
-        title: 'Stage 2: The Blurt', 
-        desc: 'FORCED RECALL. Type EVERYTHING you remember. Do not look at your notes!', 
-        duration: 600, // 10 mins
+        title: 'Stage 2: Forced Recall (BLURT)', 
+        desc: '15 Minutes: Type EVERYTHING you remember. The Penalty Aegis is active. Do not look away!', 
+        duration: 900, // 15 mins
         color: 'text-emerald-400',
         bg: 'bg-emerald-500/10'
     },
     verify: { 
-        title: 'Stage 3: Verify & Patch', 
-        desc: 'Compare your blurt with your notes. Highlight and patch your knowledge gaps.', 
+        title: 'Stage 3: Gap Analysis', 
+        desc: '5 Minutes: Compare your blurt with your sources. Patch the holes in your knowledge.', 
         duration: 300, // 5 mins
         color: 'text-amber-400',
         bg: 'bg-amber-500/10'
@@ -47,7 +47,7 @@ const STAGE_CONFIG = {
 };
 
 const BLURTING_PENALTY = 20;
-const BLURTING_REWARD = 5;
+const BLURTING_REWARD = 10; // Increased reward for 30 min session
 
 export function BlurtingSprint() {
     const { user } = useUser();
@@ -84,7 +84,6 @@ export function BlurtingSprint() {
         stopTimer();
     }, [user, applyFocusPenalty, isActive, stage]);
 
-    // Visibility Change Listener
     useEffect(() => {
         const handleVisibility = () => {
             if (isActive && stage === 'blurt' && document.visibilityState === 'hidden') {
@@ -117,12 +116,12 @@ export function BlurtingSprint() {
             setStage('blurt');
             setTimeLeft(STAGE_CONFIG.blurt.duration);
             setIsActive(true);
-            toast({ title: "Stage 2: BLURT!", description: "Recite everything from memory." });
+            toast({ title: "PROTOCOL ALPHA: BLURT!", description: "Recite everything from memory. 15 minutes on the clock." });
         } else if (stage === 'blurt') {
             setStage('verify');
             setTimeLeft(STAGE_CONFIG.verify.duration);
             setIsActive(true);
-            toast({ title: "Stage 3: VERIFY!", description: "Check your gaps." });
+            toast({ title: "PROTOCOL BETA: VERIFY!", description: "Check your knowledge gaps." });
         } else {
             finishSprint();
         }
@@ -133,7 +132,7 @@ export function BlurtingSprint() {
         setIsFinished(true);
         if (user) {
             await addCreditsToUser(user.id, BLURTING_REWARD);
-            toast({ title: "Sprint Complete!", description: `+${BLURTING_REWARD} credits awarded.` });
+            toast({ title: "Mission Accomplished!", description: `+${BLURTING_REWARD} credits awarded for your 30-minute focus.` });
         }
     };
 
@@ -150,25 +149,27 @@ export function BlurtingSprint() {
         return (
             <div className="flex items-center justify-center min-h-screen p-4 bg-background">
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
-                    <Card className="max-w-2xl w-full border-primary/20 shadow-2xl">
-                        <CardHeader className="text-center">
-                            <div className="mx-auto w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mb-4">
-                                <CheckCircle className="h-10 w-10 text-green-500" />
+                    <Card className="max-w-2xl w-full border-primary/20 shadow-2xl rounded-[2.5rem] overflow-hidden">
+                        <CardHeader className="text-center p-8 bg-primary/5">
+                            <div className="mx-auto w-24 h-24 bg-green-500/10 rounded-full flex items-center justify-center mb-4 border-2 border-green-500/20">
+                                <CheckCircle className="h-12 w-12 text-green-500 animate-bounce" />
                             </div>
-                            <CardTitle className="text-3xl font-black italic uppercase">Sprint Accomplished</CardTitle>
-                            <CardDescription>Your active recall session has been successfully logged.</CardDescription>
+                            <CardTitle className="text-4xl font-black italic uppercase text-primary">Sprint Completed</CardTitle>
+                            <CardDescription className="text-lg font-medium">You have successfully mastered 30 minutes of high-intensity recall.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="p-4 rounded-xl bg-muted/50 border">
-                                <h4 className="text-xs font-black uppercase text-muted-foreground mb-2">Memory Dump</h4>
-                                <div className="max-h-60 overflow-y-auto text-sm leading-relaxed whitespace-pre-wrap italic">
-                                    {blurtText || "No text recorded."}
-                                </div>
+                        <CardContent className="p-8 space-y-6">
+                            <div className="p-6 rounded-3xl bg-muted/30 border-2 border-dashed border-primary/10">
+                                <h4 className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-4">Secured Memory Dump</h4>
+                                <ScrollArea className="h-60">
+                                    <div className="text-sm leading-relaxed whitespace-pre-wrap italic opacity-80 pr-4">
+                                        {blurtText || "No text recorded during this session."}
+                                    </div>
+                                </ScrollArea>
                             </div>
                         </CardContent>
-                        <CardFooter>
-                            <Button className="w-full h-12 rounded-xl font-bold" onClick={() => window.location.href = '/dashboard/schedule'}>
-                                Back to Nexus
+                        <CardFooter className="p-8 pt-0">
+                            <Button className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20" onClick={() => window.location.href = '/dashboard/schedule'}>
+                                RETURN TO NEXUS
                             </Button>
                         </CardFooter>
                     </Card>
@@ -178,118 +179,141 @@ export function BlurtingSprint() {
     }
 
     return (
-        <div className="flex flex-col min-h-screen bg-background text-foreground">
+        <div className="flex flex-col min-h-screen bg-background text-foreground select-none">
             <header className="p-4 border-b bg-card/50 backdrop-blur-md flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                        <Brain className="h-5 w-5" />
+                    <div className="p-2 rounded-xl bg-primary/10 text-primary border border-primary/20">
+                        <Brain className="h-6 w-6" />
                     </div>
                     <div>
                         <h2 className="font-black uppercase text-sm tracking-tight">Blurting Sprint</h2>
-                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Protocol: Active Recall</p>
+                        <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em]">Protocol: Scientific Recall</p>
                     </div>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setIsImmersive(false)} className="rounded-full">
-                    <X className="h-4 w-4 mr-2" /> Exit
+                <Button variant="ghost" size="sm" onClick={() => setIsImmersive(false)} className="rounded-full font-bold hover:bg-destructive/10 hover:text-destructive">
+                    <X className="h-4 w-4 mr-2" /> EXIT SESSION
                 </Button>
             </header>
 
-            <main className="flex-1 p-4 md:p-8 max-w-4xl mx-auto w-full space-y-8">
-                <Card className={cn("border-none shadow-2xl transition-colors duration-500", config.bg)}>
-                    <CardHeader className="text-center">
-                        <div className="flex justify-center mb-4">
-                            <div className="flex items-center gap-2 px-4 py-1.5 rounded-full bg-background/50 border border-white/5 shadow-inner">
-                                <div className={cn("h-2 w-2 rounded-full animate-pulse", isActive ? "bg-green-500" : "bg-red-500")} />
-                                <span className="text-[10px] font-black uppercase tracking-widest">{isActive ? 'Uplink Active' : 'Protocol Paused'}</span>
+            <main className="flex-1 p-4 md:p-8 max-w-5xl mx-auto w-full space-y-8 pb-24">
+                <Card className={cn("border-none shadow-2xl transition-all duration-700 rounded-[3rem] overflow-hidden", config.bg)}>
+                    <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
+                    <CardHeader className="text-center relative z-10 p-8 sm:p-12">
+                        <div className="flex justify-center mb-6">
+                            <div className={cn(
+                                "flex items-center gap-3 px-6 py-2 rounded-full border-2 shadow-inner transition-colors duration-500",
+                                isActive ? "bg-background/80 border-green-500/30 text-green-500" : "bg-background/80 border-red-500/30 text-red-500"
+                            )}>
+                                <div className={cn("h-2.5 w-2.5 rounded-full animate-pulse", isActive ? "bg-green-500" : "bg-red-500")} />
+                                <span className="text-xs font-black uppercase tracking-[0.2em]">{isActive ? 'Uplink Synchronized' : 'Protocol Suspended'}</span>
                             </div>
                         </div>
-                        <CardTitle className={cn("text-2xl md:text-4xl font-black italic uppercase", config.color)}>
+                        <CardTitle className={cn("text-3xl md:text-5xl font-black italic uppercase tracking-tighter leading-none", config.color)}>
                             {config.title}
                         </CardTitle>
-                        <CardDescription className="text-sm font-medium mt-2 max-w-lg mx-auto">
+                        <CardDescription className="text-base sm:text-lg font-bold mt-4 max-w-2xl mx-auto leading-relaxed opacity-80">
                             {config.desc}
                         </CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col items-center gap-6">
-                        <div className="relative h-48 w-48 flex items-center justify-center">
-                            <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100">
-                                <circle cx="50" cy="50" r="45" fill="transparent" stroke="currentColor" strokeWidth="2" className="text-white/5" />
+                    
+                    <CardContent className="flex flex-col items-center gap-10 py-0 pb-12 relative z-10">
+                        <div className="relative h-64 w-64 flex items-center justify-center">
+                            <svg className="absolute inset-0 h-full w-full drop-shadow-2xl" viewBox="0 0 100 100">
+                                <circle cx="50" cy="50" r="46" fill="transparent" stroke="currentColor" strokeWidth="1.5" className="text-white/5" />
                                 <motion.circle
-                                    cx="50" cy="50" r="45"
+                                    cx="50" cy="50" r="46"
                                     fill="transparent"
                                     stroke="currentColor"
                                     strokeWidth="4"
-                                    strokeDasharray="283"
-                                    animate={{ strokeDashoffset: 283 * (1 - progress / 100) }}
+                                    strokeDasharray="289"
+                                    animate={{ strokeDashoffset: 289 * (1 - progress / 100) }}
                                     className={cn("transition-all duration-1000", config.color)}
                                     style={{ transform: 'rotate(-90deg)', transformOrigin: 'center' }}
                                 />
                             </svg>
-                            <span className="text-5xl font-black tabular-nums tracking-tighter">
-                                {formatTime(timeLeft)}
-                            </span>
+                            <div className="flex flex-col items-center">
+                                <span className="text-6xl font-black tabular-nums tracking-tighter text-foreground drop-shadow-lg">
+                                    {formatTime(timeLeft)}
+                                </span>
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Remaining</span>
+                            </div>
                         </div>
 
-                        <div className="flex gap-4 w-full max-w-xs">
-                            <Button className="flex-1 h-12 rounded-xl font-bold" onClick={() => setIsActive(!isActive)}>
-                                {isActive ? <Pause className="mr-2 h-4 w-4" /> : <Play className="mr-2 h-4 w-4" />}
-                                {isActive ? 'Pause' : 'Resume'}
-                            </Button>
-                            <Button variant="outline" className="flex-1 h-12 rounded-xl font-bold" onClick={handleNextStage}>
-                                Skip <ArrowRight className="ml-2 h-4 w-4" />
+                        <div className="flex gap-4 w-full max-w-md">
+                            <Button className="flex-1 h-16 rounded-2xl font-black text-lg shadow-xl" onClick={() => setIsActive(!isActive)}>
+                                {isActive ? <Pause className="mr-2 h-6 w-6" /> : <Play className="mr-2 h-6 w-6" />}
+                                {isActive ? 'PAUSE' : 'INITIALIZE'}
                             </Button>
                         </div>
                     </CardContent>
                 </Card>
 
-                <div className="relative">
+                <div className="relative pt-4">
                     <AnimatePresence mode="wait">
                         {stage === 'blurt' ? (
                             <motion.div 
-                                initial={{ opacity: 0, y: 20 }}
+                                initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -20 }}
-                                className="space-y-4"
+                                exit={{ opacity: 0, y: -30 }}
+                                className="space-y-6"
                             >
-                                <div className="flex items-center justify-between px-2">
-                                    <h3 className="text-xs font-black uppercase tracking-widest text-emerald-400">Recall Terminal</h3>
-                                    <div className="text-[10px] font-bold text-muted-foreground uppercase flex items-center gap-2">
-                                        <AlertTriangle className="h-3 w-3 text-amber-500" /> Tab monitoring active
+                                <div className="flex items-center justify-between px-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
+                                        <h3 className="text-xs font-black uppercase tracking-[0.2em] text-emerald-400">Recall Terminal Active</h3>
+                                    </div>
+                                    <div className="text-[10px] font-black text-muted-foreground uppercase flex items-center gap-2 bg-black/20 px-3 py-1 rounded-full border border-white/5">
+                                        <ShieldCheck className="h-3 w-3 text-emerald-500" /> Integrity Guarded
                                     </div>
                                 </div>
                                 <Textarea 
                                     value={blurtText}
                                     onChange={(e) => setBlurtText(e.target.value)}
-                                    placeholder="Empty your mind here... Every fact, date, and connection counts."
-                                    className="min-h-[300px] text-lg bg-emerald-500/5 border-emerald-500/20 rounded-2xl focus-visible:ring-emerald-500/30"
+                                    placeholder="EMPTY YOUR CONSCIOUSNESS HERE. Every fact, date, diagram description, and concept. No cheating. No notes. Just your mind."
+                                    className="min-h-[400px] text-xl font-medium leading-relaxed bg-emerald-500/5 border-2 border-emerald-500/20 rounded-[2.5rem] p-8 focus-visible:ring-emerald-500/30 shadow-inner select-text"
                                 />
                             </motion.div>
                         ) : (
                             <motion.div 
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                className="p-12 text-center border-2 border-dashed rounded-[2.5rem] opacity-40"
+                                className="py-24 text-center border-4 border-dashed rounded-[4rem] opacity-20 border-primary/20"
                             >
-                                <ShieldCheck className="h-16 w-16 mx-auto mb-4" />
-                                <p className="text-sm font-black uppercase tracking-[0.2em]">Terminal Offline</p>
-                                <p className="text-xs mt-2 font-bold">{stage === 'prep' ? 'PROTOCOL: STUDY MODE' : 'PROTOCOL: VERIFICATION MODE'}</p>
+                                <ShieldCheck className="h-24 w-24 mx-auto mb-6" />
+                                <p className="text-2xl font-black uppercase tracking-[0.3em]">Terminal Offline</p>
+                                <p className="text-sm mt-3 font-bold">{stage === 'prep' ? 'PROTOCOL: DEEP STUDY MODE' : 'PROTOCOL: VERIFICATION MODE'}</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
                 </div>
             </main>
 
+            {/* Stage Indicator Mobile Dock */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t flex justify-center gap-2 z-40">
+                {(['prep', 'blurt', 'verify'] as const).map((s) => (
+                    <div 
+                        key={s} 
+                        className={cn(
+                            "h-1.5 flex-1 max-w-[100px] rounded-full transition-all duration-500",
+                            stage === s ? "bg-primary w-12" : "bg-muted w-4"
+                        )} 
+                    />
+                ))}
+            </div>
+
             <Dialog open={!!penaltyResult} onOpenChange={() => setPenaltyResult(null)}>
-                <DialogContent>
+                <DialogContent className="border-red-600/50 bg-red-950/95 backdrop-blur-2xl rounded-[2.5rem]">
                     <DialogHeader>
-                        <div className="flex justify-center mb-4">
-                            <AlertTriangle className="h-12 w-12 text-destructive" />
+                        <div className="flex justify-center mb-6">
+                            <div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse">
+                                <AlertTriangle className="h-16 w-16 text-red-600" />
+                            </div>
                         </div>
-                        <DialogTitle className="text-center">Protocol Violated</DialogTitle>
-                        <DialogDescription className="text-center">{penaltyResult?.message}</DialogDescription>
+                        <DialogTitle className="text-center text-3xl font-black uppercase italic text-white tracking-tighter">PROTOCOL VIOLATED</DialogTitle>
+                        <DialogDescription className="text-center text-lg font-bold text-red-200 mt-2">{penaltyResult?.message}</DialogDescription>
                     </DialogHeader>
-                    <DialogFooter>
-                        <Button className="w-full" onClick={() => setPenaltyResult(null)}>Acknowledged</Button>
+                    <DialogFooter className="pt-4">
+                        <Button className="w-full h-14 bg-white text-black font-black text-xl rounded-2xl hover:bg-slate-200" onClick={() => setPenaltyResult(null)}>I UNDERSTAND</Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
