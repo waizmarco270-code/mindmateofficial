@@ -10,7 +10,8 @@ import {
     Monitor, CreditCard, Award, X, ShieldX,
     MessageSquare, Send, Check, Code, Swords, Bird, Moon,
     Youtube, Link as LinkIcon, PlayCircle, WifiOff,
-    ChevronLeft, ChevronRight, Calendar, BarChart3, Timer
+    ChevronLeft, ChevronRight, Calendar, BarChart3, Timer,
+    PanelLeftClose, PanelLeftOpen, LayoutDashboard
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -55,6 +56,7 @@ export default function IsolationHub() {
     const [isStarting, setIsStarting] = useState(false);
     const [timerActive, setTimerActive] = useState(false);
     const [viewingDate, setViewingDate] = useState<Date>(new Date());
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     
     // Vigilance Monitor
     const [isRestDialogOpen, setIsRestDialogOpen] = useState(false);
@@ -155,7 +157,7 @@ export default function IsolationHub() {
                     name: 'MindMate Extraction',
                     description: `Early Exit for ${config.label}`,
                     order_id: order.id,
-                    handler: async (response: any) => {
+                    handler: async function (response: any) {
                         await payForEarlyExit('razorpay', response.razorpay_payment_id);
                         setIsExtractionOpen(false);
                     },
@@ -213,7 +215,7 @@ export default function IsolationHub() {
             <div className="min-h-screen bg-[#050505] p-4 sm:p-8 flex flex-col items-center overflow-y-auto">
                 <TacticalCalculator />
                 
-                <div className="max-w-6xl w-full space-y-8 pb-20">
+                <div className="max-w-7xl w-full space-y-8 pb-20">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <ShieldAlert className="text-red-500 animate-pulse" />
@@ -223,42 +225,112 @@ export default function IsolationHub() {
                     </div>
 
                     <Card className="bg-slate-900/50 border-primary/20 backdrop-blur-3xl rounded-[2.5rem] overflow-hidden">
-                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 p-8 md:p-12 border-b border-white/5">
-                            {/* LEFT AREA: DAILY DATA BRIEFING */}
-                            <div className="lg:col-span-3 space-y-6">
-                                <div className="space-y-1">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2"><BarChart3 className="h-3 w-3"/> Temporal Data</p>
-                                    <h3 className="text-2xl font-black text-white italic">{format(viewingDate, 'MMM do, yyyy')}</h3>
+                        <motion.div layout className="grid grid-cols-1 lg:grid-cols-12 gap-0 border-b border-white/5 relative">
+                            
+                            {/* COLLAPSIBLE SIDEBAR: ANALYTICS & OBJECTIVES */}
+                            <motion.div 
+                                layout
+                                initial={false}
+                                animate={{ width: isSidebarOpen ? 'auto' : '64px' }}
+                                className={cn(
+                                    "lg:col-span-3 border-r border-white/5 p-6 space-y-8 bg-black/20 transition-all duration-500 overflow-hidden",
+                                    !isSidebarOpen && "lg:col-span-1 items-center"
+                                )}
+                            >
+                                <div className="flex items-center justify-between min-w-[200px]">
+                                    <AnimatePresence mode="wait">
+                                        {isSidebarOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0, x: -10 }}
+                                                className="space-y-1"
+                                            >
+                                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2"><BarChart3 className="h-3 w-3"/> Tactical Intel</p>
+                                                <h3 className="text-xl font-black text-white italic truncate">{format(viewingDate, 'MMM do, yyyy')}</h3>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 rounded-xl bg-white/5 border border-white/10 hover:bg-primary/20 text-primary"
+                                        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                    >
+                                        {isSidebarOpen ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+                                    </Button>
                                 </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                                    <div className="flex justify-between items-center">
-                                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Logged Time</p>
-                                        <Badge variant="outline" className={cn("text-[8px] font-black uppercase", targetMet ? "text-green-500 border-green-500/30" : "text-amber-500 border-amber-500/30")}>
-                                            {targetMet ? "Objective Met" : "In Progress"}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex items-baseline gap-1">
-                                        <span className="text-4xl font-black text-white tracking-tighter">{viewingDayHours.toFixed(1)}</span>
-                                        <span className="text-sm font-bold text-muted-foreground uppercase">Hours</span>
-                                    </div>
-                                    <Progress value={(viewingDayHours / 10) * 100} className="h-1 bg-white/5" indicatorClassName={targetMet ? "bg-green-500" : "bg-primary"} />
-                                </div>
-                                <TaskTerminal dateKey={viewingDateKey} isCurrentDay={dayIsCurrent} />
-                            </div>
 
-                            {/* CENTER AREA: MAIN GOAL */}
-                            <div className="lg:col-span-6 flex flex-col items-center justify-center text-center space-y-4">
-                                <div className="space-y-1">
-                                    <p className="text-sm font-black uppercase text-muted-foreground tracking-widest">Scientific Goal</p>
-                                    <h2 className="text-6xl md:text-8xl font-black text-white tracking-tighter leading-none">{config.targetHours} HOURS</h2>
-                                    <p className="text-primary font-bold">{hoursRemaining.toFixed(1)} Hours Remaining</p>
+                                <AnimatePresence>
+                                    {isSidebarOpen ? (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 20 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, scale: 0.95 }}
+                                            className="space-y-6"
+                                        >
+                                            <div className="p-5 rounded-3xl bg-white/5 border border-white/10 space-y-4 shadow-inner">
+                                                <div className="flex justify-between items-center">
+                                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Logged Time</p>
+                                                    <Badge variant="outline" className={cn("text-[8px] font-black uppercase", targetMet ? "text-green-500 border-green-500/30" : "text-amber-500 border-amber-500/30")}>
+                                                        {targetMet ? "Objective Met" : "In Progress"}
+                                                    </Badge>
+                                                </div>
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-5xl font-black text-white tracking-tighter">{viewingDayHours.toFixed(1)}</span>
+                                                    <span className="text-sm font-bold text-muted-foreground uppercase">Hours</span>
+                                                </div>
+                                                <Progress value={(viewingDayHours / 10) * 100} className="h-1 bg-white/5" indicatorClassName={targetMet ? "bg-green-500" : "bg-primary"} />
+                                            </div>
+                                            <TaskTerminal dateKey={viewingDateKey} isCurrentDay={dayIsCurrent} />
+                                        </motion.div>
+                                    ) : (
+                                        <motion.div 
+                                            initial={{ opacity: 0 }} 
+                                            animate={{ opacity: 1 }} 
+                                            className="flex flex-col items-center gap-8 pt-4"
+                                        >
+                                            <div className="flex flex-col items-center gap-1">
+                                                <BarChart3 className="h-5 w-5 text-primary opacity-40" />
+                                                <span className="text-[8px] font-black uppercase vertical-text tracking-widest text-muted-foreground">INTEL</span>
+                                            </div>
+                                            <div className="flex flex-col items-center gap-1">
+                                                <LayoutDashboard className="h-5 w-5 text-primary opacity-40" />
+                                                <span className="text-[8px] font-black uppercase vertical-text tracking-widest text-muted-foreground">TASKS</span>
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
+
+                            {/* CENTER AREA: MAIN GOAL (Responsive Expansion) */}
+                            <motion.div 
+                                layout
+                                className={cn(
+                                    "flex flex-col items-center justify-center text-center p-8 md:p-12 transition-all duration-500",
+                                    isSidebarOpen ? "lg:col-span-6" : "lg:col-span-8"
+                                )}
+                            >
+                                <div className="space-y-2 relative">
+                                    <motion.div 
+                                        animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
+                                        transition={{ duration: 4, repeat: Infinity }}
+                                        className="absolute inset-0 bg-primary/10 rounded-full blur-3xl -z-10"
+                                    />
+                                    <p className="text-sm font-black uppercase text-muted-foreground tracking-[0.3em]">Scientific Objective</p>
+                                    <h2 className="text-7xl md:text-9xl font-black text-white tracking-tighter leading-none [text-shadow:0_0_30px_rgba(139,92,246,0.3)]">{config.targetHours} HOURS</h2>
+                                    <div className="flex items-center justify-center gap-3">
+                                        <div className="h-px w-8 bg-primary/30" />
+                                        <p className="text-primary font-black uppercase text-sm tracking-widest">{hoursRemaining.toFixed(1)} Hours to Emergence</p>
+                                        <div className="h-px w-8 bg-primary/30" />
+                                    </div>
                                 </div>
-                            </div>
+                            </motion.div>
 
                             {/* RIGHT AREA: MISSION TIMELINE */}
-                            <div className="lg:col-span-3 space-y-6">
+                            <div className="lg:col-span-3 p-6 space-y-6 border-l border-white/5 bg-black/10">
                                 <div className="flex items-center justify-between">
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2"><Calendar className="h-3 w-3"/> Mission Timeline</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2"><Calendar className="h-3 w-3"/> Temporal Path</p>
                                 </div>
                                 
                                 <Carousel opts={{ align: 'start' }} className="w-full">
@@ -280,9 +352,9 @@ export default function IsolationHub() {
                                                         className={cn(
                                                             "w-full aspect-[2/3] rounded-xl border-2 flex flex-col items-center justify-center gap-1 transition-all",
                                                             isViewing ? "border-primary bg-primary/10" : "border-white/5 bg-black/20",
-                                                            isCurrent && "border-[#8b5cf6] bg-[#8b5cf6]/5 animate-pulse", // Purple for current
-                                                            dayTasksDone && isPastDate && "bg-green-500/10 border-green-500/20", // Green for Success
-                                                            dayTasksFailed && "bg-red-500/10 border-red-500/20" // Red for Fail
+                                                            isCurrent && "border-[#8b5cf6] bg-[#8b5cf6]/5 animate-pulse", 
+                                                            dayTasksDone && isPastDate && "bg-green-500/10 border-green-500/20", 
+                                                            dayTasksFailed && "bg-red-500/10 border-red-500/20" 
                                                         )}
                                                     >
                                                         <span className="text-[8px] font-black uppercase opacity-40">{format(date, 'EEE')}</span>
@@ -302,91 +374,93 @@ export default function IsolationHub() {
                                     </div>
                                 </Carousel>
                             </div>
-                        </div>
+                        </motion.div>
 
                         <div className="p-8 md:p-12 text-center space-y-8">
                             <div className="space-y-4">
-                                <div className="flex justify-between text-xs font-black uppercase"><span>Global Progress</span><span>{percent.toFixed(1)}%</span></div>
+                                <div className="flex justify-between text-xs font-black uppercase tracking-[0.2em]"><span>Convergence Progress</span><span>{percent.toFixed(1)}%</span></div>
                                 <Progress value={percent} className="h-4 bg-white/5" indicatorClassName="animated-rainbow-progress" />
                             </div>
 
-                            <div className="py-8 border-y border-white/5 grid grid-cols-2 gap-8">
-                                <div className="space-y-1"><p className="text-[10px] font-black text-muted-foreground uppercase">Live Clock</p><p className="text-3xl font-black text-white font-mono tracking-tighter">{formatSecondsToTime(activeSession.accumulatedSeconds)}</p></div>
+                            <div className="py-8 border-y border-white/5 grid grid-cols-2 gap-8 bg-white/[0.01]">
+                                <div className="space-y-1"><p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Active Pulse</p><p className="text-4xl font-black text-white font-mono tracking-tighter tabular-nums">{formatSecondsToTime(activeSession.accumulatedSeconds)}</p></div>
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase">Session Integrity</p>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Signal Integrity</p>
                                     <AnimatePresence mode="wait">
                                         {timerActive ? (
-                                            <motion.p key="secure" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-2xl font-bold text-green-500">100% SECURE</motion.p>
+                                            <motion.p key="secure" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-2xl font-black text-green-500 tracking-tight">SECURE</motion.p>
                                         ) : (
-                                            <motion.button key="lost" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-xl font-black text-red-500 flex items-center gap-2 animate-pulse uppercase italic" onClick={() => { const el = document.getElementById('tracking-trigger'); el?.scrollIntoView({ behavior: 'smooth' }); }}>
-                                                <WifiOff className="h-5 w-5" /> SIGNAL LOST
+                                            <motion.button key="lost" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="text-xl font-black text-red-500 flex items-center justify-center gap-2 animate-pulse uppercase italic" onClick={() => { const el = document.getElementById('tracking-trigger'); el?.scrollIntoView({ behavior: 'smooth' }); }}>
+                                                <WifiOff className="h-5 w-5" /> OFFLINE
                                             </motion.button>
                                         )}
                                     </AnimatePresence>
                                 </div>
                             </div>
 
-                            <div className="space-y-4 py-4">
+                            <div className="space-y-4 py-4 max-w-4xl mx-auto w-full">
                                 {activeSession.currentVideoId ? (
                                     <div className="relative group">
-                                        <div className="aspect-video w-full rounded-2xl overflow-hidden border-2 border-primary/20 shadow-2xl">
+                                        <div className="aspect-video w-full rounded-[2.5rem] overflow-hidden border-2 border-primary/20 shadow-2xl">
                                             <iframe src={`https://www.youtube.com/embed/${activeSession.currentVideoId}?autoplay=1&rel=0&modestbranding=1`} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen />
                                         </div>
-                                        <Button variant="ghost" size="sm" className="absolute -top-3 -right-2 h-8 w-8 rounded-full bg-black/80 text-white border border-white/10 hover:bg-red-500" onClick={() => setSessionVideoId(null)}><X className="h-4 w-4" /></Button>
+                                        <Button variant="ghost" size="sm" className="absolute -top-3 -right-2 h-10 w-10 rounded-full bg-black/80 text-white border border-white/10 hover:bg-red-500 shadow-xl" onClick={() => setSessionVideoId(null)}><X className="h-5 w-5" /></Button>
                                     </div>
                                 ) : (
-                                    <div className="p-8 border-2 border-dashed border-white/5 rounded-[2rem] bg-white/[0.02] flex flex-col items-center gap-4">
-                                        <div className="p-4 rounded-full bg-red-500/10 text-red-500"><Youtube className="h-8 w-8" /></div>
-                                        <div className="space-y-1"><h4 className="font-bold text-white">Tactical Video Uplink</h4><p className="text-xs text-muted-foreground">Watch lectures without leaving the monastery.</p></div>
-                                        <div className="flex gap-2 w-full max-w-md">
-                                            <Input value={ytInput} onChange={e => setYtInput(e.target.value)} placeholder="https://youtube.com/live/..." className="bg-black/40 border-white/10 rounded-xl" />
-                                            <Button onClick={handleYtUplink} className="rounded-xl"><LinkIcon className="h-4 w-4"/></Button>
+                                    <div className="p-12 border-4 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02] flex flex-col items-center gap-6 group hover:border-primary/20 transition-colors">
+                                        <div className="p-6 rounded-3xl bg-red-500/10 text-red-500 group-hover:scale-110 transition-transform"><Youtube className="h-12 w-12" /></div>
+                                        <div className="space-y-1"><h4 className="text-xl font-black text-white uppercase italic">Tactical Briefing Uplink</h4><p className="text-sm text-muted-foreground font-medium">Inject educational signals without breaching protocol.</p></div>
+                                        <div className="flex gap-3 w-full max-w-lg">
+                                            <Input value={ytInput} onChange={e => setYtInput(e.target.value)} placeholder="Enter Mission URL (YouTube)..." className="bg-black/40 border-white/10 rounded-2xl h-14 px-6 text-sm font-medium" />
+                                            <Button onClick={handleYtUplink} className="h-14 w-14 rounded-2xl shadow-xl"><LinkIcon className="h-6 w-6"/></Button>
                                         </div>
                                     </div>
                                 )}
                             </div>
 
-                            <div className="flex flex-col sm:flex-row gap-4">
-                                <Button id="tracking-trigger" size="lg" className={cn("flex-1 h-20 rounded-3xl text-2xl font-black uppercase shadow-2xl transition-all duration-500", timerActive ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-primary text-white shadow-primary/20 ring-4 ring-primary/20 animate-bounce")} onClick={() => { setTimerActive(!timerActive); lastTickRef.current = Date.now(); lastInteractionTime.current = Date.now(); }}>
-                                    {timerActive ? <><Pause className="mr-3 h-8 w-8" /> PAUSE TIMER</> : <><Play className="mr-3 h-8 w-8" /> START TRACKING</>}
+                            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl mx-auto w-full">
+                                <Button id="tracking-trigger" size="lg" className={cn("flex-1 h-20 rounded-[2rem] text-2xl font-black uppercase shadow-2xl transition-all duration-500", timerActive ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-primary text-white shadow-primary/20 ring-4 ring-primary/20 animate-bounce")} onClick={() => { setTimerActive(!timerActive); lastTickRef.current = Date.now(); lastInteractionTime.current = Date.now(); }}>
+                                    {timerActive ? <><Pause className="mr-3 h-8 w-8" /> PAUSE PULSE</> : <><Play className="mr-3 h-8 w-8" /> INITIALIZE PULSE</>}
                                 </Button>
-                                {percent >= 100 && <Button size="lg" variant="secondary" className="flex-1 h-20 rounded-3xl text-2xl font-black uppercase bg-green-500 hover:bg-green-600 text-black" onClick={emergeVictory}>EMERGE VICTORIOUS</Button>}
+                                {percent >= 100 && <Button size="lg" variant="secondary" className="flex-1 h-20 rounded-[2rem] text-2xl font-black uppercase bg-green-500 hover:bg-green-600 text-black shadow-xl" onClick={emergeVictory}>EMERGE VICTORIOUS</Button>}
                             </div>
                         </div>
                     </Card>
 
-                    <Button variant="ghost" className="text-red-500/40 hover:text-red-500 hover:bg-red-500/10 font-black uppercase text-xs tracking-widest" onClick={() => { setIsExtractionOpen(true); setExtractionMode('selection'); }}>
-                        <ShieldX className="mr-2 h-4 w-4" /> EMERGENCY EXTRACTION PROTOCOL
-                    </Button>
+                    <div className="flex justify-center pt-10">
+                        <Button variant="ghost" className="text-red-500/40 hover:text-red-500 hover:bg-red-500/10 font-black uppercase text-[10px] tracking-[0.3em]" onClick={() => { setIsExtractionOpen(true); setExtractionMode('selection'); }}>
+                            <ShieldX className="mr-2 h-4 w-4" /> EMERGENCY EXTRACTION PROTOCOL
+                        </Button>
+                    </div>
                 </div>
 
                 <Dialog open={isRestDialogOpen} onOpenChange={setIsRestDialogOpen}>
-                    <DialogContent className="max-w-md bg-slate-950 border-amber-500/50 rounded-[2rem] text-center">
+                    <DialogContent className="max-w-md bg-slate-950 border-amber-500/50 rounded-[2.5rem] text-center p-8">
                         <DialogHeader>
-                            <div className="flex justify-center mb-4"><div className="p-4 bg-amber-500/10 rounded-full"><Timer className="h-12 w-12 text-amber-500 animate-pulse"/></div></div>
-                            <DialogTitle className="text-2xl font-black uppercase text-amber-500">Take Some Rest?</DialogTitle>
-                            <DialogDescription className="text-slate-300">You've been studying for 3 hours straight without interaction. Confirm your presence to continue the session.</DialogDescription>
+                            <div className="flex justify-center mb-6"><div className="p-6 bg-amber-500/10 rounded-full border-4 border-amber-500/20"><Timer className="h-16 w-16 text-amber-500 animate-pulse"/></div></div>
+                            <DialogTitle className="text-3xl font-black uppercase italic text-amber-500">Temporal Alert</DialogTitle>
+                            <DialogDescription className="text-slate-300 text-lg font-medium mt-2">Maximum focus threshold reached. Verify presence to maintain mission integrity.</DialogDescription>
                         </DialogHeader>
-                        <DialogFooter><Button className="w-full h-14 bg-amber-500 text-black font-black text-xl rounded-2xl" onClick={() => { setIsRestDialogOpen(false); setTimerActive(true); lastInteractionTime.current = Date.now(); lastTickRef.current = Date.now(); }}>I'M STILL HERE</Button></DialogFooter>
+                        <DialogFooter className="mt-8"><Button className="w-full h-16 bg-amber-500 hover:bg-amber-600 text-black font-black text-xl rounded-2xl shadow-xl" onClick={() => { setIsRestDialogOpen(false); setTimerActive(true); lastInteractionTime.current = Date.now(); lastTickRef.current = Date.now(); }}>UPLINK ACTIVE</Button></DialogFooter>
                     </DialogContent>
                 </Dialog>
 
                 <Dialog open={isExtractionOpen} onOpenChange={setIsExtractionOpen}>
-                    <DialogContent className="max-w-lg bg-slate-950 border-red-600/50 rounded-[2rem]">
-                        <DialogHeader><DialogTitle className="text-2xl font-black uppercase italic text-red-500 flex items-center gap-2"><AlertTriangle /> Protocol Breach Request</DialogTitle><DialogDescription>Select extraction method. Dishonor is inevitable.</DialogDescription></DialogHeader>
-                        <div className="py-6">
+                    <DialogContent className="max-w-lg bg-slate-950 border-red-600/50 rounded-[3rem] p-10">
+                        <DialogHeader><DialogTitle className="text-3xl font-black uppercase italic text-red-500 flex items-center gap-3"><AlertTriangle className="h-8 w-8" /> Termination Request</DialogTitle><DialogDescription className="text-lg font-bold text-red-200/60 mt-2">Select your extraction method. Every failure has a cost.</DialogDescription></DialogHeader>
+                        <div className="py-8">
                             <AnimatePresence mode="wait">
                                 {extractionMode === 'selection' && (
-                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-3">
-                                        <Button variant="outline" className="w-full h-16 justify-between rounded-2xl border-white/10" onClick={() => setExtractionMode('credits')}><div className="flex items-center gap-3"><Gem className="text-primary"/><span className="font-bold">Pay Credit Fine</span></div><span className="font-black">{config.exitCreditCost} CR</span></Button>
-                                        <Button variant="outline" className="w-full h-16 justify-between rounded-2xl border-white/10" onClick={() => setExtractionMode('money')}><div className="flex items-center gap-3"><Wallet className="text-emerald-500"/><span className="font-bold">Protocol Forfeit Fee</span></div><span className="font-black">₹{config.exitMoneyCost}</span></Button>
+                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+                                        <Button variant="outline" className="w-full h-20 justify-between rounded-2xl border-white/10 bg-white/5 hover:bg-red-500/10 px-6 group" onClick={() => setExtractionMode('credits')}><div className="flex items-center gap-4"><Gem className="text-primary group-hover:scale-110 transition-transform"/><span className="font-black text-lg">Sacrifice Credits</span></div><span className="font-black text-xl">{config.exitCreditCost} CR</span></Button>
+                                        <Button variant="outline" className="w-full h-20 justify-between rounded-2xl border-white/10 bg-white/5 hover:bg-emerald-500/10 px-6 group" onClick={() => setExtractionMode('money')}><div className="flex items-center gap-4"><Wallet className="text-emerald-500 group-hover:scale-110 transition-transform"/><span className="font-black text-lg">Financial Forfeit</span></div><span className="font-black text-xl">₹{config.exitMoneyCost}</span></Button>
                                     </motion.div>
                                 )}
                                 {extractionMode === 'credits' && (
-                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6 text-center"><p className="text-slate-300 font-medium">Sacrifice <b>{config.exitCreditCost} Credits</b> to end session?</p><div className="flex gap-3"><Button variant="ghost" className="flex-1" onClick={() => setExtractionMode('selection')}>Back</Button><Button className="flex-1 bg-red-600 font-bold" onClick={() => handleEarlyExit('credits')} disabled={isProcessingExit}>{isProcessingExit ? <Loader2 className="animate-spin" /> : 'Confirm Sacrifice'}</Button></div></motion.div>
+                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8 text-center"><p className="text-slate-300 text-xl font-bold">Burn <span className="text-red-500">{config.exitCreditCost} Credits</span> to terminate exile?</p><div className="flex gap-4"><Button variant="ghost" className="flex-1 h-14 rounded-xl font-black uppercase" onClick={() => setExtractionMode('selection')}>Abort</Button><Button className="flex-1 bg-red-600 hover:bg-red-700 h-14 rounded-xl font-black uppercase text-lg shadow-xl shadow-red-600/20" onClick={() => handleEarlyExit('credits')} disabled={isProcessingExit}>{isProcessingExit ? <Loader2 className="animate-spin" /> : 'Confirm Sacrifice'}</Button></div></motion.div>
                                 )}
                                 {extractionMode === 'money' && (
-                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-6"><p className="text-center text-slate-300 font-medium">Termination requires a <b>₹{config.exitMoneyCost}</b> transaction.</p><div className="grid grid-cols-2 gap-3"><Button variant="outline" className="rounded-xl" onClick={() => handleEarlyExit('wallet')}>Use Vault</Button><Button className="rounded-xl bg-emerald-600" onClick={() => handleEarlyExit('razorpay')}>Pay Now</Button></div><Button variant="ghost" className="w-full" onClick={() => setExtractionMode('selection')}>Back</Button></motion.div>
+                                    <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8 text-center"><p className="text-xl font-bold text-slate-300">Authorization required for <span className="text-emerald-500">₹{config.exitMoneyCost}</span> forfeit.</p><div className="grid grid-cols-2 gap-4"><Button variant="outline" className="h-16 rounded-2xl font-black uppercase bg-white/5 border-white/10" onClick={() => handleEarlyExit('wallet')}>MM Vault</Button><Button className="h-16 rounded-2xl font-black uppercase bg-emerald-600 hover:bg-emerald-700 text-lg shadow-xl" onClick={() => handleEarlyExit('razorpay')}>Pay Now</Button></div><Button variant="ghost" className="w-full font-bold uppercase mt-4" onClick={() => setExtractionMode('selection')}>Back to Selection</Button></motion.div>
                                 )}
                             </AnimatePresence>
                         </div>
