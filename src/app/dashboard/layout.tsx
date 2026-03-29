@@ -25,22 +25,22 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   const { openMobile, setOpenMobile } = useSidebar();
   const { appSettings, currentUserData, loading, isSuperAdmin, isCoDev } = useAdmin();
   const { activeSession } = useIsolation();
-  const { updateMyPresence } = usePresence(); 
+  const { updateMyPresence } = usePresence(); // Hook handles its own heartbeat internally
   const pathname = usePathname();
   const router = useRouter();
   
   React.useEffect(() => {
     const triggerBackgroundTasks = async () => {
         try {
+            // Only handle CRON tasks here, presence is managed by the hook
             await fetch('/api/cron/send-scheduled-notifications');
-            await updateMyPresence(true);
         } catch (e) {}
     };
     
     triggerBackgroundTasks();
     const interval = setInterval(triggerBackgroundTasks, 120000);
     return () => clearInterval(interval);
-  }, [updateMyPresence]);
+  }, []);
 
   // SOVEREIGN LOCKDOWN PROTOCOL
   React.useEffect(() => {

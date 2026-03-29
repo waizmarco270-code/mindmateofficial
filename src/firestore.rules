@@ -43,6 +43,12 @@ service cloud.firestore {
       }
     }
     
+    // Presence System
+    match /presence/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+    
     // Calls Collection (Voice Calls)
     match /calls/{callId} {
       allow read, write: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.receiverId || request.auth.uid == request.resource.data.callerId);

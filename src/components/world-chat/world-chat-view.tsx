@@ -17,7 +17,7 @@ import { useAdmin, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { format, formatDistanceToNow, isSameDay } from 'date-fns';
+import { format, formatDistanceToNow, isToday, isSameDay } from 'date-fns';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { UserProfileCard } from '@/components/profile/user-profile-card';
@@ -28,6 +28,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { Label } from '../ui/label';
 import { Progress } from '../ui/progress';
+import { usePresence } from '@/hooks/use-presence';
 
 const userColors = [
     'text-red-400', 'text-orange-400', 'text-amber-400', 'text-yellow-400', 'text-lime-400', 
@@ -95,6 +96,7 @@ export function WorldChatView() {
     const { users: allUsers, loading: usersLoading, isAdmin, isSuperAdmin, currentUserData } = useAdmin();
     const { user: currentUser } = useUser();
     const { toast } = useToast();
+    const { onlineUsers } = usePresence();
     
     const [newMessage, setNewMessage] = useState('');
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -109,21 +111,8 @@ export function WorldChatView() {
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Smart Virtual Presence Engine
-    const [fakeOnlineCount, setFakeOnlineCount] = useState(1240);
-    useEffect(() => {
-        const generateSmartCount = () => {
-            const now = new Date();
-            const hour = now.getHours();
-            // Busy hours (6 PM - 1 AM) vs quiet hours
-            const base = (hour >= 18 || hour <= 1) ? 3500 : 1200;
-            const variance = Math.floor(Math.random() * 1000);
-            setFakeOnlineCount(base + variance);
-        };
-        generateSmartCount();
-        const interval = setInterval(generateSmartCount, 30000);
-        return () => clearInterval(interval);
-    }, []);
+    // Verified Online Count
+    const onlineCount = useMemo(() => onlineUsers.filter(u => u.isOnline).length, [onlineUsers]);
 
     const scrollToBottom = useCallback((behavior: ScrollBehavior = 'smooth') => {
         if (scrollAreaRef.current) {
@@ -233,7 +222,7 @@ export function WorldChatView() {
                         <h2 className="font-bold text-lg leading-tight">Global Forum</h2>
                         <div className="flex items-center gap-1.5 mt-0.5">
                             <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_5px_#22c55e]" />
-                            <p className="text-[9px] font-black uppercase tracking-[0.15em]">{fakeOnlineCount.toLocaleString()} ONLINE</p>
+                            <p className="text-[9px] font-black uppercase tracking-[0.15em]">{onlineCount.toLocaleString()} LEGENDS ACTIVE</p>
                         </div>
                     </div>
                 </div>
