@@ -16,6 +16,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useImmersive } from '@/hooks/use-immersive';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Progress } from '@/components/ui/progress';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle, 
+    AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 const EXAM_DURATION = 10800; // 3 Hours in seconds
 const REVISION_TIME = 900; // 15 Minutes remaining
@@ -53,9 +65,6 @@ export default function ApexExamSimulator() {
 
         penaltyAppliedRef.current = true;
         
-        // Custom penalty logic for simulator (ignores shield if you want, but sticking to system consistency)
-        // User requested: "agar wo ese complete nahi kar paya ya tab switch background mai chala gaya ya kuch bhi Kia to uska -200 credits ka penalty lage ga"
-        // System use-admin applyFocusPenalty handles shields. We'll use it.
         const result = await applyFocusPenalty(user.id, SIMULATOR_PENALTY);
         
         const message = result === 'shielded' 
@@ -202,7 +211,7 @@ export default function ApexExamSimulator() {
                             </div>
 
                             <div className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/10">
-                                <Checkbox 
+                                <LocalCheckbox 
                                     id="rules" 
                                     checked={isRulesAccepted} 
                                     onCheckedChange={(checked) => setIsRulesAccepted(!!checked)}
@@ -229,7 +238,7 @@ export default function ApexExamSimulator() {
     }
 
     return (
-        <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-4 sm:p-8">
+        <div className="min-h-screen bg-[#050505] text-white flex flex-col items-center justify-center p-4 sm:p-8 w-full">
             <div className="fixed top-8 left-8 flex items-center gap-3 opacity-40">
                 <Trophy className="h-6 w-6 text-primary" />
                 <div>
@@ -333,7 +342,7 @@ export default function ApexExamSimulator() {
     );
 }
 
-function Checkbox({ id, checked, onCheckedChange, className }: { id: string, checked: boolean, onCheckedChange: (checked: boolean) => void, className?: string }) {
+function LocalCheckbox({ id, checked, onCheckedChange, className }: { id: string, checked: boolean, onCheckedChange: (checked: boolean) => void, className?: string }) {
     return (
         <button 
             id={id}
@@ -344,12 +353,12 @@ function Checkbox({ id, checked, onCheckedChange, className }: { id: string, che
                 className
             )}
         >
-            {checked && <Check className="h-3.5 w-3.5 text-white" strokeWidth={4} />}
+            {checked && <LocalCheck className="h-3.5 w-3.5 text-white" strokeWidth={4} />}
         </button>
     );
 }
 
-function Check({ className, strokeWidth }: { className?: string, strokeWidth?: number }) {
+function LocalCheck({ className, strokeWidth }: { className?: string, strokeWidth?: number }) {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth || 2} strokeLinecap="round" strokeLinejoin="round" className={className}>
             <path d="M20 6 9 17l-5-5"/>
