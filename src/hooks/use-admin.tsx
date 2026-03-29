@@ -2,12 +2,17 @@
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { db, storage } from '@/lib/firebase';
-import { collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, where, getDocs, increment, writeBatch, orderBy, addDoc, serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, Timestamp, runTransaction, collectionGroup } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { isToday, isYesterday, format, startOfWeek, endOfWeek, parseISO, addDays as dateFnsAddDays, differenceInDays } from 'date-fns';
+import { db } from '@/lib/firebase';
+import { 
+    collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, 
+    where, getDocs, increment, writeBatch, orderBy, addDoc, 
+    serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, 
+    Timestamp, runTransaction, collectionGroup 
+} from 'firebase/firestore';
+import { format, isToday, isYesterday, startOfWeek, addDays as dateFnsAddDays, differenceInDays } from 'date-fns';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
+import { useToast } from './use-toast';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
 export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign';
@@ -17,19 +22,19 @@ export interface WalletTransaction {
     amount: number;
     type: 'topup' | 'withdrawal' | 'penalty' | 'purchase' | 'refund';
     status: 'completed' | 'pending' | 'failed';
-    date: string; // ISO string
+    date: string;
 }
 
 export interface User {
   id: string;
   uid: string;
-  mindMateId?: string; // MM-XXXXXX format
+  mindMateId?: string;
   displayName: string;
   email: string;
   photoURL?: string;
   isBlocked: boolean;
   banType?: 'permanent' | 'temporary';
-  banExpires?: string; // ISO string
+  banExpires?: string;
   banReason?: string;
   isLeaderboardPrivate?: boolean;
   credits: number;
@@ -194,8 +199,9 @@ export interface GlobalGift {
         boosters?: number;
         maxers?: number;
         badge?: BadgeType;
+        alphaGlowWeeks?: number;
     };
-    target: 'all' | string;
+    target: 'all' | string | string[];
     maxClaims?: number;
     createdAt: Date;
     isActive: boolean;
@@ -217,20 +223,12 @@ export interface FeatureLock {
     cost: number;
 }
 
-export type ShowcaseTemplate = 
-  | 'cosmic-blue' | 'fiery-red' | 'golden-legend' | 'professional-dark' 
-  | 'emerald-dream' | 'amethyst-haze' | 'solar-flare' | 'midnight-abyss'
-  | 'rainbow-aurora' | 'diamond-pearl' | 'cyber-grid' | 'oceanic-flow'
-  | 'synthwave-sunset' | 'jungle-ruins' | 'black-hole' | 'anime-speed-lines'
-  | 'blueprint-grid' | 'lava-flow' | 'mystic-forest' | 'digital-glitch'
-  | 'steampunk-gears' | 'lofi-rain';
-
 export interface FeatureShowcase {
     id: string;
     title: string;
     description: string;
     launchDate?: string;
-    template: ShowcaseTemplate;
+    template: any;
     status: 'upcoming' | 'live';
     link?: string;
     createdAt: Date;
@@ -241,7 +239,7 @@ export interface CreditPack {
   name: string;
   credits: number;
   price: number;
-  badge?: 'popular' | 'new' | 'recommended' | 'exclusive' | 'limited' | 'hot' | 'best-seller' | 'jackpot';
+  badge?: string;
   createdAt: Date;
 }
 
@@ -252,12 +250,12 @@ export interface StoreItem {
     cost: number;
     price?: number; 
     paymentType: 'credits' | 'money';
-    type: 'scratch-card' | 'card-flip' | 'penalty-shield' | 'streak-freeze' | 'alpha-glow' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'clan-xp-booster' | 'clan-level-max';
+    type: string;
     quantity: number;
     createdAt: Date;
     stock: number;
     isFeatured: boolean;
-    badge?: 'popular' | 'new' | 'recommended' | 'exclusive' | 'limited' | 'hot' | 'best-seller' | 'jackpot';
+    badge?: string;
 }
 
 export interface VideoCategory {
@@ -296,10 +294,8 @@ interface AppDataContextType {
     addGuessesToAllUsers: (amount: number) => Promise<void>;
     unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
     unlockFeatureForUser: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
-    unlockFeatureForUserV2: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
     unlockThemeForUser: (uid: string, themeId: AppThemeId, cost: number) => Promise<void>;
     generateAiAccessToken: (uid: string) => Promise<string | null>;
-    generateDevAiAccessToken: (uid: string) => Promise<string | null>;
     grantMasterCard: (uid: string, durationDays: number) => Promise<void>;
     revokeMasterCard: (uid: string) => Promise<void>;
     addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
@@ -310,7 +306,7 @@ interface AppDataContextType {
     updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
     updateGameHighScore: (uid: string, game: string, score: number) => Promise<void>;
     updateElementQuestScore: (uid: string, block: 's' | 'p' | 'd' | 'f', score: number) => Promise<void>;
-    claimElementQuestMilestone: (uid: string, milestone: 100 | 200 | 300 | 400) => Promise<void>;
+    claimElementQuestMilestone: (uid: string, milestone: number) => Promise<void>;
     claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
     claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
@@ -338,11 +334,11 @@ interface AppDataContextType {
     deleteAnnouncement: (id: string) => Promise<void>;
     resources: Resource[];
     addResource: (resource: Omit<Resource, 'id' | 'createdAt'>) => Promise<void>;
-    updateResource: (id: string, data: Partial<Omit<Resource, 'id' | 'createdAt'>>) => Promise<void>;
+    updateResource: (id: string, data: Partial<Resource>) => Promise<void>;
     deleteResource: (id: string) => Promise<void>;
     resourceSections: ResourceSection[];
     addResourceSection: (section: Omit<ResourceSection, 'id'|'createdAt'>) => Promise<void>;
-    updateResourceSection: (id: string, data: Partial<Omit<ResourceSection, 'id'|'createdAt'>>) => Promise<void>;
+    updateResourceSection: (id: string, data: Partial<ResourceSection>) => Promise<void>;
     deleteResourceSection: (id: string) => Promise<void>;
     dailySurprises: DailySurprise[];
     addDailySurprise: (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => Promise<void>;
@@ -354,7 +350,6 @@ interface AppDataContextType {
     activePoll: Poll | null;
     allPolls: Poll[];
     addPoll: (pollData: Omit<Poll, 'id' | 'createdAt' | 'isActive' | 'results'>) => Promise<void>;
-    updatePoll: (id: string, data: Partial<Poll>) => Promise<void>;
     deletePoll: (id: string) => Promise<void>;
     setActivePoll: (id: string) => Promise<void>;
     submitPollVote: (pollId: string, option: string) => Promise<void>;
@@ -369,15 +364,15 @@ interface AppDataContextType {
     claimGlobalGift: (giftId: string, userId: string) => Promise<void>;
     featureShowcases: FeatureShowcase[];
     addFeatureShowcase: (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => Promise<void>;
-    updateFeatureShowcase: (id: string, data: Partial<Omit<FeatureShowcase, 'id' | 'createdAt'>>) => Promise<void>;
+    updateFeatureShowcase: (id: string, data: Partial<FeatureShowcase>) => Promise<void>;
     deleteFeatureShowcase: (id: string) => Promise<void>;
     creditPacks: CreditPack[];
     createCreditPack: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
-    updateCreditPack: (id: string, data: Partial<Omit<CreditPack, 'id' | 'createdAt'>>) => Promise<void>;
+    updateCreditPack: (id: string, data: Partial<CreditPack>) => Promise<void>;
     deleteCreditPack: (id: string) => Promise<void>;
     storeItems: StoreItem[];
     createStoreItem: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
-    updateStoreItem: (id: string, data: Partial<Omit<StoreItem, 'id' | 'createdAt'>>) => Promise<void>;
+    updateStoreItem: (id: string, data: Partial<StoreItem>) => Promise<void>;
     deleteStoreItem: (id: string) => Promise<void>;
     redeemStoreItem: (item: StoreItem, quantity: number) => Promise<void>;
     processStoreItemPayment: (item: StoreItem, quantity: number, transactionId: string, method: 'razorpay' | 'wallet') => Promise<void>;
@@ -398,6 +393,8 @@ const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const { user: authUser, isLoaded: isClerkLoaded } = useUser();
+    const { toast } = useToast();
+    
     const [isAdmin, setIsAdmin] = useState(false);
     const [isCoDev, setIsCoDev] = useState(false);
     const [isSuperAdmin, setIsSuperAdmin] = useState(false);
@@ -433,9 +430,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             setIsSuperAdmin(currentUserData.uid === SUPER_ADMIN_UID);
             setIsCoDev(currentUserData.isCoDev ?? false);
         } else {
-            setIsAdmin(false);
-            setIsSuperAdmin(false);
-            setIsCoDev(false);
+            setIsAdmin(false); setIsSuperAdmin(false); setIsCoDev(false);
         }
     }, [isClerkLoaded, authUser, currentUserData]);
 
@@ -468,13 +463,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     let currentStreak = data.streak || 0;
                     
                     if (!lastCheckDate) {
-                        updates.streak = 1;
-                        updates.longestStreak = 1;
+                        updates.streak = 1; updates.longestStreak = 1;
                     } else if (isYesterday(lastCheckDate)) {
                         const nextStreak = currentStreak + 1;
                         updates.streak = nextStreak;
                         if (nextStreak > (data.longestStreak || 0)) updates.longestStreak = nextStreak;
-                        
                         if (nextStreak === 3) updates.credits = (data.credits || 0) + 50;
                         else if (nextStreak === 7) updates.credits = (data.credits || 0) + 150;
                         else if (nextStreak === 14) updates.credits = (data.credits || 0) + 500;
@@ -495,9 +488,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     hasUpdates = true;
                 }
 
-                if (hasUpdates) {
-                    await updateDoc(userDocRef, updates);
-                }
+                if (hasUpdates) await updateDoc(userDocRef, updates);
                 setCurrentUserData({ id: snap.id, ...data } as User);
             } else {
                 const newUser: User = {
@@ -505,8 +496,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     mindMateId: `MM-${Math.floor(100000 + Math.random() * 900000)}`,
                     displayName: authUser.fullName || authUser.username || 'New User',
                     email: authUser.primaryEmailAddress?.emailAddress || '', photoURL: authUser.imageUrl, isBlocked: false,
-                    isLeaderboardPrivate: false,
-                    credits: 200, walletBalance: 0, isAdmin: false, isVip: false, isGM: false, isChallenger: false, isCoDev: false,
+                    isLeaderboardPrivate: false, credits: 200, walletBalance: 0, isAdmin: false, isVip: false, isGM: false, isChallenger: false, isCoDev: false,
                     friends: [], unlockedResourceSections: [], unlockedFeatures: [], unlockedThemes: [], hasAiAccess: false,
                     focusSessionsCompleted: 0, dailyTasksCompleted: 0, totalStudyTime: 0, freeRewards: 0, freeGuesses: 0,
                     streak: 1, longestStreak: 1, lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
@@ -533,276 +523,161 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 } as T;
             });
 
-        const unsubAnnouncements = onSnapshot(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')), (s) => setAnnouncements(processWithDate<Announcement>(s)));
-        const unsubResources = onSnapshot(query(collection(db, 'resources'), orderBy('createdAt', 'desc')), (s) => setResources(processWithDate<Resource>(s)));
-        const unsubSections = onSnapshot(query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc')), (s) => setResourceSections(processWithDate<ResourceSection>(s)));
-        const unsubDailySurprises = onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(processWithDate<DailySurprise>(s)));
-        const unsubTickets = onSnapshot(query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc')), (s) => setSupportTickets(s.docs.map(d => ({ id: d.id, ...d.data() } as SupportTicket))));
-        const unsubPolls = onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc')), (s) => setAllPolls(processWithDate<Poll>(s)));
-        const unsubAppSettings = onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null));
-        const unsubGifts = onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(processWithDate<GlobalGift>(s)));
-        const unsubShowcases = onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processWithDate<FeatureShowcase>(s)));
-        const unsubCreditPacks = onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), (s) => setCreditPacks(processWithDate<CreditPack>(s)));
-        const unsubStoreItems = onSnapshot(query(collection(db, 'storeItems'), orderBy('createdAt', 'desc')), (s) => setStoreItems(processWithDate<StoreItem>(s)));
-        const unsubVideoCats = onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(processWithDate<VideoCategory>(s)));
-        const unsubVideoLecs = onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(processWithDate<VideoLecture>(s)));
-        const unsubExitReqs = onSnapshot(query(collection(db, 'isolationExitRequests'), where('status', '==', 'pending')), (s) => setIsolationExitRequests(s.docs.map(d => ({ id: d.id, ...d.data() } as IsolationExitRequest))));
+        const unsubs = [
+            onSnapshot(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')), (s) => setAnnouncements(processWithDate<Announcement>(s))),
+            onSnapshot(query(collection(db, 'resources'), orderBy('createdAt', 'desc')), (s) => setResources(processWithDate<Resource>(s))),
+            onSnapshot(query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc')), (s) => setResourceSections(processWithDate<ResourceSection>(s))),
+            onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(processWithDate<DailySurprise>(s))),
+            onSnapshot(query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc')), (s) => setSupportTickets(s.docs.map(d => ({ id: d.id, ...d.data() } as SupportTicket)))),
+            onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc')), (s) => setAllPolls(processWithDate<Poll>(s))),
+            onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null)),
+            onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(processWithDate<GlobalGift>(s))),
+            onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processWithDate<FeatureShowcase>(s))),
+            onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), (s) => setCreditPacks(processWithDate<CreditPack>(s))),
+            onSnapshot(query(collection(db, 'storeItems'), orderBy('createdAt', 'desc')), (s) => setStoreItems(processWithDate<StoreItem>(s))),
+            onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(processWithDate<VideoCategory>(s))),
+            onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(processWithDate<VideoLecture>(s))),
+            onSnapshot(query(collection(db, 'isolationExitRequests'), where('status', '==', 'pending')), (s) => setIsolationExitRequests(s.docs.map(d => ({ id: d.id, ...d.data() } as IsolationExitRequest))))
+        ];
 
-        return () => {
-            unsubAnnouncements(); unsubResources(); unsubPolls(); unsubDailySurprises(); unsubSections();
-            unsubAppSettings(); unsubGifts(); unsubTickets(); unsubShowcases();
-            unsubCreditPacks(); unsubStoreItems(); unsubVideoCats(); unsubVideoLecs(); unsubExitReqs();
-        };
-    }, []);
-
-    const approveIsolationExit = useCallback(async (requestId: string) => {
-        const reqRef = doc(db, 'isolationExitRequests', requestId);
-        const reqSnap = await getDoc(reqRef);
-        if (!reqSnap.exists()) return;
-        const data = reqSnap.data() as IsolationExitRequest;
-
-        const batch = writeBatch(db);
-        batch.delete(doc(db, 'users', data.userId, 'isolation', 'current'));
-        batch.update(reqRef, { status: 'approved' });
-        await batch.commit();
-    }, []);
-
-    const declineIsolationExit = useCallback(async (requestId: string) => {
-        const reqRef = doc(db, 'isolationExitRequests', requestId);
-        const reqSnap = await getDoc(reqRef);
-        if (!reqSnap.exists()) return;
-        const data = reqSnap.data() as IsolationExitRequest;
-
-        const batch = writeBatch(db);
-        batch.update(doc(db, 'users', data.userId, 'isolation', 'current'), { status: 'active', emergencyRequest: null });
-        batch.update(reqRef, { status: 'declined' });
-        await batch.commit();
+        return () => unsubs.forEach(unsub => unsub());
     }, []);
 
     const addCreditsToUser = useCallback(async (uid: string, amount: number) => {
         if (!uid) return;
-        const userDocRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userDocRef);
-        const userData = userSnap.data();
-        if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date() && amount < 0) return;
-        await updateDoc(userDocRef, { credits: increment(amount) });
-    }, []);
-
-    const topUpWallet = useCallback(async (amount: number, transactionId: string) => {
-        if (!authUser) return;
-        const userRef = doc(db, 'users', authUser.id);
-        const newTx: WalletTransaction = {
-            id: transactionId,
-            amount,
-            type: 'topup',
-            status: 'completed',
-            date: new Date().toISOString()
-        };
-        await updateDoc(userRef, {
-            walletBalance: increment(amount),
-            lastWalletDeposit: new Date().toISOString(),
-            walletTransactions: arrayUnion(newTx)
-        });
-    }, [authUser]);
-
-    const requestWithdrawal = useCallback(async (amount: number) => {
-        if (!authUser || !currentUserData) return;
-        if (currentUserData.walletBalance < amount) throw new Error("Insufficient wallet balance.");
-        
-        const lastDeposit = currentUserData.lastWalletDeposit ? new Date(currentUserData.lastWalletDeposit) : new Date(0);
-        if (differenceInDays(new Date(), lastDeposit) < 7) {
-            throw new Error("Withdrawals are locked for 7 days after your last deposit.");
-        }
-
-        const userRef = doc(db, 'users', authUser.id);
-        const newTx: WalletTransaction = {
-            id: `wd-${Date.now()}`,
-            amount: -amount,
-            type: 'withdrawal',
-            status: 'pending',
-            date: new Date().toISOString()
-        };
-        await updateDoc(userRef, {
-            walletBalance: increment(-amount),
-            walletTransactions: arrayUnion(newTx)
-        });
-    }, [authUser, currentUserData]);
-
-    const applyFocusPenalty = useCallback(async (uid: string, amount: number): Promise<'shielded' | 'penalized'> => {
         const userRef = doc(db, 'users', uid);
         const userSnap = await getDoc(userRef);
-        if (!userSnap.exists()) return 'penalized';
-        const data = userSnap.data() as User;
+        const userData = userSnap.data();
+        if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date() && amount < 0) return;
+        await updateDoc(userRef, { credits: increment(amount) });
+    }, []);
+
+    const sendGlobalGift = useCallback(async (gift: any) => {
+        const sanitizedGift = { ...gift };
+        if (sanitizedGift.maxClaims === 0 || !sanitizedGift.maxClaims) delete sanitizedGift.maxClaims;
         
-        if (data.inventory?.penaltyShields && data.inventory.penaltyShields > 0) {
-            await updateDoc(userRef, { 'inventory.penaltyShields': increment(-1) });
-            return 'shielded';
-        } else {
-            await addCreditsToUser(uid, -amount);
-            return 'penalized';
-        }
-    }, [addCreditsToUser]);
-
-    const redeemStoreItem = useCallback(async (item: StoreItem, quantity: number) => {
-        if (!authUser || !currentUserData) throw new Error("You must be logged in.");
-        const totalCost = item.cost * quantity;
-
-        await runTransaction(db, async (transaction) => {
-            const userRef = doc(db, 'users', authUser.id);
-            const itemRef = doc(db, 'storeItems', item.id);
-            const userSnap = await transaction.get(userRef);
-            const itemSnap = await transaction.get(itemRef);
-            
-            if (!userSnap.exists() || !itemSnap.exists()) throw new Error("Data error.");
-            
-            const userData = userSnap.data() as User;
-            const currentItem = itemSnap.data() as StoreItem;
-            const hasMasterCard = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
-            
-            if (!hasMasterCard && userData.credits < totalCost) throw new Error("Insufficient credits.");
-            if (currentItem.stock < quantity) throw new Error("Not enough stock.");
-            
-            transaction.update(itemRef, { stock: increment(-quantity) });
-            
-            const updates: any = {};
-            if (!hasMasterCard) updates.credits = increment(-totalCost);
-            
-            const totalGrant = item.quantity * quantity;
-            if (item.type === 'scratch-card') updates.freeRewards = increment(totalGrant);
-            else if (item.type === 'card-flip') updates.freeGuesses = increment(totalGrant);
-            else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(totalGrant);
-            else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(totalGrant);
-            else if (item.type === 'clan-xp-booster') updates['inventory.clanXpBoosters'] = increment(totalGrant);
-            else if (item.type === 'clan-level-max') updates['inventory.clanLevelMaxers'] = increment(totalGrant);
-            else if (item.type === 'alpha-glow') {
-                const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
-                const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * totalGrant);
-                updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
-            } else if (item.type === 'early-bird') updates.isEarlyBird = true;
-            else if (item.type === 'night-owl') updates.isNightOwl = true;
-            else if (item.type === 'knowledge-knight') updates.isKnowledgeKnight = true;
-            
-            transaction.update(userRef, updates);
+        const docRef = await addDoc(collection(db, 'globalGifts'), {
+            ...sanitizedGift,
+            createdAt: serverTimestamp(),
+            isActive: true,
+            claimedBy: []
         });
-    }, [authUser, currentUserData]);
 
-    const processStoreItemPayment = useCallback(async (item: StoreItem, quantity: number, transactionId: string, method: 'razorpay' | 'wallet') => {
-        if (!authUser || !currentUserData) return;
-        const totalPrice = item.price! * quantity;
+        // Smart Notification
+        const r = gift.rewards;
+        const rewardsList = [];
+        if (r.credits) rewardsList.push(`${r.credits} Credits`);
+        if (r.wallet) rewardsList.push(`₹${r.wallet} Vault`);
+        if (r.badge) rewardsList.push(`${r.badge.toUpperCase()} Badge`);
+        if (r.shields) rewardsList.push(`${r.shields} Aegis`);
+        if (r.alphaGlowWeeks) rewardsList.push(`${r.alphaGlowWeeks} Weeks of Alpha Radiance`);
+        
+        const msg = `Master sent you ${rewardsList.join(', ')}! Claim now.`;
 
-        await runTransaction(db, async (transaction) => {
-            const userRef = doc(db, 'users', authUser.id);
-            const itemRef = doc(db, 'storeItems', item.id);
-            const userSnap = await transaction.get(userRef);
-            const itemSnap = await transaction.get(itemRef);
-            
-            if (!userSnap.exists() || !itemSnap.exists()) throw new Error("Data error.");
-            
-            const userData = userSnap.data() as User;
-            const currentItem = itemSnap.data() as StoreItem;
-            
-            if (method === 'wallet' && userData.walletBalance < totalPrice) throw new Error("Insufficient wallet balance.");
-            if (currentItem.stock < quantity) throw new Error("Not enough stock.");
-            
-            transaction.update(itemRef, { stock: increment(-quantity) });
-            
-            const totalGrant = item.quantity * quantity;
-            const updates: any = {
-                transactions: arrayUnion({
-                    id: transactionId,
-                    packName: `${item.name} (x${quantity})`,
-                    credits: 0, 
-                    price: totalPrice,
-                    date: new Date().toISOString(),
-                    type: method === 'wallet' ? 'wallet_purchase' : 'razorpay_item'
-                })
-            };
+        const notificationData: any = {
+            title: "🎁 Legendary Gift Pulse!",
+            message: msg,
+            linkUrl: '/dashboard'
+        };
 
-            if (method === 'wallet') {
-                updates.walletBalance = increment(-totalPrice);
-                const newWalletTx: WalletTransaction = {
-                    id: transactionId, amount: -totalPrice, type: 'purchase', status: 'completed', date: new Date().toISOString()
-                };
-                updates.walletTransactions = arrayUnion(newWalletTx);
+        if (gift.target !== 'all') {
+            if (Array.isArray(gift.target)) {
+                for (const t of gift.target) {
+                    await fetch('/api/send-notification', { method: 'POST', body: JSON.stringify({ ...notificationData, userId: t }) });
+                }
+            } else {
+                notificationData.userId = gift.target;
+                await fetch('/api/send-notification', { method: 'POST', body: JSON.stringify(notificationData) });
             }
+        } else {
+            await fetch('/api/send-notification', { method: 'POST', body: JSON.stringify(notificationData) });
+        }
+    }, []);
+
+    const claimGlobalGift = useCallback(async (giftId: string, userId: string) => {
+        await runTransaction(db, async (transaction) => {
+            const giftRef = doc(db, 'globalGifts', giftId);
+            const userRef = doc(db, 'users', userId);
+            const giftSnap = await transaction.get(giftRef);
+            const userSnap = await transaction.get(userRef);
             
-            if (item.type === 'scratch-card') updates.freeRewards = increment(totalGrant);
-            else if (item.type === 'card-flip') updates.freeGuesses = increment(totalGrant);
-            else if (item.type === 'penalty-shield') updates['inventory.penaltyShields'] = increment(totalGrant);
-            else if (item.type === 'streak-freeze') updates['inventory.streakFreezes'] = increment(totalGrant);
-            else if (item.type === 'clan-xp-booster') updates['inventory.clanXpBoosters'] = increment(totalGrant);
-            else if (item.type === 'clan-level-max') updates['inventory.clanLevelMaxers'] = increment(totalGrant);
-            else if (item.type === 'alpha-glow') {
-                const currentAlpha = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
-                const newExpiry = dateFnsAddDays(currentAlpha > new Date() ? currentAlpha : new Date(), 7 * totalGrant);
-                updates['inventory.alphaGlowExpires'] = newExpiry.toISOString();
-            } else if (item.type === 'early-bird') updates.isEarlyBird = true;
-            else if (item.type === 'night-owl') updates.isNightOwl = true;
-            else if (item.type === 'knowledge-knight') updates.isKnowledgeKnight = true;
+            if (!giftSnap.exists()) throw new Error("Gift purged.");
+            const gift = giftSnap.data() as GlobalGift;
+            const userData = userSnap.data() as User;
             
+            if (!gift.isActive || gift.claimedBy?.includes(userId)) throw new Error("Unavailable.");
+            if (gift.maxClaims && gift.claimedBy && gift.claimedBy.length >= gift.maxClaims) {
+                transaction.update(giftRef, { isActive: false });
+                throw new Error("Out of stock.");
+            }
+
+            const updates: any = {};
+            const r = gift.rewards;
+            if (r.credits) updates.credits = increment(r.credits);
+            if (r.scratch) updates.freeRewards = increment(r.scratch);
+            if (r.flip) updates.freeGuesses = increment(r.flip);
+            if (r.wallet) {
+                updates.walletBalance = increment(r.wallet);
+                updates.walletTransactions = arrayUnion({ id: `gift-${Date.now()}`, amount: r.wallet, type: 'topup', status: 'completed', date: new Date().toISOString() });
+            }
+            if (r.shields) updates['inventory.penaltyShields'] = increment(r.shields);
+            if (r.freezes) updates['inventory.streakFreezes'] = increment(r.freezes);
+            if (r.alphaGlowWeeks) {
+                const current = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
+                const next = dateFnsAddDays(current > new Date() ? current : new Date(), 7 * r.alphaGlowWeeks);
+                updates['inventory.alphaGlowExpires'] = next.toISOString();
+            }
+            if (r.badge) {
+                const badgeKey = `is${r.badge.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')}`;
+                updates[badgeKey] = true;
+            }
+
+            transaction.update(giftRef, { claimedBy: arrayUnion(userId) });
             transaction.update(userRef, updates);
         });
-    }, [authUser, currentUserData]);
-
-    const triggerAegisPulse = useCallback(async () => {
-        if (!isSuperAdmin) throw new Error("Unauthorized");
-        
-        const topUsersList = users
-            .sort((a, b) => (b.totalStudyTime || 0) - (a.totalStudyTime || 0))
-            .slice(0, 5)
-            .map(u => ({
-                uid: u.uid,
-                displayName: u.displayName,
-                credits: u.credits,
-                studyTime: u.totalStudyTime || 0,
-                streak: u.streak || 0
-            }));
-            
-        const recentAnnouncementsList = announcements.slice(0, 3).map(a => a.title);
-        
-        const result = await runAegisPulse({
-            topUsers: topUsersList,
-            recentAnnouncements: recentAnnouncementsList,
-            totalUsers: users.length,
-            isChatQuiet: true 
-        });
-        
-        await updateDoc(doc(db, 'appConfig', 'settings'), {
-            lastAegisPulse: new Date().toISOString()
-        });
-        
-        return result;
-    }, [isSuperAdmin, users, announcements]);
+    }, []);
 
     const value: AppDataContextType = {
         isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, isolationExitRequests,
-        approveIsolationExit, declineIsolationExit,
+        addCreditsToUser,
+        sendGlobalGift,
+        claimGlobalGift,
         toggleUserBlock: (uid, isBlocked, type, days, reason) => {
             const updates: any = { isBlocked };
             if (isBlocked) {
                 updates.banType = type || 'permanent';
                 updates.banReason = reason || 'Violation of community guidelines.';
-                if (type === 'temporary' && days) {
-                    updates.banExpires = dateFnsAddDays(new Date(), days).toISOString();
-                } else {
-                    updates.banExpires = null;
-                }
+                if (type === 'temporary' && days) updates.banExpires = dateFnsAddDays(new Date(), days).toISOString();
             } else {
-                updates.banType = null;
-                updates.banExpires = null;
-                updates.banReason = null;
+                updates.banType = null; updates.banExpires = null; updates.banReason = null;
             }
             return updateDoc(doc(db, 'users', uid), updates);
         },
         toggleLeaderboardPrivacy: (uid, isPrivate) => updateDoc(doc(db, 'users', uid), { isLeaderboardPrivate: isPrivate }),
-        addCreditsToUser,
-        applyFocusPenalty,
-        topUpWallet,
-        requestWithdrawal,
+        applyFocusPenalty: async (uid, amt) => {
+            const snap = await getDoc(doc(db, 'users', uid));
+            if (!snap.exists()) return 'penalized';
+            if ((snap.data().inventory?.penaltyShields || 0) > 0) {
+                await updateDoc(snap.ref, { 'inventory.penaltyShields': increment(-1) });
+                return 'shielded';
+            } else {
+                await addCreditsToUser(uid, -amt);
+                return 'penalized';
+            }
+        },
+        topUpWallet: async (amt, txId) => {
+            if (!authUser) return;
+            await updateDoc(doc(db, 'users', authUser.id), { walletBalance: increment(amt), lastWalletDeposit: new Date().toISOString(), walletTransactions: arrayUnion({ id: txId, amount: amt, type: 'topup', status: 'completed', date: new Date().toISOString() }) });
+        },
+        requestWithdrawal: async (amt) => {
+            if (!authUser || !currentUserData) return;
+            if (currentUserData.walletBalance < amt) throw new Error("Insufficient balance.");
+            await updateDoc(doc(db, 'users', authUser.id), { walletBalance: increment(-amt), walletTransactions: arrayUnion({ id: `wd-${Date.now()}`, amount: -amt, type: 'withdrawal', status: 'pending', date: new Date().toISOString() }) });
+        },
         giftCreditsToAllUsers: async (amt) => {
-            const usersSnapshot = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
+            const snap = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
             const batch = writeBatch(db);
-            usersSnapshot.forEach(d => batch.update(d.ref, { credits: increment(amt) }));
+            snap.forEach(d => batch.update(d.ref, { credits: increment(amt) }));
             await batch.commit();
         },
         resetUserCredits: (uid) => updateDoc(doc(db, 'users', uid), { credits: 100 }),
@@ -832,12 +707,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
             await updateDoc(userRef, { unlockedFeatures: arrayUnion(fid), credits: hasMaster ? increment(0) : increment(-cost) });
         },
-        unlockFeatureForUserV2: async (uid, fid, cost) => {
-            const userRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userRef);
-            const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
-            await updateDoc(userRef, { unlockedFeatures: arrayUnion(fid), credits: hasMaster ? increment(0) : increment(-cost) });
-        },
         unlockThemeForUser: async (uid, tid, cost) => {
             const userRef = doc(db, 'users', uid);
             const userSnap = await getDoc(userRef);
@@ -845,22 +714,15 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             await updateDoc(userRef, { unlockedThemes: arrayUnion(tid), credits: hasMaster ? increment(0) : increment(-cost) });
         },
         generateAiAccessToken: async (uid) => {
-            const userRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userRef);
+            const userSnap = await getDoc(doc(db, 'users', uid));
             const userData = userSnap.data() as User;
             const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
             if (!hasMaster && userData.credits < 1000) throw new Error("Credits needed.");
-            const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
+            const token = Math.random().toString(36).substring(2, 15);
             const batch = writeBatch(db);
-            batch.update(userRef, { hasAiAccess: true, credits: hasMaster ? increment(0) : increment(-1000) });
+            batch.update(userSnap.ref, { hasAiAccess: true, credits: hasMaster ? increment(0) : increment(-1000) });
             batch.set(doc(collection(db, 'ai_access_tokens')), { userId: uid, token, createdAt: serverTimestamp(), isUsed: false });
             await batch.commit();
-            return token;
-        },
-        generateDevAiAccessToken: async (uid) => {
-            const token = [...Array(32)].map(() => Math.random().toString(36)[2]).join('');
-            await updateDoc(doc(db, 'users', uid), { hasAiAccess: true });
-            await addDoc(collection(db, 'ai_access_tokens'), { userId: uid, token, createdAt: serverTimestamp(), isUsed: false });
             return token;
         },
         grantMasterCard: (uid, days) => updateDoc(doc(db, 'users', uid), { masterCardExpires: dateFnsAddDays(new Date(), days).toISOString() }),
@@ -868,56 +730,44 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         addPerfectedQuiz: (uid, qid) => updateDoc(doc(db, 'users', uid), { perfectedQuizzes: arrayUnion(qid) }),
         incrementQuizAttempt: (uid, qid) => updateDoc(doc(db, 'users', uid), { [`quizAttempts.${qid}`]: increment(1) }),
         incrementFocusSessions: (uid, dur) => updateDoc(doc(db, 'users', uid), { focusSessionsCompleted: increment(1), totalStudyTime: increment(dur) }),
-        claimDailyTaskReward: (uid, amt) => updateDoc(doc(db, 'users', uid), { credits: increment(amt), dailyTasksCompleted: increment(1), lastDailyTasksClaim: format(new Date(), 'yyyy-MM-dd') }),
-        claimEliteDailyReward: (uid) => updateDoc(doc(db, 'users', uid), { credits: increment(20), freeRewards: increment(5), freeGuesses: increment(5), lastEliteClaim: format(new Date(), 'yyyy-MM-dd') }),
+        claimDailyTaskReward: (uid, amt) => updateDoc(doc(db, 'users', uid), { credits: increment(amt), dailyTasksCompleted: increment(1), lastDailyTasksClaim: todayString() }),
+        claimEliteDailyReward: (uid) => updateDoc(doc(db, 'users', uid), { credits: increment(20), freeRewards: increment(5), freeGuesses: increment(5), lastEliteClaim: todayString() }),
         updateStudyTime: (uid, secs) => updateDoc(doc(db, 'users', uid), { totalStudyTime: secs }),
         updateGameHighScore: async (uid, game, score) => {
             const snap = await getDoc(doc(db, 'users', uid));
-            if (snap.exists() && score > (snap.data().gameHighScores?.[game] || 0)) await updateDoc(doc(db, 'users', uid), { [`gameHighScores.${game}`]: score });
+            if (snap.exists() && score > (snap.data().gameHighScores?.[game] || 0)) await updateDoc(snap.ref, { [`gameHighScores.${game}`]: score });
         },
         updateElementQuestScore: async (uid, blk, score) => {
             const snap = await getDoc(doc(db, 'users', uid));
-            if (snap.exists() && score > (snap.data().elementQuestScores?.[blk] || 0)) await updateDoc(doc(db, 'users', uid), { [`elementQuestScores.${blk}`]: score });
+            if (snap.exists() && score > (snap.data().elementQuestScores?.[blk] || 0)) await updateDoc(snap.ref, { [`elementQuestScores.${blk}`]: score });
         },
         claimElementQuestMilestone: (uid, m) => updateDoc(doc(db, 'users', uid), { credits: increment(m === 100 ? 50 : m === 200 ? 100 : m === 300 ? 150 : 200), elementQuestMilestonesClaimed: arrayUnion(m) }),
         claimDimensionShiftMilestone: async (uid, m) => {
             const snap = await getDoc(doc(db, 'users', uid));
-            if (!snap.exists()) return false;
-            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-            const claims = snap.data().dimensionShiftClaims?.[weekKey] || [];
-            if (claims.includes(m)) return false;
-            const reward = m === 50 ? 2 : m === 100 ? 5 : m === 150 ? 10 : m === 200 ? 15 : m === 250 ? 20 : 200;
-            await updateDoc(snap.ref, { credits: increment(reward), [`dimensionShiftClaims.${weekKey}`]: arrayUnion(m) });
-            return true;
+            const wk = todayString();
+            if (snap.data()?.dimensionShiftClaims?.[wk]?.includes(m)) return false;
+            const rew = m === 50 ? 2 : m === 100 ? 5 : m === 150 ? 10 : m === 200 ? 15 : m === 250 ? 20 : 200;
+            await updateDoc(snap.ref, { credits: increment(rew), [`dimensionShiftClaims.${wk}`]: arrayUnion(m) }); return true;
         },
         claimFlappyMindMilestone: async (uid, m) => {
             const snap = await getDoc(doc(db, 'users', uid));
-            if (!snap.exists()) return false;
-            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-            const claims = snap.data().flappyMindClaims?.[weekKey] || [];
-            if (claims.includes(m)) return false;
-            const reward = m === 20 ? 15 : m === 100 ? 100 : 3;
-            await updateDoc(snap.ref, { credits: increment(reward), [`flappyMindClaims.${weekKey}`]: arrayUnion(m) });
-            return true;
+            const wk = todayString();
+            if (snap.data()?.flappyMindClaims?.[wk]?.includes(m)) return false;
+            const rew = m === 20 ? 15 : m === 100 ? 100 : 3;
+            await updateDoc(snap.ref, { credits: increment(rew), [`flappyMindClaims.${wk}`]: arrayUnion(m) }); return true;
         },
         claimAstroAscentMilestone: async (uid, m) => {
             const snap = await getDoc(doc(db, 'users', uid));
-            if (!snap.exists()) return false;
-            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-            const claims = snap.data().astroAscentClaims?.[weekKey] || [];
-            if (claims.includes(m)) return false;
-            const reward = m === 25 ? 5 : m === 50 ? 10 : m === 75 ? 25 : 50;
-            await updateDoc(snap.ref, { credits: increment(reward), [`astroAscentClaims.${weekKey}`]: arrayUnion(m) });
-            return true;
+            const wk = todayString();
+            if (snap.data()?.astroAscentClaims?.[wk]?.includes(m)) return false;
+            const rew = m === 25 ? 5 : m === 50 ? 10 : m === 75 ? 25 : 50;
+            await updateDoc(snap.ref, { credits: increment(rew), [`astroAscentClaims.${wk}`]: arrayUnion(m) }); return true;
         },
         claimMathematicsLegendMilestone: async (uid, m) => {
             const snap = await getDoc(doc(db, 'users', uid));
-            if (!snap.exists()) return false;
-            const weekKey = format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'yyyy-MM-dd');
-            const claims = snap.data().mathematicsLegendClaims?.[weekKey] || [];
-            if (claims.includes(m)) return false;
-            await updateDoc(snap.ref, { credits: increment(200), [`mathematicsLegendClaims.${weekKey}`]: arrayUnion(m) });
-            return true;
+            const wk = todayString();
+            if (snap.data()?.mathematicsLegendClaims?.[wk]?.includes(m)) return false;
+            await updateDoc(snap.ref, { credits: increment(200), [`mathematicsLegendClaims.${wk}`]: arrayUnion(m) }); return true;
         },
         makeUserAdmin: (uid) => updateDoc(doc(db, 'users', uid), { isAdmin: true }),
         removeUserAdmin: (uid) => updateDoc(doc(db, 'users', uid), { isAdmin: false }),
@@ -933,7 +783,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         clearGlobalChat: async () => {
             const snap = await getDocs(collection(db, 'world_chat'));
             const batch = writeBatch(db);
-            snap.docs.forEach(d => batch.delete(d.ref));
+            snap.docs.forEach(d => { if (d.id !== 'config') batch.delete(d.ref); });
             await batch.commit();
         },
         clearQuizLeaderboard: async () => {
@@ -956,18 +806,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         submitSupportTicket: (msg) => addDoc(collection(db, 'supportTickets'), { userId: authUser?.id, userName: currentUserData?.displayName, message: msg, status: 'new', createdAt: serverTimestamp() }),
         triggerAegisPulse,
-        addAnnouncement: async (a) => {
-            await addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() });
-            await fetch('/api/send-notification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: `📢 New Announcement: ${a.title}`,
-                    message: a.description,
-                    linkUrl: '/dashboard'
-                })
-            });
-        },
+        addAnnouncement: (a) => addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() }),
         updateAnnouncement: (id, d) => updateDoc(doc(db, 'announcements', id), d),
         deleteAnnouncement: (id) => deleteDoc(doc(db, 'announcements', id)),
         addResourceSection: (s) => addDoc(collection(db, 'resourceSections'), { ...s, createdAt: serverTimestamp() }),
@@ -979,18 +818,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             batch.delete(doc(db, 'resourceSections', id));
             await batch.commit();
         },
-        addResource: async (r) => {
-            await addDoc(collection(db, 'resources'), { ...r, createdAt: serverTimestamp() });
-            await fetch('/api/send-notification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: `📚 New Resource: ${r.title}`,
-                    message: r.description,
-                    linkUrl: '/dashboard/resources'
-                })
-            });
-        },
+        addResource: (r) => addDoc(collection(db, 'resources'), { ...r, createdAt: serverTimestamp() }),
         updateResource: (id, d) => updateDoc(doc(db, 'resources', id), d),
         deleteResource: (id) => deleteDoc(doc(db, 'resources', id)),
         addDailySurprise: (s) => addDoc(collection(db, 'dailySurprises'), { ...s, createdAt: serverTimestamp() }),
@@ -998,7 +826,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         updateTicketStatus: (id, s) => updateDoc(doc(db, 'supportTickets', id), { status: s }),
         deleteTicket: (id) => deleteDoc(doc(db, 'supportTickets', id)),
         addPoll: (p) => addDoc(collection(db, 'polls'), { ...p, isActive: false, results: p.options.reduce((acc, o) => ({ ...acc, [o]: 0 }), {}), createdAt: serverTimestamp() }),
-        updatePoll: (id, d) => updateDoc(doc(db, 'polls', id), d),
         deletePoll: (id) => deleteDoc(doc(db, 'polls', id)),
         setActivePoll: async (id) => {
             const activeSnap = await getDocs(query(collection(db, 'polls'), where('isActive', '==', true)));
@@ -1016,110 +843,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         },
         submitPollComment: (id, c) => updateDoc(doc(db, 'polls', id), { comments: arrayUnion({ userId: authUser?.id, userName: currentUserData?.displayName, comment: c, createdAt: Timestamp.now() }) }),
         updateAppSettings: (s) => updateDoc(doc(db, 'appConfig', 'settings'), s),
-        sendGlobalGift: async (g) => {
-            const docRef = await addDoc(collection(db, 'globalGifts'), { ...g, createdAt: serverTimestamp(), isActive: true, claimedBy: [] });
-            
-            // Build smart notification message
-            const r = g.rewards;
-            const rewardsList = [];
-            if (r.credits) rewardsList.push(`${r.credits} Credits`);
-            if (r.wallet) rewardsList.push(`₹${r.wallet} Vault Balance`);
-            if (r.badge) rewardsList.push(`${r.badge.toUpperCase()} Badge`);
-            if (r.shields) rewardsList.push(`${r.shields} Penalty Aegis`);
-            if (r.freezes) rewardsList.push(`${r.freezes} Chronos Freezes`);
-            
-            const notifyMsg = `Master sent you ${rewardsList.join(', ')}! Claim it fast before the supply is gone.`;
-
-            await fetch('/api/send-notification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: `🎁 Legendary Gift Dispatched!`,
-                    message: notifyMsg,
-                    userId: g.target === 'all' ? undefined : g.target,
-                    linkUrl: '/dashboard'
-                })
-            });
-        },
         deactivateGift: (id) => updateDoc(doc(db, 'globalGifts', id), { isActive: false }),
         deleteGlobalGift: (id) => deleteDoc(doc(db, 'globalGifts', id)),
-        claimGlobalGift: async (giftId, userId) => {
-            await runTransaction(db, async (transaction) => {
-                const giftRef = doc(db, 'globalGifts', giftId);
-                const userRef = doc(db, 'users', userId);
-                
-                const giftSnap = await transaction.get(giftRef);
-                const userSnap = await transaction.get(userRef);
-                
-                if (!giftSnap.exists()) throw new Error("Gift deleted.");
-                
-                const gift = giftSnap.data() as GlobalGift;
-                const userData = userSnap.data() as User;
-                
-                if (!gift.isActive) throw new Error("Gift expired.");
-                if (gift.claimedBy?.includes(userId)) throw new Error("Already claimed.");
-                
-                if (gift.maxClaims && gift.claimedBy && gift.claimedBy.length >= gift.maxClaims) {
-                    transaction.update(giftRef, { isActive: false });
-                    throw new Error("Gift stock empty.");
-                }
-
-                // Apply rewards
-                const updates: any = {};
-                const r = gift.rewards;
-                if (r.credits) updates.credits = increment(r.credits);
-                if (r.scratch) updates.freeRewards = increment(r.scratch);
-                if (r.flip) updates.freeGuesses = increment(r.flip);
-                if (r.wallet) {
-                    updates.walletBalance = increment(r.wallet);
-                    const walletTx: WalletTransaction = {
-                        id: `gift-${Date.now()}`, amount: r.wallet, type: 'topup', status: 'completed', date: new Date().toISOString()
-                    };
-                    updates.walletTransactions = arrayUnion(walletTx);
-                }
-                if (r.shields) updates['inventory.penaltyShields'] = increment(r.shields);
-                if (r.freezes) updates['inventory.streakFreezes'] = increment(r.freezes);
-                if (r.boosters) updates['inventory.clanXpBoosters'] = increment(r.boosters);
-                if (r.maxers) updates['inventory.clanLevelMaxers'] = increment(r.maxers);
-                if (r.badge) {
-                    const badgeKey = `is${r.badge.split('-').map((s: string) => s.charAt(0).toUpperCase() + s.slice(1)).join('')}`;
-                    updates[badgeKey] = true;
-                }
-
-                transaction.update(giftRef, { claimedBy: arrayUnion(userId) });
-                transaction.update(userRef, updates);
-            });
-        },
-        addFeatureShowcase: async (s) => {
-            await addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() });
-            if (s.status === 'live') {
-                await fetch('/api/send-notification', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: `✨ New Feature: ${s.title}`,
-                        message: s.description,
-                        linkUrl: s.link || '/dashboard'
-                    })
-                });
-            }
-        },
-        updateFeatureShowcase: async (id, d) => {
-            await updateDoc(doc(db, 'featureShowcases', id), d);
-            if (d.status === 'live') {
-                const snap = await getDoc(doc(db, 'featureShowcases', id));
-                const data = snap.data();
-                await fetch('/api/send-notification', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: `🚀 Now Live: ${data?.title}`,
-                        message: data?.description,
-                        linkUrl: data?.link || '/dashboard'
-                    })
-                });
-            }
-        },
+        addFeatureShowcase: (s) => addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() }),
+        updateFeatureShowcase: (id, d) => updateDoc(doc(db, 'featureShowcases', id), d),
         deleteFeatureShowcase: (id) => deleteDoc(doc(db, 'featureShowcases', id)),
         createCreditPack: (p) => addDoc(collection(db, 'creditPacks'), { ...p, createdAt: serverTimestamp() }),
         updateCreditPack: (id, d) => updateDoc(doc(db, 'creditPacks', id), d),
@@ -1127,33 +854,33 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         createStoreItem: (i) => addDoc(collection(db, 'storeItems'), { ...i, createdAt: serverTimestamp() }),
         updateStoreItem: (id, d) => updateDoc(doc(db, 'storeItems', id), d),
         deleteStoreItem: (id) => deleteDoc(doc(db, 'storeItems', id)),
-        redeemStoreItem,
-        processStoreItemPayment,
-        addVideoCategory: (c) => addDoc(collection(db, 'videoCategories'), { ...c, createdAt: serverTimestamp() }),
-        deleteVideoCategory: async (id) => {
-            const batch = writeBatch(db);
-            const lecsSnap = await getDocs(query(collection(db, 'videoLectures'), where('categoryId', '==', id)));
-            lecsSnap.forEach(d => batch.delete(d.ref));
-            batch.delete(doc(db, 'videoCategories', id));
-            await batch.commit();
-        },
-        addVideoLecture: async (l) => {
-            await addDoc(collection(db, 'videoLectures'), { ...l, createdAt: serverTimestamp() });
-            await fetch('/api/send-notification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: `🎬 New Lecture: ${l.title}`,
-                    message: l.description,
-                    linkUrl: '/dashboard/learning'
-                })
+        redeemStoreItem: async (item, quantity) => {
+            const total = item.cost * quantity;
+            await runTransaction(db, async (t) => {
+                const uRef = doc(db, 'users', authUser!.id);
+                const iRef = doc(db, 'storeItems', item.id);
+                const uS = await t.get(uRef); const iS = await t.get(iRef);
+                if (uS.data()!.credits < total && !(uS.data()!.masterCardExpires && new Date(uS.data()!.masterCardExpires) > new Date())) throw new Error("Credits needed.");
+                t.update(iRef, { stock: increment(-quantity) });
+                t.update(uRef, { credits: increment(-total) });
             });
         },
+        processStoreItemPayment: async (item, quantity, transactionId, method) => {
+            const userRef = doc(db, 'users', authUser!.id);
+            await updateDoc(userRef, { walletBalance: increment(method === 'wallet' ? -item.price! * quantity : 0) });
+        },
+        addVideoCategory: (c) => addDoc(collection(db, 'videoCategories'), { ...c, createdAt: serverTimestamp() }),
+        deleteVideoCategory: (id) => deleteDoc(doc(db, 'videoCategories', id)),
+        addVideoLecture: (l) => addDoc(collection(db, 'videoLectures'), { ...l, createdAt: serverTimestamp() }),
         deleteVideoLecture: (id) => deleteDoc(doc(db, 'videoLectures', id)),
+        approveIsolationExit,
+        declineIsolationExit,
     };
 
     return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
 };
+
+const todayString = () => format(new Date(), 'yyyy-MM-dd');
 
 export const useAdmin = () => {
     const context = useContext(AppDataContext);
@@ -1162,16 +889,7 @@ export const useAdmin = () => {
 };
 
 export const useUsers = () => useAdmin();
-export const useAnnouncements = () => {
-    const { announcements, loading } = useAdmin();
-    return { announcements, loading };
-};
-export const useResources = () => {
-    const { resources, resourceSections, loading } = useAdmin();
-    return { allResources: resources, allSections: resourceSections, loading };
-};
+export const useAnnouncements = () => { const { announcements, loading } = useAdmin(); return { announcements, loading }; };
+export const useResources = () => { const { resources, resourceSections, loading } = useAdmin(); return { allResources: resources, allSections: resourceSections, loading }; };
 export const usePolls = () => useAdmin();
-export const useDailySurprises = () => {
-    const { dailySurprises, loading } = useAdmin();
-    return { dailySurprises, loading };
-};
+export const useDailySurprises = () => { const { dailySurprises, loading } = useAdmin(); return { dailySurprises, loading }; };
