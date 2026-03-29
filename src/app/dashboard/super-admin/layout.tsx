@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useAdmin } from '@/hooks/use-admin';
 import { Button } from '@/components/ui/button';
 import { 
-    Users, Key, ShieldAlert, Terminal, 
-    Gift, Zap, LayoutDashboard, ArrowLeft,
+    Users, Key, Terminal, 
+    Gift, Zap, LayoutDashboard,
     ShieldX
 } from 'lucide-react';
 import Link from 'next/link';

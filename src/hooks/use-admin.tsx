@@ -1,12 +1,10 @@
-
 'use client';
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { 
-    collection, doc, onSnapshot, query, where, orderBy, limit, Timestamp, collectionGroup 
+    collection, doc, onSnapshot, query, orderBy, limit, Timestamp, collectionGroup 
 } from 'firebase/firestore';
-import { type LockableFeature } from '@/lib/features';
 import { useToast } from './use-toast';
 
 // Modular Logic Imports
@@ -109,7 +107,6 @@ export interface CreditPack { id: string; name: string; credits: number; price: 
 export interface StoreItem { id: string; name: string; description: string; cost: number; price?: number; paymentType: 'credits' | 'money'; type: string; quantity: number; createdAt: Date; stock: number; isFeatured: boolean; badge?: string; }
 export interface VideoCategory { id: string; name: string; description: string; createdAt: Date; }
 export interface VideoLecture { id: string; title: string; description: string; youtubeUrl: string; thumbnailUrl: string; categoryId: string; createdAt: Date; }
-export interface IsolationExitRequest { id: string; userId: string; userName: string; userPhoto?: string; durationId: string; message: string; status: string; createdAt: Timestamp; }
 
 export type AppThemeId = 'light' | 'dark' | 'synthwave-sunset' | 'solar-flare' | 'emerald-dream';
 export type MaintenanceTheme = 'shiny' | 'forest' | 'sunflower';
@@ -122,7 +119,7 @@ interface AppDataContextType {
     dailySurprises: DailySurprise[]; supportTickets: SupportTicket[]; allPolls: Poll[];
     appSettings: AppSettings | null; globalGifts: GlobalGift[]; activeGlobalGift: GlobalGift | null;
     featureShowcases: FeatureShowcase[]; creditPacks: CreditPack[]; storeItems: StoreItem[];
-    videoCategories: VideoCategory[]; videoLectures: VideoLecture[]; isolationExitRequests: IsolationExitRequest[];
+    videoCategories: VideoCategory[]; videoLectures: VideoLecture[];
     activePoll: Poll | null;
     
     // Actions
@@ -142,7 +139,7 @@ interface AppDataContextType {
     updateAppSettings: any; sendGlobalGift: any; claimGlobalGift: any; deactivateGift: any;
     deleteGlobalGift: any; addFeatureShowcase: any; updateFeatureShowcase: any; deleteFeatureShowcase: any;
     submitSupportTicket: any; clearGlobalChat: any; clearQuizLeaderboard: any; resetWeeklyStudyTime: any;
-    resetGameZoneLeaderboard: any; approveIsolationExit: any; declineIsolationExit: any; topUpWallet: any;
+    resetGameZoneLeaderboard: any; topUpWallet: any;
     generateAiAccessToken: any; unlockResourceSection: any; unlockFeatureForUser: any; unlockThemeForUser: any;
     triggerAegisPulse: () => Promise<AegisPulseOutput>;
 }
@@ -168,20 +165,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
-    const [isolationExitRequests, setIsolationExitRequests] = useState<IsolationExitRequest[]>([]);
     const [loading, setLoading] = useState(true);
 
     const isAdmin = currentUserData?.isAdmin ?? false;
     const isSuperAdmin = authUser?.id === SUPER_ADMIN_UID;
     const isCoDev = currentUserData?.isCoDev ?? false;
 
-    // Memoize action factory functions to prevent unnecessary recreation
     const userActions = useMemo(() => useUserActions(db, toast), [toast]);
     const contentActions = useMemo(() => useContentActions(db, toast), [toast]);
     const storeActions = useMemo(() => useStoreActions(db, toast), [toast]);
     const systemActions = useMemo(() => useSystemActions(db, toast), [toast]);
 
-    // Global Registry Listeners
     useEffect(() => {
         const process = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate() || new Date() }));
         const unsubs = [
@@ -199,12 +193,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             onSnapshot(collection(db, 'storeItems'), (s) => setStoreItems(process(s))),
             onSnapshot(collection(db, 'videoCategories'), (s) => setVideoCategories(process(s))),
             onSnapshot(collection(db, 'videoLectures'), (s) => setVideoLectures(process(s))),
-            onSnapshot(query(collection(db, 'isolationExitRequests'), where('status', '==', 'pending')), (s) => setIsolationExitRequests(s.docs.map(d => ({ id: d.id, ...d.data() } as IsolationExitRequest))))
         ];
         return () => unsubs.forEach(u => u());
     }, []);
 
-    // Current Citizen Sync
     useEffect(() => {
         if (!isClerkLoaded) return;
         if (!authUser) { setCurrentUserData(null); setLoading(false); return; }
@@ -218,7 +210,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
         announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
-        videoCategories, videoLectures, isolationExitRequests, activePoll: allPolls.find(p => p.isActive) || null,
+        videoCategories, videoLectures, activePoll: allPolls.find(p => p.isActive) || null,
         
         ...userActions,
         ...contentActions,
@@ -249,7 +241,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, 
         announcements, resources, resourceSections, dailySurprises, supportTickets, 
         allPolls, appSettings, globalGifts, featureShowcases, creditPacks, 
-        storeItems, videoCategories, videoLectures, isolationExitRequests,
+        storeItems, videoCategories, videoLectures,
         userActions, contentActions, storeActions, systemActions, authUser?.id
     ]);
 

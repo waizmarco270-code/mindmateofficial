@@ -1,31 +1,29 @@
-
 'use client';
 
 import { useAdmin } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
-    Users, ShieldAlert, Terminal, Gift, 
-    Key, Zap, TrendingUp, Clock, ShieldCheck
+    Users, Terminal, Gift, 
+    Key, Zap, ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePresence } from '@/hooks/use-presence';
-import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function SuperAdminHub() {
-    const { users, isolationExitRequests } = useAdmin();
+    const { users } = useAdmin();
     const { onlineUsers } = usePresence();
     const onlineCount = (onlineUsers || []).filter(u => u.isOnline).length;
 
     const stats = [
         { label: 'Total Citizens', value: users.length, icon: Users, color: 'text-primary' },
         { label: 'Online Legends', value: onlineCount, icon: Zap, color: 'text-green-500', isPulse: true },
-        { label: 'Active Appeals', value: isolationExitRequests.length, icon: ShieldAlert, color: 'text-red-500' },
-        { label: 'System Health', value: 'Stable', icon: ShieldCheck, color: 'text-blue-500' },
+        { label: 'System Integrity', value: '100%', icon: ShieldCheck, color: 'text-blue-500' },
+        { label: 'System Health', value: 'Stable', icon: ShieldCheck, color: 'text-emerald-500' },
     ];
 
     const modules = [
         { href: '/dashboard/super-admin/users', title: 'User Authority', desc: 'Roles, Bans & Master Cards', icon: Users, color: 'bg-primary/10 text-primary' },
-        { href: '/dashboard/super-admin/appeals', title: 'Isolation Appeals', desc: 'Review breach requests', icon: ShieldAlert, color: 'bg-red-500/10 text-red-500' },
         { href: '/dashboard/super-admin/maintenance', title: 'Config & Briefings', desc: 'Lockdown & Changelogs', icon: Terminal, color: 'bg-amber-500/10 text-amber-500' },
         { href: '/dashboard/super-admin/gifts', title: 'Global Gifts', desc: 'Dispatch rewards to all', icon: Gift, color: 'bg-pink-500/10 text-pink-500' },
         { href: '/dashboard/super-admin/api', title: 'API & Continuity', desc: 'Memory & External Links', icon: Key, color: 'bg-cyan-500/10 text-cyan-500' },
@@ -66,8 +64,4 @@ export default function SuperAdminHub() {
             </div>
         </div>
     );
-}
-
-function cn(...inputs: any[]) {
-    return inputs.filter(Boolean).join(' ');
 }

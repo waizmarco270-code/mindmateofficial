@@ -1,5 +1,4 @@
-
-import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, increment, getDocs, collectionGroup, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, increment, getDocs, writeBatch } from 'firebase/firestore';
 import { type GlobalGift, type User } from '../use-admin';
 import { addDays } from 'date-fns';
 
@@ -7,7 +6,6 @@ export const useSystemActions = (db: any, toast: any) => {
     const updateAppSettings = (s: any) => updateDoc(doc(db, 'appConfig', 'settings'), s);
 
     const sendGlobalGift = async (gift: any) => {
-        // Logic Sterilization: Remove all invalid field values before Firestore uplink
         const sanitizedRewards: any = {};
         if (gift.rewards) {
             Object.entries(gift.rewards).forEach(([key, value]) => {
@@ -31,7 +29,6 @@ export const useSystemActions = (db: any, toast: any) => {
             claimedBy: []
         });
 
-        // Smart Notification Relay
         const r = sanitizedRewards;
         const rewardsList = [];
         if (r.credits) rewardsList.push(`${r.credits} Credits`);
@@ -147,18 +144,6 @@ export const useSystemActions = (db: any, toast: any) => {
         await batch.commit();
     };
 
-    const approveIsolationExit = async (id: string) => {
-        const reqRef = doc(db, 'isolationExitRequests', id);
-        const reqSnap = await getDoc(reqRef);
-        const { userId } = reqSnap.data()!;
-        const batch = writeBatch(db);
-        batch.update(reqRef, { status: 'approved' });
-        batch.delete(doc(db, 'users', userId, 'isolation', 'current'));
-        await batch.commit();
-    };
-
-    const declineIsolationExit = (id: string) => updateDoc(doc(db, 'isolationExitRequests', id), { status: 'declined' });
-
     const topUpWallet = async (uid: string, amt: number, txId: string) => {
         await updateDoc(doc(db, 'users', uid), { 
             walletBalance: increment(amt), 
@@ -171,6 +156,6 @@ export const useSystemActions = (db: any, toast: any) => {
         updateAppSettings, sendGlobalGift, claimGlobalGift, deactivateGift, deleteGlobalGift,
         addFeatureShowcase, updateFeatureShowcase, deleteFeatureShowcase,
         submitSupportTicket, clearGlobalChat, clearQuizLeaderboard, resetWeeklyStudyTime,
-        resetGameZoneLeaderboard, approveIsolationExit, declineIsolationExit, topUpWallet
+        resetGameZoneLeaderboard, topUpWallet
     };
 };
