@@ -1,6 +1,4 @@
 
-'use server';
-import { db } from '@/lib/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch, getDocs, query, where, Timestamp, increment, arrayUnion } from 'firebase/firestore';
 
 export const useContentActions = (db: any, toast: any) => {

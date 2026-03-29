@@ -1,9 +1,7 @@
 
-'use server';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, setDoc, writeBatch, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { format, addDays } from 'date-fns';
-import { SUPER_ADMIN_UID, type User, type BadgeType } from '../use-admin';
+import { type User, type BadgeType } from '../use-admin';
 
 export const useUserActions = (db: any, toast: any) => {
     const todayString = () => format(new Date(), 'yyyy-MM-dd');
@@ -27,6 +25,10 @@ export const useUserActions = (db: any, toast: any) => {
             updates.banType = null; updates.banExpires = null; updates.banReason = null;
         }
         await updateDoc(doc(db, 'users', uid), updates);
+    };
+
+    const toggleLeaderboardPrivacy = async (uid: string, isPrivate: boolean) => {
+        await updateDoc(doc(db, 'users', uid), { isLeaderboardPrivate: isPrivate });
     };
 
     const applyFocusPenalty = async (uid: string, amt: number) => {
@@ -62,6 +64,7 @@ export const useUserActions = (db: any, toast: any) => {
     const removeUserGM = (uid: string) => updateDoc(doc(db, 'users', uid), { isGM: false });
     const makeUserCoDev = (uid: string) => updateDoc(doc(db, 'users', uid), { isCoDev: true });
     const removeUserCoDev = (uid: string) => updateDoc(doc(db, 'users', uid), { isCoDev: false });
+    const makeUserChallenger = (uid: string) => updateDoc(doc(db, 'users', uid), { isChallenger: true });
 
     const generateAiAccessToken = async (userId: string) => {
         const userRef = doc(db, 'users', userId);
@@ -119,6 +122,8 @@ export const useUserActions = (db: any, toast: any) => {
     const incrementQuizAttempt = (uid: string, qid: string) => updateDoc(doc(db, 'users', uid), { [`quizAttempts.${qid}`]: increment(1) });
     const incrementFocusSessions = (uid: string, dur: number) => updateDoc(doc(db, 'users', uid), { focusSessionsCompleted: increment(1), totalStudyTime: increment(dur) });
     
+    const updateStudyTime = (uid: string, dur: number) => updateDoc(doc(db, 'users', uid), { totalStudyTime: dur });
+
     const claimDailyTaskReward = (uid: string, amount: number) => updateDoc(doc(db, 'users', uid), { 
         credits: increment(amount), 
         dailyTasksCompleted: increment(1), 
@@ -187,10 +192,10 @@ export const useUserActions = (db: any, toast: any) => {
     };
 
     return {
-        addCreditsToUser, toggleUserBlock, applyFocusPenalty, grantMasterCard, revokeMasterCard,
+        addCreditsToUser, toggleUserBlock, toggleLeaderboardPrivacy, applyFocusPenalty, grantMasterCard, revokeMasterCard,
         setShowcaseBadge, makeUserAdmin, removeUserAdmin, makeUserVip, removeUserVip,
-        makeUserGM, removeUserGM, makeUserCoDev, removeUserCoDev, addPerfectedQuiz,
-        incrementQuizAttempt, incrementFocusSessions, claimDailyTaskReward, claimEliteDailyReward,
+        makeUserGM, removeUserGM, makeUserCoDev, removeUserCoDev, makeUserChallenger, addPerfectedQuiz,
+        incrementQuizAttempt, incrementFocusSessions, updateStudyTime, claimDailyTaskReward, claimEliteDailyReward,
         updateGameHighScore, updateElementQuestScore, claimElementQuestMilestone,
         claimDimensionShiftMilestone, claimFlappyMindMilestone, claimAstroAscentMilestone,
         claimMathematicsLegendMilestone, generateAiAccessToken, unlockResourceSection,

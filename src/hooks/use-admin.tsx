@@ -6,7 +6,6 @@ import { db } from '@/lib/firebase';
 import { 
     collection, doc, onSnapshot, query, where, orderBy, limit, Timestamp, collectionGroup 
 } from 'firebase/firestore';
-import { format } from 'date-fns';
 import { type LockableFeature } from '@/lib/features';
 import { useToast } from './use-toast';
 
@@ -176,10 +175,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const isSuperAdmin = authUser?.id === SUPER_ADMIN_UID;
     const isCoDev = currentUserData?.isCoDev ?? false;
 
-    const userActions = useUserActions(db, toast);
-    const contentActions = useContentActions(db, toast);
-    const storeActions = useStoreActions(db, toast);
-    const systemActions = useSystemActions(db, toast);
+    // Memoize action factory functions to prevent unnecessary recreation
+    const userActions = useMemo(() => useUserActions(db, toast), [toast]);
+    const contentActions = useMemo(() => useContentActions(db, toast), [toast]);
+    const storeActions = useMemo(() => useStoreActions(db, toast), [toast]);
+    const systemActions = useMemo(() => useSystemActions(db, toast), [toast]);
 
     // Global Registry Listeners
     useEffect(() => {
@@ -214,7 +214,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [authUser, isClerkLoaded]);
 
-    const value = {
+    const value = useMemo(() => ({
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
         announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
@@ -225,12 +225,15 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         ...storeActions,
         ...systemActions,
         
-        triggerAegisPulse: () => runAegisPulse({
-            topUsers: users.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, credits: u.credits, studyTime: u.totalStudyTime || 0, streak: u.streak || 0 })),
-            recentAnnouncements: announcements.slice(0, 3).map(a => a.title),
-            totalUsers: users.length,
-            isChatQuiet: true
-        }),
+        triggerAegisPulse: async () => {
+            if (users.length === 0) throw new Error("No citizens detected.");
+            return runAegisPulse({
+                topUsers: users.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, credits: u.credits, studyTime: u.totalStudyTime || 0, streak: u.streak || 0 })),
+                recentAnnouncements: announcements.slice(0, 3).map(a => a.title),
+                totalUsers: users.length,
+                isChatQuiet: true
+            });
+        },
         generateAiAccessToken: () => userActions.generateAiAccessToken(authUser?.id!),
         unlockResourceSection: (sid: string, c: number) => userActions.unlockResourceSection(authUser?.id!, sid, c),
         unlockFeatureForUser: (fid: any, c: number) => userActions.unlockFeatureForUser(authUser?.id!, fid, c),
@@ -242,7 +245,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         submitSupportTicket: (m: string) => systemActions.submitSupportTicket(m, authUser!.id, currentUserData!.displayName),
         topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
-    };
+    }), [
+        isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, 
+        announcements, resources, resourceSections, dailySurprises, supportTickets, 
+        allPolls, appSettings, globalGifts, featureShowcases, creditPacks, 
+        storeItems, videoCategories, videoLectures, isolationExitRequests,
+        userActions, contentActions, storeActions, systemActions, authUser?.id
+    ]);
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
 };

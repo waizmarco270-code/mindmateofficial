@@ -1,7 +1,5 @@
 
-'use server';
-import { db } from '@/lib/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, increment, query, where, getDocs, collectionGroup, getDoc, writeBatch } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, increment, getDocs, collectionGroup, getDoc, writeBatch } from 'firebase/firestore';
 import { type GlobalGift, type User } from '../use-admin';
 import { addDays } from 'date-fns';
 
@@ -9,24 +7,24 @@ export const useSystemActions = (db: any, toast: any) => {
     const updateAppSettings = (s: any) => updateDoc(doc(db, 'appConfig', 'settings'), s);
 
     const sendGlobalGift = async (gift: any) => {
-        // STERILIZATION PULSE: Remove undefined values from rewards object before Firestore upload
+        // Logic Sterilization: Remove all invalid field values before Firestore uplink
         const sanitizedRewards: any = {};
         if (gift.rewards) {
             Object.entries(gift.rewards).forEach(([key, value]) => {
-                if (value !== undefined && value !== null && value !== 0 && value !== 'none') {
+                if (value !== undefined && value !== null && value !== 0 && value !== 'none' && value !== '') {
                     sanitizedRewards[key] = value;
                 }
             });
         }
 
         const sanitizedGift = { 
-            ...gift,
-            rewards: sanitizedRewards
+            message: gift.message || "A gift for you.",
+            target: gift.target || 'all',
+            rewards: sanitizedRewards,
+            ...(gift.maxClaims && gift.maxClaims > 0 ? { maxClaims: gift.maxClaims } : {})
         };
         
-        if (!sanitizedGift.maxClaims) delete sanitizedGift.maxClaims;
-        
-        const docRef = await addDoc(collection(db, 'globalGifts'), {
+        await addDoc(collection(db, 'globalGifts'), {
             ...sanitizedGift,
             createdAt: serverTimestamp(),
             isActive: true,
@@ -34,24 +32,22 @@ export const useSystemActions = (db: any, toast: any) => {
         });
 
         // Smart Notification Relay
-        const r = gift.rewards;
+        const r = sanitizedRewards;
         const rewardsList = [];
         if (r.credits) rewardsList.push(`${r.credits} Credits`);
         if (r.wallet) rewardsList.push(`₹${r.wallet} Vault`);
         if (r.badge) rewardsList.push(`${r.badge.toUpperCase()} Rank`);
-        if (r.alphaGlowWeeks) rewardsList.push(`${r.alphaGlowWeeks} Weeks Alpha Radiance`);
-        if (r.shields) rewardsList.push(`${r.shields} Penalty Shields`);
+        if (r.alphaGlowWeeks) rewardsList.push(`Alpha Radiance`);
+        if (r.shields) rewardsList.push(`${r.shields} Aegis`);
         
-        const msg = `Master sent you: ${rewardsList.join(', ')}! Claim now.`;
-
         const notificationData: any = {
             title: "🎁 Legendary Gift Pulse!",
-            message: msg,
+            message: `Master sent you: ${rewardsList.join(', ') || 'Mission Assets'}! Claim now.`,
             linkUrl: '/dashboard'
         };
 
-        if (gift.target !== 'all') {
-            const targets = Array.isArray(gift.target) ? gift.target : [gift.target];
+        if (sanitizedGift.target !== 'all') {
+            const targets = Array.isArray(sanitizedGift.target) ? sanitizedGift.target : [sanitizedGift.target];
             for (const t of targets) {
                 await fetch('/api/send-notification', { 
                     method: 'POST', 

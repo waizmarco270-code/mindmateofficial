@@ -1,7 +1,6 @@
 
-import { db } from '@/lib/firebase';
-import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, increment, runTransaction, getDoc } from 'firebase/firestore';
-import { type StoreItem, type CreditPack } from '../use-admin';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, increment, runTransaction } from 'firebase/firestore';
+import { type StoreItem } from '../use-admin';
 
 export const useStoreActions = (db: any, toast: any) => {
     const createCreditPack = (p: any) => addDoc(collection(db, 'creditPacks'), { ...p, createdAt: serverTimestamp() });
