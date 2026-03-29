@@ -8,7 +8,8 @@ import {
     Gem, Wallet, Star, ArrowRight, Loader2,
     CheckCircle, AlertTriangle, Info, Play, Pause,
     Monitor, CreditCard, Award, X, ShieldX,
-    MessageSquare, Send, Check, Code, Swords, Bird, Moon
+    MessageSquare, Send, Check, Code, Swords, Bird, Moon,
+    Youtube, Link as LinkIcon, PlayCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -23,8 +24,6 @@ import { format, differenceInSeconds } from 'date-fns';
 import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
 // Synchronized Badge Registry for high-fidelity rendering
@@ -36,9 +35,16 @@ const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
     sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> }
 };
 
+const formatSecondsToTime = (totalSeconds: number) => {
+    const hrs = Math.floor(totalSeconds / 3600);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const secs = totalSeconds % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
 export default function IsolationHub() {
     const { user } = useUser();
-    const { activeSession, startIsolation, updateProgress, emergeVictory, failIsolation, loading, payForEarlyExit } = useIsolation();
+    const { activeSession, startIsolation, updateProgress, setSessionVideoId, emergeVictory, failIsolation, loading, payForEarlyExit } = useIsolation();
     const { currentUserData } = useUsers();
     const { toast } = useToast();
 
@@ -50,6 +56,9 @@ export default function IsolationHub() {
     const [isExtractionOpen, setIsExtractionOpen] = useState(false);
     const [extractionMode, setExtractionMode] = useState<'selection' | 'credits' | 'money'>('selection');
     const [isProcessingExit, setIsProcessingExit] = useState(false);
+
+    // YouTube State
+    const [ytInput, setYtInput] = useState('');
 
     // Anti-Cheat Timer Refs
     const lastTickRef = useRef<number>(Date.now());
@@ -150,6 +159,17 @@ export default function IsolationHub() {
         }
     };
 
+    const handleYtUplink = () => {
+        const idMatch = ytInput.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/))([\w-]{11})/);
+        if (idMatch && idMatch[1]) {
+            setSessionVideoId(idMatch[1]);
+            setYtInput('');
+            toast({ title: "Video Uplink Secured", description: "Lecture materialized in Terminal." });
+        } else {
+            toast({ variant: 'destructive', title: "Invalid Signal", description: "Please provide a valid YouTube URL." });
+        }
+    };
+
     if (loading) return <div className="flex h-screen items-center justify-center"><Loader2 className="animate-spin h-12 w-12 text-primary" /></div>;
 
     if (activeSession && (activeSession.status === 'active')) {
@@ -158,8 +178,8 @@ export default function IsolationHub() {
         const hoursRemaining = Math.max(0, (activeSession.totalTargetSeconds - activeSession.accumulatedSeconds) / 3600);
 
         return (
-            <div className="min-h-screen bg-[#050505] p-4 sm:p-8 flex flex-col items-center">
-                <div className="max-w-4xl w-full space-y-8">
+            <div className="min-h-screen bg-[#050505] p-4 sm:p-8 flex flex-col items-center overflow-y-auto">
+                <div className="max-w-5xl w-full space-y-8 pb-20">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <ShieldAlert className="text-red-500 animate-pulse" />
@@ -188,13 +208,56 @@ export default function IsolationHub() {
 
                             <div className="py-8 border-y border-white/5 grid grid-cols-2 gap-8">
                                 <div className="space-y-1">
-                                    <p className="text-[10px] font-black text-muted-foreground uppercase">Time Elapsed</p>
-                                    <p className="text-2xl font-bold font-mono">{(activeSession.accumulatedSeconds / 3600).toFixed(2)}h</p>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase">Live Clock</p>
+                                    <p className="text-3xl font-black text-white font-mono tracking-tighter">{formatSecondsToTime(activeSession.accumulatedSeconds)}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase">Session Integrity</p>
                                     <p className="text-2xl font-bold text-green-500">100% SECURE</p>
                                 </div>
+                            </div>
+
+                            {/* YouTube Tactical Player */}
+                            <div className="space-y-4 py-4">
+                                {activeSession.currentVideoId ? (
+                                    <div className="relative group">
+                                        <div className="aspect-video w-full rounded-2xl overflow-hidden border-2 border-primary/20 shadow-2xl">
+                                            <iframe
+                                                src={`https://www.youtube.com/embed/${activeSession.currentVideoId}?autoplay=1&rel=0&modestbranding=1`}
+                                                className="w-full h-full"
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                                allowFullScreen
+                                            />
+                                        </div>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="absolute -top-3 -right-2 h-8 w-8 rounded-full bg-black/80 text-white border border-white/10 hover:bg-red-500"
+                                            onClick={() => setSessionVideoId(null)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="p-8 border-2 border-dashed border-white/5 rounded-[2rem] bg-white/[0.02] flex flex-col items-center gap-4">
+                                        <div className="p-4 rounded-full bg-red-500/10 text-red-500">
+                                            <Youtube className="h-8 w-8" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <h4 className="font-bold text-white">Tactical Video Uplink</h4>
+                                            <p className="text-xs text-muted-foreground">Paste a YouTube link to watch lectures without leaving the Terminal.</p>
+                                        </div>
+                                        <div className="flex gap-2 w-full max-w-md">
+                                            <Input 
+                                                value={ytInput}
+                                                onChange={e => setYtInput(e.target.value)}
+                                                placeholder="https://youtube.com/watch?v=..."
+                                                className="bg-black/40 border-white/10 rounded-xl"
+                                            />
+                                            <Button onClick={handleYtUplink} className="rounded-xl"><LinkIcon className="h-4 w-4"/></Button>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
                             <div className="flex flex-col sm:flex-row gap-4">

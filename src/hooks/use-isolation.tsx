@@ -44,6 +44,7 @@ export interface ActiveIsolation {
     accumulatedSeconds: number;
     status: 'active' | 'completed' | 'failed';
     lastHeartbeat: string; // ISO
+    currentVideoId?: string | null;
 }
 
 interface IsolationContextType {
@@ -51,6 +52,7 @@ interface IsolationContextType {
     loading: boolean;
     startIsolation: (duration: IsolationDuration, method: 'credits' | 'money', transactionId?: string) => Promise<void>;
     updateProgress: (seconds: number) => Promise<void>;
+    setSessionVideoId: (videoId: string | null) => Promise<void>;
     failIsolation: () => Promise<void>;
     emergeVictory: () => Promise<void>;
     payForEarlyExit: (method: 'credits' | 'wallet' | 'razorpay', transactionId?: string) => Promise<void>;
@@ -105,6 +107,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
             accumulatedSeconds: 0,
             status: 'active',
             lastHeartbeat: now.toISOString(),
+            currentVideoId: null
         };
 
         if (method === 'credits') {
@@ -132,6 +135,12 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
             accumulatedSeconds: increment(seconds),
             lastHeartbeat: new Date().toISOString()
         });
+    };
+
+    const setSessionVideoId = async (videoId: string | null) => {
+        if (!user || !activeSession) return;
+        const sessionRef = doc(db, 'users', user.id, 'isolation', 'current');
+        await updateDoc(sessionRef, { currentVideoId: videoId });
     };
 
     const failIsolation = async () => {
@@ -181,7 +190,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
     };
 
     return (
-        <IsolationContext.Provider value={{ activeSession, loading, startIsolation, updateProgress, failIsolation, emergeVictory, payForEarlyExit }}>
+        <IsolationContext.Provider value={{ activeSession, loading, startIsolation, updateProgress, setSessionVideoId, failIsolation, emergeVictory, payForEarlyExit }}>
             {children}
         </IsolationContext.Provider>
     );
