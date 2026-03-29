@@ -7,21 +7,24 @@ import { UnreadMessagesProvider } from "@/hooks/use-unread";
 import { WorldChatProvider } from "@/hooks/use-world-chat.tsx";
 import { FriendsProvider } from "@/hooks/use-friends";
 import { GroupsProvider } from "@/hooks/use-groups.tsx";
+import { IsolationProvider } from "@/hooks/use-isolation";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AppDataProvider>
-        <GroupsProvider>
-          <FriendsProvider>
-            <UnreadMessagesProvider>
-                <WorldChatProvider>
-                    <RoadmapsProvider>
-                        {children}
-                    </RoadmapsProvider>
-                </WorldChatProvider>
-            </UnreadMessagesProvider>
-          </FriendsProvider>
-        </GroupsProvider>
+        <IsolationProvider>
+            <GroupsProvider>
+              <FriendsProvider>
+                <UnreadMessagesProvider>
+                    <WorldChatProvider>
+                        <RoadmapsProvider>
+                            {children}
+                        </RoadmapsProvider>
+                    </WorldChatProvider>
+                </UnreadMessagesProvider>
+              </FriendsProvider>
+            </GroupsProvider>
+        </IsolationProvider>
     </AppDataProvider>
   );
 }

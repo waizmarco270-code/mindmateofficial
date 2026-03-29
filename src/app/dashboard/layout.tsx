@@ -18,7 +18,7 @@ import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
 import MobileNav from '@/components/dashboard/mobile-nav';
 import { usePathname, useRouter } from 'next/navigation';
 import { usePresence } from '@/hooks/use-presence';
-import { IsolationProvider, useIsolation } from '@/hooks/use-isolation';
+import { useIsolation } from '@/hooks/use-isolation';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
@@ -58,7 +58,14 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
   const showMaintenance = (isScheduledMaintenance || isManualMaintenance) && !isSuperAdmin && !isCoDev;
 
-  if (loading) return null;
+  if (loading) return (
+    <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4 text-primary">
+            <div className="h-12 w-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="font-black uppercase tracking-widest text-[10px]">Syncing Mainframe...</p>
+        </div>
+    </div>
+  );
   
   if (currentUserData?.isBlocked) {
       return <BannedOverlay user={currentUserData} />;
@@ -105,15 +112,13 @@ export default function DashboardLayout({
   return (
     <ImmersiveProvider>
       <SidebarProvider>
-        <IsolationProvider>
-            <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
-                <Providers>
-                    <AppLayout>
-                        {children}
-                    </AppLayout>
-                </Providers>
-            </MotionConfig>
-        </IsolationProvider>
+        <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
+            <Providers>
+                <AppLayout>
+                    {children}
+                </AppLayout>
+            </Providers>
+        </MotionConfig>
       </SidebarProvider>
     </ImmersiveProvider>
   );
