@@ -56,7 +56,6 @@ import { Button } from '../ui/button';
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
   { href: '/dashboard/guide', icon: Book, label: 'App Guide', glow: 'text-emerald-400' },
-  { href: '/dashboard/roadmap', icon: MapIcon, label: 'Roadmap', glow: 'text-orange-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-purple-400' },
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
@@ -121,7 +120,7 @@ export default function SidebarContent() {
     if (href === '/dashboard' && pathname === href) return true;
     if (href !== '/dashboard' && pathname.startsWith(href)) return true;
     if (href === '/dashboard/focus' && (pathname.startsWith('/dashboard/pomodoro') || pathname.startsWith('/dashboard/tracker') || pathname.startsWith('/dashboard/tracker-insights') || pathname.startsWith('/dashboard/challenger'))) return true;
-    if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos'))) return true;
+    if (href === '/dashboard/schedule' && (pathname.startsWith('/dashboard/todos') || pathname.startsWith('/dashboard/roadmap') || pathname.startsWith('/dashboard/study'))) return true;
     if (href === '/dashboard/settings' && (pathname.startsWith('/dashboard/about') || pathname.startsWith('/dashboard/rules') || pathname.startsWith('/dashboard/admin') || pathname.startsWith('/waizmarcoadmin') || pathname.startsWith('/dashboard/whats-new'))) return true;
     if (href === '/dashboard/store' && pathname.startsWith('/dashboard/store/history')) return true;
     if (href === '/dashboard/social' && pathname.startsWith('/dashboard/groups')) return true;

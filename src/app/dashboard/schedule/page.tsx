@@ -5,12 +5,13 @@ import { NexusView } from '@/components/schedule/nexus-view';
 import { TodoList } from '@/components/todos/todo-list';
 import { useState } from 'react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, ListTodo, Map as MapIcon, ArrowLeft } from 'lucide-react';
+import { Calendar, ListTodo, Map as MapIcon, ArrowLeft, Brain, Map } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
-type NexusViewType = 'grid' | 'nexus' | 'todos';
+type NexusViewType = 'grid' | 'nexus' | 'todos' | 'roadmap' | 'blurting';
 
 const featureCards = [
     {
@@ -27,10 +28,25 @@ const featureCards = [
         icon: ListTodo,
         color: 'from-amber-500 to-orange-500 shadow-orange-500/30'
     },
+    {
+        id: 'roadmap',
+        title: 'Study Roadmap',
+        description: 'Long-term mission planning and tracking.',
+        icon: Map,
+        color: 'from-purple-500 to-indigo-500 shadow-indigo-500/30'
+    },
+    {
+        id: 'blurting',
+        title: 'Blurting Sprint',
+        description: 'High-intensity scientific active recall.',
+        icon: Brain,
+        color: 'from-emerald-500 to-green-500 shadow-green-500/30'
+    },
 ]
 
 export default function SchedulePage() {
     const [view, setView] = useState<NexusViewType>('grid');
+    const router = useRouter();
 
     const cardVariants = {
         hidden: { opacity: 0, y: 20 },
@@ -45,6 +61,16 @@ export default function SchedulePage() {
         })
     };
     
+    const handleCardClick = (id: NexusViewType) => {
+        if (id === 'roadmap') {
+            router.push('/dashboard/roadmap');
+        } else if (id === 'blurting') {
+            router.push('/dashboard/study/blurting-sprint');
+        } else {
+            setView(id);
+        }
+    };
+
     if (view !== 'grid') {
         let content;
         let title;
@@ -92,7 +118,7 @@ export default function SchedulePage() {
                         animate="visible"
                         custom={i}
                     >
-                         <button onClick={() => setView(card.id as NexusViewType)} className="w-full h-full text-left">
+                         <button onClick={() => handleCardClick(card.id as NexusViewType)} className="w-full h-full text-left">
                             <Card className={cn("group relative h-full w-full overflow-hidden rounded-xl p-px transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-2", card.color)}>
                                  <div className="relative z-10 flex h-full flex-col justify-between rounded-xl p-6 bg-card">
                                      <div className="flex items-start justify-between">
