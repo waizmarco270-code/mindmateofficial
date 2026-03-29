@@ -4,15 +4,18 @@ import { useState, useEffect, createContext, useContext, ReactNode, useCallback,
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { 
-    collection, doc, onSnapshot, updateDoc, getDoc, query, setDoc, 
-    where, getDocs, increment, writeBatch, orderBy, addDoc, 
-    serverTimestamp, deleteDoc, arrayUnion, arrayRemove, limit, 
-    Timestamp, runTransaction, collectionGroup 
+    collection, doc, onSnapshot, query, where, orderBy, limit, Timestamp, collectionGroup 
 } from 'firebase/firestore';
-import { format, isToday, isYesterday, startOfWeek, addDays as dateFnsAddDays, differenceInDays } from 'date-fns';
-import { lockableFeatures, type LockableFeature } from '@/lib/features';
-import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
+import { format, isToday, isYesterday } from 'date-fns';
+import { type LockableFeature } from '@/lib/features';
 import { useToast } from './use-toast';
+
+// Module Imports
+import { useUserActions } from './admin/use-user-actions';
+import { useContentActions } from './admin/use-content-actions';
+import { useStoreActions } from './admin/use-store-actions';
+import { useSystemActions } from './admin/use-system-actions';
+import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
 export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign';
@@ -40,7 +43,6 @@ export interface User {
   credits: number;
   walletBalance: number;
   walletTransactions?: WalletTransaction[];
-  lastWalletDeposit?: string; 
   masterCardExpires?: string;
   votedPolls?: Record<string, string>;
   unlockedResourceSections?: string[];
@@ -62,12 +64,9 @@ export interface User {
   friends?: string[];
   focusSessionsCompleted?: number;
   dailyTasksCompleted?: number;
+  totalStudyTime?: number;
   lastDailyTasksClaim?: string;
   lastEliteClaim?: string;
-  totalStudyTime?: number;
-  lastRewardDate?: string;
-  lastGiftBoxDate?: string;
-  lastRpsDate?: string;
   freeRewards?: number;
   freeGuesses?: number;
   rewardHistory?: { reward: number | string, date: Timestamp, source: string }[];
@@ -90,12 +89,7 @@ export interface User {
     astroAscent?: number;
     mathematicsLegend?: number;
   };
-  elementQuestScores?: {
-    s?: number;
-    p?: number;
-    d?: number;
-    f?: number;
-  };
+  elementQuestScores?: { s?: number; p?: number; d?: number; f?: number; };
   elementQuestMilestonesClaimed?: number[];
   dimensionShiftClaims?: Record<string, number[]>;
   flappyMindClaims?: Record<string, number[]>;
@@ -104,289 +98,54 @@ export interface User {
   transactions?: { id: string; packName: string; credits: number; price?: number; date: string; type?: string }[];
 }
 
-export interface IsolationExitRequest {
-    id: string;
-    userId: string;
-    userName: string;
-    userPhoto?: string;
-    durationId: string;
-    message: string;
-    status: 'pending' | 'approved' | 'declined';
-    createdAt: Timestamp;
-}
-
-export interface Announcement {
-    id: string;
-    title: string;
-    description: string;
-    createdAt: Date;
-    isAegisGenerated?: boolean;
-}
-
-export interface ResourceSection {
-    id: string;
-    name: string;
-    description: string;
-    unlockCost: number;
-    parentCategory: 'class-10' | 'class-12' | 'jee' | 'neet' | 'class-6-9' | 'general';
-    createdAt: Date;
-}
-
-export interface Resource {
-    id: string;
-    title: string;
-    description: string;
-    url: string;
-    sectionId: string;
-    createdAt: Date;
-}
-
-export interface Poll {
-    id: string;
-    question: string;
-    options: string[];
-    results: Record<string, number>;
-    isActive: boolean;
-    createdAt: Date;
-    commentsEnabled?: boolean;
-    comments?: { userId: string; userName: string; comment: string; createdAt: Timestamp }[];
-}
-
-export interface DailySurprise {
-    id: string;
-    type: 'quote' | 'fact' | 'meme' | 'quiz' | 'new-feature';
-    text?: string;
-    author?: string;
-    imageUrl?: string;
-    quizQuestion?: string;
-    quizOptions?: string[];
-    quizCorrectAnswer?: string;
-    createdAt: Date;
-    isAegisGenerated?: boolean;
-    featureTitle?: string;
-    featureDescription?: string;
-    featureIcon?: string;
-    featureRoute?: string;
-}
+export interface Announcement { id: string; title: string; description: string; createdAt: Date; }
+export interface Resource { id: string; title: string; description: string; url: string; sectionId: string; createdAt: Date; }
+export interface ResourceSection { id: string; name: string; description: string; unlockCost: number; parentCategory: string; createdAt: Date; }
+export interface DailySurprise { id: string; type: string; text?: string; author?: string; imageUrl?: string; quizQuestion?: string; quizOptions?: string[]; quizCorrectAnswer?: string; featureTitle?: string; featureIcon?: string; featureRoute?: string; createdAt: Date; }
+export interface Poll { id: string; question: string; options: string[]; results: Record<string, number>; isActive: boolean; createdAt: Date; commentsEnabled?: boolean; comments?: any[]; }
+export interface GlobalGift { id: string; message: string; rewards: any; target: any; maxClaims?: number; createdAt: Date; isActive: boolean; claimedBy?: string[]; }
+export interface SupportTicket { id: string; userId: string; userName: string; message: string; status: 'new' | 'resolved'; createdAt: Timestamp; }
+export interface FeatureShowcase { id: string; title: string; description: string; launchDate?: string; template: any; status: 'upcoming' | 'live'; link?: string; createdAt: Date; }
+export interface CreditPack { id: string; name: string; credits: number; price: number; badge?: string; createdAt: Date; }
+export interface StoreItem { id: string; name: string; description: string; cost: number; price?: number; paymentType: 'credits' | 'money'; type: string; quantity: number; createdAt: Date; stock: number; isFeatured: boolean; badge?: string; }
+export interface VideoCategory { id: string; name: string; description: string; createdAt: Date; }
+export interface VideoLecture { id: string; title: string; description: string; youtubeUrl: string; thumbnailUrl: string; categoryId: string; createdAt: Date; }
+export interface IsolationExitRequest { id: string; userId: string; userName: string; userPhoto?: string; durationId: string; message: string; status: string; createdAt: Timestamp; }
 
 export type AppThemeId = 'light' | 'dark' | 'synthwave-sunset' | 'solar-flare' | 'emerald-dream';
 export type MaintenanceTheme = 'shiny' | 'forest' | 'sunflower';
-
-export interface AppSettings {
-    marcoAiLaunchStatus: 'countdown' | 'live';
-    upiQrCode?: string;
-    isMaintenanceMode?: boolean;
-    maintenanceMessage?: string;
-    maintenanceStartTime?: string;
-    maintenanceEndTime?: string;
-    maintenanceTheme?: MaintenanceTheme;
-    whatsNewMessage?: string;
-    lastMaintenanceId?: string;
-    isAegisMode?: boolean;
-    lastAegisPulse?: string;
-}
-
-export interface GlobalGift {
-    id: string;
-    message: string;
-    rewards: {
-        credits: number;
-        scratch: number;
-        flip: number;
-        wallet?: number;
-        shields?: number;
-        freezes?: number;
-        boosters?: number;
-        maxers?: number;
-        badge?: BadgeType;
-        alphaGlowWeeks?: number;
-    };
-    target: 'all' | string | string[];
-    maxClaims?: number;
-    createdAt: Date;
-    isActive: boolean;
-    claimedBy?: string[];
-}
-
-export interface SupportTicket {
-    id: string;
-    userId: string;
-    userName: string;
-    message: string;
-    status: 'new' | 'resolved';
-    createdAt: Timestamp;
-}
-
-export interface FeatureLock {
-    id: LockableFeature['id'];
-    isLocked: boolean;
-    cost: number;
-}
-
-export interface FeatureShowcase {
-    id: string;
-    title: string;
-    description: string;
-    launchDate?: string;
-    template: any;
-    status: 'upcoming' | 'live';
-    link?: string;
-    createdAt: Date;
-}
-
-export interface CreditPack {
-  id: string;
-  name: string;
-  credits: number;
-  price: number;
-  badge?: string;
-  createdAt: Date;
-}
-
-export interface StoreItem {
-    id: string;
-    name: string;
-    description: string;
-    cost: number;
-    price?: number; 
-    paymentType: 'credits' | 'money';
-    type: string;
-    quantity: number;
-    createdAt: Date;
-    stock: number;
-    isFeatured: boolean;
-    badge?: string;
-}
-
-export interface VideoCategory {
-  id: string;
-  name: string;
-  description: string;
-  createdAt: Date;
-}
-
-export interface VideoLecture {
-  id: string;
-  title: string;
-  description: string;
-  youtubeUrl: string;
-  thumbnailUrl: string;
-  categoryId: string;
-  createdAt: Date;
-}
+export interface AppSettings { marcoAiLaunchStatus: 'countdown' | 'live'; isMaintenanceMode?: boolean; maintenanceMessage?: string; maintenanceEndTime?: string; maintenanceTheme?: MaintenanceTheme; whatsNewMessage?: string; lastMaintenanceId?: string; }
 
 interface AppDataContextType {
-    isAdmin: boolean;
-    isCoDev: boolean;
-    isSuperAdmin: boolean;
-    users: User[];
-    currentUserData: User | null;
-    transactions: User['transactions'];
-    toggleUserBlock: (uid: string, isBlocked: boolean, type?: 'permanent' | 'temporary', days?: number, reason?: string) => Promise<void>;
-    toggleLeaderboardPrivacy: (uid: string, isPrivate: boolean) => Promise<void>;
-    addCreditsToUser: (uid: string, amount: number) => Promise<void>;
-    applyFocusPenalty: (uid: string, amount: number) => Promise<'shielded' | 'penalized'>;
-    giftCreditsToAllUsers: (amount: number) => Promise<void>;
-    resetUserCredits: (uid: string) => Promise<void>;
-    addFreeSpinsToUser: (uid: string, amount: number) => Promise<void>;
-    addSpinsToAllUsers: (amount: number) => Promise<void>;
-    addFreeGuessesToUser: (uid: string, amount: number) => Promise<void>;
-    addGuessesToAllUsers: (amount: number) => Promise<void>;
-    unlockResourceSection: (uid: string, sectionId: string, cost: number) => Promise<void>;
-    unlockFeatureForUser: (uid: string, featureId: LockableFeature['id'], cost: number) => Promise<void>;
-    unlockThemeForUser: (uid: string, themeId: AppThemeId, cost: number) => Promise<void>;
-    generateAiAccessToken: (uid: string) => Promise<string | null>;
-    grantMasterCard: (uid: string, durationDays: number) => Promise<void>;
-    revokeMasterCard: (uid: string) => Promise<void>;
-    addPerfectedQuiz: (uid: string, quizId: string) => Promise<void>;
-    incrementQuizAttempt: (uid: string, quizId: string) => Promise<void>;
-    incrementFocusSessions: (uid: string, duration: number) => Promise<void>;
-    claimDailyTaskReward: (uid: string, amount: number) => Promise<void>;
-    claimEliteDailyReward: (uid: string) => Promise<void>;
-    updateStudyTime: (uid: string, totalSeconds: number) => Promise<void>;
-    updateGameHighScore: (uid: string, game: string, score: number) => Promise<void>;
-    updateElementQuestScore: (uid: string, block: 's' | 'p' | 'd' | 'f', score: number) => Promise<void>;
-    claimElementQuestMilestone: (uid: string, milestone: number) => Promise<void>;
-    claimDimensionShiftMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    claimFlappyMindMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    claimAstroAscentMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    claimMathematicsLegendMilestone: (uid: string, milestone: number) => Promise<boolean>;
-    makeUserAdmin: (uid: string) => Promise<void>;
-    removeUserAdmin: (uid: string) => Promise<void>;
-    makeUserVip: (uid: string) => Promise<void>;
-    removeUserVip: (uid: string) => Promise<void>;
-    makeUserGM: (uid: string) => Promise<void>;
-    removeUserGM: (uid: string) => Promise<void>;
-    makeUserChallenger: (uid: string) => Promise<void>;
-    removeUserChallenger: (uid: string) => Promise<void>;
-    makeUserCoDev: (uid: string) => Promise<void>;
-    removeUserCoDev: (uid: string) => Promise<void>;
-    setShowcaseBadge: (uid: string, badge: BadgeType | null) => Promise<void>;
-    clearGlobalChat: () => Promise<void>;
-    clearQuizLeaderboard: () => Promise<void>;
-    resetWeeklyStudyTime: () => Promise<void>;
-    resetGameZoneLeaderboard: () => Promise<void>;
-    submitSupportTicket: (message: string) => Promise<void>;
-    triggerAegisPulse: () => Promise<AegisPulseOutput>;
-    announcements: Announcement[];
-    addAnnouncement: (announcement: Omit<Announcement, 'id' | 'createdAt'>) => Promise<void>;
-    updateAnnouncement: (id: string, data: Partial<Announcement>) => Promise<void>;
-    deleteAnnouncement: (id: string) => Promise<void>;
-    resources: Resource[];
-    addResource: (resource: Omit<Resource, 'id' | 'createdAt'>) => Promise<void>;
-    updateResource: (id: string, data: Partial<Resource>) => Promise<void>;
-    deleteResource: (id: string) => Promise<void>;
-    resourceSections: ResourceSection[];
-    addResourceSection: (section: Omit<ResourceSection, 'id'|'createdAt'>) => Promise<void>;
-    updateResourceSection: (id: string, data: Partial<ResourceSection>) => Promise<void>;
-    deleteResourceSection: (id: string) => Promise<void>;
-    dailySurprises: DailySurprise[];
-    addDailySurprise: (surprise: Omit<DailySurprise, 'id' | 'createdAt'>) => Promise<void>;
-    deleteDailySurprise: (id: string) => Promise<void>;
-    supportTickets: SupportTicket[];
-    updateTicketStatus: (id: string, status: 'new' | 'resolved') => Promise<void>;
-    deleteTicket: (id: string) => Promise<void>;
-    loading: boolean;
+    isAdmin: boolean; isCoDev: boolean; isSuperAdmin: boolean; loading: boolean;
+    users: User[]; currentUserData: User | null; transactions: User['transactions'];
+    announcements: Announcement[]; resources: Resource[]; resourceSections: ResourceSection[];
+    dailySurprises: DailySurprise[]; supportTickets: SupportTicket[]; allPolls: Poll[];
+    appSettings: AppSettings | null; globalGifts: GlobalGift[]; activeGlobalGift: GlobalGift | null;
+    featureShowcases: FeatureShowcase[]; creditPacks: CreditPack[]; storeItems: StoreItem[];
+    videoCategories: VideoCategory[]; videoLectures: VideoLecture[]; isolationExitRequests: IsolationExitRequest[];
     activePoll: Poll | null;
-    allPolls: Poll[];
-    addPoll: (pollData: Omit<Poll, 'id' | 'createdAt' | 'isActive' | 'results'>) => Promise<void>;
-    deletePoll: (id: string) => Promise<void>;
-    setActivePoll: (id: string) => Promise<void>;
-    submitPollVote: (pollId: string, option: string) => Promise<void>;
-    submitPollComment: (pollId: string, comment: string) => Promise<void>;
-    appSettings: AppSettings | null;
-    updateAppSettings: (settings: Partial<AppSettings>) => Promise<void>;
-    globalGifts: GlobalGift[];
-    activeGlobalGift: GlobalGift | null;
-    sendGlobalGift: (gift: Omit<GlobalGift, 'id' | 'createdAt' | 'isActive' | 'claimedBy'>) => Promise<void>;
-    deactivateGift: (giftId: string) => Promise<void>;
-    deleteGlobalGift: (giftId: string) => Promise<void>;
-    claimGlobalGift: (giftId: string, userId: string) => Promise<void>;
-    featureShowcases: FeatureShowcase[];
-    addFeatureShowcase: (showcase: Omit<FeatureShowcase, 'id' | 'createdAt'>) => Promise<void>;
-    updateFeatureShowcase: (id: string, data: Partial<FeatureShowcase>) => Promise<void>;
-    deleteFeatureShowcase: (id: string) => Promise<void>;
-    creditPacks: CreditPack[];
-    createCreditPack: (pack: Omit<CreditPack, 'id' | 'createdAt'>) => Promise<void>;
-    updateCreditPack: (id: string, data: Partial<CreditPack>) => Promise<void>;
-    deleteCreditPack: (id: string) => Promise<void>;
-    storeItems: StoreItem[];
-    createStoreItem: (item: Omit<StoreItem, 'id' | 'createdAt'>) => Promise<void>;
-    updateStoreItem: (id: string, data: Partial<StoreItem>) => Promise<void>;
-    deleteStoreItem: (id: string) => Promise<void>;
-    redeemStoreItem: (item: StoreItem, quantity: number) => Promise<void>;
-    processStoreItemPayment: (item: StoreItem, quantity: number, transactionId: string, method: 'razorpay' | 'wallet') => Promise<void>;
-    videoCategories: VideoCategory[];
-    addVideoCategory: (category: Omit<VideoCategory, 'id' | 'createdAt'>) => Promise<void>;
-    deleteVideoCategory: (categoryId: string) => Promise<void>;
-    videoLectures: VideoLecture[];
-    addVideoLecture: (lecture: Omit<VideoLecture, 'id' | 'createdAt'>) => Promise<void>;
-    deleteVideoLecture: (lectureId: string) => Promise<void>;
-    topUpWallet: (amount: number, transactionId: string) => Promise<void>;
-    requestWithdrawal: (amount: number) => Promise<void>;
-    isolationExitRequests: IsolationExitRequest[];
-    approveIsolationExit: (requestId: string) => Promise<void>;
-    declineIsolationExit: (requestId: string) => Promise<void>;
+    
+    // Actions
+    toggleUserBlock: any; toggleLeaderboardPrivacy: any; addCreditsToUser: any; applyFocusPenalty: any;
+    grantMasterCard: any; revokeMasterCard: any; setShowcaseBadge: any; makeUserAdmin: any; removeUserAdmin: any;
+    makeUserVip: any; removeUserVip: any; makeUserGM: any; removeUserGM: any; makeUserCoDev: any; removeUserCoDev: any;
+    addPerfectedQuiz: any; incrementQuizAttempt: any; incrementFocusSessions: any; claimDailyTaskReward: any;
+    claimEliteDailyReward: any; updateGameHighScore: any; updateElementQuestScore: any; claimElementQuestMilestone: any;
+    claimDimensionShiftMilestone: any; claimFlappyMindMilestone: any; claimAstroAscentMilestone: any;
+    claimMathematicsLegendMilestone: any; addAnnouncement: any; updateAnnouncement: any; deleteAnnouncement: any;
+    addResourceSection: any; updateResourceSection: any; deleteResourceSection: any; addResource: any;
+    updateResource: any; deleteResource: any; addDailySurprise: any; deleteDailySurprise: any;
+    addPoll: any; deletePoll: any; setActivePoll: any; submitPollVote: any; submitPollComment: any;
+    addVideoCategory: any; deleteVideoCategory: any; addVideoLecture: any; deleteVideoLecture: any;
+    createCreditPack: any; updateCreditPack: any; deleteCreditPack: any; createStoreItem: any;
+    updateStoreItem: any; deleteStoreItem: any; redeemStoreItem: any; processStoreItemPayment: any;
+    updateAppSettings: any; sendGlobalGift: any; claimGlobalGift: any; deactivateGift: any;
+    deleteGlobalGift: any; addFeatureShowcase: any; updateFeatureShowcase: any; deleteFeatureShowcase: any;
+    submitSupportTicket: any; clearGlobalChat: any; clearQuizLeaderboard: any; resetWeeklyStudyTime: any;
+    resetGameZoneLeaderboard: any; approveIsolationExit: any; declineIsolationExit: any; topUpWallet: any;
+    generateAiAccessToken: any; unlockResourceSection: any; unlockFeatureForUser: any; unlockThemeForUser: any;
+    triggerAegisPulse: () => Promise<AegisPulseOutput>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -395,9 +154,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const { user: authUser, isLoaded: isClerkLoaded } = useUser();
     const { toast } = useToast();
     
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [isCoDev, setIsCoDev] = useState(false);
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
     const [users, setUsers] = useState<User[]>([]);
     const [currentUserData, setCurrentUserData] = useState<User | null>(null);
     const [announcements, setAnnouncements] = useState<Announcement[]>([]);
@@ -416,478 +172,85 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [isolationExitRequests, setIsolationExitRequests] = useState<IsolationExitRequest[]>([]);
     const [loading, setLoading] = useState(true);
 
-    const activeGlobalGift = useMemo(() => globalGifts.find(g => g.isActive) || null, [globalGifts]);
-    const activePoll = useMemo(() => allPolls.find(p => p.isActive) || null, [allPolls]);
+    const isAdmin = currentUserData?.isAdmin ?? false;
+    const isSuperAdmin = authUser?.id === SUPER_ADMIN_UID;
+    const isCoDev = currentUserData?.isCoDev ?? false;
 
-    const transactions = useMemo(() => {
-        if (!currentUserData?.transactions) return [];
-        return [...currentUserData.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }, [currentUserData]);
+    const userActions = useUserActions(db, toast);
+    const contentActions = useContentActions(db, toast);
+    const storeActions = useStoreActions(db, toast);
+    const systemActions = useSystemActions(db, toast);
 
+    // Snapshot Listeners
     useEffect(() => {
-        if (isClerkLoaded && authUser && currentUserData) {
-            setIsAdmin(currentUserData.isAdmin ?? false);
-            setIsSuperAdmin(currentUserData.uid === SUPER_ADMIN_UID);
-            setIsCoDev(currentUserData.isCoDev ?? false);
-        } else {
-            setIsAdmin(false); setIsSuperAdmin(false); setIsCoDev(false);
-        }
-    }, [isClerkLoaded, authUser, currentUserData]);
-
-    useEffect(() => {
-        const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
-            setUsers(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User)));
-        });
-        return () => unsubscribe();
+        const process = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate() || new Date() }));
+        const unsubs = [
+            onSnapshot(collection(db, 'users'), (s) => setUsers(s.docs.map(d => ({ id: d.id, ...d.data() } as User)))),
+            onSnapshot(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')), (s) => setAnnouncements(process(s))),
+            onSnapshot(collection(db, 'resources'), (s) => setResources(process(s))),
+            onSnapshot(collection(db, 'resourceSections'), (s) => setResourceSections(process(s))),
+            onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(process(s))),
+            onSnapshot(collection(db, 'supportTickets'), (s) => setSupportTickets(s.docs.map(d => ({ id: d.id, ...d.data() } as SupportTicket)))),
+            onSnapshot(collection(db, 'polls'), (s) => setAllPolls(process(s))),
+            onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null)),
+            onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(process(s))),
+            onSnapshot(collection(db, 'featureShowcases'), (s) => setFeatureShowcases(process(s))),
+            onSnapshot(collection(db, 'creditPacks'), (s) => setCreditPacks(process(s))),
+            onSnapshot(collection(db, 'storeItems'), (s) => setStoreItems(process(s))),
+            onSnapshot(collection(db, 'videoCategories'), (s) => setVideoCategories(process(s))),
+            onSnapshot(collection(db, 'videoLectures'), (s) => setVideoLectures(process(s))),
+            onSnapshot(query(collection(db, 'isolationExitRequests'), where('status', '==', 'pending')), (s) => setIsolationExitRequests(s.docs.map(d => ({ id: d.id, ...d.data() } as IsolationExitRequest))))
+        ];
+        return () => unsubs.forEach(u => u());
     }, []);
 
     useEffect(() => {
         if (!isClerkLoaded) return;
         if (!authUser) { setCurrentUserData(null); setLoading(false); return; }
-
-        const userDocRef = doc(db, 'users', authUser.id);
-        const unsubscribe = onSnapshot(userDocRef, async (snap) => {
-            if (snap.exists()) {
-                const data = snap.data();
-                const todayStr = format(new Date(), 'yyyy-MM-dd');
-                const updates: any = {};
-                let hasUpdates = false;
-
-                if (!data.mindMateId) {
-                    updates.mindMateId = `MM-${Math.floor(100000 + Math.random() * 900000)}`;
-                    hasUpdates = true;
-                }
-
-                if (data.lastStreakCheck !== todayStr) {
-                    const lastCheckDate = data.lastStreakCheck ? new Date(data.lastStreakCheck) : null;
-                    let currentStreak = data.streak || 0;
-                    
-                    if (!lastCheckDate) {
-                        updates.streak = 1; updates.longestStreak = 1;
-                    } else if (isYesterday(lastCheckDate)) {
-                        const nextStreak = currentStreak + 1;
-                        updates.streak = nextStreak;
-                        if (nextStreak > (data.longestStreak || 0)) updates.longestStreak = nextStreak;
-                        if (nextStreak === 3) updates.credits = (data.credits || 0) + 50;
-                        else if (nextStreak === 7) updates.credits = (data.credits || 0) + 150;
-                        else if (nextStreak === 14) updates.credits = (data.credits || 0) + 500;
-                        else if (nextStreak === 30) {
-                            updates.credits = (data.credits || 0) + 1000;
-                            updates.isStreaker = true;
-                            updates.streak = 0; 
-                        }
-                    } else if (!isToday(lastCheckDate)) { 
-                        if ((data.inventory?.streakFreezes || 0) > 0) {
-                            updates['inventory.streakFreezes'] = (data.inventory?.streakFreezes || 0) - 1;
-                            updates.streak = currentStreak + 1; 
-                        } else {
-                            updates.streak = 1; 
-                        }
-                    }
-                    updates.lastStreakCheck = todayStr;
-                    hasUpdates = true;
-                }
-
-                if (hasUpdates) await updateDoc(userDocRef, updates);
-                setCurrentUserData({ id: snap.id, ...data } as User);
-            } else {
-                const newUser: User = {
-                    id: authUser.id, uid: authUser.id, 
-                    mindMateId: `MM-${Math.floor(100000 + Math.random() * 900000)}`,
-                    displayName: authUser.fullName || authUser.username || 'New User',
-                    email: authUser.primaryEmailAddress?.emailAddress || '', photoURL: authUser.imageUrl, isBlocked: false,
-                    isLeaderboardPrivate: false, credits: 200, walletBalance: 0, isAdmin: false, isVip: false, isGM: false, isChallenger: false, isCoDev: false,
-                    friends: [], unlockedResourceSections: [], unlockedFeatures: [], unlockedThemes: [], hasAiAccess: false,
-                    focusSessionsCompleted: 0, dailyTasksCompleted: 0, totalStudyTime: 0, freeRewards: 0, freeGuesses: 0,
-                    streak: 1, longestStreak: 1, lastStreakCheck: format(new Date(), 'yyyy-MM-dd'),
-                    inventory: { penaltyShields: 0, streakFreezes: 0, clanXpBoosters: 0, clanLevelMaxers: 0 },
-                    gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0 },
-                    elementQuestScores: { s: 0, p: 0, d: 0, f: 0 }, elementQuestMilestonesClaimed: [],
-                };
-                await setDoc(userDocRef, newUser);
-                setCurrentUserData(newUser);
-            }
+        return onSnapshot(doc(db, 'users', authUser.id), (snap) => {
+            if (snap.exists()) setCurrentUserData({ id: snap.id, ...snap.data() } as User);
             setLoading(false);
         });
-        return () => unsubscribe();
     }, [authUser, isClerkLoaded]);
 
-    useEffect(() => {
-        const processWithDate = <T extends { id: string; createdAt: Date }>(snapshot: any) => 
-            snapshot.docs.map((doc: any) => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    ...data,
-                    createdAt: (data.createdAt as Timestamp)?.toDate() || new Date()
-                } as T;
-            });
-
-        const unsubs = [
-            onSnapshot(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')), (s) => setAnnouncements(processWithDate<Announcement>(s))),
-            onSnapshot(query(collection(db, 'resources'), orderBy('createdAt', 'desc')), (s) => setResources(processWithDate<Resource>(s))),
-            onSnapshot(query(collection(db, 'resourceSections'), orderBy('createdAt', 'desc')), (s) => setResourceSections(processWithDate<ResourceSection>(s))),
-            onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(processWithDate<DailySurprise>(s))),
-            onSnapshot(query(collection(db, 'supportTickets'), orderBy('createdAt', 'desc')), (s) => setSupportTickets(s.docs.map(d => ({ id: d.id, ...d.data() } as SupportTicket)))),
-            onSnapshot(query(collection(db, 'polls'), orderBy('createdAt', 'desc')), (s) => setAllPolls(processWithDate<Poll>(s))),
-            onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null)),
-            onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(processWithDate<GlobalGift>(s))),
-            onSnapshot(query(collection(db, 'featureShowcases'), orderBy('createdAt', 'desc')), (s) => setFeatureShowcases(processWithDate<FeatureShowcase>(s))),
-            onSnapshot(query(collection(db, 'creditPacks'), orderBy('price', 'asc')), (s) => setCreditPacks(processWithDate<CreditPack>(s))),
-            onSnapshot(query(collection(db, 'storeItems'), orderBy('createdAt', 'desc')), (s) => setStoreItems(processWithDate<StoreItem>(s))),
-            onSnapshot(query(collection(db, 'videoCategories'), orderBy('createdAt', 'asc')), (s) => setVideoCategories(processWithDate<VideoCategory>(s))),
-            onSnapshot(query(collection(db, 'videoLectures'), orderBy('createdAt', 'asc')), (s) => setVideoLectures(processWithDate<VideoLecture>(s))),
-            onSnapshot(query(collection(db, 'isolationExitRequests'), where('status', '==', 'pending')), (s) => setIsolationExitRequests(s.docs.map(d => ({ id: d.id, ...d.data() } as IsolationExitRequest))))
-        ];
-
-        return () => unsubs.forEach(unsub => unsub());
-    }, []);
-
-    const addCreditsToUser = useCallback(async (uid: string, amount: number) => {
-        if (!uid) return;
-        const userRef = doc(db, 'users', uid);
-        const userSnap = await getDoc(userRef);
-        const userData = userSnap.data();
-        if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date() && amount < 0) return;
-        await updateDoc(userRef, { credits: increment(amount) });
-    }, []);
-
-    const sendGlobalGift = useCallback(async (gift: any) => {
-        const sanitizedGift = { ...gift };
-        if (sanitizedGift.maxClaims === 0 || !sanitizedGift.maxClaims) delete sanitizedGift.maxClaims;
+    const value = {
+        isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
+        announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
+        activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
+        videoCategories, videoLectures, isolationExitRequests, activePoll: allPolls.find(p => p.isActive) || null,
         
-        const docRef = await addDoc(collection(db, 'globalGifts'), {
-            ...sanitizedGift,
-            createdAt: serverTimestamp(),
-            isActive: true,
-            claimedBy: []
-        });
-
-        // Smart Notification
-        const r = gift.rewards;
-        const rewardsList = [];
-        if (r.credits) rewardsList.push(`${r.credits} Credits`);
-        if (r.wallet) rewardsList.push(`₹${r.wallet} Vault`);
-        if (r.badge) rewardsList.push(`${r.badge.toUpperCase()} Badge`);
-        if (r.shields) rewardsList.push(`${r.shields} Aegis`);
-        if (r.alphaGlowWeeks) rewardsList.push(`${r.alphaGlowWeeks} Weeks of Alpha Radiance`);
+        ...userActions,
+        ...contentActions,
+        ...storeActions,
+        ...systemActions,
         
-        const msg = `Master sent you ${rewardsList.join(', ')}! Claim now.`;
-
-        const notificationData: any = {
-            title: "🎁 Legendary Gift Pulse!",
-            message: msg,
-            linkUrl: '/dashboard'
-        };
-
-        if (gift.target !== 'all') {
-            if (Array.isArray(gift.target)) {
-                for (const t of gift.target) {
-                    await fetch('/api/send-notification', { method: 'POST', body: JSON.stringify({ ...notificationData, userId: t }) });
-                }
-            } else {
-                notificationData.userId = gift.target;
-                await fetch('/api/send-notification', { method: 'POST', body: JSON.stringify(notificationData) });
-            }
-        } else {
-            await fetch('/api/send-notification', { method: 'POST', body: JSON.stringify(notificationData) });
-        }
-    }, []);
-
-    const claimGlobalGift = useCallback(async (giftId: string, userId: string) => {
-        await runTransaction(db, async (transaction) => {
-            const giftRef = doc(db, 'globalGifts', giftId);
-            const userRef = doc(db, 'users', userId);
-            const giftSnap = await transaction.get(giftRef);
-            const userSnap = await transaction.get(userRef);
-            
-            if (!giftSnap.exists()) throw new Error("Gift purged.");
-            const gift = giftSnap.data() as GlobalGift;
-            const userData = userSnap.data() as User;
-            
-            if (!gift.isActive || gift.claimedBy?.includes(userId)) throw new Error("Unavailable.");
-            if (gift.maxClaims && gift.claimedBy && gift.claimedBy.length >= gift.maxClaims) {
-                transaction.update(giftRef, { isActive: false });
-                throw new Error("Out of stock.");
-            }
-
-            const updates: any = {};
-            const r = gift.rewards;
-            if (r.credits) updates.credits = increment(r.credits);
-            if (r.scratch) updates.freeRewards = increment(r.scratch);
-            if (r.flip) updates.freeGuesses = increment(r.flip);
-            if (r.wallet) {
-                updates.walletBalance = increment(r.wallet);
-                updates.walletTransactions = arrayUnion({ id: `gift-${Date.now()}`, amount: r.wallet, type: 'topup', status: 'completed', date: new Date().toISOString() });
-            }
-            if (r.shields) updates['inventory.penaltyShields'] = increment(r.shields);
-            if (r.freezes) updates['inventory.streakFreezes'] = increment(r.freezes);
-            if (r.alphaGlowWeeks) {
-                const current = userData.inventory?.alphaGlowExpires ? new Date(userData.inventory.alphaGlowExpires) : new Date();
-                const next = dateFnsAddDays(current > new Date() ? current : new Date(), 7 * r.alphaGlowWeeks);
-                updates['inventory.alphaGlowExpires'] = next.toISOString();
-            }
-            if (r.badge) {
-                const badgeKey = `is${r.badge.split('-').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join('')}`;
-                updates[badgeKey] = true;
-            }
-
-            transaction.update(giftRef, { claimedBy: arrayUnion(userId) });
-            transaction.update(userRef, updates);
-        });
-    }, []);
-
-    const value: AppDataContextType = {
-        isAdmin, isCoDev, isSuperAdmin, users, currentUserData, transactions, loading, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, activePoll, appSettings, globalGifts, activeGlobalGift, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, isolationExitRequests,
-        addCreditsToUser,
-        sendGlobalGift,
-        claimGlobalGift,
-        toggleUserBlock: (uid, isBlocked, type, days, reason) => {
-            const updates: any = { isBlocked };
-            if (isBlocked) {
-                updates.banType = type || 'permanent';
-                updates.banReason = reason || 'Violation of community guidelines.';
-                if (type === 'temporary' && days) updates.banExpires = dateFnsAddDays(new Date(), days).toISOString();
-            } else {
-                updates.banType = null; updates.banExpires = null; updates.banReason = null;
-            }
-            return updateDoc(doc(db, 'users', uid), updates);
-        },
-        toggleLeaderboardPrivacy: (uid, isPrivate) => updateDoc(doc(db, 'users', uid), { isLeaderboardPrivate: isPrivate }),
-        applyFocusPenalty: async (uid, amt) => {
-            const snap = await getDoc(doc(db, 'users', uid));
-            if (!snap.exists()) return 'penalized';
-            if ((snap.data().inventory?.penaltyShields || 0) > 0) {
-                await updateDoc(snap.ref, { 'inventory.penaltyShields': increment(-1) });
-                return 'shielded';
-            } else {
-                await addCreditsToUser(uid, -amt);
-                return 'penalized';
-            }
-        },
-        topUpWallet: async (amt, txId) => {
-            if (!authUser) return;
-            await updateDoc(doc(db, 'users', authUser.id), { walletBalance: increment(amt), lastWalletDeposit: new Date().toISOString(), walletTransactions: arrayUnion({ id: txId, amount: amt, type: 'topup', status: 'completed', date: new Date().toISOString() }) });
-        },
-        requestWithdrawal: async (amt) => {
-            if (!authUser || !currentUserData) return;
-            if (currentUserData.walletBalance < amt) throw new Error("Insufficient balance.");
-            await updateDoc(doc(db, 'users', authUser.id), { walletBalance: increment(-amt), walletTransactions: arrayUnion({ id: `wd-${Date.now()}`, amount: -amt, type: 'withdrawal', status: 'pending', date: new Date().toISOString() }) });
-        },
-        giftCreditsToAllUsers: async (amt) => {
-            const snap = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
-            const batch = writeBatch(db);
-            snap.forEach(d => batch.update(d.ref, { credits: increment(amt) }));
-            await batch.commit();
-        },
-        resetUserCredits: (uid) => updateDoc(doc(db, 'users', uid), { credits: 100 }),
-        addFreeSpinsToUser: (uid, amt) => updateDoc(doc(db, 'users', uid), { freeRewards: increment(amt) }),
-        addSpinsToAllUsers: async (amt) => {
-            const snap = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
-            const batch = writeBatch(db);
-            snap.forEach(d => batch.update(d.ref, { freeRewards: increment(amt) }));
-            await batch.commit();
-        },
-        addFreeGuessesToUser: (uid, amt) => updateDoc(doc(db, 'users', uid), { freeGuesses: increment(amt) }),
-        addGuessesToAllUsers: async (amt) => {
-            const snap = await getDocs(query(collection(db, 'users'), where('isBlocked', '==', false)));
-            const batch = writeBatch(db);
-            snap.forEach(d => batch.update(d.ref, { freeGuesses: increment(amt) }));
-            await batch.commit();
-        },
-        unlockResourceSection: async (uid, sid, cost) => {
-            const userRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userRef);
-            const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
-            await updateDoc(userRef, { unlockedResourceSections: arrayUnion(sid), credits: hasMaster ? increment(0) : increment(-cost) });
-        },
-        unlockFeatureForUser: async (uid, fid, cost) => {
-            const userRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userRef);
-            const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
-            await updateDoc(userRef, { unlockedFeatures: arrayUnion(fid), credits: hasMaster ? increment(0) : increment(-cost) });
-        },
-        unlockThemeForUser: async (uid, tid, cost) => {
-            const userRef = doc(db, 'users', uid);
-            const userSnap = await getDoc(userRef);
-            const hasMaster = userSnap.data()?.masterCardExpires && new Date(userSnap.data()?.masterCardExpires) > new Date();
-            await updateDoc(userRef, { unlockedThemes: arrayUnion(tid), credits: hasMaster ? increment(0) : increment(-cost) });
-        },
-        generateAiAccessToken: async (uid) => {
-            const userSnap = await getDoc(doc(db, 'users', uid));
-            const userData = userSnap.data() as User;
-            const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
-            if (!hasMaster && userData.credits < 1000) throw new Error("Credits needed.");
-            const token = Math.random().toString(36).substring(2, 15);
-            const batch = writeBatch(db);
-            batch.update(userSnap.ref, { hasAiAccess: true, credits: hasMaster ? increment(0) : increment(-1000) });
-            batch.set(doc(collection(db, 'ai_access_tokens')), { userId: uid, token, createdAt: serverTimestamp(), isUsed: false });
-            await batch.commit();
-            return token;
-        },
-        grantMasterCard: (uid, days) => updateDoc(doc(db, 'users', uid), { masterCardExpires: dateFnsAddDays(new Date(), days).toISOString() }),
-        revokeMasterCard: (uid) => updateDoc(doc(db, 'users', uid), { masterCardExpires: null }),
-        addPerfectedQuiz: (uid, qid) => updateDoc(doc(db, 'users', uid), { perfectedQuizzes: arrayUnion(qid) }),
-        incrementQuizAttempt: (uid, qid) => updateDoc(doc(db, 'users', uid), { [`quizAttempts.${qid}`]: increment(1) }),
-        incrementFocusSessions: (uid, dur) => updateDoc(doc(db, 'users', uid), { focusSessionsCompleted: increment(1), totalStudyTime: increment(dur) }),
-        claimDailyTaskReward: (uid, amt) => updateDoc(doc(db, 'users', uid), { credits: increment(amt), dailyTasksCompleted: increment(1), lastDailyTasksClaim: todayString() }),
-        claimEliteDailyReward: (uid) => updateDoc(doc(db, 'users', uid), { credits: increment(20), freeRewards: increment(5), freeGuesses: increment(5), lastEliteClaim: todayString() }),
-        updateStudyTime: (uid, secs) => updateDoc(doc(db, 'users', uid), { totalStudyTime: secs }),
-        updateGameHighScore: async (uid, game, score) => {
-            const snap = await getDoc(doc(db, 'users', uid));
-            if (snap.exists() && score > (snap.data().gameHighScores?.[game] || 0)) await updateDoc(snap.ref, { [`gameHighScores.${game}`]: score });
-        },
-        updateElementQuestScore: async (uid, blk, score) => {
-            const snap = await getDoc(doc(db, 'users', uid));
-            if (snap.exists() && score > (snap.data().elementQuestScores?.[blk] || 0)) await updateDoc(snap.ref, { [`elementQuestScores.${blk}`]: score });
-        },
-        claimElementQuestMilestone: (uid, m) => updateDoc(doc(db, 'users', uid), { credits: increment(m === 100 ? 50 : m === 200 ? 100 : m === 300 ? 150 : 200), elementQuestMilestonesClaimed: arrayUnion(m) }),
-        claimDimensionShiftMilestone: async (uid, m) => {
-            const snap = await getDoc(doc(db, 'users', uid));
-            const wk = todayString();
-            if (snap.data()?.dimensionShiftClaims?.[wk]?.includes(m)) return false;
-            const rew = m === 50 ? 2 : m === 100 ? 5 : m === 150 ? 10 : m === 200 ? 15 : m === 250 ? 20 : 200;
-            await updateDoc(snap.ref, { credits: increment(rew), [`dimensionShiftClaims.${wk}`]: arrayUnion(m) }); return true;
-        },
-        claimFlappyMindMilestone: async (uid, m) => {
-            const snap = await getDoc(doc(db, 'users', uid));
-            const wk = todayString();
-            if (snap.data()?.flappyMindClaims?.[wk]?.includes(m)) return false;
-            const rew = m === 20 ? 15 : m === 100 ? 100 : 3;
-            await updateDoc(snap.ref, { credits: increment(rew), [`flappyMindClaims.${wk}`]: arrayUnion(m) }); return true;
-        },
-        claimAstroAscentMilestone: async (uid, m) => {
-            const snap = await getDoc(doc(db, 'users', uid));
-            const wk = todayString();
-            if (snap.data()?.astroAscentClaims?.[wk]?.includes(m)) return false;
-            const rew = m === 25 ? 5 : m === 50 ? 10 : m === 75 ? 25 : 50;
-            await updateDoc(snap.ref, { credits: increment(rew), [`astroAscentClaims.${wk}`]: arrayUnion(m) }); return true;
-        },
-        claimMathematicsLegendMilestone: async (uid, m) => {
-            const snap = await getDoc(doc(db, 'users', uid));
-            const wk = todayString();
-            if (snap.data()?.mathematicsLegendClaims?.[wk]?.includes(m)) return false;
-            await updateDoc(snap.ref, { credits: increment(200), [`mathematicsLegendClaims.${wk}`]: arrayUnion(m) }); return true;
-        },
-        makeUserAdmin: (uid) => updateDoc(doc(db, 'users', uid), { isAdmin: true }),
-        removeUserAdmin: (uid) => updateDoc(doc(db, 'users', uid), { isAdmin: false }),
-        makeUserVip: (uid) => updateDoc(doc(db, 'users', uid), { isVip: true }),
-        removeUserVip: (uid) => updateDoc(doc(db, 'users', uid), { isVip: false }),
-        makeUserGM: (uid) => updateDoc(doc(db, 'users', uid), { isGM: true }),
-        removeUserGM: (uid) => updateDoc(doc(db, 'users', uid), { isGM: false }),
-        makeUserChallenger: (uid) => updateDoc(doc(db, 'users', uid), { isChallenger: true }),
-        removeUserChallenger: (uid) => updateDoc(doc(db, 'users', uid), { isChallenger: false }),
-        makeUserCoDev: (uid) => updateDoc(doc(db, 'users', uid), { isCoDev: true }),
-        removeUserCoDev: (uid) => updateDoc(doc(db, 'users', uid), { isCoDev: false }),
-        setShowcaseBadge: (uid, badge) => updateDoc(doc(db, 'users', uid), { showcasedBadge: badge }),
-        clearGlobalChat: async () => {
-            const snap = await getDocs(collection(db, 'world_chat'));
-            const batch = writeBatch(db);
-            snap.docs.forEach(d => { if (d.id !== 'config') batch.delete(d.ref); });
-            await batch.commit();
-        },
-        clearQuizLeaderboard: async () => {
-            const snap = await getDocs(collection(db, 'users'));
-            const batch = writeBatch(db);
-            snap.forEach(d => batch.update(d.ref, { perfectedQuizzes: [], quizAttempts: {} }));
-            await batch.commit();
-        },
-        resetWeeklyStudyTime: async () => {
-            const snap = await getDocs(collectionGroup(db, 'timeTrackerSessions'));
-            const batch = writeBatch(db);
-            snap.forEach(d => batch.delete(d.ref));
-            await batch.commit();
-        },
-        resetGameZoneLeaderboard: async () => {
-            const snap = await getDocs(collection(db, 'users'));
-            const batch = writeBatch(db);
-            snap.forEach(d => batch.update(d.ref, { gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0 } }));
-            await batch.commit();
-        },
-        submitSupportTicket: (msg) => addDoc(collection(db, 'supportTickets'), { userId: authUser?.id, userName: currentUserData?.displayName, message: msg, status: 'new', createdAt: serverTimestamp() }),
-        triggerAegisPulse,
-        addAnnouncement: (a) => addDoc(collection(db, 'announcements'), { ...a, createdAt: serverTimestamp() }),
-        updateAnnouncement: (id, d) => updateDoc(doc(db, 'announcements', id), d),
-        deleteAnnouncement: (id) => deleteDoc(doc(db, 'announcements', id)),
-        addResourceSection: (s) => addDoc(collection(db, 'resourceSections'), { ...s, createdAt: serverTimestamp() }),
-        updateResourceSection: (id, d) => updateDoc(doc(db, 'resourceSections', id), d),
-        deleteResourceSection: async (id) => {
-            const resSnap = await getDocs(query(collection(db, "resources"), where("sectionId", "==", id)));
-            const batch = writeBatch(db);
-            resSnap.forEach(d => batch.delete(d.ref));
-            batch.delete(doc(db, 'resourceSections', id));
-            await batch.commit();
-        },
-        addResource: (r) => addDoc(collection(db, 'resources'), { ...r, createdAt: serverTimestamp() }),
-        updateResource: (id, d) => updateDoc(doc(db, 'resources', id), d),
-        deleteResource: (id) => deleteDoc(doc(db, 'resources', id)),
-        addDailySurprise: (s) => addDoc(collection(db, 'dailySurprises'), { ...s, createdAt: serverTimestamp() }),
-        deleteDailySurprise: (id) => deleteDoc(doc(db, 'dailySurprises', id)),
-        updateTicketStatus: (id, s) => updateDoc(doc(db, 'supportTickets', id), { status: s }),
-        deleteTicket: (id) => deleteDoc(doc(db, 'supportTickets', id)),
-        addPoll: (p) => addDoc(collection(db, 'polls'), { ...p, isActive: false, results: p.options.reduce((acc, o) => ({ ...acc, [o]: 0 }), {}), createdAt: serverTimestamp() }),
-        deletePoll: (id) => deleteDoc(doc(db, 'polls', id)),
-        setActivePoll: async (id) => {
-            const activeSnap = await getDocs(query(collection(db, 'polls'), where('isActive', '==', true)));
-            const batch = writeBatch(db);
-            activeSnap.forEach(d => batch.update(d.ref, { isActive: false }));
-            batch.update(doc(db, 'polls', id), { isActive: true });
-            await batch.commit();
-        },
-        submitPollVote: async (id, opt) => {
-            if (!authUser) return;
-            const batch = writeBatch(db);
-            batch.update(doc(db, 'polls', id), { [`results.${opt}`]: increment(1) });
-            batch.update(doc(db, 'users', authUser.id), { [`votedPolls.${id}`]: opt });
-            await batch.commit();
-        },
-        submitPollComment: (id, c) => updateDoc(doc(db, 'polls', id), { comments: arrayUnion({ userId: authUser?.id, userName: currentUserData?.displayName, comment: c, createdAt: Timestamp.now() }) }),
-        updateAppSettings: (s) => updateDoc(doc(db, 'appConfig', 'settings'), s),
-        deactivateGift: (id) => updateDoc(doc(db, 'globalGifts', id), { isActive: false }),
-        deleteGlobalGift: (id) => deleteDoc(doc(db, 'globalGifts', id)),
-        addFeatureShowcase: (s) => addDoc(collection(db, 'featureShowcases'), { ...s, createdAt: serverTimestamp() }),
-        updateFeatureShowcase: (id, d) => updateDoc(doc(db, 'featureShowcases', id), d),
-        deleteFeatureShowcase: (id) => deleteDoc(doc(db, 'featureShowcases', id)),
-        createCreditPack: (p) => addDoc(collection(db, 'creditPacks'), { ...p, createdAt: serverTimestamp() }),
-        updateCreditPack: (id, d) => updateDoc(doc(db, 'creditPacks', id), d),
-        deleteCreditPack: (id) => deleteDoc(doc(db, 'creditPacks', id)),
-        createStoreItem: (i) => addDoc(collection(db, 'storeItems'), { ...i, createdAt: serverTimestamp() }),
-        updateStoreItem: (id, d) => updateDoc(doc(db, 'storeItems', id), d),
-        deleteStoreItem: (id) => deleteDoc(doc(db, 'storeItems', id)),
-        redeemStoreItem: async (item, quantity) => {
-            const total = item.cost * quantity;
-            await runTransaction(db, async (t) => {
-                const uRef = doc(db, 'users', authUser!.id);
-                const iRef = doc(db, 'storeItems', item.id);
-                const uS = await t.get(uRef); const iS = await t.get(iRef);
-                if (uS.data()!.credits < total && !(uS.data()!.masterCardExpires && new Date(uS.data()!.masterCardExpires) > new Date())) throw new Error("Credits needed.");
-                t.update(iRef, { stock: increment(-quantity) });
-                t.update(uRef, { credits: increment(-total) });
-            });
-        },
-        processStoreItemPayment: async (item, quantity, transactionId, method) => {
-            const userRef = doc(db, 'users', authUser!.id);
-            await updateDoc(userRef, { walletBalance: increment(method === 'wallet' ? -item.price! * quantity : 0) });
-        },
-        addVideoCategory: (c) => addDoc(collection(db, 'videoCategories'), { ...c, createdAt: serverTimestamp() }),
-        deleteVideoCategory: (id) => deleteDoc(doc(db, 'videoCategories', id)),
-        addVideoLecture: (l) => addDoc(collection(db, 'videoLectures'), { ...l, createdAt: serverTimestamp() }),
-        deleteVideoLecture: (id) => deleteDoc(doc(db, 'videoLectures', id)),
-        approveIsolationExit,
-        declineIsolationExit,
+        triggerAegisPulse: () => runAegisPulse({
+            topUsers: users.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, credits: u.credits, studyTime: u.totalStudyTime || 0, streak: u.streak || 0 })),
+            recentAnnouncements: announcements.slice(0, 3).map(a => a.title),
+            totalUsers: users.length,
+            isChatQuiet: true
+        }),
+        generateAiAccessToken: () => userActions.generateAiAccessToken(authUser?.id),
+        unlockResourceSection: (sid: string, c: number) => userActions.unlockResourceSection(authUser?.id, sid, c),
+        unlockFeatureForUser: (fid: any, c: number) => userActions.unlockFeatureForUser(authUser?.id, fid, c),
+        unlockThemeForUser: (tid: any, c: number) => userActions.unlockThemeForUser(authUser?.id, tid, c),
+        submitPollVote: (pid: string, opt: string) => contentActions.submitPollVote(pid, opt, authUser!.id),
+        submitPollComment: (pid: string, c: string) => contentActions.submitPollComment(pid, c, authUser!.id, currentUserData!.displayName),
+        redeemStoreItem: (i: any, q: number) => storeActions.redeemStoreItem(i, q, authUser!.id),
+        processStoreItemPayment: (i: any, q: number, tx: string, m: any) => storeActions.processStoreItemPayment(i, q, authUser!.id, m),
+        submitSupportTicket: (m: string) => systemActions.submitSupportTicket(m, authUser!.id, currentUserData!.displayName),
+        topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
+        claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
     };
 
-    return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
+    return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
 };
-
-const todayString = () => format(new Date(), 'yyyy-MM-dd');
 
 export const useAdmin = () => {
     const context = useContext(AppDataContext);
-    if (!context) throw new Error('useAdmin must be used within an AppDataProvider');
+    if (!context) throw new Error('useAdmin failed.');
     return context;
 };
-
 export const useUsers = () => useAdmin();
 export const useAnnouncements = () => { const { announcements, loading } = useAdmin(); return { announcements, loading }; };
 export const useResources = () => { const { resources, resourceSections, loading } = useAdmin(); return { allResources: resources, allSections: resourceSections, loading }; };
