@@ -16,15 +16,18 @@ import { MaintenancePage } from '@/components/dashboard/maintenance-page';
 import { BannedOverlay } from '@/components/dashboard/banned-overlay';
 import { WhatsNewPopup } from '@/components/dashboard/whats-new-popup';
 import MobileNav from '@/components/dashboard/mobile-nav';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { usePresence } from '@/hooks/use-presence';
+import { IsolationProvider, useIsolation } from '@/hooks/use-isolation';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
   const { isImmersive } = useImmersive();
   const { openMobile, setOpenMobile } = useSidebar();
   const { appSettings, currentUserData, loading, isSuperAdmin, isCoDev } = useAdmin();
+  const { activeSession } = useIsolation();
   const { updateMyPresence } = usePresence(); 
   const pathname = usePathname();
+  const router = useRouter();
   
   React.useEffect(() => {
     const triggerBackgroundTasks = async () => {
@@ -38,6 +41,13 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     const interval = setInterval(triggerBackgroundTasks, 120000);
     return () => clearInterval(interval);
   }, [updateMyPresence]);
+
+  // SOVEREIGN LOCKDOWN PROTOCOL
+  React.useEffect(() => {
+    if (activeSession?.status === 'active' && !pathname.startsWith('/dashboard/focus/isolation')) {
+        router.replace('/dashboard/focus/isolation');
+    }
+  }, [activeSession, pathname, router]);
 
   const now = new Date();
   const maintenanceStart = appSettings?.maintenanceStartTime ? new Date(appSettings.maintenanceStartTime) : null;
@@ -59,11 +69,12 @@ function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   const useSuperAdminStyling = pathname.startsWith('/dashboard/super-admin');
+  const isIsolationLocked = activeSession?.status === 'active';
 
   return (
     <>
       <WhatsNewPopup settings={appSettings} />
-      {!useSuperAdminStyling && (
+      {!useSuperAdminStyling && !isIsolationLocked && (
         <Sheet open={openMobile} onOpenChange={setOpenMobile}>
           <SheetContent side="left" className="w-[18rem] bg-sidebar/80 p-0 text-sidebar-foreground backdrop-blur-lg [&>button]:hidden">
               <SidebarContent />
@@ -72,15 +83,15 @@ function AppLayout({ children }: { children: React.ReactNode }) {
       )}
 
       <div className={cn("flex flex-1 size-full flex-col bg-background", useSuperAdminStyling && "bg-muted")}>
-        {!isImmersive && !useSuperAdminStyling && <Header />}
+        {!isImmersive && !useSuperAdminStyling && !isIsolationLocked && <Header />}
         <main className={cn(
             "relative flex-1 overflow-y-auto focus:outline-none flex flex-col",
-            isImmersive || useSuperAdminStyling ? "p-0" : "p-4 sm:p-6 lg:p-8",
+            isImmersive || useSuperAdminStyling || isIsolationLocked ? "p-0" : "p-4 sm:p-6 lg:p-8",
             useSuperAdminStyling && "p-4 sm:p-6 lg:p-8"
         )}>
             {children}
         </main>
-        {!isImmersive && !useSuperAdminStyling && <MobileNav />}
+        {!isImmersive && !useSuperAdminStyling && !isIsolationLocked && <MobileNav />}
       </div>
     </>
   )
@@ -94,13 +105,15 @@ export default function DashboardLayout({
   return (
     <ImmersiveProvider>
       <SidebarProvider>
-        <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
-            <Providers>
-                <AppLayout>
-                    {children}
-                </AppLayout>
-            </Providers>
-        </MotionConfig>
+        <IsolationProvider>
+            <MotionConfig transition={{ duration: 0.15, type: 'tween', ease: 'easeOut' }}>
+                <Providers>
+                    <AppLayout>
+                        {children}
+                    </AppLayout>
+                </Providers>
+            </MotionConfig>
+        </IsolationProvider>
       </SidebarProvider>
     </ImmersiveProvider>
   );
