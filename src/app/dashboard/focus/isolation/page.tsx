@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     ShieldAlert, Lock, Zap, Trophy, Clock, 
@@ -9,7 +9,7 @@ import {
     CheckCircle, AlertTriangle, Info, Play, Pause,
     Monitor, CreditCard, Award, X, ShieldX,
     MessageSquare, Send, Check, Code, Swords, Bird, Moon,
-    Youtube, Link as LinkIcon, PlayCircle
+    Youtube, Link as LinkIcon, PlayCircle, WifiOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,7 @@ import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { TacticalCalculator } from '@/components/isolation/tactical-calculator';
 
 // Synchronized Badge Registry for high-fidelity rendering
 const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
@@ -60,9 +61,10 @@ export default function IsolationHub() {
     // YouTube State
     const [ytInput, setYtInput] = useState('');
 
-    // Anti-Cheat Timer Refs
+    // Refs
     const lastTickRef = useRef<number>(Date.now());
     const heartbeatRef = useRef<number>(0);
+    const startButtonRef = useRef<HTMLButtonElement>(null);
 
     useEffect(() => {
         if (!timerActive || activeSession?.status !== 'active') return;
@@ -83,12 +85,21 @@ export default function IsolationHub() {
                 }
             } else {
                 setTimerActive(false);
-                toast({ title: "Timer Paused", description: "Isolation requires active presence. Return to continue." });
+                toast({ 
+                    variant: 'destructive',
+                    title: "SIGNAL LOST", 
+                    description: "Isolation requires active presence. Return to continue.",
+                    className: "bg-red-600 text-white font-black"
+                });
             }
         }, 1000);
 
         return () => clearInterval(interval);
     }, [timerActive, activeSession, updateProgress, toast]);
+
+    const scrollToStartButton = () => {
+        startButtonRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    };
 
     const handleIngress = async (method: 'credits' | 'money') => {
         if (!selectedDuration || !user) return;
@@ -160,7 +171,6 @@ export default function IsolationHub() {
     };
 
     const handleYtUplink = () => {
-        // Advanced Regex supporting: standard, short, live, embed, and youtu.be
         const idMatch = ytInput.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/))([\w-]{11})/);
         if (idMatch && idMatch[1]) {
             setSessionVideoId(idMatch[1]);
@@ -180,6 +190,8 @@ export default function IsolationHub() {
 
         return (
             <div className="min-h-screen bg-[#050505] p-4 sm:p-8 flex flex-col items-center overflow-y-auto">
+                <TacticalCalculator />
+                
                 <div className="max-w-5xl w-full space-y-8 pb-20">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -214,7 +226,27 @@ export default function IsolationHub() {
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-[10px] font-black text-muted-foreground uppercase">Session Integrity</p>
-                                    <p className="text-2xl font-bold text-green-500">100% SECURE</p>
+                                    <AnimatePresence mode="wait">
+                                        {timerActive ? (
+                                            <motion.p 
+                                                key="secure"
+                                                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                                className="text-2xl font-bold text-green-500"
+                                            >
+                                                100% SECURE
+                                            </motion.p>
+                                        ) : (
+                                            <motion.button 
+                                                key="lost"
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                onClick={scrollToStartButton}
+                                                className="text-xl font-black text-red-500 flex items-center gap-2 animate-pulse uppercase italic"
+                                            >
+                                                <WifiOff className="h-5 w-5" /> SIGNAL LOST - RECONNECT
+                                            </motion.button>
+                                        )}
+                                    </AnimatePresence>
                                 </div>
                             </div>
 
@@ -263,8 +295,12 @@ export default function IsolationHub() {
 
                             <div className="flex flex-col sm:flex-row gap-4">
                                 <Button 
+                                    ref={startButtonRef}
                                     size="lg" 
-                                    className={cn("flex-1 h-20 rounded-3xl text-2xl font-black uppercase shadow-2xl", timerActive ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-primary text-white shadow-primary/20")}
+                                    className={cn(
+                                        "flex-1 h-20 rounded-3xl text-2xl font-black uppercase shadow-2xl transition-all duration-500", 
+                                        timerActive ? "bg-amber-500 hover:bg-amber-600 text-black" : "bg-primary text-white shadow-primary/20 ring-4 ring-primary/20 animate-bounce"
+                                    )}
                                     onClick={() => { setTimerActive(!timerActive); lastTickRef.current = Date.now(); }}
                                 >
                                     {timerActive ? <><Pause className="mr-3 h-8 w-8" /> PAUSE TIMER</> : <><Play className="mr-3 h-8 w-8" /> START TRACKING</>}
