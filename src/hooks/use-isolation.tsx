@@ -42,12 +42,8 @@ export interface ActiveIsolation {
     endTime: string; // ISO
     totalTargetSeconds: number;
     accumulatedSeconds: number;
-    status: 'active' | 'completed' | 'failed' | 'requesting_exit';
+    status: 'active' | 'completed' | 'failed';
     lastHeartbeat: string; // ISO
-    emergencyRequest?: {
-        message: string;
-        submittedAt: string;
-    };
 }
 
 interface IsolationContextType {
@@ -58,7 +54,6 @@ interface IsolationContextType {
     failIsolation: () => Promise<void>;
     emergeVictory: () => Promise<void>;
     payForEarlyExit: (method: 'credits' | 'wallet' | 'razorpay', transactionId?: string) => Promise<void>;
-    submitEmergencyAppeal: (message: string) => Promise<void>;
 }
 
 const IsolationContext = createContext<IsolationContextType | undefined>(undefined);
@@ -82,7 +77,6 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
                 const data = snap.data() as ActiveIsolation;
                 const lastBeat = new Date(data.lastHeartbeat);
                 const now = new Date();
-                // Auto-fail if heartbeat missed by 24h
                 if (data.status === 'active' && differenceInSeconds(now, lastBeat) > 86400) {
                     updateDoc(sessionRef, { status: 'failed' });
                 }
@@ -186,33 +180,8 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "ISOLATION TERMINATED", description: "You have paid for an early extraction. Protocol ended." });
     };
 
-    const submitEmergencyAppeal = async (message: string) => {
-        if (!user || !activeSession || !currentUserData) return;
-        
-        const requestRef = doc(collection(db, 'isolationExitRequests'));
-        await setDoc(requestRef, {
-            userId: user.id,
-            userName: currentUserData.displayName,
-            userPhoto: currentUserData.photoURL,
-            durationId: activeSession.durationId,
-            message,
-            status: 'pending',
-            createdAt: serverTimestamp()
-        });
-
-        await updateDoc(doc(db, 'users', user.id, 'isolation', 'current'), {
-            status: 'requesting_exit',
-            emergencyRequest: {
-                message,
-                submittedAt: new Date().toISOString()
-            }
-        });
-
-        toast({ title: "APPEAL TRANSMITTED", description: "The High Council will review your emergency request." });
-    };
-
     return (
-        <IsolationContext.Provider value={{ activeSession, loading, startIsolation, updateProgress, failIsolation, emergeVictory, payForEarlyExit, submitEmergencyAppeal }}>
+        <IsolationContext.Provider value={{ activeSession, loading, startIsolation, updateProgress, failIsolation, emergeVictory, payForEarlyExit }}>
             {children}
         </IsolationContext.Provider>
     );

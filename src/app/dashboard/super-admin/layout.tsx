@@ -16,7 +16,6 @@ import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 const adminNav = [
     { href: '/dashboard/super-admin', icon: LayoutDashboard, label: 'Hub' },
     { href: '/dashboard/super-admin/users', icon: Users, label: 'Users' },
-    { href: '/dashboard/super-admin/appeals', icon: ShieldAlert, label: 'Appeals' },
     { href: '/dashboard/super-admin/maintenance', icon: Terminal, label: 'Config' },
     { href: '/dashboard/super-admin/gifts', icon: Gift, label: 'Gifts' },
     { href: '/dashboard/super-admin/api', icon: Key, label: 'API' },
