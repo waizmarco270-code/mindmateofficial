@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Timer, Zap, Clock, Swords } from 'lucide-react';
+import { Timer, Zap, Clock, Swords, Trophy } from 'lucide-react';
 
 const focusTools = [
     {
@@ -42,6 +42,16 @@ const focusTools = [
         color: 'from-red-800 via-slate-900 to-slate-900',
         shadow: 'shadow-red-500/20',
         iconColor: 'text-red-400',
+    },
+    {
+        title: 'Apex Exam Simulator',
+        description: '3HR Hard-Lock session. High stakes.',
+        icon: Trophy,
+        href: '/dashboard/focus/exam-simulator',
+        color: 'from-purple-900 via-slate-900 to-slate-900',
+        shadow: 'shadow-purple-500/30',
+        iconColor: 'text-purple-400',
+        isLegendary: true
     }
 ];
 
@@ -55,14 +65,18 @@ export default function FocusHubPage() {
                 </h1>
                 <p className="text-muted-foreground">Your dedicated toolkit for deep work and productivity.</p>
             </div>
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {focusTools.map((tool) => (
-                    <Link href={tool.href} className="group block" key={tool.title}>
-                       <Card className={cn("group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg transition-all duration-300 flex flex-col justify-center h-full", tool.shadow)}>
+                    <Link href={tool.href} className={cn("group block", tool.isLegendary && "col-span-2 lg:col-span-1")} key={tool.title}>
+                       <Card className={cn(
+                           "group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg transition-all duration-300 flex flex-col justify-center h-full", 
+                           tool.shadow,
+                           tool.isLegendary && "border-purple-500/50"
+                        )}>
                             <div className={cn("absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 z-0 opacity-80", tool.color)}></div>
                             <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
                             <CardContent className="p-4 sm:p-6 text-center relative z-10 space-y-3">
-                                <tool.icon className={cn("h-10 w-10 mx-auto", tool.iconColor)} />
+                                <tool.icon className={cn("h-10 w-10 mx-auto", tool.iconColor, tool.isLegendary && "animate-pulse")} />
                                 <h3 className="text-lg font-semibold">{tool.title}</h3>
                                 <p className="text-xs text-slate-400 hidden sm:block">{tool.description}</p>
                             </CardContent>
