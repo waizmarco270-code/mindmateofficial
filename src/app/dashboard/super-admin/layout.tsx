@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAdmin } from '@/hooks/use-admin';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
     Users, Key, Terminal, 
     Gift, Zap, LayoutDashboard,
-    ShieldX
+    ShieldX, Ticket
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -16,6 +17,7 @@ const adminNav = [
     { href: '/dashboard/super-admin', icon: LayoutDashboard, label: 'Hub' },
     { href: '/dashboard/super-admin/users', icon: Users, label: 'Users' },
     { href: '/dashboard/super-admin/maintenance', icon: Terminal, label: 'Config' },
+    { href: '/dashboard/super-admin/codes', icon: Ticket, label: 'Codes' },
     { href: '/dashboard/super-admin/gifts', icon: Gift, label: 'Gifts' },
     { href: '/dashboard/super-admin/api', icon: Key, label: 'API' },
     { href: '/dashboard/super-admin/overrides', icon: Zap, label: 'Overrides' },

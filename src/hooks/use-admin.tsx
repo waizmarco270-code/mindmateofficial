@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -12,6 +13,7 @@ import { useUserActions } from './admin/use-user-actions';
 import { useContentActions } from './admin/use-content-actions';
 import { useStoreActions } from './admin/use-store-actions';
 import { useSystemActions } from './admin/use-system-actions';
+import { useCodeActions } from './admin/use-code-actions';
 import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
@@ -20,7 +22,7 @@ export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev'
 export interface WalletTransaction {
     id: string;
     amount: number;
-    type: 'topup' | 'withdrawal' | 'penalty' | 'purchase' | 'refund';
+    type: 'topup' | 'withdrawal' | 'penalty' | 'purchase' | 'refund' | 'code_redemption';
     status: 'completed' | 'pending' | 'failed';
     date: string;
 }
@@ -96,6 +98,15 @@ export interface User {
   transactions?: { id: string; packName: string; credits: number; price?: number; date: string; type?: string }[];
 }
 
+export interface RedeemCode {
+    id: string;
+    value: number;
+    status: 'active' | 'redeemed' | 'inactive';
+    createdAt: Date;
+    redeemedBy?: string;
+    redeemedAt?: Date;
+}
+
 export interface Announcement { id: string; title: string; description: string; createdAt: Date; }
 export interface Resource { id: string; title: string; description: string; url: string; sectionId: string; createdAt: Date; }
 export interface ResourceSection { id: string; name: string; description: string; unlockCost: number; parentCategory: string; createdAt: Date; }
@@ -121,7 +132,7 @@ interface AppDataContextType {
     appSettings: AppSettings | null; globalGifts: GlobalGift[]; activeGlobalGift: GlobalGift | null;
     featureShowcases: FeatureShowcase[]; creditPacks: CreditPack[]; storeItems: StoreItem[];
     videoCategories: VideoCategory[]; videoLectures: VideoLecture[];
-    activePoll: Poll | null;
+    activePoll: Poll | null; redeemCodes: RedeemCode[];
     
     // Actions
     toggleUserBlock: any; toggleLeaderboardPrivacy: any; addCreditsToUser: any; applyFocusPenalty: any;
@@ -142,6 +153,7 @@ interface AppDataContextType {
     submitSupportTicket: any; clearGlobalChat: any; clearQuizLeaderboard: any; resetWeeklyStudyTime: any;
     resetGameZoneLeaderboard: any; topUpWallet: any;
     generateAiAccessToken: any; unlockResourceSection: any; unlockFeatureForUser: any; unlockThemeForUser: any;
+    generateRedeemCode: (v: number) => Promise<string>; deactivateRedeemCode: (id: string) => Promise<void>; deleteRedeemCode: (id: string) => Promise<void>; redeemCode: (u: string, c: string) => Promise<number>;
     triggerAegisPulse: () => Promise<AegisPulseOutput>;
 }
 
@@ -166,6 +178,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
+    const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([]);
     const [loading, setLoading] = useState(true);
 
     const isAdmin = currentUserData?.isAdmin ?? false;
@@ -176,6 +189,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const contentActions = useMemo(() => useContentActions(db, toast), [toast]);
     const storeActions = useMemo(() => useStoreActions(db, toast), [toast]);
     const systemActions = useMemo(() => useSystemActions(db, toast), [toast]);
+    const codeActions = useMemo(() => useCodeActions(db, toast), [toast]);
 
     useEffect(() => {
         const process = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate() || new Date() }));
@@ -194,6 +208,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             onSnapshot(collection(db, 'storeItems'), (s) => setStoreItems(process(s))),
             onSnapshot(collection(db, 'videoCategories'), (s) => setVideoCategories(process(s))),
             onSnapshot(collection(db, 'videoLectures'), (s) => setVideoLectures(process(s))),
+            onSnapshot(query(collection(db, 'redeemCodes'), orderBy('createdAt', 'desc')), (s) => setRedeemCodes(process(s))),
         ];
         return () => unsubs.forEach(u => u());
     }, []);
@@ -211,12 +226,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
         announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
-        videoCategories, videoLectures, activePoll: allPolls.find(p => p.isActive) || null,
+        videoCategories, videoLectures, redeemCodes, activePoll: allPolls.find(p => p.isActive) || null,
         
         ...userActions,
         ...contentActions,
         ...storeActions,
         ...systemActions,
+        ...codeActions,
         
         triggerAegisPulse: async () => {
             if (users.length === 0) throw new Error("No citizens detected.");
@@ -238,12 +254,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         submitSupportTicket: (m: string) => systemActions.submitSupportTicket(m, authUser!.id, currentUserData!.displayName),
         topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
+        redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
     }), [
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, 
         announcements, resources, resourceSections, dailySurprises, supportTickets, 
         allPolls, appSettings, globalGifts, featureShowcases, creditPacks, 
-        storeItems, videoCategories, videoLectures,
-        userActions, contentActions, storeActions, systemActions, authUser?.id
+        storeItems, videoCategories, videoLectures, redeemCodes,
+        userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id
     ]);
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
