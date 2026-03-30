@@ -8,7 +8,7 @@ import { useLeaderboardData, UserWithStats } from '@/hooks/use-leaderboard-data'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Settings2, Loader2, Trophy, ShieldCheck, Globe, Info, X } from 'lucide-react';
+import { Settings2, Loader2, Trophy, ShieldCheck, Globe, Info, X, Target, Star } from 'lucide-react';
 import { UserProfileCard } from '@/components/profile/user-profile-card';
 import { AllTimeTab } from '@/components/leaderboard/tabs/all-time-tab';
 import { WeeklyTab } from '@/components/leaderboard/tabs/weekly-tab';
@@ -38,6 +38,12 @@ export default function LeaderboardPage() {
     const lastWeekWeeklyWinner = useMemo(() => [...processedUsers].sort((a, b) => b.prevWeeklyTime - a.prevWeeklyTime)[0], [processedUsers]);
     const lastWeekGameWinner = useMemo(() => [...processedUsers].sort((a, b) => b.prevWeekEntertainmentTotalScore - a.prevWeekEntertainmentTotalScore)[0], [processedUsers]);
 
+    const handleFindMe = () => {
+        if (typeof window !== 'undefined' && (window as any).scrollToUserRank) {
+            (window as any).scrollToUserRank();
+        }
+    };
+
     if (loading) {
         return (
             <div className="flex h-screen items-center justify-center bg-background">
@@ -50,7 +56,7 @@ export default function LeaderboardPage() {
     }
 
     return (
-        <div className="min-h-full flex flex-col space-y-8 pb-40 max-w-7xl mx-auto px-4 w-full">
+        <div className="min-h-full flex flex-col space-y-8 pb-40 max-w-7xl mx-auto px-4 w-full relative">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-4">
                 <motion.div 
                     initial={{ opacity: 0, y: -20 }}
@@ -73,6 +79,13 @@ export default function LeaderboardPage() {
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <Button 
                         variant="outline" 
+                        className="flex-1 md:flex-none h-12 rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10 font-black uppercase text-[10px] tracking-widest px-6"
+                        onClick={handleFindMe}
+                    >
+                        <Target className="mr-2 h-4 w-4"/> Find Me
+                    </Button>
+                    <Button 
+                        variant="outline" 
                         size="icon"
                         className="h-12 w-12 rounded-2xl border-primary/20 hover:bg-primary/10 transition-all"
                         onClick={() => setIsInfoOpen(true)}
@@ -84,7 +97,7 @@ export default function LeaderboardPage() {
                         className="flex-1 md:flex-none h-12 rounded-2xl border-primary/20 hover:bg-primary/5 font-black uppercase text-[10px] tracking-widest px-6"
                         onClick={() => setIsPrivacyOpen(true)}
                     >
-                        <Settings2 className="mr-2 h-4 w-4"/> Phantom Mode
+                        <Settings2 className="mr-2 h-4 w-4"/> Phantom
                     </Button>
                 </div>
             </header>
@@ -126,14 +139,14 @@ export default function LeaderboardPage() {
                         <DialogTitle className="text-2xl font-black uppercase italic flex items-center gap-2">
                             <Info className="text-primary h-6 w-6"/> Scoring Protocol
                         </DialogTitle>
-                        <DialogDescription className="font-bold">How tactical points are calculated.</DialogDescription>
+                        <DialogDescription className="font-bold">The mathematical architecture of excellence.</DialogDescription>
                     </DialogHeader>
                     <div className="py-6 space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <InfoBlock label="Study Time" desc="1 Point per Minute" color="text-sky-400" />
-                            <InfoBlock label="Consistency" desc="10 Points per Streak Day" color="text-orange-500" />
-                            <InfoBlock label="Economy" desc="1/2 Point per Credit" color="text-amber-500" />
-                            <InfoBlock label="D-Index" desc="Direct Score Index (Soon)" color="text-emerald-500" />
+                            <InfoBlock label="Study Mastery" desc="1 Point per Minute Logged" color="text-sky-400" />
+                            <InfoBlock label="Streak Loyalty" desc="10 Points per Daily Streak" color="text-orange-500" />
+                            <InfoBlock label="Standard Economy" desc="1/2 Point per Credit Held" color="text-amber-500" />
+                            <InfoBlock label="Strategic Index" desc="Discipline Weighting (Soon)" color="text-emerald-500" />
                         </div>
                         <div className="p-6 rounded-[2rem] bg-red-500/5 border border-red-500/20">
                             <h4 className="text-xs font-black uppercase text-red-500 tracking-widest mb-3 flex items-center gap-2">
