@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -10,11 +11,12 @@ import {
     MessageSquare, ExternalLink, ShieldAlert,
     BookOpen, ChevronDown, Timer, Map, Wrench, X, Crown,
     Globe, CheckCircle, GraduationCap, Users, Heart, Quote,
-    Swords, Trophy, Flame, Star
+    Swords, Trophy, Flame, Star, FileText
 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 import { SignInButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import { 
     Card, 
     CardContent, 
@@ -317,7 +319,7 @@ export function LandingPage() {
                                             <AvatarFallback>WM</AvatarFallback>
                                         </Avatar>
                                     </div>
-                                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter leading-tight">Mohammed Waiz Monazzum</h3>
+                                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter leading-tight">Waiz Marco</h3>
                                     <p className="text-yellow-400 text-xs font-black uppercase tracking-widest mt-2">Founder & Chairman (MD)</p>
                                     <p className="text-slate-400 text-sm mt-6 font-bold leading-relaxed">Chief Architect of MindMate</p>
                                     <Button variant="ghost" className="mt-8 text-yellow-400/60 group-hover:text-yellow-400 transition-colors uppercase font-black text-[10px] tracking-widest">
@@ -539,7 +541,7 @@ function FounderDialog({ founder, onClose }: { founder: 'waiz' | 'msm' | null, o
                                         </Avatar>
                                     </div>
                                     <div className="pb-2 text-center sm:text-left flex-1 min-w-0">
-                                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none truncate">Msm</h2>
+                                        <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter leading-none truncate">Shabaan Moazzum</h2>
                                         <p className="text-primary font-black uppercase text-[10px] tracking-[0.3em] mt-2">Founder & CEO</p>
                                     </div>
                                 </div>
