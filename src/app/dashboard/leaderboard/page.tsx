@@ -8,7 +8,7 @@ import { useLeaderboardData, UserWithStats } from '@/hooks/use-leaderboard-data'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Settings2, Loader2, Trophy, ShieldCheck, Globe, Info, X, Target, Star, Medal, Clock, Flame, ShieldAlert, Award } from 'lucide-react';
+import { Settings2, Loader2, Trophy, ShieldCheck, Globe, Info, X, Target, Star, Medal, Clock, Flame, ShieldAlert, Award, Gem } from 'lucide-react';
 import { AllTimeTab } from '@/components/leaderboard/tabs/all-time-tab';
 import { WeeklyTab } from '@/components/leaderboard/tabs/weekly-tab';
 import { GameZoneTab } from '@/components/leaderboard/tabs/game-zone-tab';
@@ -110,7 +110,7 @@ export default function LeaderboardPage() {
                 </div>
 
                 <div className="animate-in fade-in-50 duration-700 w-full">
-                    <TabsContent value="all-time" className="m-0 w-full">
+                    <TabsContent value="all-time" className="h-full m-0 w-full">
                         <AllTimeTab users={sortedByScore} currentUserId={currentUser?.id} onUserClick={() => {}} />
                     </TabsContent>
                     
