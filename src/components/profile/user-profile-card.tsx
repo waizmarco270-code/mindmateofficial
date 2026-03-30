@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock, ShieldAlert, Snowflake, Sparkles, Bird, Moon, TrendingUp } from 'lucide-react';
+import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock, ShieldAlert, Snowflake, Sparkles, Bird, Moon, TrendingUp, Wallet, Anchor, Lock, Zap as ZapIcon } from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -43,7 +43,12 @@ const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
     'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span> },
     'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span> },
     'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> },
-    streaker: { name: 'Streaker', badge: <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span> }
+    streaker: { name: 'Streaker', badge: <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span> },
+    isolater: { name: 'Isolater', badge: <span className="isolater-badge">ISOLATER</span> },
+    'iso-warrior': { name: 'ISO-Warrior', badge: <span className="iso-warrior-badge">ISO-WARRIOR</span> },
+    warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
+    'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
+    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> }
 };
 
 export function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProfile?: boolean }) {
@@ -75,7 +80,12 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
         user.isCoDev && 'co-dev',
         user.isEarlyBird && 'early-bird',
         user.isNightOwl && 'night-owl',
-        user.isKnowledgeKnight && 'knowledge-knight'
+        user.isKnowledgeKnight && 'knowledge-knight',
+        user.isIsolater && 'isolater',
+        user.isIsoWarrior && 'iso-warrior',
+        user.isWarrior && 'warrior',
+        user.isIsoMaster && 'iso-master',
+        user.isSovereign && 'sovereign'
     ].filter(Boolean) as BadgeType[];
     
     if(isSuperAdmin) ownedBadgesList.unshift('dev');
@@ -86,6 +96,7 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
 
     const stats = [
         { label: 'Total Credits', value: hasMasterCard ? '∞' : user.credits.toLocaleString(), icon: Medal, color: 'text-amber-500' },
+        { label: 'Vault Assets', value: `₹${(user.walletBalance || 0).toLocaleString()}`, icon: Wallet, color: 'text-emerald-500' },
         { label: 'Current Streak', value: user.streak || 0, icon: Flame, color: 'text-orange-500' },
         { label: 'Longest Streak', value: user.longestStreak || 0, icon: Trophy, color: 'text-yellow-400' },
         { label: 'Focus Sessions', value: user.focusSessionsCompleted || 0, icon: Zap, color: 'text-green-500' },

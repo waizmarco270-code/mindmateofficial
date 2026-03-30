@@ -10,7 +10,7 @@ import {
     Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, 
     Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, 
     Vote, Megaphone, BellRing, Lock, Unlock, Trash, Clock, 
-    ShieldAlert, ExternalLink, CheckCircle, Bird, Moon
+    ShieldAlert, ExternalLink, CheckCircle, Bird, Moon, Anchor
 } from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
@@ -54,7 +54,13 @@ const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
     'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> },
     'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span> },
     'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span> },
-    'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> }
+    'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> },
+    streaker: { name: 'Streaker', badge: <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span> },
+    isolater: { name: 'Isolater', badge: <span className="isolater-badge">ISOLATER</span> },
+    'iso-warrior': { name: 'ISO-Warrior', badge: <span className="iso-warrior-badge">ISO-WARRIOR</span> },
+    warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
+    'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
+    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> }
 };
 
 function SmartText({ text }: { text?: string }) {
@@ -89,6 +95,10 @@ function SmartText({ text }: { text?: string }) {
             })}
         </div>
     );
+}
+
+function Flame({ className }: { className?: string }) {
+    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.21 1.14-3.027L8.5 14.5Z"/></svg>;
 }
 
 export function WorldChatView() {
@@ -287,7 +297,7 @@ export function WorldChatView() {
                                     sender={sender} 
                                     isOwn={isOwn} 
                                     showHeader={showHeader} 
-                                    onUserSelect={setSelectedUser} 
+                                    onUserSelect={onUserSelect} 
                                     onReply={setReplyingTo}
                                     onClaimRain={() => claimRain(msg.id)}
                                 />
@@ -472,6 +482,11 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
         (sender.isEarlyBird) && 'early-bird',
         (sender.isNightOwl) && 'night-owl',
         (sender.isKnowledgeKnight) && 'knowledge-knight',
+        (sender.isIsolater) && 'isolater',
+        (sender.isIsoWarrior) && 'iso-warrior',
+        (sender.isWarrior) && 'warrior',
+        (sender.isIsoMaster) && 'iso-master',
+        (sender.isSovereign) && 'sovereign'
     ].filter(Boolean) as BadgeType[];
 
     const showcasedBadge = sender.showcasedBadge && ownedBadges.includes(sender.showcasedBadge) 
