@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
@@ -10,7 +9,8 @@ import {
     Clock, 
     MessageSquare, ExternalLink, ShieldAlert,
     BookOpen, FileText, ChevronDown, Timer, Map, Wrench, X, Star, Crown,
-    Globe, BrainCircuit, Trophy, CheckCircle, Smartphone, Lock
+    Globe, BrainCircuit, Trophy, CheckCircle, Smartphone, Lock,
+    Swords
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
