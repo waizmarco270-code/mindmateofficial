@@ -1,3 +1,4 @@
+
 /* SOVEREIGN LANDING - CONTINUOUS SCROLL PROTOCOL */
 
 .landing-root {
@@ -111,4 +112,5 @@
 @media (max-width: 768px) {
   .scroll-section { padding: 4rem 1rem; min-height: auto; }
   .logo-text { display: none; }
+  .ingress-btn { padding-left: 1rem; padding-right: 1rem; font-size: 0.75rem; height: 2.5rem; }
 }

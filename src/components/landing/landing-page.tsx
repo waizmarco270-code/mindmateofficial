@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { 
     ArrowRight, Bot, Zap, 
@@ -10,7 +10,7 @@ import {
     Clock, 
     MessageSquare, ExternalLink, ShieldAlert,
     BookOpen, FileText, ChevronDown, Timer, Map, Wrench, X, Star, Crown,
-    Globe
+    Globe, BrainCircuit, Trophy, CheckCircle, Smartphone, Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
@@ -18,11 +18,12 @@ import { SignUpButton, SignInButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import '@/app/landing.css';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ActivityGlobe } from './ActivityGlobe';
 import { IntelFeed } from './IntelFeed';
+import { ThreeDCore } from './ThreeDCore';
 
 // --- PLEXUS ENGINE ---
 class Node {
@@ -191,15 +192,12 @@ export function LandingPage() {
                         viewport={{ once: true }}
                         className="max-w-4xl flex flex-col items-center text-center"
                     >
-                        <motion.div variants={itemVariants} className="flex gap-3 mb-8">
-                            <span className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-primary">🤖 AI Native</span>
-                            <span className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-emerald-400">🛡️ Secure Vault</span>
-                        </motion.div>
+                        <ThreeDCore />
                         <motion.h1 variants={itemVariants} className="text-6xl md:text-9xl font-black tracking-tighter leading-[0.9] uppercase mb-8">
                             ASCEND TO <br />
                             <span className="keyword-glow">GREATNESS.</span>
                         </motion.h1>
-                        <motion.p variants={itemVariants} className="text-lg text-slate-400 max-w-xl leading-relaxed mb-10 opacity-80">
+                        <motion.p variants={itemVariants} className="text-lg text-slate-400 max-w-xl leading-relaxed mb-10 opacity-80 px-4">
                             The integrated study ecosystem for elite scholars. Tactical AI guidance, deep focus protocols, and collective mastery.
                         </motion.p>
                         <motion.div variants={itemVariants} className="flex gap-4">
@@ -226,7 +224,7 @@ export function LandingPage() {
                             viewport={{ once: true }}
                             className="text-center mb-16"
                         >
-                            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic">Operational Briefing</h2>
+                            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-shadow-glow">Operational Briefing</h2>
                             <p className="text-slate-400 mt-4 max-w-xl mx-auto font-medium">Integrated student modules designed for academic dominance.</p>
                         </motion.div>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
@@ -250,6 +248,83 @@ export function LandingPage() {
                     </div>
                 </section>
 
+                <section className="scroll-section border-y border-white/5 py-32">
+                    <div className="container px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+                        <motion.div 
+                            initial={{ opacity: 0, x: -50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="space-y-8"
+                        >
+                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic leading-none">
+                                <span className="text-purple-400 flex items-center gap-4"><BrainCircuit className="h-12 w-12" /> Neural Link</span>
+                                ADAPTIVE AI
+                            </h2>
+                            <p className="text-xl text-slate-400 font-medium leading-relaxed">
+                                Marco AI isn't just a chatbot—it's a cognitive sync. It analyzes your study history, recognizes burnout patterns, and adjusts mission directives in real-time.
+                            </p>
+                            <div className="flex gap-4">
+                                <span className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-[10px] font-black uppercase tracking-widest text-purple-400">Genkit V1 Core</span>
+                                <span className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-[10px] font-black uppercase tracking-widest text-purple-400">Zero Latency</span>
+                            </div>
+                        </motion.div>
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            className="relative"
+                        >
+                            <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-[100px]" />
+                            <div className="relative p-12 rounded-[3rem] border-2 border-purple-500/30 bg-black/40 backdrop-blur-2xl text-center">
+                                <Bot className="h-32 w-32 mx-auto text-purple-400 animate-pulse" />
+                                <div className="mt-8 space-y-4">
+                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full w-3/4 bg-purple-500" /></div>
+                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full w-1/2 bg-purple-500" /></div>
+                                    <p className="text-[10px] font-black uppercase text-purple-400">Syncing Intelligence...</p>
+                                </div>
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+
+                <section className="scroll-section bg-black/40 overflow-hidden py-32">
+                    <div className="container px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+                        <motion.div 
+                            initial={{ opacity: 0, x: 50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="lg:order-2 space-y-8"
+                        >
+                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic leading-none">
+                                <span className="text-green-400 flex items-center gap-4"><Swords className="h-12 w-12" /> Collective IQ</span>
+                                CLAN DOMINANCE
+                            </h2>
+                            <p className="text-xl text-slate-400 font-medium leading-relaxed">
+                                Forge a Study Clan. Level up together through collective focused time. High-level clans unlock custom banners, elite badges, and legendary status in the Global Forum.
+                            </p>
+                            <Button asChild variant="outline" className="rounded-2xl border-green-500/30 text-green-400 font-black h-14 px-8">
+                                <Link href="/dashboard/groups">EXPLORE CLANS <ChevronDown className="ml-2 h-4 w-4" /></Link>
+                            </Button>
+                        </motion.div>
+                        <motion.div 
+                            initial={{ opacity: 0, x: -50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            className="lg:order-1 relative h-[400px]"
+                        >
+                            <div className="absolute inset-0 bg-green-500/10 rounded-full blur-[100px]" />
+                            <div className="grid grid-cols-2 gap-4 h-full">
+                                {[1,2,3,4].map(i => (
+                                    <div key={i} className="rounded-3xl border border-white/5 bg-white/[0.02] p-6 flex flex-col items-center justify-center gap-4">
+                                        <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center"><CheckCircle className="text-green-400" /></div>
+                                        <div className="h-1.5 w-12 bg-green-500/40 rounded-full" />
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+
                 {/* GLOBAL MAINFRAME SECTION */}
                 <section className="scroll-section bg-black/40">
                     <div className="container px-4">
@@ -260,13 +335,13 @@ export function LandingPage() {
                             className="flex flex-col items-center gap-12"
                         >
                             <div className="text-center">
-                                <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic">Global Mainframe</h2>
+                                <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-shadow-glow">Global Mainframe</h2>
                                 <p className="text-slate-400 mt-2 font-black uppercase tracking-[0.2em] text-[10px]">Real-time Network Intelligence</p>
                             </div>
                             
                             <ActivityGlobe />
                             
-                            <div className="w-full max-w-5xl">
+                            <div className="w-full max-w-5xl px-4">
                                 <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-4 text-center">Live Intelligence Relay</p>
                                 <IntelFeed />
                             </div>
@@ -299,12 +374,12 @@ export function LandingPage() {
                                 <div className="relative glass-module p-10 flex flex-col items-center text-center border-yellow-400/30">
                                     <div className="relative mb-8">
                                         <div className="absolute -inset-4 bg-yellow-400/10 rounded-full animate-pulse" />
-                                        <Avatar className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-yellow-400 shadow-2xl bg-black">
+                                        <Avatar className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-yellow-400 shadow-2xl bg-black relative z-10">
                                             <AvatarImage src="https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18zMldnVjZTYUx3c0xUUUZsdTlnSFN3UmcwY3kifQ" />
                                             <AvatarFallback>WM</AvatarFallback>
                                         </Avatar>
                                     </div>
-                                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">Mohammed Waiz Monazzum</h3>
+                                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter leading-tight">Mohammed Waiz Monazzum</h3>
                                     <p className="text-yellow-400 text-xs font-black uppercase tracking-widest mt-2">Founder & Chairman (MD)</p>
                                     <p className="text-slate-400 text-sm mt-6 font-bold leading-relaxed">Chief Architect of MindMate</p>
                                     <Button variant="ghost" className="mt-8 text-yellow-400/60 group-hover:text-yellow-400 transition-colors uppercase font-black text-[10px] tracking-widest">
@@ -327,7 +402,7 @@ export function LandingPage() {
                                         <AvatarImage src="https://picsum.photos/seed/msm/400" />
                                         <AvatarFallback>MSM</AvatarFallback>
                                     </Avatar>
-                                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">Shabaan Moazzum</h3>
+                                    <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter leading-tight">Shabaan Moazzum</h3>
                                     <p className="text-primary text-xs font-black uppercase tracking-widest mt-2">Founder & CEO</p>
                                     <p className="text-slate-400 text-sm mt-6 font-bold leading-relaxed">UI/UX Strategist of MindMate</p>
                                     <Button variant="ghost" className="mt-8 text-primary/60 group-hover:text-primary transition-colors uppercase font-black text-[10px] tracking-widest">
@@ -362,7 +437,7 @@ export function LandingPage() {
                             <div className="text-center md:text-left">
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Mainframe</h5>
                                 <ul className="space-y-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    <li><Link href="https://emitygate.com" target="_blank" className="nav-link flex items-center justify-center md:justify-start gap-2">EmityGate Solutions <ExternalLink className="h-3 w-3"/></Link></li>
+                                    <li><Link href="https://emitygate.com" target="_blank" className="nav-link flex items-center justify-center md:justify-start gap-2 text-nowrap">EmityGate Solutions <ExternalLink className="h-3 w-3"/></Link></li>
                                     <li><Link href="/about" className="nav-link">Strategic Mission</Link></li>
                                     <li><Link href="/dashboard/docs" className="nav-link flex items-center justify-center md:justify-start gap-2">Sovereign Docs <BookOpen className="h-3 w-3"/></Link></li>
                                     <li><Link href="/contact" className="nav-link flex items-center justify-center md:justify-start gap-2">Relay Signal <MessageSquare className="h-3 w-3"/></Link></li>
@@ -403,7 +478,7 @@ export function LandingPage() {
                             </div>
                         </div>
 
-                        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 px-4 text-center md:text-left">
                             <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">
                                 © {new Date().getFullYear()} EmityGate Solutions. All Rights Reserved.
                             </p>
@@ -429,21 +504,24 @@ function FounderDialog({ founder, onClose }: { founder: 'waiz' | 'msm' | null, o
 
     return (
         <Dialog open={!!founder} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent className="max-w-2xl bg-black/95 border-yellow-400/20 backdrop-blur-2xl p-0 overflow-hidden rounded-[2.5rem] md:rounded-[3rem] h-fit max-h-[90vh]">
+            <DialogContent className="max-w-xl bg-black/95 border-yellow-400/20 backdrop-blur-2xl p-0 overflow-hidden rounded-[2.5rem] md:rounded-[3rem] h-fit max-h-[90vh] sm:max-h-none border-4">
                 <ScrollArea className="h-full">
-                    <div className="relative h-48 bg-gradient-to-br from-yellow-400/20 via-black to-black">
+                    <div className="relative h-40 bg-gradient-to-br from-yellow-400/20 via-black to-black border-b border-white/5">
                         <div className="absolute inset-0 bg-grid-white/5" />
-                        <Button variant="ghost" size="icon" className="absolute top-6 right-6 text-white/40 hover:text-white z-50" onClick={onClose}><X/></Button>
+                        <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-white/40 hover:text-white hover:bg-white/10 z-50 rounded-full h-10 w-10" onClick={onClose}><X className="h-6 w-6"/></Button>
                     </div>
-                    <div className="px-6 md:px-8 pb-12 -mt-16 relative z-10">
+                    <div className="px-6 md:px-10 pb-12 -mt-16 relative z-10">
                         {founder === 'waiz' ? (
                             <div className="space-y-8">
                                 <div className="flex flex-col sm:flex-row items-end gap-6">
-                                    <Avatar className="h-40 w-40 border-4 border-yellow-400 shadow-2xl bg-black">
-                                        <AvatarImage src="https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18zMldnVjZTYUx3c0xUUUZsdTlnSFN3UmcwY3kifQ" />
-                                    </Avatar>
-                                    <div className="pb-2 text-center sm:text-left">
-                                        <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none">Waiz Marco</h2>
+                                    <div className="relative">
+                                        <div className="absolute -inset-2 bg-yellow-400/20 rounded-full blur animate-pulse" />
+                                        <Avatar className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-yellow-400 shadow-2xl bg-black relative z-10">
+                                            <AvatarImage src="https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18zMldnVjZTYUx3c0xUUUZsdTlnSFN3UmcwY3kifQ" />
+                                        </Avatar>
+                                    </div>
+                                    <div className="pb-2 text-center sm:text-left flex-1 min-w-0">
+                                        <h2 className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter leading-none truncate">Waiz Marco</h2>
                                         <p className="text-yellow-400 font-black uppercase text-[10px] tracking-[0.3em] mt-2">Mohammed Waiz Monazzum</p>
                                     </div>
                                 </div>
@@ -458,7 +536,7 @@ function FounderDialog({ founder, onClose }: { founder: 'waiz' | 'msm' | null, o
                                     </div>
                                     <div className="p-4 rounded-3xl bg-yellow-400/10 border border-yellow-400/20 text-center col-span-2 sm:col-span-1">
                                         <p className="text-[8px] font-black uppercase text-yellow-400 mb-1 tracking-widest">Founding</p>
-                                        <p className="text-xl font-black text-yellow-400">EMITYGATE</p>
+                                        <p className="text-xl font-black text-yellow-400 text-nowrap">EMITYGATE</p>
                                     </div>
                                 </div>
                                 <div className="space-y-4">
@@ -474,11 +552,14 @@ function FounderDialog({ founder, onClose }: { founder: 'waiz' | 'msm' | null, o
                         ) : (
                             <div className="space-y-8">
                                 <div className="flex flex-col sm:flex-row items-end gap-6">
-                                    <Avatar className="h-40 w-40 border-4 border-primary shadow-2xl bg-black">
-                                        <AvatarImage src="https://picsum.photos/seed/msm/400" />
-                                    </Avatar>
-                                    <div className="pb-2 text-center sm:text-left">
-                                        <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none">Msm</h2>
+                                    <div className="relative">
+                                        <div className="absolute -inset-2 bg-primary/20 rounded-full blur animate-pulse" />
+                                        <Avatar className="h-32 w-32 sm:h-40 sm:w-40 border-4 border-primary shadow-2xl bg-black relative z-10">
+                                            <AvatarImage src="https://picsum.photos/seed/msm/400" />
+                                        </Avatar>
+                                    </div>
+                                    <div className="pb-2 text-center sm:text-left flex-1 min-w-0">
+                                        <h2 className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter leading-none truncate">Msm</h2>
                                         <p className="text-primary font-black uppercase text-[10px] tracking-[0.3em] mt-2">Shabaan Moazzum</p>
                                     </div>
                                 </div>
