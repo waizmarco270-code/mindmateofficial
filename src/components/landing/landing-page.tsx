@@ -32,7 +32,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { ActivityGlobe } from '@/components/landing/ActivityGlobe';
 import { IntelFeed } from '@/components/landing/IntelFeed';
-import { ThreeDCore } from '@/components/landing/ThreeDCore';
 
 // --- PLEXUS ENGINE ---
 class Node {
@@ -207,7 +206,6 @@ export function LandingPage() {
                         viewport={{ once: true }}
                         className="max-w-4xl mx-auto flex flex-col items-center text-center"
                     >
-                        <ThreeDCore />
                         <motion.h1 variants={itemVariants} className="text-6xl md:text-[10rem] font-black tracking-tighter leading-[0.85] uppercase mb-8 mt-12">
                             ASCEND TO <br />
                             <span className="keyword-glow">GREATNESS.</span>
@@ -541,7 +539,7 @@ function FounderDialog({ founder, onClose }: { founder: 'waiz' | 'msm' | null, o
                                         </Avatar>
                                     </div>
                                     <div className="pb-2 text-center sm:text-left flex-1 min-w-0">
-                                        <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter leading-none truncate">Shabaan Moazzum</h2>
+                                        <h2 className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter leading-none truncate">Shabaan Moazzum</h2>
                                         <p className="text-primary font-black uppercase text-[10px] tracking-[0.3em] mt-2">Founder & CEO</p>
                                     </div>
                                 </div>

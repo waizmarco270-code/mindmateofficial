@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -60,6 +61,7 @@ export function ActivityGlobe() {
     const geometry = new THREE.SphereGeometry(radius, 64, 64);
     const textureLoader = new THREE.TextureLoader();
     
+    // Using a reliable CDN for planetary textures
     const texture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', () => {
         setIsLoading(false);
     });
