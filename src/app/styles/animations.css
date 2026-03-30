@@ -46,6 +46,24 @@
   50% { filter: drop-shadow(0 0 6px #fde047) drop-shadow(0 0 12px #f59e0b); }
 }
 
+@keyframes silver-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(226, 232, 240, 0.2); filter: brightness(1); }
+  50% { box-shadow: 0 0 20px rgba(226, 232, 240, 0.5); filter: brightness(1.2); }
+}
+
+@keyframes bronze-glow {
+  0%, 100% { box-shadow: 0 0 5px rgba(180, 83, 9, 0.2); filter: brightness(1); }
+  50% { box-shadow: 0 0 15px rgba(180, 83, 9, 0.4); filter: brightness(1.1); }
+}
+
+@keyframes alpha-rainbow-gold {
+  0% { border-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+  25% { border-color: #fde047; box-shadow: 0 0 20px #fde047; }
+  50% { border-color: #fbbf24; box-shadow: 0 0 10px #fbbf24; }
+  75% { border-color: #ffffff; box-shadow: 0 0 25px #ffffff; }
+  100% { border-color: #f59e0b; box-shadow: 0 0 10px #f59e0b; }
+}
+
 @keyframes fire-shimmer {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }

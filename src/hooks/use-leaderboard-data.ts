@@ -38,12 +38,13 @@ export type UserWithStats = User & {
     }
 };
 
+// SOVEREIGN SCORING DICTATE v2.0
 const ISOLATION_POINTS: Record<string, number> = {
     'isolater': 5000,      // 7d
-    'iso-warrior': 11000,  // 14d
-    'warrior': 26000,      // 21d/30d (Warrior badge used for both, 30d is the target for higher)
-    'iso-master': 45000,   // 3m/6m
-    'sovereign': 56000     // 1y
+    'iso-warrior': 15000,  // 14d
+    'warrior': 30000,      // 30d (Using 30d as base for Warrior rank points)
+    'iso-master': 100000,  // 3m (Note: simplified tier mapping)
+    'sovereign': 1000000   // 1y
 };
 
 export function useLeaderboardData() {
@@ -110,30 +111,30 @@ export function useLeaderboardData() {
                 const studyTimeSeconds = user.totalStudyTime || 0;
                 const streak = user.streak || 0;
                 
-                // SOVEREIGN SCORING LOGIC
+                // SOVEREIGN SCORING LOGIC v2.0
                 const creditsPoints = Math.round(credits / 2);
                 const studyPoints = Math.round(studyTimeSeconds / 60); // 1 point per minute
-                const streakPoints = streak;
+                const streakPoints = streak * 10; // Master Directive: 10pts per day
                 const disciplinePoints = 0; // Coming Soon
                 
                 let isolationPoints = 0;
                 let isolationLabel = 'None';
 
-                // Check badges for isolation points
+                // Check badges for isolation points - Tactical Mapping
                 if (user.isSovereign) {
-                    isolationPoints = ISOLATION_POINTS.sovereign;
+                    isolationPoints = 1000000; // 1 Year
                     isolationLabel = '1-Year Sovereign';
                 } else if (user.isIsoMaster) {
-                    isolationPoints = ISOLATION_POINTS['iso-master'];
+                    isolationPoints = 300000; // 6 Months (Defaulting Master to 6m for points)
                     isolationLabel = 'Master Protocol';
                 } else if (user.isWarrior) {
-                    isolationPoints = ISOLATION_POINTS.warrior;
+                    isolationPoints = 30000; // 30 Days
                     isolationLabel = '30-Day Warrior';
                 } else if (user.isIsoWarrior) {
-                    isolationPoints = ISOLATION_POINTS['iso-warrior'];
+                    isolationPoints = 15000; // 14 Days
                     isolationLabel = '14-Day ISO-Warrior';
                 } else if (user.isIsolater) {
-                    isolationPoints = ISOLATION_POINTS.isolater;
+                    isolationPoints = 5000; // 7 Days
                     isolationLabel = '7-Day Isolater';
                 }
 

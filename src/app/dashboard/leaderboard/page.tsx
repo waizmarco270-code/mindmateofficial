@@ -7,8 +7,8 @@ import { useUsers } from '@/hooks/use-admin';
 import { useLeaderboardData, UserWithStats } from '@/hooks/use-leaderboard-data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Settings2, Loader2, Trophy, ShieldCheck, Globe } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Settings2, Loader2, Trophy, ShieldCheck, Globe, Info, X } from 'lucide-react';
 import { UserProfileCard } from '@/components/profile/user-profile-card';
 import { AllTimeTab } from '@/components/leaderboard/tabs/all-time-tab';
 import { WeeklyTab } from '@/components/leaderboard/tabs/weekly-tab';
@@ -24,6 +24,7 @@ export default function LeaderboardPage() {
     const [activeTab, setActiveTab] = useState('all-time');
     const [selectedUser, setSelectedUser] = useState<UserWithStats | null>(null);
     const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
+    const [isInfoOpen, setIsInfoOpen] = useState(false);
 
     const filteredUsers = useMemo(() => {
         return processedUsers.filter(u => !u.isLeaderboardPrivate || u.uid === currentUser?.id);
@@ -48,7 +49,7 @@ export default function LeaderboardPage() {
     }
 
     return (
-        <div className="min-h-full flex flex-col space-y-8 pb-20 max-w-7xl mx-auto px-4 md:px-8">
+        <div className="min-h-full flex flex-col space-y-8 pb-20 max-w-7xl mx-auto px-4 w-full">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-4">
                 <motion.div 
                     initial={{ opacity: 0, y: -20 }}
@@ -71,7 +72,15 @@ export default function LeaderboardPage() {
                 <div className="flex items-center gap-3 w-full md:w-auto">
                     <Button 
                         variant="outline" 
-                        className="flex-1 md:flex-none h-12 rounded-2xl border-primary/20 hover:bg-primary/5 font-black uppercase text-[10px] tracking-widest"
+                        size="icon"
+                        className="h-12 w-12 rounded-2xl border-primary/20 hover:bg-primary/10 transition-all"
+                        onClick={() => setIsInfoOpen(true)}
+                    >
+                        <Info className="h-5 w-5 text-primary" />
+                    </Button>
+                    <Button 
+                        variant="outline" 
+                        className="flex-1 md:flex-none h-12 rounded-2xl border-primary/20 hover:bg-primary/5 font-black uppercase text-[10px] tracking-widest px-6"
                         onClick={() => setIsPrivacyOpen(true)}
                     >
                         <Settings2 className="mr-2 h-4 w-4"/> Phantom Mode
@@ -81,15 +90,15 @@ export default function LeaderboardPage() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex justify-center mb-12">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-3 h-16 p-1.5 bg-muted/30 backdrop-blur-xl rounded-[2rem] border-2 border-white/5">
+                    <TabsList className="grid w-full max-w-2xl grid-cols-3 h-16 p-1.5 bg-muted/30 backdrop-blur-xl rounded-[2.5rem] border-2 border-white/5">
                         <TabsTrigger value="all-time" className="rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-[0.2em] data-[state=active]:bg-primary data-[state=active]:text-white shadow-xl transition-all">All-Time</TabsTrigger>
                         <TabsTrigger value="weekly" className="rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-[0.2em] data-[state=active]:bg-primary data-[state=active]:text-white shadow-xl transition-all">Weekly</TabsTrigger>
                         <TabsTrigger value="game-zone" className="rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-[0.2em] data-[state=active]:bg-primary data-[state=active]:text-white shadow-xl transition-all">Arcade</TabsTrigger>
                     </TabsList>
                 </div>
 
-                <div className="animate-in fade-in-50 duration-700">
-                    <TabsContent value="all-time" className="m-0">
+                <div className="animate-in fade-in-50 duration-700 w-full">
+                    <TabsContent value="all-time" className="m-0 w-full">
                         <AllTimeTab users={sortedByScore} currentUserId={currentUser?.id} onUserClick={setSelectedUser} />
                     </TabsContent>
                     
@@ -110,6 +119,41 @@ export default function LeaderboardPage() {
                 onToggle={(val) => toggleLeaderboardPrivacy(currentUser!.id, val)}
             />
 
+            <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
+                <DialogContent className="max-w-2xl bg-background/95 backdrop-blur-xl border-primary/20 rounded-[2.5rem]">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-black uppercase italic flex items-center gap-2">
+                            <Info className="text-primary h-6 w-6"/> Scoring Protocol
+                        </DialogTitle>
+                        <DialogDescription className="font-bold">How tactical points are calculated.</DialogDescription>
+                    </DialogHeader>
+                    <div className="py-6 space-y-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <InfoBlock label="Study Time" desc="1 Point per Minute" color="text-sky-400" />
+                            <InfoBlock label="Consistency" desc="10 Points per Streak Day" color="text-orange-500" />
+                            <InfoBlock label="Economy" desc="1/2 Point per Credit" color="text-amber-500" />
+                            <InfoBlock label="D-Index" desc="Direct Score Index (Soon)" color="text-emerald-500" />
+                        </div>
+                        <div className="p-6 rounded-[2rem] bg-red-500/5 border border-red-500/20">
+                            <h4 className="text-xs font-black uppercase text-red-500 tracking-widest mb-3 flex items-center gap-2">
+                                <ShieldCheck className="h-4 w-4"/> Isolation Bounties
+                            </h4>
+                            <div className="grid grid-cols-2 gap-y-2 text-[10px] font-bold">
+                                <p>7 Days: <span className="text-red-500">5,000 PTS</span></p>
+                                <p>14 Days: <span className="text-red-500">15,000 PTS</span></p>
+                                <p>21 Days: <span className="text-red-500">25,000 PTS</span></p>
+                                <p>30 Days: <span className="text-red-500">30,000 PTS</span></p>
+                                <p>3 Months: <span className="text-red-500">100,000 PTS</span></p>
+                                <p>6 Months: <span className="text-red-500">300,000 PTS</span></p>
+                                <p className="col-span-2 mt-2 pt-2 border-t border-red-500/10 text-center text-sm">
+                                    1 Year: <span className="text-red-500 font-black">1,000,000 PTS</span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
                 <DialogContent className="max-w-md p-0 overflow-hidden border-none bg-transparent shadow-none">
                     {selectedUser && (
@@ -119,6 +163,15 @@ export default function LeaderboardPage() {
                     )}
                 </DialogContent>
             </Dialog>
+        </div>
+    );
+}
+
+function InfoBlock({ label, desc, color }: any) {
+    return (
+        <div className="p-4 rounded-2xl bg-muted/50 border border-white/5">
+            <p className={cn("text-xs font-black uppercase tracking-widest", color)}>{label}</p>
+            <p className="text-sm font-bold text-foreground mt-1">{desc}</p>
         </div>
     );
 }
