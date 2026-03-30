@@ -1,24 +1,25 @@
+
 'use client';
 
 import { useAdmin } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
     Users, Terminal, Gift, 
-    Key, Zap, ShieldCheck
+    Key, Zap, ShieldCheck, BellRing
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePresence } from '@/hooks/use-presence';
 import { cn } from '@/lib/utils';
 
 export default function SuperAdminHub() {
-    const { users } = useAdmin();
+    const { users, subscribedUserIds } = useAdmin();
     const { onlineUsers } = usePresence();
     const onlineCount = (onlineUsers || []).filter(u => u.isOnline).length;
 
     const stats = [
         { label: 'Total Citizens', value: users.length, icon: Users, color: 'text-primary' },
         { label: 'Online Legends', value: onlineCount, icon: Zap, color: 'text-green-500', isPulse: true },
-        { label: 'System Integrity', value: '100%', icon: ShieldCheck, color: 'text-blue-500' },
+        { label: 'Relay Reach', value: subscribedUserIds.size, icon: BellRing, color: 'text-yellow-500' },
         { label: 'System Health', value: 'Stable', icon: ShieldCheck, color: 'text-emerald-500' },
     ];
 

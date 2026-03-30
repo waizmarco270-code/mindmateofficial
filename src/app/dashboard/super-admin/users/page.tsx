@@ -19,7 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
     Users, UserCog, Ban, CreditCard, 
     ShieldCheck, Crown, Code, Gavel, 
-    Loader2, Search, MoreVertical
+    Loader2, Search, MoreVertical, BellRing, BellOff
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { useToast } from '@/hooks/use-toast';
@@ -33,7 +33,7 @@ import { addDays as dateFnsAddDays } from 'date-fns';
 
 export default function UserAuthorityPage() {
     const { 
-        users, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
+        users, subscribedUserIds, toggleUserBlock, makeUserAdmin, removeUserAdmin, 
         makeUserVip, removeUserVip, makeUserGM, removeUserGM,
         makeUserCoDev, removeUserCoDev, grantMasterCard
     } = useAdmin();
@@ -90,6 +90,7 @@ export default function UserAuthorityPage() {
                             <TableRow>
                                 <TableHead className="w-12">Status</TableHead>
                                 <TableHead>Student</TableHead>
+                                <TableHead>Relay</TableHead>
                                 <TableHead>Badges</TableHead>
                                 <TableHead>Credits</TableHead>
                                 <TableHead>State</TableHead>
@@ -99,6 +100,7 @@ export default function UserAuthorityPage() {
                         <TableBody>
                             {filteredUsers.map(u => {
                                 const isOnline = (onlineUsers || []).find(ou => ou.uid === u.uid)?.isOnline;
+                                const isSubscribed = subscribedUserIds.has(u.uid);
                                 const hasMaster = u.masterCardExpires && new Date(u.masterCardExpires) > new Date();
                                 const isDev = u.uid === SUPER_ADMIN_UID;
 
@@ -118,6 +120,17 @@ export default function UserAuthorityPage() {
                                                     <span className="text-[10px] text-muted-foreground font-mono uppercase tracking-tighter">{u.mindMateId || u.uid.slice(-8)}</span>
                                                 </div>
                                             </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {isSubscribed ? (
+                                                <Badge variant="outline" className="bg-yellow-400/10 border-yellow-400/30 text-yellow-500 gap-1.5 px-2 py-0.5 font-black uppercase text-[8px] animate-pulse">
+                                                    <BellRing className="h-2.5 w-2.5"/> Active
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="outline" className="bg-muted text-muted-foreground gap-1.5 px-2 py-0.5 font-black uppercase text-[8px] opacity-40">
+                                                    <BellOff className="h-2.5 w-2.5"/> Locked
+                                                </Badge>
+                                            )}
                                         </TableCell>
                                         <TableCell className="whitespace-nowrap space-x-1">
                                             {isDev && <Badge className="bg-red-500 text-[10px] font-black">Dev</Badge>}

@@ -133,6 +133,7 @@ interface AppDataContextType {
     featureShowcases: FeatureShowcase[]; creditPacks: CreditPack[]; storeItems: StoreItem[];
     videoCategories: VideoCategory[]; videoLectures: VideoLecture[];
     activePoll: Poll | null; redeemCodes: RedeemCode[];
+    subscribedUserIds: Set<string>;
     
     // Actions
     toggleUserBlock: any; toggleLeaderboardPrivacy: any; addCreditsToUser: any; applyFocusPenalty: any;
@@ -179,6 +180,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
     const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([]);
+    const [subscribedUserIds, setSubscribedUserIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
 
     const isAdmin = currentUserData?.isAdmin ?? false;
@@ -209,6 +211,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             onSnapshot(collection(db, 'videoCategories'), (s) => setVideoCategories(process(s))),
             onSnapshot(collection(db, 'videoLectures'), (s) => setVideoLectures(process(s))),
             onSnapshot(query(collection(db, 'redeemCodes'), orderBy('createdAt', 'desc')), (s) => setRedeemCodes(process(s))),
+            onSnapshot(collection(db, 'fcmTokens'), (s) => setSubscribedUserIds(new Set(s.docs.map(d => d.id)))),
         ];
         return () => unsubs.forEach(u => u());
     }, []);
@@ -227,6 +230,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
         videoCategories, videoLectures, redeemCodes, activePoll: allPolls.find(p => p.isActive) || null,
+        subscribedUserIds,
         
         ...userActions,
         ...contentActions,
@@ -259,7 +263,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, 
         announcements, resources, resourceSections, dailySurprises, supportTickets, 
         allPolls, appSettings, globalGifts, featureShowcases, creditPacks, 
-        storeItems, videoCategories, videoLectures, redeemCodes,
+        storeItems, videoCategories, videoLectures, redeemCodes, subscribedUserIds,
         userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id
     ]);
 
