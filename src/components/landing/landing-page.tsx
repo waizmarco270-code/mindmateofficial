@@ -174,18 +174,9 @@ export function LandingPage() {
                         <span className="logo-text font-black text-2xl tracking-tighter text-white uppercase">MindMate</span>
                     </div>
                     
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="flex items-center gap-4">
                         <SignInButton mode="modal">
-                            <Button variant="ghost" className="text-[10px] font-black uppercase text-white/70 hover:text-white">Login</Button>
-                        </SignInButton>
-                        <SignUpButton mode="modal">
-                            <Button className="ingress-btn h-11 px-8">Initialize</Button>
-                        </SignUpButton>
-                    </div>
-
-                    <div className="flex md:hidden">
-                        <SignInButton mode="modal">
-                            <Button className="ingress-btn h-10 px-6 text-[10px] rounded-full">Login to MindMate</Button>
+                            <Button className="ingress-btn h-11 px-8 rounded-full">Login to MindMate</Button>
                         </SignInButton>
                     </div>
                 </div>
