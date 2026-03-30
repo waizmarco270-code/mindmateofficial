@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,35 +30,43 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
     const topTwenty = users.slice(0, 20);
     const myRank = users.findIndex(u => u.uid === currentUserId) + 1;
     const myData = users.find(u => u.uid === currentUserId);
-    const isNotInTopTwenty = myRank > 20;
+    const isNotInTopTwenty = myRank > 20 || myRank === 0;
 
     const scrollToMe = useCallback(() => {
         if (currentUserId && itemRefs.current[currentUserId]) {
             itemRefs.current[currentUserId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setExpandedId(currentUserId);
+        } else if (isNotInTopTwenty) {
+            setExpandedId('my-rank');
+            const footer = document.getElementById('personal-rank-footer');
+            footer?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [currentUserId]);
+    }, [currentUserId, isNotInTopTwenty]);
 
-    // Expose scroll function via window for the parent to call
-    if (typeof window !== 'undefined') {
-        (window as any).scrollToUserRank = scrollToMe;
-    }
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            (window as any).scrollToUserRank = scrollToMe;
+        }
+    }, [scrollToMe]);
+
+    const getTierStyles = (rank: number, isMe: boolean) => {
+        if (rank === 1) return "border-[#f59e0b] shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-[alpha-rainbow-gold_4s_linear_infinite] bg-gradient-to-br from-yellow-500/10 to-amber-900/20";
+        if (rank === 2) return "border-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.2)] animate-[silver-glow_3s_ease-in-out_infinite] bg-gradient-to-br from-slate-400/10 to-slate-800/20";
+        if (rank === 3) return "border-[#b45309] shadow-[0_0_15px_rgba(180,83,9,0.2)] animate-[bronze-glow_3s_ease-in-out_infinite] bg-gradient-to-br from-amber-700/10 to-orange-900/20";
+        if (isMe) return "border-primary/30 bg-primary/5";
+        return "border-white/5 bg-card/40";
+    };
 
     return (
-        <div className="space-y-4 max-w-7xl mx-auto w-full pb-40">
+        <div className="space-y-4 max-w-7xl mx-auto w-full pb-40 px-2 sm:px-0">
             {topTwenty.map((user, index) => {
                 const rank = index + 1;
                 const isExpanded = expandedId === user.uid;
                 const isMe = user.uid === currentUserId;
-                
-                const tierStyles = {
-                    1: "border-[#f59e0b] shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-[alpha-rainbow-gold_4s_linear_infinite] bg-gradient-to-br from-yellow-500/10 to-amber-900/20",
-                    2: "border-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.2)] animate-[silver-glow_3s_ease-in-out_infinite] bg-gradient-to-br from-slate-400/10 to-slate-800/20",
-                    3: "border-[#b45309] shadow-[0_0_15px_rgba(180,83,9,0.2)] animate-[bronze-glow_3s_ease-in-out_infinite] bg-gradient-to-br from-amber-700/10 to-orange-900/20"
-                }[rank as 1|2|3] || (isMe ? "border-primary/30 bg-primary/5" : "border-white/5 bg-card/40");
+                const tierStyles = getTierStyles(rank, isMe);
 
                 return (
-                    <div key={user.uid} ref={el => itemRefs.current[user.uid] = el}>
+                    <div key={user.uid} ref={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}>
                         <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -76,7 +83,13 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                 <div className="p-4 sm:p-6 flex items-center gap-4 sm:gap-8">
                                     <div className="w-8 sm:w-12 text-center font-black italic text-xl sm:text-3xl opacity-40">#{rank}</div>
                                     
-                                    <button onClick={(e) => { e.stopPropagation(); onUserClick(user); }} className="relative group/avatar">
+                                    <button 
+                                        onClick={(e) => { 
+                                            e.stopPropagation(); 
+                                            onUserClick(user); 
+                                        }} 
+                                        className="relative group/avatar"
+                                    >
                                         <div className="absolute -inset-1 bg-primary/20 rounded-full blur opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
                                         <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-white/10 relative z-10">
                                             <AvatarImage src={user.photoURL} />
@@ -88,10 +101,15 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                         <div className="flex items-center gap-3 flex-wrap">
                                             <p className="font-black text-sm sm:text-xl uppercase tracking-tight truncate italic">{user.displayName}</p>
                                             <ShowcaseBadge user={user} />
-                                            {user.isLeaderboardPrivate && <EyeOff className="h-3 w-3 text-white/30" />}
+                                            {user.isLeaderboardPrivate && (
+                                                <div className="flex items-center gap-1 text-white/40">
+                                                    <EyeOff className="h-3 w-3" />
+                                                    <span className="text-[8px] font-black uppercase">Phantom</span>
+                                                </div>
+                                            )}
                                         </div>
                                         <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1 opacity-60">
-                                            {user.mindMateId || 'GENESIS LEGEND'}
+                                            {user.mindMateId || 'LEGENDARY CITIZEN'}
                                         </p>
                                     </div>
 
@@ -125,74 +143,75 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                             </Card>
                         </motion.div>
                     </div>
-                ))}
+                );
+            })}
 
-                {/* STICKY BOTTOM PERSONAL MONITOR (Only for Rank > 20) */}
-                <AnimatePresence>
-                    {isNotInTopTwenty && myData && (
-                        <motion.div 
-                            initial={{ y: 100 }}
-                            animate={{ y: 0 }}
-                            className="fixed bottom-[88px] left-0 right-0 z-[100] px-4 md:px-8 pointer-events-none"
-                        >
-                            <div className="max-w-7xl mx-auto pointer-events-auto">
-                                <Card 
-                                    className="bg-[#0a0a0a]/95 backdrop-blur-2xl border-t-2 border-primary shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[2.5rem] overflow-hidden relative cursor-pointer group"
-                                    onClick={() => setExpandedId(expandedId === 'my-rank' ? null : 'my-rank')}
-                                >
-                                    <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
-                                    <div className="p-4 sm:p-6 flex items-center justify-between text-white relative z-10">
-                                        <div className="flex items-center gap-4 sm:gap-8">
-                                            <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-primary/20 border-2 border-primary/40 flex flex-col items-center justify-center font-black text-xl sm:text-2xl italic leading-none">
-                                                <span className="text-[8px] uppercase tracking-widest not-italic opacity-60 mb-1">Rank</span>
-                                                #{myRank}
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <Avatar className="h-10 w-10 sm:h-14 sm:w-14 border-2 border-white/10">
-                                                    <AvatarImage src={myData.photoURL} />
-                                                    <AvatarFallback>ME</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <p className="font-black text-xs sm:text-lg uppercase tracking-widest leading-none">Your Tactical Standing</p>
-                                                    <p className="text-[8px] font-bold uppercase text-primary tracking-[0.2em] mt-1.5 flex items-center gap-2">
-                                                        <CheckCircle className="h-3 w-3"/> System Sync Active
-                                                    </p>
-                                                </div>
-                                            </div>
+            <AnimatePresence>
+                {isNotInTopTwenty && myData && (
+                    <motion.div 
+                        id="personal-rank-footer"
+                        initial={{ y: 100 }}
+                        animate={{ y: 0 }}
+                        className="fixed bottom-[88px] left-0 right-0 z-[100] px-4 md:px-8 pointer-events-none"
+                    >
+                        <div className="max-w-7xl mx-auto pointer-events-auto">
+                            <Card 
+                                className="bg-[#0a0a0a]/95 backdrop-blur-2xl border-t-2 border-primary shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[2.5rem] overflow-hidden relative cursor-pointer group"
+                                onClick={() => setExpandedId(expandedId === 'my-rank' ? null : 'my-rank')}
+                            >
+                                <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
+                                <div className="p-4 sm:p-6 flex items-center justify-between text-white relative z-10">
+                                    <div className="flex items-center gap-4 sm:gap-8">
+                                        <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-primary/20 border-2 border-primary/40 flex flex-col items-center justify-center font-black text-xl sm:text-2xl italic leading-none">
+                                            <span className="text-[8px] uppercase tracking-widest not-italic opacity-60 mb-1">Rank</span>
+                                            #{myRank}
                                         </div>
-                                        <div className="text-right flex items-center gap-4">
-                                            <div className="flex flex-col items-end">
-                                                <p className="text-2xl sm:text-5xl font-black italic tracking-tighter leading-none text-primary">{myData.totalScore.toLocaleString()}</p>
-                                                <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Sovereign Points</p>
-                                            </div>
-                                            <div className="opacity-30 group-hover:opacity-100 transition-opacity">
-                                                {expandedId === 'my-rank' ? <ChevronUp /> : <ChevronDown />}
+                                        <div className="flex items-center gap-4">
+                                            <Avatar className="h-10 w-10 sm:h-14 sm:w-14 border-2 border-white/10">
+                                                <AvatarImage src={myData.photoURL} />
+                                                <AvatarFallback>ME</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-black text-xs sm:text-lg uppercase tracking-widest leading-none">Your Tactical Standing</p>
+                                                <p className="text-[8px] font-bold uppercase text-primary tracking-[0.2em] mt-1.5 flex items-center gap-2">
+                                                    <CheckCircle className="h-3 w-3"/> System Sync Active
+                                                </p>
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="text-right flex items-center gap-4">
+                                        <div className="flex flex-col items-end">
+                                            <p className="text-2xl sm:text-5xl font-black italic tracking-tighter leading-none text-primary">{myData.totalScore.toLocaleString()}</p>
+                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Sovereign Points</p>
+                                        </div>
+                                        <div className="opacity-30 group-hover:opacity-100 transition-opacity">
+                                            {expandedId === 'my-rank' ? <ChevronUp /> : <ChevronDown />}
+                                        </div>
+                                    </div>
+                                </div>
 
-                                    <AnimatePresence>
-                                        {expandedId === 'my-rank' && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="border-t border-white/10 bg-black/60 p-6"
-                                            >
-                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                                    <BreakdownBlock icon={Clock} label="Study" val={`${formatHours(myData.totalStudyTime || 0)}h`} points={myData.breakdown.studyPoints} color="text-sky-400" />
-                                                    <BreakdownBlock icon={Flame} label="Streak" val={`${myData.streak}d`} points={myData.breakdown.streakPoints} color="text-orange-500" />
-                                                    <BreakdownBlock icon={Gem} label="Credits" val={myData.credits.toLocaleString()} points={myData.breakdown.creditsPoints} color="text-amber-500" />
-                                                    <BreakdownBlock icon={ShieldAlert} label="Isolation" val={myData.breakdown.isolationLabel} points={myData.breakdown.isolationPoints} color="text-red-500" />
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </Card>
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                <AnimatePresence>
+                                    {expandedId === 'my-rank' && (
+                                        <motion.div
+                                            initial={{ height: 0, opacity: 0 }}
+                                            animate={{ height: 'auto', opacity: 1 }}
+                                            exit={{ height: 0, opacity: 0 }}
+                                            className="border-t border-white/10 bg-black/60 p-6"
+                                        >
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                                <BreakdownBlock icon={Clock} label="Study" val={`${formatHours(myData.totalStudyTime || 0)}h`} points={myData.breakdown.studyPoints} color="text-sky-400" />
+                                                <BreakdownBlock icon={Flame} label="Streak" val={`${myData.streak}d`} points={myData.breakdown.streakPoints} color="text-orange-500" />
+                                                <BreakdownBlock icon={Gem} label="Credits" val={myData.credits.toLocaleString()} points={myData.breakdown.creditsPoints} color="text-amber-500" />
+                                                <BreakdownBlock icon={ShieldAlert} label="Isolation" val={myData.breakdown.isolationLabel} points={myData.breakdown.isolationPoints} color="text-red-500" />
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </Card>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

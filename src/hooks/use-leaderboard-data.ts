@@ -27,7 +27,6 @@ export type UserWithStats = User & {
       longBreak: number;
       total: number;
     };
-    // Score Breakdown Components
     breakdown: {
         creditsPoints: number;
         studyPoints: number;
@@ -102,16 +101,15 @@ export function useLeaderboardData() {
                 const studyTimeSeconds = user.totalStudyTime || 0;
                 const streak = user.streak || 0;
                 
-                // SOVEREIGN SCORING LOGIC v2.5 (MASTER DIRECTIVE)
+                // SOVEREIGN ALGORITHM v2.5
                 const creditsPoints = Math.round(credits / 2);
-                const studyPoints = Math.round(studyTimeSeconds / 60); // 1 point per minute
-                const streakPoints = streak * 10; // 10 points per day
+                const studyPoints = Math.round(studyTimeSeconds / 60); 
+                const streakPoints = streak * 10; 
                 const disciplinePoints = 0; 
                 
                 let isolationPoints = 0;
-                let isolationLabel = 'None';
+                let isolationLabel = 'Standard Scholar';
 
-                // MASTER ISOLATION TIERS
                 if (user.isSovereign) {
                     isolationPoints = 1000000; 
                     isolationLabel = '1-Year Sovereign';
@@ -156,7 +154,7 @@ export function useLeaderboardData() {
                     (mathematicsLegendHighScore * 1.4) + 
                     (elementQuestTotalScore * 0.5);
 
-                const prevWeekEntertainmentTotalScore = (user.gameHighScores?.emojiQuiz || 0) + (user.gameHighScores?.memoryGame || 0) + (user.gameHighScores?.dimensionShift || 0) + (user.gameHighScores?.subjectSprint || 0) + (user.gameHighScores?.flappyMind || 0) + (user.gameHighScores?.astroAscent || 0) + (user.gameHighScores?.mathematicsLegend || 0) + elementQuestTotalScore;
+                const prevWeekEntertainmentTotalScore = 0;
 
                 return { 
                     ...user, 
