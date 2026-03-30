@@ -15,6 +15,7 @@ import { WeeklyTab } from '@/components/leaderboard/tabs/weekly-tab';
 import { GameZoneTab } from '@/components/leaderboard/tabs/game-zone-tab';
 import { PrivacyDialog } from '@/components/leaderboard/shared/privacy-dialog';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 export default function LeaderboardPage() {
     const { user: currentUser } = useUser();
@@ -49,7 +50,7 @@ export default function LeaderboardPage() {
     }
 
     return (
-        <div className="min-h-full flex flex-col space-y-8 pb-20 max-w-7xl mx-auto px-4 w-full">
+        <div className="min-h-full flex flex-col space-y-8 pb-40 max-w-7xl mx-auto px-4 w-full">
             <header className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-4">
                 <motion.div 
                     initial={{ opacity: 0, y: -20 }}
