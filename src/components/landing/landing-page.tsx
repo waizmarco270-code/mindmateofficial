@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -19,6 +20,9 @@ import { cn } from '@/lib/utils';
 import '@/app/landing.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { ActivityGlobe } from './ActivityGlobe';
+import { IntelFeed } from './IntelFeed';
 
 // --- PLEXUS ENGINE ---
 class Node {
@@ -170,7 +174,6 @@ export function LandingPage() {
                         <span className="logo-text font-black text-2xl tracking-tighter text-white uppercase">MindMate</span>
                     </div>
                     
-                    {/* Desktop Header */}
                     <div className="hidden md:flex items-center gap-4">
                         <SignInButton mode="modal">
                             <Button variant="ghost" className="text-[10px] font-black uppercase text-white/70 hover:text-white">Login</Button>
@@ -180,7 +183,6 @@ export function LandingPage() {
                         </SignUpButton>
                     </div>
 
-                    {/* Mobile Header - Sovereign Login Button only */}
                     <div className="flex md:hidden">
                         <SignInButton mode="modal">
                             <Button className="ingress-btn h-10 px-6 text-[10px] rounded-full">Login to MindMate</Button>
@@ -190,7 +192,6 @@ export function LandingPage() {
             </header>
 
             <main className="relative z-10">
-                {/* HERO SECTION */}
                 <section className="scroll-section min-h-[90vh]">
                     <motion.div 
                         variants={containerVariants}
@@ -258,6 +259,30 @@ export function LandingPage() {
                     </div>
                 </section>
 
+                {/* GLOBAL MAINFRAME SECTION */}
+                <section className="scroll-section bg-black/40">
+                    <div className="container px-4">
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            whileInView={{ opacity: 1, scale: 1 }}
+                            viewport={{ once: true }}
+                            className="flex flex-col items-center gap-12"
+                        >
+                            <div className="text-center">
+                                <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic">Global Mainframe</h2>
+                                <p className="text-slate-400 mt-2 font-black uppercase tracking-[0.2em] text-[10px]">Real-time Network Intelligence</p>
+                            </div>
+                            
+                            <ActivityGlobe />
+                            
+                            <div className="w-full max-w-5xl">
+                                <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-4 text-center">Live Intelligence Relay</p>
+                                <IntelFeed />
+                            </div>
+                        </motion.div>
+                    </div>
+                </section>
+
                 {/* FOUNDERS SECTION */}
                 <section className="scroll-section">
                     <div className="container px-6">
@@ -271,7 +296,6 @@ export function LandingPage() {
                             <p className="text-slate-400 mt-4 max-w-xl mx-auto font-medium">Meet the minds behind the MindMate sovereign intelligence.</p>
                         </motion.div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
-                            {/* Waiz Marco */}
                             <motion.div 
                                 initial={{ opacity: 0, x: -30 }}
                                 whileInView={{ opacity: 1, x: 0 }}
@@ -298,7 +322,6 @@ export function LandingPage() {
                                 </div>
                             </motion.div>
 
-                            {/* Msm */}
                             <motion.div 
                                 initial={{ opacity: 0, x: 30 }}
                                 whileInView={{ opacity: 1, x: 0 }}
@@ -325,7 +348,6 @@ export function LandingPage() {
                     </div>
                 </section>
 
-                {/* FINAL FOOTER SECTION */}
                 <footer className="bg-black pt-20 pb-10 border-t border-white/5">
                     <div className="container mx-auto px-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
@@ -403,7 +425,6 @@ export function LandingPage() {
                 </footer>
             </main>
 
-            {/* Founder Registry Dialogs */}
             <FounderDialog 
                 founder={selectedFounder} 
                 onClose={() => setSelectedFounder(null)} 
