@@ -3,12 +3,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 import { 
-    ArrowRight, Bot, Users, Zap, Award, 
-    Globe, Sparkles, ShieldCheck, 
+    ArrowRight, Bot, Zap, 
+    Sparkles, ShieldCheck, 
     Instagram, Youtube, Send, 
-    Code, CreditCard, Clock, Gem, Vault,
+    Clock, 
     MessageSquare, ExternalLink, ShieldAlert,
-    BookOpen, FileText, ChevronDown, Trophy, Timer, Map, Wrench, Smartphone, Laptop, Target, X, Star, Rocket, Crown
+    BookOpen, FileText, ChevronDown, Timer, Map, Wrench, X, Star, Crown,
+    Globe
 } from 'lucide-react';
 import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
@@ -18,8 +19,6 @@ import { cn } from '@/lib/utils';
 import '@/app/landing.css';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 // --- PLEXUS ENGINE ---
 class Node {
@@ -114,38 +113,11 @@ function PlexusCanvas({ color, density, glow, speed, mouse }: any) {
     return <canvas ref={canvasRef} className="fixed inset-0 pointer-events-none opacity-40 z-0" />;
 }
 
-// --- STAT COUNTER ---
-function StatCounter({ target, suffix = "" }: { target: number, suffix?: string }) {
-    const [count, setCount] = useState(0);
-    const [isVisible, setIsVisible] = useState(false);
-
-    useEffect(() => {
-        if (!isVisible) return;
-        let startTime: number;
-        const animate = (now: number) => {
-            if (!startTime) startTime = now;
-            const progress = Math.min((now - startTime) / 1800, 1);
-            const ease = 1 - Math.pow(1 - progress, 4);
-            setCount(Math.floor(ease * target));
-            if (progress < 1) requestAnimationFrame(animate);
-        };
-        requestAnimationFrame(animate);
-    }, [target, isVisible]);
-
-    return (
-        <motion.span onViewportEnter={() => setIsVisible(true)}>
-            {count.toLocaleString()}{suffix}
-        </motion.span>
-    );
-}
-
-// --- MAIN PAGE ---
 export function LandingPage() {
     const [mouse, setMouse] = useState({ x: 0, y: 0 });
     const [selectedFounder, setSelectedFounder] = useState<'waiz' | 'msm' | null>(null);
     const { scrollYProgress } = useScroll();
     
-    // Background dynamic transitions based on scroll
     const bgOpacity0 = useTransform(scrollYProgress, [0, 0.2], [1, 0]);
     const bgOpacity1 = useTransform(scrollYProgress, [0.1, 0.3, 0.5], [0, 1, 0]);
     const bgOpacity2 = useTransform(scrollYProgress, [0.4, 0.6, 0.8], [0, 1, 0]);
@@ -186,7 +158,6 @@ export function LandingPage() {
         <div className="landing-root">
             <PlexusCanvas color="255,255,255" density={40} glow={0.5} speed={0.3} mouse={mouse} />
             
-            {/* Dynamic Background Layers */}
             <motion.div style={{ opacity: bgOpacity0 }} className="bg-layer gradient-0" />
             <motion.div style={{ opacity: bgOpacity1 }} className="bg-layer gradient-1" />
             <motion.div style={{ opacity: bgOpacity2 }} className="bg-layer gradient-2" />
@@ -198,7 +169,9 @@ export function LandingPage() {
                         <Logo className="h-10 w-10" />
                         <span className="logo-text font-black text-2xl tracking-tighter text-white uppercase">MindMate</span>
                     </div>
-                    <div className="flex items-center gap-4">
+                    
+                    {/* Desktop Header */}
+                    <div className="hidden md:flex items-center gap-4">
                         <SignInButton mode="modal">
                             <Button variant="ghost" className="text-[10px] font-black uppercase text-white/70 hover:text-white">Login</Button>
                         </SignInButton>
@@ -206,12 +179,19 @@ export function LandingPage() {
                             <Button className="ingress-btn h-11 px-8">Initialize</Button>
                         </SignUpButton>
                     </div>
+
+                    {/* Mobile Header - Sovereign Login Button only */}
+                    <div className="flex md:hidden">
+                        <SignInButton mode="modal">
+                            <Button className="ingress-btn h-10 px-6 text-[10px] rounded-full">Login to MindMate</Button>
+                        </SignInButton>
+                    </div>
                 </div>
             </header>
 
             <main className="relative z-10">
                 {/* HERO SECTION */}
-                <section className="scroll-section">
+                <section className="scroll-section min-h-[90vh]">
                     <motion.div 
                         variants={containerVariants}
                         initial="hidden"
@@ -298,7 +278,7 @@ export function LandingPage() {
                                 viewport={{ once: true }}
                                 onClick={() => setSelectedFounder('waiz')}
                                 whileHover={{ scale: 1.02 }}
-                                className="group cursor-pointer relative"
+                                className="group cursor-pointer relative order-1"
                             >
                                 <div className="absolute -inset-1 bg-yellow-400/20 rounded-[3rem] blur opacity-40 group-hover:opacity-100 transition duration-500" />
                                 <div className="relative glass-module p-10 flex flex-col items-center text-center border-yellow-400/30">
@@ -310,8 +290,8 @@ export function LandingPage() {
                                         </Avatar>
                                     </div>
                                     <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">Mohammed Waiz Monazzum</h3>
-                                    <p className="text-yellow-400 text-xs font-black uppercase tracking-widest mt-2">Founder & Lead Architect (Waiz Marco)</p>
-                                    <p className="text-slate-400 text-sm mt-6 font-medium leading-relaxed italic">"Original visionary. Master architect of the source logic."</p>
+                                    <p className="text-yellow-400 text-xs font-black uppercase tracking-widest mt-2">Founder & Chairman (MD)</p>
+                                    <p className="text-slate-400 text-sm mt-6 font-bold leading-relaxed">Chief Architect of MindMate</p>
                                     <Button variant="ghost" className="mt-8 text-yellow-400/60 group-hover:text-yellow-400 transition-colors uppercase font-black text-[10px] tracking-widest">
                                         Inspect Registry <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
@@ -325,7 +305,7 @@ export function LandingPage() {
                                 viewport={{ once: true }}
                                 onClick={() => setSelectedFounder('msm')}
                                 whileHover={{ scale: 1.02 }}
-                                className="group cursor-pointer relative"
+                                className="group cursor-pointer relative order-2"
                             >
                                 <div className="absolute -inset-1 bg-primary/20 rounded-[3rem] blur opacity-40 group-hover:opacity-100 transition duration-500" />
                                 <div className="relative glass-module p-10 flex flex-col items-center text-center border-primary/30">
@@ -334,8 +314,8 @@ export function LandingPage() {
                                         <AvatarFallback>MSM</AvatarFallback>
                                     </Avatar>
                                     <h3 className="text-3xl font-black text-white uppercase italic tracking-tighter">Shabaan Moazzum</h3>
-                                    <p className="text-primary text-xs font-black uppercase tracking-widest mt-2">Co-Founder & UI Strategist (Msm)</p>
-                                    <p className="text-slate-400 text-sm mt-6 font-medium leading-relaxed italic">"Visual engineer of the Sovereign interface."</p>
+                                    <p className="text-primary text-xs font-black uppercase tracking-widest mt-2">Founder & CEO</p>
+                                    <p className="text-slate-400 text-sm mt-6 font-bold leading-relaxed">UI/UX Strategist of MindMate</p>
                                     <Button variant="ghost" className="mt-8 text-primary/60 group-hover:text-primary transition-colors uppercase font-black text-[10px] tracking-widest">
                                         Inspect Registry <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
@@ -345,86 +325,50 @@ export function LandingPage() {
                     </div>
                 </section>
 
-                {/* METRICS SECTION */}
-                <section className="scroll-section bg-white/[0.02] border-y border-white/5">
-                    <div className="container px-6 text-center">
-                        <motion.h2 
-                            initial={{ opacity: 0 }}
-                            whileInView={{ opacity: 1 }}
-                            viewport={{ once: true }}
-                            className="text-4xl md:text-7xl font-black uppercase tracking-tighter mb-24 italic"
-                        >
-                            Network Metrics
-                        </motion.h2>
-                        <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 sm:gap-20">
-                            {[
-                                { label: 'Active Scholars', target: 12500, suffix: '+' },
-                                { label: 'Hours Focused', target: 850000, suffix: '+' },
-                                { label: 'AI Responses', target: 2400000, suffix: '+' },
-                                { label: 'Vaults Created', target: 4500, suffix: '' }
-                            ].map((s, i) => (
-                                <motion.div 
-                                    key={i} 
-                                    initial={{ opacity: 0, scale: 0.9 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    viewport={{ once: true }}
-                                    transition={{ delay: i * 0.1 }}
-                                    className="flex flex-col items-center"
-                                >
-                                    <span className="text-5xl md:text-8xl font-black tracking-tighter text-primary">
-                                        <StatCounter target={s.target} suffix={s.suffix} />
-                                    </span>
-                                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mt-6">{s.label}</span>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-
                 {/* FINAL FOOTER SECTION */}
-                <footer className="bg-black pt-20 pb-10">
+                <footer className="bg-black pt-20 pb-10 border-t border-white/5">
                     <div className="container mx-auto px-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
-                            <div className="space-y-8">
-                                <div className="flex items-center gap-3">
+                            <div className="space-y-8 text-center md:text-left">
+                                <div className="flex items-center justify-center md:justify-start gap-3">
                                     <Logo className="h-12 w-12" />
                                     <span className="font-black text-3xl uppercase tracking-tighter text-white">MindMate</span>
                                 </div>
-                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-loose max-w-xs">
+                                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest leading-loose max-w-xs mx-auto md:mx-0">
                                     Empowering the next generation of scholars through strategic automation and collective intelligence.
                                 </p>
-                                <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 flex items-center gap-4">
+                                <div className="p-6 rounded-[2rem] bg-white/[0.03] border border-white/5 flex items-center justify-center md:justify-start gap-4">
                                     <ShieldCheck className="h-8 w-8 text-emerald-500" />
-                                    <div className="text-[10px] font-black uppercase">
+                                    <div className="text-[10px] font-black uppercase text-left">
                                         <p className="text-slate-400">Validated Ingress</p>
                                         <p className="text-white mt-0.5">Razorpay Secure</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <div>
+                            <div className="text-center md:text-left">
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Mainframe</h5>
                                 <ul className="space-y-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    <li><Link href="https://emitygate.com" target="_blank" className="nav-link flex items-center gap-2">EmityGate Solutions <ExternalLink className="h-3 w-3"/></Link></li>
+                                    <li><Link href="https://emitygate.com" target="_blank" className="nav-link flex items-center justify-center md:justify-start gap-2">EmityGate Solutions <ExternalLink className="h-3 w-3"/></Link></li>
                                     <li><Link href="/about" className="nav-link">Strategic Mission</Link></li>
-                                    <li><Link href="/dashboard/docs" className="nav-link flex items-center gap-2">Sovereign Docs <BookOpen className="h-3 w-3"/></Link></li>
-                                    <li><Link href="/contact" className="nav-link flex items-center gap-2">Relay Signal <MessageSquare className="h-3 w-3"/></Link></li>
+                                    <li><Link href="/dashboard/docs" className="nav-link flex items-center justify-center md:justify-start gap-2">Sovereign Docs <BookOpen className="h-3 w-3"/></Link></li>
+                                    <li><Link href="/contact" className="nav-link flex items-center justify-center md:justify-start gap-2">Relay Signal <MessageSquare className="h-3 w-3"/></Link></li>
                                 </ul>
                             </div>
 
-                            <div>
+                            <div className="text-center md:text-left">
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Protocols</h5>
                                 <ul className="space-y-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    <li><Link href="/privacy" className="nav-link flex items-center gap-2">Privacy Shield <ShieldCheck className="h-3 w-3"/></Link></li>
-                                    <li><Link href="/terms" className="nav-link flex items-center gap-2">Terms of Service <FileText className="h-3 w-3"/></Link></li>
-                                    <li><Link href="/refund" className="nav-link flex items-center gap-2">Asset Protection <ShieldAlert className="h-3 w-3"/></Link></li>
+                                    <li><Link href="/privacy" className="nav-link flex items-center justify-center md:justify-start gap-2">Privacy Shield <ShieldCheck className="h-3 w-3"/></Link></li>
+                                    <li><Link href="/terms" className="nav-link flex items-center justify-center md:justify-start gap-2">Terms of Service <FileText className="h-3 w-3"/></Link></li>
+                                    <li><Link href="/refund" className="nav-link flex items-center justify-center md:justify-start gap-2">Asset Protection <ShieldAlert className="h-3 w-3"/></Link></li>
                                 </ul>
                             </div>
 
-                            <div>
+                            <div className="text-center md:text-left">
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Alliance Hub</h5>
                                 <div className="flex flex-col gap-6">
-                                    <div className="flex gap-4">
+                                    <div className="flex justify-center md:justify-start gap-4">
                                         <Link href="https://www.instagram.com/mindmatehq?igsh=MWd6dXJjbjVva2dlYg==" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
                                             <Instagram className="h-5 w-5" />
                                         </Link>
@@ -438,7 +382,7 @@ export function LandingPage() {
                                             <Globe className="h-5 w-5" />
                                         </Link>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20">
+                                    <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 inline-block">
                                         <p className="text-[8px] font-black uppercase text-primary mb-1">Official Status</p>
                                         <p className="text-[10px] font-bold text-white">NETWORK OPERATIONAL</p>
                                     </div>
@@ -473,80 +417,82 @@ function FounderDialog({ founder, onClose }: { founder: 'waiz' | 'msm' | null, o
 
     return (
         <Dialog open={!!founder} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent className="max-w-2xl bg-black/95 border-yellow-400/20 backdrop-blur-2xl p-0 overflow-hidden rounded-[3rem]">
-                <div className="relative h-48 bg-gradient-to-br from-yellow-400/20 via-black to-black">
-                    <div className="absolute inset-0 bg-grid-white/5" />
-                    <Button variant="ghost" size="icon" className="absolute top-6 right-6 text-white/40 hover:text-white z-50" onClick={onClose}><X/></Button>
-                </div>
-                <div className="px-8 pb-12 -mt-16 relative z-10">
-                    {founder === 'waiz' ? (
-                        <div className="space-y-8">
-                            <div className="flex flex-col sm:flex-row items-end gap-6">
-                                <Avatar className="h-40 w-40 border-4 border-yellow-400 shadow-2xl bg-black">
-                                    <AvatarImage src="https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18zMldnVjZTYUx3c0xUUUZsdTlnSFN3UmcwY3kifQ" />
-                                </Avatar>
-                                <div className="pb-2 text-center sm:text-left">
-                                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none">Waiz Marco</h2>
-                                    <p className="text-yellow-400 font-black uppercase text-[10px] tracking-[0.3em] mt-2">Mohammed Waiz Monazzum</p>
+            <DialogContent className="max-w-2xl bg-black/95 border-yellow-400/20 backdrop-blur-2xl p-0 overflow-hidden rounded-[2.5rem] md:rounded-[3rem] h-fit max-h-[90vh]">
+                <ScrollArea className="h-full">
+                    <div className="relative h-48 bg-gradient-to-br from-yellow-400/20 via-black to-black">
+                        <div className="absolute inset-0 bg-grid-white/5" />
+                        <Button variant="ghost" size="icon" className="absolute top-6 right-6 text-white/40 hover:text-white z-50" onClick={onClose}><X/></Button>
+                    </div>
+                    <div className="px-6 md:px-8 pb-12 -mt-16 relative z-10">
+                        {founder === 'waiz' ? (
+                            <div className="space-y-8">
+                                <div className="flex flex-col sm:flex-row items-end gap-6">
+                                    <Avatar className="h-40 w-40 border-4 border-yellow-400 shadow-2xl bg-black">
+                                        <AvatarImage src="https://img.clerk.com/eyJ0eXBlIjoicHJveHkiLCJzcmMiOiJodHRwczovL2ltYWdlcy5jbGVyay5kZXYvb2F1dGhfZ29vZ2xlL2ltZ18zMldnVjZTYUx3c0xUUUZsdTlnSFN3UmcwY3kifQ" />
+                                    </Avatar>
+                                    <div className="pb-2 text-center sm:text-left">
+                                        <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none">Waiz Marco</h2>
+                                        <p className="text-yellow-400 font-black uppercase text-[10px] tracking-[0.3em] mt-2">Mohammed Waiz Monazzum</p>
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                                    <div className="p-4 rounded-3xl bg-white/5 border border-white/10 text-center">
+                                        <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Track Record</p>
+                                        <p className="text-xl font-black text-white">300+ PROJ</p>
+                                    </div>
+                                    <div className="p-4 rounded-3xl bg-white/5 border border-white/10 text-center">
+                                        <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Authority</p>
+                                        <p className="text-xl font-black text-white">ARCHITECT</p>
+                                    </div>
+                                    <div className="p-4 rounded-3xl bg-yellow-400/10 border border-yellow-400/20 text-center col-span-2 sm:col-span-1">
+                                        <p className="text-[8px] font-black uppercase text-yellow-400 mb-1 tracking-widest">Founding</p>
+                                        <p className="text-xl font-black text-yellow-400">EMITYGATE</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2"><Crown className="h-4 w-4"/> Sovereign Vision</h4>
+                                    <p className="text-lg text-slate-300 font-medium italic leading-relaxed">
+                                        "Original visionary behind EmityGate. Architect of the MindMate system, focused on building high-performance digital ecosystems that redefine productivity and control."
+                                    </p>
+                                    <div className="pt-4 border-t border-white/5 text-sm text-slate-400 font-medium leading-loose">
+                                        As the lead developer and Founder of EmityGate, Mohammed Waiz Monazzum (Waiz Marco) has spent years engineering high-fidelity digital systems. With over 300 successful projects delivered, his focus is on building platforms that don't just function, but inspire absolute mastery.
+                                    </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                                <div className="p-4 rounded-3xl bg-white/5 border border-white/10 text-center">
-                                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Track Record</p>
-                                    <p className="text-xl font-black text-white">300+ PROJ</p>
+                        ) : (
+                            <div className="space-y-8">
+                                <div className="flex flex-col sm:flex-row items-end gap-6">
+                                    <Avatar className="h-40 w-40 border-4 border-primary shadow-2xl bg-black">
+                                        <AvatarImage src="https://picsum.photos/seed/msm/400" />
+                                    </Avatar>
+                                    <div className="pb-2 text-center sm:text-left">
+                                        <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none">Msm</h2>
+                                        <p className="text-primary font-black uppercase text-[10px] tracking-[0.3em] mt-2">Shabaan Moazzum</p>
+                                    </div>
                                 </div>
-                                <div className="p-4 rounded-3xl bg-white/5 border border-white/10 text-center">
-                                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Authority</p>
-                                    <p className="text-xl font-black text-white">ARCHITECT</p>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 rounded-3xl bg-white/5 border border-white/10 text-center">
+                                        <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Specialization</p>
+                                        <p className="text-xl font-black text-white">UI STRATEGY</p>
+                                    </div>
+                                    <div className="p-4 rounded-3xl bg-primary/10 border border-primary/20 text-center">
+                                        <p className="text-[8px] font-black uppercase text-primary mb-1 tracking-widest">Founding</p>
+                                        <p className="text-xl font-black text-primary">CO-FOUNDER</p>
+                                    </div>
                                 </div>
-                                <div className="p-4 rounded-3xl bg-yellow-400/10 border border-yellow-400/20 text-center col-span-2 sm:col-span-1">
-                                    <p className="text-[8px] font-black uppercase text-yellow-400 mb-1 tracking-widest">Founding</p>
-                                    <p className="text-xl font-black text-yellow-400">EMITYGATE</p>
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                <h4 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2"><Crown className="h-4 w-4"/> Sovereign Vision</h4>
-                                <p className="text-lg text-slate-300 font-medium italic leading-relaxed">
-                                    "The future of academic excellence is not just in smarter study, but in the intelligent integration of human potential and neural automation. MindMate is the manifestation of that balance."
-                                </p>
-                                <div className="pt-4 border-t border-white/5 text-sm text-slate-400 font-medium leading-loose">
-                                    As the lead developer and founder of EmityGate, Mohammed Waiz Monazzum (Waiz Marco) has spent years engineering high-fidelity digital systems. With over 300 successful projects delivered, his focus is on building platforms that don't just function, but inspire absolute mastery.
-                                </div>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="space-y-8">
-                            <div className="flex flex-col sm:flex-row items-end gap-6">
-                                <Avatar className="h-40 w-40 border-4 border-primary shadow-2xl bg-black">
-                                    <AvatarImage src="https://picsum.photos/seed/msm/400" />
-                                </Avatar>
-                                <div className="pb-2 text-center sm:text-left">
-                                    <h2 className="text-4xl font-black text-white italic uppercase tracking-tighter leading-none">Msm</h2>
-                                    <p className="text-primary font-black uppercase text-[10px] tracking-[0.3em] mt-2">Shabaan Moazzum</p>
+                                <div className="space-y-4">
+                                    <h4 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2"><Sparkles className="h-4 w-4"/> Aesthetic Protocol</h4>
+                                    <p className="text-lg text-slate-300 font-medium italic leading-relaxed">
+                                        "A legendary student needs a legendary workspace. We built the Sovereign interface to ensure every second of focus is an aesthetic and rewarding experience."
+                                    </p>
+                                    <div className="pt-4 border-t border-white/5 text-sm text-slate-400 font-medium leading-loose">
+                                        Shabaan Moazzum (Msm) is the Founder & CEO of MindMate. His expertise in user experience and interface engineering ensures that the platform remains intuitive while pushing the boundaries of modern design.
+                                    </div>
                                 </div>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 rounded-3xl bg-white/5 border border-white/10 text-center">
-                                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Specialization</p>
-                                    <p className="text-xl font-black text-white">UI STRATEGY</p>
-                                </div>
-                                <div className="p-4 rounded-3xl bg-primary/10 border border-primary/20 text-center">
-                                    <p className="text-[8px] font-black uppercase text-primary mb-1 tracking-widest">Founding</p>
-                                    <p className="text-xl font-black text-primary">CO-FOUNDER</p>
-                                </div>
-                            </div>
-                            <div className="space-y-4">
-                                <h4 className="text-sm font-black uppercase tracking-widest text-primary flex items-center gap-2"><Sparkles className="h-4 w-4"/> Aesthetic Protocol</h4>
-                                <p className="text-lg text-slate-300 font-medium italic leading-relaxed">
-                                    "A legendary student needs a legendary workspace. We built the Sovereign interface to ensure every second of focus is an aesthetic and rewarding experience."
-                                </p>
-                                <div className="pt-4 border-t border-white/5 text-sm text-slate-400 font-medium leading-loose">
-                                    Shabaan Moazzum (Msm) is the creative force behind the MindMate visual identity. His expertise in user experience and interface engineering ensures that the platform remains intuitive while pushing the boundaries of modern design.
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );
