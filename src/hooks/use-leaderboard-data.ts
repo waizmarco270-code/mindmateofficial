@@ -27,13 +27,23 @@ export type UserWithStats = User & {
       longBreak: number;
       total: number;
     };
+    // Score Breakdown Components
+    breakdown: {
+        creditsPoints: number;
+        studyPoints: number;
+        streakPoints: number;
+        isolationPoints: number;
+        disciplinePoints: number;
+        isolationLabel: string;
+    }
 };
 
-const SCORE_WEIGHTS = {
-  credits: 1,
-  focusSessionsCompleted: 20,
-  dailyTasksCompleted: 10,
-  totalStudyTime: 0.01,
+const ISOLATION_POINTS: Record<string, number> = {
+    'isolater': 5000,      // 7d
+    'iso-warrior': 11000,  // 14d
+    'warrior': 26000,      // 21d/30d (Warrior badge used for both, 30d is the target for higher)
+    'iso-master': 45000,   // 3m/6m
+    'sovereign': 56000     // 1y
 };
 
 export function useLeaderboardData() {
@@ -97,14 +107,37 @@ export function useLeaderboardData() {
             .filter(u => !u.isBlocked)
             .map(user => {
                 const credits = user.credits || 0;
-                const focusSessions = user.focusSessionsCompleted || 0;
-                const dailyTasks = user.dailyTasksCompleted || 0;
-                const studyTime = user.totalStudyTime || 0;
+                const studyTimeSeconds = user.totalStudyTime || 0;
+                const streak = user.streak || 0;
                 
-                const totalScore = (credits * SCORE_WEIGHTS.credits) + 
-                                   (focusSessions * SCORE_WEIGHTS.focusSessionsCompleted) + 
-                                   (dailyTasks * SCORE_WEIGHTS.dailyTasksCompleted) +
-                                   (studyTime * SCORE_WEIGHTS.totalStudyTime);
+                // SOVEREIGN SCORING LOGIC
+                const creditsPoints = Math.round(credits / 2);
+                const studyPoints = Math.round(studyTimeSeconds / 60); // 1 point per minute
+                const streakPoints = streak;
+                const disciplinePoints = 0; // Coming Soon
+                
+                let isolationPoints = 0;
+                let isolationLabel = 'None';
+
+                // Check badges for isolation points
+                if (user.isSovereign) {
+                    isolationPoints = ISOLATION_POINTS.sovereign;
+                    isolationLabel = '1-Year Sovereign';
+                } else if (user.isIsoMaster) {
+                    isolationPoints = ISOLATION_POINTS['iso-master'];
+                    isolationLabel = 'Master Protocol';
+                } else if (user.isWarrior) {
+                    isolationPoints = ISOLATION_POINTS.warrior;
+                    isolationLabel = '30-Day Warrior';
+                } else if (user.isIsoWarrior) {
+                    isolationPoints = ISOLATION_POINTS['iso-warrior'];
+                    isolationLabel = '14-Day ISO-Warrior';
+                } else if (user.isIsolater) {
+                    isolationPoints = ISOLATION_POINTS.isolater;
+                    isolationLabel = '7-Day Isolater';
+                }
+
+                const totalScore = creditsPoints + studyPoints + streakPoints + isolationPoints + disciplinePoints;
                                    
                 const userWeeklyStats = weeklyStats[user.uid] || { 
                     thisWeek: { totalTime: 0, subjects: {}, pomodoro: { focus: 0, shortBreak: 0, longBreak: 0, total: 0 } }, 
@@ -149,7 +182,15 @@ export function useLeaderboardData() {
                     astroAscentHighScore,
                     mathematicsLegendHighScore,
                     elementQuestTotalScore,
-                    prevWeekEntertainmentTotalScore: Math.round(prevWeekEntertainmentTotalScore)
+                    prevWeekEntertainmentTotalScore: Math.round(prevWeekEntertainmentTotalScore),
+                    breakdown: {
+                        creditsPoints,
+                        studyPoints,
+                        streakPoints,
+                        isolationPoints,
+                        disciplinePoints,
+                        isolationLabel
+                    }
                 };
             });
     }, [users, weeklyStats]);
