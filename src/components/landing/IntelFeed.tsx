@@ -40,7 +40,7 @@ export function IntelFeed() {
           100% { transform: translateX(-50%); }
         }
         .animate-marquee {
-          animation: marquee 40s linear infinite;
+          animation: marquee 15s linear infinite; /* Increased Speed */
         }
         .animate-marquee:hover {
           animation-play-state: paused;

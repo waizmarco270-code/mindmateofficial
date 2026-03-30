@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -15,6 +14,18 @@ const locations = [
   { name: 'Sydney', lat: -33.8688, lng: 151.2093 },
   { name: 'Bengaluru', lat: 12.9716, lng: 77.5946 },
   { name: 'Singapore', lat: 1.3521, lng: 103.8198 },
+  { name: 'Dubai', lat: 25.2048, lng: 55.2708 },
+  { name: 'Berlin', lat: 52.5200, lng: 13.4050 },
+  { name: 'Paris', lat: 48.8566, lng: 2.3522 },
+  { name: 'Toronto', lat: 43.6532, lng: -79.3832 },
+  { name: 'Sao Paulo', lat: -23.5505, lng: -46.6333 },
+  { name: 'Cape Town', lat: -33.9249, lng: 18.4241 },
+  { name: 'Cairo', lat: 30.0444, lng: 31.2357 },
+  { name: 'Moscow', lat: 55.7558, lng: 37.6173 },
+  { name: 'Seoul', lat: 37.5665, lng: 126.9780 },
+  { name: 'Lagos', lat: 6.5244, lng: 3.3792 },
+  { name: 'Jakarta', lat: -6.2088, lng: 106.8456 },
+  { name: 'Manila', lat: 14.5995, lng: 120.9842 },
 ];
 
 export function ActivityGlobe() {
@@ -29,7 +40,7 @@ export function ActivityGlobe() {
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.z = 200; 
+    camera.position.z = 180; 
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
@@ -42,10 +53,10 @@ export function ActivityGlobe() {
     controls.dampingFactor = 0.05;
     controls.enableZoom = false;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.5;
+    controls.autoRotateSpeed = 0.8;
     
-    // Earth - Tactical Radius (60)
-    const radius = 60;
+    // Earth - Tactical Radius (65)
+    const radius = 65;
     const geometry = new THREE.SphereGeometry(radius, 64, 64);
     const textureLoader = new THREE.TextureLoader();
     
@@ -68,7 +79,7 @@ export function ActivityGlobe() {
     scene.add(earth);
 
     // Atmospheric Glow
-    const atmoGeometry = new THREE.SphereGeometry(radius + 2, 64, 64);
+    const atmoGeometry = new THREE.SphereGeometry(radius + 3, 64, 64);
     const atmoMaterial = new THREE.MeshBasicMaterial({
         color: 0x8b5cf6,
         transparent: true,
@@ -99,8 +110,8 @@ export function ActivityGlobe() {
     });
     scene.add(pointsGroup);
 
-    // Satellite Uplink
-    const satelliteGeo = new THREE.BoxGeometry(2, 2, 2);
+    // Sovereign Satellite
+    const satelliteGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
     const satelliteMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
     const satellite = new THREE.Mesh(satelliteGeo, satelliteMat);
     scene.add(satellite);
@@ -118,7 +129,7 @@ export function ActivityGlobe() {
       
       // Animate points
       pointsGroup.children.forEach((point, i) => {
-          const scale = 1 + Math.sin(time * 5 + i) * 0.3;
+          const scale = 1 + Math.sin(time * 5 + i) * 0.4;
           point.scale.set(scale, scale, scale);
       });
 
@@ -153,17 +164,17 @@ export function ActivityGlobe() {
   }, []);
 
   return (
-    <div ref={mountRef} className="relative w-full h-[280px] sm:h-[350px] flex items-center justify-center overflow-hidden rounded-[3rem] bg-black/5 border border-white/5 cursor-grab active:cursor-grabbing">
+    <div ref={mountRef} className="relative w-full h-[320px] sm:h-[450px] flex items-center justify-center overflow-hidden rounded-[3rem] bg-black/5 border border-white/10 cursor-grab active:cursor-grabbing">
       {isLoading && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md">
               <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Syncing Real World Data...</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Syncing Planetary Grid...</p>
           </div>
       )}
       
       <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/40 backdrop-blur-md p-2 px-3 rounded-xl border border-white/10 z-20">
         <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
-        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/80">Sovereign Presence</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/80">Active Citizens Online</p>
       </div>
     </div>
   );

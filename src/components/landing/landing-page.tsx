@@ -8,22 +8,29 @@ import {
     Instagram, Youtube, Send, 
     Clock, 
     MessageSquare, ExternalLink, ShieldAlert,
-    BookOpen, FileText, ChevronDown, Timer, Map, Wrench, X, Star, Crown,
-    Globe, BrainCircuit, Trophy, CheckCircle, Smartphone, Lock,
-    Swords
+    BookOpen, ChevronDown, Timer, Map, Wrench, X, Crown,
+    Globe, CheckCircle, GraduationCap, Users, Heart, Quote,
+    Swords, Trophy, Flame, Star
 } from 'lucide-react';
-import Link from 'next/link';
 import { Logo } from '@/components/ui/logo';
-import { SignUpButton, SignInButton } from '@clerk/nextjs';
+import { SignInButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
+import { 
+    Card, 
+    CardContent, 
+    CardHeader, 
+    CardTitle, 
+    CardDescription, 
+    CardFooter 
+} from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import '@/app/landing.css';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { ActivityGlobe } from './ActivityGlobe';
-import { IntelFeed } from './IntelFeed';
-import { ThreeDCore } from './ThreeDCore';
+import { ActivityGlobe } from '@/components/landing/ActivityGlobe';
+import { IntelFeed } from '@/components/landing/IntelFeed';
+import { ThreeDCore } from '@/components/landing/ThreeDCore';
 
 // --- PLEXUS ENGINE ---
 class Node {
@@ -145,6 +152,12 @@ export function LandingPage() {
         { title: 'All Tools', icon: Wrench, desc: 'Unified student utilities.', color: 'text-emerald-400' }
     ];
 
+    const testimonials = [
+        { name: "Aditya Verma", role: "JEE Aspirant", type: "Student", text: "MindMate transformed my JEE prep. The Focus Mode is a game changer! I've cleared 300+ study missions already.", icon: GraduationCap },
+        { name: "Mrs. Sharma", role: "Parent", type: "Parent", text: "I've never seen my son so disciplined. The Isolation Mode really works to cut out digital distractions completely.", icon: Heart },
+        { name: "Tech Academy", role: "Institute Partner", type: "Institute", text: "The most comprehensive study ecosystem we've recommended. The ROI in terms of student focus is massive.", icon: Users }
+    ];
+
     const containerVariants = {
         hidden: { opacity: 0, y: 30 },
         visible: { 
@@ -170,9 +183,9 @@ export function LandingPage() {
 
             <header className="fixed top-0 left-0 w-full z-[1000] border-b border-white/5 bg-black/30 backdrop-blur-md">
                 <div className="container mx-auto h-20 flex items-center justify-between px-6">
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         <Logo className="h-10 w-10" />
-                        <span className="logo-text font-black text-2xl tracking-tighter text-white uppercase">MindMate</span>
+                        <span className="logo-text font-black text-2xl tracking-tighter text-white uppercase hidden md:block">MindMate</span>
                     </div>
                     
                     <div className="flex items-center gap-4">
@@ -184,26 +197,26 @@ export function LandingPage() {
             </header>
 
             <main className="relative z-10">
-                <section className="scroll-section min-h-[90vh]">
+                <section className="scroll-section min-h-[90vh] flex flex-col justify-center">
                     <motion.div 
                         variants={containerVariants}
                         initial="hidden"
                         whileInView="visible"
                         viewport={{ once: true }}
-                        className="max-w-4xl flex flex-col items-center text-center"
+                        className="max-w-4xl mx-auto flex flex-col items-center text-center"
                     >
                         <ThreeDCore />
-                        <motion.h1 variants={itemVariants} className="text-6xl md:text-9xl font-black tracking-tighter leading-[0.9] uppercase mb-8">
+                        <motion.h1 variants={itemVariants} className="text-6xl md:text-[10rem] font-black tracking-tighter leading-[0.85] uppercase mb-8 mt-12">
                             ASCEND TO <br />
                             <span className="keyword-glow">GREATNESS.</span>
                         </motion.h1>
-                        <motion.p variants={itemVariants} className="text-lg text-slate-400 max-w-xl leading-relaxed mb-10 opacity-80 px-4">
-                            The integrated study ecosystem for elite scholars. Tactical AI guidance, deep focus protocols, and collective mastery.
+                        <motion.p variants={itemVariants} className="text-xl text-slate-400 max-w-2xl leading-relaxed mb-12 opacity-80 px-4 font-medium">
+                            The professional grade study command center. Tactical focus protocols, elite resources, and strategic AI automation for the next generation of legends.
                         </motion.p>
                         <motion.div variants={itemVariants} className="flex gap-4">
-                            <SignUpButton mode="modal">
-                                <Button size="lg" className="h-16 px-10 rounded-2xl bg-white text-black font-black uppercase tracking-widest hover:bg-slate-200 shadow-2xl">Start Mission</Button>
-                            </SignUpButton>
+                            <SignInButton mode="modal">
+                                <Button size="lg" className="h-16 px-12 rounded-2xl bg-white text-black font-black uppercase tracking-widest hover:bg-slate-200 shadow-2xl transition-all hover:scale-105">Initialize Mission</Button>
+                            </SignInButton>
                         </motion.div>
                         <motion.div 
                             animate={{ y: [0, 10, 0] }} 
@@ -224,8 +237,8 @@ export function LandingPage() {
                             viewport={{ once: true }}
                             className="text-center mb-16"
                         >
-                            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-shadow-glow">Operational Briefing</h2>
-                            <p className="text-slate-400 mt-4 max-w-xl mx-auto font-medium">Integrated student modules designed for academic dominance.</p>
+                            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-shadow-glow">Operational Modules</h2>
+                            <p className="text-slate-400 mt-4 max-w-xl mx-auto font-bold uppercase tracking-widest text-[10px]">High-Performance Student Infrastructure</p>
                         </motion.div>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
                             {modules.map((f, i) => (
@@ -248,83 +261,6 @@ export function LandingPage() {
                     </div>
                 </section>
 
-                <section className="scroll-section border-y border-white/5 py-32">
-                    <div className="container px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                        <motion.div 
-                            initial={{ opacity: 0, x: -50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="space-y-8"
-                        >
-                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic leading-none">
-                                <span className="text-purple-400 flex items-center gap-4"><BrainCircuit className="h-12 w-12" /> Neural Link</span>
-                                ADAPTIVE AI
-                            </h2>
-                            <p className="text-xl text-slate-400 font-medium leading-relaxed">
-                                Marco AI isn't just a chatbot—it's a cognitive sync. It analyzes your study history, recognizes burnout patterns, and adjusts mission directives in real-time.
-                            </p>
-                            <div className="flex gap-4">
-                                <span className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-[10px] font-black uppercase tracking-widest text-purple-400">Genkit V1 Core</span>
-                                <span className="px-4 py-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-[10px] font-black uppercase tracking-widest text-purple-400">Zero Latency</span>
-                            </div>
-                        </motion.div>
-                        <motion.div 
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            whileInView={{ opacity: 1, scale: 1 }}
-                            viewport={{ once: true }}
-                            className="relative"
-                        >
-                            <div className="absolute inset-0 bg-purple-500/20 rounded-full blur-[100px]" />
-                            <div className="relative p-12 rounded-[3rem] border-2 border-purple-500/30 bg-black/40 backdrop-blur-2xl text-center">
-                                <Bot className="h-32 w-32 mx-auto text-purple-400 animate-pulse" />
-                                <div className="mt-8 space-y-4">
-                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full w-3/4 bg-purple-500" /></div>
-                                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden"><div className="h-full w-1/2 bg-purple-500" /></div>
-                                    <p className="text-[10px] font-black uppercase text-purple-400">Syncing Intelligence...</p>
-                                </div>
-                            </div>
-                        </motion.div>
-                    </div>
-                </section>
-
-                <section className="scroll-section bg-black/40 overflow-hidden py-32">
-                    <div className="container px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-                        <motion.div 
-                            initial={{ opacity: 0, x: 50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="lg:order-2 space-y-8"
-                        >
-                            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter italic leading-none">
-                                <span className="text-green-400 flex items-center gap-4"><Swords className="h-12 w-12" /> Collective IQ</span>
-                                CLAN DOMINANCE
-                            </h2>
-                            <p className="text-xl text-slate-400 font-medium leading-relaxed">
-                                Forge a Study Clan. Level up together through collective focused time. High-level clans unlock custom banners, elite badges, and legendary status in the Global Forum.
-                            </p>
-                            <Button asChild variant="outline" className="rounded-2xl border-green-500/30 text-green-400 font-black h-14 px-8">
-                                <Link href="/dashboard/groups">EXPLORE CLANS <ChevronDown className="ml-2 h-4 w-4" /></Link>
-                            </Button>
-                        </motion.div>
-                        <motion.div 
-                            initial={{ opacity: 0, x: -50 }}
-                            whileInView={{ opacity: 1, x: 0 }}
-                            viewport={{ once: true }}
-                            className="lg:order-1 relative h-[400px]"
-                        >
-                            <div className="absolute inset-0 bg-green-500/10 rounded-full blur-[100px]" />
-                            <div className="grid grid-cols-2 gap-4 h-full">
-                                {[1,2,3,4].map(i => (
-                                    <div key={i} className="rounded-3xl border border-white/5 bg-white/[0.02] p-6 flex flex-col items-center justify-center gap-4">
-                                        <div className="h-12 w-12 rounded-full bg-green-500/20 flex items-center justify-center"><CheckCircle className="text-green-400" /></div>
-                                        <div className="h-1.5 w-12 bg-green-500/40 rounded-full" />
-                                    </div>
-                                ))}
-                            </div>
-                        </motion.div>
-                    </div>
-                </section>
-
                 {/* GLOBAL MAINFRAME SECTION */}
                 <section className="scroll-section bg-black/40">
                     <div className="container px-4">
@@ -335,14 +271,16 @@ export function LandingPage() {
                             className="flex flex-col items-center gap-12"
                         >
                             <div className="text-center">
-                                <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-shadow-glow">Global Mainframe</h2>
-                                <p className="text-slate-400 mt-2 font-black uppercase tracking-[0.2em] text-[10px]">Real-time Network Intelligence</p>
+                                <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-shadow-glow">Global Command</h2>
+                                <p className="text-slate-400 mt-2 font-black uppercase tracking-[0.2em] text-[10px]">Sovereign Network Integrity Check</p>
                             </div>
                             
-                            <ActivityGlobe />
+                            <div className="relative p-1 rounded-[3.5rem] bg-gradient-to-br from-primary/30 via-white/5 to-primary/30 shadow-2xl">
+                                <ActivityGlobe />
+                            </div>
                             
                             <div className="w-full max-w-5xl px-4">
-                                <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-4 text-center">Live Intelligence Relay</p>
+                                <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-4 text-center">Encrypted Data Pulse</p>
                                 <IntelFeed />
                             </div>
                         </motion.div>
@@ -350,7 +288,7 @@ export function LandingPage() {
                 </section>
 
                 {/* FOUNDERS SECTION */}
-                <section className="scroll-section">
+                <section className="scroll-section border-t border-white/5">
                     <div className="container px-6">
                         <motion.div 
                             initial={{ opacity: 0, y: 20 }}
@@ -358,8 +296,8 @@ export function LandingPage() {
                             viewport={{ once: true }}
                             className="text-center mb-20"
                         >
-                            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-yellow-400">The Architects</h2>
-                            <p className="text-slate-400 mt-4 max-w-xl mx-auto font-medium">Meet the minds behind the MindMate sovereign intelligence.</p>
+                            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-yellow-400">Mainframe Architects</h2>
+                            <p className="text-slate-400 mt-4 max-w-xl mx-auto font-medium">The engineering force behind the EmityGate study ecosystem.</p>
                         </motion.div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-12 max-w-5xl mx-auto">
                             <motion.div 
@@ -368,7 +306,7 @@ export function LandingPage() {
                                 viewport={{ once: true }}
                                 onClick={() => setSelectedFounder('waiz')}
                                 whileHover={{ scale: 1.02 }}
-                                className="group cursor-pointer relative order-1"
+                                className="group cursor-pointer relative"
                             >
                                 <div className="absolute -inset-1 bg-yellow-400/20 rounded-[3rem] blur opacity-40 group-hover:opacity-100 transition duration-500" />
                                 <div className="relative glass-module p-10 flex flex-col items-center text-center border-yellow-400/30">
@@ -394,7 +332,7 @@ export function LandingPage() {
                                 viewport={{ once: true }}
                                 onClick={() => setSelectedFounder('msm')}
                                 whileHover={{ scale: 1.02 }}
-                                className="group cursor-pointer relative order-2"
+                                className="group cursor-pointer relative"
                             >
                                 <div className="absolute -inset-1 bg-primary/20 rounded-[3rem] blur opacity-40 group-hover:opacity-100 transition duration-500" />
                                 <div className="relative glass-module p-10 flex flex-col items-center text-center border-primary/30">
@@ -414,7 +352,49 @@ export function LandingPage() {
                     </div>
                 </section>
 
-                <footer className="bg-black pt-20 pb-10 border-t border-white/5">
+                {/* FEEDBACK SECTION */}
+                <section className="scroll-section bg-black/20 border-y border-white/5 py-32">
+                    <div className="container px-6">
+                        <motion.div 
+                            initial={{ opacity: 0, y: 20 }}
+                            whileInView={{ opacity: 1, y: 0 }}
+                            viewport={{ once: true }}
+                            className="text-center mb-20"
+                        >
+                            <h2 className="text-4xl md:text-7xl font-black uppercase tracking-tighter italic text-cyan-400">Network Validation</h2>
+                            <p className="text-slate-400 mt-4 max-w-xl mx-auto font-medium">Verified field reports from students, parents, and academic institutions.</p>
+                        </motion.div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                            {testimonials.map((t, i) => (
+                                <motion.div 
+                                    key={i}
+                                    initial={{ opacity: 0, y: 30 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    viewport={{ once: true }}
+                                    transition={{ delay: i * 0.1 }}
+                                >
+                                    <Card className="glass-module p-8 h-full flex flex-col justify-between border-white/10 group hover:border-cyan-500/30 transition-all">
+                                        <div className="space-y-6">
+                                            <Quote className="h-10 w-10 text-cyan-500/20 group-hover:text-cyan-500/40 transition-colors" />
+                                            <p className="text-lg font-medium text-slate-200 leading-relaxed italic">"{t.text}"</p>
+                                        </div>
+                                        <div className="mt-10 flex items-center gap-4 border-t border-white/5 pt-6">
+                                            <div className="h-12 w-12 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+                                                <t.icon className="h-6 w-6" />
+                                            </div>
+                                            <div>
+                                                <p className="font-black uppercase text-sm text-white">{t.name}</p>
+                                                <p className="text-[10px] font-bold text-cyan-500 uppercase tracking-widest">{t.role}</p>
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </motion.div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <footer className="bg-black pt-20 pb-10">
                     <div className="container mx-auto px-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16 mb-20">
                             <div className="space-y-8 text-center md:text-left">
@@ -437,10 +417,10 @@ export function LandingPage() {
                             <div className="text-center md:text-left">
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Mainframe</h5>
                                 <ul className="space-y-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    <li><Link href="https://emitygate.com" target="_blank" className="nav-link flex items-center justify-center md:justify-start gap-2 text-nowrap">EmityGate Solutions <ExternalLink className="h-3 w-3"/></Link></li>
+                                    <li><a href="https://emitygate.com" target="_blank" className="nav-link flex items-center justify-center md:justify-start gap-2 text-nowrap">EmityGate Solutions <ExternalLink className="h-3 w-3"/></a></li>
                                     <li><Link href="/about" className="nav-link">Strategic Mission</Link></li>
                                     <li><Link href="/dashboard/docs" className="nav-link flex items-center justify-center md:justify-start gap-2">Sovereign Docs <BookOpen className="h-3 w-3"/></Link></li>
-                                    <li><Link href="/contact" className="nav-link flex items-center justify-center md:justify-start gap-2">Relay Signal <MessageSquare className="h-3 w-3"/></Link></li>
+                                    <li><Link href="/contact" className="nav-link flex items-center justify-start gap-2">Relay Signal <MessageSquare className="h-3 w-3"/></Link></li>
                                 </ul>
                             </div>
 
@@ -457,18 +437,18 @@ export function LandingPage() {
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Alliance Hub</h5>
                                 <div className="flex flex-col gap-6">
                                     <div className="flex justify-center md:justify-start gap-4">
-                                        <Link href="https://www.instagram.com/mindmatehq?igsh=MWd6dXJjbjVva2dlYg==" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                                        <a href="https://www.instagram.com/mindmatehq?igsh=MWd6dXJjbjVva2dlYg==" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
                                             <Instagram className="h-5 w-5" />
-                                        </Link>
-                                        <Link href="https://youtube.com/@mindmateofficials?si=_PpffdhhQFGCTi47" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                                        </a>
+                                        <a href="https://youtube.com/@mindmateofficials?si=_PpffdhhQFGCTi47" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
                                             <Youtube className="h-5 w-5" />
-                                        </Link>
-                                        <Link href="https://t.me/emitygate" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                                        </a>
+                                        <a href="https://t.me/emitygate" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
                                             <Send className="h-5 w-5" />
-                                        </Link>
-                                        <Link href="https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
+                                        </a>
+                                        <a href="https://whatsapp.com/channel/0029Vb6qoFb7YSd13q71Hc1H" target="_blank" className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-slate-400 hover:text-white hover:border-white/20 transition-all">
                                             <Globe className="h-5 w-5" />
-                                        </Link>
+                                        </a>
                                     </div>
                                     <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 inline-block">
                                         <p className="text-[8px] font-black uppercase text-primary mb-1">Official Status</p>
@@ -522,7 +502,7 @@ function FounderDialog({ founder, onClose }: { founder: 'waiz' | 'msm' | null, o
                                     </div>
                                     <div className="pb-2 text-center sm:text-left flex-1 min-w-0">
                                         <h2 className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter leading-none truncate">Waiz Marco</h2>
-                                        <p className="text-yellow-400 font-black uppercase text-[10px] tracking-[0.3em] mt-2">Mohammed Waiz Monazzum</p>
+                                        <p className="text-yellow-400 font-black uppercase text-[10px] tracking-[0.3em] mt-2">Founder & Chairman (MD)</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -559,8 +539,8 @@ function FounderDialog({ founder, onClose }: { founder: 'waiz' | 'msm' | null, o
                                         </Avatar>
                                     </div>
                                     <div className="pb-2 text-center sm:text-left flex-1 min-w-0">
-                                        <h2 className="text-3xl sm:text-4xl font-black text-white italic uppercase tracking-tighter leading-none truncate">Msm</h2>
-                                        <p className="text-primary font-black uppercase text-[10px] tracking-[0.3em] mt-2">Shabaan Moazzum</p>
+                                        <h2 className="text-3xl font-black text-white italic uppercase tracking-tighter leading-none truncate">Msm</h2>
+                                        <p className="text-primary font-black uppercase text-[10px] tracking-[0.3em] mt-2">Founder & CEO</p>
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-2 gap-4">
