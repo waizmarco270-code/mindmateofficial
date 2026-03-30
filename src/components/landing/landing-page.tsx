@@ -275,7 +275,7 @@ export function LandingPage() {
                                 <p className="text-slate-400 mt-2 font-black uppercase tracking-[0.2em] text-[10px]">Sovereign Network Integrity Check</p>
                             </div>
                             
-                            <div className="relative p-1 rounded-[3.5rem] bg-gradient-to-br from-primary/30 via-white/5 to-primary/30 shadow-2xl">
+                            <div className="relative p-1 rounded-[3.5rem] bg-gradient-to-br from-primary/30 via-white/5 to-primary/30 shadow-2xl w-full">
                                 <ActivityGlobe />
                             </div>
                             
@@ -417,7 +417,7 @@ export function LandingPage() {
                             <div className="text-center md:text-left">
                                 <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-8">Mainframe</h5>
                                 <ul className="space-y-5 text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    <li><a href="https://emitygate.com" target="_blank" className="nav-link flex items-center justify-center md:justify-start gap-2 text-nowrap">EmityGate Solutions <ExternalLink className="h-3 w-3"/></a></li>
+                                    <li><a href="https://emitygate.com" target="_blank" className="nav-link flex items-center justify-center md:justify-start gap-2 text-nowrap text-white">EmityGate Solutions <ExternalLink className="h-3 w-3"/></a></li>
                                     <li><Link href="/about" className="nav-link">Strategic Mission</Link></li>
                                     <li><Link href="/dashboard/docs" className="nav-link flex items-center justify-center md:justify-start gap-2">Sovereign Docs <BookOpen className="h-3 w-3"/></Link></li>
                                     <li><Link href="/contact" className="nav-link flex items-center justify-start gap-2">Relay Signal <MessageSquare className="h-3 w-3"/></Link></li>

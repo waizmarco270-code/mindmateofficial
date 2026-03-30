@@ -19,14 +19,6 @@ const locations = [
   { name: 'Berlin', lat: 52.5200, lng: 13.4050 },
   { name: 'Paris', lat: 48.8566, lng: 2.3522 },
   { name: 'Toronto', lat: 43.6532, lng: -79.3832 },
-  { name: 'Sao Paulo', lat: -23.5505, lng: -46.6333 },
-  { name: 'Cape Town', lat: -33.9249, lng: 18.4241 },
-  { name: 'Cairo', lat: 30.0444, lng: 31.2357 },
-  { name: 'Moscow', lat: 55.7558, lng: 37.6173 },
-  { name: 'Seoul', lat: 37.5665, lng: 126.9780 },
-  { name: 'Lagos', lat: 6.5244, lng: 3.3792 },
-  { name: 'Jakarta', lat: -6.2088, lng: 106.8456 },
-  { name: 'Manila', lat: 14.5995, lng: 120.9842 },
 ];
 
 export function ActivityGlobe() {
@@ -36,16 +28,17 @@ export function ActivityGlobe() {
   useEffect(() => {
     if (!mountRef.current) return;
 
-    const width = mountRef.current.clientWidth;
-    const height = mountRef.current.clientHeight;
+    // Use a fixed fallback height if clientHeight is 0 initially
+    const width = mountRef.current.clientWidth || window.innerWidth;
+    const height = mountRef.current.clientHeight || 450;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
-    camera.position.z = 180; 
+    camera.position.z = 160; 
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     mountRef.current.appendChild(renderer.domElement);
 
     // BIND CONTROLS ONLY TO CANVAS TO PREVENT SCROLL INTERFERENCE
@@ -54,38 +47,36 @@ export function ActivityGlobe() {
     controls.dampingFactor = 0.05;
     controls.enableZoom = false;
     controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.8;
+    controls.autoRotateSpeed = 0.5;
     
-    // Earth - Tactical Radius (65)
-    const radius = 65;
+    // Earth - Tactical Radius
+    const radius = 60;
     const geometry = new THREE.SphereGeometry(radius, 64, 64);
     const textureLoader = new THREE.TextureLoader();
     
-    // Using a reliable CDN for planetary textures
+    // Reliable high-fidelity texture source
     const texture = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg', () => {
         setIsLoading(false);
     });
     const bumpMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-topology.png');
-    const specularMap = textureLoader.load('https://unpkg.com/three-globe/example/img/earth-water.png');
 
     const material = new THREE.MeshPhongMaterial({
       map: texture,
       bumpMap: bumpMap,
-      bumpScale: 1.5,
-      specularMap: specularMap,
-      specular: new THREE.Color('grey'),
-      shininess: 15
+      bumpScale: 1.2,
+      specular: new THREE.Color('#222'),
+      shininess: 5
     });
 
     const earth = new THREE.Mesh(geometry, material);
     scene.add(earth);
 
     // Atmospheric Glow
-    const atmoGeometry = new THREE.SphereGeometry(radius + 3, 64, 64);
+    const atmoGeometry = new THREE.SphereGeometry(radius + 2, 64, 64);
     const atmoMaterial = new THREE.MeshBasicMaterial({
         color: 0x8b5cf6,
         transparent: true,
-        opacity: 0.1,
+        opacity: 0.05,
         side: THREE.BackSide
     });
     const atmo = new THREE.Mesh(atmoGeometry, atmoMaterial);
@@ -103,8 +94,8 @@ export function ActivityGlobe() {
 
     const pointsGroup = new THREE.Group();
     locations.forEach(loc => {
-        const pos = latLngToVector3(loc.lat, loc.lng, radius + 1);
-        const pointGeo = new THREE.SphereGeometry(1.2, 16, 16);
+        const pos = latLngToVector3(loc.lat, loc.lng, radius + 0.5);
+        const pointGeo = new THREE.SphereGeometry(0.8, 16, 16);
         const pointMat = new THREE.MeshBasicMaterial({ color: 0x22c55e });
         const point = new THREE.Mesh(pointGeo, pointMat);
         point.position.copy(pos);
@@ -113,32 +104,33 @@ export function ActivityGlobe() {
     scene.add(pointsGroup);
 
     // Sovereign Satellite
-    const satelliteGeo = new THREE.BoxGeometry(1.5, 1.5, 1.5);
+    const satelliteGeo = new THREE.BoxGeometry(1, 1, 1);
     const satelliteMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
     const satellite = new THREE.Mesh(satelliteGeo, satelliteMat);
     scene.add(satellite);
 
-    // Lights
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+    // Lights - Strategic Setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
-    const dLight = new THREE.DirectionalLight(0xffffff, 1.2);
+    const dLight = new THREE.DirectionalLight(0xffffff, 1.5);
     dLight.position.set(5, 3, 5);
     scene.add(dLight);
 
+    let frameId: number;
     const animate = () => {
-      requestAnimationFrame(animate);
+      frameId = requestAnimationFrame(animate);
       const time = Date.now() * 0.001;
       
-      // Animate points
+      // Animate points pulse
       pointsGroup.children.forEach((point, i) => {
-          const scale = 1 + Math.sin(time * 5 + i) * 0.4;
+          const scale = 1 + Math.sin(time * 4 + i) * 0.3;
           point.scale.set(scale, scale, scale);
       });
 
       // Orbit satellite
-      satellite.position.x = (radius + 20) * Math.cos(time * 0.5);
-      satellite.position.z = (radius + 20) * Math.sin(time * 0.5);
-      satellite.position.y = Math.sin(time * 0.5) * 10;
+      satellite.position.x = (radius + 15) * Math.cos(time * 0.4);
+      satellite.position.z = (radius + 15) * Math.sin(time * 0.4);
+      satellite.position.y = Math.sin(time * 0.3) * 8;
       satellite.rotation.y += 0.05;
 
       controls.update();
@@ -150,7 +142,7 @@ export function ActivityGlobe() {
     const handleResize = () => {
       if (!mountRef.current) return;
       const w = mountRef.current.clientWidth;
-      const h = mountRef.current.clientHeight;
+      const h = mountRef.current.clientHeight || 450;
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
@@ -159,24 +151,26 @@ export function ActivityGlobe() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      cancelAnimationFrame(frameId);
       if (mountRef.current && renderer.domElement) {
           mountRef.current.removeChild(renderer.domElement);
       }
+      renderer.dispose();
     };
   }, []);
 
   return (
-    <div ref={mountRef} className="relative w-full h-[320px] sm:h-[450px] flex items-center justify-center overflow-hidden rounded-[3rem] bg-black/5 border border-white/10 cursor-grab active:cursor-grabbing">
+    <div ref={mountRef} className="relative w-full h-[350px] sm:h-[500px] flex items-center justify-center overflow-hidden rounded-[3rem] bg-black/5 border border-white/10">
       {isLoading && (
           <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/40 backdrop-blur-md">
-              <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Syncing Planetary Grid...</p>
+              <Loader2 className="h-8 w-8 animate-spin text-primary mb-4" />
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-white">Synchronizing Planetary Pulse...</p>
           </div>
       )}
       
       <div className="absolute top-6 left-6 flex items-center gap-2 bg-black/40 backdrop-blur-md p-2 px-3 rounded-xl border border-white/10 z-20">
         <div className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]" />
-        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/80">Active Citizens Online</p>
+        <p className="text-[9px] font-black uppercase tracking-[0.2em] text-white/80">Legends Tracking Active</p>
       </div>
     </div>
   );
