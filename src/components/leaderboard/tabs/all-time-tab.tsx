@@ -1,17 +1,21 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
-import { ShowcaseBadge } from '../shared/badge-renderer';
+import { Card, CardContent } from '@/components/ui/card';
+import { ShowcaseBadge, getOwnedBadges, badgeMeta } from '../shared/badge-renderer';
 import { 
     Clock, Flame, Gem, ShieldAlert, 
     ChevronDown, ChevronUp, Target, 
-    Zap, Info, Star, Trophy, EyeOff, CheckCircle
+    Zap, Info, Star, Trophy, EyeOff, CheckCircle,
+    Medal, X, ScrollText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface AllTimeTabProps {
     users: UserWithStats[];
@@ -25,6 +29,7 @@ const formatHours = (seconds: number) => {
 
 export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProps) {
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [showcaseUser, setShowcaseUser] = useState<UserWithStats | null>(null);
     const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const topTwenty = users.slice(0, 20);
@@ -64,6 +69,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                 const isExpanded = expandedId === user.uid;
                 const isMe = user.uid === currentUserId;
                 const tierStyles = getTierStyles(rank, isMe);
+                const ownedBadges = getOwnedBadges(user);
 
                 return (
                     <div key={user.uid} ref={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}>
@@ -86,9 +92,9 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                     <button 
                                         onClick={(e) => { 
                                             e.stopPropagation(); 
-                                            onUserClick(user); 
+                                            setShowcaseUser(user); 
                                         }} 
-                                        className="relative group/avatar"
+                                        className="relative group/avatar shrink-0"
                                     >
                                         <div className="absolute -inset-1 bg-primary/20 rounded-full blur opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
                                         <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-white/10 relative z-10">
@@ -108,9 +114,18 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                 </div>
                                             )}
                                         </div>
-                                        <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1 opacity-60">
-                                            {user.mindMateId || 'LEGENDARY CITIZEN'}
-                                        </p>
+                                        <div className="flex items-center gap-4 mt-1">
+                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                                                {user.mindMateId || 'LEGENDARY CITIZEN'}
+                                            </p>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setShowcaseUser(user); }}
+                                                className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-full border border-primary/20 transition-all group/badge"
+                                            >
+                                                <Medal className="h-2.5 w-2.5 text-primary" />
+                                                <span className="text-[9px] font-black text-primary uppercase">{ownedBadges.length} Assets</span>
+                                            </button>
+                                        </div>
                                     </div>
 
                                     <div className="text-right">
@@ -131,11 +146,12 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                             exit={{ height: 0, opacity: 0 }}
                                             className="border-t border-white/5 bg-black/40"
                                         >
-                                            <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                            <div className="p-6 grid grid-cols-2 sm:grid-cols-5 gap-4">
                                                 <BreakdownBlock icon={Clock} label="Study" val={`${formatHours(user.totalStudyTime || 0)}h`} points={user.breakdown.studyPoints} color="text-sky-400" />
                                                 <BreakdownBlock icon={Flame} label="Streak" val={`${user.streak}d`} points={user.breakdown.streakPoints} color="text-orange-500" />
                                                 <BreakdownBlock icon={Gem} label="Credits" val={user.credits.toLocaleString()} points={user.breakdown.creditsPoints} color="text-amber-500" />
                                                 <BreakdownBlock icon={ShieldAlert} label="Isolation" val={user.breakdown.isolationLabel} points={user.breakdown.isolationPoints} color="text-red-500" />
+                                                <BreakdownBlock icon={Medal} label="Badges" val={`${ownedBadges.length}`} points={user.breakdown.badgePoints} color="text-fuchsia-400" />
                                             </div>
                                         </motion.div>
                                     )}
@@ -198,11 +214,12 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                             exit={{ height: 0, opacity: 0 }}
                                             className="border-t border-white/10 bg-black/60 p-6"
                                         >
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
                                                 <BreakdownBlock icon={Clock} label="Study" val={`${formatHours(myData.totalStudyTime || 0)}h`} points={myData.breakdown.studyPoints} color="text-sky-400" />
                                                 <BreakdownBlock icon={Flame} label="Streak" val={`${myData.streak}d`} points={myData.breakdown.streakPoints} color="text-orange-500" />
                                                 <BreakdownBlock icon={Gem} label="Credits" val={myData.credits.toLocaleString()} points={myData.breakdown.creditsPoints} color="text-amber-500" />
                                                 <BreakdownBlock icon={ShieldAlert} label="Isolation" val={myData.breakdown.isolationLabel} points={myData.breakdown.isolationPoints} color="text-red-500" />
+                                                <BreakdownBlock icon={Medal} label="Badges" val={`${getOwnedBadges(myData).length}`} points={myData.breakdown.badgePoints} color="text-fuchsia-400" />
                                             </div>
                                         </motion.div>
                                     )}
@@ -212,6 +229,11 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            <BadgeShowcaseDialog 
+                user={showcaseUser} 
+                onClose={() => setShowcaseUser(null)} 
+            />
         </div>
     );
 }
@@ -222,11 +244,76 @@ function BreakdownBlock({ icon: Icon, label, val, points, color }: any) {
             <div className={cn("p-2 rounded-xl bg-black/20", color)}>
                 <Icon className="h-5 w-5" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 text-left">
                 <p className="text-[8px] font-black uppercase opacity-40 leading-none mb-1">{label}</p>
                 <p className="text-xs font-bold truncate leading-none">{val}</p>
                 <p className={cn("text-[10px] font-black mt-1", color)}>+{points.toLocaleString()} PTS</p>
             </div>
         </div>
+    );
+}
+
+function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, onClose: () => void }) {
+    if (!user) return null;
+    const owned = getOwnedBadges(user);
+
+    return (
+        <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
+            <DialogContent className="max-w-xl bg-background/95 backdrop-blur-2xl border-primary/20 p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
+                <div className="h-32 bg-gradient-to-br from-primary/20 via-background to-background relative overflow-hidden">
+                    <div className="absolute inset-0 bg-grid-white/5" />
+                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-4 w-4"/></Button>
+                </div>
+                
+                <div className="px-8 pb-10 -mt-12 relative z-10">
+                    <div className="flex flex-col items-center text-center space-y-4">
+                        <Avatar className="h-24 w-24 border-4 border-primary shadow-2xl bg-background">
+                            <AvatarImage src={user.photoURL} />
+                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <h3 className="text-2xl font-black uppercase italic tracking-tight">{user.displayName}</h3>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Identity Dossier • {user.mindMateId || 'LEGEND'}</p>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 space-y-6">
+                        <div className="flex items-center justify-between border-b pb-2">
+                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
+                                <Medal className="h-4 w-4"/> Verified Assets
+                            </h4>
+                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{owned.length} Badges Unlocked</span>
+                        </div>
+
+                        <ScrollArea className="h-64 pr-4">
+                            <div className="space-y-3">
+                                {owned.map(key => (
+                                    <div key={key} className="flex items-center justify-between p-3 rounded-2xl bg-muted/30 border border-white/5 group hover:border-primary/20 transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-xl bg-background shadow-inner">
+                                                {/* Extracting icon from badgeMeta logic */}
+                                                <ScrollText className="h-4 w-4 text-primary opacity-40"/>
+                                            </div>
+                                            <div>
+                                                <p className="text-sm font-bold">{badgeMeta[key].name}</p>
+                                                <p className="text-[10px] text-muted-foreground font-medium">Unlocked through academic merit.</p>
+                                            </div>
+                                        </div>
+                                        <div className="scale-90">{badgeMeta[key].badge}</div>
+                                    </div>
+                                ))}
+                                {owned.length === 0 && (
+                                    <div className="py-12 text-center opacity-30 flex flex-col items-center">
+                                        <Trophy className="h-12 w-12 mb-2" />
+                                        <p className="text-xs font-black uppercase tracking-widest">No assets found</p>
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
+                        <p className="text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest italic opacity-60 pt-4">"Viewing all badges this user's Identity record holds"</p>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 }

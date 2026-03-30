@@ -2,7 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
+import { useUsers, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
 import { startOfWeek, endOfWeek, parseISO, isWithinInterval, subWeeks } from 'date-fns';
 
@@ -32,10 +32,34 @@ export type UserWithStats = User & {
         studyPoints: number;
         streakPoints: number;
         isolationPoints: number;
+        badgePoints: number;
         disciplinePoints: number;
         isolationLabel: string;
+        badgeCount: number;
     }
 };
+
+// Internal helper for scoring calculation
+function getBadgeCount(user: User) {
+    const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
+    let count = 0;
+    if (isSuperAdmin) count++;
+    if (user.isCoDev) count++;
+    if (user.isAdmin) count++;
+    if (user.isVip) count++;
+    if (user.isGM) count++;
+    if (user.isChallenger) count++;
+    if (user.isEarlyBird) count++;
+    if (user.isNightOwl) count++;
+    if (user.isKnowledgeKnight) count++;
+    if (user.isStreaker) count++;
+    if (user.isIsolater) count++;
+    if (user.isIsoWarrior) count++;
+    if (user.isWarrior) count++;
+    if (user.isIsoMaster) count++;
+    if (user.isSovereign) count++;
+    return count;
+}
 
 export function useLeaderboardData() {
     const { users, loading: usersLoading } = useUsers();
@@ -100,11 +124,13 @@ export function useLeaderboardData() {
                 const credits = user.credits || 0;
                 const studyTimeSeconds = user.totalStudyTime || 0;
                 const streak = user.streak || 0;
+                const badgeCount = getBadgeCount(user);
                 
-                // SOVEREIGN ALGORITHM v2.5
+                // SOVEREIGN ALGORITHM v3.0
                 const creditsPoints = Math.round(credits / 2);
                 const studyPoints = Math.round(studyTimeSeconds / 60); 
                 const streakPoints = streak * 10; 
+                const badgePoints = badgeCount * 100;
                 const disciplinePoints = 0; 
                 
                 let isolationPoints = 0;
@@ -127,7 +153,7 @@ export function useLeaderboardData() {
                     isolationLabel = '7-Day Isolater';
                 }
 
-                const totalScore = creditsPoints + studyPoints + streakPoints + isolationPoints + disciplinePoints;
+                const totalScore = creditsPoints + studyPoints + streakPoints + isolationPoints + badgePoints + disciplinePoints;
                                    
                 const userWeeklyStats = weeklyStats[user.uid] || { 
                     thisWeek: { totalTime: 0, subjects: {}, pomodoro: { focus: 0, shortBreak: 0, longBreak: 0, total: 0 } }, 
@@ -154,8 +180,6 @@ export function useLeaderboardData() {
                     (mathematicsLegendHighScore * 1.4) + 
                     (elementQuestTotalScore * 0.5);
 
-                const prevWeekEntertainmentTotalScore = 0;
-
                 return { 
                     ...user, 
                     totalScore: Math.round(totalScore), 
@@ -172,14 +196,16 @@ export function useLeaderboardData() {
                     astroAscentHighScore,
                     mathematicsLegendHighScore,
                     elementQuestTotalScore,
-                    prevWeekEntertainmentTotalScore: Math.round(prevWeekEntertainmentTotalScore),
+                    prevWeekEntertainmentTotalScore: 0,
                     breakdown: {
                         creditsPoints,
                         studyPoints,
                         streakPoints,
                         isolationPoints,
+                        badgePoints,
                         disciplinePoints,
-                        isolationLabel
+                        isolationLabel,
+                        badgeCount
                     }
                 };
             });

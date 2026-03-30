@@ -8,8 +8,7 @@ import { useLeaderboardData, UserWithStats } from '@/hooks/use-leaderboard-data'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Settings2, Loader2, Trophy, ShieldCheck, Globe, Info, X, Target, Star } from 'lucide-react';
-import { UserProfileCard } from '@/components/profile/user-profile-card';
+import { Settings2, Loader2, Trophy, ShieldCheck, Globe, Info, X, Target, Star, Medal, Clock, Flame, ShieldAlert, Award } from 'lucide-react';
 import { AllTimeTab } from '@/components/leaderboard/tabs/all-time-tab';
 import { WeeklyTab } from '@/components/leaderboard/tabs/weekly-tab';
 import { GameZoneTab } from '@/components/leaderboard/tabs/game-zone-tab';
@@ -23,7 +22,6 @@ export default function LeaderboardPage() {
     const { processedUsers, loading } = useLeaderboardData();
     
     const [activeTab, setActiveTab] = useState('all-time');
-    const [selectedUser, setSelectedUser] = useState<UserWithStats | null>(null);
     const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
     const [isInfoOpen, setIsInfoOpen] = useState(false);
 
@@ -113,15 +111,15 @@ export default function LeaderboardPage() {
 
                 <div className="animate-in fade-in-50 duration-700 w-full">
                     <TabsContent value="all-time" className="m-0 w-full">
-                        <AllTimeTab users={sortedByScore} currentUserId={currentUser?.id} onUserClick={setSelectedUser} />
+                        <AllTimeTab users={sortedByScore} currentUserId={currentUser?.id} onUserClick={() => {}} />
                     </TabsContent>
                     
                     <TabsContent value="weekly" className="m-0">
-                        <WeeklyTab users={sortedByWeekly} currentUserId={currentUser?.id} onUserClick={setSelectedUser} lastWeekWinner={lastWeekWeeklyWinner} />
+                        <WeeklyTab users={sortedByWeekly} currentUserId={currentUser?.id} onUserClick={() => {}} lastWeekWinner={lastWeekWeeklyWinner} />
                     </TabsContent>
                     
                     <TabsContent value="game-zone" className="m-0">
-                        <GameZoneTab users={sortedByGames} currentUserId={currentUser?.id} onUserClick={setSelectedUser} lastWeekWinner={lastWeekGameWinner} />
+                        <GameZoneTab users={sortedByGames} currentUserId={currentUser?.id} onUserClick={() => {}} lastWeekWinner={lastWeekGameWinner} />
                     </TabsContent>
                 </div>
             </Tabs>
@@ -137,16 +135,16 @@ export default function LeaderboardPage() {
                 <DialogContent className="max-w-2xl bg-background/95 backdrop-blur-xl border-primary/20 rounded-[2.5rem]">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black uppercase italic flex items-center gap-2">
-                            <Info className="text-primary h-6 w-6"/> Scoring Protocol
+                            <Info className="text-primary h-6 w-6"/> Scoring Protocol v3.0
                         </DialogTitle>
-                        <DialogDescription className="font-bold">The mathematical architecture of excellence.</DialogDescription>
+                        <DialogDescription className="font-bold">The mathematical architecture of academic excellence.</DialogDescription>
                     </DialogHeader>
                     <div className="py-6 space-y-6">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <InfoBlock label="Study Mastery" desc="1 Point per Minute Logged" color="text-sky-400" />
-                            <InfoBlock label="Streak Loyalty" desc="10 Points per Daily Streak" color="text-orange-500" />
-                            <InfoBlock label="Standard Economy" desc="1/2 Point per Credit Held" color="text-amber-500" />
-                            <InfoBlock label="Strategic Index" desc="Discipline Weighting (Soon)" color="text-emerald-500" />
+                            <InfoBlock label="Study Mastery" desc="1 Point per Minute Logged" color="text-sky-400" icon={Clock} />
+                            <InfoBlock label="Streak Loyalty" desc="10 Points per Daily Streak" color="text-orange-500" icon={Flame} />
+                            <InfoBlock label="Standard Economy" desc="1/2 Point per Credit Held" color="text-amber-500" icon={Gem} />
+                            <InfoBlock label="Identity Assets" desc="100 Points per Unique Badge" color="text-fuchsia-400" icon={Award} />
                         </div>
                         <div className="p-6 rounded-[2rem] bg-red-500/5 border border-red-500/20">
                             <h4 className="text-xs font-black uppercase text-red-500 tracking-widest mb-3 flex items-center gap-2">
@@ -167,25 +165,20 @@ export default function LeaderboardPage() {
                     </div>
                 </DialogContent>
             </Dialog>
-
-            <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>
-                <DialogContent className="max-w-md p-0 overflow-hidden border-none bg-transparent shadow-none">
-                    {selectedUser && (
-                        <div className="animate-in zoom-in-95 duration-300">
-                            <UserProfileCard user={selectedUser} />
-                        </div>
-                    )}
-                </DialogContent>
-            </Dialog>
         </div>
     );
 }
 
-function InfoBlock({ label, desc, color }: any) {
+function InfoBlock({ label, desc, color, icon: Icon }: any) {
     return (
-        <div className="p-4 rounded-2xl bg-muted/50 border border-white/5">
-            <p className={cn("text-xs font-black uppercase tracking-widest", color)}>{label}</p>
-            <p className="text-sm font-bold text-foreground mt-1">{desc}</p>
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-white/5">
+            <div className={cn("p-2 rounded-xl bg-black/20", color)}>
+                <Icon className="h-5 w-5" />
+            </div>
+            <div>
+                <p className={cn("text-[10px] font-black uppercase tracking-widest", color)}>{label}</p>
+                <p className="text-xs font-bold text-foreground mt-0.5">{desc}</p>
+            </div>
         </div>
     );
 }
