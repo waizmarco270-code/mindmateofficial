@@ -4,9 +4,10 @@ import { useState, useEffect, createContext, useContext, ReactNode, useMemo } fr
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { 
-    collection, doc, onSnapshot, query, orderBy, limit, Timestamp, collectionGroup 
+    collection, doc, onSnapshot, query, orderBy, limit, Timestamp, collectionGroup, writeBatch, getDocs, setDoc, getDoc, increment 
 } from 'firebase/firestore';
 import { useToast } from './use-toast';
+import { format, startOfWeek, isSameWeek, subWeeks } from 'date-fns';
 
 // Modular Logic Imports
 import { useUserActions } from './admin/use-user-actions';
@@ -98,6 +99,18 @@ export interface User {
   transactions?: { id: string; packName: string; credits: number; price?: number; date: string; type?: string }[];
 }
 
+export interface GameHistoryEntry {
+    id: string;
+    weekStartDate: string;
+    topPerformers: {
+        uid: string;
+        displayName: string;
+        photoURL?: string;
+        score: number;
+        scores: User['gameHighScores'] & { elementQuestTotal: number };
+    }[];
+}
+
 export interface RedeemCode {
     id: string;
     value: number;
@@ -122,7 +135,16 @@ export interface VideoLecture { id: string; title: string; description: string; 
 
 export type AppThemeId = 'light' | 'dark' | 'synthwave-sunset' | 'solar-flare' | 'emerald-dream';
 export type MaintenanceTheme = 'shiny' | 'forest' | 'sunflower';
-export interface AppSettings { marcoAiLaunchStatus: 'countdown' | 'live'; isMaintenanceMode?: boolean; maintenanceMessage?: string; maintenanceEndTime?: string; maintenanceTheme?: MaintenanceTheme; whatsNewMessage?: string; lastMaintenanceId?: string; }
+export interface AppSettings { 
+    marcoAiLaunchStatus: 'countdown' | 'live'; 
+    isMaintenanceMode?: boolean; 
+    maintenanceMessage?: string; 
+    maintenanceEndTime?: string; 
+    maintenanceTheme?: MaintenanceTheme; 
+    whatsNewMessage?: string; 
+    lastMaintenanceId?: string; 
+    lastGameReset?: string; // ISO Date of start of week
+}
 
 interface AppDataContextType {
     isAdmin: boolean; isCoDev: boolean; isSuperAdmin: boolean; loading: boolean;
@@ -133,6 +155,7 @@ interface AppDataContextType {
     featureShowcases: FeatureShowcase[]; creditPacks: CreditPack[]; storeItems: StoreItem[];
     videoCategories: VideoCategory[]; videoLectures: VideoLecture[];
     activePoll: Poll | null; redeemCodes: RedeemCode[];
+    gameHistory: GameHistoryEntry[];
     subscribedUserIds: Set<string>;
     
     // Actions
@@ -156,6 +179,7 @@ interface AppDataContextType {
     generateAiAccessToken: any; unlockResourceSection: any; unlockFeatureForUser: any; unlockThemeForUser: any;
     generateRedeemCode: (v: number) => Promise<string>; deactivateRedeemCode: (id: string) => Promise<void>; deleteRedeemCode: (id: string) => Promise<void>; redeemCode: (u: string, c: string) => Promise<number>;
     triggerAegisPulse: () => Promise<AegisPulseOutput>;
+    performGameReset: () => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -180,6 +204,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
     const [redeemCodes, setRedeemCodes] = useState<RedeemCode[]>([]);
+    const [gameHistory, setGameHistory] = useState<GameHistoryEntry[]>([]);
     const [subscribedUserIds, setSubscribedUserIds] = useState<Set<string>>(new Set());
     const [loading, setLoading] = useState(true);
 
@@ -211,6 +236,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             onSnapshot(collection(db, 'videoCategories'), (s) => setVideoCategories(process(s))),
             onSnapshot(collection(db, 'videoLectures'), (s) => setVideoLectures(process(s))),
             onSnapshot(query(collection(db, 'redeemCodes'), orderBy('createdAt', 'desc')), (s) => setRedeemCodes(process(s))),
+            onSnapshot(query(collection(db, 'gameZoneHistory'), orderBy('weekStartDate', 'desc'), limit(5)), (s) => setGameHistory(s.docs.map(d => ({ id: d.id, ...d.data() } as GameHistoryEntry)))),
             onSnapshot(collection(db, 'fcmTokens'), (s) => setSubscribedUserIds(new Set(s.docs.map(d => d.id)))),
         ];
         return () => unsubs.forEach(u => u());
@@ -225,12 +251,93 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         });
     }, [authUser, isClerkLoaded]);
 
+    const performGameReset = useCallback(async () => {
+        if (!isSuperAdmin) return;
+        
+        try {
+            const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
+            
+            // 1. Snapshot current leaderboard
+            const sortedUsers = [...users]
+                .map(u => {
+                    const { s = 0, p = 0, d = 0, f = 0 } = u.elementQuestScores || {};
+                    const elementQuestTotal = s + p + d + f;
+                    const score = (u.gameHighScores?.emojiQuiz || 0) * 1.2 + 
+                                  (u.gameHighScores?.memoryGame || 0) + 
+                                  (u.gameHighScores?.dimensionShift || 0) * 1.5 + 
+                                  (u.gameHighScores?.subjectSprint || 0) * 1.1 + 
+                                  (u.gameHighScores?.flappyMind || 0) + 
+                                  (u.gameHighScores?.astroAscent || 0) * 1.3 + 
+                                  (u.gameHighScores?.mathematicsLegend || 0) * 1.4 + 
+                                  (elementQuestTotal * 0.5);
+                    return { ...u, score, elementQuestTotal };
+                })
+                .sort((a, b) => b.score - a.score);
+
+            const topFive = sortedUsers.slice(0, 5).map(u => ({
+                uid: u.uid,
+                displayName: u.displayName,
+                photoURL: u.photoURL,
+                score: Math.round(u.score),
+                scores: { ...u.gameHighScores, elementQuestTotal: u.elementQuestTotal }
+            }));
+
+            const batch = writeBatch(db);
+
+            // 2. Save history
+            const historyRef = doc(collection(db, 'gameZoneHistory'));
+            batch.set(historyRef, {
+                weekStartDate: currentWeekStart,
+                topPerformers: topFive,
+                createdAt: serverTimestamp()
+            });
+
+            // 3. Reset ALL users game scores
+            users.forEach(u => {
+                const userRef = doc(db, 'users', u.uid);
+                batch.update(userRef, {
+                    gameHighScores: {
+                        memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, 
+                        subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0
+                    },
+                    elementQuestScores: { s: 0, p: 0, d: 0, f: 0 },
+                    // Optional: reset milestones if they are weekly
+                    dimensionShiftClaims: {},
+                    flappyMindClaims: {},
+                    astroAscentClaims: {},
+                    mathematicsLegendClaims: {}
+                });
+            });
+
+            // 4. Update config
+            batch.update(doc(db, 'appConfig', 'settings'), { lastGameReset: currentWeekStart });
+
+            await batch.commit();
+            toast({ title: "Mainframe Pulse: Reset Complete", description: "Game leaderboard has been cycled." });
+        } catch (e: any) {
+            console.error("Reset failed:", e);
+            toast({ variant: 'destructive', title: "Reset Failed", description: e.message });
+        }
+    }, [isSuperAdmin, users, toast]);
+
+    // Check for weekly reset on load (Sovereign Auto-Goverance)
+    useEffect(() => {
+        if (isSuperAdmin && appSettings) {
+            const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
+            const lastReset = appSettings.lastGameReset ? new Date(appSettings.lastGameReset) : null;
+            
+            if (!lastReset || !isSameWeek(currentWeekStart, lastReset, { weekStartsOn: 1 })) {
+                performGameReset();
+            }
+        }
+    }, [isSuperAdmin, appSettings, performGameReset]);
+
     const value = useMemo(() => ({
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
         announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
         videoCategories, videoLectures, redeemCodes, activePoll: allPolls.find(p => p.isActive) || null,
-        subscribedUserIds,
+        gameHistory, subscribedUserIds,
         
         ...userActions,
         ...contentActions,
@@ -259,12 +366,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
         redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
+        performGameReset
     }), [
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, 
         announcements, resources, resourceSections, dailySurprises, supportTickets, 
         allPolls, appSettings, globalGifts, featureShowcases, creditPacks, 
-        storeItems, videoCategories, videoLectures, redeemCodes, subscribedUserIds,
-        userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id
+        storeItems, videoCategories, videoLectures, redeemCodes, gameHistory, subscribedUserIds,
+        userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id, performGameReset
     ]);
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
