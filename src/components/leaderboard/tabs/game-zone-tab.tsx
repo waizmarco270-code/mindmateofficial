@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { ShowcaseBadge, getOwnedBadges, badgeMeta } from '../shared/badge-renderer';
 import { 
     Gamepad2, History, Trophy, Star, 
@@ -37,8 +37,6 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
     const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const topTwenty = users.slice(0, 20);
-    const topThree = users.slice(0, 3);
-    const rest = users.slice(3, 20);
     const myRank = users.findIndex(u => u.uid === currentUserId) + 1;
     const myData = users.find(u => u.uid === currentUserId);
     const isNotInTopTwenty = myRank > 20 || myRank === 0;
