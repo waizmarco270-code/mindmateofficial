@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2, Crown, Lock, KeyRound } from 'lucide-react';
+import { ArrowRight, Orbit, Swords, Brain, Newspaper, Dice5, Gamepad2, Crown, Lock, KeyRound, Trophy, Star } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -119,13 +119,20 @@ export default function GameZoneHubPage() {
     const premiumFeatureDetails = lockableFeatures.find(f => f.id === PREMIUM_FEATURE_ID);
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
-                  <Gamepad2 className="h-8 w-8 text-primary" />
-                  Game Zone
-                </h1>
-                <p className="text-muted-foreground">Relax, play some games, and earn credits!</p>
+        <div className="space-y-8 pb-20">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
+                    <Gamepad2 className="h-8 w-8 text-primary" />
+                    Game Zone
+                    </h1>
+                    <p className="text-muted-foreground">Relax, play some games, and earn credits!</p>
+                </div>
+                <Button asChild variant="outline" className="rounded-full border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-amber-500 font-black uppercase tracking-widest text-[10px]">
+                    <Link href="/dashboard/leaderboard?tab=game-zone">
+                        <Trophy className="mr-2 h-4 w-4"/> Global Game Leaderboard
+                    </Link>
+                </Button>
             </div>
             
             <div className="space-y-8">
