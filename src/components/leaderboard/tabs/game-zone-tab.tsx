@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -69,35 +69,35 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto w-full pb-40 px-2 sm:px-0">
+        <div className="space-y-6 max-w-7xl mx-auto w-full pb-40 px-2">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-rose-500/5 border-rose-500/20">
+                <Card className="bg-rose-500/5 border-rose-500/20 rounded-3xl overflow-hidden">
                     <CardContent className="p-4 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Gamepad2 className="h-8 w-8 text-rose-500 animate-pulse" />
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Skill Registry</p>
-                                <p className="font-bold">Weekly Arcade Cycle</p>
+                                <p className="font-bold text-sm sm:text-base">Weekly Arcade Cycle</p>
                             </div>
                         </div>
-                        <Button variant="outline" size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest border-primary/20" onClick={() => setIsHistoryOpen(true)}>
+                        <Button variant="outline" size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest border-primary/20 rounded-xl" onClick={() => setIsHistoryOpen(true)}>
                             <History className="mr-2 h-3 w-3"/> View History
                         </Button>
                     </CardContent>
                 </Card>
 
                 {lastWeekWinner && (
-                    <Card className="bg-amber-500/5 border-amber-500/20 cursor-pointer group" onClick={() => setSelectedHistoryEntry({ user: lastWeekWinner, date: gameHistory[0].weekStartDate })}>
+                    <Card className="bg-amber-500/5 border-amber-500/20 cursor-pointer group rounded-3xl overflow-hidden" onClick={() => setSelectedHistoryEntry({ user: lastWeekWinner, date: gameHistory[0].weekStartDate })}>
                         <CardContent className="p-4 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <Trophy className="h-8 w-8 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Week Champion</p>
-                                    <p className="font-bold truncate max-w-[150px]">{lastWeekWinner.displayName}</p>
+                                    <p className="font-bold truncate max-w-[150px] text-sm sm:text-base">{lastWeekWinner.displayName}</p>
                                 </div>
                             </div>
                             <div className="text-right">
-                                <p className="text-xl font-black text-amber-500">{Math.round(lastWeekWinner.score)}</p>
+                                <p className="text-base sm:text-xl font-black text-amber-500 tabular-nums">{Math.round(lastWeekWinner.score)}</p>
                                 <p className="text-[8px] font-black uppercase opacity-40">Skill Points</p>
                             </div>
                         </CardContent>
@@ -111,69 +111,58 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                     const isExpanded = expandedId === user.uid;
                     const isMe = user.uid === currentUserId;
                     const tierStyles = getTierStyles(rank, isMe);
-                    const ownedBadges = getOwnedBadges(user);
 
                     return (
                         <div key={user.uid} ref={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}>
                             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.03 }}>
                                 <Card 
                                     className={cn(
-                                        "relative overflow-hidden border-2 cursor-pointer group transition-all duration-500 rounded-[2.5rem]",
+                                        "relative overflow-hidden border-2 cursor-pointer group transition-all duration-500 rounded-[2rem] sm:rounded-[2.5rem]",
                                         isExpanded ? "ring-4 ring-rose-500/20 scale-[1.01]" : "hover:scale-[1.005]",
-                                        tierStyles,
-                                        rank <= 3 && "min-h-[100px]"
+                                        tierStyles
                                     )}
                                     onClick={() => setExpandedId(isExpanded ? null : user.uid)}
                                 >
-                                    <div className="p-4 sm:p-6 flex items-center gap-4 sm:gap-8">
-                                        <div className="w-8 sm:w-12 text-center font-black italic text-xl sm:text-3xl opacity-40">#{rank}</div>
+                                    <div className="p-4 sm:p-6 flex items-center gap-3 sm:gap-8">
+                                        <div className="w-8 sm:w-12 text-center font-black italic text-xl sm:text-3xl opacity-40 shrink-0">#{rank}</div>
                                         
                                         <button 
                                             onClick={(e) => { e.stopPropagation(); setShowcaseUser(user); }} 
-                                            className="relative group/avatar shrink-0"
+                                            className="relative shrink-0"
                                         >
-                                            <div className="absolute -inset-1 bg-rose-500/20 rounded-full blur opacity-0 group-hover/avatar:opacity-100 transition-opacity" />
-                                            <Avatar className={cn("h-12 w-12 sm:h-16 sm:w-16 border-2 border-white/10 relative z-10", rank === 1 && "h-16 w-16 sm:h-20 sm:w-20")}>
+                                            <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-white/10 relative z-10">
                                                 <AvatarImage src={user.photoURL} />
                                                 <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                         </button>
 
                                         <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-3 flex-wrap">
-                                                <p className={cn("font-black text-sm sm:text-xl uppercase tracking-tight truncate italic", rank === 1 && "text-lg sm:text-2xl")}>{user.displayName}</p>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="font-black text-sm sm:text-xl uppercase tracking-tight truncate italic">{user.displayName}</p>
                                                 <ShowcaseBadge user={user} />
-                                                {user.isLeaderboardPrivate && (
-                                                    <div className="flex items-center gap-1 text-white/40">
-                                                        <EyeOff className="h-3 w-3" />
-                                                        <span className="text-[8px] font-black uppercase">Stealth</span>
-                                                    </div>
-                                                )}
+                                                {user.isLeaderboardPrivate && <EyeOff className="h-3 w-3 opacity-40" />}
                                             </div>
-                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-1">
-                                                {user.mindMateId || 'ELITE ARCADE GAMER'}
+                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-0.5">
+                                                {user.mindMateId || 'ARCADE ELITE'}
                                             </p>
                                         </div>
 
-                                        <div className="text-right">
-                                            <p className={cn("text-2xl sm:text-4xl font-black italic tracking-tighter text-white leading-none", rank === 1 && "text-3xl sm:text-5xl")}>{Math.round(user.entertainmentTotalScore).toLocaleString()}</p>
+                                        <div className="text-right shrink-0">
+                                            <p className="text-xl sm:text-4xl font-black italic tracking-tighter text-white leading-none tabular-nums">
+                                                {Math.round(user.entertainmentTotalScore).toLocaleString()}
+                                            </p>
                                             <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Skill Points</p>
                                         </div>
                                         
-                                        <div className="ml-2 opacity-30 group-hover:opacity-100 transition-opacity">
-                                            {isExpanded ? <ChevronUp /> : <ChevronDown />}
+                                        <div className="ml-1 sm:ml-2 opacity-30">
+                                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                         </div>
                                     </div>
 
                                     <AnimatePresence>
                                         {isExpanded && (
-                                            <motion.div
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: 'auto', opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                className="border-t border-white/5 bg-black/40"
-                                            >
-                                                <div className="p-6 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/5 bg-black/40">
+                                                <div className="p-4 sm:p-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                                                     <SkillBlock icon={Orbit} label="Astro Ascent" score={user.gameHighScores?.astroAscent} color="text-purple-400" />
                                                     <SkillBlock icon={Bird} label="Flappy Mind" score={user.gameHighScores?.flappyMind} color="text-sky-400" />
                                                     <SkillBlock icon={Swords} label="Dim. Shift" score={user.gameHighScores?.dimensionShift} color="text-rose-400" />
@@ -199,42 +188,48 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                         id="personal-skill-footer"
                         initial={{ y: 100 }}
                         animate={{ y: 0 }}
-                        className="fixed bottom-[88px] left-0 right-0 z-[100] px-4 md:px-8 pointer-events-none"
+                        className="fixed bottom-[80px] sm:bottom-[88px] left-0 right-0 z-[100] px-4 pointer-events-none"
                     >
                         <div className="max-w-7xl mx-auto pointer-events-auto">
                             <Card 
-                                className="bg-[#0a0a0a]/95 backdrop-blur-2xl border-t-2 border-rose-500 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[2.5rem] overflow-hidden relative cursor-pointer group"
+                                className="bg-[#0a0a0a]/95 backdrop-blur-2xl border-t-2 border-rose-500 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[2rem] overflow-hidden relative cursor-pointer group"
                                 onClick={() => setExpandedId(expandedId === 'my-rank' ? null : 'my-rank')}
                             >
                                 <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
-                                <div className="p-4 sm:p-6 flex items-center justify-between text-white relative z-10">
-                                    <div className="flex items-center gap-4 sm:gap-8">
-                                        <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-rose-500/20 border-2 border-rose-500/40 flex flex-col items-center justify-center font-black text-xl sm:text-2xl italic leading-none">
-                                            <span className="text-[8px] uppercase tracking-widest not-italic opacity-60 mb-1">Rank</span>
+                                <div className="p-4 flex items-center justify-between text-white relative z-10">
+                                    <div className="flex items-center gap-3 sm:gap-8">
+                                        <div className="h-10 w-10 sm:h-16 sm:w-16 rounded-full bg-rose-500/20 border-2 border-rose-500/40 flex flex-col items-center justify-center font-black text-sm sm:text-2xl italic leading-none">
+                                            <span className="text-[6px] sm:text-[8px] uppercase tracking-widest not-italic opacity-60 mb-0.5 sm:mb-1">Rank</span>
                                             #{myRank}
                                         </div>
-                                        <div>
-                                            <p className="font-black text-xs sm:text-lg uppercase tracking-widest leading-none">Your Skill Standing</p>
-                                            <p className="text-[8px] font-bold uppercase text-rose-500 tracking-[0.2em] mt-1.5 flex items-center gap-2">
-                                                <CheckCircle className="h-3 w-3"/> Arcade Uplink Active
-                                            </p>
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-8 w-8 sm:h-14 sm:w-14 border-2 border-white/10 shrink-0">
+                                                <AvatarImage src={myData.photoURL} />
+                                                <AvatarFallback>ME</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-black text-[10px] sm:text-lg uppercase tracking-widest leading-none">Skill Standing</p>
+                                                <p className="text-[7px] sm:text-[8px] font-bold uppercase text-rose-500 tracking-[0.2em] mt-1 flex items-center gap-1.5">
+                                                    <CheckCircle className="h-2 w-2 sm:h-3 sm:w-3"/> Arcade Uplink Active
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="text-right flex items-center gap-4">
+                                    <div className="text-right flex items-center gap-3">
                                         <div className="flex flex-col items-end">
-                                            <p className="text-2xl sm:text-5xl font-black italic tracking-tighter leading-none text-rose-500">{Math.round(myData.entertainmentTotalScore).toLocaleString()}</p>
+                                            <p className="text-xl sm:text-5xl font-black italic tracking-tighter leading-none text-rose-500 tabular-nums">{Math.round(myData.entertainmentTotalScore).toLocaleString()}</p>
                                             <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Skill Points</p>
                                         </div>
-                                        <div className="opacity-30 group-hover:opacity-100 transition-opacity">
-                                            {expandedId === 'my-rank' ? <ChevronUp /> : <ChevronDown />}
+                                        <div className="opacity-30">
+                                            {expandedId === 'my-rank' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                         </div>
                                     </div>
                                 </div>
 
                                 <AnimatePresence>
                                     {expandedId === 'my-rank' && (
-                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/10 bg-black/60 p-6">
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/10 bg-black/60 p-4 sm:p-6">
+                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
                                                 <SkillBlock icon={Orbit} label="Astro Ascent" score={myData.gameHighScores?.astroAscent} color="text-purple-400" />
                                                 <SkillBlock icon={Bird} label="Flappy Mind" score={myData.gameHighScores?.flappyMind} color="text-sky-400" />
                                                 <SkillBlock icon={Swords} label="Dim. Shift" score={myData.gameHighScores?.dimensionShift} color="text-rose-400" />
@@ -253,23 +248,22 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                 )}
             </AnimatePresence>
 
-            {/* History Dialog */}
             <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
                 <DialogContent className="max-w-3xl bg-background/95 backdrop-blur-xl border-primary/20 p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
-                    <div className="p-8 border-b bg-muted/20">
+                    <div className="p-6 sm:p-8 border-b bg-muted/20">
                         <DialogHeader>
-                            <DialogTitle className="text-3xl font-black uppercase italic flex items-center gap-3">
+                            <DialogTitle className="text-2xl sm:text-3xl font-black uppercase italic flex items-center gap-3">
                                 <History className="h-8 w-8 text-primary"/> Skill Registry Archive
                             </DialogTitle>
-                            <DialogDescription className="text-base font-medium">Historical Top 5 Game Masters from previous operational cycles.</DialogDescription>
+                            <DialogDescription className="text-xs sm:text-base font-medium">Historical Top 5 Game Masters from previous operational cycles.</DialogDescription>
                         </DialogHeader>
                     </div>
                     <ScrollArea className="h-[500px]">
-                        <div className="p-8 space-y-8">
+                        <div className="p-4 sm:p-8 space-y-8">
                             {gameHistory.map((entry, i) => (
                                 <div key={entry.id} className="space-y-4">
                                     <div className="flex items-center justify-between px-2">
-                                        <h4 className="text-sm font-black uppercase tracking-[0.3em] text-primary">Cycle: {format(parseISO(entry.weekStartDate), 'MMM d')}</h4>
+                                        <h4 className="text-xs sm:text-sm font-black uppercase tracking-[0.3em] text-primary">Cycle: {format(parseISO(entry.weekStartDate), 'MMM d')}</h4>
                                         <Badge variant="outline" className="text-[8px] font-black uppercase">Operational Record</Badge>
                                     </div>
                                     <div className="grid gap-2">
@@ -285,10 +279,10 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                                         <AvatarImage src={p.photoURL}/>
                                                         <AvatarFallback>U</AvatarFallback>
                                                     </Avatar>
-                                                    <span className="font-bold text-sm truncate max-w-[150px]">{p.displayName}</span>
+                                                    <span className="font-bold text-xs sm:text-sm truncate max-w-[150px]">{p.displayName}</span>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className="text-sm font-black text-primary">{p.score}</p>
+                                                    <p className="text-xs sm:text-sm font-black text-primary tabular-nums">{p.score}</p>
                                                     <p className="text-[8px] font-black uppercase opacity-40">Points</p>
                                                 </div>
                                             </button>
@@ -297,14 +291,13 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                 </div>
                             ))}
                             {gameHistory.length === 0 && (
-                                <div className="py-20 text-center opacity-30 italic">No historical archives found in the mainframe.</div>
+                                <div className="py-20 text-center opacity-30 italic">No historical archives found.</div>
                             )}
                         </div>
                     </ScrollArea>
                 </DialogContent>
             </Dialog>
 
-            {/* Individual History Detail Dialog */}
             <Dialog open={!!selectedHistoryEntry} onOpenChange={(o) => !o && setSelectedHistoryEntry(null)}>
                 <DialogContent className="max-w-md p-0 overflow-hidden border-0 bg-transparent shadow-none">
                     {selectedHistoryEntry && (
@@ -320,14 +313,14 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <SkillBlock icon={Orbit} label="Astro Ascent" score={selectedHistoryEntry.user.scores.astroAscent} color="text-purple-400" isMini />
-                                    <SkillBlock icon={Bird} label="Flappy Mind" score={selectedHistoryEntry.user.scores.flappyMind} color="text-sky-400" isMini />
-                                    <SkillBlock icon={Swords} label="Dim. Shift" score={selectedHistoryEntry.user.scores.dimensionShift} color="text-rose-400" isMini />
-                                    <SkillBlock icon={BrainCircuit} label="Sub. Sprint" score={selectedHistoryEntry.user.scores.subjectSprint} color="text-emerald-400" isMini />
-                                    <SkillBlock icon={Smile} label="Emoji Quiz" score={selectedHistoryEntry.user.scores.emojiQuiz} color="text-yellow-400" isMini />
-                                    <SkillBlock icon={Sigma} label="Math Legend" score={selectedHistoryEntry.user.scores.mathematicsLegend} color="text-blue-400" isMini />
-                                    <SkillBlock icon={Atom} label="Element Quest" score={selectedHistoryEntry.user.scores.elementQuestTotal} color="text-cyan-400" isMini />
-                                    <SkillBlock icon={Brain} label="Memory Pattern" score={selectedHistoryEntry.user.scores.memoryGame} color="text-green-400" isMini />
+                                    <SkillBlock icon={Orbit} label="Astro" score={selectedHistoryEntry.user.scores.astroAscent} color="text-purple-400" isMini />
+                                    <SkillBlock icon={Bird} label="Flappy" score={selectedHistoryEntry.user.scores.flappyMind} color="text-sky-400" isMini />
+                                    <SkillBlock icon={Swords} label="Shift" score={selectedHistoryEntry.user.scores.dimensionShift} color="text-rose-400" isMini />
+                                    <SkillBlock icon={BrainCircuit} label="Sprint" score={selectedHistoryEntry.user.scores.subjectSprint} color="text-emerald-400" isMini />
+                                    <SkillBlock icon={Smile} label="Emoji" score={selectedHistoryEntry.user.scores.emojiQuiz} color="text-yellow-400" isMini />
+                                    <SkillBlock icon={Sigma} label="Math" score={selectedHistoryEntry.user.scores.mathematicsLegend} color="text-blue-400" isMini />
+                                    <SkillBlock icon={Atom} label="Element" score={selectedHistoryEntry.user.scores.elementQuestTotal} color="text-cyan-400" isMini />
+                                    <SkillBlock icon={Brain} label="Memory" score={selectedHistoryEntry.user.scores.memoryGame} color="text-green-400" isMini />
                                 </div>
                                 <div className="pt-4 border-t border-white/5 text-center">
                                     <p className="text-3xl font-black text-amber-500 italic tabular-nums">{selectedHistoryEntry.user.score}</p>
@@ -349,13 +342,13 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
 
 function SkillBlock({ icon: Icon, label, score, color, isMini = false }: any) {
     return (
-        <div className={cn("flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 transition-colors", isMini ? "p-2 rounded-xl" : "p-3 rounded-2xl")}>
-            <div className={cn("p-1.5 rounded-lg bg-black/20", color)}>
+        <div className={cn("flex items-center gap-3 bg-white/5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5 transition-colors")}>
+            <div className={cn("p-1 sm:p-1.5 rounded-lg bg-black/20 shrink-0", color)}>
                 <Icon className={cn(isMini ? "h-3.5 w-3.5" : "h-5 w-5")} />
             </div>
             <div className="min-w-0 text-left">
-                <p className={cn("text-[8px] font-black uppercase opacity-40 leading-none mb-1", isMini && "text-[7px]")}>{label}</p>
-                <p className={cn("font-bold truncate leading-none", isMini ? "text-[10px]" : "text-xs")}>{score || 0}</p>
+                <p className={cn("text-[7px] sm:text-[8px] font-black uppercase opacity-40 leading-none mb-0.5 sm:mb-1")}>{label}</p>
+                <p className={cn("font-bold truncate leading-none tabular-nums", isMini ? "text-[10px]" : "text-xs")}>{score || 0}</p>
             </div>
         </div>
     );
@@ -370,10 +363,10 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
             <DialogContent className="max-w-xl bg-background/95 backdrop-blur-xl border-primary/20 p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
                 <div className="h-32 bg-gradient-to-br from-rose-500/20 via-background to-background relative overflow-hidden">
                     <div className="absolute inset-0 bg-grid-white/5" />
-                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-4 w-4"/></Button>
+                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-6 w-6"/></Button>
                 </div>
                 
-                <div className="px-8 pb-10 -mt-12 relative z-10">
+                <div className="px-6 sm:px-8 pb-10 -mt-12 relative z-10">
                     <div className="flex flex-col items-center text-center space-y-4">
                         <Avatar className="h-24 w-24 border-4 border-rose-500 shadow-2xl bg-background">
                             <AvatarImage src={user.photoURL} />
@@ -381,19 +374,19 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                         </Avatar>
                         <div>
                             <h3 className="text-2xl font-black uppercase italic tracking-tight">{user.displayName}</h3>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Arcade Identity Dossier • {user.mindMateId || 'LEGEND'}</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Arcade Dossier • {user.mindMateId || 'LEGEND'}</p>
                         </div>
                     </div>
 
                     <div className="mt-8 space-y-6">
                         <div className="flex items-center justify-between border-b pb-2">
-                            <h4 className="text-xs font-black uppercase tracking-[0.3em] text-rose-500 flex items-center gap-2">
+                            <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-rose-500 flex items-center gap-2">
                                 <Medal className="h-4 w-4"/> Verified Arcade Assets
                             </h4>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{owned.length} Badges Unlocked</span>
+                            <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase">{owned.length} Badges Unlocked</span>
                         </div>
 
-                        <ScrollArea className="h-64 pr-4">
+                        <ScrollArea className="h-64 pr-2 sm:pr-4">
                             <div className="space-y-3">
                                 {owned.map(key => (
                                     <div key={key} className="flex items-center justify-between p-3 rounded-2xl bg-muted/30 border border-white/5 group hover:border-rose-500/20 transition-all">
@@ -403,10 +396,10 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                                             </div>
                                             <div>
                                                 <p className="text-sm font-bold">{badgeMeta[key].name}</p>
-                                                <p className="text-[10px] text-muted-foreground font-medium">Unlocked through arcade dominance.</p>
+                                                <p className="text-[9px] text-muted-foreground font-medium">Unlocked through merit.</p>
                                             </div>
                                         </div>
-                                        <div className="scale-90">{badgeMeta[key].badge}</div>
+                                        <div className="scale-75 sm:scale-90 origin-right">{badgeMeta[key].badge}</div>
                                     </div>
                                 ))}
                                 {owned.length === 0 && (
@@ -417,7 +410,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                                 )}
                             </div>
                         </ScrollArea>
-                        <p className="text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest italic opacity-60 pt-4">"Viewing all badges this user's Identity record holds"</p>
+                        <p className="text-[8px] sm:text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest italic opacity-60 pt-4">"Viewing all badges this user's Identity record holds"</p>
                     </div>
                 </div>
             </DialogContent>
