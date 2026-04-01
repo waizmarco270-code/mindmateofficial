@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -69,7 +68,7 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto w-full pb-40 px-2">
+        <div className="space-y-6 max-w-7xl mx-auto w-full pb-40 px-2 sm:px-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-rose-500/5 border-rose-500/20 rounded-3xl overflow-hidden">
                     <CardContent className="p-4 flex items-center justify-between">
@@ -77,7 +76,7 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                             <Gamepad2 className="h-8 w-8 text-rose-500 animate-pulse" />
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Skill Registry</p>
-                                <p className="font-bold text-sm sm:text-base">Weekly Arcade Cycle</p>
+                                <p className="font-bold text-sm sm:text-base text-foreground">Weekly Arcade Cycle</p>
                             </div>
                         </div>
                         <Button variant="outline" size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest border-primary/20 rounded-xl" onClick={() => setIsHistoryOpen(true)}>
@@ -93,7 +92,7 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                 <Trophy className="h-8 w-8 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
                                 <div>
                                     <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Week Champion</p>
-                                    <p className="font-bold truncate max-w-[150px] text-sm sm:text-base">{lastWeekWinner.displayName}</p>
+                                    <p className="font-bold truncate max-w-[150px] text-sm sm:text-base text-foreground">{lastWeekWinner.displayName}</p>
                                 </div>
                             </div>
                             <div className="text-right">
@@ -136,7 +135,7 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                             </Avatar>
                                         </button>
 
-                                        <div className="flex-1 min-w-0">
+                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <p className="font-black text-sm sm:text-xl uppercase tracking-tight truncate italic">{user.displayName}</p>
                                                 <ShowcaseBadge user={user} />
@@ -147,14 +146,17 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                             </p>
                                         </div>
 
-                                        <div className="text-right shrink-0">
-                                            <p className="text-xl sm:text-4xl font-black italic tracking-tighter text-white leading-none tabular-nums">
+                                        <div className="text-right shrink-0 ml-auto">
+                                            <p className={cn(
+                                                "font-black italic tracking-tighter text-white leading-none tabular-nums",
+                                                user.entertainmentTotalScore >= 1000 ? "text-xl sm:text-4xl" : "text-2xl sm:text-5xl"
+                                            )}>
                                                 {Math.round(user.entertainmentTotalScore).toLocaleString()}
                                             </p>
                                             <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Skill Points</p>
                                         </div>
                                         
-                                        <div className="ml-1 sm:ml-2 opacity-30">
+                                        <div className="ml-1 sm:ml-2 opacity-30 group-hover:opacity-100 transition-opacity hidden sm:block">
                                             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                         </div>
                                     </div>
@@ -188,7 +190,7 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                         id="personal-skill-footer"
                         initial={{ y: 100 }}
                         animate={{ y: 0 }}
-                        className="fixed bottom-[80px] sm:bottom-[88px] left-0 right-0 z-[100] px-4 pointer-events-none"
+                        className="fixed bottom-[80px] sm:bottom-[88px] left-0 right-0 z-[100] px-2 sm:px-4 pointer-events-none"
                     >
                         <div className="max-w-7xl mx-auto pointer-events-auto">
                             <Card 
@@ -196,20 +198,20 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                 onClick={() => setExpandedId(expandedId === 'my-rank' ? null : 'my-rank')}
                             >
                                 <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
-                                <div className="p-4 flex items-center justify-between text-white relative z-10">
+                                <div className="p-4 sm:p-6 flex items-center justify-between text-white relative z-10">
                                     <div className="flex items-center gap-3 sm:gap-8">
-                                        <div className="h-10 w-10 sm:h-16 sm:w-16 rounded-full bg-rose-500/20 border-2 border-rose-500/40 flex flex-col items-center justify-center font-black text-sm sm:text-2xl italic leading-none">
+                                        <div className="h-10 w-10 sm:h-16 sm:w-16 rounded-full bg-rose-500/20 border-2 border-rose-500/40 flex flex-col items-center justify-center font-black text-sm sm:text-2xl italic leading-none shrink-0">
                                             <span className="text-[6px] sm:text-[8px] uppercase tracking-widest not-italic opacity-60 mb-0.5 sm:mb-1">Rank</span>
                                             #{myRank}
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-3 min-w-0">
                                             <Avatar className="h-8 w-8 sm:h-14 sm:w-14 border-2 border-white/10 shrink-0">
                                                 <AvatarImage src={myData.photoURL} />
                                                 <AvatarFallback>ME</AvatarFallback>
                                             </Avatar>
-                                            <div>
-                                                <p className="font-black text-[10px] sm:text-lg uppercase tracking-widest leading-none">Skill Standing</p>
-                                                <p className="text-[7px] sm:text-[8px] font-bold uppercase text-rose-500 tracking-[0.2em] mt-1 flex items-center gap-1.5">
+                                            <div className="truncate">
+                                                <p className="font-black text-[10px] sm:text-lg uppercase tracking-widest leading-none truncate">Skill Standing</p>
+                                                <p className="text-[7px] sm:text-[8px] font-bold uppercase text-rose-500 tracking-[0.2em] mt-1 sm:mt-1.5 flex items-center gap-1.5">
                                                     <CheckCircle className="h-2 w-2 sm:h-3 sm:w-3"/> Arcade Uplink Active
                                                 </p>
                                             </div>
@@ -217,10 +219,13 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                     </div>
                                     <div className="text-right flex items-center gap-3">
                                         <div className="flex flex-col items-end">
-                                            <p className="text-xl sm:text-5xl font-black italic tracking-tighter leading-none text-rose-500 tabular-nums">{Math.round(myData.entertainmentTotalScore).toLocaleString()}</p>
+                                            <p className={cn(
+                                                "font-black italic tracking-tighter leading-none text-rose-500 tabular-nums",
+                                                myData.entertainmentTotalScore >= 1000 ? "text-xl sm:text-5xl" : "text-2xl sm:text-6xl"
+                                            )}>{Math.round(myData.entertainmentTotalScore).toLocaleString()}</p>
                                             <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Skill Points</p>
                                         </div>
-                                        <div className="opacity-30">
+                                        <div className="opacity-30 group-hover:opacity-100 transition-opacity">
                                             {expandedId === 'my-rank' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                         </div>
                                     </div>
@@ -279,7 +284,7 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                                         <AvatarImage src={p.photoURL}/>
                                                         <AvatarFallback>U</AvatarFallback>
                                                     </Avatar>
-                                                    <span className="font-bold text-xs sm:text-sm truncate max-w-[150px]">{p.displayName}</span>
+                                                    <span className="font-bold text-xs sm:text-sm truncate max-w-[150px] text-foreground">{p.displayName}</span>
                                                 </div>
                                                 <div className="text-right">
                                                     <p className="text-xs sm:text-sm font-black text-primary tabular-nums">{p.score}</p>
@@ -306,7 +311,7 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                 <div className="mx-auto w-20 h-20 rounded-full bg-amber-500/20 border-4 border-amber-500/40 flex items-center justify-center mb-4">
                                     <Trophy className="h-10 w-10 text-amber-500 animate-gold-shine" />
                                 </div>
-                                <CardTitle className="text-2xl font-black uppercase italic tracking-tight">{selectedHistoryEntry.user.displayName}</CardTitle>
+                                <CardTitle className="text-2xl font-black uppercase italic tracking-tight text-foreground">{selectedHistoryEntry.user.displayName}</CardTitle>
                                 <CardDescription className="font-bold text-amber-600 dark:text-amber-400 uppercase text-[10px] tracking-widest">
                                     Week of {format(parseISO(selectedHistoryEntry.date), 'MMMM do')}
                                 </CardDescription>
@@ -328,7 +333,9 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                 </div>
                             </CardContent>
                             <CardFooter>
-                                <Button className="w-full h-12 rounded-xl font-bold" onClick={() => setSelectedHistoryEntry(null)}>UPLINK CLOSED</Button>
+                                <DialogClose asChild>
+                                    <Button className="w-full h-12 rounded-xl font-bold">UPLINK CLOSED</Button>
+                                </DialogClose>
                             </CardFooter>
                         </Card>
                     )}
@@ -348,7 +355,7 @@ function SkillBlock({ icon: Icon, label, score, color, isMini = false }: any) {
             </div>
             <div className="min-w-0 text-left">
                 <p className={cn("text-[7px] sm:text-[8px] font-black uppercase opacity-40 leading-none mb-0.5 sm:mb-1")}>{label}</p>
-                <p className={cn("font-bold truncate leading-none tabular-nums", isMini ? "text-[10px]" : "text-xs")}>{score || 0}</p>
+                <p className={cn("font-bold truncate leading-none tabular-nums text-foreground", isMini ? "text-[10px]" : "text-xs")}>{score || 0}</p>
             </div>
         </div>
     );
@@ -363,7 +370,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
             <DialogContent className="max-w-xl bg-background/95 backdrop-blur-xl border-primary/20 p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
                 <div className="h-32 bg-gradient-to-br from-rose-500/20 via-background to-background relative overflow-hidden">
                     <div className="absolute inset-0 bg-grid-white/5" />
-                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-6 w-6"/></Button>
+                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-4 w-4"/></Button>
                 </div>
                 
                 <div className="px-6 sm:px-8 pb-10 -mt-12 relative z-10">
@@ -373,7 +380,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                             <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
-                            <h3 className="text-2xl font-black uppercase italic tracking-tight">{user.displayName}</h3>
+                            <h3 className="text-2xl font-black uppercase italic tracking-tight text-foreground">{user.displayName}</h3>
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Arcade Dossier • {user.mindMateId || 'LEGEND'}</p>
                         </div>
                     </div>
@@ -395,7 +402,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                                                 <ScrollText className="h-4 w-4 text-rose-500 opacity-40"/>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold">{badgeMeta[key].name}</p>
+                                                <p className="text-sm font-bold text-foreground">{badgeMeta[key].name}</p>
                                                 <p className="text-[9px] text-muted-foreground font-medium">Unlocked through merit.</p>
                                             </div>
                                         </div>

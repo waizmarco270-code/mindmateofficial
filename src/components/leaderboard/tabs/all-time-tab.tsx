@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -17,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { SUPER_ADMIN_UID } from '@/hooks/use-admin';
 
 interface AllTimeTabProps {
     users: UserWithStats[];
@@ -64,7 +64,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
     };
 
     return (
-        <div className="space-y-4 max-w-7xl mx-auto w-full pb-40 px-2">
+        <div className="space-y-4 max-w-7xl mx-auto w-full pb-40 px-2 sm:px-4">
             {topTwenty.map((user, index) => {
                 const rank = index + 1;
                 const isExpanded = expandedId === user.uid;
@@ -88,8 +88,10 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                 onClick={() => setExpandedId(isExpanded ? null : user.uid)}
                             >
                                 <div className="p-4 sm:p-6 flex items-center gap-3 sm:gap-8">
+                                    {/* Rank Indicator */}
                                     <div className="w-8 sm:w-12 text-center font-black italic text-xl sm:text-3xl opacity-40 shrink-0">#{rank}</div>
                                     
+                                    {/* Avatar Zone */}
                                     <button 
                                         onClick={(e) => { 
                                             e.stopPropagation(); 
@@ -104,41 +106,44 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                         </Avatar>
                                     </button>
 
-                                    <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                                        <div className="min-w-0">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="font-black text-sm sm:text-xl uppercase tracking-tight truncate italic">{user.displayName}</p>
-                                                <ShowcaseBadge user={user} />
-                                                {user.isLeaderboardPrivate && (
-                                                    <div className="flex items-center gap-1 text-white/40">
-                                                        <EyeOff className="h-3 w-3" />
-                                                        <span className="text-[8px] font-black uppercase">Phantom</span>
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-3 mt-0.5">
-                                                <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                                                    {user.mindMateId || 'LEGEND'}
-                                                </p>
-                                                <button 
-                                                    onClick={(e) => { e.stopPropagation(); setShowcaseUser(user); }}
-                                                    className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-full border border-primary/20 transition-all"
-                                                >
-                                                    <Medal className="h-2.5 w-2.5 text-primary" />
-                                                    <span className="text-[9px] font-black text-primary uppercase">{ownedBadges.length} Assets</span>
-                                                </button>
-                                            </div>
+                                    {/* User Identity Zone */}
+                                    <div className="flex-1 min-w-0 flex flex-col justify-center">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="font-black text-sm sm:text-xl uppercase tracking-tight truncate italic">{user.displayName}</p>
+                                            <ShowcaseBadge user={user} />
+                                            {user.isLeaderboardPrivate && (
+                                                <div className="flex items-center gap-1 text-white/40">
+                                                    <EyeOff className="h-3 w-3" />
+                                                    <span className="text-[8px] font-black uppercase hidden sm:inline">Phantom</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div className="flex items-center gap-2 sm:gap-3 mt-1 sm:mt-1.5 flex-wrap">
+                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
+                                                {user.mindMateId || 'LEGEND'}
+                                            </p>
+                                            <button 
+                                                onClick={(e) => { e.stopPropagation(); setShowcaseUser(user); }}
+                                                className="flex items-center gap-1 sm:gap-1.5 bg-primary/10 hover:bg-primary/20 px-2 py-0.5 rounded-full border border-primary/20 transition-all"
+                                            >
+                                                <Medal className="h-2.5 w-2.5 text-primary" />
+                                                <span className="text-[8px] sm:text-[9px] font-black text-primary uppercase">{ownedBadges.length} Assets</span>
+                                            </button>
                                         </div>
                                     </div>
 
-                                    <div className="text-right shrink-0 ml-auto">
-                                        <p className="text-xl sm:text-4xl font-black italic tracking-tighter text-white leading-none tabular-nums">
+                                    {/* Score Zone - Fluid Typography */}
+                                    <div className="text-right shrink-0">
+                                        <p className={cn(
+                                            "font-black italic tracking-tighter text-white leading-none tabular-nums",
+                                            user.totalScore >= 1000000 ? "text-xl sm:text-4xl" : "text-2xl sm:text-5xl"
+                                        )}>
                                             {user.totalScore.toLocaleString()}
                                         </p>
                                         <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Tactical Points</p>
                                     </div>
                                     
-                                    <div className="ml-1 sm:ml-2 opacity-30 group-hover:opacity-100 transition-opacity">
+                                    <div className="ml-1 sm:ml-2 opacity-30 group-hover:opacity-100 transition-opacity hidden sm:block">
                                         {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                     </div>
                                 </div>
@@ -173,7 +178,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                         id="personal-rank-footer"
                         initial={{ y: 100 }}
                         animate={{ y: 0 }}
-                        className="fixed bottom-[80px] sm:bottom-[88px] left-0 right-0 z-[100] px-4 pointer-events-none"
+                        className="fixed bottom-[80px] sm:bottom-[88px] left-0 right-0 z-[100] px-2 sm:px-4 pointer-events-none"
                     >
                         <div className="max-w-7xl mx-auto pointer-events-auto">
                             <Card 
@@ -181,19 +186,19 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                 onClick={() => setExpandedId(expandedId === 'my-rank' ? null : 'my-rank')}
                             >
                                 <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
-                                <div className="p-4 flex items-center justify-between text-white relative z-10">
+                                <div className="p-4 sm:p-6 flex items-center justify-between text-white relative z-10">
                                     <div className="flex items-center gap-3 sm:gap-8">
                                         <div className="h-10 w-10 sm:h-16 sm:w-16 rounded-full bg-primary/20 border-2 border-primary/40 flex flex-col items-center justify-center font-black text-sm sm:text-2xl italic leading-none shrink-0">
                                             <span className="text-[6px] sm:text-[8px] uppercase tracking-widest not-italic opacity-60 mb-0.5 sm:mb-1">Rank</span>
                                             #{myRank}
                                         </div>
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex items-center gap-3 min-w-0">
                                             <Avatar className="h-8 w-8 sm:h-14 sm:w-14 border-2 border-white/10 shrink-0">
                                                 <AvatarImage src={myData.photoURL} />
                                                 <AvatarFallback>ME</AvatarFallback>
                                             </Avatar>
-                                            <div>
-                                                <p className="font-black text-[10px] sm:text-lg uppercase tracking-widest leading-none">Personal Standing</p>
+                                            <div className="truncate">
+                                                <p className="font-black text-[10px] sm:text-lg uppercase tracking-widest leading-none truncate">Personal Standing</p>
                                                 <p className="text-[7px] sm:text-[8px] font-bold uppercase text-primary tracking-[0.2em] mt-1 sm:mt-1.5 flex items-center gap-1.5">
                                                     <CheckCircle className="h-2 w-2 sm:h-3 sm:w-3"/> System Sync Active
                                                 </p>
@@ -202,7 +207,10 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                     </div>
                                     <div className="text-right flex items-center gap-3">
                                         <div className="flex flex-col items-end">
-                                            <p className="text-xl sm:text-5xl font-black italic tracking-tighter leading-none text-primary tabular-nums">{myData.totalScore.toLocaleString()}</p>
+                                            <p className={cn(
+                                                "font-black italic tracking-tighter leading-none text-primary tabular-nums",
+                                                myData.totalScore >= 1000000 ? "text-xl sm:text-5xl" : "text-2xl sm:text-6xl"
+                                            )}>{myData.totalScore.toLocaleString()}</p>
                                             <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Sovereign Points</p>
                                         </div>
                                         <div className="opacity-30 group-hover:opacity-100 transition-opacity">
