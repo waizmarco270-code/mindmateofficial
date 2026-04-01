@@ -1,3 +1,99 @@
+/* BILION DOLLAR STARTUP METALLIC SHIMMERS */
+
+@keyframes gold-shimmer-sober {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.tier-gold-sober {
+  background: linear-gradient(135deg, 
+    rgba(20, 20, 20, 0.95), 
+    rgba(40, 35, 10, 0.95)
+  );
+  position: relative;
+}
+
+.tier-gold-sober::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: linear-gradient(90deg, 
+    #f59e0b 0%, 
+    #fde047 25%, 
+    #fbbf24 50%, 
+    #fde047 75%, 
+    #f59e0b 100%
+  );
+  background-size: 200% auto;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: gold-shimmer-sober 6s linear infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.tier-silver-sober {
+  background: linear-gradient(135deg, 
+    rgba(20, 20, 20, 0.95), 
+    rgba(30, 30, 35, 0.95)
+  );
+  position: relative;
+}
+
+.tier-silver-sober::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: linear-gradient(90deg, 
+    #94a3b8 0%, 
+    #f8fafc 25%, 
+    #cbd5e1 50%, 
+    #f8fafc 75%, 
+    #94a3b8 100%
+  );
+  background-size: 200% auto;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: gold-shimmer-sober 8s linear infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.tier-bronze-sober {
+  background: linear-gradient(135deg, 
+    rgba(20, 20, 20, 0.95), 
+    rgba(35, 20, 10, 0.95)
+  );
+  position: relative;
+}
+
+.tier-bronze-sober::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  background: linear-gradient(90deg, 
+    #b45309 0%, 
+    #f59e0b 25%, 
+    #d97706 50%, 
+    #f59e0b 75%, 
+    #b45309 100%
+  );
+  background-size: 200% auto;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: gold-shimmer-sober 10s linear infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
 
 @keyframes vip-shimmer {
   0% { background-position: -200% 0; }
