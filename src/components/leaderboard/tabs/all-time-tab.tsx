@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,9 +29,11 @@ const formatHours = (seconds: number) => {
 
 export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProps) {
     const [showcaseUser, setShowcaseUser] = useState<UserWithStats | null>(null);
+    const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({});
     const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-    const topTwenty = users.slice(0, 20);
+    const topThree = useMemo(() => users.slice(0, 3), [users]);
+    const registry = useMemo(() => users.slice(3, 20), [users]);
     const myRank = users.findIndex(u => u.uid === currentUserId) + 1;
     const myData = users.find(u => u.uid === currentUserId);
     const isNotInTopTwenty = myRank > 20 || myRank === 0;
@@ -51,96 +53,44 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
         }
     }, [scrollToMe]);
 
-    const getTierClasses = (rank: number) => {
-        if (rank === 1) return "tier-gold-sober border-yellow-500/50";
-        if (rank === 2) return "tier-silver-sober border-slate-300/50";
-        if (rank === 3) return "tier-bronze-sober border-amber-700/50";
-        return "border-white/5 bg-card/40";
+    const handleFlip = (uid: string) => {
+        setFlippedCards(prev => ({ ...prev, [uid]: !prev[uid] }));
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto w-full pb-60 px-2 sm:px-4">
-            {topTwenty.map((user, index) => {
-                const rank = index + 1;
-                const isMe = user.uid === currentUserId;
-                const tierClasses = getTierClasses(rank);
-                const ownedBadges = getOwnedBadges(user);
+        <div className="space-y-12 max-w-7xl mx-auto w-full pb-60 px-2 sm:px-4">
+            {/* THE GLASS PODIUM (TOP 3) */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {topThree.map((user, index) => (
+                    <PodiumHeroCard 
+                        key={user.uid} 
+                        user={user} 
+                        rank={index + 1} 
+                        isMe={user.uid === currentUserId}
+                        onShowcase={() => setShowcaseUser(user)}
+                    />
+                ))}
+            </div>
 
-                return (
-                    <div key={user.uid} ref={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}>
-                        <motion.div
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                        >
-                            <Card 
-                                className={cn(
-                                    "relative overflow-hidden border-2 transition-all duration-500 rounded-[2rem] sm:rounded-[3rem] shadow-2xl",
-                                    isMe ? "ring-2 ring-primary/40 bg-primary/5" : "",
-                                    tierClasses
-                                )}
-                            >
-                                <div className="p-4 sm:p-8 flex flex-col gap-6">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                                        <div className="flex items-center gap-4 sm:gap-6">
-                                            <div className="flex flex-col items-center justify-center bg-black/20 rounded-2xl h-12 w-12 sm:h-16 sm:w-16 border border-white/5 shrink-0">
-                                                <span className="text-[10px] font-black uppercase opacity-40 leading-none mb-1">Rank</span>
-                                                <span className="text-xl sm:text-2xl font-black italic">#{rank}</span>
-                                            </div>
-                                            
-                                            <div className="flex items-center gap-4">
-                                                <button onClick={() => setShowcaseUser(user)} className="relative shrink-0">
-                                                    <Avatar className="h-14 w-14 sm:h-20 sm:w-20 border-2 border-white/10 shadow-xl">
-                                                        <AvatarImage src={user.photoURL} />
-                                                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                </button>
-                                                <div className="min-w-0">
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <h3 className="font-black text-lg sm:text-3xl uppercase tracking-tight italic truncate text-white">{user.displayName}</h3>
-                                                        <ShowcaseBadge user={user} />
-                                                        {user.isLeaderboardPrivate && <EyeOff className="h-4 w-4 opacity-40" />}
-                                                    </div>
-                                                    <div className="flex items-center gap-3 mt-1">
-                                                        <p className="text-[10px] sm:text-xs font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                                                            {user.mindMateId || 'LEGENDARY CITIZEN'}
-                                                        </p>
-                                                        <button 
-                                                            onClick={() => setShowcaseUser(user)}
-                                                            className="flex items-center gap-1.5 bg-primary/10 hover:bg-primary/20 px-2.5 py-1 rounded-full border border-primary/20 transition-all"
-                                                        >
-                                                            <Medal className="h-3 w-3 text-primary" />
-                                                            <span className="text-[9px] font-black text-primary uppercase">{ownedBadges.length} Assets</span>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="text-left sm:text-right border-t sm:border-t-0 pt-4 sm:pt-0 border-white/5">
-                                            <p className={cn(
-                                                "font-black italic tracking-tighter leading-none text-white tabular-nums",
-                                                user.totalScore >= 1000000 ? "text-2xl sm:text-6xl" : "text-3xl sm:text-7xl"
-                                            )}>
-                                                {user.totalScore.toLocaleString()}
-                                            </p>
-                                            <p className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-primary mt-2">Sovereign Points</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4 border-t border-white/5 pt-6">
-                                        <MatrixBlock icon={Clock} label="Study" val={`${formatHours(user.totalStudyTime || 0)}h`} points={user.breakdown.studyPoints} color="text-sky-400" />
-                                        <MatrixBlock icon={Flame} label="Streak" val={`${user.streak}d`} points={user.breakdown.streakPoints} color="text-orange-500" />
-                                        <MatrixBlock icon={Gem} label="Credits" val={user.credits.toLocaleString()} points={user.breakdown.creditsPoints} color="text-amber-500" />
-                                        <MatrixBlock icon={ShieldAlert} label="Exile" val={user.breakdown.isolationLabel.split(' ')[0]} points={user.breakdown.isolationPoints} color="text-red-500" />
-                                        <MatrixBlock icon={Medal} label="Assets" val={`${ownedBadges.length}`} points={user.breakdown.badgePoints} color="text-fuchsia-400" className="col-span-2 sm:col-span-1" />
-                                    </div>
-                                </div>
-                            </Card>
-                        </motion.div>
-                    </div>
-                );
-            })}
+            {/* THE KINETIC REGISTRY (RANK 4-20) */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between px-4 mb-6">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Registry Index</h4>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Tap Card to Inspect Stats</p>
+                </div>
+                {registry.map((user, index) => (
+                    <RegistryFlipCard 
+                        key={user.uid}
+                        user={user}
+                        rank={index + 4}
+                        isMe={user.uid === currentUserId}
+                        isFlipped={!!flippedCards[user.uid]}
+                        onFlip={() => handleFlip(user.uid)}
+                        onShowcase={() => setShowcaseUser(user)}
+                        itemRef={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}
+                    />
+                ))}
+            </div>
 
             <AnimatePresence>
                 {isNotInTopTwenty && myData && (
@@ -190,18 +140,146 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
     );
 }
 
+function PodiumHeroCard({ user, rank, isMe, onShowcase }: any) {
+    const shimmerClass = rank === 1 ? "tier-gold-sober" : rank === 2 ? "tier-silver-sober" : "tier-bronze-sober";
+    const ownedBadges = getOwnedBadges(user);
+
+    return (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: rank * 0.1 }}
+        >
+            <Card className={cn(
+                "relative overflow-hidden border-2 rounded-[2.5rem] shadow-2xl h-full flex flex-col",
+                shimmerClass,
+                isMe && "ring-2 ring-primary/40"
+            )}>
+                <div className="p-6 sm:p-8 flex-1 flex flex-col gap-6">
+                    <div className="flex items-center justify-between">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 bg-black/40 rounded-2xl flex items-center justify-center border border-white/10 font-black italic text-xl">
+                            #{rank}
+                        </div>
+                        <ShowcaseBadge user={user} />
+                    </div>
+
+                    <div className="flex flex-col items-center text-center">
+                        <button onClick={onShowcase} className="relative mb-4">
+                            <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-white/10 shadow-2xl bg-background">
+                                <AvatarImage src={user.photoURL} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </button>
+                        <h3 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight text-white truncate w-full">{user.displayName}</h3>
+                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mt-1">{user.mindMateId || 'LEGEND'}</p>
+                    </div>
+
+                    <div className="text-center py-4 bg-black/20 rounded-3xl border border-white/5 shadow-inner">
+                        <p className="text-4xl sm:text-5xl font-black italic tracking-tighter text-white tabular-nums">
+                            {user.totalScore.toLocaleString()}
+                        </p>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mt-1">Sovereign Points</p>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                        <PodiumStat icon={Clock} val={`${formatHours(user.totalStudyTime || 0)}h`} color="text-sky-400" />
+                        <PodiumStat icon={Flame} val={`${user.streak}d`} color="text-orange-500" />
+                        <PodiumStat icon={Medal} val={`${ownedBadges.length}`} color="text-fuchsia-400" />
+                    </div>
+                </div>
+            </Card>
+        </motion.div>
+    );
+}
+
+function PodiumStat({ icon: Icon, val, color }: any) {
+    return (
+        <div className="bg-white/5 rounded-2xl p-2 flex flex-col items-center border border-white/5">
+            <Icon className={cn("h-3.5 w-3.5 mb-1", color)} />
+            <span className="text-[10px] font-black text-white">{val}</span>
+        </div>
+    );
+}
+
+function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, itemRef }: any) {
+    const ownedBadges = getOwnedBadges(user);
+
+    return (
+        <div ref={itemRef} className="perspective-1000 w-full h-[88px] sm:h-20 relative cursor-pointer" onClick={onFlip}>
+            <motion.div
+                animate={{ rotateY: isFlipped ? 180 : 0 }}
+                transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
+                className="w-full h-full preserve-3d relative"
+            >
+                {/* FRONT: THE HUD */}
+                <div className="absolute inset-0 backface-hidden">
+                    <Card className={cn(
+                        "h-full border border-white/5 bg-card/40 rounded-2xl sm:rounded-3xl flex items-center px-4 sm:px-8 gap-4 sm:gap-8 transition-colors",
+                        isMe && "bg-primary/5 border-primary/20"
+                    )}>
+                        <div className="w-6 sm:w-10 text-center font-black italic text-lg sm:text-2xl opacity-30">#{rank}</div>
+                        
+                        <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                            <button onClick={(e) => { e.stopPropagation(); onShowcase(); }}>
+                                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-white/10 shadow-lg bg-background">
+                                    <AvatarImage src={user.photoURL} />
+                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            </button>
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <p className="font-black text-sm sm:text-lg uppercase italic truncate">{user.displayName}</p>
+                                    <div className="scale-75 origin-left hidden sm:block">
+                                        <ShowcaseBadge user={user} />
+                                    </div>
+                                    {user.isLeaderboardPrivate && <EyeOff className="h-3 w-3 opacity-40" />}
+                                </div>
+                                <div className="flex items-center gap-2 sm:hidden">
+                                    <div className="scale-75 origin-left">
+                                        <ShowcaseBadge user={user} />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="text-right">
+                            <p className="text-xl sm:text-3xl font-black italic tracking-tighter leading-none tabular-nums">
+                                {user.totalScore.toLocaleString()}
+                            </p>
+                            <p className="text-[8px] font-black uppercase opacity-40 mt-1">Points</p>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* BACK: THE DATA MATRIX */}
+                <div className="absolute inset-0 backface-hidden rotate-y-180">
+                    <Card className="h-full border-primary/30 bg-primary/10 rounded-2xl sm:rounded-3xl flex items-center px-2 sm:px-6">
+                        <div className="grid grid-cols-5 gap-1 sm:gap-4 w-full">
+                            <MatrixBlock icon={Clock} label="Study" val={`${formatHours(user.totalStudyTime || 0)}h`} points={user.breakdown.studyPoints} color="text-sky-400" isMini />
+                            <MatrixBlock icon={Flame} label="Streak" val={`${user.streak}d`} points={user.breakdown.streakPoints} color="text-orange-500" isMini />
+                            <MatrixBlock icon={Gem} label="Credits" val={user.credits.toLocaleString()} points={user.breakdown.creditsPoints} color="text-amber-500" isMini />
+                            <MatrixBlock icon={ShieldAlert} label="Exile" val={user.breakdown.isolationLabel.split(' ')[0]} points={user.breakdown.isolationPoints} color="text-red-500" isMini />
+                            <MatrixBlock icon={Medal} label="Assets" val={`${ownedBadges.length}`} points={user.breakdown.badgePoints} color="text-fuchsia-400" isMini />
+                        </div>
+                    </Card>
+                </div>
+            </motion.div>
+        </div>
+    );
+}
+
 function MatrixBlock({ icon: Icon, label, val, points, color, className, isMini = false }: any) {
     return (
         <div className={cn(
-            "flex flex-col items-center justify-center p-2 sm:p-4 rounded-2xl sm:rounded-3xl bg-white/[0.03] border border-white/5 transition-all hover:bg-white/[0.06] text-center",
+            "flex flex-col items-center justify-center p-1 sm:p-2 rounded-xl sm:rounded-2xl bg-black/20 border border-white/5 text-center",
             className
         )}>
-            <div className={cn("p-1.5 sm:p-2.5 rounded-xl bg-black/40 mb-2 sm:mb-3 shadow-inner", color)}>
-                <Icon className={cn(isMini ? "h-3.5 w-3.5" : "h-5 w-5 sm:h-6 sm:w-6")} />
+            <div className={cn("p-1 rounded-lg bg-black/40 mb-1 shadow-inner", color)}>
+                <Icon className={cn(isMini ? "h-3 w-3" : "h-5 w-5")} />
             </div>
-            <p className="text-[7px] sm:text-[9px] font-black uppercase opacity-40 tracking-widest mb-0.5">{label}</p>
-            <p className="text-[9px] sm:text-sm font-black truncate max-w-full text-foreground">{val}</p>
-            <p className={cn("text-[8px] sm:text-[10px] font-black mt-1", color)}>+{points.toLocaleString()}</p>
+            <p className="text-[6px] sm:text-[8px] font-black uppercase opacity-40 leading-none truncate w-full px-1">{label}</p>
+            <p className="text-[8px] sm:text-xs font-black truncate max-w-full text-foreground">{val}</p>
+            <p className={cn("text-[6px] sm:text-[9px] font-black mt-0.5", color)}>+{points.toLocaleString()}</p>
         </div>
     );
 }
