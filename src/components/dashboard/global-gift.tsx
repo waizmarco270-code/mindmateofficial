@@ -41,6 +41,9 @@ function Flame({ className }: { className?: string }) {
 }
 
 function GiftSuccessDialog({ isOpen, onOpenChange, rewards }: { isOpen: boolean, onOpenChange: (o: boolean) => void, rewards: any }) {
+    // Safety check to prevent property access on undefined
+    const safeRewards = rewards || {};
+
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md border-0 bg-transparent shadow-none p-0">
@@ -84,9 +87,9 @@ function GiftSuccessDialog({ isOpen, onOpenChange, rewards }: { isOpen: boolean,
                         </div>
 
                         <div className="flex flex-wrap justify-center gap-2">
-                            {rewards.credits > 0 && <Badge variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-500 font-black">+{rewards.credits} CREDITS</Badge>}
-                            {rewards.badge && <div className="scale-90">{badgeDetails[rewards.badge]?.badge}</div>}
-                            {rewards.alphaGlowWeeks && <Badge className="bg-pink-500 text-white font-black">ALPHA RADIANCE</Badge>}
+                            {(safeRewards.credits || 0) > 0 && <Badge variant="outline" className="bg-amber-500/10 border-amber-500/30 text-amber-500 font-black">+{safeRewards.credits} CREDITS</Badge>}
+                            {safeRewards.badge && <div className="scale-90">{badgeDetails[safeRewards.badge]?.badge}</div>}
+                            {safeRewards.alphaGlowWeeks && <Badge className="bg-pink-500 text-white font-black">ALPHA RADIANCE</Badge>}
                         </div>
 
                         <Button onClick={() => onOpenChange(false)} size="lg" className="w-full h-14 bg-yellow-400 hover:bg-yellow-500 text-black font-black text-xl rounded-2xl shadow-[0_10px_30px_rgba(250,204,21,0.3)]">
@@ -105,6 +108,7 @@ export function GlobalGiftCard() {
     const [isVisible, setIsVisible] = useState(false);
     const [isClaiming, setIsClaiming] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+    const [claimedRewards, setClaimedRewards] = useState<any>(null);
 
     useEffect(() => {
         if (activeGlobalGift && user) {
@@ -121,7 +125,10 @@ export function GlobalGiftCard() {
         if (!activeGlobalGift || !user || isClaiming) return;
         setIsClaiming(true);
         try {
+            // Lock the rewards data before claiming to ensure the success dialog is stable
+            const rewardsToPreserve = { ...activeGlobalGift.rewards };
             await claimGlobalGift(activeGlobalGift.id, user.id);
+            setClaimedRewards(rewardsToPreserve);
             setShowSuccess(true);
             setTimeout(() => setIsVisible(false), 500);
         } catch (e) {
@@ -156,7 +163,7 @@ export function GlobalGiftCard() {
 
     return (
         <>
-            <GiftSuccessDialog isOpen={showSuccess} onOpenChange={setShowSuccess} rewards={activeGlobalGift?.rewards} />
+            <GiftSuccessDialog isOpen={showSuccess} onOpenChange={setShowSuccess} rewards={claimedRewards} />
             <AnimatePresence>
                 {isVisible && activeGlobalGift && (
                     <motion.div 

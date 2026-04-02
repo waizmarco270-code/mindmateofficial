@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
@@ -80,9 +81,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                     tierClasses
                                 )}
                             >
-                                {/* Fixed Layout Grid */}
                                 <div className="p-4 sm:p-8 flex flex-col gap-6">
-                                    {/* Header: Rank, Identity, and Score */}
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                                         <div className="flex items-center gap-4 sm:gap-6">
                                             <div className="flex flex-col items-center justify-center bg-black/20 rounded-2xl h-12 w-12 sm:h-16 sm:w-16 border border-white/5 shrink-0">
@@ -122,7 +121,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                         <div className="text-left sm:text-right border-t sm:border-t-0 pt-4 sm:pt-0 border-white/5">
                                             <p className={cn(
                                                 "font-black italic tracking-tighter leading-none text-white tabular-nums",
-                                                user.totalScore >= 1000000 ? "text-3xl sm:text-6xl" : "text-4xl sm:text-7xl"
+                                                user.totalScore >= 1000000 ? "text-2xl sm:text-6xl" : "text-3xl sm:text-7xl"
                                             )}>
                                                 {user.totalScore.toLocaleString()}
                                             </p>
@@ -130,7 +129,6 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                         </div>
                                     </div>
 
-                                    {/* Default Open Tactical Matrix */}
                                     <div className="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-4 border-t border-white/5 pt-6">
                                         <MatrixBlock icon={Clock} label="Study" val={`${formatHours(user.totalStudyTime || 0)}h`} points={user.breakdown.studyPoints} color="text-sky-400" />
                                         <MatrixBlock icon={Flame} label="Streak" val={`${user.streak}d`} points={user.breakdown.streakPoints} color="text-orange-500" />
@@ -145,7 +143,6 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                 );
             })}
 
-            {/* Sticky Personal Bar */}
             <AnimatePresence>
                 {isNotInTopTwenty && myData && (
                     <motion.div 
@@ -204,7 +201,7 @@ function MatrixBlock({ icon: Icon, label, val, points, color, className, isMini 
                 <Icon className={cn(isMini ? "h-3.5 w-3.5" : "h-5 w-5 sm:h-6 sm:w-6")} />
             </div>
             <p className="text-[7px] sm:text-[9px] font-black uppercase opacity-40 tracking-widest mb-0.5">{label}</p>
-            <p className="text-[10px] sm:text-sm font-black truncate max-w-full text-foreground">{val}</p>
+            <p className="text-[9px] sm:text-sm font-black truncate max-w-full text-foreground">{val}</p>
             <p className={cn("text-[8px] sm:text-[10px] font-black mt-1", color)}>+{points.toLocaleString()}</p>
         </div>
     );
