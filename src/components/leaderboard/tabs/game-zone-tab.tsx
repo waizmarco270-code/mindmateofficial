@@ -139,7 +139,7 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <p className="font-black text-sm sm:text-xl uppercase tracking-tight truncate italic">{user.displayName}</p>
                                                 <ShowcaseBadge user={user} />
-                                                {user.isLeaderboardPrivate && <EyeOff className="h-3 w-3 opacity-40" />}
+                                                {user.isLeaderboardPrivate && <EyeOff className="h-4 w-4 opacity-40" />}
                                             </div>
                                             <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-0.5">
                                                 {user.mindMateId || 'ARCADE ELITE'}
