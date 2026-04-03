@@ -34,11 +34,10 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
     const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const topThree = useMemo(() => {
-        // Special ordering for 2-1-3 layout
         const winners = users.slice(0, 3);
         if (winners.length < 3) return winners;
         return [winners[1], winners[0], winners[2]]; // [2nd, 1st, 3rd]
-    }, [users]);
+    }, [winners]);
 
     const registry = useMemo(() => users.slice(3, 20), [users]);
     const myRank = users.findIndex(u => u.uid === currentUserId) + 1;
@@ -81,7 +80,6 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                             
                             <div className="flex items-end justify-center gap-4 sm:gap-12 w-full max-w-2xl relative z-10">
                                 {topThree.map((user, index) => {
-                                    // Identify actual rank from users array
                                     const actualRank = users.findIndex(u => u.uid === user.uid) + 1;
                                     const isFirst = actualRank === 1;
                                     
@@ -127,10 +125,10 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                         </Card>
                     </div>
 
-                    {/* BACK: THE DATA REVEAL */}
+                    {/* BACK: THE TACTICAL DOSSIER */}
                     <div className="absolute inset-0 backface-hidden rotate-y-180">
-                        <Card className="h-full bg-slate-900/95 backdrop-blur-3xl border-2 border-primary/30 rounded-[3rem] shadow-2xl overflow-hidden relative">
-                            <div className="absolute inset-0 bg-grid-slate-800/50" />
+                        <Card className="h-full bg-slate-950/95 backdrop-blur-3xl border-2 border-primary/30 rounded-[3rem] shadow-2xl overflow-hidden relative">
+                            <div className="absolute inset-0 bg-grid-slate-800/50 opacity-20" />
                             
                             <AnimatePresence mode="wait">
                                 {activePodiumRank && (
@@ -139,10 +137,10 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                         initial={{ opacity: 0, scale: 0.9 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         exit={{ opacity: 0, scale: 0.9 }}
-                                        className="h-full p-6 sm:p-10 flex flex-col relative z-10"
+                                        className="h-full p-4 sm:p-10 flex flex-col relative z-10"
                                     >
-                                        <div className="flex items-center justify-between">
-                                            <Button variant="ghost" onClick={() => setActivePodiumRank(null)} className="h-10 px-4 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-white font-bold">
+                                        <div className="flex items-center justify-between mb-4 sm:mb-8">
+                                            <Button variant="ghost" onClick={() => setActivePodiumRank(null)} className="h-10 px-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold text-xs uppercase tracking-widest">
                                                 <ArrowLeft className="mr-2 h-4 w-4"/> Back to Stage
                                             </Button>
                                             <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-primary/40 font-black italic text-xl">
@@ -150,36 +148,50 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                             </div>
                                         </div>
 
-                                        <div className="flex-1 flex flex-col items-center justify-center gap-4 sm:gap-6">
-                                            <Avatar className="h-20 w-20 sm:h-28 sm:w-28 border-4 border-primary/20 shadow-2xl">
-                                                <AvatarImage src={users[activePodiumRank - 1]?.photoURL} />
-                                                <AvatarFallback>U</AvatarFallback>
-                                            </Avatar>
-
-                                            <div className="text-center space-y-2">
-                                                <h3 className="text-2xl sm:text-5xl font-black uppercase italic tracking-tighter text-white">
-                                                    {users[activePodiumRank - 1]?.displayName}
-                                                </h3>
-                                                <div className="flex items-center justify-center gap-3">
-                                                    <ShowcaseBadge user={users[activePodiumRank - 1]} />
-                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em]">
-                                                        {users[activePodiumRank - 1]?.mindMateId || 'LEGEND'}
-                                                    </span>
+                                        <div className="flex-1 flex flex-col sm:flex-row gap-6 sm:gap-12 items-center sm:items-start">
+                                            {/* LEFT PANE: IDENTITY */}
+                                            <div className="flex flex-col items-center gap-4 shrink-0">
+                                                <div className="relative">
+                                                    <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute -inset-4 bg-primary/10 rounded-full blur-2xl" />
+                                                    <Avatar className="h-24 w-24 sm:h-48 sm:w-48 border-4 border-primary/20 shadow-2xl relative z-10 bg-background">
+                                                        <AvatarImage src={users[activePodiumRank - 1]?.photoURL} />
+                                                        <AvatarFallback>U</AvatarFallback>
+                                                    </Avatar>
+                                                </div>
+                                                <div className="text-center space-y-1">
+                                                    <h3 className="text-xl sm:text-3xl font-black uppercase italic tracking-tighter text-white">
+                                                        {users[activePodiumRank - 1]?.displayName}
+                                                    </h3>
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <ShowcaseBadge user={users[activePodiumRank - 1]} />
+                                                        <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">{users[activePodiumRank - 1]?.mindMateId || 'LEGEND'}</span>
+                                                    </div>
                                                 </div>
                                             </div>
 
-                                            <div className="w-full max-w-md p-4 sm:p-8 bg-black/40 rounded-[2rem] sm:rounded-[2.5rem] border border-white/5 shadow-inner text-center">
-                                                <p className="text-4xl sm:text-7xl font-black italic tracking-tighter text-primary tabular-nums drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]">
-                                                    {users[activePodiumRank - 1]?.totalScore.toLocaleString()}
-                                                </p>
-                                                <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] opacity-40 mt-2">Sovereign Points</p>
-                                            </div>
+                                            {/* RIGHT PANE: DATA MATRIX */}
+                                            <div className="flex-1 w-full space-y-4">
+                                                <div className="bg-black/40 rounded-[2rem] p-4 sm:p-6 border border-white/5 shadow-inner">
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60 mb-1">Live Standing</p>
+                                                    <div className="flex items-baseline gap-2">
+                                                        <p className="text-4xl sm:text-6xl font-black italic tracking-tighter text-white tabular-nums drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]">
+                                                            {users[activePodiumRank - 1]?.totalScore.toLocaleString()}
+                                                        </p>
+                                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Total Points</p>
+                                                    </div>
+                                                </div>
 
-                                            <div className="grid grid-cols-4 gap-2 w-full max-w-lg">
-                                                <QuickStat icon={Clock} val={`${formatHours(users[activePodiumRank - 1]?.totalStudyTime || 0)}h`} color="text-sky-400" />
-                                                <QuickStat icon={Flame} val={`${users[activePodiumRank - 1]?.streak}d`} color="text-orange-500" />
-                                                <QuickStat icon={Gem} val={users[activePodiumRank - 1]?.credits.toLocaleString()} color="text-amber-500" />
-                                                <QuickStat icon={Medal} val={`${getOwnedBadges(users[activePodiumRank - 1]).length}`} color="text-fuchsia-400" />
+                                                <div className="grid grid-cols-1 gap-2">
+                                                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 grid grid-cols-3 gap-4">
+                                                        <MatrixCell icon={Clock} label="Focus" val={`${formatHours(users[activePodiumRank - 1]?.totalStudyTime || 0)}h`} color="text-sky-400" />
+                                                        <MatrixCell icon={Flame} label="Streak" val={`${users[activePodiumRank - 1]?.streak}d`} color="text-orange-500" />
+                                                        <MatrixCell icon={Gem} label="Credits" val={users[activePodiumRank - 1]?.credits.toLocaleString()} color="text-amber-500" />
+                                                    </div>
+                                                    <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/5 grid grid-cols-2 gap-4">
+                                                        <MatrixCell icon={ShieldAlert} label="Exile Status" val={users[activePodiumRank - 1]?.breakdown.isolationLabel.split(' ')[0]} color="text-red-500" />
+                                                        <MatrixCell icon={Medal} label="Unlocked Assets" val={`${getOwnedBadges(users[activePodiumRank - 1]).length}`} color="text-fuchsia-400" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </motion.div>
@@ -194,7 +206,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
             <div className="space-y-4">
                 <div className="flex items-center justify-between px-4 mb-6">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Registry Index</h4>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase">Tap Card to Inspect Stats</p>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tap Card to Inspect Stats</p>
                 </div>
                 {registry.map((user, index) => (
                     <RegistryFlipCard 
@@ -236,7 +248,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                         </div>
                                         <div className="text-right">
                                             <p className="text-2xl sm:text-5xl font-black italic tracking-tighter text-white tabular-nums">{myData.totalScore.toLocaleString()}</p>
-                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40">Points</p>
+                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40">Total Points</p>
                                         </div>
                                     </div>
                                     <div className="grid grid-cols-5 gap-2 sm:gap-4 pt-4 border-t border-white/5">
@@ -258,18 +270,19 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
     );
 }
 
-function QuickStat({ icon: Icon, val, color }: any) {
+function MatrixCell({ icon: Icon, label, val, color }: any) {
     return (
-        <div className="bg-white/5 rounded-2xl p-2 flex flex-col items-center border border-white/5 shadow-inner">
-            <Icon className={cn("h-4 w-4 mb-1", color)} />
-            <span className="text-[10px] font-black text-white truncate w-full text-center">{val}</span>
+        <div className="flex flex-col items-center text-center">
+            <Icon className={cn("h-4 w-4 mb-1.5", color)} />
+            <p className="text-[8px] font-black uppercase opacity-40 leading-none">{label}</p>
+            <p className="text-[10px] sm:text-sm font-black text-white mt-1">{val}</p>
         </div>
     );
 }
 
 function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, itemRef }: any) {
     return (
-        <div ref={itemRef} className="perspective-1000 w-full h-[88px] sm:h-20 relative cursor-pointer" onClick={onFlip}>
+        <div ref={itemRef} className="perspective-1000 w-full h-[88px] sm:h-24 relative cursor-pointer" onClick={onFlip}>
             <motion.div
                 animate={{ rotateY: isFlipped ? 180 : 0 }}
                 transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
@@ -278,45 +291,53 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                 {/* FRONT: THE HUD */}
                 <div className="absolute inset-0 backface-hidden">
                     <Card className={cn(
-                        "h-full border border-white/5 bg-card/40 rounded-2xl sm:rounded-3xl flex items-center px-4 sm:px-8 gap-4 sm:gap-8 transition-colors",
+                        "h-full border border-white/5 bg-card/40 rounded-[1.5rem] sm:rounded-[2.5rem] flex items-center px-4 sm:px-8 gap-4 sm:gap-8 transition-colors",
                         isMe && "bg-primary/5 border-primary/20"
                     )}>
-                        <div className="w-6 sm:w-10 text-center font-black italic text-lg sm:text-2xl opacity-60">#{rank}</div>
+                        <div className="w-6 sm:w-10 text-center font-black italic text-lg sm:text-2xl opacity-40">#{rank}</div>
                         
                         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                             <button onClick={(e) => { e.stopPropagation(); onShowcase(); }}>
-                                <Avatar className="h-10 w-10 sm:h-12 sm:w-12 border-2 border-white/10 shadow-lg bg-background">
+                                <Avatar className="h-10 w-10 sm:h-14 sm:w-14 border-2 border-white/10 shadow-lg bg-background">
                                     <AvatarImage src={user.photoURL} />
                                     <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                 </Avatar>
                             </button>
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-black text-sm sm:text-lg uppercase italic truncate">{user.displayName}</p>
+                                    <p className="font-black text-sm sm:text-xl uppercase italic truncate">{user.displayName}</p>
                                     <div className="scale-90 origin-left">
                                         <ShowcaseBadge user={user} />
                                     </div>
                                     {user.isLeaderboardPrivate && <EyeOff className="h-3 w-3 opacity-40" />}
                                 </div>
-                                <p className="hidden sm:block text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-0.5">
+                                <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-0.5">
                                     {user.mindMateId || 'LEGEND'}
                                 </p>
                             </div>
                         </div>
 
-                        <div className="text-right">
-                            <p className="text-xl sm:text-3xl font-black italic tracking-tighter leading-none tabular-nums">
+                        <div className="text-right shrink-0">
+                            <p className="text-xl sm:text-4xl font-black italic tracking-tighter leading-none tabular-nums text-white">
                                 {user.totalScore.toLocaleString()}
                             </p>
-                            <p className="text-[8px] font-black uppercase opacity-40 mt-1">Points</p>
+                            <p className="text-[8px] font-black uppercase opacity-40 mt-1 tracking-widest">Total Points</p>
                         </div>
                     </Card>
                 </div>
 
-                {/* BACK: THE DATA MATRIX */}
+                {/* BACK: THE DATA DOSSIER */}
                 <div className="absolute inset-0 backface-hidden rotate-y-180">
-                    <Card className="h-full border-primary/30 bg-primary/10 rounded-2xl sm:rounded-3xl flex items-center px-2 sm:px-6">
-                        <div className="grid grid-cols-5 gap-1 sm:gap-4 w-full">
+                    <Card className="h-full border-primary/30 bg-slate-900/90 rounded-[1.5rem] sm:rounded-[2.5rem] flex items-center p-2 sm:p-4 gap-4 sm:gap-8 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
+                        
+                        {/* Dossier Logo */}
+                        <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-primary/20 shrink-0 bg-background relative z-10">
+                            <AvatarImage src={user.photoURL} />
+                            <AvatarFallback>U</AvatarFallback>
+                        </Avatar>
+
+                        <div className="flex-1 grid grid-cols-5 gap-1 sm:gap-4 relative z-10">
                             <MatrixBlock icon={Clock} label="Study" val={`${formatHours(user.totalStudyTime || 0)}h`} points={user.breakdown.studyPoints} color="text-sky-400" isMini />
                             <MatrixBlock icon={Flame} label="Streak" val={`${user.streak}d`} points={user.breakdown.streakPoints} color="text-orange-500" isMini />
                             <MatrixBlock icon={Gem} label="Credits" val={user.credits.toLocaleString()} points={user.breakdown.creditsPoints} color="text-amber-500" isMini />
@@ -333,13 +354,13 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
 function MatrixBlock({ icon: Icon, label, val, points, color, className, isMini = false }: any) {
     return (
         <div className={cn(
-            "flex flex-col items-center justify-center p-1 sm:p-2 rounded-xl sm:rounded-2xl bg-black/20 border border-white/5 text-center",
+            "flex flex-col items-center justify-center p-1 sm:p-2 rounded-xl sm:rounded-2xl bg-black/40 border border-white/5 text-center shadow-inner",
             className
         )}>
-            <div className={cn("p-1 rounded-lg bg-black/40 mb-1 shadow-inner", color)}>
+            <div className={cn("p-1 rounded-lg bg-black/20 mb-1", color)}>
                 <Icon className={cn(isMini ? "h-3 w-3" : "h-5 w-5")} />
             </div>
-            <p className="text-[6px] sm:text-[8px] font-black uppercase opacity-40 leading-none truncate w-full px-1">{label}</p>
+            <p className="text-[6px] sm:text-[8px] font-black uppercase opacity-40 leading-none truncate w-full px-1 mb-0.5">{label}</p>
             <p className="text-[8px] sm:text-xs font-black truncate max-w-full text-foreground">{val}</p>
             <p className={cn("text-[6px] sm:text-[9px] font-black mt-0.5", color)}>+{points.toLocaleString()}</p>
         </div>
