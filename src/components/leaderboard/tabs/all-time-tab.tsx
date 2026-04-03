@@ -68,7 +68,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
         <div className="space-y-12 max-w-7xl mx-auto w-full pb-60 px-2 sm:px-4">
             
             {/* THE GLASS PODIUM STAGE */}
-            <div className="perspective-1000 w-full h-[320px] sm:h-[400px] relative">
+            <div className="perspective-1000 w-full h-[320px] sm:h-[450px] relative">
                 <motion.div
                     animate={{ rotateY: activePodiumRank ? 180 : 0 }}
                     transition={{ duration: 0.8, type: 'spring', stiffness: 100, damping: 20 }}
@@ -109,10 +109,10 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                 </button>
                                             </div>
                                             <div className="text-center">
-                                                <p className="text-[10px] sm:text-xs font-black uppercase tracking-tighter text-white/80 truncate max-w-[80px] sm:max-w-[120px]">
+                                                <p className="text-[10px] sm:text-xs font-black uppercase tracking-tighter text-white truncate max-w-[80px] sm:max-w-[120px]">
                                                     {user.displayName.split(' ')[0]}
                                                 </p>
-                                                <div className="mt-1 opacity-60 scale-75">
+                                                <div className="mt-1 scale-90">
                                                     <ShowcaseBadge user={user} />
                                                 </div>
                                             </div>
@@ -129,30 +129,35 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
 
                     {/* BACK: THE DATA REVEAL */}
                     <div className="absolute inset-0 backface-hidden rotate-y-180">
-                        <Card className="h-full bg-slate-900/90 backdrop-blur-3xl border-2 border-primary/30 rounded-[3rem] shadow-2xl overflow-hidden relative">
+                        <Card className="h-full bg-slate-900/95 backdrop-blur-3xl border-2 border-primary/30 rounded-[3rem] shadow-2xl overflow-hidden relative">
                             <div className="absolute inset-0 bg-grid-slate-800/50" />
                             
                             <AnimatePresence mode="wait">
                                 {activePodiumRank && (
                                     <motion.div 
                                         key={activePodiumRank}
-                                        initial={{ opacity: 0, x: 20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        exit={{ opacity: 0, x: -20 }}
+                                        initial={{ opacity: 0, scale: 0.9 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.9 }}
                                         className="h-full p-6 sm:p-10 flex flex-col relative z-10"
                                     >
                                         <div className="flex items-center justify-between">
-                                            <Button variant="ghost" onClick={() => setActivePodiumRank(null)} className="h-10 px-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10">
+                                            <Button variant="ghost" onClick={() => setActivePodiumRank(null)} className="h-10 px-4 rounded-full bg-white/10 border border-white/10 hover:bg-white/20 text-white font-bold">
                                                 <ArrowLeft className="mr-2 h-4 w-4"/> Back to Stage
                                             </Button>
-                                            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary/20 rounded-2xl flex items-center justify-center border border-primary/40 font-black italic text-xl">
+                                            <div className="h-10 w-10 sm:h-12 sm:w-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-primary/40 font-black italic text-xl">
                                                 #{activePodiumRank}
                                             </div>
                                         </div>
 
-                                        <div className="flex-1 flex flex-col items-center justify-center gap-6">
+                                        <div className="flex-1 flex flex-col items-center justify-center gap-4 sm:gap-6">
+                                            <Avatar className="h-20 w-20 sm:h-28 sm:w-28 border-4 border-primary/20 shadow-2xl">
+                                                <AvatarImage src={users[activePodiumRank - 1]?.photoURL} />
+                                                <AvatarFallback>U</AvatarFallback>
+                                            </Avatar>
+
                                             <div className="text-center space-y-2">
-                                                <h3 className="text-3xl sm:text-5xl font-black uppercase italic tracking-tighter text-white">
+                                                <h3 className="text-2xl sm:text-5xl font-black uppercase italic tracking-tighter text-white">
                                                     {users[activePodiumRank - 1]?.displayName}
                                                 </h3>
                                                 <div className="flex items-center justify-center gap-3">
@@ -163,11 +168,11 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                 </div>
                                             </div>
 
-                                            <div className="w-full max-w-md p-6 sm:p-8 bg-black/40 rounded-[2.5rem] border border-white/5 shadow-inner text-center">
-                                                <p className="text-5xl sm:text-7xl font-black italic tracking-tighter text-primary tabular-nums drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]">
+                                            <div className="w-full max-w-md p-4 sm:p-8 bg-black/40 rounded-[2rem] sm:rounded-[2.5rem] border border-white/5 shadow-inner text-center">
+                                                <p className="text-4xl sm:text-7xl font-black italic tracking-tighter text-primary tabular-nums drop-shadow-[0_0_15px_rgba(139,92,246,0.5)]">
                                                     {users[activePodiumRank - 1]?.totalScore.toLocaleString()}
                                                 </p>
-                                                <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 mt-2">Sovereign Points</p>
+                                                <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.4em] opacity-40 mt-2">Sovereign Points</p>
                                             </div>
 
                                             <div className="grid grid-cols-4 gap-2 w-full max-w-lg">
@@ -222,8 +227,8 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                 <span className="text-[8px] font-black uppercase tracking-widest opacity-60">Rank</span>
                                                 <span className="text-xl sm:text-2xl font-black italic">#{myRank}</span>
                                             </div>
-                                            <div>
-                                                <p className="font-black text-sm sm:text-xl uppercase italic tracking-tighter">Your Standing</p>
+                                            <div className="min-w-0">
+                                                <p className="font-black text-sm sm:text-xl uppercase italic tracking-tighter truncate">Your Standing</p>
                                                 <p className="text-[8px] sm:text-[10px] font-bold uppercase text-primary tracking-[0.2em] flex items-center gap-1.5 mt-1">
                                                     <CheckCircle className="h-3 w-3"/> Mainframe Link Active
                                                 </p>
@@ -263,8 +268,6 @@ function QuickStat({ icon: Icon, val, color }: any) {
 }
 
 function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, itemRef }: any) {
-    const ownedBadges = getOwnedBadges(user);
-
     return (
         <div ref={itemRef} className="perspective-1000 w-full h-[88px] sm:h-20 relative cursor-pointer" onClick={onFlip}>
             <motion.div
@@ -278,7 +281,7 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                         "h-full border border-white/5 bg-card/40 rounded-2xl sm:rounded-3xl flex items-center px-4 sm:px-8 gap-4 sm:gap-8 transition-colors",
                         isMe && "bg-primary/5 border-primary/20"
                     )}>
-                        <div className="w-6 sm:w-10 text-center font-black italic text-lg sm:text-2xl opacity-30">#{rank}</div>
+                        <div className="w-6 sm:w-10 text-center font-black italic text-lg sm:text-2xl opacity-60">#{rank}</div>
                         
                         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                             <button onClick={(e) => { e.stopPropagation(); onShowcase(); }}>
@@ -288,18 +291,16 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                                 </Avatar>
                             </button>
                             <div className="min-w-0">
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                     <p className="font-black text-sm sm:text-lg uppercase italic truncate">{user.displayName}</p>
-                                    <div className="scale-75 origin-left hidden sm:block">
+                                    <div className="scale-90 origin-left">
                                         <ShowcaseBadge user={user} />
                                     </div>
                                     {user.isLeaderboardPrivate && <EyeOff className="h-3 w-3 opacity-40" />}
                                 </div>
-                                <div className="flex items-center gap-2 sm:hidden">
-                                    <div className="scale-75 origin-left">
-                                        <ShowcaseBadge user={user} />
-                                    </div>
-                                </div>
+                                <p className="hidden sm:block text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-0.5">
+                                    {user.mindMateId || 'LEGEND'}
+                                </p>
                             </div>
                         </div>
 
