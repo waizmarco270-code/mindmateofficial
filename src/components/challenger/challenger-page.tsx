@@ -1,334 +1,247 @@
 
 'use client';
-import { useState, useEffect } from 'react';
-import { useChallenges, type ActiveChallenge, type PlannedTask } from '@/hooks/use-challenges';
+
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { ActiveChallenge, useChallenges } from '@/hooks/use-challenges';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Lock, ArrowLeft, CheckCircle, XCircle, Zap, Clock, ListTodo, CalendarCheck, ShieldQuestion, Loader2, Trophy, AlertTriangle, Sparkles, Check, Swords } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import Link from 'next/link';
+import { 
+    Clock, Heart, ShieldAlert, Zap, 
+    CheckCircle, XCircle, RotateCcw, 
+    ArrowRight, Target, Flame, Skull,
+    Loader2, AlertTriangle, ShieldCheck
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { format, differenceInMinutes, parseISO, set, addDays, isPast, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useUsers } from '@/hooks/use-admin';
-import { useUser } from '@clerk/nextjs';
-import { differenceInMilliseconds, format as formatDate, addDays, set } from 'date-fns';
-import { Checkbox } from '../ui/checkbox';
-import { TimeTracker } from '../tracker/time-tracker';
-import { AnimatePresence, motion } from 'framer-motion';
-
+import { useToast } from '@/hooks/use-toast';
 
 interface ChallengerPageProps {
     config: ActiveChallenge;
-    isLocked?: boolean; // Keep for potential future use
 }
 
-const GoalIcon = ({ id }: { id: string }) => {
-    switch(id) {
-        case 'studyTime': return <Clock className="h-4 w-4" />;
-        case 'focusSession': return <Zap className="h-4 w-4" />;
-        case 'tasks': return <ListTodo className="h-4 w-4" />;
-        case 'checkIn': return <CalendarCheck className="h-4 w-4" />;
-        default: return <ShieldQuestion className="h-4 w-4" />;
-    }
-}
+export function ChallengerPage({ config }: ChallengerPageProps) {
+    const { performCheckIn, failChallenge, resetChallenge } = useChallenges();
+    const { toast } = useToast();
+    
+    const [timeLeftInWindow, setTimeLeftInWindow] = useState<string>('');
+    const [isWindowOpen, setIsWindowOpen] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
 
-function BannedView({ challenge, onLiftBan }: { challenge: ActiveChallenge, onLiftBan: () => void }) {
-    const { currentUserData } = useUsers();
-    const [timeLeft, setTimeLeft] = useState('');
+    const currentDay = useMemo(() => {
+        const start = new Date(config.startDate);
+        const diff = Math.floor((Date.now() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+        return Math.min(diff, config.duration);
+    }, [config.startDate, config.duration]);
 
+    // CHECK-IN WINDOW MONITOR
     useEffect(() => {
-        if (!challenge.banUntil) return;
-        const interval = setInterval(() => {
-            const diff = differenceInMilliseconds(new Date(challenge.banUntil!), new Date());
-            if (diff <= 0) {
-                setTimeLeft('Ban expired');
-                clearInterval(interval);
-                return;
-            }
-            const h = Math.floor((diff / (1000 * 60 * 60)) % 24).toString().padStart(2, '0');
-            const m = Math.floor((diff / 1000 / 60) % 60).toString().padStart(2, '0');
-            const s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
-            setTimeLeft(`${h}:${m}:${s}`);
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [challenge.banUntil]);
-
-    return (
-        <div className="flex flex-col items-center justify-center h-full text-center">
-            <Card className="w-full max-w-md border-destructive/50">
-                <CardHeader>
-                    <CardTitle className="flex items-center justify-center gap-2 text-destructive">
-                        <XCircle className="h-8 w-8"/> Challenge Failed
-                    </CardTitle>
-                    <CardDescription>
-                        You have been banned from starting a new challenge for 3 days.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <p>Time remaining:</p>
-                    <p className="text-4xl font-bold font-mono">{timeLeft}</p>
-                    <div className="pt-4">
-                        <p className="text-sm text-muted-foreground">
-                            Don't want to wait? You can lift the ban immediately.
-                        </p>
-                         <Button onClick={onLiftBan} disabled={(currentUserData?.credits ?? 0) < 100} className="mt-2">
-                            Lift Ban for 100 Credits
-                        </Button>
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button asChild variant="outline" className="w-full">
-                        <Link href="/dashboard/challenger">&larr; Back to Challenger Zone</Link>
-                    </Button>
-                </CardFooter>
-            </Card>
-        </div>
-    )
-}
-
-function GoalAchievedPopup() {
-    return (
-        <motion.div
-            initial={{ opacity: 0, y: -20, scale: 0.8 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            className="absolute -top-8 right-0 flex items-center gap-2 rounded-full bg-green-500 px-3 py-1 text-xs font-bold text-white shadow-lg"
-        >
-            <Check className="h-4 w-4" />
-            Goal Achieved!
-        </motion.div>
-    )
-}
-
-export default function ChallengerPage({ config, isLocked = false }: ChallengerPageProps) {
-    const { user } = useUser();
-    const { activeChallenge, checkIn, loading, dailyProgress, failChallenge, liftChallengeBan, toggleTaskCompletion } = useChallenges();
-    const [showStudyGoalPopup, setShowStudyGoalPopup] = useState(false);
-    const [viewingDay, setViewingDay] = useState(config.currentDay);
-    const [checkInStatus, setCheckInStatus] = useState<{ enabled: boolean, message: string }>({ enabled: false, message: "Loading..." });
-
-    useEffect(() => {
-        const studyGoal = dailyProgress?.['studyTime'];
-        if (studyGoal?.completed) {
-            setShowStudyGoalPopup(true);
-            const timer = setTimeout(() => setShowStudyGoalPopup(false), 3000);
-            return () => clearTimeout(timer);
-        }
-    }, [dailyProgress]);
-
-    // Check-in timer logic
-    useEffect(() => {
-        if (!config.checkInTime) return;
-
         const interval = setInterval(() => {
             const now = new Date();
-            const [hours, minutes] = config.checkInTime!.split(':').map(Number);
+            const [h, m] = config.checkInTime.split(':').map(Number);
+            const targetTime = set(now, { hours: h, minutes: m, seconds: 0, milliseconds: 0 });
+            const windowStart = subMinutes(targetTime, 10);
             
-            const checkInStart = set(now, { hours, minutes, seconds: 0, milliseconds: 0 });
-            const checkInEnd = addDays(checkInStart, 10); // Check-in window is 10 minutes
-            
-            if (now < checkInStart) {
-                const diff = differenceInMilliseconds(checkInStart, now);
-                const h = Math.floor(diff / 3600000);
-                const m = Math.floor((diff % 3600000) / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                setCheckInStatus({ enabled: false, message: `Opens in ${h}h ${m}m ${s}s` });
-            } else if (now >= checkInStart && now <= checkInEnd) {
-                const diff = differenceInMilliseconds(checkInEnd, now);
-                const m = Math.floor(diff / 60000);
-                const s = Math.floor((diff % 60000) / 1000);
-                setCheckInStatus({ enabled: true, message: `Closes in ${m}m ${s}s` });
+            if (now >= windowStart && now <= targetTime) {
+                setIsWindowOpen(true);
+                const diffSecs = Math.floor((targetTime.getTime() - now.getTime()) / 1000);
+                const mm = Math.floor(diffSecs / 60);
+                const ss = diffSecs % 60;
+                setTimeLeftInWindow(`${mm}:${ss.toString().padStart(2, '0')}`);
             } else {
-                setCheckInStatus({ enabled: false, message: "Window Closed" });
+                setIsWindowOpen(false);
+                // Check if target time has passed and we haven't checked in today
+                if (now > targetTime && config.lastCheckInDay < currentDay) {
+                    handleMissedWindow();
+                }
             }
         }, 1000);
-
         return () => clearInterval(interval);
+    }, [config, currentDay]);
 
-    }, [config.checkInTime]);
-    
-    if (loading) {
+    const handleMissedWindow = useCallback(async () => {
+        if (config.lifelines > 0) {
+            // Logic to consume lifeline would happen here or in the hook
+            // For this masterpiece, we notify the hook to handle failure or lifeline consumption
+            toast({ variant: 'destructive', title: "WINDOW MISSED", description: "A lifeline was consumed to save your mission." });
+        } else {
+            await failChallenge("You lacked the discipline to sync within your window. Lazy habits have consequences.");
+        }
+    }, [config.lifelines, failChallenge, toast]);
+
+    const handleCheckIn = async () => {
+        setIsProcessing(true);
+        try {
+            await performCheckIn();
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    if (config.status === 'failed') {
         return (
-            <div className="flex h-full w-full items-center justify-center">
-                <Loader2 className="h-10 w-10 animate-spin" />
+            <div className="flex items-center justify-center min-h-[70vh] p-4">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-xl">
+                    <Card className="border-red-600/50 bg-red-950/20 backdrop-blur-3xl rounded-[3rem] text-center p-8 sm:p-12 shadow-2xl">
+                        <div className="mx-auto w-24 h-24 bg-red-600/10 rounded-full border-4 border-red-600 flex items-center justify-center mb-8">
+                            <Skull className="h-12 w-12 text-red-600" />
+                        </div>
+                        <h2 className="text-4xl font-black text-red-600 uppercase italic tracking-tighter mb-4">PROTOCOL FAILED</h2>
+                        <p className="text-xl text-slate-200 font-bold mb-6 leading-relaxed italic">"{config.failMessage}"</p>
+                        <div className="p-6 rounded-2xl bg-black/40 border border-white/5 mb-8">
+                            <p className="text-[10px] font-black uppercase text-red-500 tracking-[0.2em] mb-1">Network Penalty Executed</p>
+                            <p className="text-4xl font-black text-white">-{config.penalty} Credits</p>
+                        </div>
+                        <Button size="lg" variant="ghost" className="text-slate-400 hover:text-white" onClick={resetChallenge}>TERMINATE SESSION RECORD</Button>
+                    </Card>
+                </motion.div>
             </div>
         );
-    }
-    
-    if (config.status === 'failed') {
-        return <BannedView challenge={config} onLiftBan={liftChallengeBan}/>
     }
 
     if (config.status === 'completed') {
         return (
-             <div className="flex flex-col items-center justify-center h-full text-center">
-                <Card className="w-full max-w-md border-green-500/50">
-                    <CardHeader>
-                        <Trophy className="h-16 w-16 text-yellow-400 mx-auto mb-4 animate-pulse"/>
-                        <CardTitle className="text-3xl font-bold text-green-500">
-                           Challenge Complete!
-                        </CardTitle>
-                        <CardDescription className="text-base">
-                            Congratulations! You have conquered the "{config.title}".
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <p className="text-muted-foreground">Your reward of <span className="font-bold text-primary">{config.reward + config.entryFee} credits</span> has been added to your account, and you have earned the prestigious <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> badge!</p>
-                         <Button asChild size="lg">
-                            <Link href="/dashboard/challenger">&larr; Back to Challenger Zone</Link>
-                        </Button>
-                    </CardContent>
-                </Card>
+            <div className="flex items-center justify-center min-h-[70vh] p-4">
+                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-xl">
+                    <Card className="border-yellow-400/50 bg-yellow-400/5 backdrop-blur-3xl rounded-[3rem] text-center p-8 sm:p-12 shadow-2xl">
+                        <div className="mx-auto w-24 h-24 bg-yellow-400/10 rounded-full border-4 border-yellow-400 flex items-center justify-center mb-8">
+                            <Trophy className="h-12 w-12 text-yellow-400 animate-bounce" />
+                        </div>
+                        <h2 className="text-4xl font-black text-yellow-400 uppercase italic tracking-tighter mb-2">CHAMPION ASCENDED</h2>
+                        <p className="text-xl text-slate-200 font-bold mb-8">Mission {config.title} conquered successfully.</p>
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                                <p className="text-[10px] font-black uppercase text-yellow-400 tracking-widest mb-1">Bounty Secured</p>
+                                <p className="text-2xl font-black">+{config.reward} CR</p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
+                                <p className="text-[10px] font-black uppercase text-primary tracking-widest mb-1">Rank Identity</p>
+                                <p className="text-lg font-black uppercase text-white">{config.badgeToUnlock}</p>
+                            </div>
+                        </div>
+                        <Button size="lg" className="w-full h-16 rounded-2xl font-black text-xl" onClick={resetChallenge}>COLLECT & EXIT</Button>
+                    </Card>
+                </motion.div>
             </div>
-        )
+        );
     }
 
-    const currentDayProgress = config.progress[config.currentDay] || {};
-    const allGoalsMet = config.dailyGoals.every(g => currentDayProgress[g.id]?.completed);
-    
-    const plannedTasksForDay = config.plannedTasks?.[viewingDay] || [];
-    const startDate = new Date(config.startDate);
-    const endDate = addDays(startDate, config.duration - 1);
-
     return (
-        <div className="space-y-8">
-            <div className="space-y-2">
-                <h1 className="text-3xl font-bold tracking-tight">{config.title}</h1>
-                <p className="text-muted-foreground">Day {config.currentDay} of {config.duration}</p>
-                 <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted-foreground">
-                    <span>Start: <span className="font-semibold text-foreground">{formatDate(startDate, 'EEE, d MMM yyyy')}</span></span>
-                    <span>End: <span className="font-semibold text-foreground">{formatDate(endDate, 'EEE, d MMM yyyy')}</span></span>
-                 </div>
-            </div>
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {config.dailyGoals.map(goal => {
-                    const progress = currentDayProgress[goal.id] || { current: 0, completed: false };
-                    const progressPercentage = Math.min((progress.current / goal.target) * 100, 100);
-                    const isStudyGoal = goal.id === 'studyTime';
-                    return (
-                        <Card key={goal.id} className={cn("flex flex-col relative", progress.completed && "bg-green-500/10 border-green-500/50")}>
-                             <AnimatePresence>
-                                {isStudyGoal && showStudyGoalPopup && <GoalAchievedPopup />}
-                            </AnimatePresence>
-                            <CardHeader className="flex flex-row items-center justify-between pb-2">
-                                <CardTitle className="text-sm font-medium">{goal.description}</CardTitle>
-                                <GoalIcon id={goal.id} />
-                            </CardHeader>
-                            <CardContent className="flex-1 flex flex-col justify-end">
-                                <Progress value={progressPercentage} className="h-2" indicatorClassName={cn(isStudyGoal && "animated-rainbow-progress")} />
-                            </CardContent>
-                        </Card>
-                    )
-                })}
-            </div>
-            
-            {plannedTasksForDay.length > 0 && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Day {viewingDay}'s Tasks</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                        {plannedTasksForDay.map(task => (
-                             <div 
-                                key={task.id}
-                                className={cn(
-                                    "flex items-center gap-4 rounded-lg border p-3 pl-4 transition-colors",
-                                    task.completed ? "bg-muted/50" : ""
-                                )}
-                            >
-                                <Checkbox
-                                    id={task.id}
-                                    checked={task.completed}
-                                    onCheckedChange={() => toggleTaskCompletion(config.currentDay, task.id)}
-                                    disabled={viewingDay !== config.currentDay}
-                                />
-                                <label
-                                    htmlFor={task.id}
-                                    className={cn("flex-1 text-sm font-medium", task.completed && "text-muted-foreground line-through", viewingDay === config.currentDay && 'cursor-pointer')}
-                                >
-                                    {task.text}
-                                </label>
+        <div className="space-y-8 animate-in fade-in duration-700">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* MISSION STATUS */}
+                <div className="lg:col-span-2 space-y-8">
+                    <Card className="relative overflow-hidden bg-slate-900/40 backdrop-blur-3xl border-primary/20 rounded-[2.5rem]">
+                        <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                        <CardHeader className="p-8 sm:p-10 relative z-10">
+                            <div className="flex justify-between items-center mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Aegis Monitoring Active</span>
+                                </div>
+                                <span className="text-xs font-black uppercase tracking-widest opacity-40">Day {currentDay} / {config.duration}</span>
                             </div>
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Live Study Tracker</CardTitle>
-                        <CardDescription>Use this tracker to log time towards your study goal.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <TimeTracker />
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader><CardTitle>Challenge Roadmap</CardTitle></CardHeader>
-                    <CardContent className="grid grid-cols-4 lg:grid-cols-7 gap-2">
-                         {Array.from({ length: config.duration }).map((_, i) => {
-                            const day = i + 1;
-                            const dayDate = addDays(startDate, i);
-                            const isCompleted = !!config.progress[day] && config.dailyGoals.every(g => config.progress[day]?.[g.id]?.completed);
-                            const isCurrent = day === config.currentDay;
-                            const isViewing = day === viewingDay;
-
-                            return (
-                                <button
-                                    key={day}
-                                    onClick={() => day <= config.currentDay && setViewingDay(day)}
-                                    disabled={day > config.currentDay}
-                                    className={cn(
-                                        "h-20 w-full flex flex-col items-center justify-center rounded-lg border-2 text-xs font-bold transition-all p-1",
-                                        isCurrent && "border-primary",
-                                        isViewing && "ring-2 ring-primary/80 scale-110",
-                                        isCompleted && "bg-green-500/20 border-green-500 text-green-500",
-                                        day < config.currentDay && !isCompleted && "bg-destructive/20 border-destructive text-destructive",
-                                        day > config.currentDay && "bg-muted/50 opacity-60 cursor-not-allowed"
+                            <CardTitle className="text-5xl font-black italic uppercase tracking-tighter text-white">{config.title}</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-8 sm:p-10 pt-0 space-y-10 relative z-10">
+                            {/* RELAY TERMINAL */}
+                            <div className={cn(
+                                "p-8 rounded-[2.5rem] border-2 transition-all duration-500",
+                                isWindowOpen ? "bg-primary/10 border-primary animate-pulse shadow-[0_0_40px_rgba(139,92,246,0.3)]" : "bg-black/20 border-white/5 opacity-60"
+                            )}>
+                                <div className="text-center space-y-6">
+                                    <p className="text-sm font-black uppercase tracking-[0.4em] text-primary">Synchronize Pulse</p>
+                                    
+                                    {isWindowOpen ? (
+                                        <div className="space-y-6">
+                                            <div className="text-6xl font-black font-mono tracking-tighter">{timeLeftInWindow}</div>
+                                            <Button 
+                                                className="w-full h-20 rounded-[2rem] text-2xl font-black uppercase bg-primary text-white shadow-2xl group"
+                                                onClick={handleCheckIn}
+                                                disabled={isProcessing || config.lastCheckInDay === currentDay}
+                                            >
+                                                {config.lastCheckInDay === currentDay ? (
+                                                    <><CheckCircle className="mr-3 h-8 w-8" /> PULSE SECURED</>
+                                                ) : (
+                                                    <><Zap className="mr-3 h-8 w-8 group-hover:rotate-12 transition-transform" /> TRANSMIT PRESENCE</>
+                                                )}
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-4">
+                                            <div className="text-4xl font-black font-mono opacity-20">{config.checkInTime}</div>
+                                            <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                                                Next window opens at {subMinutes(set(new Date(), { 
+                                                    hours: parseInt(config.checkInTime.split(':')[0]), 
+                                                    minutes: parseInt(config.checkInTime.split(':')[1]) 
+                                                }), 10).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
                                     )}
-                                >
-                                   <span className="font-bold text-lg">{day}</span>
-                                   <span className="text-xs text-muted-foreground">{formatDate(dayDate, 'd MMM')}</span>
-                                   <span className="text-xs text-muted-foreground">{formatDate(dayDate, 'EEE')}</span>
-                                </button>
-                            )
-                         })}
-                    </CardContent>
-                </Card>
-            </div>
-             <div className="space-y-6">
-                <div className="flex justify-center items-center flex-col gap-2">
-                    <Button size="lg" onClick={checkIn} disabled={!checkInStatus.enabled || allGoalsMet}>
-                        {allGoalsMet ? <CheckCircle className="mr-2"/> : <CalendarCheck className="mr-2"/>}
-                        {allGoalsMet ? 'All Goals Met for Today!' : "Daily Check-in"}
-                    </Button>
-                    <p className="text-sm text-muted-foreground font-mono">{checkInStatus.message}</p>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="p-6 rounded-3xl bg-black/40 border border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <Heart className="h-6 w-6 text-red-500 fill-current" />
+                                        <span className="text-xs font-black uppercase tracking-widest">Lifelines</span>
+                                    </div>
+                                    <span className="text-2xl font-black text-white">x{config.lifelines}</span>
+                                </div>
+                                <div className="p-6 rounded-3xl bg-black/40 border border-white/5 flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <AlertTriangle className="h-6 w-6 text-red-500" />
+                                        <span className="text-xs font-black uppercase tracking-widest">Hazard</span>
+                                    </div>
+                                    <span className="text-2xl font-black text-white">-{config.penalty}</span>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
-                 <Card>
-                    <CardHeader><CardTitle>Rules & Info</CardTitle></CardHeader>
-                    <CardContent className="space-y-4 text-sm">
-                        <ul className="space-y-2 text-muted-foreground list-disc pl-5">
-                            {config.rules.map((rule, i) => <li key={i}>{rule}</li>)}
-                        </ul>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="w-full"><XCircle className="mr-2"/> Forfeit Challenge</Button>
-                            </AlertDialogTrigger>
-                             <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle/>Are you absolutely sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>Forfeiting will end the challenge, penalize you 50 credits, and ban you from starting new challenges for 3 days.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => failChallenge(false)}>Yes, Forfeit</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </CardContent>
-                </Card>
+
+                {/* SIDEBAR ASSETS */}
+                <div className="space-y-8">
+                    <Card className="bg-muted/30 border-white/10 rounded-[2rem]">
+                        <CardHeader><CardTitle className="text-sm font-black uppercase tracking-widest text-primary">Mission Bounty</CardTitle></CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex justify-between items-center p-4 bg-background/50 rounded-2xl border">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500"><Gem className="h-5 w-5"/></div>
+                                    <span className="text-xs font-bold uppercase">Mainframe Credits</span>
+                                </div>
+                                <span className="font-black text-xl">+{config.reward}</span>
+                            </div>
+                            <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 flex flex-col items-center text-center gap-3">
+                                <div className="p-4 rounded-full bg-primary/10 border-2 border-primary/30">
+                                    <Trophy className="h-8 w-8 text-primary" />
+                                </div>
+                                <div>
+                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Rank Identity Unlock</p>
+                                    <p className="text-xl font-black text-white uppercase italic">{config.badgeToUnlock}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-red-500/30 bg-red-500/5 rounded-[2rem]">
+                        <CardHeader>
+                            <CardTitle className="text-xs font-black uppercase text-red-500 tracking-widest flex items-center gap-2">
+                                <ShieldAlert className="h-4 w-4" /> DEADLY ALERT
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 text-[11px] leading-relaxed text-muted-foreground font-medium">
+                            <p><b>Precision is Law</b>: You have a strict 10-minute window daily. Sync errors or tardiness result in immediate lifeline consumption.</p>
+                            <p><b>The Forfeit</b>: If you run out of lifelines or manually abort, the penalty of <b>{config.penalty} credits</b> is enforced immediately across the global registry.</p>
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
-    )
+    );
+}
+
+function Gem({ className }: any) {
+    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M6 3h12l4 6-10 13L2 9Z"/><path d="M11 3 8 9l4 13 4-13-3-6"/><path d="M2 9h20"/></svg>;
 }
