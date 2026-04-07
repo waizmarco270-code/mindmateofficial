@@ -26,6 +26,16 @@
   animation: vip-shimmer 3s ease-in-out infinite;
 }
 
+.champion-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
+  background: linear-gradient(135deg, #800000, #ff0000, #800000);
+  background-size: 200% 200%;
+  color: #ffffff;
+  border: 1px solid #ff4500;
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.5), inset 0 0 8px rgba(255, 69, 0, 0.3);
+  animation: vip-shimmer 2s linear infinite;
+}
+
 .dev-badge {
   @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
   background-color: #ef4444;
@@ -91,7 +101,6 @@
   animation: fire-shimmer 2s ease infinite, fire-flicker 0.1s infinite;
 }
 
-/* NEW ISOLATION TIER BADGES */
 .isolater-badge {
   @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
   background: linear-gradient(45deg, #0891b2, #0ea5e9, #0891b2);
@@ -133,8 +142,3 @@
   box-shadow: 0 0 30px rgba(251, 191, 36, 0.8);
   animation: vip-shimmer 2s linear infinite;
 }
-
-.clan-badge-pro { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-blue-500/10 text-blue-400 border border-blue-400/50 shadow-lg shadow-blue-500/10 animate-[pulse-pro_2s_infinite]; }
-.clan-badge-alpha { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-red-500/10 text-red-400 border border-red-400/50 shadow-lg shadow-red-500/10 animate-[pulse-alpha_2s_infinite]; }
-.clan-badge-warrior { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-slate-500/10 text-slate-400 border border-slate-400/50 shadow-lg shadow-slate-500/10 animate-[pulse-warrior_2s_infinite]; }
-.clan-badge-legendary { @apply inline-block px-2 py-0.5 rounded-md text-sm font-bold bg-amber-400/10 text-amber-400 border border-amber-400/50 shadow-lg shadow-amber-400/10 animate-gold-shine; }

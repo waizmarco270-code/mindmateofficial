@@ -44,6 +44,8 @@ export const CHALLENGE_CONFIGS = [
         penalty: 999,
         reward: 2000,
         badgeToUnlock: 'challenger',
+        tag: 'Recommended',
+        tagColor: 'bg-blue-500',
         description: 'Build core discipline. Check in daily at your chosen hour.'
     },
     {
@@ -53,6 +55,8 @@ export const CHALLENGE_CONFIGS = [
         penalty: 3999,
         reward: 6999,
         badgeToUnlock: 'champion',
+        tag: "Topper's Choice",
+        tagColor: 'bg-amber-500',
         description: 'Forge an unbreakable identity. 3 weeks of perfect execution.'
     }
 ];
@@ -135,7 +139,9 @@ export function useChallenges() {
         if (isLastDay) {
             updates.status = 'completed';
             await addCreditsToUser(user.id, activeChallenge.reward);
-            // Badge logic here if needed
+            // Award the badge
+            const badgeKey = `is${activeChallenge.badgeToUnlock.charAt(0).toUpperCase() + activeChallenge.badgeToUnlock.slice(1)}`;
+            await updateDoc(doc(db, 'users', user.id), { [badgeKey]: true, showcasedBadge: activeChallenge.badgeToUnlock });
             toast({ title: "ASCENSION COMPLETE!", description: `+${activeChallenge.reward} Credits secured. You are a true legend.` });
         } else {
             toast({ title: "Day " + currentDay + " Secured", description: "Maintain focus for " + (activeChallenge.duration - currentDay) + " more days." });

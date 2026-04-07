@@ -4,9 +4,19 @@
 import { BadgeType, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { 
     Code, ShieldCheck, Crown, Gamepad2, Swords, Bird, Moon, Flame, 
-    ShieldAlert, Anchor, Lock, Zap, CheckCircle, Sparkles 
+    ShieldAlert, Anchor, Lock, Zap, CheckCircle, Sparkles, Skull
 } from 'lucide-react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
+
+const SkullFire = ({ className }: { className?: string }) => (
+  <div className={className + " relative flex items-center justify-center"}>
+    <Skull className="h-4 w-4" />
+    <div className="absolute inset-0 flex items-center justify-center opacity-80">
+        <Sparkles className="h-2 w-2 text-orange-500 animate-pulse" style={{ transform: 'translate(-2px, -1px)' }} />
+        <Sparkles className="h-2 w-2 text-orange-500 animate-pulse" style={{ transform: 'translate(2px, -1px)' }} />
+    </div>
+  </div>
+);
 
 export const badgeMeta: Record<BadgeType, { name: string; badge: JSX.Element }> = {
     dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
@@ -15,6 +25,7 @@ export const badgeMeta: Record<BadgeType, { name: string; badge: JSX.Element }> 
     vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span> },
     gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span> },
     challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span> },
+    champion: { name: 'Champion', badge: <span className="champion-badge"><SkullFire className="h-3.5 w-3.5"/> Champion</span> },
     'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span> },
     'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span> },
     'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span> },
@@ -35,6 +46,7 @@ export function getOwnedBadges(user: UserWithStats) {
     if (user.isVip) badges.push('vip');
     if (user.isGM) badges.push('gm');
     if (user.isChallenger) badges.push('challenger');
+    if (user.isChampion) badges.push('champion');
     if (user.isEarlyBird) badges.push('early-bird');
     if (user.isNightOwl) badges.push('night-owl');
     if (user.isKnowledgeKnight) badges.push('knowledge-knight');

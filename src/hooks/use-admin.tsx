@@ -18,7 +18,7 @@ import { useCodeActions } from './admin/use-code-actions';
 import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
-export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign';
+export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'champion' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign';
 
 export interface WalletTransaction {
     id: string;
@@ -56,6 +56,7 @@ export interface User {
   isVip?: boolean;
   isGM?: boolean;
   isChallenger?: boolean;
+  isChampion?: boolean;
   isCoDev?: boolean;
   isEarlyBird?: boolean;
   isNightOwl?: boolean;

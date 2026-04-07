@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { 
     Code, ShieldCheck, Crown, Gamepad2, Swords, Bird, Moon, Flame, 
     Users, Trophy, Star, ChevronRight, Search, Info, Loader2, Sparkles,
-    ShieldAlert, Anchor, Lock, Zap
+    ShieldAlert, Anchor, Lock, Zap, Skull
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+
+const SkullFire = ({ className }: { className?: string }) => (
+  <div className={className + " relative flex items-center justify-center"}>
+    <Skull className="h-4 w-4" />
+    <div className="absolute inset-0 flex items-center justify-center opacity-80">
+        <Sparkles className="h-2 w-2 text-orange-500 animate-pulse" style={{ transform: 'translate(-2px, -1px)' }} />
+        <Sparkles className="h-2 w-2 text-orange-500 animate-pulse" style={{ transform: 'translate(2px, -1px)' }} />
+    </div>
+  </div>
+);
 
 const badgeMeta: Record<BadgeType, { 
     name: string; 
@@ -71,8 +81,16 @@ const badgeMeta: Record<BadgeType, {
         icon: Swords, 
         gradient: 'from-orange-500 to-red-500', 
         description: 'Warriors who conquer the impossible in the Challenger Zone.',
-        requirement: 'Successfully complete a 7-day or 30-day disciplinary challenge.',
+        requirement: 'Successfully complete a 7-Day Protocol.',
         badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>
+    },
+    champion: {
+        name: 'Champion',
+        icon: Skull,
+        gradient: 'from-red-900 to-red-600',
+        description: 'The mark of a true Topper. One who has mastered the 21-Day Champion Gauntlet.',
+        requirement: 'Successfully complete a 21-Day Champion Protocol.',
+        badge: <span className="champion-badge"><SkullFire className="h-3.5 w-3.5"/> Champion</span>
     },
     'early-bird': { 
         name: 'Early Bird', 
@@ -160,6 +178,7 @@ function BadgeDetailsDialog({ badgeKey, isOpen, onOpenChange, users }: { badgeKe
             if (badgeKey === 'vip') return u.isVip;
             if (badgeKey === 'gm') return u.isGM;
             if (badgeKey === 'challenger') return u.isChallenger;
+            if (badgeKey === 'champion') return u.isChampion;
             if (badgeKey === 'streaker') return u.isStreaker;
             if (badgeKey === 'early-bird') return u.isEarlyBird;
             if (badgeKey === 'night-owl') return u.isNightOwl;
@@ -293,6 +312,7 @@ export default function BadgesTreasuryPage() {
                         if (key === 'vip') return u.isVip;
                         if (key === 'gm') return u.isGM;
                         if (key === 'challenger') return u.isChallenger;
+                        if (key === 'champion') return u.isChampion;
                         if (key === 'streaker') return u.isStreaker;
                         if (key === 'early-bird') return u.isEarlyBird;
                         if (key === 'night-owl') return u.isNightOwl;
