@@ -80,7 +80,7 @@ export function TaskPlanner({ duration, onComplete, onCancel }: TaskPlannerProps
                 <CardHeader className="border-b border-white/5 p-6 sm:p-8">
                     <div className="flex justify-between items-center">
                         <CardTitle className="text-xl font-black uppercase italic">Day Range: {startDay} — {endDay}</CardTitle>
-                        <Badge variant="outline" className="font-black text-[10px]">Page {currentPage} / {totalPages}</Badge>
+                        <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest">Page {currentPage} / {totalPages}</div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-6 sm:p-8 min-h-[400px]">
@@ -173,8 +173,4 @@ export function TaskPlanner({ duration, onComplete, onCancel }: TaskPlannerProps
             </Card>
         </div>
     );
-}
-
-function Badge({ children, variant, className }: any) {
-    return <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", className)}>{children}</span>;
 }

@@ -21,10 +21,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { badgeMeta } from '@/components/leaderboard/shared/badge-renderer';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ChallengerHub() {
     const { activeChallenge, loading, startChallenge, resetChallenge } = useChallenges();
     const { currentUserData } = useAdmin();
+    const { toast } = useToast();
     
     const [selectedConfig, setSelectedConfig] = useState<typeof CHALLENGE_CONFIGS[0] | null>(null);
     const [setupStep, setSetupTerminalStep] = useState<'config' | 'planner'>('config');
@@ -33,7 +35,6 @@ export default function ChallengerHub() {
     const [checkInTime, setCheckInTime] = useState('05:00');
     const [lifelines, setLifelines] = useState(0);
     const [workHours, setWorkHours] = useState(4);
-    const [plannedTasks, setPlannedTasks] = useState<Record<number, PlannedTaskCategory[]>>({});
     
     const [isInitializing, setIsInitializing] = useState(false);
 
@@ -47,11 +48,22 @@ export default function ChallengerHub() {
         return <ChallengerPage config={activeChallenge} />;
     }
 
+    const handleSelectProtocol = (config: typeof CHALLENGE_CONFIGS[0]) => {
+        try {
+            setSelectedConfig(config);
+            setSetupTerminalStep('config');
+        } catch (e) {
+            toast({ variant: 'destructive', title: "TERMINAL STALL", description: "Manual override required. Refresh session." });
+        }
+    };
+
     const handleFinalizeStart = async (tasks: Record<number, PlannedTaskCategory[]>) => {
         if (!selectedConfig) return;
         setIsInitializing(true);
         try {
             await startChallenge(selectedConfig.id, checkInTime, lifelines, workHours, tasks);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "INGRESS FAILED", description: e.message });
         } finally {
             setIsInitializing(false);
         }
@@ -111,7 +123,10 @@ export default function ChallengerHub() {
                                         </div>
                                     </CardContent>
                                     <CardFooter className="p-8 pt-0">
-                                        <Button className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 group-hover:bg-primary group-hover:text-white transition-all" onClick={() => setSelectedConfig(config)}>
+                                        <Button 
+                                            className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 group-hover:bg-primary group-hover:text-white transition-all active:scale-95" 
+                                            onClick={() => handleSelectProtocol(config)}
+                                        >
                                             SELECT PROTOCOL <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                         </Button>
                                     </CardFooter>
@@ -124,6 +139,7 @@ export default function ChallengerHub() {
                         key="config"
                         initial={{ opacity: 0, scale: 0.95 }} 
                         animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, x: -50 }}
                         className="max-w-2xl mx-auto space-y-8"
                     >
                         <Card className="border-primary/20 bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-2xl">
@@ -203,6 +219,7 @@ export default function ChallengerHub() {
                         key="planner"
                         initial={{ opacity: 0, x: 50 }} 
                         animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
                         className="w-full"
                     >
                         <TaskPlanner 
