@@ -27,11 +27,11 @@
 
 .champion-badge {
   @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
-  background: linear-gradient(135deg, #800000, #ff0000, #800000);
+  background: linear-gradient(135deg, #800000, #ff0000, #b91c1c, #800000);
   background-size: 200% 200%;
   color: #ffffff;
-  border: 1px solid #ff4500;
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.5), inset 0 0 8px rgba(255, 69, 0, 0.3);
+  border: 1px solid #ef4444;
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5), inset 0 0 8px rgba(220, 38, 38, 0.3);
   animation: vip-shimmer 2s linear infinite;
 }
 

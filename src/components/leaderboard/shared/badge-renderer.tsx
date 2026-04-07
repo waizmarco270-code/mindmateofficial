@@ -12,8 +12,8 @@ export const SkullFire = ({ className }: { className?: string }) => (
   <div className={cn(className, "relative flex items-center justify-center")}>
     <Skull className="h-full w-full" />
     <div className="absolute inset-0 flex items-center justify-center opacity-80 pointer-events-none">
-        <Sparkles className="h-[25%] w-[25%] text-orange-500 animate-pulse" style={{ transform: 'translate(-20%, -10%)' }} />
-        <Sparkles className="h-[25%] w-[25%] text-orange-500 animate-pulse" style={{ transform: 'translate(20%, -10%)' }} />
+        <Sparkles className="h-[35%] w-[35%] text-orange-500 animate-pulse" style={{ transform: 'translate(-20%, -10%)' }} />
+        <Sparkles className="h-[35%] w-[35%] text-orange-500 animate-pulse" style={{ transform: 'translate(20%, -10%)' }} />
     </div>
   </div>
 );
@@ -38,6 +38,7 @@ export const badgeMeta: Record<BadgeType, { name: string; badge: JSX.Element }> 
 };
 
 export function getOwnedBadges(user: any) {
+    if (!user) return [];
     const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
     const badges: BadgeType[] = [];
     if (isSuperAdmin) badges.push('dev');
@@ -60,6 +61,7 @@ export function getOwnedBadges(user: any) {
 }
 
 export function ShowcaseBadge({ user }: { user: any }) {
+    if (!user) return null;
     const owned = getOwnedBadges(user);
     if (owned.length === 0) return null;
     

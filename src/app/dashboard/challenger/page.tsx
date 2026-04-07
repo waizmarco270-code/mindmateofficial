@@ -24,12 +24,12 @@ import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
 
 export default function ChallengerHub() {
-    const { activeChallenge, loading, startChallenge, resetChallenge } = useChallenges();
+    const { activeChallenge, loading, startChallenge } = useChallenges();
     const { currentUserData } = useAdmin();
     const { toast } = useToast();
     
     const [selectedConfig, setSelectedConfig] = useState<typeof CHALLENGE_CONFIGS[0] | null>(null);
-    const [setupStep, setSetupTerminalStep] = useState<'config' | 'planner'>('config');
+    const [setupStep, setSetupStep] = useState<'lobby' | 'config' | 'planner'>('lobby');
     
     // Config State
     const [checkInTime, setCheckInTime] = useState('05:00');
@@ -48,13 +48,14 @@ export default function ChallengerHub() {
         return <ChallengerPage config={activeChallenge} />;
     }
 
-    const handleSelectProtocol = (config: typeof CHALLENGE_CONFIGS[0]) => {
-        try {
-            setSelectedConfig(config);
-            setSetupTerminalStep('config');
-        } catch (e) {
-            toast({ variant: 'destructive', title: "TERMINAL STALL", description: "Manual override required. Refresh session." });
+    const handleSelectProtocol = (configId: string) => {
+        const config = CHALLENGE_CONFIGS.find(c => c.id === configId);
+        if (!config) {
+            toast({ variant: 'destructive', title: "PROTOCOL ERROR", description: "Selected configuration not found in registry." });
+            return;
         }
+        setSelectedConfig(config);
+        setSetupStep('config');
     };
 
     const handleFinalizeStart = async (tasks: Record<number, PlannedTaskCategory[]>) => {
@@ -72,12 +73,12 @@ export default function ChallengerHub() {
     return (
         <div className="space-y-8 max-w-6xl mx-auto pb-20">
             <AnimatePresence mode="wait">
-                {!selectedConfig ? (
+                {setupStep === 'lobby' && (
                     <motion.div 
                         key="lobby"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
                         className="space-y-12"
                     >
                         <div className="text-center space-y-4">
@@ -119,13 +120,15 @@ export default function ChallengerHub() {
                                         </div>
                                         <div className="p-6 rounded-3xl bg-primary/5 border border-primary/20 flex flex-col items-center text-center gap-3">
                                             <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Asset Reward</p>
-                                            <div className="scale-125 transition-transform group-hover:scale-150 duration-700">{badgeMeta[config.badgeToUnlock as any]?.badge}</div>
+                                            <div className="scale-125 transition-transform group-hover:scale-150 duration-700">
+                                                {badgeMeta[config.badgeToUnlock as any]?.badge}
+                                            </div>
                                         </div>
                                     </CardContent>
                                     <CardFooter className="p-8 pt-0">
                                         <Button 
-                                            className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 group-hover:bg-primary group-hover:text-white transition-all active:scale-95" 
-                                            onClick={() => handleSelectProtocol(config)}
+                                            className="w-full h-14 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 group-hover:bg-primary group-hover:text-white transition-all active:scale-95 z-20" 
+                                            onClick={(e) => { e.stopPropagation(); handleSelectProtocol(config.id); }}
                                         >
                                             SELECT PROTOCOL <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
                                         </Button>
@@ -134,7 +137,9 @@ export default function ChallengerHub() {
                             ))}
                         </div>
                     </motion.div>
-                ) : setupStep === 'config' ? (
+                )}
+
+                {setupStep === 'config' && selectedConfig && (
                     <motion.div 
                         key="config"
                         initial={{ opacity: 0, scale: 0.95 }} 
@@ -144,7 +149,7 @@ export default function ChallengerHub() {
                     >
                         <Card className="border-primary/20 bg-slate-900/60 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-2xl">
                             <CardHeader className="p-8 sm:p-12 border-b border-white/5 bg-white/5">
-                                <Button variant="ghost" size="sm" className="w-fit mb-6 text-slate-400 hover:text-white" onClick={() => setSelectedConfig(null)}>
+                                <Button variant="ghost" size="sm" className="w-fit mb-6 text-slate-400 hover:text-white" onClick={() => setSetupStep('lobby')}>
                                     <X className="mr-2 h-4 w-4"/> ABORT SELECTION
                                 </Button>
                                 <CardTitle className="text-4xl font-black italic uppercase text-primary tracking-tighter">Mission Config: {selectedConfig.title}</CardTitle>
@@ -207,14 +212,16 @@ export default function ChallengerHub() {
                             <CardFooter className="p-8 sm:p-12 pt-0">
                                 <Button 
                                     className="w-full h-16 rounded-2xl font-black text-xl shadow-2xl shadow-primary/20 group italic"
-                                    onClick={() => setSetupTerminalStep('planner')}
+                                    onClick={() => setSetupStep('planner')}
                                 >
                                     INITIALIZE PLANNING <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
                                 </Button>
                             </CardFooter>
                         </Card>
                     </motion.div>
-                ) : (
+                )}
+
+                {setupStep === 'planner' && selectedConfig && (
                     <motion.div 
                         key="planner"
                         initial={{ opacity: 0, x: 50 }} 
@@ -224,7 +231,7 @@ export default function ChallengerHub() {
                     >
                         <TaskPlanner 
                             duration={selectedConfig.duration} 
-                            onCancel={() => setSetupTerminalStep('config')}
+                            onCancel={() => setSetupStep('config')}
                             onComplete={handleFinalizeStart}
                         />
                     </motion.div>
@@ -232,4 +239,8 @@ export default function ChallengerHub() {
             </AnimatePresence>
         </div>
     );
+}
+
+function Separator({ className }: any) {
+    return <div className={cn("h-px w-full", className)} />;
 }
