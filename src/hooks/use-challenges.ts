@@ -1,24 +1,30 @@
-
 'use client';
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import {
-  collection,
   doc,
   onSnapshot,
   setDoc,
   deleteDoc,
-  query,
   updateDoc,
-  getDoc,
-  serverTimestamp,
   increment,
-  Timestamp
 } from 'firebase/firestore';
 import { useUsers } from './use-admin';
 import { useToast } from './use-toast';
-import { addDays, isPast, isToday, differenceInMinutes, set, subMinutes } from 'date-fns';
+
+export interface PlannedTask {
+    id: string;
+    text: string;
+    completed: boolean;
+}
+
+export interface PlannedTaskCategory {
+    id: string;
+    title: string;
+    color: string;
+    tasks: PlannedTask[];
+}
 
 export interface ActiveChallenge {
     id: string;
@@ -28,6 +34,8 @@ export interface ActiveChallenge {
     startDate: string;
     status: 'active' | 'completed' | 'failed';
     checkInTime: string; // HH:mm format
+    dailyWorkHourTarget: number;
+    plannedTasks: Record<number, PlannedTaskCategory[]>; // Day number -> Tasks
     lifelines: number;
     lastCheckInDay: number;
     penalty: number;
@@ -46,7 +54,7 @@ export const CHALLENGE_CONFIGS = [
         badgeToUnlock: 'challenger',
         tag: 'RECOMMENDED',
         tagColor: 'bg-blue-500',
-        description: 'Build core discipline. Check in daily at your chosen hour.'
+        description: 'Build core discipline. Check in daily and meet your work targets.'
     },
     {
         id: '21-day-champion',
@@ -64,7 +72,7 @@ export const CHALLENGE_CONFIGS = [
 export function useChallenges() {
     const { user } = useUser();
     const { toast } = useToast();
-    const { addCreditsToUser, currentUserData, setShowcaseBadge } = useUsers();
+    const { addCreditsToUser, currentUserData } = useUsers();
     const [activeChallenge, setActiveChallenge] = useState<ActiveChallenge | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -84,13 +92,21 @@ export function useChallenges() {
         return unsub;
     }, [user]);
 
-    const startChallenge = async (configId: string, checkInTime: string, lifelines: number) => {
+    const startChallenge = async (
+        configId: string, 
+        checkInTime: string, 
+        lifelines: number, 
+        dailyWorkHourTarget: number,
+        plannedTasks: Record<number, PlannedTaskCategory[]>
+    ) => {
         if (!user || !currentUserData) return;
         const config = CHALLENGE_CONFIGS.find(c => c.id === configId);
         if (!config) return;
 
         const lifelineCost = lifelines * 300;
-        if (currentUserData.credits < lifelineCost) {
+        const hasMaster = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
+        if (!hasMaster && currentUserData.credits < lifelineCost) {
             toast({ variant: 'destructive', title: "Credits Required", description: "You need more credits to secure these lifelines." });
             return;
         }
@@ -106,16 +122,22 @@ export function useChallenges() {
             startDate: new Date().toISOString(),
             status: 'active',
             checkInTime,
+            dailyWorkHourTarget,
+            plannedTasks,
             lifelines,
             lastCheckInDay: 0
         };
 
-        if (lifelineCost > 0) {
+        if (!hasMaster && lifelineCost > 0) {
             await addCreditsToUser(user.id, -lifelineCost);
         }
 
         await setDoc(doc(db, 'users', user.id, 'challenges', 'active'), newChallenge);
-        toast({ title: "MISSION INITIALIZED", description: "Your path to legend begins now. Do not miss your window." });
+        toast({ 
+            title: "MISSION INITIALIZED", 
+            description: "Target locked. Objectives etched. Do not fail the mainframe.",
+            className: "bg-black text-white border-primary"
+        });
     };
 
     const performCheckIn = async () => {
@@ -139,12 +161,11 @@ export function useChallenges() {
         if (isLastDay) {
             updates.status = 'completed';
             await addCreditsToUser(user.id, activeChallenge.reward);
-            // Award the badge
             const badgeKey = `is${activeChallenge.badgeToUnlock.charAt(0).toUpperCase() + activeChallenge.badgeToUnlock.slice(1)}`;
             await updateDoc(doc(db, 'users', user.id), { [badgeKey]: true, showcasedBadge: activeChallenge.badgeToUnlock });
             toast({ title: "ASCENSION COMPLETE!", description: `+${activeChallenge.reward} Credits secured. You are a true legend.` });
         } else {
-            toast({ title: "Day " + currentDay + " Secured", description: "Maintain focus for " + (activeChallenge.duration - currentDay) + " more days." });
+            toast({ title: `Day ${currentDay} Pulse Secured`, description: `${activeChallenge.duration - currentDay} more cycles remain.` });
         }
 
         await updateDoc(doc(db, 'users', user.id, 'challenges', 'active'), updates);
@@ -158,13 +179,17 @@ export function useChallenges() {
             failMessage: reason
         };
 
-        await addCreditsToUser(user.id, -activeChallenge.penalty);
+        const hasMaster = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+        if (!hasMaster) {
+            await addCreditsToUser(user.id, -activeChallenge.penalty);
+        }
+        
         await updateDoc(doc(db, 'users', user.id, 'challenges', 'active'), updates);
         
         toast({ 
             variant: 'destructive', 
             title: "PROTOCOL TERMINATED", 
-            description: `You failed the mission. -${activeChallenge.penalty} Credits deducted.` 
+            description: `You lacked the discipline required. -${activeChallenge.penalty} Credits deducted.` 
         });
     };
 

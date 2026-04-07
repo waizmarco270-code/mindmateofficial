@@ -1,4 +1,3 @@
-
 'use client';
 
 import { BadgeType, SUPER_ADMIN_UID } from '@/hooks/use-admin';
@@ -7,9 +6,10 @@ import {
     ShieldAlert, Anchor, Lock, Zap, CheckCircle, Sparkles, Skull
 } from 'lucide-react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
+import { cn } from '@/lib/utils';
 
 export const SkullFire = ({ className }: { className?: string }) => (
-  <div className={className + " relative flex items-center justify-center"}>
+  <div className={cn(className, "relative flex items-center justify-center")}>
     <Skull className="h-full w-full" />
     <div className="absolute inset-0 flex items-center justify-center opacity-80 pointer-events-none">
         <Sparkles className="h-[25%] w-[25%] text-orange-500 animate-pulse" style={{ transform: 'translate(-20%, -10%)' }} />
@@ -37,7 +37,7 @@ export const badgeMeta: Record<BadgeType, { name: string; badge: JSX.Element }> 
     sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> }
 };
 
-export function getOwnedBadges(user: UserWithStats) {
+export function getOwnedBadges(user: any) {
     const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
     const badges: BadgeType[] = [];
     if (isSuperAdmin) badges.push('dev');
@@ -59,7 +59,7 @@ export function getOwnedBadges(user: UserWithStats) {
     return badges;
 }
 
-export function ShowcaseBadge({ user }: { user: UserWithStats }) {
+export function ShowcaseBadge({ user }: { user: any }) {
     const owned = getOwnedBadges(user);
     if (owned.length === 0) return null;
     

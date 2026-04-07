@@ -1,4 +1,3 @@
-
 .elite-badge {
   @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-2.5 py-1 text-xs font-bold;
   background: linear-gradient(45deg, #f0b90b, #fbda61, #ffc371, #f0b90b);
