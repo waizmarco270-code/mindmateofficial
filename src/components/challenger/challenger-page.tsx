@@ -12,7 +12,7 @@ import {
     Loader2, AlertTriangle, ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, differenceInMinutes, parseISO, set, addDays, isPast, isToday } from 'date-fns';
+import { format, differenceInMinutes, parseISO, set, addDays, isPast, isToday, subMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -62,7 +62,6 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
     const handleMissedWindow = useCallback(async () => {
         if (config.lifelines > 0) {
             // Logic to consume lifeline would happen here or in the hook
-            // For this masterpiece, we notify the hook to handle failure or lifeline consumption
             toast({ variant: 'destructive', title: "WINDOW MISSED", description: "A lifeline was consumed to save your mission." });
         } else {
             await failChallenge("You lacked the discipline to sync within your window. Lazy habits have consequences.");

@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { ChallengerPage } from '@/components/challenger/challenger-page';
 import { motion } from 'framer-motion';
 import { badgeMeta } from '@/components/leaderboard/shared/badge-renderer';
+import { Badge } from '@/components/ui/badge';
 
 export default function ChallengerHub() {
     const { activeChallenge, loading, startChallenge, performCheckIn, failChallenge, resetChallenge } = useChallenges();
@@ -169,8 +170,4 @@ export default function ChallengerHub() {
             )}
         </div>
     );
-}
-
-function Badge({ children, className }: any) {
-    return <span className={cn("px-2 py-0.5 rounded-md border", className)}>{children}</span>;
 }

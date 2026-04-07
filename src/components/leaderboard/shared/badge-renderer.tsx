@@ -8,12 +8,12 @@ import {
 } from 'lucide-react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 
-const SkullFire = ({ className }: { className?: string }) => (
+export const SkullFire = ({ className }: { className?: string }) => (
   <div className={className + " relative flex items-center justify-center"}>
-    <Skull className="h-4 w-4" />
-    <div className="absolute inset-0 flex items-center justify-center opacity-80">
-        <Sparkles className="h-2 w-2 text-orange-500 animate-pulse" style={{ transform: 'translate(-2px, -1px)' }} />
-        <Sparkles className="h-2 w-2 text-orange-500 animate-pulse" style={{ transform: 'translate(2px, -1px)' }} />
+    <Skull className="h-full w-full" />
+    <div className="absolute inset-0 flex items-center justify-center opacity-80 pointer-events-none">
+        <Sparkles className="h-[25%] w-[25%] text-orange-500 animate-pulse" style={{ transform: 'translate(-20%, -10%)' }} />
+        <Sparkles className="h-[25%] w-[25%] text-orange-500 animate-pulse" style={{ transform: 'translate(20%, -10%)' }} />
     </div>
   </div>
 );

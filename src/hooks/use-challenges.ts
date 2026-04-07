@@ -44,7 +44,7 @@ export const CHALLENGE_CONFIGS = [
         penalty: 999,
         reward: 2000,
         badgeToUnlock: 'challenger',
-        tag: 'Recommended',
+        tag: 'RECOMMENDED',
         tagColor: 'bg-blue-500',
         description: 'Build core discipline. Check in daily at your chosen hour.'
     },
@@ -55,7 +55,7 @@ export const CHALLENGE_CONFIGS = [
         penalty: 3999,
         reward: 6999,
         badgeToUnlock: 'champion',
-        tag: "Topper's Choice",
+        tag: "TOPPER'S CHOICE",
         tagColor: 'bg-amber-500',
         description: 'Forge an unbreakable identity. 3 weeks of perfect execution.'
     }
