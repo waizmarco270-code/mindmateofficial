@@ -9,9 +9,10 @@ import {
     ShieldAlert, Zap, Loader2, Play, 
     ArrowRight, Sparkles, AlertTriangle, X,
     Skull, Gem, Flame, Medal, Award,
-    CheckCircle, Target, BrainCircuit, BarChart3, ChevronRight
+    CheckCircle, Target, BrainCircuit, BarChart3, ChevronRight,
+    Lock
 } from 'lucide-react';
-import { useAdmin } from '@/hooks/use-admin';
+import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -22,10 +23,22 @@ import { badgeMeta } from '@/components/leaderboard/shared/badge-renderer';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { useToast } from '@/hooks/use-toast';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle, 
+    AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 export default function ChallengerHub() {
     const { activeChallenge, loading, startChallenge } = useChallenges();
     const { currentUserData } = useAdmin();
+    const { addCreditsToUser } = useUsers();
     const { toast } = useToast();
     
     const [selectedConfig, setSelectedConfig] = useState<typeof CHALLENGE_CONFIGS[0] | null>(null);
@@ -56,6 +69,24 @@ export default function ChallengerHub() {
         }
         setSelectedConfig(config);
         setSetupStep('config');
+    };
+
+    const handlePurchaseLifeline = async (count: number) => {
+        if (!currentUserData) return;
+        const cost = count * 300;
+        const hasMaster = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
+        if (!hasMaster && currentUserData.credits < cost) {
+            toast({ variant: 'destructive', title: "INSUFFICIENT LIQUIDITY", description: "You need more credits to secure these lifelines." });
+            return;
+        }
+
+        if (!hasMaster) {
+            await addCreditsToUser(currentUserData.uid, -cost);
+        }
+        
+        setLifelines(count);
+        toast({ title: "ASSET SECURED", description: `${count} Lifelines integrated into your tactical profile.` });
     };
 
     const handleFinalizeStart = async (tasks: Record<number, PlannedTaskCategory[]>) => {
@@ -178,24 +209,42 @@ export default function ChallengerHub() {
 
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between">
-                                        <Label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><Heart className="h-4 w-4"/> Emergency Lifelines</Label>
+                                        <Label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><Heart className="h-4 w-4"/> Tactical Lifelines</Label>
                                         <span className="text-[10px] font-black uppercase text-amber-500">300 CR / UNIT</span>
                                     </div>
                                     <div className="flex gap-4">
                                         {[0, 1, 2, 3].map(val => (
-                                            <Button 
-                                                key={val} 
-                                                variant={lifelines === val ? 'default' : 'outline'} 
-                                                className={cn(
-                                                    "flex-1 h-14 rounded-2xl text-lg font-black border-white/10 transition-all",
-                                                    lifelines === val ? "bg-primary text-white scale-105 shadow-lg shadow-primary/20" : "bg-black/20 hover:bg-white/5"
+                                            <AlertDialog key={val}>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button 
+                                                        disabled={lifelines === val}
+                                                        variant={lifelines === val ? 'default' : 'outline'} 
+                                                        className={cn(
+                                                            "flex-1 h-14 rounded-2xl text-lg font-black border-white/10 transition-all",
+                                                            lifelines === val ? "bg-primary text-white scale-105 shadow-lg shadow-primary/20" : "bg-black/20 hover:bg-white/5"
+                                                        )}
+                                                    >
+                                                        {val === 0 ? '0' : <><Lock className="mr-1 h-3.5 w-3.5 opacity-40"/> {val}</>}
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                {val > 0 && (
+                                                    <AlertDialogContent className="bg-slate-900 border-primary/20">
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle className="text-2xl font-black uppercase italic text-white">SECURE LIFELINES</AlertDialogTitle>
+                                                            <AlertDialogDescription className="text-slate-300">
+                                                                Authorize the deduction of <b className="text-amber-500">{val * 300} Credits</b> to secure {val} Emergency Lifelines for this mission.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel className="bg-transparent border-white/10 text-white font-bold">ABORT</AlertDialogCancel>
+                                                            <AlertDialogAction className="bg-primary text-white font-black" onClick={() => handlePurchaseLifeline(val)}>AUTHORIZE PURCHASE</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
                                                 )}
-                                                onClick={() => setLifelines(val)}
-                                            >
-                                                {val === 0 ? '0' : <><Heart className={cn("mr-1 h-4 w-4 fill-current", lifelines === val ? "text-white" : "text-red-500")} /> {val}</>}
-                                            </Button>
+                                            </AlertDialog>
                                         ))}
                                     </div>
+                                    <p className="text-[9px] text-center text-muted-foreground uppercase font-bold tracking-widest">Active Assets: {lifelines} / 3</p>
                                 </div>
 
                                 <div className="p-6 rounded-3xl bg-red-500/5 border border-red-500/20">

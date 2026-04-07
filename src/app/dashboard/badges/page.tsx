@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -17,16 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-const SkullFire = ({ className }: { className?: string }) => (
-  <div className={className + " relative flex items-center justify-center"}>
-    <Skull className="h-4 w-4" />
-    <div className="absolute inset-0 flex items-center justify-center opacity-80">
-        <Sparkles className="h-2 w-2 text-orange-500 animate-pulse" style={{ transform: 'translate(-2px, -1px)' }} />
-        <Sparkles className="h-2 w-2 text-orange-500 animate-pulse" style={{ transform: 'translate(2px, -1px)' }} />
-    </div>
-  </div>
-);
+import { SkullFire } from '@/components/leaderboard/shared/badge-renderer';
 
 const badgeMeta: Record<BadgeType, { 
     name: string; 
