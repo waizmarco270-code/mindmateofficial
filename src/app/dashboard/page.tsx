@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight, X, Sparkles } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight, X, Sparkles, Skull } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -198,7 +197,7 @@ const badgeDetails: Record<BadgeType, { name: string; badge: JSX.Element, icon: 
     vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>, icon: Crown, gradient: 'from-amber-400 to-yellow-500' },
     gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span>, icon: Gamepad2, gradient: 'from-blue-500 to-sky-500' },
     challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>, icon: Swords, gradient: 'from-orange-500 to-red-500' },
-    champion: { name: 'Champion', badge: <span className="champion-badge"><SkullFire className="h-3.5 w-3.5"/> Champion</span>, icon: Swords, gradient: 'from-red-900 to-red-600' },
+    champion: { name: 'Champion', badge: <span className="champion-badge"><Skull className="h-3.5 w-3.5"/> Champion</span>, icon: Skull, gradient: 'from-red-900 to-red-600' },
     'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span>, icon: Bird, gradient: 'from-orange-400 to-yellow-500' },
     'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span>, icon: Moon, gradient: 'from-indigo-600 to-purple-900' },
     'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span>, icon: ShieldCheck, gradient: 'from-slate-600 to-gray-800' },

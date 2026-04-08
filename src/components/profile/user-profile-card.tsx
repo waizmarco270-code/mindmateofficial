@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock, ShieldAlert, Snowflake, Sparkles, Bird, Moon, TrendingUp, Wallet, Anchor, Lock, Zap as ZapIcon } from 'lucide-react';
+import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock, ShieldAlert, Snowflake, Sparkles, Bird, Moon, TrendingUp, Wallet, Anchor, Lock, Skull } from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
@@ -49,6 +48,7 @@ const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
     warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
     'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
     sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> },
+    champion: { name: 'Champion', badge: <span className="champion-badge"><Skull className="h-3.5 w-3.5"/> Champion</span> },
     premium: { name: 'Premium', badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span> }
 };
 
@@ -78,6 +78,7 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
         user.isVip && 'vip',
         user.isGM && 'gm',
         user.isChallenger && 'challenger',
+        user.isChampion && 'champion',
         user.isStreaker && 'streaker',
         user.isCoDev && 'co-dev',
         user.isEarlyBird && 'early-bird',

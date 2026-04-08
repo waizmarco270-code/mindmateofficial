@@ -16,7 +16,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SkullFire } from '@/components/leaderboard/shared/badge-renderer';
 
 const badgeMeta: Record<BadgeType, { 
     name: string; 
@@ -80,7 +79,7 @@ const badgeMeta: Record<BadgeType, {
         gradient: 'from-red-900 to-red-600',
         description: 'The mark of a true Topper. One who has mastered the 21-Day Champion Gauntlet.',
         requirement: 'Successfully complete a 21-Day Champion Protocol.',
-        badge: <span className="champion-badge"><SkullFire className="h-3.5 w-3.5"/> Champion</span>
+        badge: <span className="champion-badge"><Skull className="h-3.5 w-3.5"/> Champion</span>
     },
     'early-bird': { 
         name: 'Early Bird', 
@@ -153,6 +152,14 @@ const badgeMeta: Record<BadgeType, {
         description: 'The ultimate rank. A citizen who has surrendered a year to focus.',
         requirement: 'Successfully emerge from a 1-Year Isolation Protocol.',
         badge: <span className="sovereign-badge">Sovereign</span>
+    },
+    premium: {
+        name: 'Premium',
+        icon: Crown,
+        gradient: 'from-primary to-purple-600',
+        description: 'A mark of a MindMate Plus Founder. Eternal status in the mainframe.',
+        requirement: 'Secure a MindMate Plus Permanent Slot.',
+        badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span>
     }
 };
 
@@ -163,6 +170,7 @@ function BadgeDetailsDialog({ badgeKey, isOpen, onOpenChange, users }: { badgeKe
         if (!badgeKey) return [];
         return users.filter(u => {
             if (badgeKey === 'dev') return u.uid === SUPER_ADMIN_UID;
+            if (badgeKey === 'premium') return u.isPlusMember;
             if (badgeKey === 'co-dev') return u.isCoDev;
             if (badgeKey === 'admin') return u.isAdmin;
             if (badgeKey === 'vip') return u.isVip;
@@ -297,6 +305,7 @@ export default function BadgesTreasuryPage() {
                     const meta = badgeMeta[key];
                     const ownerCount = users.filter(u => {
                         if (key === 'dev') return u.uid === SUPER_ADMIN_UID;
+                        if (key === 'premium') return u.isPlusMember;
                         if (key === 'co-dev') return u.isCoDev;
                         if (key === 'admin') return u.isAdmin;
                         if (key === 'vip') return u.isVip;

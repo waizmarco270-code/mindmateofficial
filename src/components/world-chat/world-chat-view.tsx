@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import {
     Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, 
     Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, 
     Vote, Megaphone, BellRing, Lock, Unlock, Trash, Clock, 
-    ShieldAlert, ExternalLink, CheckCircle, Bird, Moon, Anchor
+    ShieldAlert, ExternalLink, CheckCircle, Bird, Moon, Anchor, Skull
 } from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
@@ -61,6 +60,7 @@ const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
     warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
     'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
     sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> },
+    champion: { name: 'Champion', badge: <span className="champion-badge"><Skull className="h-3.5 w-3.5"/> Champion</span> },
     premium: { name: 'Premium', badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span> }
 };
 
