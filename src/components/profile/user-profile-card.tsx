@@ -48,7 +48,8 @@ const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
     'iso-warrior': { name: 'ISO-Warrior', badge: <span className="iso-warrior-badge">ISO-WARRIOR</span> },
     warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
     'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
-    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> }
+    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> },
+    premium: { name: 'Premium', badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span> }
 };
 
 export function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProfile?: boolean }) {
@@ -73,6 +74,7 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
 
     const ownedBadgesList = [
         (isSuperAdmin || user.isAdmin) && 'admin',
+        user.isPlusMember && 'premium',
         user.isVip && 'vip',
         user.isGM && 'gm',
         user.isChallenger && 'challenger',
@@ -119,12 +121,15 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
                         <div className="relative group shrink-0">
                             <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-full blur opacity-40 group-hover:opacity-100 transition duration-1000" />
-                            <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-primary relative bg-background">
+                            <Avatar className={cn("h-20 w-20 sm:h-24 sm:w-24 border-2 relative bg-background", user.isPlusMember ? "premium-rainbow-border" : "border-primary")}>
                                 <AvatarImage src={user.photoURL} />
                                 <AvatarFallback className="text-3xl">{user.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
                         </div>
                         <div className="flex-1 min-w-0">
+                            {user.isPlusMember && (
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em] premium-text-gradient mb-1">MindMate Plus Member</p>
+                            )}
                             <CardTitle className="text-2xl sm:text-4xl font-black tracking-tight truncate">{user.displayName}</CardTitle>
                             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mt-2">
                                 {showcasedBadgeType ? badgeDetails[showcasedBadgeType].badge : <Badge variant="outline" className="font-bold">STUDENT</Badge>}

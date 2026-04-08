@@ -4,10 +4,10 @@ import { useState, useEffect, createContext, useContext, ReactNode, useMemo, use
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { 
-    collection, doc, onSnapshot, query, orderBy, limit, Timestamp, collectionGroup, writeBatch, getDocs, setDoc, getDoc, increment, serverTimestamp 
+    collection, doc, onSnapshot, query, orderBy, limit, Timestamp, collectionGroup, writeBatch, getDocs, setDoc, getDoc, increment, serverTimestamp, runTransaction, arrayUnion 
 } from 'firebase/firestore';
 import { useToast } from './use-toast';
-import { format, startOfWeek, isSameWeek, subWeeks } from 'date-fns';
+import { format, startOfWeek, isSameWeek, subWeeks, addYears } from 'date-fns';
 
 // Modular Logic Imports
 import { useUserActions } from './admin/use-user-actions';
@@ -18,7 +18,7 @@ import { useCodeActions } from './admin/use-code-actions';
 import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
-export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'champion' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign';
+export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'champion' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign' | 'premium';
 
 export interface WalletTransaction {
     id: string;
@@ -36,6 +36,8 @@ export interface User {
   email: string;
   photoURL?: string;
   isBlocked: boolean;
+  isPlusMember?: boolean;
+  plusJoinedAt?: string;
   banType?: 'permanent' | 'temporary';
   banExpires?: string;
   banReason?: string;
@@ -62,6 +64,11 @@ export interface User {
   isNightOwl?: boolean;
   isKnowledgeKnight?: boolean;
   isStreaker?: boolean;
+  isIsolater?: boolean;
+  isIsoWarrior?: boolean;
+  isWarrior?: boolean;
+  isIsoMaster?: boolean;
+  isSovereign?: boolean;
   showcasedBadge?: BadgeType;
   friends?: string[];
   focusSessionsCompleted?: number;
@@ -129,7 +136,7 @@ export interface Poll { id: string; question: string; options: string[]; results
 export interface GlobalGift { id: string; message: string; rewards: any; target: any; maxClaims?: number; createdAt: Date; isActive: boolean; claimedBy?: string[]; }
 export interface SupportTicket { id: string; userId: string; userName: string; message: string; status: 'new' | 'resolved'; createdAt: Timestamp; }
 export interface FeatureShowcase { id: string; title: string; description: string; launchDate?: string; template: any; status: 'upcoming' | 'live'; link?: string; createdAt: Date; }
-export interface CreditPack { id: string; name: string; credits: number; price: number; badge?: string; createdAt: Date; }
+export interface CreditPacks { id: string; name: string; credits: number; price: number; badge?: string; createdAt: Date; }
 export interface StoreItem { id: string; name: string; description: string; cost: number; price?: number; paymentType: 'credits' | 'money'; type: string; quantity: number; createdAt: Date; stock: number; isFeatured: boolean; badge?: string; }
 export interface VideoCategory { id: string; name: string; description: string; createdAt: Date; }
 export interface VideoLecture { id: string; title: string; description: string; youtubeUrl: string; thumbnailUrl: string; categoryId: string; createdAt: Date; }
@@ -144,7 +151,8 @@ export interface AppSettings {
     maintenanceTheme?: MaintenanceTheme; 
     whatsNewMessage?: string; 
     lastMaintenanceId?: string; 
-    lastGameReset?: string; // ISO Date of start of week
+    lastGameReset?: string;
+    plusMemberCount?: number;
 }
 
 interface AppDataContextType {
@@ -153,7 +161,7 @@ interface AppDataContextType {
     announcements: Announcement[]; resources: Resource[]; resourceSections: ResourceSection[];
     dailySurprises: DailySurprise[]; supportTickets: SupportTicket[]; allPolls: Poll[];
     appSettings: AppSettings | null; globalGifts: GlobalGift[]; activeGlobalGift: GlobalGift | null;
-    featureShowcases: FeatureShowcase[]; creditPacks: CreditPack[]; storeItems: StoreItem[];
+    featureShowcases: FeatureShowcase[]; creditPacks: any[]; storeItems: StoreItem[];
     videoCategories: VideoCategory[]; videoLectures: VideoLecture[];
     activePoll: Poll | null; redeemCodes: RedeemCode[];
     gameHistory: GameHistoryEntry[];
@@ -181,6 +189,7 @@ interface AppDataContextType {
     generateRedeemCode: (v: number) => Promise<string>; deactivateRedeemCode: (id: string) => Promise<void>; deleteRedeemCode: (id: string) => Promise<void>; redeemCode: (u: string, c: string) => Promise<number>;
     triggerAegisPulse: () => Promise<AegisPulseOutput>;
     performGameReset: () => Promise<void>;
+    claimPlusMembership: (paymentId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -200,7 +209,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const [appSettings, setAppSettings] = useState<AppSettings | null>(null);
     const [globalGifts, setGlobalGifts] = useState<GlobalGift[]>([]);
     const [featureShowcases, setFeatureShowcases] = useState<FeatureShowcase[]>([]);
-    const [creditPacks, setCreditPacks] = useState<CreditPack[]>([]);
+    const [creditPacks, setCreditPacks] = useState<any[]>([]);
     const [storeItems, setStoreItems] = useState<StoreItem[]>([]);
     const [videoCategories, setVideoCategories] = useState<VideoCategory[]>([]);
     const [videoLectures, setVideoLectures] = useState<VideoLecture[]>([]);
@@ -254,84 +263,43 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const performGameReset = useCallback(async () => {
         if (!isSuperAdmin) return;
-        
         try {
             const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
-            
-            // 1. Snapshot current leaderboard
-            const sortedUsers = [...users]
-                .map(u => {
-                    const { s = 0, p = 0, d = 0, f = 0 } = u.elementQuestScores || {};
-                    const elementQuestTotal = s + p + d + f;
-                    const score = (u.gameHighScores?.emojiQuiz || 0) * 1.2 + 
-                                  (u.gameHighScores?.memoryGame || 0) + 
-                                  (u.gameHighScores?.dimensionShift || 0) * 1.5 + 
-                                  (u.gameHighScores?.subjectSprint || 0) * 1.1 + 
-                                  (u.gameHighScores?.flappyMind || 0) + 
-                                  (u.gameHighScores?.astroAscent || 0) * 1.3 + 
-                                  (u.gameHighScores?.mathematicsLegend || 0) * 1.4 + 
-                                  (elementQuestTotal * 0.5);
-                    return { ...u, score, elementQuestTotal };
-                })
+            const sortedUsers = [...users].map(u => ({ ...u, score: (u.gameHighScores?.emojiQuiz || 0) * 1.2 + (u.gameHighScores?.memoryGame || 0) + (u.gameHighScores?.dimensionShift || 0) * 1.5 + (u.gameHighScores?.subjectSprint || 0) * 1.1 + (u.gameHighScores?.flappyMind || 0) + (u.gameHighScores?.astroAscent || 0) * 1.3 + (u.gameHighScores?.mathematicsLegend || 0) * 1.4 + (((u.elementQuestScores?.s || 0) + (u.elementQuestScores?.p || 0) + (u.elementQuestScores?.d || 0) + (u.elementQuestScores?.f || 0)) * 0.5) }))
                 .sort((a, b) => b.score - a.score);
-
-            const topFive = sortedUsers.slice(0, 5).map(u => ({
-                uid: u.uid,
-                displayName: u.displayName,
-                photoURL: u.photoURL,
-                score: Math.round(u.score),
-                scores: { ...u.gameHighScores, elementQuestTotal: u.elementQuestTotal }
-            }));
-
+            const topFive = sortedUsers.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, photoURL: u.photoURL, score: Math.round(u.score), scores: { ...u.gameHighScores, elementQuestTotal: (u.elementQuestScores?.s || 0) + (u.elementQuestScores?.p || 0) + (u.elementQuestScores?.d || 0) + (u.elementQuestScores?.f || 0) } }));
             const batch = writeBatch(db);
-
-            // 2. Save history
-            const historyRef = doc(collection(db, 'gameZoneHistory'));
-            batch.set(historyRef, {
-                weekStartDate: currentWeekStart,
-                topPerformers: topFive,
-                createdAt: serverTimestamp()
-            });
-
-            // 3. Reset ALL users game scores
-            users.forEach(u => {
-                const userRef = doc(db, 'users', u.uid);
-                batch.update(userRef, {
-                    gameHighScores: {
-                        memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, 
-                        subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0
-                    },
-                    elementQuestScores: { s: 0, p: 0, d: 0, f: 0 },
-                    // Optional: reset milestones if they are weekly
-                    dimensionShiftClaims: {},
-                    flappyMindClaims: {},
-                    astroAscentClaims: {},
-                    mathematicsLegendClaims: {}
-                });
-            });
-
-            // 4. Update config
+            batch.set(doc(collection(db, 'gameZoneHistory')), { weekStartDate: currentWeekStart, topPerformers: topFive, createdAt: serverTimestamp() });
+            users.forEach(u => batch.update(doc(db, 'users', u.uid), { gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0 }, elementQuestScores: { s: 0, p: 0, d: 0, f: 0 }, dimensionShiftClaims: {}, flappyMindClaims: {}, astroAscentClaims: {}, mathematicsLegendClaims: {} }));
             batch.update(doc(db, 'appConfig', 'settings'), { lastGameReset: currentWeekStart });
-
             await batch.commit();
-            toast({ title: "Mainframe Pulse: Reset Complete", description: "Game leaderboard has been cycled." });
-        } catch (e: any) {
-            console.error("Reset failed:", e);
-            toast({ variant: 'destructive', title: "Reset Failed", description: e.message });
-        }
+            toast({ title: "Leaderboard Reset Complete" });
+        } catch (e: any) { toast({ variant: 'destructive', title: "Reset Failed", description: e.message }); }
     }, [isSuperAdmin, users, toast]);
 
-    // Check for weekly reset on load (Sovereign Auto-Goverance)
-    useEffect(() => {
-        if (isSuperAdmin && appSettings) {
-            const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-            const lastReset = appSettings.lastGameReset ? new Date(appSettings.lastGameReset) : null;
+    const claimPlusMembership = async (paymentId: string) => {
+        if (!authUser || !currentUserData) return;
+        await runTransaction(db, async (transaction) => {
+            const userRef = doc(db, 'users', authUser.id);
+            const settingsRef = doc(db, 'appConfig', 'settings');
+            const settingsSnap = await transaction.get(settingsRef);
+            const currentCount = settingsSnap.data()?.plusMemberCount || 0;
             
-            if (!lastReset || !isSameWeek(currentWeekStart, lastReset, { weekStartsOn: 1 })) {
-                performGameReset();
-            }
-        }
-    }, [isSuperAdmin, appSettings, performGameReset]);
+            const alphaExpiry = addYears(new Date(), 99).toISOString();
+            transaction.update(userRef, {
+                isPlusMember: true,
+                plusJoinedAt: new Date().toISOString(),
+                credits: increment(5000),
+                showcasedBadge: 'premium',
+                'inventory.penaltyShields': increment(5),
+                'inventory.streakFreezes': increment(5),
+                'inventory.alphaGlowExpires': alphaExpiry,
+                transactions: arrayUnion({ id: paymentId, packName: 'MindMate Plus', credits: 5000, date: new Date().toISOString(), type: 'membership_activation' })
+            });
+            transaction.update(settingsRef, { plusMemberCount: increment(1) });
+        });
+        toast({ title: "Welcome to MindMate Plus!", description: "Legendary features authorized.", className: "bg-gradient-to-r from-purple-500 to-indigo-600 text-white" });
+    };
 
     const value = useMemo(() => ({
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
@@ -339,21 +307,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
         videoCategories, videoLectures, redeemCodes, activePoll: allPolls.find(p => p.isActive) || null,
         gameHistory, subscribedUserIds,
-        
-        ...userActions,
-        ...contentActions,
-        ...storeActions,
-        ...systemActions,
-        ...codeActions,
-        
+        ...userActions, ...contentActions, ...storeActions, ...systemActions, ...codeActions,
         triggerAegisPulse: async () => {
-            if (users.length === 0) throw new Error("No citizens detected.");
-            return runAegisPulse({
-                topUsers: users.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, credits: u.credits, studyTime: u.totalStudyTime || 0, streak: u.streak || 0 })),
-                recentAnnouncements: announcements.slice(0, 3).map(a => a.title),
-                totalUsers: users.length,
-                isChatQuiet: true
-            });
+            if (users.length === 0) throw new Error("No citizens.");
+            return runAegisPulse({ topUsers: users.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, credits: u.credits, studyTime: u.totalStudyTime || 0, streak: u.streak || 0 })), recentAnnouncements: announcements.slice(0, 3).map(a => a.title), totalUsers: users.length, isChatQuiet: true });
         },
         generateAiAccessToken: () => userActions.generateAiAccessToken(authUser?.id!),
         unlockResourceSection: (sid: string, c: number) => userActions.unlockResourceSection(authUser?.id!, sid, c),
@@ -367,14 +324,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
         redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
-        performGameReset
-    }), [
-        isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, 
-        announcements, resources, resourceSections, dailySurprises, supportTickets, 
-        allPolls, appSettings, globalGifts, featureShowcases, creditPacks, 
-        storeItems, videoCategories, videoLectures, redeemCodes, gameHistory, subscribedUserIds,
-        userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id, performGameReset
-    ]);
+        performGameReset, claimPlusMembership
+    }), [isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, redeemCodes, gameHistory, subscribedUserIds, userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id, performGameReset]);
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
 };

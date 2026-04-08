@@ -82,6 +82,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                 {topThree.map((user) => {
                                     const actualRank = users.findIndex(u => u.uid === user.uid) + 1;
                                     const isFirst = actualRank === 1;
+                                    const isPlus = user.isPlusMember;
                                     
                                     return (
                                         <div key={user.uid} className="flex flex-col items-center gap-4">
@@ -94,7 +95,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                     onClick={() => setActivePodiumRank(actualRank)}
                                                     className={cn(
                                                         "relative p-1 rounded-full transition-all duration-500 hover:scale-110",
-                                                        actualRank === 1 ? "gold-glow" : actualRank === 2 ? "silver-glow" : "bronze-glow"
+                                                        isPlus ? "premium-rainbow-border" : (actualRank === 1 ? "gold-glow" : actualRank === 2 ? "silver-glow" : "bronze-glow")
                                                     )}
                                                 >
                                                     <Avatar className={cn(
@@ -153,7 +154,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                             <div className="w-[35%] sm:w-[30%] flex flex-col items-center justify-center gap-4 shrink-0 border-r border-white/5 pr-4 sm:pr-10">
                                                 <div className="relative">
                                                     <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl" />
-                                                    <Avatar className="h-20 w-20 sm:h-40 sm:w-40 border-4 border-primary/30 shadow-2xl relative z-10 bg-background">
+                                                    <Avatar className={cn("h-20 w-20 sm:h-40 sm:w-40 border-4 shadow-2xl relative z-10 bg-background", users[activePodiumRank - 1]?.isPlusMember ? "premium-rainbow-border" : "border-primary/30")}>
                                                         <AvatarImage src={users[activePodiumRank - 1]?.photoURL} />
                                                         <AvatarFallback>U</AvatarFallback>
                                                     </Avatar>
@@ -254,7 +255,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                 )}
             </AnimatePresence>
 
-            <BadgeShowcaseDialog user={showcaseUser} onClose={() => setShowcaseUser(null)} />
+            <BadgeShowcaseDialog user={showcaseUser} onClose={() => showcaseUser && setShowcaseUser(null)} />
         </div>
     );
 }
@@ -294,14 +295,14 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                         
                         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                             <button onClick={(e) => { e.stopPropagation(); onShowcase(); }}>
-                                <Avatar className="h-10 w-10 sm:h-14 sm:w-14 border-2 border-white/10 shadow-lg bg-background">
+                                <Avatar className={cn("h-10 w-10 sm:h-14 sm:w-14 border-2 shadow-lg bg-background relative z-10", user.isPlusMember ? "premium-rainbow-border" : "border-white/10")}>
                                     <AvatarImage src={user.photoURL} />
                                     <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                 </Avatar>
                             </button>
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <p className="font-black text-sm sm:text-xl uppercase italic truncate">{user.displayName}</p>
+                                    <p className="font-black text-sm sm:text-xl uppercase italic tracking-tight truncate">{user.displayName}</p>
                                     <div className="scale-90 origin-left">
                                         <ShowcaseBadge user={user} />
                                     </div>
@@ -329,7 +330,7 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                         
                         {/* LEFT PANE: IDENTITY */}
                         <div className="w-[30%] flex flex-col items-center justify-center gap-1 border-r border-white/5 pr-2 sm:pr-4">
-                            <Avatar className="h-10 w-10 sm:h-14 sm:w-14 border-2 border-primary/20 shrink-0 bg-background relative z-10">
+                            <Avatar className={cn("h-10 w-10 sm:h-14 sm:w-14 border-2 shrink-0 bg-background relative z-10", user.isPlusMember ? "premium-rainbow-border" : "border-primary/20")}>
                                 <AvatarImage src={user.photoURL} />
                                 <AvatarFallback>U</AvatarFallback>
                             </Avatar>
@@ -364,11 +365,14 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                 
                 <div className="px-6 sm:px-10 pb-12 -mt-16 relative z-10">
                     <div className="flex flex-col items-center text-center space-y-4">
-                        <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-primary shadow-2xl bg-background">
+                        <Avatar className={cn("h-24 w-24 sm:h-32 sm:w-32 border-4 shadow-2xl bg-background", user.isPlusMember ? "premium-rainbow-border" : "border-primary")}>
                             <AvatarImage src={user.photoURL} />
                             <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                         </Avatar>
                         <div>
+                            {user.isPlusMember && (
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em] premium-text-gradient mb-1">MindMate Plus Member</p>
+                            )}
                             <h3 className="text-2xl sm:text-4xl font-black uppercase italic tracking-tight">{user.displayName}</h3>
                             <p className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground mt-2">Identity Registry • {user.mindMateId || 'LEGEND'}</p>
                         </div>

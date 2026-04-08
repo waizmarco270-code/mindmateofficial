@@ -1,6 +1,40 @@
 /* ALPHA RAINBOW BORDER ARTIFACT */
-.alpha-rainbow-border {
+@keyframes alpha-rainbow {
+  0% { border-color: #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
+  20% { border-color: #ffff00; box-shadow: 0 0 15px rgba(255, 255, 0, 0.5); }
+  40% { border-color: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.5); }
+  60% { border-color: #00ffff; box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
+  80% { border-color: #0000ff; box-shadow: 0 0 15px rgba(0, 0, 255, 0.5); }
+  100% { border-color: #ff00ff; box-shadow: 0 0 15px rgba(255, 0, 255, 0.5); }
+}
+
+.premium-rainbow-border {
   border: 3px solid transparent !important;
-  animation: alpha-rainbow 3s linear infinite !important;
+  animation: alpha-rainbow 4s linear infinite !important;
   background-clip: padding-box;
+}
+
+.premium-text-gradient {
+  background: linear-gradient(to right, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: alpha-rainbow-text 5s linear infinite;
+}
+
+@keyframes alpha-rainbow-text {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+.premium-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-3 py-1.5 text-[10px] font-black uppercase italic;
+  background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
+  background-size: 300% 300%;
+  color: white;
+  border: 2px solid white;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+  animation: vip-shimmer 2s linear infinite;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }

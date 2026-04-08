@@ -60,7 +60,8 @@ const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
     'iso-warrior': { name: 'ISO-Warrior', badge: <span className="iso-warrior-badge">ISO-WARRIOR</span> },
     warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
     'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
-    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> }
+    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> },
+    premium: { name: 'Premium', badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span> }
 };
 
 function SmartText({ text }: { text?: string }) {
@@ -218,6 +219,10 @@ export function WorldChatView() {
         if (typingUsers.length === 0) return null;
         if (typingUsers.length === 1) return `${typingUsers[0].displayName} is typing...`;
         return `${typingUsers.length} users are typing...`;
+    };
+
+    const onUserSelect = (user: User) => {
+        setSelectedUser(user);
     };
 
     return (
@@ -474,14 +479,17 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
 
     const ownedBadges = [
         (sender.uid === SUPER_ADMIN_UID) && 'dev',
+        (sender.isPlusMember) && 'premium',
         (sender.isCoDev) && 'co-dev',
         (sender.isAdmin) && 'admin',
         (sender.isVip) && 'vip',
         (sender.isGM) && 'gm',
         (sender.isChallenger) && 'challenger',
+        (sender.isChampion) && 'champion',
         (sender.isEarlyBird) && 'early-bird',
         (sender.isNightOwl) && 'night-owl',
         (sender.isKnowledgeKnight) && 'knowledge-knight',
+        (sender.isStreaker) && 'streaker',
         (sender.isIsolater) && 'isolater',
         (sender.isIsoWarrior) && 'iso-warrior',
         (sender.isWarrior) && 'warrior',
@@ -607,7 +615,10 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
             <div className={cn("flex gap-2 max-w-[85%]", isOwn ? "flex-row-reverse" : "flex-row")}>
                 {!isOwn && (
                     <button onClick={() => onUserSelect(sender)} className="mt-1 flex-shrink-0">
-                        <Avatar className="h-8 w-8 border border-white/10 shadow-sm"><AvatarImage src={sender.photoURL}/><AvatarFallback>{sender.displayName?.charAt(0)}</AvatarFallback></Avatar>
+                        <Avatar className={cn("h-8 w-8 border shadow-sm", sender.isPlusMember ? "premium-rainbow-border" : "border-white/10")}>
+                            <AvatarImage src={sender.photoURL}/>
+                            <AvatarFallback>{sender.displayName?.charAt(0)}</AvatarFallback>
+                        </Avatar>
                     </button>
                 )}
                 
@@ -616,7 +627,7 @@ function ChatMessage({ message, sender, isOwn, showHeader, onUserSelect, onReply
                         <div className={cn(
                             "relative px-3 py-2 rounded-2xl shadow-sm text-sm cursor-pointer transition-all border-2 border-transparent",
                             isOwn ? "bg-[#d9fdd3] dark:bg-[#005c4b] rounded-tr-none" : "bg-white dark:bg-[#202c33] rounded-tl-none",
-                            hasGlow ? "alpha-rainbow-border" : "",
+                            (hasGlow || sender.isPlusMember) ? "alpha-rainbow-border" : "",
                             isNugget && "border-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.3)]"
                         )}>
                             {showHeader && !isOwn && (

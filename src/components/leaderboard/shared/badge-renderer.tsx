@@ -1,3 +1,4 @@
+
 'use client';
 
 import { BadgeType, SUPER_ADMIN_UID } from '@/hooks/use-admin';
@@ -34,7 +35,8 @@ export const badgeMeta: Record<BadgeType, { name: string; badge: JSX.Element }> 
     'iso-warrior': { name: 'ISO-Warrior', badge: <span className="iso-warrior-badge">ISO-WARRIOR</span> },
     warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
     'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
-    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> }
+    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> },
+    premium: { name: 'Premium', badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span> }
 };
 
 export function getOwnedBadges(user: any) {
@@ -42,6 +44,7 @@ export function getOwnedBadges(user: any) {
     const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
     const badges: BadgeType[] = [];
     if (isSuperAdmin) badges.push('dev');
+    if (user.isPlusMember) badges.push('premium');
     if (user.isCoDev) badges.push('co-dev');
     if (user.isAdmin) badges.push('admin');
     if (user.isVip) badges.push('vip');

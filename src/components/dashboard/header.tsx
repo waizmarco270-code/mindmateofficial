@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Medal, Crown, ShieldCheck, Settings, LifeBuoy, KeyRound, Check, X, PanelLeft, ShoppingCart, User as UserIcon, LogOut, Bell, Sun, Moon, Monitor, CreditCard, Wallet, Fingerprint, Maximize2 } from 'lucide-react';
+import { Medal, Crown, ShieldCheck, Settings, LifeBuoy, KeyRound, Check, X, PanelLeft, ShoppingCart, User as UserIcon, LogOut, Bell, Sun, Moon, Monitor, CreditCard, Wallet, Fingerprint, Maximize2, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useUsers, useAdmin } from '@/hooks/use-admin';
@@ -118,7 +118,7 @@ function ProfileHub() {
         <Popover>
             <PopoverTrigger asChild>
                 <button className="relative group focus:outline-none focus:ring-0">
-                    <div className="p-[2px] rounded-full border-2 border-primary/20">
+                    <div className={cn("p-[2px] rounded-full border-2", currentUserData?.isPlusMember ? "premium-rainbow-border" : "border-primary/20")}>
                         <Avatar className="h-10 w-10 border-2 border-background">
                             <AvatarImage src={user.imageUrl} />
                             <AvatarFallback><UserIcon /></AvatarFallback>
@@ -129,11 +129,14 @@ function ProfileHub() {
             <PopoverContent className="w-80 p-0 overflow-hidden border-primary/20 shadow-2xl rounded-2xl">
                 <div className="p-6 bg-gradient-to-br from-primary/10 to-background border-b">
                     <div className="flex items-center gap-4">
-                        <Avatar className="h-14 w-14 border-2 border-primary/20 shadow-lg">
+                        <Avatar className={cn("h-14 w-14 border-2 shadow-lg", currentUserData?.isPlusMember ? "premium-rainbow-border" : "border-primary/20")}>
                             <AvatarImage src={user.imageUrl} />
                             <AvatarFallback>U</AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
+                            {currentUserData?.isPlusMember && (
+                                <p className="text-[10px] font-black uppercase tracking-[0.25em] premium-text-gradient mb-1">MindMate Plus</p>
+                            )}
                             <p className="font-black text-lg truncate leading-tight">{currentUserData?.displayName || user.fullName}</p>
                             <p className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-tighter">{currentUserData?.mindMateId || user.primaryEmailAddress?.emailAddress}</p>
                         </div>
@@ -151,6 +154,13 @@ function ProfileHub() {
                             <Settings className="mr-3 h-4 w-4 text-primary"/> Settings & Info
                         </Button>
                     </Link>
+                    {!currentUserData?.isPlusMember && (
+                        <Link href="/dashboard/pricing">
+                            <Button variant="ghost" className="w-full justify-start h-11 rounded-xl text-primary font-bold">
+                                <Sparkles className="mr-3 h-4 w-4 animate-pulse"/> Upgrade to Plus
+                            </Button>
+                        </Link>
+                    )}
                     <Link href="/dashboard/help">
                         <Button variant="ghost" className="w-full justify-start h-11 rounded-xl">
                             <LifeBuoy className="mr-3 h-4 w-4 text-primary"/> Help & Support

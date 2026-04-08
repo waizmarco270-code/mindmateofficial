@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight, X } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight, X, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -198,21 +198,30 @@ const badgeDetails: Record<BadgeType, { name: string; badge: JSX.Element, icon: 
     vip: { name: 'Elite Member', badge: <span className="elite-badge"><Crown className="h-3 w-3" /> ELITE</span>, icon: Crown, gradient: 'from-amber-400 to-yellow-500' },
     gm: { name: 'Game Master', badge: <span className="gm-badge">GM</span>, icon: Gamepad2, gradient: 'from-blue-500 to-sky-500' },
     challenger: { name: 'Challenger', badge: <span className="challenger-badge"><Swords className="h-3 w-3"/> Challenger</span>, icon: Swords, gradient: 'from-orange-500 to-red-500' },
+    champion: { name: 'Champion', badge: <span className="champion-badge"><SkullFire className="h-3.5 w-3.5"/> Champion</span>, icon: Swords, gradient: 'from-red-900 to-red-600' },
     'early-bird': { name: 'Early Bird', badge: <span className="early-bird-badge"><Bird className="h-3 w-3"/> EARLY BIRD</span>, icon: Bird, gradient: 'from-orange-400 to-yellow-500' },
     'night-owl': { name: 'Night Owl', badge: <span className="night-owl-badge"><Moon className="h-3 w-3"/> NIGHT OWL</span>, icon: Moon, gradient: 'from-indigo-600 to-purple-900' },
     'knowledge-knight': { name: 'Knowledge Knight', badge: <span className="knowledge-knight-badge"><ShieldCheck className="h-3 w-3"/> KNIGHT</span>, icon: ShieldCheck, gradient: 'from-slate-600 to-gray-800' },
-    streaker: { name: 'Streaker', badge: <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span>, icon: Flame, gradient: 'from-orange-600 to-red-600' }
+    streaker: { name: 'Streaker', badge: <span className="streaker-badge"><Flame className="h-3 w-3"/> STREAKER</span>, icon: Flame, gradient: 'from-orange-600 to-red-600' },
+    isolater: { name: 'Isolater', badge: <span className="isolater-badge">ISOLATER</span>, icon: Flame, gradient: 'from-blue-500 to-sky-500' },
+    'iso-warrior': { name: 'ISO-Warrior', badge: <span className="iso-warrior-badge">ISO-WARRIOR</span>, icon: Flame, gradient: 'from-indigo-500 to-purple-500' },
+    warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span>, icon: Flame, gradient: 'from-slate-500 to-slate-700' },
+    'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span>, icon: Flame, gradient: 'from-emerald-500 to-green-700' },
+    sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span>, icon: Flame, gradient: 'from-yellow-400 to-amber-600' },
+    premium: { name: 'Premium', badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span>, icon: Crown, gradient: 'from-primary to-purple-600' }
 };
 
 function UserBadgeDisplay() {
     const { currentUserData, isSuperAdmin, isAdmin } = useAdmin();
     const ownedBadges = [
         (isSuperAdmin) && 'dev',
+        (currentUserData?.isPlusMember) && 'premium',
         (currentUserData?.isCoDev) && 'co-dev',
         (isAdmin) && 'admin',
         (currentUserData?.isVip) && 'vip',
         (currentUserData?.isGM) && 'gm',
         (currentUserData?.isChallenger) && 'challenger',
+        (currentUserData?.isChampion) && 'champion',
         (currentUserData?.isStreaker) && 'streaker',
         (currentUserData?.isEarlyBird) && 'early-bird',
         (currentUserData?.isNightOwl) && 'night-owl',
@@ -230,6 +239,9 @@ function UserBadgeDisplay() {
                     <CardContent className="relative p-4 sm:p-6 flex items-center gap-4 sm:gap-6">
                         <div className="p-3 sm:p-4 rounded-full bg-black/20 border-2 border-white/20"><badge.icon className="h-8 w-8 sm:h-10 sm:w-10 text-white"/></div>
                         <div className="flex-1 text-left">
+                            {currentUserData?.isPlusMember && (
+                                <p className="text-[10px] font-black uppercase tracking-[0.25em] premium-text-gradient mb-1">MindMate Plus</p>
+                            )}
                             <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Your Rank</p>
                             <CardTitle className="text-xl sm:text-2xl font-bold text-white">{badge.name}</CardTitle>
                         </div>
@@ -320,9 +332,20 @@ export default function DashboardPage() {
     <div className="space-y-8 pb-20">
         <SignedOut><WelcomeDialog /></SignedOut>
         <StreakMilestonesDialog isOpen={isStreakDialogOpen} onOpenChange={setIsStreakDialogOpen} currentStreak={streak} />
-        <div>
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
-            <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
+            <div>
+                <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome Back, {currentUserData?.displayName || 'Student'}!</h1>
+                <p className="text-muted-foreground">Here's a snapshot of your study world.</p>
+            </div>
+            {!currentUserData?.isPlusMember && (
+                <Button asChild variant="outline" className="rounded-2xl border-primary/30 bg-primary/5 hover:bg-primary/10 shadow-lg shadow-primary/5 group">
+                    <Link href="/dashboard/pricing">
+                        <Sparkles className="mr-2 h-4 w-4 text-primary animate-pulse" />
+                        <span className="font-bold">GET PLUS ACCESS</span>
+                        <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                </Button>
+            )}
         </div>
         <div className="flex flex-col space-y-8">
             <SignedIn><UserBadgeDisplay /></SignedIn>
