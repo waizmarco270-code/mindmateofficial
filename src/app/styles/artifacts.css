@@ -1,3 +1,4 @@
+
 /* SOVEREIGN AVATAR FRAMES - MISSION MASTERPIECE EDITION */
 
 @keyframes rotate-rainbow {
@@ -60,19 +61,19 @@
   @apply relative z-10 bg-background rounded-full;
 }
 
-/* LEGENDARY RAINBOW BORDER FOR POPUPS */
+/* LEGENDARY RAINBOW BORDER FOR POPUPS AND BUTTONS */
 .premium-rainbow-border {
   @apply relative overflow-hidden;
 }
 
 .premium-rainbow-border::before {
   content: '';
-  @apply absolute top-[-50%] left-[-50%] w-[200%] h-[200%];
+  @apply absolute top-[-100%] left-[-100%] w-[300%] h-[300%];
   background: conic-gradient(
     from 0deg,
     #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff0000
   );
-  animation: rotate-rainbow 4s linear infinite;
+  animation: rotate-rainbow 3s linear infinite;
   z-index: -1;
 }
 

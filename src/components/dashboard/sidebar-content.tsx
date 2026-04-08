@@ -195,7 +195,7 @@ export default function SidebarContent() {
         </div>
       </div>
 
-       <div className="p-4 border-b border-sidebar-border space-y-2">
+       <div className="p-4 border-b border-sidebar-border space-y-3">
           {isSpecialUser && (
             <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
                 <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
@@ -203,17 +203,32 @@ export default function SidebarContent() {
             </Link>
           )}
 
-          <Link href="/dashboard/store" prefetch={true} className={cn(
-              'group flex items-center gap-3 rounded-xl px-4 py-3 transition-all relative overflow-hidden border-2',
-              isActive('/dashboard/store') 
-                ? 'bg-green-500 text-white border-green-400 shadow-lg shadow-green-500/30' 
-                : 'bg-green-500/10 border-green-500/20 hover:border-green-500/50 hover:bg-green-500/20 text-green-500'
-          )}>
-              {!isActive('/dashboard/store') && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />}
-              <ShoppingCart className={cn("h-5 w-5", isActive('/dashboard/store') ? "text-white" : "text-green-500 animate-pulse")} />
-              <span className="font-black uppercase tracking-tight text-sm">Nexus Emporium</span>
-              <Sparkles className="h-3 w-3 absolute top-1 right-2 text-yellow-400 animate-pulse" />
-          </Link>
+          <div className="flex gap-2">
+              <Link href="/dashboard/store" prefetch={true} className={cn(
+                  'flex-1 group flex items-center gap-2 rounded-xl px-3 py-3 transition-all relative overflow-hidden border-2',
+                  isActive('/dashboard/store') 
+                    ? 'bg-green-500 text-white border-green-400 shadow-lg shadow-green-500/30' 
+                    : 'bg-green-500/10 border-green-500/20 hover:border-green-500/50 hover:bg-green-500/20 text-green-500'
+              )}>
+                  {!isActive('/dashboard/store') && <div className="absolute inset-0 bg-gradient-to-r from-transparent via-green-400/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />}
+                  <ShoppingCart className={cn("h-4 w-4", isActive('/dashboard/store') ? "text-white" : "text-green-500 animate-pulse")} />
+                  <span className="font-black uppercase tracking-tighter text-[10px] sm:text-xs whitespace-nowrap">Emporium</span>
+              </Link>
+
+              <Link href="/dashboard/pricing" prefetch={true} className={cn(
+                  'flex-1 group flex items-center justify-center gap-2 rounded-xl px-3 py-3 transition-all relative overflow-hidden border-2',
+                  isActive('/dashboard/pricing')
+                    ? 'border-white/40 shadow-xl'
+                    : 'border-white/10 hover:border-white/30',
+                  'premium-rainbow-border'
+              )}>
+                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors z-0" />
+                  <div className="relative z-10 flex items-center gap-2">
+                      <Crown className="h-4 w-4 text-white animate-pulse" />
+                      <span className="font-black uppercase tracking-tighter text-[10px] sm:text-xs text-white whitespace-nowrap">Get Plus</span>
+                  </div>
+              </Link>
+          </div>
       </div>
 
       <div className="flex-1 overflow-y-auto py-4 px-4 space-y-2">
