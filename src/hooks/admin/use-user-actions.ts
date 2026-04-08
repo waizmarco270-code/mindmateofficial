@@ -1,4 +1,3 @@
-
 import { doc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { format, addDays } from 'date-fns';
 import { type User, type BadgeType } from '../use-admin';
@@ -54,6 +53,10 @@ export const useUserActions = (db: any, toast: any) => {
 
     const setShowcaseBadge = async (uid: string, badge: BadgeType | null) => {
         await updateDoc(doc(db, 'users', uid), { showcasedBadge: badge });
+    };
+
+    const setEquippedFrame = async (uid: string, frameId: string) => {
+        await updateDoc(doc(db, 'users', uid), { equippedFrame: frameId });
     };
 
     const makeUserAdmin = (uid: string) => updateDoc(doc(db, 'users', uid), { isAdmin: true });
@@ -193,7 +196,7 @@ export const useUserActions = (db: any, toast: any) => {
 
     return {
         addCreditsToUser, toggleUserBlock, toggleLeaderboardPrivacy, applyFocusPenalty, grantMasterCard, revokeMasterCard,
-        setShowcaseBadge, makeUserAdmin, removeUserAdmin, makeUserVip, removeUserVip,
+        setShowcaseBadge, setEquippedFrame, makeUserAdmin, removeUserAdmin, makeUserVip, removeUserVip,
         makeUserGM, removeUserGM, makeUserCoDev, removeUserCoDev, makeUserChallenger, addPerfectedQuiz,
         incrementQuizAttempt, incrementFocusSessions, updateStudyTime, claimDailyTaskReward, claimEliteDailyReward,
         updateGameHighScore, updateElementQuestScore, claimElementQuestMilestone,

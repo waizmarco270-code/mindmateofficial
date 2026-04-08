@@ -82,7 +82,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                 {topThree.map((user) => {
                                     const actualRank = users.findIndex(u => u.uid === user.uid) + 1;
                                     const isFirst = actualRank === 1;
-                                    const isPlus = user.isPlusMember;
+                                    const equippedFrameId = user.equippedFrame || 'default';
                                     
                                     return (
                                         <div key={user.uid} className="flex flex-col items-center gap-4">
@@ -94,8 +94,8 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                 <button 
                                                     onClick={() => setActivePodiumRank(actualRank)}
                                                     className={cn(
-                                                        "relative p-1 rounded-full transition-all duration-500 hover:scale-110",
-                                                        isPlus ? "premium-rainbow-border" : (actualRank === 1 ? "gold-glow" : actualRank === 2 ? "silver-glow" : "bronze-glow")
+                                                        "avatar-frame-base transition-all duration-500 hover:scale-110",
+                                                        equippedFrameId === 'premium' ? "avatar-frame-premium" : (actualRank === 1 ? "gold-glow" : actualRank === 2 ? "silver-glow" : "bronze-glow")
                                                     )}
                                                 >
                                                     <Avatar className={cn(
@@ -108,7 +108,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                 </button>
                                             </div>
                                             <div className="text-center">
-                                                <p className="text-[10px] sm:text-xs font-black uppercase tracking-tighter text-white truncate max-w-[80px] sm:max-w-[120px]">
+                                                <p className="text-[10px] sm:text-xs font-black uppercase tighter text-white truncate max-w-[80px] sm:max-w-[120px]">
                                                     {user.displayName.split(' ')[0]}
                                                 </p>
                                                 <div className="mt-1 scale-90">
@@ -144,7 +144,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                             <Button variant="ghost" onClick={() => setActivePodiumRank(null)} className="h-9 px-4 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest">
                                                 <ArrowLeft className="mr-2 h-3.5 w-3.5"/> Back to Stage
                                             </Button>
-                                            <div className="h-9 w-9 sm:h-12 sm:w-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-primary/40 font-black italic text-lg sm:text-xl">
+                                            <div className="h-9 w-9 sm:h-12 sm:w-12 bg-primary/20 rounded-2xl flex items-center justify-center border-2 border-primary/40 font-black italic text-lg sm:text-xl text-primary">
                                                 #{activePodiumRank}
                                             </div>
                                         </div>
@@ -152,9 +152,8 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                         <div className="flex-1 flex flex-row gap-4 sm:gap-10 items-stretch">
                                             {/* LEFT PANE: IDENTITY */}
                                             <div className="w-[35%] sm:w-[30%] flex flex-col items-center justify-center gap-4 shrink-0 border-r border-white/5 pr-4 sm:pr-10">
-                                                <div className="relative">
-                                                    <motion.div animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }} transition={{ repeat: Infinity, duration: 3 }} className="absolute -inset-4 bg-primary/20 rounded-full blur-2xl" />
-                                                    <Avatar className={cn("h-20 w-20 sm:h-40 sm:w-40 border-4 shadow-2xl relative z-10 bg-background", users[activePodiumRank - 1]?.isPlusMember ? "premium-rainbow-border" : "border-primary/30")}>
+                                                <div className={cn("avatar-frame-base", (users[activePodiumRank - 1]?.equippedFrame || 'default') === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                                                    <Avatar className="h-20 w-20 sm:h-40 sm:w-40 border-4 shadow-2xl relative z-10 bg-background">
                                                         <AvatarImage src={users[activePodiumRank - 1]?.photoURL} />
                                                         <AvatarFallback>U</AvatarFallback>
                                                     </Avatar>
@@ -278,6 +277,7 @@ function DossierCell({ icon: Icon, label, val, color, isWide = false }: any) {
 }
 
 function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, itemRef }: any) {
+    const equippedFrameId = user.equippedFrame || 'default';
     return (
         <div ref={itemRef} className="perspective-1000 w-full h-[88px] sm:h-24 relative cursor-pointer" onClick={onFlip}>
             <motion.div
@@ -295,10 +295,12 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                         
                         <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
                             <button onClick={(e) => { e.stopPropagation(); onShowcase(); }}>
-                                <Avatar className={cn("h-10 w-10 sm:h-14 sm:w-14 border-2 shadow-lg bg-background relative z-10", user.isPlusMember ? "premium-rainbow-border" : "border-white/10")}>
-                                    <AvatarImage src={user.photoURL} />
-                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                </Avatar>
+                                <div className={cn("avatar-frame-base", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                                    <Avatar className={cn("h-10 w-10 sm:h-14 sm:w-14 border-2 shadow-lg bg-background relative z-10")}>
+                                        <AvatarImage src={user.photoURL} />
+                                        <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                </div>
                             </button>
                             <div className="min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
@@ -330,10 +332,12 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                         
                         {/* LEFT PANE: IDENTITY */}
                         <div className="w-[30%] flex flex-col items-center justify-center gap-1 border-r border-white/5 pr-2 sm:pr-4">
-                            <Avatar className={cn("h-10 w-10 sm:h-14 sm:w-14 border-2 shrink-0 bg-background relative z-10", user.isPlusMember ? "premium-rainbow-border" : "border-primary/20")}>
-                                <AvatarImage src={user.photoURL} />
-                                <AvatarFallback>U</AvatarFallback>
-                            </Avatar>
+                            <div className={cn("avatar-frame-base", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                                <Avatar className={cn("h-10 w-10 sm:h-14 sm:w-14 border-2 shrink-0 bg-background relative z-10")}>
+                                    <AvatarImage src={user.photoURL} />
+                                    <AvatarFallback>U</AvatarFallback>
+                                </Avatar>
+                            </div>
                             <p className="text-[8px] font-black uppercase text-primary truncate w-full text-center">{user.displayName.split(' ')[0]}</p>
                         </div>
 
@@ -354,6 +358,7 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
 function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, onClose: () => void }) {
     if (!user) return null;
     const owned = getOwnedBadges(user);
+    const equippedFrameId = user.equippedFrame || 'default';
 
     return (
         <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
@@ -365,10 +370,12 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                 
                 <div className="px-6 sm:px-10 pb-12 -mt-16 relative z-10">
                     <div className="flex flex-col items-center text-center space-y-4">
-                        <Avatar className={cn("h-24 w-24 sm:h-32 sm:w-32 border-4 shadow-2xl bg-background", user.isPlusMember ? "premium-rainbow-border" : "border-primary")}>
-                            <AvatarImage src={user.photoURL} />
-                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <div className={cn("avatar-frame-base h-24 w-24 sm:h-32 sm:w-32", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                            <Avatar className={cn("h-full w-full border-4 shadow-2xl bg-background")}>
+                                <AvatarImage src={user.photoURL} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
                         <div>
                             {user.isPlusMember && (
                                 <p className="text-[10px] font-black uppercase tracking-[0.3em] premium-text-gradient mb-1">MindMate Plus Member</p>

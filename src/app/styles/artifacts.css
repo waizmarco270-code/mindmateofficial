@@ -1,17 +1,64 @@
-/* ALPHA RAINBOW BORDER ARTIFACT */
-@keyframes alpha-rainbow {
-  0% { border-color: #ff0000; box-shadow: 0 0 15px rgba(255, 0, 0, 0.5); }
-  20% { border-color: #ffff00; box-shadow: 0 0 15px rgba(255, 255, 0, 0.5); }
-  40% { border-color: #00ff00; box-shadow: 0 0 15px rgba(0, 255, 0, 0.5); }
-  60% { border-color: #00ffff; box-shadow: 0 0 15px rgba(0, 255, 255, 0.5); }
-  80% { border-color: #0000ff; box-shadow: 0 0 15px rgba(0, 0, 255, 0.5); }
-  100% { border-color: #ff00ff; box-shadow: 0 0 15px rgba(255, 0, 255, 0.5); }
+/* SOVEREIGN AVATAR FRAMES - MISSION MASTERPIECE EDITION */
+
+@keyframes rotate-rainbow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
+@keyframes frame-shine-sweep {
+  0% { left: -100%; opacity: 0; }
+  50% { opacity: 0.6; }
+  100% { left: 100%; opacity: 0; }
+}
+
+.avatar-frame-base {
+  @apply relative rounded-full flex items-center justify-center transition-all duration-500 shrink-0;
+}
+
+/* DEFAULT FRAME: Sovereign Purple */
+.avatar-frame-default {
+  @apply border-2 border-primary/40 p-[2px] bg-background;
+}
+
+/* PREMIUM FRAME: Kinetic Rainbow Crystalline */
+.avatar-frame-premium {
+  @apply relative p-[3px] overflow-hidden;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.avatar-frame-premium::before {
+  content: '';
+  @apply absolute top-[-25%] left-[-25%] w-[150%] h-[150%];
+  background: conic-gradient(
+    from 0deg,
+    #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff0000
+  );
+  animation: rotate-rainbow 3s linear infinite;
+  z-index: 0;
+}
+
+/* Metallic Shine Overlay */
+.avatar-frame-premium::after {
+  content: '';
+  @apply absolute inset-0 rounded-full pointer-events-none z-20;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 200%;
+  animation: frame-shine-sweep 4s ease-in-out infinite;
+}
+
+.avatar-frame-premium > * {
+  @apply relative z-10 bg-background rounded-full;
+}
+
+/* LEGENDARY BADGE POLISH */
 .premium-rainbow-border {
   border: 3px solid transparent !important;
-  animation: alpha-rainbow 4s linear infinite !important;
-  background-clip: padding-box;
+  @apply relative overflow-hidden;
 }
 
 .premium-text-gradient {

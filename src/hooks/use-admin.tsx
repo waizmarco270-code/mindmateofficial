@@ -38,6 +38,8 @@ export interface User {
   isBlocked: boolean;
   isPlusMember?: boolean;
   plusJoinedAt?: string;
+  equippedFrame?: string;
+  unlockedFrames?: string[];
   banType?: 'permanent' | 'temporary';
   banExpires?: string;
   banReason?: string;
@@ -169,7 +171,7 @@ interface AppDataContextType {
     
     // Actions
     toggleUserBlock: any; toggleLeaderboardPrivacy: any; addCreditsToUser: any; applyFocusPenalty: any;
-    grantMasterCard: any; revokeMasterCard: any; setShowcaseBadge: any; makeUserAdmin: any; removeUserAdmin: any;
+    grantMasterCard: any; revokeMasterCard: any; setShowcaseBadge: any; setEquippedFrame: any; makeUserAdmin: any; removeUserAdmin: any;
     makeUserVip: any; removeUserVip: any; makeUserGM: any; removeUserGM: any; makeUserCoDev: any; removeUserCoDev: any;
     addPerfectedQuiz: any; incrementQuizAttempt: any; incrementFocusSessions: any; claimDailyTaskReward: any;
     claimEliteDailyReward: any; updateGameHighScore: any; updateElementQuestScore: any; claimElementQuestMilestone: any;
@@ -291,6 +293,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                 plusJoinedAt: new Date().toISOString(),
                 credits: increment(5000),
                 showcasedBadge: 'premium',
+                equippedFrame: 'premium',
+                unlockedFrames: arrayUnion('default', 'premium'),
                 'inventory.penaltyShields': increment(5),
                 'inventory.streakFreezes': increment(5),
                 'inventory.alphaGlowExpires': alphaExpiry,

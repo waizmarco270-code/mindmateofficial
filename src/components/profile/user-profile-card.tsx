@@ -1,11 +1,19 @@
+
 'use client';
 
 import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, Trophy, Clock, ShieldAlert, Snowflake, Sparkles, Bird, Moon, TrendingUp, Wallet, Anchor, Lock, Skull } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { 
+    Copy, Check, Medal, Flame, Zap, ListChecks, Code, ShieldCheck, 
+    Crown, Gamepad2, Swords, CreditCard, UserPlus, UserCheck, 
+    Trophy, Clock, ShieldAlert, Snowflake, Sparkles, Bird, 
+    Moon, TrendingUp, Wallet, Anchor, Lock, Skull, CheckCircle,
+    User as UserIcon, Frame
+} from 'lucide-react';
 import { useAdmin, useUsers, SUPER_ADMIN_UID, User, BadgeType } from '@/hooks/use-admin';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
@@ -14,21 +22,17 @@ import { Label } from '@/components/ui/label';
 import { useFriends } from '@/hooks/use-friends';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import Link from 'next/link';
 
 const formatTotalStudyTime = (totalSeconds: number) => {
     if (totalSeconds < 60) return "0m";
-
     const days = Math.floor(totalSeconds / (3600 * 24));
     const hours = Math.floor((totalSeconds % (3600 * 24)) / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
-
     const parts = [];
     if (days > 0) parts.push(`${days}d`);
     if (hours > 0) parts.push(`${hours}h`);
     if (minutes > 0 || (days === 0 && hours === 0)) parts.push(`${minutes}m`);
-
     return parts.join(' ');
 }
 
@@ -52,17 +56,21 @@ const badgeDetails: Record<BadgeType, { name: string, badge: JSX.Element }> = {
     premium: { name: 'Premium', badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span> }
 };
 
+const frameConfig = {
+    default: { name: 'Default Purple', class: 'avatar-frame-default', isPremium: false },
+    premium: { name: 'Rainbow Masterpiece', class: 'avatar-frame-premium', isPremium: true },
+};
+
 export function UserProfileCard({ user, isOwnProfile = false }: { user: User, isOwnProfile?: boolean }) {
     const { user: authUser } = useUser();
     const { friends, sendFriendRequest, sentRequests } = useFriends();
-    const { setShowcaseBadge } = useAdmin();
+    const { setShowcaseBadge, setEquippedFrame } = useAdmin();
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
     if (!user) return null;
     
     const handleCopyId = () => {
-        if (!user) return;
         navigator.clipboard.writeText(user.mindMateId || user.uid || '');
         setIsCopied(true);
         toast({ title: "MindMate ID copied!" });
@@ -113,6 +121,9 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
         { name: 'XP Booster', count: user.inventory?.clanXpBoosters || 0, icon: TrendingUp, color: 'text-emerald-400', desc: '+500 Clan XP.' },
         { name: 'Clan Ascender', count: user.inventory?.clanLevelMaxers || 0, icon: Crown, color: 'text-yellow-400', desc: 'Instant Max Level.' },
     ];
+
+    const equippedFrameId = user.equippedFrame || 'default';
+    const unlockedFrames = user.isPlusMember ? ['default', 'premium'] : ['default'];
     
     return (
         <div className="space-y-6 w-full max-w-full">
@@ -121,11 +132,12 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                 <CardHeader className="relative z-10 p-4 sm:p-6">
                     <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 text-center sm:text-left">
                         <div className="relative group shrink-0">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-purple-600 rounded-full blur opacity-40 group-hover:opacity-100 transition duration-1000" />
-                            <Avatar className={cn("h-20 w-20 sm:h-24 sm:w-24 border-2 relative bg-background", user.isPlusMember ? "premium-rainbow-border" : "border-primary")}>
-                                <AvatarImage src={user.photoURL} />
-                                <AvatarFallback className="text-3xl">{user.displayName.charAt(0)}</AvatarFallback>
-                            </Avatar>
+                            <div className={cn("avatar-frame-base", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 relative bg-background">
+                                    <AvatarImage src={user.photoURL} />
+                                    <AvatarFallback className="text-3xl">{user.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            </div>
                         </div>
                         <div className="flex-1 min-w-0">
                             {user.isPlusMember && (
@@ -166,9 +178,10 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
             </Card>
 
             <Tabs defaultValue="stats" className="w-full">
-                <TabsList className="grid w-full grid-cols-2 mb-4 bg-muted/50 p-1 rounded-xl border">
-                    <TabsTrigger value="stats" className="rounded-lg font-bold">Statistics</TabsTrigger>
-                    <TabsTrigger value="inventory" className="rounded-lg font-bold">Artifacts</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 mb-4 bg-muted/50 p-1 rounded-xl border">
+                    <TabsTrigger value="stats" className="rounded-lg font-bold">Stats</TabsTrigger>
+                    <TabsTrigger value="inventory" className="rounded-lg font-bold">Assets</TabsTrigger>
+                    <TabsTrigger value="frames" className="rounded-lg font-bold">Frames</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="stats" className="space-y-6">
@@ -241,6 +254,50 @@ export function UserProfileCard({ user, isOwnProfile = false }: { user: User, is
                         <Button asChild variant="outline" className="w-full h-11 rounded-xl font-bold text-sm">
                             <Link href="/dashboard/store">Visit Nexus Emporium</Link>
                         </Button>
+                    )}
+                </TabsContent>
+
+                <TabsContent value="frames" className="space-y-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {Object.entries(frameConfig).map(([id, cfg]) => {
+                            const isUnlocked = unlockedFrames.includes(id);
+                            const isActive = equippedFrameId === id;
+                            return (
+                                <button 
+                                    key={id} 
+                                    onClick={() => isUnlocked && isOwnProfile && setEquippedFrame(user.uid, id)}
+                                    disabled={!isUnlocked || !isOwnProfile}
+                                    className={cn(
+                                        "p-4 rounded-2xl border-2 transition-all flex items-center gap-4 text-left group relative",
+                                        isActive ? "border-primary bg-primary/5" : "border-muted hover:border-primary/20",
+                                        !isUnlocked && "opacity-50 grayscale"
+                                    )}
+                                >
+                                    <div className={cn("avatar-frame-base", cfg.class)}>
+                                        <Avatar className="h-12 w-12 border">
+                                            <AvatarImage src={user.photoURL}/>
+                                            <AvatarFallback>U</AvatarFallback>
+                                        </Avatar>
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-black text-sm uppercase italic">{cfg.name}</p>
+                                        <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{isUnlocked ? 'Unlocked' : 'Locked Asset'}</p>
+                                    </div>
+                                    {isActive && <CheckCircle className="h-5 w-5 text-primary"/>}
+                                    {!isUnlocked && <Lock className="h-4 w-4 text-muted-foreground"/>}
+                                </button>
+                            );
+                        })}
+                    </div>
+                    {!user.isPlusMember && isOwnProfile && (
+                        <Card className="bg-primary/5 border-primary/20">
+                            <CardContent className="p-4 text-center space-y-3">
+                                <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Masterpiece frames are reserved for MindMate Plus members.</p>
+                                <Button asChild size="sm" variant="outline" className="rounded-full border-primary/30 h-8 text-[10px] font-black uppercase">
+                                    <Link href="/dashboard/pricing">Upgrade Now</Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
                     )}
                 </TabsContent>
             </Tabs>

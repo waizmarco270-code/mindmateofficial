@@ -114,12 +114,14 @@ function ProfileHub() {
 
     if (!user) return null;
 
+    const equippedFrameId = currentUserData?.equippedFrame || 'default';
+
     return (
         <Popover>
             <PopoverTrigger asChild>
                 <button className="relative group focus:outline-none focus:ring-0">
-                    <div className={cn("p-[2px] rounded-full border-2", currentUserData?.isPlusMember ? "premium-rainbow-border" : "border-primary/20")}>
-                        <Avatar className="h-10 w-10 border-2 border-background">
+                    <div className={cn("avatar-frame-base h-11 w-11", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                        <Avatar className="h-9 w-9 border-2 border-background">
                             <AvatarImage src={user.imageUrl} />
                             <AvatarFallback><UserIcon /></AvatarFallback>
                         </Avatar>
@@ -129,13 +131,15 @@ function ProfileHub() {
             <PopoverContent className="w-80 p-0 overflow-hidden border-primary/20 shadow-2xl rounded-2xl">
                 <div className="p-6 bg-gradient-to-br from-primary/10 to-background border-b">
                     <div className="flex items-center gap-4">
-                        <Avatar className={cn("h-14 w-14 border-2 shadow-lg", currentUserData?.isPlusMember ? "premium-rainbow-border" : "border-primary/20")}>
-                            <AvatarImage src={user.imageUrl} />
-                            <AvatarFallback>U</AvatarFallback>
-                        </Avatar>
+                        <div className={cn("avatar-frame-base h-16 w-16", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                            <Avatar className="h-14 w-14 border-2 border-background shadow-lg">
+                                <AvatarImage src={user.imageUrl} />
+                                <AvatarFallback>U</AvatarFallback>
+                            </Avatar>
+                        </div>
                         <div className="flex-1 min-w-0">
                             {currentUserData?.isPlusMember && (
-                                <p className="text-[10px] font-black uppercase tracking-[0.25em] premium-text-gradient mb-1">MindMate Plus</p>
+                                <p className="text-[10px] font-black uppercase tracking-[0.25em] premium-text-gradient mb-1">MindMate Plus Member</p>
                             )}
                             <p className="font-black text-lg truncate leading-tight">{currentUserData?.displayName || user.fullName}</p>
                             <p className="text-[10px] text-muted-foreground truncate uppercase font-bold tracking-tighter">{currentUserData?.mindMateId || user.primaryEmailAddress?.emailAddress}</p>
