@@ -10,20 +10,70 @@ import {
     Gem, ShieldCheck, Flame, 
     ArrowRight, Star, Loader2,
     Trophy, Rocket, ShieldAlert,
-    Smartphone, Globe
+    Smartphone, Globe, X
 } from 'lucide-react';
 import { useAdmin } from '@/hooks/use-admin';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
+import { useRouter } from 'next/navigation';
+import { Dialog, DialogContent, DialogClose } from '@/components/ui/dialog';
+
+function PlusSuccessDialog({ isOpen, onOpenChange }: { isOpen: boolean, onOpenChange: (o: boolean) => void }) {
+    const router = useRouter();
+    return (
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md border-none p-0 bg-transparent shadow-none outline-none">
+                <motion.div 
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className="relative p-8 rounded-[3rem] overflow-hidden bg-background border-4 premium-rainbow-border text-center space-y-6"
+                >
+                    {/* Background Animation */}
+                    <div className="absolute inset-0 pointer-events-none opacity-20">
+                        <div className="absolute inset-0 rainbow-aurora-bg animate-pulse" />
+                    </div>
+
+                    <div className="relative z-10">
+                        <div className="mx-auto w-24 h-24 rounded-full bg-primary/10 border-4 border-primary/20 flex items-center justify-center mb-6">
+                            <Crown className="h-12 w-12 text-primary animate-bounce" />
+                        </div>
+                        <h2 className="text-4xl font-black italic uppercase tracking-tighter text-foreground drop-shadow-sm">CONGRATULATIONS!</h2>
+                        <p className="text-muted-foreground font-bold uppercase tracking-widest mt-2">You have ascended to MindMate Plus</p>
+                    </div>
+
+                    <div className="p-6 rounded-3xl bg-primary/5 border border-primary/10 shadow-inner relative z-10">
+                        <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em] mb-4">Identity Assets Secured</p>
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="scale-125 transform transition-transform">
+                                <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span>
+                            </div>
+                            <p className="text-xs text-muted-foreground font-medium italic">"Your legend is now permanent in the mainframe."</p>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative z-10">
+                        <Button variant="outline" className="h-14 rounded-2xl font-black uppercase tracking-widest border-2" onClick={() => router.push('/dashboard/profile')}>
+                            VISIT PROFILE
+                        </Button>
+                        <Button className="h-14 rounded-2xl font-black uppercase tracking-widest bg-primary shadow-xl shadow-primary/20" onClick={() => router.push('/dashboard')}>
+                            EXPLORE HUB
+                        </Button>
+                    </div>
+                </motion.div>
+            </DialogContent>
+        </Dialog>
+    );
+}
 
 export default function PricingPage() {
     const { currentUserData, claimPlusMembership, appSettings } = useAdmin();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isSuccessOpen, setIsSuccessOpen] = useState(false);
 
     const plusMemberCount = appSettings?.plusMemberCount || 0;
     const slotsLeft = Math.max(0, 100 - plusMemberCount);
@@ -53,6 +103,7 @@ export default function PricingPage() {
                 handler: async function (response: any) {
                     await claimPlusMembership(response.razorpay_payment_id);
                     setIsProcessing(false);
+                    setIsSuccessOpen(true);
                 },
                 theme: { color: '#8b5cf6' },
                 modal: { ondismiss: () => setIsProcessing(false) }
@@ -79,6 +130,7 @@ export default function PricingPage() {
     return (
         <div className="space-y-12 pb-20 max-w-5xl mx-auto px-4 relative overflow-hidden">
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+            <PlusSuccessDialog isOpen={isSuccessOpen} onOpenChange={setIsSuccessOpen} />
             
             <div className="text-center space-y-4">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mx-auto w-20 h-20 rounded-[2rem] bg-primary/10 border-2 border-primary/20 flex items-center justify-center shadow-2xl">
@@ -106,6 +158,26 @@ export default function PricingPage() {
                             </motion.div>
                         ))}
                     </div>
+
+                    <Card className="bg-primary/5 border-primary/20 rounded-[2rem] overflow-hidden">
+                        <CardHeader className="p-6 pb-2 text-center">
+                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Identity Asset Showcase</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-8 flex flex-col sm:flex-row items-center justify-center gap-12">
+                            <div className="flex flex-col items-center gap-3">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Premium Badge</p>
+                                <div className="scale-125 transition-transform hover:scale-150 duration-500">
+                                    <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-center gap-3">
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">Kinetic Frame</p>
+                                <div className="avatar-frame-premium p-[3px] rounded-full">
+                                    <div className="h-16 w-16 bg-muted rounded-full flex items-center justify-center font-black text-xs text-muted-foreground">PREVIEW</div>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <div className="lg:col-span-5">

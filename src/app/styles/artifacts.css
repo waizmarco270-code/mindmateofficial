@@ -11,6 +11,11 @@
   100% { left: 100%; opacity: 0; }
 }
 
+@keyframes alpha-rainbow-text {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
 .avatar-frame-base {
   @apply relative rounded-full flex items-center justify-center transition-all duration-500 shrink-0;
 }
@@ -20,7 +25,7 @@
   @apply border-2 border-primary/40 p-[2px] bg-background;
 }
 
-/* PREMIUM FRAME: Kinetic Rainbow Crystalline */
+/* PREMIUM FRAME: Kinetic Rainbow Crystalline (Real Rainbow corners border) */
 .avatar-frame-premium {
   @apply relative p-[3px] overflow-hidden;
   background: rgba(0, 0, 0, 0.2);
@@ -28,7 +33,7 @@
 
 .avatar-frame-premium::before {
   content: '';
-  @apply absolute top-[-25%] left-[-25%] w-[150%] h-[150%];
+  @apply absolute top-[-50%] left-[-50%] w-[200%] h-[200%];
   background: conic-gradient(
     from 0deg,
     #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff0000
@@ -55,10 +60,36 @@
   @apply relative z-10 bg-background rounded-full;
 }
 
-/* LEGENDARY BADGE POLISH */
+/* LEGENDARY RAINBOW BORDER FOR POPUPS */
 .premium-rainbow-border {
-  border: 3px solid transparent !important;
   @apply relative overflow-hidden;
+}
+
+.premium-rainbow-border::before {
+  content: '';
+  @apply absolute top-[-50%] left-[-50%] w-[200%] h-[200%];
+  background: conic-gradient(
+    from 0deg,
+    #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff0000
+  );
+  animation: rotate-rainbow 4s linear infinite;
+  z-index: -1;
+}
+
+/* REFINED PREMIUM BADGE - PROFESSIONAL LEGENDARY EDITION */
+.premium-badge {
+  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-4 py-1.5 text-[10px] font-black uppercase italic tracking-widest;
+  background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff0000);
+  background-size: 200% auto;
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3), inset 0 0 10px rgba(255, 255, 255, 0.2);
+  animation: alpha-rainbow-text 3s linear infinite;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+
+.premium-badge > svg {
+  @apply drop-shadow-md text-white;
 }
 
 .premium-text-gradient {
@@ -68,20 +99,4 @@
   background-clip: text;
   color: transparent;
   animation: alpha-rainbow-text 5s linear infinite;
-}
-
-@keyframes alpha-rainbow-text {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
-}
-
-.premium-badge {
-  @apply relative inline-flex items-center gap-1.5 overflow-hidden rounded-full px-3 py-1.5 text-[10px] font-black uppercase italic;
-  background: linear-gradient(45deg, #ff0000, #ffff00, #00ff00, #00ffff, #0000ff, #ff00ff, #ff0000);
-  background-size: 300% 300%;
-  color: white;
-  border: 2px solid white;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
-  animation: vip-shimmer 2s linear infinite;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.5);
 }
