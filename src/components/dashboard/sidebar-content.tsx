@@ -174,8 +174,8 @@ export default function SidebarContent() {
                     <Settings className={cn(
                         "h-6 w-6 transition-all duration-1000",
                         "animate-[spin_10s_linear_infinite]",
-                        "drop-shadow-[0_0_5px_rgba(250,204,21,0.5)]",
-                        isActive('/dashboard/settings') && "text-yellow-400 drop-shadow-[0_0_10px_currentColor]"
+                        "drop-shadow-[0_0_10px_rgba(250,204,21,0.5)]",
+                        isActive('/dashboard/settings') && "text-yellow-400 drop-shadow-[0_0_15px_currentColor]"
                     )} />
                 </Button>
             </Link>
@@ -218,14 +218,15 @@ export default function SidebarContent() {
               <Link href="/dashboard/pricing" prefetch={true} className={cn(
                   'flex-1 group flex items-center justify-center gap-2 rounded-xl px-3 py-3 transition-all relative overflow-hidden border-2',
                   isActive('/dashboard/pricing')
-                    ? 'border-white/40 shadow-xl'
-                    : 'border-white/10 hover:border-white/30',
+                    ? 'border-white/60 shadow-xl'
+                    : 'border-white/20 hover:border-white/40',
                   'premium-rainbow-border'
               )}>
-                  <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors z-0" />
+                  <div className="absolute inset-0 premium-btn-gradient opacity-80 group-hover:opacity-100 transition-opacity z-0" />
+                  <div className="absolute inset-0 bg-black/20 z-0" />
                   <div className="relative z-10 flex items-center gap-2">
-                      <Crown className="h-4 w-4 text-white animate-pulse" />
-                      <span className="font-black uppercase tracking-tighter text-[10px] sm:text-xs text-white whitespace-nowrap">Get Plus</span>
+                      <Crown className="h-4 w-4 text-white animate-pulse drop-shadow-md" />
+                      <span className="font-black uppercase tracking-tighter text-[10px] sm:text-xs text-white whitespace-nowrap drop-shadow-md">Get Plus</span>
                   </div>
               </Link>
           </div>

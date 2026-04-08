@@ -17,6 +17,12 @@
   100% { background-position: 200% 50%; }
 }
 
+@keyframes rainbow-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 .avatar-frame-base {
   @apply relative rounded-full flex items-center justify-center transition-all duration-500 shrink-0;
 }
@@ -75,6 +81,16 @@
   );
   animation: rotate-rainbow 3s linear infinite;
   z-index: -1;
+}
+
+/* PREMIUM BUTTON GRADIENT BACKGROUND */
+.premium-btn-gradient {
+  background: linear-gradient(
+    45deg,
+    #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #8b00ff, #ff0000
+  );
+  background-size: 400% 400%;
+  animation: rainbow-shift 8s ease infinite;
 }
 
 /* REFINED PREMIUM BADGE - PROFESSIONAL LEGENDARY EDITION */
