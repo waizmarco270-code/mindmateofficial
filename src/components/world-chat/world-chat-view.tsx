@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Card, CardHeader, CardContent, CardFooter } from '@/components/ui/card';
@@ -10,7 +9,8 @@ import {
     Swords, Trash2, Smile, Pin, X, PinOff, ArrowLeft, Reply, 
     Edit, Copy, Palette, Gem, CloudRain, Zap, Plus, AtSign, 
     Vote, Megaphone, BellRing, Lock, Unlock, Trash, Clock, 
-    ShieldAlert, ExternalLink, CheckCircle, Bird, Moon, Anchor, Skull
+    ShieldAlert, ExternalLink, CheckCircle, Bird, Moon, Anchor, Skull,
+    Flame
 } from 'lucide-react';
 import { useWorldChat, WorldChatMessage, ReplyContext } from '@/hooks/use-world-chat';
 import { useAdmin, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
@@ -173,6 +173,10 @@ export function WorldChatView() {
         allUsers.forEach(u => m.set(u.uid, u));
         return m;
     }, [allUsers]);
+
+    const onUserSelect = (u: User) => {
+        setSelectedUser(u);
+    };
     
     return (
         <div className="h-screen flex flex-col bg-whatsapp-style-bg relative overflow-hidden">

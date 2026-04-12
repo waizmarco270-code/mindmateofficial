@@ -5,7 +5,7 @@ import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, History, ChevronDown, ChevronUp, CheckCircle, Gem, Medal, EyeOff, X, ScrollText } from 'lucide-react';
+import { Clock, History, ChevronDown, ChevronUp, CheckCircle, Gem, Medal, EyeOff, X, ScrollText, Flame } from 'lucide-react';
 import { endOfWeek, format as formatDate, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ShowcaseBadge, getOwnedBadges, badgeMeta } from '../shared/badge-renderer';
@@ -194,10 +194,10 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
 
     return (
         <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent className="max-w-xl bg-background/95 backdrop-blur-xl border-primary/20 p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
+            <DialogContent className="max-w-xl bg-background/95 backdrop-blur-3xl border-primary/20 p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
                 <div className="h-32 bg-gradient-to-br from-primary/20 via-background to-background relative overflow-hidden">
                     <div className="absolute inset-0 bg-grid-white/5" />
-                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-4 w-4"/></Button>
+                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-6 w-6"/></Button>
                 </div>
                 
                 <div className="px-6 sm:px-8 pb-10 -mt-12 relative z-10">
@@ -214,8 +214,8 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
 
                     <div className="mt-8 space-y-6">
                         <div className="flex items-center justify-between border-b pb-2">
-                            <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                                <Medal className="h-4 w-4"/> Verified Assets
+                            <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
+                                <Medal className="h-5 w-5"/> Verified Assets
                             </h4>
                             <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase">{owned.length} Badges Unlocked</span>
                         </div>

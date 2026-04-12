@@ -35,6 +35,11 @@
   animation: vip-shimmer 2s linear infinite;
 }
 
+.champion-badge > svg {
+  @apply drop-shadow-[0_0_5px_rgba(251,146,60,0.9)];
+  color: #fb923c; /* orange-400 fire eye effect */
+}
+
 .dev-badge {
   @apply relative inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-bold;
   background-color: #ef4444;
