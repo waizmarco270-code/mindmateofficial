@@ -45,7 +45,8 @@ import {
   BellRing,
   Book,
   ShieldAlert,
-  Lock
+  Lock,
+  FileCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -60,6 +61,7 @@ const mainNavItems = [
   { href: '/dashboard/guide', icon: Book, label: 'App Guide', glow: 'text-emerald-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-purple-400' },
+  { href: '/dashboard/proof-of-work', icon: FileCheck, label: 'Sovereign Ledger', glow: 'text-amber-400' },
   { href: '/dashboard/profile', icon: UserIcon, label: 'Profile', glow: 'text-teal-400' },
   { href: '/dashboard/leaderboard', icon: Trophy, label: 'Leaderboard', glow: 'text-amber-400' },
   { href: '/dashboard/tools', icon: Wrench, label: 'Tools', glow: 'text-lime-400' },

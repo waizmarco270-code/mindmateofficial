@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight, X, Sparkles, Skull } from 'lucide-react';
+import { ArrowRight, Bot, CreditCard, Users, BrainCircuit, Medal, BookOpen, Calendar, Zap, Gift, Trophy, Clock, LineChart, RefreshCw, Gamepad2, Swords, ListTodo, Wrench, Lock, Crown, Sparkles as SparklesIcon, Rocket, Flame, Code, ShieldCheck, Timer, Globe, UserPlus, User, Megaphone, Map as MapIcon, Settings, Bird, Moon, Loader2, CheckCircle, Info, ChevronRight, X, Sparkles, Skull, FileCheck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -366,6 +367,27 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* Sovereign Proof of Work CTA */}
+            <Link href="/dashboard/proof-of-work" className="group">
+                <Card className="relative overflow-hidden bg-slate-900 border-primary/20 shadow-xl rounded-[2rem] hover:border-primary/50 transition-all duration-500">
+                    <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                    <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.1)_0%,_transparent_70%)]" />
+                    <CardContent className="relative z-10 p-6 sm:p-8 flex items-center justify-between">
+                        <div className="flex items-center gap-6">
+                            <div className="p-4 rounded-3xl bg-primary/10 text-primary border border-primary/20 shadow-2xl">
+                                <FileCheck className="h-10 w-10" />
+                            </div>
+                            <div>
+                                <h3 className="text-2xl font-black uppercase italic tracking-tight text-white">Sovereign Proof of Work</h3>
+                                <p className="text-sm text-slate-400 font-medium">Download your verified study achievement record.</p>
+                            </div>
+                        </div>
+                        <ChevronRight className="h-8 w-8 text-primary/40 group-hover:translate-x-2 transition-transform" />
+                    </CardContent>
+                </Card>
+            </Link>
+
              <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                     <CardTitle>MindMate Focus</CardTitle>
