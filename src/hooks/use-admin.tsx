@@ -159,7 +159,7 @@ export interface AppSettings {
 interface AppDataContextType {
     isAdmin: boolean; isCoDev: boolean; isSuperAdmin: boolean; loading: boolean;
     users: User[]; currentUserData: User | null; transactions: User['transactions'];
-    announcements: Announcement[]; resources: Resource[]; resourceSections: ResourceSection[];
+    announcements: Announcement[]; resources: Resource[]; resourcesSections: ResourceSection[];
     dailySurprises: DailySurprise[]; supportTickets: SupportTicket[]; allPolls: Poll[];
     appSettings: AppSettings | null; globalGifts: GlobalGift[]; activeGlobalGift: GlobalGift | null;
     featureShowcases: FeatureShowcase[]; creditPacks: any[]; storeItems: StoreItem[];
@@ -190,6 +190,7 @@ interface AppDataContextType {
     generateRedeemCode: (v: number) => Promise<string>; deactivateRedeemCode: (id: string) => Promise<void>; deleteRedeemCode: (id: string) => Promise<void>; redeemCode: (u: string, c: string) => Promise<number>;
     triggerAegisPulse: () => Promise<AegisPulseOutput>;
     performGameReset: () => Promise<void>;
+    resetAllChallenges: () => Promise<void>;
     claimPlusMembership: (paymentId: string) => Promise<void>;
 }
 
@@ -292,6 +293,25 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         } catch (e: any) { toast({ variant: 'destructive', title: "Reset Failed", description: e.message }); }
     }, [isSuperAdmin, users, toast]);
 
+    const resetAllChallenges = useCallback(async () => {
+        if (!isSuperAdmin) return;
+        try {
+            const batch = writeBatch(db);
+            const allChallengesSnap = await getDocs(collectionGroup(db, 'challenges'));
+            
+            allChallengesSnap.forEach(d => {
+                if (d.id === 'active') {
+                    batch.delete(d.ref);
+                }
+            });
+            
+            await batch.commit();
+            toast({ title: "Global Reset Executed", description: "All active missions have been terminated." });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Purge Failed", description: e.message });
+        }
+    }, [isSuperAdmin, toast]);
+
     const claimPlusMembership = async (paymentId: string) => {
         if (!authUser || !currentUserData) return;
         await runTransaction(db, async (transaction) => {
@@ -335,8 +355,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
         redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
-        performGameReset, claimPlusMembership
-    }), [isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, redeemCodes, gameHistory, subscribedUserIds, userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id, performGameReset]);
+        performGameReset, resetAllChallenges, claimPlusMembership
+    }), [isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, redeemCodes, gameHistory, subscribedUserIds, userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id, performGameReset, resetAllChallenges]);
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
 };

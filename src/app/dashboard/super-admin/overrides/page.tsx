@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -10,7 +9,7 @@ import { useAdmin } from '@/hooks/use-admin';
 import { 
     Zap, BrainCircuit, KeyRound, Check, 
     AlertTriangle, CloudRain, Trash2, 
-    RefreshCcw, Loader2, Code, ShieldX
+    RefreshCcw, Loader2, Code, ShieldX, Skull
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,7 +20,8 @@ const CREDIT_PASSWORD = "waizcredit";
 export default function SystemOverridesPage() {
     const { 
         triggerAegisPulse, giftCreditsToAllUsers, clearGlobalChat, 
-        clearQuizLeaderboard, resetWeeklyStudyTime, resetGameZoneLeaderboard 
+        clearQuizLeaderboard, resetWeeklyStudyTime, resetGameZoneLeaderboard,
+        resetAllChallenges
     } = useAdmin();
     const { toast } = useToast();
 
@@ -29,6 +29,7 @@ export default function SystemOverridesPage() {
     const [creditPassword, setCreditPassword] = useState('');
     const [giftAmount, setGiftAmount] = useState(100);
     const [isAegisPulseRunning, setIsAegisPulseRunning] = useState(false);
+    const [isResettingChallenges, setIsResettingChallenges] = useState(false);
 
     const handleUnlock = (e: React.FormEvent) => {
         e.preventDefault();
@@ -55,6 +56,15 @@ export default function SystemOverridesPage() {
     const handleGiftAll = async () => {
         await giftCreditsToAllUsers(giftAmount);
         toast({ title: "Credits Dispatched", description: `+${giftAmount} granted to all active citizens.` });
+    };
+
+    const handleResetAllChallenges = async () => {
+        setIsResettingChallenges(true);
+        try {
+            await resetAllChallenges();
+        } finally {
+            setIsResettingChallenges(false);
+        }
     };
 
     return (
@@ -118,10 +128,30 @@ export default function SystemOverridesPage() {
                             <CardDescription className="text-red-600/60 font-bold uppercase text-[10px] tracking-widest">Warning: Protocols below are irreversible.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="outline" className="h-16 border-red-600/40 hover:bg-red-600 hover:text-white font-black uppercase text-xs">
+                                        {isResettingChallenges ? <Loader2 className="animate-spin mr-2 h-4 w-4"/> : <Skull className="mr-2 h-4 w-4"/>}
+                                        Wipe ALL Challenges
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle className="text-red-600">CRITICAL OVERRIDE</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will terminate every active mission for EVERY user in the database. Use only to fix system stalls or deploy major logic updates.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Abort</AlertDialogCancel>
+                                        <AlertDialogAction className="bg-red-600" onClick={handleResetAllChallenges}>Execute Wipe</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+
                             <Button variant="outline" className="h-16 border-red-600/20 hover:bg-red-600 hover:text-white font-bold uppercase text-xs" onClick={clearGlobalChat}><Trash2 className="mr-2 h-4 w-4"/> Purge Global Forum</Button>
                             <Button variant="outline" className="h-16 border-red-600/20 hover:bg-red-600 hover:text-white font-bold uppercase text-xs" onClick={clearQuizLeaderboard}><RefreshCcw className="mr-2 h-4 w-4"/> Clear Quiz Board</Button>
                             <Button variant="outline" className="h-16 border-red-600/20 hover:bg-red-600 hover:text-white font-bold uppercase text-xs" onClick={resetWeeklyStudyTime}><Clock className="mr-2 h-4 w-4"/> Reset Weekly Time</Button>
-                            <Button variant="outline" className="h-16 border-red-600/20 hover:bg-red-600 hover:text-white font-bold uppercase text-xs" onClick={resetGameZoneLeaderboard}><Zap className="mr-2 h-4 w-4"/> Wipe Game Board</Button>
                         </CardContent>
                     </Card>
                 </div>

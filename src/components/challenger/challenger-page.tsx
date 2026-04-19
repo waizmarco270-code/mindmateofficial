@@ -14,15 +14,15 @@ import {
     Trophy, Gem, Flag, LogOut, MessageSquare, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, set, subMinutes, isToday, differenceInSeconds, parseISO } from 'date-fns';
+import { format, set, subMinutes, isToday, differenceInSeconds } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '@/components/ui/progress';
-import { Checkbox } from '@/components/ui/checkbox';
 import { badgeMeta } from '@/components/leaderboard/shared/badge-renderer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 interface ChallengerPageProps {
     config: ActiveChallenge;
@@ -363,7 +363,7 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
             <Dialog open={isForfeitOpen} onOpenChange={setIsForfeitOpen}>
                 <DialogContent className="max-w-lg bg-slate-950 border-red-600/50 rounded-[3rem] p-8 sm:p-12 overflow-hidden relative">
                     <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
-                    <DialogHeader className="relative z-10">
+                    <DialogHeader className="relative z-10 text-left">
                         <div className="flex justify-center mb-6">
                             <div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse">
                                 <AlertTriangle className="h-12 w-12 text-red-600" />
@@ -410,7 +410,7 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
 
 function NoFapPill({ label, val }: { label: string, val: number }) {
     return (
-        <div className="p-2 rounded-xl bg-black/40 border border-white/5">
+        <div className="p-2 rounded-xl bg-black/40 border border-white/5 text-center">
             <p className="text-[12px] font-black text-white tabular-nums leading-none">{String(val).padStart(2, '0')}</p>
             <p className="text-[7px] font-black uppercase text-purple-400 tracking-tighter mt-0.5">{label}</p>
         </div>
