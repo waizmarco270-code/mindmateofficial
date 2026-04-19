@@ -42,6 +42,9 @@ export interface ActiveChallenge {
     reward: number;
     badgeToUnlock: string;
     failMessage?: string;
+    // New Fields
+    hasNoFapTracker?: boolean;
+    noFapStartDate?: string; 
 }
 
 export const CHALLENGE_CONFIGS = [
@@ -97,7 +100,8 @@ export function useChallenges() {
         checkInTime: string, 
         lifelines: number, 
         dailyWorkHourTarget: number,
-        plannedTasks: Record<number, PlannedTaskCategory[]>
+        plannedTasks: Record<number, PlannedTaskCategory[]>,
+        hasNoFapTracker: boolean
     ) => {
         if (!user || !currentUserData) return;
         const config = CHALLENGE_CONFIGS.find(c => c.id === configId);
@@ -125,7 +129,9 @@ export function useChallenges() {
             dailyWorkHourTarget,
             plannedTasks,
             lifelines,
-            lastCheckInDay: 0
+            lastCheckInDay: 0,
+            hasNoFapTracker,
+            noFapStartDate: hasNoFapTracker ? new Date().toISOString() : undefined
         };
 
         if (!hasMaster && lifelineCost > 0) {
@@ -193,10 +199,15 @@ export function useChallenges() {
         });
     };
 
+    const forfeitChallenge = async (reason: string) => {
+        if (!user || !activeChallenge) return;
+        await failChallenge(`MISSION ABORTED BY USER. CONFESSION: ${reason}`);
+    };
+
     const resetChallenge = async () => {
         if (!user) return;
         await deleteDoc(doc(db, 'users', user.id, 'challenges', 'active'));
     };
 
-    return { activeChallenge, loading, startChallenge, performCheckIn, failChallenge, resetChallenge };
+    return { activeChallenge, loading, startChallenge, performCheckIn, failChallenge, forfeitChallenge, resetChallenge };
 }

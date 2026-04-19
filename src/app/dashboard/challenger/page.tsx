@@ -16,6 +16,7 @@ import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { ChallengerPage } from '@/components/challenger/challenger-page';
 import { TaskPlanner } from '@/components/challenger/task-planner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -48,6 +49,7 @@ export default function ChallengerHub() {
     const [checkInTime, setCheckInTime] = useState('05:00');
     const [lifelines, setLifelines] = useState(0);
     const [workHours, setWorkHours] = useState(4);
+    const [includeNoFap, setIncludeNoFap] = useState(false);
     
     const [isInitializing, setIsInitializing] = useState(false);
 
@@ -93,7 +95,7 @@ export default function ChallengerHub() {
         if (!selectedConfig) return;
         setIsInitializing(true);
         try {
-            await startChallenge(selectedConfig.id, checkInTime, lifelines, workHours, tasks);
+            await startChallenge(selectedConfig.id, checkInTime, lifelines, workHours, tasks, includeNoFap);
         } catch (e: any) {
             toast({ variant: 'destructive', title: "INGRESS FAILED", description: e.message });
         } finally {
@@ -205,6 +207,14 @@ export default function ChallengerHub() {
                                     </div>
                                     <Slider value={[workHours]} onValueChange={v => setWorkHours(v[0])} min={1} max={12} step={1} className="py-2" />
                                     <p className="text-[10px] text-slate-500 font-bold uppercase leading-relaxed text-center">Failure to log {workHours}h study time results in a mission strike.</p>
+                                </div>
+
+                                <div className="flex items-center justify-between p-6 rounded-3xl bg-purple-500/5 border border-purple-500/20">
+                                    <div className="space-y-1">
+                                        <Label className="text-sm font-black uppercase tracking-widest text-purple-400 flex items-center gap-2"><ShieldCheck className="h-4 w-4"/> NoFap Discipline</Label>
+                                        <p className="text-[10px] text-muted-foreground font-bold uppercase">Include biological reset protocol in mission</p>
+                                    </div>
+                                    <Switch checked={includeNoFap} onCheckedChange={setIncludeNoFap} />
                                 </div>
 
                                 <div className="space-y-4">

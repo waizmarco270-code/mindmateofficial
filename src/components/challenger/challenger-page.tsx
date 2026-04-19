@@ -11,27 +11,35 @@ import {
     ArrowRight, Target, Flame, Skull,
     Loader2, AlertTriangle, ShieldCheck,
     ListTodo, BarChart3, ChevronRight,
-    Trophy, Gem
+    Trophy, Gem, Flag, LogOut, MessageSquare, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { format, set, subMinutes, isToday } from 'date-fns';
+import { format, set, subMinutes, isToday, differenceInSeconds, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from '../ui/progress';
 import { Checkbox } from '../ui/checkbox';
 import { badgeMeta } from '../leaderboard/shared/badge-renderer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Textarea } from '../ui/textarea';
+import { Label } from '../ui/label';
 
 interface ChallengerPageProps {
     config: ActiveChallenge;
 }
 
 export function ChallengerPage({ config }: ChallengerPageProps) {
-    const { performCheckIn, failChallenge, resetChallenge } = useChallenges();
+    const { performCheckIn, failChallenge, forfeitChallenge, resetChallenge } = useChallenges();
     const { toast } = useToast();
     
     const [timeLeftInWindow, setTimeLeftInWindow] = useState<string>('');
     const [isWindowOpen, setIsWindowOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isForfeitOpen, setIsForfeitOpen] = useState(false);
+    const [forfeitReason, setForfeitReason] = useState('');
+
+    // NoFap Streak Logic
+    const [noFapTime, setNoFapTime] = useState({ days: 0, hours: 0, mins: 0, secs: 0 });
 
     const currentDay = useMemo(() => {
         const start = new Date(config.startDate);
@@ -41,6 +49,25 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
 
     // Daily Mission Data
     const todayTasks = config.plannedTasks?.[currentDay] || [];
+
+    // NOFAP TIMER
+    useEffect(() => {
+        if (!config.hasNoFapTracker || !config.noFapStartDate) return;
+
+        const interval = setInterval(() => {
+            const start = new Date(config.noFapStartDate!);
+            const now = new Date();
+            const diff = Math.max(0, differenceInSeconds(now, start));
+
+            setNoFapTime({
+                days: Math.floor(diff / 86400),
+                hours: Math.floor((diff % 86400) / 3600),
+                mins: Math.floor((diff % 3600) / 60),
+                secs: diff % 60
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [config.hasNoFapTracker, config.noFapStartDate]);
 
     // CHECK-IN WINDOW MONITOR
     useEffect(() => {
@@ -78,6 +105,20 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
         setIsProcessing(true);
         try {
             await performCheckIn();
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleForfeit = async () => {
+        if (!forfeitReason.trim()) {
+            toast({ variant: 'destructive', title: "CONFESSION REQUIRED", description: "You must explain why you are abandoning your path." });
+            return;
+        }
+        setIsProcessing(true);
+        try {
+            await forfeitChallenge(forfeitReason);
+            setIsForfeitOpen(false);
         } finally {
             setIsProcessing(false);
         }
@@ -230,6 +271,30 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
 
                 {/* SIDEBAR ASSETS */}
                 <div className="lg:col-span-4 space-y-8">
+                    {/* NOFAP TRACKER CARD */}
+                    <AnimatePresence>
+                        {config.hasNoFapTracker && (
+                            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
+                                <Card className="bg-gradient-to-br from-purple-900/40 via-slate-900/60 to-slate-900 border-purple-500/30 rounded-[2.5rem] overflow-hidden shadow-xl group">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-purple-400 flex items-center gap-2">
+                                            <ShieldCheck className="h-4 w-4" /> NOFAP DISCIPLINE
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-6 text-center space-y-4">
+                                        <div className="grid grid-cols-4 gap-2">
+                                            <NoFapPill label="Days" val={noFapTime.days} />
+                                            <NoFapPill label="Hours" val={noFapTime.hours} />
+                                            <NoFapPill label="Mins" val={noFapTime.mins} />
+                                            <NoFapPill label="Secs" val={noFapTime.secs} />
+                                        </div>
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest italic group-hover:text-purple-400 transition-colors">"Biological preservation active."</p>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                     <Card className="bg-slate-900/60 backdrop-blur-2xl border-white/10 rounded-[3rem] overflow-hidden">
                         <CardHeader className="bg-white/5 border-b border-white/5"><CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-primary">Session Assets</CardTitle></CardHeader>
                         <CardContent className="p-8 space-y-6">
@@ -249,7 +314,7 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                                 <span className="font-black text-2xl tabular-nums italic">{config.dailyWorkHourTarget}h</span>
                             </div>
 
-                            <Separator className="bg-white/5" />
+                            <div className="h-px w-full bg-white/5" />
 
                             <div className="p-8 rounded-[2rem] bg-gradient-to-br from-primary/10 to-transparent border border-primary/30 flex flex-col items-center text-center gap-4 group">
                                 <div className="p-5 rounded-full bg-primary/10 border-2 border-primary/20 shadow-2xl transition-transform group-hover:scale-110 duration-500">
@@ -272,15 +337,73 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                         </h4>
                         <div className="space-y-4 text-[11px] leading-relaxed text-slate-400 font-medium italic">
                             <p>"Missing your relay window results in immediate lifeline extraction. If lifelines hit zero, the mainframe executes a <b>{config.penalty} Credit</b> penalty."</p>
-                            <p>"The work target of <b>{config.dailyWorkHourTarget}h</b> is monitored. Consistency is the only path to the {config.badgeToUnlock.toUpperCase()} rank."</p>
                         </div>
                     </Card>
+
+                    <Button 
+                        variant="ghost" 
+                        onClick={() => setIsForfeitOpen(true)}
+                        className="w-full text-red-500/40 hover:text-red-500 hover:bg-red-500/10 font-black uppercase text-[10px] tracking-[0.3em] h-12 rounded-2xl"
+                    >
+                        <Flag className="mr-2 h-4 w-4" /> FORFEIT PROTOCOL
+                    </Button>
                 </div>
             </div>
+
+            {/* FORFEIT DIALOG */}
+            <Dialog open={isForfeitOpen} onOpenChange={setIsForfeitOpen}>
+                <DialogContent className="max-w-lg bg-slate-950 border-red-600/50 rounded-[3rem] p-8 sm:p-12 overflow-hidden relative">
+                    <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
+                    <DialogHeader className="relative z-10">
+                        <div className="flex justify-center mb-6">
+                            <div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse">
+                                <AlertTriangle className="h-12 w-12 text-red-600" />
+                            </div>
+                        </div>
+                        <DialogTitle className="text-center text-3xl font-black uppercase italic text-white tracking-tighter">SURRENDER REQUESTED</DialogTitle>
+                        <DialogDescription className="text-center text-base font-bold text-red-200 mt-2">
+                             Retreat is the silent killer of legends. A penalty of <span className="text-white">-{config.penalty} Credits</span> will be authorized.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-6 py-6 relative z-10">
+                        <div className="p-6 rounded-3xl bg-white/5 border-2 border-dashed border-white/10 text-center italic text-sm text-slate-400">
+                            "A champion is simply someone who didn't give up when they wanted to. Are you certain this is your end?"
+                        </div>
+                        
+                        <div className="space-y-3">
+                            <Label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><MessageSquare className="h-4 w-4" /> Confession of Failure</Label>
+                            <Textarea 
+                                value={forfeitReason}
+                                onChange={e => setForfeitReason(e.target.value)}
+                                placeholder="Why are you abandoning your path?"
+                                className="bg-black/40 border-white/10 rounded-2xl min-h-[120px] focus-visible:ring-red-600/30"
+                            />
+                        </div>
+                    </div>
+
+                    <DialogFooter className="flex flex-col sm:flex-row gap-3 relative z-10">
+                        <DialogClose asChild><Button variant="outline" className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest border-white/10">STAY ON PATH</Button></DialogClose>
+                        <Button 
+                            variant="destructive" 
+                            disabled={isProcessing || !forfeitReason.trim()} 
+                            onClick={handleForfeit}
+                            className="flex-1 h-14 rounded-2xl font-black uppercase bg-red-600 hover:bg-red-700 shadow-xl shadow-red-600/20"
+                        >
+                            {isProcessing ? <Loader2 className="animate-spin" /> : <><LogOut className="mr-2 h-5 w-5" /> AUTHORIZE FORFEIT</>}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
 
-function Separator({ className }: any) {
-    return <div className={cn("h-px w-full", className)} />;
+function NoFapPill({ label, val }: { label: string, val: number }) {
+    return (
+        <div className="p-2 rounded-xl bg-black/40 border border-white/5">
+            <p className="text-[12px] font-black text-white tabular-nums leading-none">{String(val).padStart(2, '0')}</p>
+            <p className="text-[7px] font-black uppercase text-purple-400 tracking-tighter mt-0.5">{label}</p>
+        </div>
+    );
 }
