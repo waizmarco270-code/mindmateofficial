@@ -54,8 +54,8 @@ export default function SystemOverridesPage() {
     const [walletAmount, setWalletAmount] = useState(10);
     const [broadcastMsg, setBroadcastMsg] = useState('');
     
-    // Economy State
-    const [newSignupCredits, setNewSignupCredits] = useState(200);
+    // Economy State - Updated default to 500
+    const [newSignupCredits, setNewSignupCredits] = useState(500);
     const [hasInitializedCredits, setHasInitializedCredits] = useState(false);
 
     // Sync Signup Credits ONCE when appSettings arrives
@@ -386,12 +386,12 @@ export default function SystemOverridesPage() {
                                 <AlertDialogHeader>
                                     <AlertDialogTitle className="text-red-500">ECONOMY RE-CALIBRATION</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will set every user's credit balance back to the configured sign-up default ({appSettings?.startingCredits || 200}).
+                                        This will set every user's credit balance back to the configured sign-up default ({appSettings?.startingCredits || 500}).
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Abort</AlertDialogCancel>
-                                    <AlertDialogAction className="bg-red-600" onClick={() => executeDirective('reset-credits', () => resetAllUserCredits(appSettings?.startingCredits || 200), "All credits re-calibrated.")}>EXECUTE RESET</AlertDialogAction>
+                                    <AlertDialogAction className="bg-red-600" onClick={() => executeDirective('reset-credits', () => resetAllUserCredits(appSettings?.startingCredits || 500), "All credits re-calibrated.")}>EXECUTE RESET</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>

@@ -21,7 +21,7 @@ export default function MaintenanceControlPage() {
     const [maintenanceMessage, setMaintenanceMessage] = useState(appSettings?.maintenanceMessage || '');
     const [maintenanceTheme, setMaintenanceTheme] = useState<MaintenanceTheme>(appSettings?.maintenanceTheme || 'shiny');
     const [whatsNewMessage, setWhatsNewMessage] = useState(appSettings?.whatsNewMessage || '');
-    const [startingCredits, setStartingCredits] = useState(appSettings?.startingCredits || 200);
+    const [startingCredits, setStartingCredits] = useState(appSettings?.startingCredits || 500);
 
     useEffect(() => {
         if (appSettings) {
@@ -29,7 +29,7 @@ export default function MaintenanceControlPage() {
             setMaintenanceMessage(appSettings.maintenanceMessage || '');
             setMaintenanceTheme(appSettings.maintenanceTheme || 'shiny');
             setWhatsNewMessage(appSettings.whatsNewMessage || '');
-            setStartingCredits(appSettings.startingCredits || 200);
+            setStartingCredits(appSettings.startingCredits || 500);
         }
     }, [appSettings]);
 

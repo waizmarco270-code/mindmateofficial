@@ -277,8 +277,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             if (snap.exists()) {
                 setCurrentUserData({ id: snap.id, ...snap.data() } as User);
             } else {
-                // AUTO-INITIALIZE NEW LEGEND
-                const initialCredits = appSettings?.startingCredits || 200;
+                // AUTO-INITIALIZE NEW LEGEND - 500 Credits Baseline
+                const initialCredits = appSettings?.startingCredits || 500;
                 const newUser: Partial<User> = {
                     uid: authUser.id,
                     displayName: authUser.fullName || 'Legend',
