@@ -13,7 +13,7 @@ import {
     Coins, Lock, ShieldAlert, BellRing, Package,
     Wallet, UserMinus, History, Flame, ShieldCheck,
     MessageSquare, Send, Search, User as UserIcon,
-    Plus, Minus, X, ArrowRight
+    Plus, Minus, X, ArrowRight, Clock, Gamepad2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -97,8 +97,7 @@ export default function SystemOverridesPage() {
         try {
             await addCreditsToUser(selectedTargetUser.uid, amount);
             toast({ title: "Registry Updated", description: `${type === 'add' ? 'Added' : 'Removed'} ${targetedCreditAmount} credits for ${selectedTargetUser.displayName}.` });
-            // Update local selection to reflect new balance if needed, 
-            // though useAdmin listener will eventually update it.
+            // Update local selection to reflect new balance if possible
             setTargetedCreditAmount(100);
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Update Failed", description: error.message });
@@ -295,7 +294,7 @@ export default function SystemOverridesPage() {
                                 <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Quick Ingress Shortcuts</CardTitle>
                             </CardHeader>
                             <CardContent className="p-4 space-y-2">
-                                <Button variant="ghost" className="w-full justify-start text-[10px] font-black h-9 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => setUserSearchTerm('WAZMARCO')}>WAIZMARCO [MASTER]</Button>
+                                <Button variant="ghost" className="w-full justify-start text-[10px] font-black h-9 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => setUserSearchTerm('WAIZMARCO')}>WAIZMARCO [MASTER]</Button>
                                 <Button variant="ghost" className="w-full justify-start text-[10px] font-black h-9 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => setUserSearchTerm('SENTINEL')}>AEGIS_SENTINEL</Button>
                             </CardContent>
                         </Card>
