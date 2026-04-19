@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -196,8 +195,14 @@ interface AppDataContextType {
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
+const safeToDate = (val: any) => {
+    if (!val) return new Date();
+    if (typeof val.toDate === 'function') return val.toDate();
+    return new Date(val);
+};
+
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
-    const { user: authUser, isClerkLoaded } = useUser();
+    const { user: authUser, isLoaded: isClerkLoaded } = useUser();
     const { toast } = useToast();
     
     const [users, setUsers] = useState<User[]>([]);
@@ -231,25 +236,30 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const codeActions = useMemo(() => useCodeActions(db, toast), [toast]);
 
     useEffect(() => {
-        const process = (snap: any) => snap.docs.map((d: any) => ({ id: d.id, ...d.data(), createdAt: d.data().createdAt?.toDate() || new Date() }));
+        const process = (snap: any) => snap.docs.map((d: any) => ({ 
+            id: d.id, 
+            ...d.data(), 
+            createdAt: safeToDate(d.data().createdAt) 
+        }));
+        
         const unsubs = [
-            onSnapshot(collection(db, 'users'), (s) => setUsers(s.docs.map(d => ({ id: d.id, ...d.data() } as User)))),
-            onSnapshot(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')), (s) => setAnnouncements(process(s))),
-            onSnapshot(collection(db, 'resources'), (s) => setResources(process(s))),
-            onSnapshot(collection(db, 'resourceSections'), (s) => setResourceSections(process(s))),
-            onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(process(s))),
-            onSnapshot(collection(db, 'supportTickets'), (s) => setSupportTickets(s.docs.map(d => ({ id: d.id, ...d.data() } as SupportTicket)))),
-            onSnapshot(collection(db, 'polls'), (s) => setAllPolls(process(s))),
-            onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null)),
-            onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(process(s))),
-            onSnapshot(collection(db, 'featureShowcases'), (s) => setFeatureShowcases(process(s))),
-            onSnapshot(collection(db, 'creditPacks'), (s) => setCreditPacks(process(s))),
-            onSnapshot(collection(db, 'storeItems'), (s) => setStoreItems(process(s))),
-            onSnapshot(collection(db, 'videoCategories'), (s) => setVideoCategories(process(s))),
-            onSnapshot(collection(db, 'videoLectures'), (s) => setVideoLectures(process(s))),
-            onSnapshot(query(collection(db, 'redeemCodes'), orderBy('createdAt', 'desc')), (s) => setRedeemCodes(process(s))),
-            onSnapshot(query(collection(db, 'gameZoneHistory'), orderBy('weekStartDate', 'desc'), limit(5)), (s) => setGameHistory(s.docs.map(d => ({ id: d.id, ...d.data() } as GameHistoryEntry)))),
-            onSnapshot(collection(db, 'fcmTokens'), (s) => setSubscribedUserIds(new Set(s.docs.map(d => d.id)))),
+            onSnapshot(collection(db, 'users'), (s) => setUsers(s.docs.map(d => ({ id: d.id, ...d.data() } as User))), (e) => console.error("Users Sync Error:", e)),
+            onSnapshot(query(collection(db, 'announcements'), orderBy('createdAt', 'desc')), (s) => setAnnouncements(process(s)), (e) => console.error("Announcements Error:", e)),
+            onSnapshot(collection(db, 'resources'), (s) => setResources(process(s)), (e) => console.error("Resources Error:", e)),
+            onSnapshot(collection(db, 'resourceSections'), (s) => setResourceSections(process(s)), (e) => console.error("Sections Error:", e)),
+            onSnapshot(query(collection(db, 'dailySurprises'), orderBy('createdAt', 'asc')), (s) => setDailySurprises(process(s)), (e) => console.error("Surprises Error:", e)),
+            onSnapshot(collection(db, 'supportTickets'), (s) => setSupportTickets(s.docs.map(d => ({ id: d.id, ...d.data() } as SupportTicket))), (e) => console.error("Tickets Error:", e)),
+            onSnapshot(collection(db, 'polls'), (s) => setAllPolls(process(s)), (e) => console.error("Polls Error:", e)),
+            onSnapshot(doc(db, 'appConfig', 'settings'), (d) => setAppSettings(d.exists() ? d.data() as AppSettings : null), (e) => console.error("Settings Error:", e)),
+            onSnapshot(query(collection(db, 'globalGifts'), orderBy('createdAt', 'desc')), (s) => setGlobalGifts(process(s)), (e) => console.error("Gifts Error:", e)),
+            onSnapshot(collection(db, 'featureShowcases'), (s) => setFeatureShowcases(process(s)), (e) => console.error("Showcases Error:", e)),
+            onSnapshot(collection(db, 'creditPacks'), (s) => setCreditPacks(process(s)), (e) => console.error("Packs Error:", e)),
+            onSnapshot(collection(db, 'storeItems'), (s) => setStoreItems(process(s)), (e) => console.error("Items Error:", e)),
+            onSnapshot(collection(db, 'videoCategories'), (s) => setVideoCategories(process(s)), (e) => console.error("VideoCat Error:", e)),
+            onSnapshot(collection(db, 'videoLectures'), (s) => setVideoLectures(process(s)), (e) => console.error("Videos Error:", e)),
+            onSnapshot(query(collection(db, 'redeemCodes'), orderBy('createdAt', 'desc')), (s) => setRedeemCodes(process(s)), (e) => console.error("Codes Error:", e)),
+            onSnapshot(query(collection(db, 'gameZoneHistory'), orderBy('weekStartDate', 'desc'), limit(5)), (s) => setGameHistory(s.docs.map(d => ({ id: d.id, ...d.data() } as GameHistoryEntry))), (e) => console.error("History Error:", e)),
+            onSnapshot(collection(db, 'fcmTokens'), (s) => setSubscribedUserIds(new Set(s.docs.map(d => d.id))), (e) => console.warn("Tokens List Restricted")),
         ];
         return () => unsubs.forEach(u => u());
     }, []);
@@ -259,6 +269,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (!authUser) { setCurrentUserData(null); setLoading(false); return; }
         return onSnapshot(doc(db, 'users', authUser.id), (snap) => {
             if (snap.exists()) setCurrentUserData({ id: snap.id, ...snap.data() } as User);
+            setLoading(false);
+        }, (error) => {
+            console.error("Critical: User Identity Sync Failure", error);
             setLoading(false);
         });
     }, [authUser, isClerkLoaded]);

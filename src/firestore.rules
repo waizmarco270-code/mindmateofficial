@@ -49,6 +49,18 @@ service cloud.firestore {
       allow write: if isOwner(userId);
     }
     
+    // FCM Tokens (Needed for Push Notifications list)
+    match /fcmTokens/{userId} {
+      allow read: if isAdmin() || isSuperAdmin();
+      allow write: if isOwner(userId);
+    }
+    
+    // Game Zone History
+    match /gameZoneHistory/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+    
     // Calls Collection (Voice Calls)
     match /calls/{callId} {
       allow read, write: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.receiverId || request.auth.uid == request.resource.data.callerId);
@@ -121,7 +133,6 @@ service cloud.firestore {
     // World Chat (Global Chat)
     match /world_chat/{messageId} {
         allow read, create: if isSignedIn();
-        // Allow updates specifically for rain claims and poll votes
         allow update: if isSignedIn(); 
         allow delete: if isOwner(resource.data.senderId) || isAdmin() || isSuperAdmin();
     }
