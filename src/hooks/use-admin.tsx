@@ -14,7 +14,6 @@ import { useContentActions } from './admin/use-content-actions';
 import { useStoreActions } from './admin/use-store-actions';
 import { useSystemActions } from './admin/use-system-actions';
 import { useCodeActions } from './admin/use-code-actions';
-import { runAegisPulse, type AegisPulseOutput } from '@/ai/flows/aegis-sentinel-flow';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
 export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'champion' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign' | 'premium';
@@ -189,7 +188,6 @@ interface AppDataContextType {
     resetGameZoneLeaderboard: any; topUpWallet: any;
     generateAiAccessToken: any; unlockResourceSection: any; unlockFeatureForUser: any; unlockThemeForUser: any;
     generateRedeemCode: (v: number) => Promise<string>; deactivateRedeemCode: (id: string) => Promise<void>; deleteRedeemCode: (id: string) => Promise<void>; redeemCode: (u: string, c: string) => Promise<number>;
-    triggerAegisPulse: () => Promise<AegisPulseOutput>;
     performGameReset: () => Promise<void>;
     resetAllChallenges: () => Promise<void>;
     resetAllIsolationSessions: () => Promise<void>;
@@ -371,17 +369,13 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "Welcome to MindMate Plus!", description: "Legendary features authorized.", className: "bg-gradient-to-r from-purple-500 to-indigo-600 text-white" });
     };
 
-    const value = useMemo(() => ({
+    const value = {
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
         announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
         videoCategories, videoLectures, redeemCodes, activePoll: allPolls.find(p => p.isActive) || null,
         gameHistory, subscribedUserIds,
         ...userActions, ...contentActions, ...storeActions, ...systemActions, ...codeActions,
-        triggerAegisPulse: async () => {
-            if (users.length === 0) throw new Error("No citizens.");
-            return runAegisPulse({ topUsers: users.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, credits: u.credits, studyTime: u.totalStudyTime || 0, streak: u.streak || 0 })), recentAnnouncements: announcements.slice(0, 3).map(a => a.title), totalUsers: users.length, isChatQuiet: true });
-        },
         submitPollVote: (pid: string, opt: string) => contentActions.submitPollVote(pid, opt, authUser!.id),
         submitPollComment: (pid: string, c: string) => contentActions.submitPollComment(pid, c, authUser!.id, currentUserData!.displayName),
         submitSupportTicket: (m: string) => systemActions.submitSupportTicket(m, authUser!.id, currentUserData!.displayName),
@@ -390,7 +384,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
         resetAllUserCredits: () => systemActions.resetAllUserCredits(appSettings?.startingCredits || 200),
         performGameReset, resetAllChallenges, claimPlusMembership
-    }), [isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, redeemCodes, gameHistory, subscribedUserIds, userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id, performGameReset, resetAllChallenges]);
+    };
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
 };

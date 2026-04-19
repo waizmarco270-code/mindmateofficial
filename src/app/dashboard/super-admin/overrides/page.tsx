@@ -7,13 +7,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAdmin, type User } from '@/hooks/use-admin';
 import { 
-    Zap, BrainCircuit, KeyRound, Check, 
+    Zap, KeyRound, Check, 
     AlertTriangle, CloudRain, Trash2, 
     RefreshCcw, Loader2, Code, ShieldX, Skull,
     Coins, Lock, ShieldAlert, BellRing, Package,
     Wallet, UserMinus, History, Flame, ShieldCheck,
     MessageSquare, Send, Search, User as UserIcon,
-    Plus, Minus, X, ArrowRight, Clock, Gamepad2, Gem
+    Plus, Minus, X, ArrowRight, Clock, Gamepad2, Gem,
+    Save
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -36,11 +37,11 @@ const MASTER_OVERRIDE_CODE = "waizcredit";
 
 export default function SystemOverridesPage() {
     const { 
-        users, triggerAegisPulse, giftCreditsToAllUsers, clearGlobalChat, 
+        users, giftCreditsToAllUsers, clearGlobalChat, 
         clearQuizLeaderboard, resetWeeklyStudyTime, resetGameZoneLeaderboard,
         resetAllChallenges, resetAllIsolationSessions, resetAllUserCredits,
         broadcastGlobalMessage, topUpAllWallets, addCreditsToUser,
-        appSettings
+        appSettings, updateAppSettings
     } = useAdmin();
     const { toast } = useToast();
 
@@ -52,6 +53,7 @@ export default function SystemOverridesPage() {
     const [giftAmount, setGiftAmount] = useState(100);
     const [walletAmount, setWalletAmount] = useState(10);
     const [broadcastMsg, setBroadcastMsg] = useState('');
+    const [newSignupCredits, setNewSignupCredits] = useState(appSettings?.startingCredits || 200);
 
     // Targeted Credit Authority State
     const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -80,6 +82,18 @@ export default function SystemOverridesPage() {
         }
     };
 
+    const handleUpdateSignupCredits = async () => {
+        setIsProcessing('signup-credits');
+        try {
+            await updateAppSettings({ startingCredits: Number(newSignupCredits) });
+            toast({ title: "Economy Re-calibrated", description: `New sign-ups will now receive ${newSignupCredits} credits.` });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Config Failed", description: e.message });
+        } finally {
+            setIsProcessing(null);
+        }
+    };
+
     const filteredUsers = useMemo(() => {
         if (!userSearchTerm.trim()) return [];
         return users.filter(u => 
@@ -97,7 +111,6 @@ export default function SystemOverridesPage() {
         try {
             await addCreditsToUser(selectedTargetUser.uid, amount);
             toast({ title: "Registry Updated", description: `${type === 'add' ? 'Added' : 'Removed'} ${targetedCreditAmount} credits for ${selectedTargetUser.displayName}.` });
-            // Update local selection to reflect new balance if possible
             setTargetedCreditAmount(100);
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Update Failed", description: error.message });
@@ -138,23 +151,33 @@ export default function SystemOverridesPage() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
-            {/* TOP ROW: INTELLIGENCE & BROADCAST */}
+            {/* TOP ROW: DYNAMIC CONFIG & BROADCAST */}
             <div className="grid gap-6 grid-cols-1 lg:grid-cols-12">
-                <Card className="lg:col-span-4 border-indigo-500/30 bg-indigo-500/5 relative overflow-hidden group">
+                <Card className="lg:col-span-4 border-emerald-500/30 bg-emerald-500/5 relative overflow-hidden group">
                     <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-indigo-400 uppercase italic"><BrainCircuit className="h-5 w-5"/> Aegis Sentinel Core</CardTitle>
-                        <CardDescription className="text-[10px] font-bold uppercase tracking-widest">Autonomous Governance Engine</CardDescription>
+                        <CardTitle className="flex items-center gap-2 text-emerald-400 uppercase italic"><ShieldCheck className="h-5 w-5"/> Signup Economy</CardTitle>
+                        <CardDescription className="text-[10px] font-bold uppercase tracking-widest">Control Starting Assets for New Legends</CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        <Button 
-                            onClick={() => executeDirective('aegis', triggerAegisPulse, "Intelligence pulse dispatched to the network.")} 
-                            disabled={!!isProcessing} 
-                            className="w-full h-16 bg-indigo-600 hover:bg-indigo-700 text-white font-black text-lg shadow-xl shadow-indigo-500/20 rounded-2xl"
-                        >
-                            {isProcessing === 'aegis' ? <Loader2 className="animate-spin mr-2"/> : <Zap className="mr-2"/>}
-                            TRIGGER AEGIS PULSE
-                        </Button>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground">Default Credits</Label>
+                            <div className="flex gap-2">
+                                <Input 
+                                    type="number" 
+                                    value={newSignupCredits} 
+                                    onChange={e => setNewSignupCredits(Number(e.target.value))} 
+                                    className="h-12 text-lg font-black bg-black/20 text-center"
+                                />
+                                <Button 
+                                    onClick={handleUpdateSignupCredits} 
+                                    disabled={isProcessing === 'signup-credits'}
+                                    className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6"
+                                >
+                                    {isProcessing === 'signup-credits' ? <Loader2 className="animate-spin" /> : <Save className="h-4 w-4"/>}
+                                </Button>
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
 
@@ -295,7 +318,6 @@ export default function SystemOverridesPage() {
                             </CardHeader>
                             <CardContent className="p-4 space-y-2">
                                 <Button variant="ghost" className="w-full justify-start text-[10px] font-black h-9 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => setUserSearchTerm('WAIZMARCO')}>WAIZMARCO [MASTER]</Button>
-                                <Button variant="ghost" className="w-full justify-start text-[10px] font-black h-9 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => setUserSearchTerm('SENTINEL')}>AEGIS_SENTINEL</Button>
                             </CardContent>
                         </Card>
                     </div>
