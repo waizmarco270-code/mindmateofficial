@@ -17,12 +17,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { format, set, subMinutes, isToday, differenceInSeconds, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { Progress } from '../ui/progress';
-import { Checkbox } from '../ui/checkbox';
-import { badgeMeta } from '../leaderboard/shared/badge-renderer';
+import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
+import { badgeMeta } from '@/components/leaderboard/shared/badge-renderer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Textarea } from '../ui/textarea';
-import { Label } from '../ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 interface ChallengerPageProps {
     config: ActiveChallenge;
@@ -47,7 +47,6 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
         return Math.min(diff, config.duration);
     }, [config.startDate, config.duration]);
 
-    // Daily Mission Data
     const todayTasks = config.plannedTasks?.[currentDay] || [];
 
     // NOFAP TIMER
@@ -71,7 +70,7 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
 
     // HANDLE MISSED WINDOW
     const handleMissedWindow = useCallback(async () => {
-        if (isProcessing) return; // Prevent loop trigger if already processing an update
+        if (isProcessing) return; 
         
         setIsProcessing(true);
         try {
@@ -106,7 +105,6 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                 setTimeLeftInWindow(`${mm}:${ss.toString().padStart(2, '0')}`);
             } else {
                 setIsWindowOpen(false);
-                // Check if mission day check-in is missed (window closed and lastCheckInDay is behind currentDay)
                 if (now > targetTime && config.lastCheckInDay < currentDay) {
                     handleMissedWindow();
                 }
@@ -133,6 +131,8 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
         try {
             await forfeitChallenge(forfeitReason);
             setIsForfeitOpen(false);
+        } catch (e) {
+            console.error(e);
         } finally {
             setIsProcessing(false);
         }
@@ -189,7 +189,6 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* MISSION STATUS */}
                 <div className="lg:col-span-8 space-y-8">
                     <Card className="relative overflow-hidden bg-slate-900/40 backdrop-blur-3xl border-primary/20 rounded-[2.5rem] shadow-2xl">
                         <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
@@ -204,7 +203,6 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                             <CardTitle className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter text-white">{config.title}</CardTitle>
                         </CardHeader>
                         <CardContent className="p-8 sm:p-10 space-y-10 relative z-10">
-                            {/* RELAY TERMINAL */}
                             <div className={cn(
                                 "p-10 rounded-[3rem] border-2 transition-all duration-700",
                                 isWindowOpen ? "bg-primary/10 border-primary shadow-[0_0_50px_rgba(139,92,246,0.3)]" : "bg-black/20 border-white/5 opacity-60"
@@ -248,7 +246,6 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                                 </div>
                             </div>
 
-                            {/* DAILY OBJECTIVES */}
                             <div className="space-y-6">
                                 <div className="flex items-center justify-between border-b border-white/5 pb-4">
                                     <h3 className="text-xl font-black uppercase italic tracking-tight flex items-center gap-3">
@@ -283,9 +280,7 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                     </Card>
                 </div>
 
-                {/* SIDEBAR ASSETS */}
                 <div className="lg:col-span-4 space-y-8">
-                    {/* NOFAP TRACKER CARD */}
                     <AnimatePresence>
                         {config.hasNoFapTracker && (
                             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
