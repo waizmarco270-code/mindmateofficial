@@ -1,18 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAdmin } from '@/hooks/use-admin';
+import { useAdmin, type User } from '@/hooks/use-admin';
 import { 
     Zap, BrainCircuit, KeyRound, Check, 
     AlertTriangle, CloudRain, Trash2, 
     RefreshCcw, Loader2, Code, ShieldX, Skull,
     Coins, Lock, ShieldAlert, BellRing, Package,
     Wallet, UserMinus, History, Flame, ShieldCheck,
-    MessageSquare, Send
+    MessageSquare, Send, Search, User as UserIcon,
+    Plus, Minus, X, ArrowRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,15 +30,16 @@ import {
     AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
 const MASTER_OVERRIDE_CODE = "waizcredit";
 
 export default function SystemOverridesPage() {
     const { 
-        triggerAegisPulse, giftCreditsToAllUsers, clearGlobalChat, 
+        users, triggerAegisPulse, giftCreditsToAllUsers, clearGlobalChat, 
         clearQuizLeaderboard, resetWeeklyStudyTime, resetGameZoneLeaderboard,
         resetAllChallenges, resetAllIsolationSessions, resetAllUserCredits,
-        injectArtifactToAll, broadcastGlobalMessage, topUpAllWallets,
+        broadcastGlobalMessage, topUpAllWallets, addCreditsToUser,
         appSettings
     } = useAdmin();
     const { toast } = useToast();
@@ -50,6 +52,11 @@ export default function SystemOverridesPage() {
     const [giftAmount, setGiftAmount] = useState(100);
     const [walletAmount, setWalletAmount] = useState(10);
     const [broadcastMsg, setBroadcastMsg] = useState('');
+
+    // Targeted Credit Authority State
+    const [userSearchTerm, setUserSearchTerm] = useState('');
+    const [selectedTargetUser, setSelectedTargetUser] = useState<User | null>(null);
+    const [targetedCreditAmount, setTargetedCreditAmount] = useState(100);
 
     const handleUnlock = (e: React.FormEvent) => {
         e.preventDefault();
@@ -68,6 +75,33 @@ export default function SystemOverridesPage() {
             toast({ title: "Directive Executed", description: successMsg });
         } catch (error: any) {
             toast({ variant: 'destructive', title: "Directive Failed", description: error.message });
+        } finally {
+            setIsProcessing(null);
+        }
+    };
+
+    const filteredUsers = useMemo(() => {
+        if (!userSearchTerm.trim()) return [];
+        return users.filter(u => 
+            u.displayName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+            u.mindMateId?.toLowerCase() === userSearchTerm.toLowerCase() ||
+            u.uid === userSearchTerm
+        ).slice(0, 5);
+    }, [users, userSearchTerm]);
+
+    const handleAdjustCredits = async (type: 'add' | 'remove') => {
+        if (!selectedTargetUser) return;
+        const amount = type === 'add' ? targetedCreditAmount : -targetedCreditAmount;
+        
+        setIsProcessing('target-credits');
+        try {
+            await addCreditsToUser(selectedTargetUser.uid, amount);
+            toast({ title: "Registry Updated", description: `${type === 'add' ? 'Added' : 'Removed'} ${targetedCreditAmount} credits for ${selectedTargetUser.displayName}.` });
+            // Update local selection to reflect new balance if needed, 
+            // though useAdmin listener will eventually update it.
+            setTargetedCreditAmount(100);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: "Update Failed", description: error.message });
         } finally {
             setIsProcessing(null);
         }
@@ -148,6 +182,127 @@ export default function SystemOverridesPage() {
                 </Card>
             </div>
 
+            {/* SECOND ROW: TARGETED AUTHORITY */}
+            <Card className="border-amber-500/30 bg-amber-500/5 relative overflow-hidden">
+                <div className="absolute inset-0 bg-grid-white/5 opacity-5" />
+                <CardHeader>
+                    <CardTitle className="text-xl font-black uppercase italic text-amber-500 flex items-center gap-3">
+                        <UserIcon className="h-6 w-6" /> Targeted Credit Authority
+                    </CardTitle>
+                    <CardDescription className="font-bold">Modify individual citizen records with surgical precision.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    <div className="space-y-4">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search by name, MM-ID or UID..." 
+                                value={userSearchTerm}
+                                onChange={e => setUserSearchTerm(e.target.value)}
+                                className="pl-10 h-14 bg-black/20 border-amber-500/20"
+                            />
+                            {filteredUsers.length > 0 && (
+                                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="absolute top-full left-0 w-full mt-2 bg-background border border-amber-500/30 rounded-2xl shadow-2xl z-50 overflow-hidden divide-y divide-white/5">
+                                    {filteredUsers.map(u => (
+                                        <button key={u.uid} onClick={() => { setSelectedTargetUser(u); setUserSearchTerm(''); }} className="w-full p-4 flex items-center gap-4 hover:bg-amber-500/10 transition-colors text-left">
+                                            <Avatar className="h-10 w-10 border border-white/10">
+                                                <AvatarImage src={u.photoURL}/>
+                                                <AvatarFallback>U</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="font-black text-sm uppercase tracking-tight">{u.displayName}</p>
+                                                <p className="text-[10px] text-muted-foreground font-mono truncate">{u.mindMateId || u.uid}</p>
+                                            </div>
+                                            <ArrowRight className="h-4 w-4 text-amber-500 opacity-40" />
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </div>
+
+                        <AnimatePresence mode="wait">
+                            {selectedTargetUser ? (
+                                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="p-6 rounded-[2rem] bg-black/40 border border-amber-500/20 flex flex-col gap-6 relative">
+                                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full" onClick={() => setSelectedTargetUser(null)}>
+                                        <X className="h-4 w-4"/>
+                                    </Button>
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="h-16 w-16 border-4 border-amber-500/30">
+                                            <AvatarImage src={selectedTargetUser.photoURL}/>
+                                            <AvatarFallback>U</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <h4 className="text-xl font-black uppercase italic tracking-tighter">{selectedTargetUser.displayName}</h4>
+                                            <div className="flex items-center gap-3 mt-1">
+                                                <div className="flex items-center gap-1 text-amber-500 font-black text-lg">
+                                                    <Gem className="h-4 w-4"/> {selectedTargetUser.credits.toLocaleString()}
+                                                </div>
+                                                <span className="text-[10px] font-bold text-muted-foreground uppercase bg-white/5 px-2 py-0.5 rounded">Current Balance</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4 pt-4 border-t border-white/5">
+                                        <div className="space-y-2">
+                                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Modification Value</Label>
+                                            <Input 
+                                                type="number" 
+                                                value={targetedCreditAmount} 
+                                                onChange={e => setTargetedCreditAmount(Number(e.target.value))} 
+                                                className="h-12 bg-black/40 border-amber-500/20 text-xl font-black text-center"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <Button 
+                                                variant="outline" 
+                                                className="h-12 border-red-500/50 hover:bg-red-500/10 text-red-500 font-black"
+                                                onClick={() => handleAdjustCredits('remove')}
+                                                disabled={isProcessing === 'target-credits'}
+                                            >
+                                                {isProcessing === 'target-credits' ? <Loader2 className="animate-spin" /> : <Minus className="mr-2 h-4 w-4"/>} REMOVE
+                                            </Button>
+                                            <Button 
+                                                className="h-12 bg-amber-500 hover:bg-amber-600 text-black font-black"
+                                                onClick={() => handleAdjustCredits('add')}
+                                                disabled={isProcessing === 'target-credits'}
+                                            >
+                                                {isProcessing === 'target-credits' ? <Loader2 className="animate-spin" /> : <Plus className="mr-2 h-4 w-4"/>} ADD ASSETS
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ) : (
+                                <div className="py-12 text-center border-2 border-dashed border-white/5 rounded-[2rem] opacity-30">
+                                    <UserIcon className="h-10 w-10 mx-auto mb-3" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">No Citizen Selected <br/> Search to initiate override</p>
+                                </div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div className="p-6 rounded-[2rem] bg-amber-500/10 border border-amber-500/20">
+                            <h5 className="font-black uppercase text-xs tracking-widest text-amber-600 flex items-center gap-2 mb-4">
+                                <ShieldCheck className="h-4 w-4"/> Direct Registry Access
+                            </h5>
+                            <p className="text-xs text-amber-700 dark:text-amber-300 font-medium leading-relaxed italic">
+                                "This terminal provides absolute authority over user balances. Use this for resolving technical failures, manual bounty awarding, or disciplinary actions. All actions are logged in the sovereign record."
+                            </p>
+                        </div>
+
+                        <Card className="bg-black/20 border-white/5 rounded-2xl overflow-hidden">
+                            <CardHeader className="p-4 bg-white/5 border-b border-white/5">
+                                <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Quick Ingress Shortcuts</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 space-y-2">
+                                <Button variant="ghost" className="w-full justify-start text-[10px] font-black h-9 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => setUserSearchTerm('WAZMARCO')}>WAIZMARCO [MASTER]</Button>
+                                <Button variant="ghost" className="w-full justify-start text-[10px] font-black h-9 hover:bg-amber-500/10 hover:text-amber-500" onClick={() => setUserSearchTerm('SENTINEL')}>AEGIS_SENTINEL</Button>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </CardContent>
+            </Card>
+
             <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 {/* ECONOMY HUB */}
                 <Card className="border-emerald-500/20 bg-emerald-500/5">
@@ -201,20 +356,25 @@ export default function SystemOverridesPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                        <div className="grid grid-cols-2 gap-2">
-                            <Button variant="outline" className="h-14 font-black uppercase text-[10px] border-primary/20" onClick={() => executeDirective('shields', () => injectArtifactToAll('penalty-shield'), "Penalty Shields distributed.")}>
-                                <ShieldCheck className="mr-2 h-4 w-4 text-blue-400"/> Gifting Shields
-                            </Button>
-                            <Button variant="outline" className="h-14 font-black uppercase text-[10px] border-primary/20" onClick={() => executeDirective('freezes', () => injectArtifactToAll('streak-freeze'), "Streak Freezes distributed.")}>
-                                <Snowflake className="mr-2 h-4 w-4 text-cyan-400"/> Gifting Freezes
-                            </Button>
-                        </div>
-                        
-                        <Separator className="bg-red-600/10" />
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" className="w-full h-14 font-black uppercase text-xs">Hard Reset: Isolation Mode</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="bg-slate-950 border-red-600/50">
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Terminate All Digital Exiles?</AlertDialogTitle>
+                                    <AlertDialogDescription>Instantly ends all current isolation sessions for every user. No rewards, no penalties.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Abort</AlertDialogCancel>
+                                    <AlertDialogAction className="bg-red-600" onClick={() => executeDirective('reset-isolation', resetAllIsolationSessions, "Isolation sessions ended.")}>PURGE ALL</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
 
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="w-full h-12 font-black uppercase text-xs">Reset Challenger Zone</Button>
+                                <Button variant="destructive" className="w-full h-14 font-black uppercase text-xs">Hard Reset: Challenger Zone</Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent className="bg-slate-950 border-red-600/50">
                                 <AlertDialogHeader>
@@ -224,22 +384,6 @@ export default function SystemOverridesPage() {
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Abort</AlertDialogCancel>
                                     <AlertDialogAction className="bg-red-600" onClick={() => executeDirective('reset-challenges', resetAllChallenges, "Challenges purged.")}>PURGE ALL</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="destructive" className="w-full h-12 font-black uppercase text-xs">Reset Isolation Mode</Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="bg-slate-950 border-red-600/50">
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Wipe ALL Isolation Sessions?</AlertDialogTitle>
-                                    <AlertDialogDescription>Ends every digital exile session immediately. No penalties executed.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Abort</AlertDialogCancel>
-                                    <AlertDialogAction className="bg-red-600" onClick={() => executeDirective('reset-isolation', resetAllIsolationSessions, "Isolation sessions ended.")}>PURGE ALL</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
