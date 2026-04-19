@@ -167,21 +167,37 @@ export default function SystemOverridesPage() {
                         <CardDescription className="text-[10px] font-bold uppercase tracking-widest">Control Starting Assets for New Legends</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase text-muted-foreground">Default Credits</Label>
-                            <div className="flex gap-2">
-                                <Input 
-                                    type="number" 
-                                    value={newSignupCredits} 
-                                    onChange={e => setNewSignupCredits(Number(e.target.value))} 
-                                    className="h-12 text-lg font-black bg-black/20 text-center"
-                                />
+                        <div className="space-y-3">
+                            <Label className="text-[10px] font-black uppercase text-muted-foreground">Default Credits (Max 1000)</Label>
+                            <div className="flex flex-col gap-3">
+                                <div className="flex items-center gap-2 p-1 bg-black/20 rounded-xl border border-emerald-500/20">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 text-emerald-400 hover:bg-emerald-400/10 rounded-lg shrink-0"
+                                        onClick={() => setNewSignupCredits(prev => Math.max(0, prev - 100))}
+                                    >
+                                        <Minus className="h-4 w-4"/>
+                                    </Button>
+                                    <div className="flex-1 text-center font-black text-2xl tracking-tighter text-white">
+                                        {newSignupCredits}
+                                    </div>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-10 w-10 text-emerald-400 hover:bg-emerald-400/10 rounded-lg shrink-0"
+                                        onClick={() => setNewSignupCredits(prev => Math.min(1000, prev + 100))}
+                                    >
+                                        <Plus className="h-4 w-4"/>
+                                    </Button>
+                                </div>
                                 <Button 
                                     onClick={handleUpdateSignupCredits} 
-                                    disabled={isProcessing === 'signup-credits'}
-                                    className="bg-emerald-600 hover:bg-emerald-700 h-12 px-6"
+                                    disabled={isProcessing === 'signup-credits' || newSignupCredits === appSettings?.startingCredits}
+                                    className="w-full bg-emerald-600 hover:bg-emerald-700 h-12 font-black uppercase tracking-widest shadow-lg shadow-emerald-900/20 rounded-xl"
                                 >
-                                    {isProcessing === 'signup-credits' ? <Loader2 className="animate-spin" /> : <Save className="h-4 w-4"/>}
+                                    {isProcessing === 'signup-credits' ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Save className="mr-2 h-4 w-4"/>}
+                                    COMMIT ECONOMY
                                 </Button>
                             </div>
                         </div>
