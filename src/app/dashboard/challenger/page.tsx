@@ -10,7 +10,7 @@ import {
     ArrowRight, Sparkles, AlertTriangle, X,
     Skull, Gem, Flame, Medal, Award,
     CheckCircle, Target, BrainCircuit, BarChart3, ChevronRight,
-    Lock
+    Lock, ShieldCheck
 } from 'lucide-react';
 import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { cn } from '@/lib/utils';
@@ -191,11 +191,11 @@ export default function ChallengerHub() {
                             <CardContent className="p-8 sm:p-12 space-y-10">
                                 <div className="space-y-4">
                                     <Label className="text-xs font-black uppercase tracking-widest text-primary flex items-center gap-2"><Clock className="h-4 w-4"/> Tactical Check-in Time</Label>
-                                    <Input 
+                                    <input 
                                         type="time" 
                                         value={checkInTime} 
                                         onChange={e => setCheckInTime(e.target.value)} 
-                                        className="h-16 text-4xl font-black text-center bg-black/40 border-primary/20 rounded-2xl focus-visible:ring-primary/30"
+                                        className="h-16 w-full text-4xl font-black text-center bg-black/40 border border-primary/20 rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary/30"
                                     />
                                     <p className="text-[10px] text-muted-foreground italic text-center uppercase tracking-widest">"Relay window opens 10 minutes prior to this hour."</p>
                                 </div>
@@ -298,8 +298,4 @@ export default function ChallengerHub() {
             </AnimatePresence>
         </div>
     );
-}
-
-function Separator({ className }: any) {
-    return <div className={cn("h-px w-full", className)} />;
 }
