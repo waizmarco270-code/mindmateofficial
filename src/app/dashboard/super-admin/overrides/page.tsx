@@ -53,14 +53,18 @@ export default function SystemOverridesPage() {
     const [giftAmount, setGiftAmount] = useState(100);
     const [walletAmount, setWalletAmount] = useState(10);
     const [broadcastMsg, setBroadcastMsg] = useState('');
+    
+    // Economy State
     const [newSignupCredits, setNewSignupCredits] = useState(200);
+    const [hasInitializedCredits, setHasInitializedCredits] = useState(false);
 
-    // Sync Signup Credits when appSettings arrives
+    // Sync Signup Credits ONCE when appSettings arrives
     useEffect(() => {
-        if (appSettings?.startingCredits) {
+        if (appSettings?.startingCredits !== undefined && !hasInitializedCredits) {
             setNewSignupCredits(appSettings.startingCredits);
+            setHasInitializedCredits(true);
         }
-    }, [appSettings?.startingCredits]);
+    }, [appSettings?.startingCredits, hasInitializedCredits]);
 
     // Targeted Credit Authority State
     const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -172,6 +176,7 @@ export default function SystemOverridesPage() {
                             <div className="flex flex-col gap-3">
                                 <div className="flex items-center gap-2 p-1 bg-black/20 rounded-xl border border-emerald-500/20">
                                     <Button 
+                                        type="button"
                                         variant="ghost" 
                                         size="icon" 
                                         className="h-10 w-10 text-emerald-400 hover:bg-emerald-400/10 rounded-lg shrink-0"
@@ -183,6 +188,7 @@ export default function SystemOverridesPage() {
                                         {newSignupCredits}
                                     </div>
                                     <Button 
+                                        type="button"
                                         variant="ghost" 
                                         size="icon" 
                                         className="h-10 w-10 text-emerald-400 hover:bg-emerald-400/10 rounded-lg shrink-0"
@@ -477,4 +483,8 @@ export default function SystemOverridesPage() {
             </div>
         </div>
     );
+}
+
+function Badge({ children, variant, className }: any) {
+    return <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", className)}>{children}</span>;
 }
