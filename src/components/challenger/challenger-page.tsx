@@ -29,7 +29,7 @@ interface ChallengerPageProps {
 }
 
 export function ChallengerPage({ config }: ChallengerPageProps) {
-    const { performCheckIn, failChallenge, forfeitChallenge, resetChallenge } = useChallenges();
+    const { performCheckIn, failChallenge, forfeitChallenge, resetChallenge, consumeLifeline } = useChallenges();
     const { toast } = useToast();
     
     const [timeLeftInWindow, setTimeLeftInWindow] = useState<string>('');
@@ -69,6 +69,27 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
         return () => clearInterval(interval);
     }, [config.hasNoFapTracker, config.noFapStartDate]);
 
+    // HANDLE MISSED WINDOW
+    const handleMissedWindow = useCallback(async () => {
+        if (isProcessing) return; // Prevent loop trigger if already processing an update
+        
+        setIsProcessing(true);
+        try {
+            if (config.lifelines > 0) {
+                await consumeLifeline(currentDay);
+                toast({ 
+                    variant: 'destructive', 
+                    title: "WINDOW MISSED", 
+                    description: "A lifeline was consumed to save your mission." 
+                });
+            } else {
+                await failChallenge("You lacked the discipline to sync within your window. Lazy habits have consequences.");
+            }
+        } finally {
+            setIsProcessing(false);
+        }
+    }, [config.lifelines, currentDay, consumeLifeline, failChallenge, toast, isProcessing]);
+
     // CHECK-IN WINDOW MONITOR
     useEffect(() => {
         const interval = setInterval(() => {
@@ -85,21 +106,14 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                 setTimeLeftInWindow(`${mm}:${ss.toString().padStart(2, '0')}`);
             } else {
                 setIsWindowOpen(false);
+                // Check if mission day check-in is missed (window closed and lastCheckInDay is behind currentDay)
                 if (now > targetTime && config.lastCheckInDay < currentDay) {
                     handleMissedWindow();
                 }
             }
         }, 1000);
         return () => clearInterval(interval);
-    }, [config, currentDay]);
-
-    const handleMissedWindow = useCallback(async () => {
-        if (config.lifelines > 0) {
-            toast({ variant: 'destructive', title: "WINDOW MISSED", description: "A lifeline was consumed to save your mission." });
-        } else {
-            await failChallenge("You lacked the discipline to sync within your window. Lazy habits have consequences.");
-        }
-    }, [config.lifelines, failChallenge, toast]);
+    }, [config, currentDay, handleMissedWindow]);
 
     const handleCheckIn = async () => {
         setIsProcessing(true);

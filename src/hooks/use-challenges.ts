@@ -42,7 +42,6 @@ export interface ActiveChallenge {
     reward: number;
     badgeToUnlock: string;
     failMessage?: string;
-    // New Fields
     hasNoFapTracker?: boolean;
     noFapStartDate?: string; 
 }
@@ -146,6 +145,16 @@ export function useChallenges() {
         });
     };
 
+    const consumeLifeline = async (day: number) => {
+        if (!user || !activeChallenge) return;
+        if (activeChallenge.lifelines <= 0) return;
+
+        await updateDoc(doc(db, 'users', user.id, 'challenges', 'active'), {
+            lifelines: increment(-1),
+            lastCheckInDay: day
+        });
+    };
+
     const performCheckIn = async () => {
         if (!user || !activeChallenge) return;
         
@@ -209,5 +218,5 @@ export function useChallenges() {
         await deleteDoc(doc(db, 'users', user.id, 'challenges', 'active'));
     };
 
-    return { activeChallenge, loading, startChallenge, performCheckIn, failChallenge, forfeitChallenge, resetChallenge };
+    return { activeChallenge, loading, startChallenge, performCheckIn, failChallenge, forfeitChallenge, resetChallenge, consumeLifeline };
 }
