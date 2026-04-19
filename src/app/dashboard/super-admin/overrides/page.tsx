@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -53,7 +53,14 @@ export default function SystemOverridesPage() {
     const [giftAmount, setGiftAmount] = useState(100);
     const [walletAmount, setWalletAmount] = useState(10);
     const [broadcastMsg, setBroadcastMsg] = useState('');
-    const [newSignupCredits, setNewSignupCredits] = useState(appSettings?.startingCredits || 200);
+    const [newSignupCredits, setNewSignupCredits] = useState(200);
+
+    // Sync Signup Credits when appSettings arrives
+    useEffect(() => {
+        if (appSettings?.startingCredits) {
+            setNewSignupCredits(appSettings.startingCredits);
+        }
+    }, [appSettings?.startingCredits]);
 
     // Targeted Credit Authority State
     const [userSearchTerm, setUserSearchTerm] = useState('');
@@ -97,7 +104,7 @@ export default function SystemOverridesPage() {
     const filteredUsers = useMemo(() => {
         if (!userSearchTerm.trim()) return [];
         return users.filter(u => 
-            u.displayName.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
+            u.displayName?.toLowerCase().includes(userSearchTerm.toLowerCase()) ||
             u.mindMateId?.toLowerCase() === userSearchTerm.toLowerCase() ||
             u.uid === userSearchTerm
         ).slice(0, 5);
@@ -362,7 +369,7 @@ export default function SystemOverridesPage() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Abort</AlertDialogCancel>
-                                    <AlertDialogAction className="bg-red-600" onClick={() => executeDirective('reset-credits', resetAllUserCredits, "All credits re-calibrated.")}>EXECUTE RESET</AlertDialogAction>
+                                    <AlertDialogAction className="bg-red-600" onClick={() => executeDirective('reset-credits', () => resetAllUserCredits(appSettings?.startingCredits || 200), "All credits re-calibrated.")}>EXECUTE RESET</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>

@@ -191,7 +191,7 @@ interface AppDataContextType {
     performGameReset: () => Promise<void>;
     resetAllChallenges: () => Promise<void>;
     resetAllIsolationSessions: () => Promise<void>;
-    resetAllUserCredits: () => Promise<void>;
+    resetAllUserCredits: (v: number) => Promise<void>;
     injectArtifactToAll: (type: any) => Promise<void>;
     broadcastGlobalMessage: (msg: string) => Promise<void>;
     topUpAllWallets: (amt: number) => Promise<void>;
@@ -382,7 +382,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
         redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
-        resetAllUserCredits: () => systemActions.resetAllUserCredits(appSettings?.startingCredits || 200),
+        resetAllUserCredits: (v: number) => systemActions.resetAllUserCredits(v),
         performGameReset, resetAllChallenges, claimPlusMembership
     };
 
