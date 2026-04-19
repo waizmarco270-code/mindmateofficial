@@ -11,7 +11,7 @@ export const useUserActions = (db: any, toast: any) => {
         const userSnap = await getDoc(userRef);
         const userData = userSnap.data() as User;
         if (userData?.masterCardExpires && new Date(userData.masterCardExpires) > new Date() && amount < 0) return;
-        await updateDoc(userRef, { credits: increment(amount) });
+        await updateDoc(userRef, { credits: increment(Number(amount)) });
     };
 
     const toggleUserBlock = async (uid: string, isBlocked: boolean, type?: 'permanent' | 'temporary', days?: number, reason?: string) => {
@@ -38,7 +38,7 @@ export const useUserActions = (db: any, toast: any) => {
             await updateDoc(snap.ref, { 'inventory.penaltyShields': increment(-1) });
             return 'shielded';
         } else {
-            await addCreditsToUser(uid, -amt);
+            await addCreditsToUser(uid, -Number(amt));
             return 'penalized';
         }
     };
@@ -83,9 +83,10 @@ export const useUserActions = (db: any, toast: any) => {
         const userRef = doc(db, 'users', userId);
         const userData = (await getDoc(userRef)).data() as User;
         const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+        const numCost = Number(cost);
         if (!hasMaster) {
             await updateDoc(userRef, { 
-                credits: increment(-cost),
+                credits: increment(-numCost),
                 unlockedResourceSections: arrayUnion(sectionId)
             });
         } else {
@@ -97,9 +98,10 @@ export const useUserActions = (db: any, toast: any) => {
         const userRef = doc(db, 'users', userId);
         const userData = (await getDoc(userRef)).data() as User;
         const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+        const numCost = Number(cost);
         if (!hasMaster) {
             await updateDoc(userRef, { 
-                credits: increment(-cost),
+                credits: increment(-numCost),
                 unlockedFeatures: arrayUnion(featureId)
             });
         } else {
@@ -111,9 +113,10 @@ export const useUserActions = (db: any, toast: any) => {
         const userRef = doc(db, 'users', userId);
         const userData = (await getDoc(userRef)).data() as User;
         const hasMaster = userData.masterCardExpires && new Date(userData.masterCardExpires) > new Date();
+        const numCost = Number(cost);
         if (!hasMaster) {
             await updateDoc(userRef, { 
-                credits: increment(-cost),
+                credits: increment(-numCost),
                 unlockedThemes: arrayUnion(themeId)
             });
         } else {
@@ -123,12 +126,12 @@ export const useUserActions = (db: any, toast: any) => {
 
     const addPerfectedQuiz = (uid: string, qid: string) => updateDoc(doc(db, 'users', uid), { perfectedQuizzes: arrayUnion(qid) });
     const incrementQuizAttempt = (uid: string, qid: string) => updateDoc(doc(db, 'users', uid), { [`quizAttempts.${qid}`]: increment(1) });
-    const incrementFocusSessions = (uid: string, dur: number) => updateDoc(doc(db, 'users', uid), { focusSessionsCompleted: increment(1), totalStudyTime: increment(dur) });
+    const incrementFocusSessions = (uid: string, dur: number) => updateDoc(doc(db, 'users', uid), { focusSessionsCompleted: increment(1), totalStudyTime: increment(Number(dur)) });
     
-    const updateStudyTime = (uid: string, dur: number) => updateDoc(doc(db, 'users', uid), { totalStudyTime: dur });
+    const updateStudyTime = (uid: string, dur: number) => updateDoc(doc(db, 'users', uid), { totalStudyTime: Number(dur) });
 
     const claimDailyTaskReward = (uid: string, amount: number) => updateDoc(doc(db, 'users', uid), { 
-        credits: increment(amount), 
+        credits: increment(Number(amount)), 
         dailyTasksCompleted: increment(1), 
         lastDailyTasksClaim: todayString() 
     });
@@ -143,14 +146,14 @@ export const useUserActions = (db: any, toast: any) => {
     const updateGameHighScore = async (uid: string, game: string, score: number) => {
         const snap = await getDoc(doc(db, 'users', uid));
         if (snap.exists() && score > (snap.data().gameHighScores?.[game as any] || 0)) {
-            await updateDoc(snap.ref, { [`gameHighScores.${game}`]: score });
+            await updateDoc(snap.ref, { [`gameHighScores.${game}`]: Number(score) });
         }
     };
 
     const updateElementQuestScore = async (uid: string, blk: 's' | 'p' | 'd' | 'f', score: number) => {
         const snap = await getDoc(doc(db, 'users', uid));
         if (snap.exists() && score > (snap.data().elementQuestScores?.[blk] || 0)) {
-            await updateDoc(snap.ref, { [`elementQuestScores.${blk}`]: score });
+            await updateDoc(snap.ref, { [`elementQuestScores.${blk}`]: Number(score) });
         }
     };
 

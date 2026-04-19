@@ -6,7 +6,7 @@ import { useResources, useUsers } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Lock, Sparkles, FileText, Download, Search } from 'lucide-react';
+import { Lock, Sparkles, FileText, Download, Search, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@clerk/nextjs';
 import { Skeleton } from '../ui/skeleton';
@@ -26,6 +26,7 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
     const { toast } = useToast();
 
     const [sectionToUnlock, setSectionToUnlock] = useState<any | null>(null);
+    const [isUnlocking, setIsUnlocking] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
@@ -82,12 +83,15 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
             return;
         }
         
+        setIsUnlocking(true);
         try {
             await unlockResourceSection(user.id, sectionToUnlock.id, sectionToUnlock.unlockCost);
             toast({ title: 'Section Unlocked!', description: `You can now access all resources in "${sectionToUnlock.name}".`});
             setSectionToUnlock(null);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Unlock Failed', description: 'An error occurred. Please try again.' });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Unlock Failed', description: error.message || 'An error occurred. Please try again.' });
+        } finally {
+            setIsUnlocking(false);
         }
     }
     
@@ -141,10 +145,10 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
                             <Card key={section.id} className={cn("flex flex-col", isUnlocked && "border-primary/30")}>
                                 <CardHeader>
                                     <CardTitle className="flex items-start justify-between">
-                                        <span>{section.name}</span>
-                                        {isUnlocked ? <Sparkles className="h-6 w-6 text-yellow-500" /> : <Lock className="h-6 w-6 text-muted-foreground"/>}
+                                        <span className="truncate pr-2">{section.name}</span>
+                                        {isUnlocked ? <Sparkles className="h-6 w-6 text-yellow-500 shrink-0" /> : <Lock className="h-6 w-6 text-muted-foreground shrink-0"/>}
                                     </CardTitle>
-                                    <CardDescription>{section.description}</CardDescription>
+                                    <CardDescription className="line-clamp-2">{section.description}</CardDescription>
                                 </CardHeader>
                                 <CardContent className="flex-1">
                                     {isUnlocked ? (
@@ -181,7 +185,7 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
                  </div>
             )}
             
-            <Dialog open={!!sectionToUnlock} onOpenChange={(open) => !open && setSectionToUnlock(null)}>
+            <Dialog open={!!sectionToUnlock} onOpenChange={(open) => !open && !isUnlocking && setSectionToUnlock(null)}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Unlock "{sectionToUnlock?.name}"</DialogTitle>
@@ -200,12 +204,12 @@ export default function ResourceCategoryPage({ categoryId, title }: ResourceCate
                         </div>
                     </div>
                     <DialogFooter>
-                        <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                        <DialogClose asChild><Button variant="outline" disabled={isUnlocking}>Cancel</Button></DialogClose>
                         <Button 
                           onClick={handleUnlock}
-                          disabled={!hasMasterCard && (currentUserData?.credits ?? 0) < (sectionToUnlock?.unlockCost ?? Infinity)}
+                          disabled={(!hasMasterCard && (currentUserData?.credits ?? 0) < (sectionToUnlock?.unlockCost ?? Infinity)) || isUnlocking}
                         >
-                          {hasMasterCard ? 'Unlock for Free' : `Confirm & Unlock`}
+                          {isUnlocking ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Processing...</> : (hasMasterCard ? 'Unlock for Free' : `Confirm & Unlock`)}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

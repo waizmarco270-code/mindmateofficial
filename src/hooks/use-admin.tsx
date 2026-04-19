@@ -197,7 +197,7 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 export const AppDataProvider = ({ children }: { children: ReactNode }) => {
-    const { user: authUser, isLoaded: isClerkLoaded } = useUser();
+    const { user: authUser, isClerkLoaded } = useUser();
     const { toast } = useToast();
     
     const [users, setUsers] = useState<User[]>([]);
@@ -316,14 +316,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             if (users.length === 0) throw new Error("No citizens.");
             return runAegisPulse({ topUsers: users.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, credits: u.credits, studyTime: u.totalStudyTime || 0, streak: u.streak || 0 })), recentAnnouncements: announcements.slice(0, 3).map(a => a.title), totalUsers: users.length, isChatQuiet: true });
         },
-        generateAiAccessToken: () => userActions.generateAiAccessToken(authUser?.id!),
-        unlockResourceSection: (sid: string, c: number) => userActions.unlockResourceSection(authUser?.id!, sid, c),
-        unlockFeatureForUser: (fid: any, c: number) => userActions.unlockFeatureForUser(authUser?.id!, fid, c),
-        unlockThemeForUser: (tid: any, c: number) => userActions.unlockThemeForUser(authUser?.id!, tid, c),
         submitPollVote: (pid: string, opt: string) => contentActions.submitPollVote(pid, opt, authUser!.id),
         submitPollComment: (pid: string, c: string) => contentActions.submitPollComment(pid, c, authUser!.id, currentUserData!.displayName),
-        redeemStoreItem: (i: any, q: number) => storeActions.redeemStoreItem(i, q, authUser!.id),
-        processStoreItemPayment: (i: any, q: number, tx: string, m: any) => storeActions.processStoreItemPayment(i, q, authUser!.id, m),
         submitSupportTicket: (m: string) => systemActions.submitSupportTicket(m, authUser!.id, currentUserData!.displayName),
         topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
