@@ -13,7 +13,7 @@ import {
     Coins, Lock, ShieldAlert, BellRing, Package,
     Wallet, UserMinus, History, Flame, ShieldCheck,
     MessageSquare, Send, Search, User as UserIcon,
-    Plus, Minus, X, ArrowRight, Clock, Gamepad2
+    Plus, Minus, X, ArrowRight, Clock, Gamepad2, Gem
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
