@@ -154,6 +154,7 @@ export interface AppSettings {
     lastMaintenanceId?: string; 
     lastGameReset?: string;
     plusMemberCount?: number;
+    startingCredits?: number;
 }
 
 interface AppDataContextType {
@@ -191,6 +192,11 @@ interface AppDataContextType {
     triggerAegisPulse: () => Promise<AegisPulseOutput>;
     performGameReset: () => Promise<void>;
     resetAllChallenges: () => Promise<void>;
+    resetAllIsolationSessions: () => Promise<void>;
+    resetAllUserCredits: () => Promise<void>;
+    injectArtifactToAll: (type: any) => Promise<void>;
+    broadcastGlobalMessage: (msg: string) => Promise<void>;
+    topUpAllWallets: (amt: number) => Promise<void>;
     claimPlusMembership: (paymentId: string) => Promise<void>;
 }
 
@@ -268,14 +274,41 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     useEffect(() => {
         if (!isClerkLoaded) return;
         if (!authUser) { setCurrentUserData(null); setLoading(false); return; }
-        return onSnapshot(doc(db, 'users', authUser.id), (snap) => {
-            if (snap.exists()) setCurrentUserData({ id: snap.id, ...snap.data() } as User);
+        
+        return onSnapshot(doc(db, 'users', authUser.id), async (snap) => {
+            if (snap.exists()) {
+                setCurrentUserData({ id: snap.id, ...snap.data() } as User);
+            } else {
+                // AUTO-INITIALIZE NEW LEGEND
+                const initialCredits = appSettings?.startingCredits || 200;
+                const newUser: Partial<User> = {
+                    uid: authUser.id,
+                    displayName: authUser.fullName || 'Legend',
+                    email: authUser.primaryEmailAddress?.emailAddress || '',
+                    photoURL: authUser.imageUrl,
+                    credits: initialCredits,
+                    walletBalance: 0,
+                    isBlocked: false,
+                    streak: 0,
+                    focusSessionsCompleted: 0,
+                    dailyTasksCompleted: 0,
+                    totalStudyTime: 0,
+                    inventory: {
+                        penaltyShields: 0,
+                        streakFreezes: 0,
+                        clanXpBoosters: 0,
+                        clanLevelMaxers: 0
+                    }
+                };
+                await setDoc(doc(db, 'users', authUser.id), newUser);
+                setCurrentUserData({ id: authUser.id, ...newUser } as User);
+            }
             setLoading(false);
         }, (error) => {
             console.error("Critical: User Identity Sync Failure", error);
             setLoading(false);
         });
-    }, [authUser, isClerkLoaded]);
+    }, [authUser, isClerkLoaded, appSettings?.startingCredits]);
 
     const performGameReset = useCallback(async () => {
         if (!isSuperAdmin) return;
@@ -355,6 +388,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         topUpWallet: (a: number, tx: string) => systemActions.topUpWallet(authUser!.id, a, tx),
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
         redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
+        resetAllUserCredits: () => systemActions.resetAllUserCredits(appSettings?.startingCredits || 200),
         performGameReset, resetAllChallenges, claimPlusMembership
     }), [isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, redeemCodes, gameHistory, subscribedUserIds, userActions, contentActions, storeActions, systemActions, codeActions, authUser?.id, performGameReset, resetAllChallenges]);
 

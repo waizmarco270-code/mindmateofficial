@@ -1,4 +1,4 @@
-import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, increment, getDocs, writeBatch } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, arrayUnion, runTransaction, increment, getDocs, writeBatch, collectionGroup } from 'firebase/firestore';
 import { type GlobalGift, type User } from '../use-admin';
 import { addDays } from 'date-fns';
 
@@ -152,10 +152,71 @@ export const useSystemActions = (db: any, toast: any) => {
         });
     };
 
+    // --- NEW MASTER OVERRIDES ---
+
+    const resetAllIsolationSessions = async () => {
+        const snap = await getDocs(collectionGroup(db, 'isolation'));
+        const batch = writeBatch(db);
+        snap.forEach(d => { if(d.id === 'current') batch.delete(d.ref); });
+        await batch.commit();
+    };
+
+    const resetAllUserCredits = async (defaultCredits: number) => {
+        const snap = await getDocs(collection(db, 'users'));
+        const batch = writeBatch(db);
+        snap.forEach(d => batch.update(d.ref, { credits: Number(defaultCredits) }));
+        await batch.commit();
+    };
+
+    const injectArtifactToAll = async (type: 'penalty-shield' | 'streak-freeze' | 'clan-xp-booster' | 'clan-level-max') => {
+        const snap = await getDocs(collection(db, 'users'));
+        const batch = writeBatch(db);
+        const fieldMap = {
+            'penalty-shield': 'inventory.penaltyShields',
+            'streak-freeze': 'inventory.streakFreezes',
+            'clan-xp-booster': 'inventory.clanXpBoosters',
+            'clan-level-max': 'inventory.clanLevelMaxers'
+        };
+        const field = fieldMap[type];
+        snap.forEach(d => batch.update(d.ref, { [field]: increment(1) }));
+        await batch.commit();
+    };
+
+    const broadcastGlobalMessage = async (msg: string) => {
+        await fetch('/api/send-notification', { 
+            method: 'POST', 
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                title: "⚠️ SOVEREIGN DIRECTIVE", 
+                message: msg, 
+                linkUrl: '/dashboard/whats-new' 
+            }) 
+        });
+    };
+
+    const topUpAllWallets = async (amt: number) => {
+        const snap = await getDocs(collection(db, 'users'));
+        const batch = writeBatch(db);
+        snap.forEach(d => {
+            batch.update(d.ref, { 
+                walletBalance: increment(Number(amt)),
+                walletTransactions: arrayUnion({ 
+                    id: `global-${Date.now()}`, 
+                    amount: Number(amt), 
+                    type: 'topup', 
+                    status: 'completed', 
+                    date: new Date().toISOString() 
+                })
+            });
+        });
+        await batch.commit();
+    };
+
     return {
         updateAppSettings, sendGlobalGift, claimGlobalGift, deactivateGift, deleteGlobalGift,
         addFeatureShowcase, updateFeatureShowcase, deleteFeatureShowcase,
         submitSupportTicket, clearGlobalChat, clearQuizLeaderboard, resetWeeklyStudyTime,
-        resetGameZoneLeaderboard, topUpWallet
+        resetGameZoneLeaderboard, topUpWallet,
+        resetAllIsolationSessions, resetAllUserCredits, injectArtifactToAll, broadcastGlobalMessage, topUpAllWallets
     };
 };
