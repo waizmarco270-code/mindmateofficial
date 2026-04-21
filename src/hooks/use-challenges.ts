@@ -44,6 +44,8 @@ export interface ActiveChallenge {
     failMessage?: string;
     hasNoFapTracker?: boolean;
     noFapStartDate?: string; 
+    noFapLimit?: number;
+    noFapRelapses?: number;
 }
 
 export const CHALLENGE_CONFIGS = [
@@ -100,7 +102,8 @@ export function useChallenges() {
         lifelines: number, 
         dailyWorkHourTarget: number,
         plannedTasks: Record<number, PlannedTaskCategory[]>,
-        hasNoFapTracker: boolean
+        hasNoFapTracker: boolean,
+        noFapLimit?: number
     ) => {
         if (!user || !currentUserData) return;
         const config = CHALLENGE_CONFIGS.find(c => c.id === configId);
@@ -130,7 +133,9 @@ export function useChallenges() {
             lifelines,
             lastCheckInDay: 0,
             hasNoFapTracker,
-            noFapStartDate: hasNoFapTracker ? new Date().toISOString() : undefined
+            noFapStartDate: hasNoFapTracker ? new Date().toISOString() : undefined,
+            noFapLimit: hasNoFapTracker ? (noFapLimit || 0) : 0,
+            noFapRelapses: 0
         };
 
         if (!hasMaster && lifelineCost > 0) {
@@ -218,5 +223,22 @@ export function useChallenges() {
         await deleteDoc(doc(db, 'users', user.id, 'challenges', 'active'));
     };
 
-    return { activeChallenge, loading, startChallenge, performCheckIn, failChallenge, forfeitChallenge, resetChallenge, consumeLifeline };
+    const logNoFapRelapse = async () => {
+        if (!user || !activeChallenge || !activeChallenge.hasNoFapTracker) return;
+
+        const currentRelapses = activeChallenge.noFapRelapses || 0;
+        const limit = activeChallenge.noFapLimit || 0;
+
+        if (currentRelapses + 1 > limit) {
+            await failChallenge(`Discipline Protocol Breached: Exceeded the allowed NoFap relapse limit of ${limit}.`);
+        } else {
+            await updateDoc(doc(db, 'users', user.id, 'challenges', 'active'), {
+                noFapRelapses: increment(1),
+                noFapStartDate: new Date().toISOString() // Reset streak timer
+            });
+            toast({ variant: 'destructive', title: "RELAPSE REGISTERED", description: `Tolerance consumed: ${currentRelapses + 1} / ${limit}` });
+        }
+    };
+
+    return { activeChallenge, loading, startChallenge, performCheckIn, failChallenge, forfeitChallenge, resetChallenge, consumeLifeline, logNoFapRelapse };
 }

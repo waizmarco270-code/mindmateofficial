@@ -23,13 +23,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle, 
+    AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 interface ChallengerPageProps {
     config: ActiveChallenge;
 }
 
 export function ChallengerPage({ config }: ChallengerPageProps) {
-    const { performCheckIn, failChallenge, forfeitChallenge, resetChallenge, consumeLifeline } = useChallenges();
+    const { performCheckIn, failChallenge, forfeitChallenge, resetChallenge, consumeLifeline, logNoFapRelapse } = useChallenges();
     const { toast } = useToast();
     
     const [timeLeftInWindow, setTimeLeftInWindow] = useState<string>('');
@@ -133,6 +144,15 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
             setIsForfeitOpen(false);
         } catch (e) {
             console.error(e);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleRelapseRegister = async () => {
+        setIsProcessing(true);
+        try {
+            await logNoFapRelapse();
         } finally {
             setIsProcessing(false);
         }
@@ -286,18 +306,50 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                             <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }}>
                                 <Card className="bg-gradient-to-br from-purple-900/40 via-slate-900/60 to-slate-900 border-purple-500/30 rounded-[2.5rem] overflow-hidden shadow-xl group">
                                     <CardHeader className="pb-2">
-                                        <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-purple-400 flex items-center gap-2">
-                                            <ShieldCheck className="h-4 w-4" /> NOFAP DISCIPLINE
-                                        </CardTitle>
+                                        <div className="flex justify-between items-center">
+                                            <CardTitle className="text-xs font-black uppercase tracking-[0.3em] text-purple-400 flex items-center gap-2">
+                                                <ShieldCheck className="h-4 w-4" /> NOFAP DISCIPLINE
+                                            </CardTitle>
+                                            <Badge variant="outline" className="text-[9px] font-black text-purple-500 border-purple-500/30">
+                                                TOLERANCE: {config.noFapRelapses || 0} / {config.noFapLimit}
+                                            </Badge>
+                                        </div>
                                     </CardHeader>
-                                    <CardContent className="p-6 text-center space-y-4">
+                                    <CardContent className="p-6 text-center space-y-6">
                                         <div className="grid grid-cols-4 gap-2">
                                             <NoFapPill label="Days" val={noFapTime.days} />
                                             <NoFapPill label="Hours" val={noFapTime.hours} />
                                             <NoFapPill label="Mins" val={noFapTime.mins} />
                                             <NoFapPill label="Secs" val={noFapTime.secs} />
                                         </div>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest italic group-hover:text-purple-400 transition-colors">"Biological preservation active."</p>
+
+                                        <div className="pt-2">
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        className="w-full h-12 rounded-xl border-purple-500/30 bg-purple-500/5 hover:bg-purple-500/20 text-purple-400 font-black uppercase tracking-widest italic"
+                                                        disabled={isProcessing}
+                                                    >
+                                                        <Flame className="mr-2 h-4 w-4" /> REGISTER RELAPSE (FORGE)
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent className="bg-slate-950 border-purple-500/50">
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle className="text-purple-400 uppercase italic font-black">REGISTER RELAPSE?</AlertDialogTitle>
+                                                        <AlertDialogDescription className="text-slate-300">
+                                                            This will consume 1 unit of your allowed tolerance. Exceeding your limit will <b>terminate the entire mission</b> and authorize the credit penalty.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel className="border-white/10 text-white font-bold">ABORT</AlertDialogCancel>
+                                                        <AlertDialogAction className="bg-purple-600 text-white font-black" onClick={handleRelapseRegister}>AUTHORIZE REGISTER</AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                        
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest italic group-hover:text-purple-400 transition-colors">"Biological preservation cycle active."</p>
                                     </CardContent>
                                 </Card>
                             </motion.div>
@@ -345,7 +397,7 @@ export function ChallengerPage({ config }: ChallengerPageProps) {
                             <ShieldAlert className="h-5 w-5" /> EXTREME HAZARD
                         </h4>
                         <div className="space-y-4 text-[11px] leading-relaxed text-slate-400 font-medium italic">
-                            <p>"Missing your relay window results in immediate lifeline extraction. If lifelines hit zero, the mainframe executes a <b>{config.penalty} Credit</b> penalty."</p>
+                            <p>"Missing your relay window results in immediate lifeline extraction. If lifelines hit zero, or if discipline protocol limits are exceeded, the mainframe executes a <b>{config.penalty} Credit</b> penalty."</p>
                         </div>
                     </Card>
 

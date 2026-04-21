@@ -50,6 +50,7 @@ export default function ChallengerHub() {
     const [lifelines, setLifelines] = useState(0);
     const [workHours, setWorkHours] = useState(4);
     const [includeNoFap, setIncludeNoFap] = useState(false);
+    const [noFapLimit, setNoFapLimit] = useState(1);
     
     const [isInitializing, setIsInitializing] = useState(false);
 
@@ -95,7 +96,7 @@ export default function ChallengerHub() {
         if (!selectedConfig) return;
         setIsInitializing(true);
         try {
-            await startChallenge(selectedConfig.id, checkInTime, lifelines, workHours, tasks, includeNoFap);
+            await startChallenge(selectedConfig.id, checkInTime, lifelines, workHours, tasks, includeNoFap, noFapLimit);
         } catch (e: any) {
             toast({ variant: 'destructive', title: "INGRESS FAILED", description: e.message });
         } finally {
@@ -209,12 +210,33 @@ export default function ChallengerHub() {
                                     <p className="text-[10px] text-slate-500 font-bold uppercase leading-relaxed text-center">Failure to log {workHours}h study time results in a mission strike.</p>
                                 </div>
 
-                                <div className="flex items-center justify-between p-6 rounded-3xl bg-purple-500/5 border border-purple-500/20">
-                                    <div className="space-y-1">
-                                        <Label className="text-sm font-black uppercase tracking-widest text-purple-400 flex items-center gap-2"><ShieldCheck className="h-4 w-4"/> NoFap Discipline</Label>
-                                        <p className="text-[10px] text-muted-foreground font-bold uppercase">Include biological reset protocol in mission</p>
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between p-6 rounded-3xl bg-purple-500/5 border border-purple-500/20">
+                                        <div className="space-y-1">
+                                            <Label className="text-sm font-black uppercase tracking-widest text-purple-400 flex items-center gap-2"><ShieldCheck className="h-4 w-4"/> NoFap Discipline</Label>
+                                            <p className="text-[10px] text-muted-foreground font-bold uppercase">Include biological reset protocol in mission</p>
+                                        </div>
+                                        <Switch checked={includeNoFap} onCheckedChange={setIncludeNoFap} />
                                     </div>
-                                    <Switch checked={includeNoFap} onCheckedChange={setIncludeNoFap} />
+
+                                    {includeNoFap && (
+                                        <motion.div 
+                                            initial={{ opacity: 0, height: 0 }}
+                                            animate={{ opacity: 1, height: 'auto' }}
+                                            className="space-y-4 p-6 rounded-3xl bg-purple-500/5 border border-purple-500/20"
+                                        >
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-xs font-black uppercase tracking-widest text-purple-400 flex items-center gap-2">
+                                                    <Skull className="h-4 w-4"/> Relapse Tolerance
+                                                </Label>
+                                                <span className="text-xl font-black text-white">{noFapLimit}</span>
+                                            </div>
+                                            <Slider value={[noFapLimit]} onValueChange={v => setNoFapLimit(v[0])} min={0} max={3} step={1} className="py-2" />
+                                            <p className="text-[9px] text-slate-500 font-bold uppercase text-center leading-relaxed italic">
+                                                {noFapLimit === 0 ? "STRICT MODE: Challenge fails immediately on relapse." : `Challenge fails on relapse #${noFapLimit + 1}.`}
+                                            </p>
+                                        </motion.div>
+                                    )}
                                 </div>
 
                                 <div className="space-y-4">
