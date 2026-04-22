@@ -1,7 +1,7 @@
 
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Brain, BookCheck, Smile, Atom, Book, Sparkles, ArrowRight, Sigma } from "lucide-react";
+import { ArrowLeft, Brain, BookCheck, Smile, Atom, Book, Sparkles, ArrowRight, Sigma, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -9,6 +9,14 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { cn } from "@/lib/utils";
 
 const puzzleGames = [
+    {
+        title: "Chronos: Timeline War",
+        description: "Place legendary events in the correct historical order.",
+        icon: Clock,
+        href: "/dashboard/game-zone/puzzle/chronos",
+        color: "from-purple-500 to-indigo-600",
+        isNew: true
+    },
     {
         title: "Emoji Quiz",
         description: "Guess the word or phrase from the emojis.",
@@ -53,7 +61,10 @@ export default function PuzzleHubPage() {
                         transition={{ duration: 0.5, delay: index * 0.1 }}
                     >
                          <Link href={game.href} className="block h-full group">
-                            <Card className="h-full flex flex-col justify-between items-center text-center p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                            <Card className="h-full flex flex-col justify-between items-center text-center p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative">
+                                {game.isNew && (
+                                    <div className="absolute top-2 right-2 px-3 py-1 bg-primary text-white text-[10px] font-black uppercase rounded-full animate-pulse">NEW</div>
+                                )}
                                 <div>
                                     <div className={`mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-gradient-to-br ${game.color} mb-4`}>
                                         <game.icon className="h-10 w-10 text-white" />
@@ -70,5 +81,3 @@ export default function PuzzleHubPage() {
         </div>
     )
 }
-
-    
