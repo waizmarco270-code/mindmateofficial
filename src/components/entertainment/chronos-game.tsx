@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Clock, Trophy, Heart, Play, 
     RotateCcw, ShieldCheck, Zap, 
@@ -22,6 +22,14 @@ import { cn } from '@/lib/utils';
 import { LoginWall } from '../ui/login-wall';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogHeader, 
+    DialogTitle, 
+    DialogDescription, 
+    DialogFooter 
+} from '@/components/ui/dialog';
 
 interface TimelineEvent {
     id: string;
@@ -207,7 +215,7 @@ export function ChronosGame() {
                             </DialogTitle>
                             <DialogDescription className="font-bold">Protocol: Sequential Temporal Alignment</DialogDescription>
                         </DialogHeader>
-                        <div className="py-6 space-y-4 text-sm font-medium leading-relaxed">
+                        <div className="py-6 space-y-4 text-sm font-medium leading-relaxed text-left">
                             <p>1. <b className="text-primary">The Deck</b>: An "Active Event" card appears at the top. This is the moment in time you must place.</p>
                             <p>2. <b className="text-primary">The Timeline</b>: A row of "Synced Events" grows below. Place your active card into the correct slot.</p>
                             <p>3. <b className="text-primary">Logic</b>: If you think an event happened *between* two others, click the <Plus className="inline h-3 w-3"/> sign in that gap.</p>
@@ -267,7 +275,7 @@ export function ChronosGame() {
                                         <CardTitle className="text-3xl font-black italic uppercase leading-none tracking-tighter text-white">{currentEvent.title}</CardTitle>
                                     </CardHeader>
                                     <CardContent className="p-8 pt-6">
-                                        <p className="text-slate-400 font-medium leading-relaxed italic text-lg">"{currentEvent.description}"</p>
+                                        <p className="text-slate-400 font-medium leading-relaxed italic text-lg text-left">"{currentEvent.description}"</p>
                                     </CardContent>
                                     <div className="h-2 w-full bg-primary/10">
                                         <motion.div animate={{ x: ['-100%', '100%'] }} transition={{ duration: 4, repeat: Infinity, ease: 'linear' }} className="h-full w-1/4 bg-primary shadow-[0_0_15px_#8b5cf6]" />
@@ -374,4 +382,3 @@ function PlacementSpot({ onClick }: { onClick: () => void }) {
         </motion.button>
     );
 }
-
