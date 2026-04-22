@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -7,7 +6,8 @@ import {
     GraduationCap, Target, Globe, 
     Sparkles, Clock, CheckCircle, 
     ChevronRight, ChevronLeft, Award,
-    Rocket, Brain, Zap, Gem, Trophy, Flame
+    Rocket, Brain, Zap, Gem, Trophy, Flame,
+    ShieldCheck, Users, Send, Gamepad2, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -82,7 +82,7 @@ export function OnboardingWizard() {
                             { id: 'neet', label: 'NEET Aspirant', icon: Brain, color: 'text-emerald-400' },
                             { id: 'others', label: 'Lifelong Learner', icon: Globe }
                         ]}
-                        onSelect={(val) => updateData('identity', val)}
+                        onSelect={(val: any) => updateData('identity', val)}
                     />
                 );
 
@@ -97,7 +97,7 @@ export function OnboardingWizard() {
                             { id: 'habit', label: 'Fix Study Habits', icon: Flame },
                             { id: 'social', label: 'Study with Peers', icon: Users }
                         ]}
-                        onSelect={(val) => updateData('objective', val)}
+                        onSelect={(val: any) => updateData('objective', val)}
                     />
                 );
 
@@ -113,7 +113,7 @@ export function OnboardingWizard() {
                             { id: 'friends', label: 'Word of Mouth', icon: Users },
                             { id: 'ads', label: 'Digital Advertisement', icon: MegaphoneIcon }
                         ]}
-                        onSelect={(val) => updateData('source', val)}
+                        onSelect={(val: any) => updateData('source', val)}
                     />
                 );
 
@@ -126,7 +126,7 @@ export function OnboardingWizard() {
                             { id: 'group', label: 'Clan Collaboration', icon: Users, desc: 'Team-based motivation.' },
                             { id: 'game', label: 'Gamified Sprints', icon: Gamepad2, desc: 'Rewards-driven learning.' }
                         ]}
-                        onSelect={(val) => updateData('habit', val)}
+                        onSelect={(val: any) => updateData('habit', val)}
                     />
                 );
 
@@ -143,7 +143,8 @@ export function OnboardingWizard() {
                                     key={h} 
                                     variant="outline" 
                                     className="h-20 rounded-2xl border-2 border-white/5 bg-white/5 hover:border-primary/50 text-xl font-black uppercase tracking-widest"
-                                    onClick={() => { setData((p: any) => ({ ...prev, commitment: h })); handleFinish(); }}
+                                    onClick={() => { setData((p: any) => ({ ...p, commitment: h })); handleFinish(); }}
+                                    disabled={isSubmitting}
                                 >
                                     {isSubmitting ? <Loader2 className="animate-spin"/> : `${h} Hours / Day`}
                                 </Button>
