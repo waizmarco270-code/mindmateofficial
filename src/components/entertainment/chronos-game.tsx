@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -10,7 +9,8 @@ import {
     CheckCircle2, XCircle, Gem, 
     History, Rocket, Microscope, 
     Globe, ScrollText, Sparkles,
-    ChevronRight, ChevronLeft, Loader2
+    ChevronRight, ChevronLeft, Loader2,
+    Plus
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
