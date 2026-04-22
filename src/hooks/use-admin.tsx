@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -82,6 +83,8 @@ export interface User {
   streak?: number;
   longestStreak?: number;
   lastStreakCheck?: string;
+  onboardingCompleted?: boolean;
+  onboardingData?: any;
   inventory?: {
     penaltyShields?: number;
     streakFreezes?: number;
@@ -196,6 +199,7 @@ interface AppDataContextType {
     broadcastGlobalMessage: (msg: string) => Promise<void>;
     topUpAllWallets: (amt: number) => Promise<void>;
     claimPlusMembership: (paymentId: string) => Promise<void>;
+    completeOnboarding: (data: any) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -277,7 +281,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             if (snap.exists()) {
                 setCurrentUserData({ id: snap.id, ...snap.data() } as User);
             } else {
-                // AUTO-INITIALIZE NEW LEGEND - 500 Credits Baseline
                 const initialCredits = appSettings?.startingCredits || 500;
                 const newUser: Partial<User> = {
                     uid: authUser.id,
@@ -291,6 +294,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
                     focusSessionsCompleted: 0,
                     dailyTasksCompleted: 0,
                     totalStudyTime: 0,
+                    onboardingCompleted: false,
                     inventory: {
                         penaltyShields: 0,
                         streakFreezes: 0,
@@ -307,6 +311,14 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             setLoading(false);
         });
     }, [authUser, isClerkLoaded, appSettings?.startingCredits]);
+
+    const completeOnboarding = useCallback(async (data: any) => {
+        if (!authUser) return;
+        await updateDoc(doc(db, 'users', authUser.id), {
+            onboardingCompleted: true,
+            onboardingData: data
+        });
+    }, [authUser]);
 
     const performGameReset = useCallback(async () => {
         if (!isSuperAdmin) return;
@@ -329,18 +341,10 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         try {
             const batch = writeBatch(db);
             const allChallengesSnap = await getDocs(collectionGroup(db, 'challenges'));
-            
-            allChallengesSnap.forEach(d => {
-                if (d.id === 'active') {
-                    batch.delete(d.ref);
-                }
-            });
-            
+            allChallengesSnap.forEach(d => { if (d.id === 'active') batch.delete(d.ref); });
             await batch.commit();
-            toast({ title: "Global Reset Executed", description: "All active missions have been terminated." });
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Purge Failed", description: e.message });
-        }
+            toast({ title: "Global Reset Executed" });
+        } catch (e: any) { toast({ variant: 'destructive', title: "Purge Failed", description: e.message }); }
     }, [isSuperAdmin, toast]);
 
     const claimPlusMembership = async (paymentId: string) => {
@@ -349,8 +353,6 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             const userRef = doc(db, 'users', authUser.id);
             const settingsRef = doc(db, 'appConfig', 'settings');
             const settingsSnap = await transaction.get(settingsRef);
-            const currentCount = settingsSnap.data()?.plusMemberCount || 0;
-            
             const alphaExpiry = addYears(new Date(), 99).toISOString();
             transaction.update(userRef, {
                 isPlusMember: true,
@@ -366,7 +368,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             });
             transaction.update(settingsRef, { plusMemberCount: increment(1) });
         });
-        toast({ title: "Welcome to MindMate Plus!", description: "Legendary features authorized.", className: "bg-gradient-to-r from-purple-500 to-indigo-600 text-white" });
+        toast({ title: "Welcome to MindMate Plus!" });
     };
 
     const value = {
@@ -383,7 +385,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
         redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
         resetAllUserCredits: (v: number) => systemActions.resetAllUserCredits(v),
-        performGameReset, resetAllChallenges, claimPlusMembership
+        performGameReset, resetAllChallenges, claimPlusMembership, completeOnboarding
     };
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;

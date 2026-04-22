@@ -28,6 +28,7 @@ import versionHistory from '@/app/lib/version-history.json';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { usePinnedPage } from '@/hooks/use-pinned-page';
 import { useRouter, usePathname } from 'next/navigation';
+import { OnboardingWizard } from '@/components/dashboard/onboarding-wizard';
 
 const LATEST_VERSION = versionHistory[0].version;
 
@@ -328,6 +329,10 @@ export default function DashboardPage() {
     const streak = currentUserData?.streak ?? 0;
     const hasMasterCard = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
+    if (currentUserData && currentUserData.onboardingCompleted === false) {
+        return <OnboardingWizard />;
+    }
+
     return (
     <div className="space-y-8 pb-20">
         <SignedOut><WelcomeDialog /></SignedOut>
@@ -340,7 +345,7 @@ export default function DashboardPage() {
             {!currentUserData?.isPlusMember && (
                 <Button asChild variant="outline" className="rounded-2xl border-primary/30 bg-primary/5 hover:bg-primary/10 shadow-lg shadow-primary/5 group">
                     <Link href="/dashboard/pricing">
-                        <Sparkles className="mr-2 h-4 w-4 text-primary animate-pulse" />
+                        <SparklesIcon className="mr-2 h-4 w-4 text-primary animate-pulse" />
                         <span className="font-bold">GET PLUS ACCESS</span>
                         <ChevronRight className="ml-1 h-4 w-4 group-hover:translate-x-1 transition-transform" />
                     </Link>
@@ -368,7 +373,6 @@ export default function DashboardPage() {
                 </Card>
             </div>
 
-            {/* Sovereign Proof of Work CTA */}
             <Link href="/dashboard/proof-of-work" className="group">
                 <Card className="relative overflow-hidden bg-slate-900 border-primary/20 shadow-xl rounded-[2rem] hover:border-primary/50 transition-all duration-500">
                     <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
