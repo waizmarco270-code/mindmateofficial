@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Zap, Trophy, Heart, Play, 
     RotateCcw, ShieldCheck, Gem, 
-    ArrowLeft, Info, HelpCircle, 
+    ArrowLeft, ArrowRight, Info, HelpCircle, 
     CheckCircle2, XCircle, History,
     Sparkles, ChevronRight, Loader2,
     ShieldAlert, AlertTriangle, 
@@ -14,7 +14,7 @@ import {
     Lightbulb, Beaker, Search,
     Maximize, Minimize, Box, 
     Settings, Plus, Minus, Check,
-    BookOpen
+    BookOpen, Trash2
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -146,7 +146,7 @@ export function UnitDimensionsGame() {
         setScore(0);
         setLives(MAX_LIVES);
         setView('challenge');
-    }, []);
+    }, [score]);
 
     const prepareQuestion = (qty: PhysicalQuantity) => {
         setCurrentQty(qty);
@@ -351,7 +351,7 @@ export function UnitDimensionsGame() {
                                                     {c.base}
                                                     <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-black text-[10px] flex items-center justify-center border border-white/20">{c.power}</span>
                                                     <div className="absolute inset-0 bg-red-600 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <X className="h-5 w-5" />
+                                                        <Trash2 className="h-5 w-5" />
                                                     </div>
                                                 </motion.button>
                                             ))}
@@ -515,4 +515,10 @@ function ProtocolCard({ icon: Icon, label, desc, color, bg, onClick }: any) {
             </CardContent>
         </Card>
     );
+}
+
+function formatTime(seconds: number) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
