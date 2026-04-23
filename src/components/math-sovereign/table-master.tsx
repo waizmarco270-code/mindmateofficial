@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Table as TableIcon, ArrowLeft, Play, 
@@ -38,6 +37,12 @@ export function TableMaster({ onBack }: TableMasterProps) {
     const [timeLeft, setTimeLeft] = useState(30);
     const [isProcessing, setIsProcessing] = useState(false);
 
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const stopTimer = () => {
+        if (timerRef.current) clearInterval(timerRef.current);
+    };
+
     const generateChallenge = useCallback((table: number) => {
         const pool = Array.from({ length: 10 }).map((_, i) => ({ a: table, b: i + 1 }));
         setQuestions(pool.sort(() => Math.random() - 0.5));
@@ -48,36 +53,10 @@ export function TableMaster({ onBack }: TableMasterProps) {
         setView('challenge');
     }, []);
 
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (view === 'challenge' && timeLeft > 0) {
-            interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
-        } else if (view === 'challenge' && timeLeft === 0) {
-            setView('result');
-        }
-        return () => clearInterval(interval);
-    }, [view, timeLeft]);
-
-    const handleAnswer = (e: React.FormEvent) => {
-        e.preventDefault();
-        const current = questions[currentIndex];
-        const correct = current.a * current.b;
-
-        if (parseInt(userInput) === correct) {
-            setScore(s => s + 1);
-        }
-
-        if (currentIndex < questions.length - 1) {
-            setCurrentIndex(i => i + 1);
-            setUserInput('');
-        } else {
-            handleComplete();
-        }
-    };
-
-    const handleComplete = async () => {
+    const handleComplete = useCallback(async (finalScore: number) => {
+        stopTimer();
         setView('result');
-        const perfect = score === 10;
+        const perfect = finalScore === 10;
         const alreadyMastered = currentUserData?.masteredTables?.includes(selectedTable);
 
         if (perfect && !alreadyMastered && user) {
@@ -85,10 +64,46 @@ export function TableMaster({ onBack }: TableMasterProps) {
             try {
                 // Reward based on table number (e.g. Table 11 = 11 Credits)
                 await markTableAsMastered(user.id, selectedTable, selectedTable);
-                toast({ title: "TABLE SYNCHRONIZED", description: `+${selectedTable} Credits secured. mastery recorded.` });
+                toast({ 
+                    title: "MASTERY VERIFIED", 
+                    description: `+${selectedTable} Credits secured for Table ${selectedTable}.`,
+                    className: "bg-green-500 text-white font-black"
+                });
+            } catch (e: any) {
+                console.error("Mastery failed", e);
             } finally {
                 setIsProcessing(false);
             }
+        }
+    }, [selectedTable, currentUserData, user, markTableAsMastered, toast]);
+
+    useEffect(() => {
+        let interval: NodeJS.Timeout;
+        if (view === 'challenge' && timeLeft > 0) {
+            interval = setInterval(() => setTimeLeft(t => t - 1), 1000);
+            timerRef.current = interval;
+        } else if (view === 'challenge' && timeLeft === 0) {
+            handleComplete(score);
+        }
+        return () => clearInterval(interval);
+    }, [view, timeLeft, score, handleComplete]);
+
+    const handleAnswer = (e: React.FormEvent) => {
+        e.preventDefault();
+        const current = questions[currentIndex];
+        const correct = current.a * current.b;
+        
+        let newScore = score;
+        if (parseInt(userInput) === correct) {
+            newScore = score + 1;
+            setScore(newScore);
+        }
+
+        if (currentIndex < questions.length - 1) {
+            setCurrentIndex(i => i + 1);
+            setUserInput('');
+        } else {
+            handleComplete(newScore);
         }
     };
 
@@ -199,10 +214,10 @@ export function TableMaster({ onBack }: TableMasterProps) {
                             )}
                             {perfect && alreadyMastered && (
                                 <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-500 font-bold uppercase text-xs">
-                                    Mastery Verified (Reward already claimed)
+                                    Mastery Verified (Registry already updated)
                                 </div>
                             )}
-                            <Button className="w-full h-14 rounded-2xl font-black uppercase" onClick={() => setView('selecting')}>RETURN TO NEXUS</Button>
+                            <Button className="w-full h-14 rounded-2xl font-black uppercase" onClick={() => setView('selecting')}>RETURN TO MATRIX</Button>
                             <Button variant="ghost" className="w-full text-slate-400" onClick={() => generateChallenge(selectedTable)}>RE-INITIALIZE STRIKE</Button>
                         </div>
                     </Card>
