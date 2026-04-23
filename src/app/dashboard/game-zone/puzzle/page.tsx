@@ -1,7 +1,6 @@
-
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Brain, BookCheck, Smile, Atom, Book, Sparkles, ArrowRight, Sigma, Clock } from "lucide-react";
+import { ArrowLeft, Brain, BookCheck, Smile, Atom, Book, Sparkles, ArrowRight, Sigma, Clock, Beaker } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -10,12 +9,20 @@ import { cn } from "@/lib/utils";
 
 const puzzleGames = [
     {
+        title: "Formula Forge",
+        description: "Reassemble the shattered laws of Physics & Mathematics.",
+        icon: Beaker,
+        href: "/dashboard/game-zone/puzzle/formula-forge",
+        color: "from-sky-500 to-indigo-600",
+        isNew: true
+    },
+    {
         title: "Chronos: Timeline War",
         description: "Place legendary events in the correct historical order.",
         icon: Clock,
         href: "/dashboard/game-zone/puzzle/chronos",
         color: "from-purple-500 to-indigo-600",
-        isNew: true
+        isNew: false
     },
     {
         title: "Emoji Quiz",

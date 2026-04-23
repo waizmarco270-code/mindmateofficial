@@ -99,6 +99,8 @@ export interface User {
     flappyMind?: number;
     astroAscent?: number;
     mathematicsLegend?: number;
+    chronos?: number;
+    formulaForge?: number;
   };
   elementQuestScores?: { s?: number; p?: number; d?: number; f?: number; };
   elementQuestMilestonesClaimed?: number[];
@@ -323,12 +325,12 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         if (!isSuperAdmin) return;
         try {
             const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
-            const sortedUsers = [...users].map(u => ({ ...u, score: (u.gameHighScores?.emojiQuiz || 0) * 1.2 + (u.gameHighScores?.memoryGame || 0) + (u.gameHighScores?.dimensionShift || 0) * 1.5 + (u.gameHighScores?.subjectSprint || 0) * 1.1 + (u.gameHighScores?.flappyMind || 0) + (u.gameHighScores?.astroAscent || 0) * 1.3 + (u.gameHighScores?.mathematicsLegend || 0) * 1.4 + (((u.elementQuestScores?.s || 0) + (u.elementQuestScores?.p || 0) + (u.elementQuestScores?.d || 0) + (u.elementQuestScores?.f || 0)) * 0.5) }))
+            const sortedUsers = [...users].map(u => ({ ...u, score: (u.gameHighScores?.emojiQuiz || 0) * 1.2 + (u.gameHighScores?.memoryGame || 0) + (u.gameHighScores?.dimensionShift || 0) * 1.5 + (u.gameHighScores?.subjectSprint || 0) * 1.1 + (u.gameHighScores?.flappyMind || 0) + (u.gameHighScores?.astroAscent || 0) * 1.3 + (u.gameHighScores?.mathematicsLegend || 0) * 1.4 + (u.gameHighScores?.chronos || 0) * 1.6 + (u.gameHighScores?.formulaForge || 0) * 1.8 + (((u.elementQuestScores?.s || 0) + (u.elementQuestScores?.p || 0) + (u.elementQuestScores?.d || 0) + (u.elementQuestScores?.f || 0)) * 0.5) }))
                 .sort((a, b) => b.score - a.score);
             const topFive = sortedUsers.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, photoURL: u.photoURL, score: Math.round(u.score), scores: { ...u.gameHighScores, elementQuestTotal: (u.elementQuestScores?.s || 0) + (u.elementQuestScores?.p || 0) + (u.elementQuestScores?.d || 0) + (u.elementQuestScores?.f || 0) } }));
             const batch = writeBatch(db);
             batch.set(doc(collection(db, 'gameZoneHistory')), { weekStartDate: currentWeekStart, topPerformers: topFive, createdAt: serverTimestamp() });
-            users.forEach(u => batch.update(doc(db, 'users', u.uid), { gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0 }, elementQuestScores: { s: 0, p: 0, d: 0, f: 0 }, dimensionShiftClaims: {}, flappyMindClaims: {}, astroAscentClaims: {}, mathematicsLegendClaims: {} }));
+            users.forEach(u => batch.update(doc(db, 'users', u.uid), { gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0, chronos: 0, formulaForge: 0 }, elementQuestScores: { s: 0, p: 0, d: 0, f: 0 }, dimensionShiftClaims: {}, flappyMindClaims: {}, astroAscentClaims: {}, mathematicsLegendClaims: {} }));
             batch.update(doc(db, 'appConfig', 'settings'), { lastGameReset: currentWeekStart });
             await batch.commit();
             toast({ title: "Leaderboard Reset Complete" });
