@@ -9,8 +9,8 @@ import {
     CheckCircle2, XCircle, History,
     Sparkles, ChevronRight, Loader2,
     ShieldAlert, AlertTriangle, 
-    Atom, Variable, Sigma, FlaskConical,
-    Search, Lightbulb, Beaker
+    Atom, Sigma, FlaskConical,
+    Lightbulb, Beaker, Clock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -87,6 +87,15 @@ export function FormulaForge() {
 
     const stopTimer = () => { if (timerRef.current) clearInterval(timerRef.current); };
 
+    const prepareFormula = useCallback((formula: Formula) => {
+        setCurrentFormula(formula);
+        const jumbled = formula.shards.map((s, i) => ({ id: `shard-${i}-${Math.random()}`, val: s }))
+            .sort(() => Math.random() - 0.5);
+        setShards(jumbled);
+        setAssembly([]);
+        setTimeLeft(Math.max(15, 60 - score * 2)); 
+    }, [score]);
+
     const setupMission = useCallback((category: 'physics' | 'math' | 'chemistry' | 'mixed') => {
         const pool = FORMULA_DATA.filter(f => category === 'mixed' ? true : f.category === category);
         const shuffled = [...pool].sort(() => Math.random() - 0.5);
@@ -96,16 +105,15 @@ export function FormulaForge() {
         setLives(MAX_LIVES);
         setScore(0);
         setGameState('playing');
-    }, []);
+    }, [prepareFormula]);
 
-    const prepareFormula = (formula: Formula) => {
-        setCurrentFormula(formula);
-        const jumbled = formula.shards.map((s, i) => ({ id: `shard-${i}-${Math.random()}`, val: s }))
-            .sort(() => Math.random() - 0.5);
-        setShards(jumbled);
-        setAssembly([]);
-        setTimeLeft(Math.max(15, 60 - score * 2)); // Faster timers as you progress
-    };
+    const handleGameOver = useCallback(() => {
+        if (score > highScore) {
+            setHighScore(score);
+            if (user) updateGameHighScore(user.id, 'formulaForge', score);
+        }
+        setGameState('gameOver');
+    }, [score, highScore, user, updateGameHighScore]);
 
     const handleShardClick = (shard: { id: string, val: string }) => {
         if (gameState !== 'playing' || !currentFormula) return;
@@ -143,7 +151,7 @@ export function FormulaForge() {
             
             if (newLives <= 0) {
                 stopTimer();
-                setGameState('gameOver');
+                handleGameOver();
             }
         }
     };
@@ -165,7 +173,6 @@ export function FormulaForge() {
             const hintShard = shards.find(s => s.val === nextVal);
             
             if (hintShard) {
-                // Briefly flash the correct shard
                 const el = document.getElementById(hintShard.id);
                 if (el) {
                     el.classList.add('ring-4', 'ring-yellow-400', 'animate-bounce');
@@ -186,7 +193,7 @@ export function FormulaForge() {
                         stopTimer();
                         setLives(l => {
                             const nl = l - 1;
-                            if (nl <= 0) setGameState('gameOver');
+                            if (nl <= 0) handleGameOver();
                             return nl;
                         });
                         toast({ variant: 'destructive', title: "CORE MELTDOWN", description: "Time limit exceeded. Reactor breached." });
@@ -197,22 +204,14 @@ export function FormulaForge() {
             }, 1000);
         }
         return stopTimer;
-    }, [gameState, currentFormula, toast]);
-
-    const handleGameOver = () => {
-        if (score > highScore) {
-            setHighScore(score);
-            if (user) updateGameHighScore(user.id, 'formulaForge', score);
-        }
-        setGameState('gameOver');
-    };
+    }, [gameState, currentFormula, toast, handleGameOver]);
 
     if (gameState === 'selecting') {
         return (
             <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 <header className="text-center space-y-4">
                     <div className="mx-auto w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center border-2 border-primary/20 shadow-[0_0_50px_rgba(139,92,246,0.2)]">
-                        <Atom className="h-12 w-12 text-primary animate-spin-slow" />
+                        <Atom className="h-12 w-12 text-primary animate-[spin_12s_linear_infinite]" />
                     </div>
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent">The Formula Forge</h1>
                     <p className="text-slate-400 font-medium max-w-xl mx-auto text-lg leading-relaxed">The Core has fractured. Reassemble the fundamental laws of reality before total system collapse occurs.</p>
@@ -387,16 +386,6 @@ export function FormulaForge() {
                     </motion.div>
                 )}
             </AnimatePresence>
-
-            <style jsx global>{`
-                @keyframes spin-slow {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-                .animate-spin-slow {
-                    animation: spin-slow 12s linear infinite;
-                }
-            `}</style>
         </div>
     );
 }
