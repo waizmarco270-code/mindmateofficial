@@ -1,3 +1,4 @@
+
 import { doc, getDoc, updateDoc, increment, arrayUnion, arrayRemove, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
 import { format, addDays } from 'date-fns';
 import { type User, type BadgeType } from '../use-admin';
@@ -197,6 +198,20 @@ export const useUserActions = (db: any, toast: any) => {
         return true;
     };
 
+    const markTableAsMastered = async (uid: string, table: number, reward: number) => {
+        await updateDoc(doc(db, 'users', uid), {
+            masteredTables: arrayUnion(table),
+            credits: increment(Number(reward))
+        });
+    };
+
+    const claimAllTablesBounty = async (uid: string) => {
+        await updateDoc(doc(db, 'users', uid), {
+            hasClaimedAllTablesBounty: true,
+            credits: increment(500)
+        });
+    };
+
     return {
         addCreditsToUser, toggleUserBlock, toggleLeaderboardPrivacy, applyFocusPenalty, grantMasterCard, revokeMasterCard,
         setShowcaseBadge, setEquippedFrame, makeUserAdmin, removeUserAdmin, makeUserVip, removeUserVip,
@@ -205,6 +220,6 @@ export const useUserActions = (db: any, toast: any) => {
         updateGameHighScore, updateElementQuestScore, claimElementQuestMilestone,
         claimDimensionShiftMilestone, claimFlappyMindMilestone, claimAstroAscentMilestone,
         claimMathematicsLegendMilestone, generateAiAccessToken, unlockResourceSection,
-        unlockFeatureForUser, unlockThemeForUser
+        unlockFeatureForUser, unlockThemeForUser, markTableAsMastered, claimAllTablesBounty
     };
 };

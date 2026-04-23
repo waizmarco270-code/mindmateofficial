@@ -7,7 +7,8 @@ import {
     Sigma, Trophy, ArrowRight, BrainCircuit, 
     Calculator, Star, Flame, Zap, 
     Table as TableIcon, Square, Cuboid, 
-    CheckCircle, History, Info, ChevronRight
+    CheckCircle, History, Info, ChevronRight,
+    Check, Lock, Gem, Book, X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,22 +17,60 @@ import { TableMaster } from '@/components/math-sovereign/table-master';
 import { RootMaster } from '@/components/math-sovereign/root-master';
 import { cn } from '@/lib/utils';
 import { useAdmin } from '@/hooks/use-admin';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@clerk/nextjs';
 
 export default function MathSovereignHub() {
-    const { currentUserData } = useAdmin();
+    const { user } = useUser();
+    const { currentUserData, claimAllTablesBounty } = useAdmin();
+    const { toast } = useToast();
     const [activeTab, setActiveTab] = useState('hub');
+    const [isMasterySheetOpen, setIsMasterySheetOpen] = useState(false);
+    const [isClaiming, setIsClaiming] = useState(false);
+
+    const masteredCount = currentUserData?.masteredTables?.length || 0;
+    const isBountyClaimable = masteredCount >= 19;
+    const hasClaimedBounty = currentUserData?.hasClaimedAllTablesBounty;
 
     const stats = [
-        { label: 'Table Mastery', val: 'N/A', icon: TableIcon, color: 'text-blue-400' },
-        { label: 'Power Level', val: 'N/A', icon: Zap, color: 'text-yellow-400' },
-        { label: 'Perfect Runs', val: '0', icon: Trophy, color: 'text-emerald-400' }
+        { 
+            label: 'Table Mastery', 
+            val: `${masteredCount} / 19`, 
+            icon: TableIcon, 
+            color: 'text-blue-400',
+            onClick: () => setIsMasterySheetOpen(true)
+        },
+        { 
+            label: 'Root Proficiency', 
+            val: 'Stable', 
+            icon: Zap, 
+            color: 'text-yellow-400' 
+        },
+        { 
+            label: 'Perfect Runs', 
+            val: String(currentUserData?.masteredTables?.length || 0), 
+            icon: Trophy, 
+            color: 'text-emerald-400' 
+        }
     ];
+
+    const handleClaimBounty = async () => {
+        if (!user || isClaiming || !isBountyClaimable || hasClaimedBounty) return;
+        setIsClaiming(true);
+        try {
+            await claimAllTablesBounty(user.id);
+            toast({ title: "GRAND ARCHITECT BOUNTY", description: "+500 Credits injected into your mainframe." });
+        } finally {
+            setIsClaiming(false);
+        }
+    };
 
     if (activeTab === 'tables') return <TableMaster onBack={() => setActiveTab('hub')} />;
     if (activeTab === 'roots') return <RootMaster onBack={() => setActiveTab('hub')} />;
 
     return (
-        <div className="space-y-12 pb-20 max-w-6xl mx-auto relative overflow-hidden">
+        <div className="space-y-12 pb-40 max-w-6xl mx-auto relative overflow-hidden">
             {/* Background Atmosphere */}
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 blue-nebula-bg opacity-30" />
@@ -53,7 +92,7 @@ export default function MathSovereignHub() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
                 {stats.map((s, i) => (
-                    <Card key={i} className="bg-black/40 border-white/5 backdrop-blur-xl rounded-[2rem] overflow-hidden group">
+                    <Card key={i} className="bg-black/40 border-white/5 backdrop-blur-xl rounded-[2rem] overflow-hidden group cursor-pointer" onClick={s.onClick}>
                         <div className="p-6 flex items-center justify-between">
                             <div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">{s.label}</p>
@@ -88,20 +127,101 @@ export default function MathSovereignHub() {
                 />
             </div>
 
-            <Card className="relative z-10 border-primary/20 bg-slate-900 shadow-2xl rounded-[3rem] overflow-hidden">
-                <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
-                <CardHeader className="p-8 sm:p-12 text-center">
-                    <CardTitle className="text-3xl font-black uppercase italic tracking-tight">Daily Sovereign Challenge</CardTitle>
-                    <CardDescription className="text-base text-slate-400 font-medium">Complete one perfect run in every domain to claim the Daily Treasury Bonus.</CardDescription>
-                </CardHeader>
-                <CardContent className="px-8 sm:px-12 pb-12">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <ChallengeRequirement label="Table Strike" done={false} />
-                        <ChallengeRequirement label="Square Sync" done={false} />
-                        <ChallengeRequirement label="Cube Forge" done={false} />
+            {/* ULTIMATE BOUNTY SECTION */}
+            <div className="relative z-10">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                >
+                    <Card className={cn(
+                        "relative overflow-hidden border-2 rounded-[3rem] shadow-2xl transition-all duration-700",
+                        isBountyClaimable && !hasClaimedBounty ? "border-green-500/50 bg-green-500/5" : "border-white/5 bg-slate-900/60"
+                    )}>
+                        <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                        <CardHeader className="text-center p-8 sm:p-12 relative z-10">
+                            <div className="flex justify-center mb-6">
+                                <div className={cn(
+                                    "p-6 rounded-full border-4 transition-all duration-1000",
+                                    isBountyClaimable && !hasClaimedBounty ? "bg-green-500/10 border-green-500 animate-bounce" : "bg-white/5 border-white/10"
+                                )}>
+                                    <Trophy className={cn("h-12 w-12", isBountyClaimable && !hasClaimedBounty ? "text-green-500" : "text-slate-700")} />
+                                </div>
+                            </div>
+                            <CardTitle className="text-4xl font-black uppercase italic tracking-tighter text-white">Grand Architect Bounty</CardTitle>
+                            <CardDescription className="text-lg font-medium text-slate-400">
+                                Protocol: Master all 19 tables in the Matrix to unlock the ultimate mainframe reward.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="px-8 sm:px-12 pb-12 relative z-10 text-center">
+                            <div className="max-w-md mx-auto space-y-6">
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-primary">
+                                        <span>Matrix Synchronization</span>
+                                        <span>{masteredCount} / 19 TABLES</span>
+                                    </div>
+                                    <Progress value={(masteredCount / 19) * 100} className="h-2" indicatorClassName="animated-rainbow-progress" />
+                                </div>
+
+                                <Button 
+                                    size="lg" 
+                                    className={cn(
+                                        "w-full h-20 rounded-[2rem] text-2xl font-black uppercase italic shadow-2xl transition-all",
+                                        isBountyClaimable && !hasClaimedBounty ? "bg-green-500 hover:bg-green-600 text-black shadow-green-500/20" : "bg-white/5 text-white/20 border-white/5 cursor-not-allowed"
+                                    )}
+                                    disabled={!isBountyClaimable || hasClaimedBounty || isClaiming}
+                                    onClick={handleClaimBounty}
+                                >
+                                    {isClaiming ? <Loader2 className="animate-spin mr-2" /> : hasClaimedBounty ? <CheckCircle className="mr-2" /> : <Lock className="mr-2" />}
+                                    {hasClaimedBounty ? 'BOUNTY SECURED' : isBountyClaimable ? 'CLAIM 500 CREDITS' : 'BOUNTY LOCKED'}
+                                </Button>
+                                
+                                <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em]">
+                                    {isBountyClaimable ? "Authorized for immediate claim." : `Requires ${19 - masteredCount} more perfect calibrations.`}
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            </div>
+
+            {/* MASTERY INSPECTION DIALOG */}
+            <Dialog open={isMasterySheetOpen} onOpenChange={setIsMasterySheetOpen}>
+                <DialogContent className="max-w-2xl bg-background/95 backdrop-blur-3xl border-primary/20 rounded-[3rem] p-0 overflow-hidden shadow-2xl">
+                    <div className="h-32 bg-gradient-to-br from-blue-500/20 via-background to-background relative overflow-hidden">
+                        <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                        <Button variant="ghost" size="icon" className="absolute top-4 right-4 text-white/40 hover:text-white z-50 rounded-full h-10 w-10" onClick={() => setIsMasterySheetOpen(false)}><X className="h-6 w-6"/></Button>
                     </div>
-                </CardContent>
-            </Card>
+                    <div className="px-8 pb-12 -mt-12 relative z-10">
+                        <div className="flex items-center gap-6 mb-8">
+                            <div className="h-20 w-20 rounded-[1.5rem] bg-blue-500/10 border-2 border-blue-500/30 flex items-center justify-center shadow-xl">
+                                <TableIcon className="h-10 w-10 text-blue-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-3xl font-black uppercase italic tracking-tighter">Mastery Registry</h3>
+                                <p className="text-xs font-black uppercase text-primary tracking-[0.2em]">Verified Matrix Connections</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3">
+                            {Array.from({ length: 19 }).map((_, i) => {
+                                const table = i + 2;
+                                const isMastered = currentUserData?.masteredTables?.includes(table);
+                                return (
+                                    <div key={table} className={cn(
+                                        "p-4 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all",
+                                        isMastered ? "bg-green-500/10 border-green-500/50 text-green-400 shadow-lg shadow-green-500/10" : "bg-white/5 border-white/5 text-slate-700"
+                                    )}>
+                                        <p className="text-[8px] font-black uppercase mb-1">Table</p>
+                                        <p className="text-2xl font-black italic">{table}</p>
+                                        {isMastered && <Check className="h-3 w-3 mt-1" strokeWidth={4} />}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -127,20 +247,4 @@ function ProtocolCard({ title, desc, icon: Icon, gradient, border, color, onClic
             </CardContent>
         </Card>
     );
-}
-
-function ChallengeRequirement({ label, done }: { label: string, done: boolean }) {
-    return (
-        <div className={cn(
-            "p-4 rounded-2xl border-2 flex items-center justify-between transition-all",
-            done ? "bg-green-500/10 border-green-500/50 text-green-500" : "bg-white/5 border-white/5 text-slate-500"
-        )}>
-            <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
-            {done ? <CheckCircle className="h-4 w-4"/> : <CircleIcon className="h-4 w-4 opacity-20"/>}
-        </div>
-    );
-}
-
-function CircleIcon({ className }: { className?: string }) {
-    return <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><circle cx="12" cy="12" r="10"/></svg>;
 }

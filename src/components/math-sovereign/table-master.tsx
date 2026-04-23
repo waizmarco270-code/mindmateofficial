@@ -7,7 +7,7 @@ import {
     Table as TableIcon, ArrowLeft, Play, 
     RotateCcw, Trophy, CheckCircle, XCircle,
     Zap, Gem, Clock, ShieldCheck, ChevronRight,
-    Star, Info, Sparkles
+    Star, Info, Sparkles, Check
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,15 +16,15 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { useAdmin } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
+import { useUser } from '@clerk/nextjs';
 
 interface TableMasterProps {
     onBack: () => void;
 }
 
-const REWARD = 5;
-
 export function TableMaster({ onBack }: TableMasterProps) {
-    const { addCreditsToUser } = useAdmin();
+    const { user } = useUser();
+    const { addCreditsToUser, currentUserData, markTableAsMastered } = useAdmin();
     const { toast } = useToast();
     
     const [view, setView] = useState<'selecting' | 'learning' | 'challenge' | 'result'>('selecting');
@@ -77,11 +77,18 @@ export function TableMaster({ onBack }: TableMasterProps) {
 
     const handleComplete = async () => {
         setView('result');
-        if (score >= 9) {
+        const perfect = score === 10;
+        const alreadyMastered = currentUserData?.masteredTables?.includes(selectedTable);
+
+        if (perfect && !alreadyMastered && user) {
             setIsProcessing(true);
-            await addCreditsToUser(REWARD);
-            toast({ title: "PERFECT CALIBRATION!", description: `+${REWARD} Credits secured for Table ${selectedTable} mastery.` });
-            setIsProcessing(false);
+            try {
+                // Reward based on table number (e.g. Table 11 = 11 Credits)
+                await markTableAsMastered(user.id, selectedTable, selectedTable);
+                toast({ title: "TABLE SYNCHRONIZED", description: `+${selectedTable} Credits secured. mastery recorded.` });
+            } finally {
+                setIsProcessing(false);
+            }
         }
     };
 
@@ -156,7 +163,7 @@ export function TableMaster({ onBack }: TableMasterProps) {
                                     value={userInput}
                                     onChange={e => setUserInput(e.target.value)}
                                     placeholder="?"
-                                    className="h-24 text-6xl font-black text-center border-none bg-black/40 text-blue-400 placeholder:text-blue-900 rounded-3xl"
+                                    className="h-24 text-6xl font-black text-center border-none bg-black/40 text-blue-400 placeholder:text-yellow-900 rounded-3xl"
                                 />
                                 <Button type="submit" className="w-full h-16 rounded-2xl font-black text-xl italic uppercase">COMMIT RESULT</Button>
                             </form>
@@ -169,6 +176,8 @@ export function TableMaster({ onBack }: TableMasterProps) {
 
     if (view === 'result') {
         const perfect = score === 10;
+        const alreadyMastered = currentUserData?.masteredTables?.includes(selectedTable);
+
         return (
             <div className="flex items-center justify-center min-h-[60vh]">
                 <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-md">
@@ -183,9 +192,14 @@ export function TableMaster({ onBack }: TableMasterProps) {
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Accuracy standing</p>
                         </div>
                         <div className="space-y-3">
-                            {perfect && (
+                            {perfect && !alreadyMastered && (
                                 <div className="p-4 rounded-2xl bg-green-500/10 border border-green-500/30 text-green-500 font-bold uppercase text-xs">
-                                    Mainframe Bounty Secured: +5 CR
+                                    Mainframe Bounty Secured: +{selectedTable} CR
+                                </div>
+                            )}
+                            {perfect && alreadyMastered && (
+                                <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/30 text-blue-500 font-bold uppercase text-xs">
+                                    Mastery Verified (Reward already claimed)
                                 </div>
                             )}
                             <Button className="w-full h-14 rounded-2xl font-black uppercase" onClick={() => setView('selecting')}>RETURN TO NEXUS</Button>
@@ -214,18 +228,32 @@ export function TableMaster({ onBack }: TableMasterProps) {
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-4">
                 {Array.from({ length: 19 }).map((_, i) => {
                     const table = i + 2;
+                    const isMastered = currentUserData?.masteredTables?.includes(table);
                     return (
                         <Card 
                             key={table} 
-                            className="bg-black/40 border-white/5 hover:border-blue-500/40 cursor-pointer group transition-all rounded-[2rem] overflow-hidden"
+                            className={cn(
+                                "bg-black/40 border-white/5 hover:border-blue-500/40 cursor-pointer group transition-all rounded-[2rem] overflow-hidden relative",
+                                isMastered && "border-green-500/30 bg-green-500/5"
+                            )}
                             onClick={() => { setSelectedTable(table); setView('learning'); }}
                         >
+                            {isMastered && (
+                                <div className="absolute top-2 right-2 h-6 w-6 rounded-full bg-green-500 flex items-center justify-center text-white shadow-lg">
+                                    <Check className="h-4 w-4" strokeWidth={4} />
+                                </div>
+                            )}
                             <CardContent className="p-8 flex flex-col items-center gap-4">
-                                <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-400 group-hover:scale-110 transition-transform">
+                                <div className={cn(
+                                    "p-3 rounded-2xl transition-transform group-hover:scale-110",
+                                    isMastered ? "bg-green-500/10 text-green-500" : "bg-blue-500/10 text-blue-400"
+                                )}>
                                     <TableIcon className="h-6 w-6" />
                                 </div>
                                 <h3 className="text-3xl font-black text-white italic">T-{table}</h3>
-                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-blue-400">Initialize</p>
+                                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-blue-400">
+                                    {isMastered ? 'Mastered' : 'Initialize'}
+                                </p>
                             </CardContent>
                         </Card>
                     );

@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -108,6 +109,8 @@ export interface User {
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
   mathematicsLegendClaims?: Record<string, number[]>;
+  masteredTables?: number[];
+  hasClaimedAllTablesBounty?: boolean;
   transactions?: { id: string; packName: string; credits: number; price?: number; date: string; type?: string }[];
 }
 
@@ -201,6 +204,8 @@ interface AppDataContextType {
     topUpAllWallets: (amt: number) => Promise<void>;
     claimPlusMembership: (paymentId: string) => Promise<void>;
     completeOnboarding: (data: any) => Promise<void>;
+    markTableAsMastered: (uid: string, table: number, reward: number) => Promise<void>;
+    claimAllTablesBounty: (uid: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -386,7 +391,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         claimGlobalGift: (gid: string) => systemActions.claimGlobalGift(gid, authUser!.id),
         redeemCode: (c: string) => codeActions.redeemCode(authUser!.id, c),
         resetAllUserCredits: (v: number) => systemActions.resetAllUserCredits(v),
-        performGameReset, resetAllChallenges, claimPlusMembership, completeOnboarding
+        performGameReset, resetAllChallenges, claimPlusMembership, completeOnboarding,
+        markTableAsMastered: (uid: string, t: number, r: number) => userActions.markTableAsMastered(uid, t, r),
+        claimAllTablesBounty: (uid: string) => userActions.claimAllTablesBounty(uid)
     };
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
