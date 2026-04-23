@@ -13,7 +13,8 @@ import {
     Atom, Sigma, FlaskConical,
     Lightbulb, Beaker, Search,
     Maximize, Minimize, Box, 
-    Settings, Plus, Minus, Check
+    Settings, Plus, Minus, Check,
+    BookOpen
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -127,7 +128,6 @@ export function UnitDimensionsGame() {
     const [highScore, setHighScore] = useState(0);
     const [lives, setLives] = useState(MAX_LIVES);
     const [timeLeft, setTimeLeft] = useState(30);
-    const [isProcessing, setIsProcessing] = useState(false);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -215,7 +215,6 @@ export function UnitDimensionsGame() {
         }
 
         // Parse built dimension into comparable string
-        // Sorting is crucial for comparison: M before L before T etc.
         const sortedComponents = [...components]
             .filter(c => c.power !== 0)
             .sort((a, b) => DIMENSION_BASES.indexOf(a.base) - DIMENSION_BASES.indexOf(b.base));
@@ -227,7 +226,7 @@ export function UnitDimensionsGame() {
         if (builtStr === currentQty.dimension) {
             handleSuccess();
         } else {
-            handleBreach(`Structural misalignment! [${builtStr || 'Empty'}] is incorrect.`);
+            handleBreach(`Structural misalignment! Incorrect configuration.`);
         }
     };
 
@@ -361,7 +360,7 @@ export function UnitDimensionsGame() {
                                     </div>
                                 </div>
                                 <Button onClick={validateConstruction} className="w-full h-16 rounded-2xl text-lg font-black uppercase italic shadow-2xl shadow-primary/20">
-                                    VERIFY STRUCTURE <CheckCircle className="ml-2 h-6 w-6"/>
+                                    VERIFY STRUCTURE <CheckCircle2 className="ml-2 h-6 w-6"/>
                                 </Button>
                             </CardContent>
                         </Card>
@@ -516,10 +515,4 @@ function ProtocolCard({ icon: Icon, label, desc, color, bg, onClick }: any) {
             </CardContent>
         </Card>
     );
-}
-
-function formatTime(seconds: number) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
