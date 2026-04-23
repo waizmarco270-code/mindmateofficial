@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -20,6 +19,7 @@ import { useAdmin } from '@/hooks/use-admin';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@clerk/nextjs';
+import { Progress } from '@/components/ui/progress';
 
 export default function MathSovereignHub() {
     const { user } = useUser();
@@ -234,7 +234,7 @@ function ProtocolCard({ title, desc, icon: Icon, gradient, border, color, onClic
         >
             <div className={cn("absolute inset-0 bg-gradient-to-br opacity-50", gradient)} />
             <CardContent className="p-10 flex flex-col items-center text-center gap-6 relative z-10">
-                <div className={cn("p-6 rounded-3xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform duration-500 shadow-2xl", color)}>
+                <div className={cn("p-6 rounded-3xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}>
                     <Icon className="h-12 w-12" />
                 </div>
                 <div className="space-y-2">
