@@ -1,6 +1,6 @@
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Brain, BookCheck, Smile, Atom, Book, Sparkles, ArrowRight, Sigma, Clock, Beaker } from "lucide-react";
+import { ArrowLeft, Brain, BookCheck, Smile, Atom, Book, Sparkles, ArrowRight, Sigma, Clock, Beaker, Ruler } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
@@ -9,12 +9,20 @@ import { cn } from "@/lib/utils";
 
 const puzzleGames = [
     {
+        title: "Units & Dimensions",
+        description: "Master the physical structure of 100+ scientific quantities.",
+        icon: Ruler,
+        href: "/dashboard/game-zone/puzzle/unit-dimensions",
+        color: "from-amber-400 to-yellow-600",
+        isNew: true
+    },
+    {
         title: "Formula Forge",
         description: "Reassemble the shattered laws of Physics & Mathematics.",
         icon: Beaker,
         href: "/dashboard/game-zone/puzzle/formula-forge",
         color: "from-sky-500 to-indigo-600",
-        isNew: true
+        isNew: false
     },
     {
         title: "Chronos: Timeline War",
