@@ -12,7 +12,8 @@ import {
     History, ChevronDown, ChevronUp, CheckCircle,
     ArrowRight, Info, EyeOff, Loader2, Maximize2,
     Settings, Globe, Medal, Sparkles, X, LayoutDashboard,
-    ScrollText, Orbit, Flame, Brain, ShieldX, Beaker
+    ScrollText, Orbit, Flame, Brain, ShieldX, Beaker,
+    Target, GripVertical
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,7 +36,7 @@ export function ArenaLeaderboard() {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [showcaseUser, setShowcaseUser] = useState<UserWithStats | null>(null);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
-    const [selectedHistoryEntry, setSelectedHistoryEntry] = useState<any | null>(null);
+    const [isMyRankOpen, setIsMyRankOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Sorting Logic
@@ -116,15 +117,24 @@ export function ArenaLeaderboard() {
                         <TabsTrigger value="monthly" className="rounded-xl px-8 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-rose-600 data-[state=active]:text-white">Monthly</TabsTrigger>
                     </TabsList>
 
-                    <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="h-14 rounded-2xl border-white/10 bg-white/5 font-black uppercase text-[10px] tracking-[0.2em] px-8 w-full sm:w-auto hover:bg-rose-600/10">
-                        <History className="mr-3 h-4 w-4 text-rose-500" /> Cycle Archives
-                    </Button>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Button 
+                            variant="outline" 
+                            onClick={() => setIsMyRankOpen(true)} 
+                            className="h-14 rounded-2xl border-rose-500/30 bg-rose-500/5 text-rose-500 font-black uppercase text-[10px] tracking-[0.2em] px-8 flex-1 sm:flex-initial hover:bg-rose-600/10 shadow-lg shadow-rose-900/10"
+                        >
+                            <Target className="mr-3 h-4 w-4" /> Your Rank Info
+                        </Button>
+                        <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="h-14 rounded-2xl border-white/10 bg-white/5 font-black uppercase text-[10px] tracking-[0.2em] px-8 flex-1 sm:flex-initial hover:bg-rose-600/10">
+                            <History className="mr-3 h-4 w-4 text-rose-500" /> Archives
+                        </Button>
+                    </div>
                 </div>
 
                 <TabsContent value={activeTab} className="m-0 space-y-12">
                     {/* ARENA PODIUM */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-end relative">
-                        <div className="lg:col-span-2 grid grid-cols-3 gap-4 sm:gap-8 items-end h-[350px] sm:h-[500px]">
+                        <div className="lg:col-span-2 grid grid-cols-3 gap-2 sm:gap-8 items-end h-[350px] sm:h-[500px]">
                             {topThree.map((user, idx) => {
                                 const originalRank = sortedUsers.findIndex(u => u.uid === user.uid) + 1;
                                 const isFirst = originalRank === 1;
@@ -143,22 +153,22 @@ export function ArenaLeaderboard() {
                                                 (user.equippedFrame || 'default') === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default'
                                             )}>
                                                 <Avatar className={cn(
-                                                    "h-16 w-16 sm:h-24 sm:w-24 border-2 shadow-2xl relative z-10 bg-background",
-                                                    isFirst && "sm:h-40 sm:w-40"
+                                                    "h-12 w-12 sm:h-24 sm:w-24 border-2 shadow-2xl relative z-10 bg-background",
+                                                    isFirst && "sm:h-40 sm:w-40 h-24 w-24"
                                                 )}>
                                                     <AvatarImage src={user.photoURL} />
                                                     <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                                 </Avatar>
                                             </div>
                                             <div className={cn(
-                                                "absolute -bottom-4 left-1/2 -translate-x-1/2 h-8 w-8 rounded-full border-2 bg-background flex items-center justify-center font-black italic shadow-xl z-20",
+                                                "absolute -bottom-4 left-1/2 -translate-x-1/2 h-6 w-6 sm:h-8 sm:w-8 rounded-full border-2 bg-background flex items-center justify-center font-black italic shadow-xl z-20 text-[10px] sm:text-sm",
                                                 stageColor
                                             )}>
                                                 {originalRank}
                                             </div>
                                         </div>
                                         <div className="text-center space-y-1">
-                                            <p className="text-xs sm:text-xl font-black uppercase italic tracking-tighter truncate max-w-[80px] sm:max-w-none">{user.displayName}</p>
+                                            <p className="text-[10px] sm:text-xl font-black uppercase italic tracking-tighter truncate max-w-[70px] sm:max-w-none">{user.displayName}</p>
                                             <div className="scale-75"><ShowcaseBadge user={user} /></div>
                                         </div>
                                         {/* The Arena Pedestal */}
@@ -167,11 +177,11 @@ export function ArenaLeaderboard() {
                                             stageColor,
                                             isFirst ? "h-32 sm:h-48" : originalRank === 2 ? "h-24 sm:h-32" : "h-16 sm:h-24"
                                         )}>
-                                            <div className="p-4 text-center">
-                                                <p className="text-lg sm:text-3xl font-black italic tabular-nums text-white">
+                                            <div className="p-2 sm:p-4 text-center">
+                                                <p className="text-sm sm:text-3xl font-black italic tabular-nums text-white">
                                                     {Math.round(user.entertainmentTotalScore).toLocaleString()}
                                                 </p>
-                                                <p className="text-[7px] sm:text-[9px] font-black uppercase tracking-widest opacity-40">Skill Points</p>
+                                                <p className="text-[6px] sm:text-[9px] font-black uppercase tracking-widest opacity-40">Points</p>
                                             </div>
                                         </div>
                                     </div>
@@ -223,33 +233,69 @@ export function ArenaLeaderboard() {
                 </TabsContent>
             </Tabs>
 
-            {/* PERSONAL FLOATING HUD */}
-            <AnimatePresence>
-                {myRank > 50 && myData && (
-                    <motion.div initial={{ y: 100 }} animate={{ y: 0 }} className="fixed bottom-[88px] left-0 right-0 z-50 px-4">
-                        <div className="max-w-4xl mx-auto">
-                            <Card className="bg-[#050505]/95 border-t-2 border-rose-500 shadow-[0_-20px_60px_rgba(0,0,0,0.8)] rounded-t-[2.5rem] overflow-hidden backdrop-blur-xl">
-                                <div className="p-6 flex items-center justify-between">
-                                    <div className="flex items-center gap-6">
-                                        <div className="h-16 w-16 rounded-2xl bg-rose-500/10 border-2 border-rose-500/40 flex flex-col items-center justify-center">
-                                            <span className="text-[8px] font-black uppercase opacity-40">Rank</span>
-                                            <span className="text-2xl font-black italic">#{myRank}</span>
+            {/* MY RANK DIALOG */}
+            <Dialog open={isMyRankOpen} onOpenChange={setIsMyRankOpen}>
+                <DialogContent className="max-w-lg bg-background/95 backdrop-blur-3xl border-rose-500/20 rounded-[3rem] p-0 overflow-hidden shadow-2xl">
+                    {myData ? (
+                        <>
+                            <div className="p-8 bg-rose-500/10 border-b border-rose-500/20">
+                                <DialogHeader>
+                                    <div className="flex items-center gap-4 mb-4">
+                                        <div className="h-14 w-14 rounded-2xl bg-rose-500/20 flex items-center justify-center border-2 border-rose-500/40 font-black italic text-2xl text-rose-500">
+                                            #{myRank}
                                         </div>
                                         <div>
-                                            <p className="font-black text-xl uppercase italic tracking-tighter leading-none">Your Skill Status</p>
-                                            <p className="text-[10px] font-bold uppercase text-rose-500 tracking-[0.2em] mt-1">Arcade Registry Logged</p>
+                                            <DialogTitle className="text-3xl font-black uppercase italic text-white tracking-tighter">Your Skill Status</DialogTitle>
+                                            <DialogDescription className="font-bold text-rose-500/60 uppercase text-[10px] tracking-widest">Active Registry Record</DialogDescription>
+                                        </div>
+                                    </div>
+                                </DialogHeader>
+                                <div className="mt-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className={cn("avatar-frame-base", (myData.equippedFrame || 'default') === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                                            <Avatar className="h-16 w-16 border-2 shadow-lg bg-background relative z-10">
+                                                <AvatarImage src={myData.photoURL} />
+                                                <AvatarFallback>U</AvatarFallback>
+                                            </Avatar>
+                                        </div>
+                                        <div>
+                                            <p className="font-black text-xl text-white uppercase italic">{myData.displayName}</p>
+                                            <div className="scale-90 origin-left"><ShowcaseBadge user={myData} /></div>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <p className="text-4xl font-black italic tracking-tighter text-white tabular-nums">{Math.round(myData.entertainmentTotalScore).toLocaleString()}</p>
-                                        <p className="text-[8px] font-black uppercase tracking-widest opacity-40">Skill Points</p>
+                                        <p className="text-4xl font-black italic tabular-nums text-rose-500">{Math.round(myData.entertainmentTotalScore).toLocaleString()}</p>
+                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Points</p>
                                     </div>
                                 </div>
-                            </Card>
+                            </div>
+                            <div className="p-8">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-rose-500/60 mb-6 flex items-center gap-2"><LayoutDashboard className="h-3 w-3"/> Detailed Module Dossier</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <DossierItem icon={Orbit} label="Astro Ascent" val={myData.gameHighScores?.astroAscent} color="text-purple-400" />
+                                    <DossierItem icon={Bird} label="Flappy Mind" val={myData.gameHighScores?.flappyMind} color="text-sky-400" />
+                                    <DossierItem icon={Swords} label="Dimension Shift" val={myData.gameHighScores?.dimensionShift} color="text-rose-400" />
+                                    <DossierItem icon={BrainCircuit} label="Subject Sprint" val={myData.gameHighScores?.subjectSprint} color="text-emerald-400" />
+                                    <DossierItem icon={Smile} label="Emoji Quiz" val={myData.gameHighScores?.emojiQuiz} color="text-yellow-400" />
+                                    <DossierItem icon={Sigma} label="Math Legend" val={myData.gameHighScores?.mathematicsLegend} color="text-blue-400" />
+                                    <DossierItem icon={Atom} label="Element Quest" val={myData.elementQuestTotalScore} color="text-cyan-400" />
+                                    <DossierItem icon={Clock} label="Chronos" val={myData.gameHighScores?.chronos} color="text-amber-400" />
+                                    <DossierItem icon={Beaker} label="Formula Forge" val={myData.gameHighScores?.formulaForge} color="text-rose-600" />
+                                    <DossierItem icon={Brain} label="Memory Pattern" val={myData.gameHighScores?.memoryGame} color="text-green-500" />
+                                </div>
+                            </div>
+                            <DialogFooter className="p-6 bg-muted/20 border-t">
+                                <DialogClose asChild><Button className="w-full h-14 rounded-2xl font-black uppercase">Dismiss Briefing</Button></DialogClose>
+                            </DialogFooter>
+                        </>
+                    ) : (
+                        <div className="p-12 text-center opacity-40">
+                            <ShieldX className="h-16 w-16 mx-auto mb-4" />
+                            <p className="font-black uppercase tracking-widest">No registry data manifest.</p>
                         </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    )}
+                </DialogContent>
+            </Dialog>
 
             {/* CYCLE ARCHIVES DIALOG */}
             <Dialog open={isHistoryOpen} onOpenChange={setIsHistoryOpen}>
