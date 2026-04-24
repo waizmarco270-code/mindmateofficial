@@ -11,15 +11,16 @@ import {
     Sigma, Atom, Smile, Clock, ShieldAlert,
     History, ChevronDown, ChevronUp, CheckCircle,
     ArrowRight, Info, EyeOff, Loader2, Maximize2,
-    Settings, Globe, Medal, Sparkles, X, LayoutDashboard
+    Settings, Globe, Medal, Sparkles, X, LayoutDashboard,
+    ScrollText
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { ShowcaseBadge, getOwnedBadges, badgeMeta } from '../leaderboard/shared/badge-renderer';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +41,7 @@ export function ArenaLeaderboard() {
     const sortedUsers = useMemo(() => {
         let pool = [...processedUsers].filter(u => !u.isLeaderboardPrivate || u.uid === currentUser?.id);
         if (activeTab === 'all-time') return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
-        // Placeholder for Weekly/Monthly - in real app, these would come from separate collections or filters
+        // Defaulting to score for now as placeholders for weekly/monthly
         return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
     }, [processedUsers, activeTab, currentUser?.id]);
 
@@ -65,7 +66,12 @@ export function ArenaLeaderboard() {
         }
     };
 
-    if (loading) return null;
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-12 w-12 animate-spin text-rose-500 mb-4" />
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-rose-500/60 animate-pulse">Syncing Arena Registry...</p>
+        </div>
+    );
 
     return (
         <div className="space-y-12">
