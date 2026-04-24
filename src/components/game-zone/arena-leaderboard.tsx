@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
@@ -14,7 +13,7 @@ import {
     ArrowRight, Info, EyeOff, Loader2, Maximize2,
     Settings, Globe, Medal, Sparkles, X, LayoutDashboard
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,7 +26,7 @@ import { format, parseISO } from 'date-fns';
 export function ArenaLeaderboard() {
     const { user: currentUser } = useUser();
     const { processedUsers, loading } = useLeaderboardData();
-    const { gameHistory, claimGMBounty, currentUserData } = useAdmin();
+    const { gameHistory, claimGMBounty } = useAdmin();
     
     const [activeTab, setActiveTab] = useState('all-time');
     const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -449,8 +448,4 @@ function isNotInTopFifty(rank: number) {
 
 function Separator({ className }: { className?: string }) {
     return <div className={cn("h-px w-full", className)} />;
-}
-
-function Badge({ children, variant, className }: any) {
-    return <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", className)}>{children}</span>;
 }
