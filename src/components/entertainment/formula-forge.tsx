@@ -220,7 +220,7 @@ export function FormulaForge() {
             }, 1000);
         }
         return stopTimer;
-    }, [gameState, currentFormula, toast, handleGameOver]);
+    }, [gameState, timeLeft, toast, handleGameOver]);
 
     if (gameState === 'selecting') {
         return (
@@ -443,9 +443,9 @@ function CategoryButton({ icon: Icon, label, desc, color, onClick }: any) {
             className={cn("bg-black/40 border-2 cursor-pointer group hover:bg-primary/10 transition-all duration-500 rounded-[3rem] overflow-hidden", color)}
             onClick={onClick}
         >
-            <CardContent className="p-10 flex flex-col items-center text-center gap-6 relative">
+            <CardContent className="p-10 flex flex-col items-center text-center gap-6 relative z-10">
                 <div className="absolute inset-0 bg-grid-white/5 opacity-5" />
-                <div className="p-5 rounded-3xl bg-white/5 border border-white/5 group-hover:scale-110 transition-transform group-hover:border-primary/50 group-hover:bg-primary/20 shadow-xl relative z-10">
+                <div className={cn("p-5 rounded-3xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform group-hover:border-primary/50 group-hover:bg-primary/20 shadow-xl relative z-10")}>
                     <Icon className="h-10 w-10 text-primary" />
                 </div>
                 <div className="relative z-10">

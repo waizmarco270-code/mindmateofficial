@@ -480,7 +480,7 @@ export function UnitDimensionsGame() {
                 </SignedOut>
                 
                 <ProtocolCard 
-                    icon: icon={BookOpen} 
+                    icon={BookOpen} 
                     label="Learning Protocol" 
                     desc="Access the Global Registry of physical quantities and their dimensions."
                     color="text-emerald-400"
@@ -489,7 +489,7 @@ export function UnitDimensionsGame() {
                 />
                 
                 <ProtocolCard 
-                    icon: icon={Zap} 
+                    icon={Zap} 
                     label="Challenge Protocol" 
                     desc="High-stakes dimensional construction against the temporal clock."
                     color="text-yellow-400"
@@ -562,10 +562,4 @@ function ProtocolCard({ icon: Icon, label, desc, color, bg, onClick }: any) {
             </CardContent>
         </Card>
     );
-}
-
-function formatTime(seconds: number) {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
