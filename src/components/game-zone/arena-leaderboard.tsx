@@ -22,6 +22,8 @@ import { ShowcaseBadge, getOwnedBadges, badgeMeta } from '../leaderboard/shared/
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format, parseISO } from 'date-fns';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 export function ArenaLeaderboard() {
     const { user: currentUser } = useUser();
@@ -444,8 +446,4 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
 
 function isNotInTopFifty(rank: number) {
     return rank > 50 || rank === 0;
-}
-
-function Separator({ className }: { className?: string }) {
-    return <div className={cn("h-px w-full", className)} />;
 }
