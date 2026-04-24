@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useLeaderboardData, UserWithStats } from '@/hooks/use-leaderboard-data';
@@ -173,8 +172,4 @@ function InfoBlock({ label, desc, color, icon: Icon }: any) {
             </div>
         </div>
     );
-}
-
-function useCallback(arg0: () => void, arg1: (string | undefined | boolean)[]) {
-    throw new Error('Function not implemented.');
 }
