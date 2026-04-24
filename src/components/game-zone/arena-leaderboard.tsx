@@ -12,7 +12,7 @@ import {
     History, ChevronDown, ChevronUp, CheckCircle,
     ArrowRight, Info, EyeOff, Loader2, Maximize2,
     Settings, Globe, Medal, Sparkles, X, LayoutDashboard,
-    ScrollText
+    ScrollText, Orbit, Flame, Brain, ShieldX, Beaker
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,13 +35,14 @@ export function ArenaLeaderboard() {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [showcaseUser, setShowcaseUser] = useState<UserWithStats | null>(null);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+    const [selectedHistoryEntry, setSelectedHistoryEntry] = useState<any | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
 
     // Sorting Logic
     const sortedUsers = useMemo(() => {
         let pool = [...processedUsers].filter(u => !u.isLeaderboardPrivate || u.uid === currentUser?.id);
         if (activeTab === 'all-time') return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
-        // Defaulting to score for now as placeholders for weekly/monthly
+        // Defaulting to score for now
         return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
     }, [processedUsers, activeTab, currentUser?.id]);
 
@@ -222,9 +223,9 @@ export function ArenaLeaderboard() {
                 </TabsContent>
             </Tabs>
 
-            {/* PERSONAL FLOATING HUD (If rank > 50) */}
+            {/* PERSONAL FLOATING HUD */}
             <AnimatePresence>
-                {isNotInTopFifty(myRank) && myData && (
+                {myRank > 50 && myData && (
                     <motion.div initial={{ y: 100 }} animate={{ y: 0 }} className="fixed bottom-[88px] left-0 right-0 z-50 px-4">
                         <div className="max-w-4xl mx-auto">
                             <Card className="bg-[#050505]/95 border-t-2 border-rose-500 shadow-[0_-20px_60px_rgba(0,0,0,0.8)] rounded-t-[2.5rem] overflow-hidden backdrop-blur-xl">
@@ -353,14 +354,16 @@ function ArenaRankCard({ user, rank, isMe, isExpanded, onToggle, onInspect }: an
                 {isExpanded && (
                     <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-2 border-white/5 border-t-0 bg-black/60 rounded-b-[2rem] p-4 sm:p-8 overflow-hidden">
                         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
-                            <DossierCell icon={Orbit} label="Astro Ascent" val={user.gameHighScores?.astroAscent} color="text-purple-400" />
-                            <DossierCell icon={Bird} label="Flappy Mind" val={user.gameHighScores?.flappyMind} color="text-sky-400" />
-                            <DossierCell icon={Swords} label="Dimension Shift" val={user.gameHighScores?.dimensionShift} color="text-rose-400" />
-                            <DossierCell icon={BrainCircuit} label="Subject Sprint" val={user.gameHighScores?.subjectSprint} color="text-emerald-400" />
-                            <DossierCell icon={Smile} label="Emoji Quiz" val={user.gameHighScores?.emojiQuiz} color="text-yellow-400" />
-                            <DossierCell icon={Sigma} label="Math Legend" val={user.gameHighScores?.mathematicsLegend} color="text-blue-400" />
-                            <DossierCell icon={Atom} label="Element Quest" val={user.elementQuestTotalScore} color="text-cyan-400" />
-                            <DossierCell icon={Clock} label="Chronos" val={user.gameHighScores?.chronos} color="text-amber-400" />
+                            <DossierItem icon={Orbit} label="Astro Ascent" val={user.gameHighScores?.astroAscent} color="text-purple-400" />
+                            <DossierItem icon={Bird} label="Flappy Mind" val={user.gameHighScores?.flappyMind} color="text-sky-400" />
+                            <DossierItem icon={Swords} label="Dimension Shift" val={user.gameHighScores?.dimensionShift} color="text-rose-400" />
+                            <DossierItem icon={BrainCircuit} label="Subject Sprint" val={user.gameHighScores?.subjectSprint} color="text-emerald-400" />
+                            <DossierItem icon={Smile} label="Emoji Quiz" val={user.gameHighScores?.emojiQuiz} color="text-yellow-400" />
+                            <DossierItem icon={Sigma} label="Math Legend" val={user.gameHighScores?.mathematicsLegend} color="text-blue-400" />
+                            <DossierItem icon={Atom} label="Element Quest" val={user.elementQuestTotalScore} color="text-cyan-400" />
+                            <DossierItem icon={Clock} label="Chronos" val={user.gameHighScores?.chronos} color="text-amber-400" />
+                            <DossierItem icon={Beaker} label="Formula Forge" val={user.gameHighScores?.formulaForge} color="text-rose-600" />
+                            <DossierItem icon={Brain} label="Memory Pattern" val={user.gameHighScores?.memoryGame} color="text-green-500" />
                         </div>
                     </motion.div>
                 )}
@@ -369,7 +372,7 @@ function ArenaRankCard({ user, rank, isMe, isExpanded, onToggle, onInspect }: an
     );
 }
 
-function DossierCell({ icon: Icon, label, val, color }: any) {
+function DossierItem({ icon: Icon, label, val, color }: any) {
     return (
         <div className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-2xl border border-white/5 shadow-inner group/cell hover:border-white/10 transition-all">
             <div className={cn("p-2 rounded-lg bg-black/20 shrink-0 group-hover/cell:scale-110 transition-transform", color)}>
@@ -448,8 +451,4 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
             </DialogContent>
         </Dialog>
     );
-}
-
-function isNotInTopFifty(rank: number) {
-    return rank > 50 || rank === 0;
 }
