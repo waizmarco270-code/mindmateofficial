@@ -1,13 +1,12 @@
 'use client';
 import Link from "next/link";
-import { ArrowLeft, Crown, Atom, Book, Brain, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowLeft, Crown, Atom, Book, Brain, Sparkles, ArrowRight, Ruler, Beaker } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-// Dummy icons to prevent errors since they are used in the dialog content
 const BookIcon = (props: any) => <Book {...props} />;
 const BrainIcon = (props: any) => <Brain {...props} />;
 const SparklesIcon = (props: any) => <Sparkles {...props} />;
@@ -42,11 +41,28 @@ const elementQuestModes = [
 
 const premiumGames = [
     {
+        title: "Units & Dimensions",
+        description: "Master the physical structure of 100+ scientific quantities.",
+        icon: Ruler,
+        href: "/dashboard/game-zone/puzzle/unit-dimensions",
+        color: "from-amber-400 to-yellow-600",
+        type: 'direct'
+    },
+    {
+        title: "Formula Forge",
+        description: "Reassemble the shattered laws of Physics & Mathematics.",
+        icon: Beaker,
+        href: "/dashboard/game-zone/puzzle/formula-forge",
+        color: "from-sky-500 to-indigo-600",
+        type: 'direct'
+    },
+    {
         title: "Element Quest",
         description: "Master the periodic table by placing elements in their correct spots.",
         icon: Atom,
         href: "/dashboard/game-zone/puzzle/periodic-table/challenge",
         color: "from-cyan-500 to-blue-500",
+        type: 'dialog',
         dialogContent: (
             <div className="grid gap-4 py-4">
                 {elementQuestModes.map(mode => (
@@ -91,14 +107,47 @@ export default function PremiumGamesHubPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {premiumGames.map((game, index) => (
-                    <Dialog key={game.title}>
-                        <DialogTrigger asChild>
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.5, delay: index * 0.1 }}
-                                className="cursor-pointer"
-                            >
+                    game.type === 'dialog' ? (
+                        <Dialog key={game.title}>
+                            <DialogTrigger asChild>
+                                <motion.div
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.5, delay: index * 0.1 }}
+                                    className="cursor-pointer"
+                                >
+                                    <Card className="h-full flex flex-col justify-between items-center text-center p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+                                        <div>
+                                            <div className={`mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-gradient-to-br ${game.color} mb-4`}>
+                                                <game.icon className="h-10 w-10 text-white" />
+                                            </div>
+                                            <CardTitle>{game.title}</CardTitle>
+                                            <CardDescription className="mt-2">{game.description}</CardDescription>
+                                        </div>
+                                        <Button variant="outline" className="mt-6 w-full">Select Mode</Button>
+                                    </Card>
+                                </motion.div>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle className="flex items-center gap-2 text-2xl">
+                                        <game.icon className="text-primary"/> Select a Game Mode
+                                    </DialogTitle>
+                                    <DialogDescription>
+                                        Choose how you want to play {game.title}.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                {game.dialogContent}
+                            </DialogContent>
+                        </Dialog>
+                    ) : (
+                        <motion.div
+                            key={game.title}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: index * 0.1 }}
+                        >
+                             <Link href={game.href} className="block h-full group">
                                 <Card className="h-full flex flex-col justify-between items-center text-center p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                                     <div>
                                         <div className={`mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-gradient-to-br ${game.color} mb-4`}>
@@ -107,22 +156,11 @@ export default function PremiumGamesHubPage() {
                                         <CardTitle>{game.title}</CardTitle>
                                         <CardDescription className="mt-2">{game.description}</CardDescription>
                                     </div>
-                                    <Button variant="outline" className="mt-6 w-full">Select Mode</Button>
+                                    <Button variant="outline" className="mt-6 w-full">Play Now</Button>
                                 </Card>
-                            </motion.div>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle className="flex items-center gap-2 text-2xl">
-                                    <game.icon className="text-primary"/> Select a Game Mode
-                                </DialogTitle>
-                                <DialogDescription>
-                                    Choose how you want to play {game.title}.
-                                </DialogDescription>
-                            </DialogHeader>
-                            {game.dialogContent}
-                        </DialogContent>
-                    </Dialog>
+                             </Link>
+                        </motion.div>
+                    )
                 ))}
             </div>
         </div>

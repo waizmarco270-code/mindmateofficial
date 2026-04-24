@@ -10,7 +10,7 @@ import {
     Sparkles, ChevronRight, Loader2,
     ShieldAlert, AlertTriangle, 
     Atom, Sigma, FlaskConical,
-    Lightbulb, Beaker, Clock
+    Lightbulb, Beaker, Clock, ShieldX, X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,8 @@ import {
     DialogHeader, 
     DialogTitle, 
     DialogDescription, 
-    DialogFooter 
+    DialogFooter,
+    DialogClose
 } from '@/components/ui/dialog';
 
 interface Formula {
@@ -76,8 +77,23 @@ export function FormulaForge() {
     const [timeLeft, setTimeLeft] = useState(45);
     const [showGuide, setShowGuide] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isCheatingDialogOpen, setIsCheatingDialogOpen] = useState(false);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // SOVEREIGN ANTI-CHEAT SENTINEL
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (gameState === 'playing' && document.visibilityState === 'hidden') {
+                stopTimer();
+                setIsCheatingDialogOpen(true);
+                setGameState('selecting');
+                toast({ variant: 'destructive', title: "SIGNAL INTERRUPTED", description: "Anti-Cheat Sentinel activated. Signal loss detected." });
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [gameState, toast]);
 
     useEffect(() => {
         if (currentUserData?.gameHighScores?.formulaForge) {
@@ -237,15 +253,46 @@ export function FormulaForge() {
                         <DialogHeader>
                             <DialogTitle className="text-2xl font-black uppercase italic text-white flex items-center gap-2"><Beaker className="text-primary"/> Operation Protocols</DialogTitle>
                         </DialogHeader>
-                        <div className="py-6 space-y-4 text-sm text-slate-300 font-medium leading-relaxed">
+                        <div className="py-6 space-y-4 text-sm text-slate-300 font-medium leading-relaxed text-left">
                             <p>1. <b className="text-primary">The Directive</b>: A scientific law name will appear. You must identify its mathematical structure.</p>
                             <p>2. <b className="text-primary">Forge Input</b>: Click the scattered shards in the correct sequence to build the formula.</p>
                             <p>3. <b className="text-primary">Stabilization</b>: You must complete the assembly before the timer hits zero.</p>
                             <p>4. <b className="text-primary">Breach</b>: Wrong sequences or timeouts consume 1 Heart. 3 breaches ends the mission.</p>
-                            <p>5. <b className="text-primary">Pulse Hint</b>: Stuck? Spend 5 Credits for a Neural Pulse to find the next shard.</p>
+                            <p>5. <b className="text-primary">Anti-Cheat</b>: The reactor is monitored. Switching tabs will cause an immediate meltdown.</p>
                         </div>
                         <DialogFooter>
                             <Button className="w-full h-12 font-black uppercase rounded-xl" onClick={() => setShowGuide(false)}>Authorized</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+
+                {/* CHEATING DETECTED DIALOG */}
+                <Dialog open={isCheatingDialogOpen} onOpenChange={setIsCheatingDialogOpen}>
+                    <DialogContent className="border-red-600/50 bg-red-950/95 backdrop-blur-2xl rounded-[2.5rem]">
+                        <DialogHeader>
+                            <div className="flex justify-center mb-6">
+                                <div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse">
+                                    <ShieldX className="h-16 w-16 text-red-600" />
+                                </div>
+                            </div>
+                            <DialogTitle className="text-center text-3xl font-black uppercase italic text-white tracking-tighter">SIGNAL LOST</DialogTitle>
+                            <DialogDescription className="text-center text-lg font-bold text-red-200 mt-2">
+                                YOU WERE CAUGHT CHEATING!
+                            </DialogDescription>
+                        </DialogHeader>
+                        <div className="p-6 rounded-2xl bg-black/40 border border-white/5 space-y-4 text-sm text-slate-300">
+                            <p className="font-bold text-red-400 uppercase tracking-widest text-center">Reactor Sentinel Status:</p>
+                            <ul className="list-disc list-inside space-y-2">
+                                <li>Connection severed due to user distraction.</li>
+                                <li>The Formula Forge requires 100% synchronization.</li>
+                                <li>No credits awarded for corrupted sessions.</li>
+                            </ul>
+                            <p className="italic text-center text-xs opacity-60">"Absolute focus is the law of the Forge."</p>
+                        </div>
+                        <DialogFooter className="pt-4">
+                            <DialogClose asChild>
+                                <Button className="w-full h-14 bg-white text-black font-black text-xl rounded-2xl hover:bg-slate-200">RE-INITIALIZE DRIVE</Button>
+                            </DialogClose>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

@@ -14,7 +14,7 @@ import {
     Lightbulb, Beaker, Search,
     Maximize, Minimize, Box, 
     Settings, Plus, Minus, Check,
-    BookOpen, Trash2
+    BookOpen, Trash2, X, ShieldX
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,8 @@ import {
     DialogHeader, 
     DialogTitle, 
     DialogDescription, 
-    DialogFooter 
+    DialogFooter,
+    DialogClose
 } from '@/components/ui/dialog';
 
 interface PhysicalQuantity {
@@ -128,8 +129,23 @@ export function UnitDimensionsGame() {
     const [highScore, setHighScore] = useState(0);
     const [lives, setLives] = useState(MAX_LIVES);
     const [timeLeft, setTimeLeft] = useState(30);
+    const [isCheatingDialogOpen, setIsCheatingDialogOpen] = useState(false);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    // SOVEREIGN ANTI-CHEAT SENTINEL
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (view === 'challenge' && document.visibilityState === 'hidden') {
+                stopTimer();
+                setIsCheatingDialogOpen(true);
+                setView('hub');
+                toast({ variant: 'destructive', title: "PROTOCOL BREACHED", description: "The Sovereign Sentinel caught you switching signals." });
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, [view, toast]);
 
     useEffect(() => {
         if (currentUserData?.gameHighScores?.unitDimensions) {
@@ -317,7 +333,7 @@ export function UnitDimensionsGame() {
 
                     <div className="flex items-center gap-8">
                         <div className="text-right">
-                            <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">Temporal Clock</p>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Temporal Clock</p>
                             <p className={cn("text-3xl font-black italic tabular-nums", timeLeft <= 5 ? "text-red-500 animate-pulse" : "text-white")}>
                                 {timeLeft}s
                             </p>
@@ -464,7 +480,7 @@ export function UnitDimensionsGame() {
                 </SignedOut>
                 
                 <ProtocolCard 
-                    icon={BookOpen} 
+                    icon: icon={BookOpen} 
                     label="Learning Protocol" 
                     desc="Access the Global Registry of physical quantities and their dimensions."
                     color="text-emerald-400"
@@ -473,7 +489,7 @@ export function UnitDimensionsGame() {
                 />
                 
                 <ProtocolCard 
-                    icon={Zap} 
+                    icon: icon={Zap} 
                     label="Challenge Protocol" 
                     desc="High-stakes dimensional construction against the temporal clock."
                     color="text-yellow-400"
@@ -487,9 +503,40 @@ export function UnitDimensionsGame() {
                     <Info className="h-4 w-4"/> Manual Briefing
                 </h4>
                 <p className="text-slate-400 text-sm font-medium italic">
-                    "Structural mastery of units and dimensions is required for any serious academic ascent. The Challenge Protocol rewards legends who can identify and build dimensions with surgical speed."
+                    "Structural mastery of units and dimensions is required for any serious academic ascent. Challenge Protocol is guarded by a Sovereign Anti-Cheat system. Tab switching will terminate the session."
                 </p>
             </div>
+
+            {/* CHEATING DETECTED DIALOG */}
+            <Dialog open={isCheatingDialogOpen} onOpenChange={setIsCheatingDialogOpen}>
+                <DialogContent className="border-red-600/50 bg-red-950/95 backdrop-blur-2xl rounded-[2.5rem]">
+                    <DialogHeader>
+                        <div className="flex justify-center mb-6">
+                            <div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse">
+                                <ShieldX className="h-16 w-16 text-red-600" />
+                            </div>
+                        </div>
+                        <DialogTitle className="text-center text-3xl font-black uppercase italic text-white tracking-tighter">PROTOCOL VIOLATED</DialogTitle>
+                        <DialogDescription className="text-center text-lg font-bold text-red-200 mt-2">
+                            YOU WERE CAUGHT CHEATING!
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="p-6 rounded-2xl bg-black/40 border border-white/5 space-y-4 text-sm text-slate-300">
+                        <p className="font-bold text-red-400 uppercase tracking-widest text-center">Anti-Cheat Sentinel Report:</p>
+                        <ul className="list-disc list-inside space-y-2">
+                            <li>Signal lost due to tab switching or backgrounding.</li>
+                            <li>Session terminated immediately.</li>
+                            <li>No rewards granted for corrupted cycles.</li>
+                        </ul>
+                        <p className="italic text-center text-xs opacity-60">"Legends win through focus, not through manipulation."</p>
+                    </div>
+                    <DialogFooter className="pt-4">
+                        <DialogClose asChild>
+                            <Button className="w-full h-14 bg-white text-black font-black text-xl rounded-2xl hover:bg-slate-200">I UNDERSTAND</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

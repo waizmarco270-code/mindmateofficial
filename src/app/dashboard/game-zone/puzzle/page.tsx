@@ -9,28 +9,11 @@ import { cn } from "@/lib/utils";
 
 const puzzleGames = [
     {
-        title: "Units & Dimensions",
-        description: "Master the physical structure of 100+ scientific quantities.",
-        icon: Ruler,
-        href: "/dashboard/game-zone/puzzle/unit-dimensions",
-        color: "from-amber-400 to-yellow-600",
-        isNew: true
-    },
-    {
-        title: "Formula Forge",
-        description: "Reassemble the shattered laws of Physics & Mathematics.",
-        icon: Beaker,
-        href: "/dashboard/game-zone/puzzle/formula-forge",
-        color: "from-sky-500 to-indigo-600",
-        isNew: false
-    },
-    {
         title: "Chronos: Timeline War",
         description: "Place legendary events in the correct historical order.",
         icon: Clock,
         href: "/dashboard/game-zone/puzzle/chronos",
         color: "from-purple-500 to-indigo-600",
-        isNew: false
     },
     {
         title: "Emoji Quiz",
@@ -77,9 +60,6 @@ export default function PuzzleHubPage() {
                     >
                          <Link href={game.href} className="block h-full group">
                             <Card className="h-full flex flex-col justify-between items-center text-center p-6 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative">
-                                {game.isNew && (
-                                    <div className="absolute top-2 right-2 px-3 py-1 bg-primary text-white text-[10px] font-black uppercase rounded-full animate-pulse">NEW</div>
-                                )}
                                 <div>
                                     <div className={`mx-auto h-20 w-20 flex items-center justify-center rounded-full bg-gradient-to-br ${game.color} mb-4`}>
                                         <game.icon className="h-10 w-10 text-white" />
