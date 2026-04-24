@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,7 +12,8 @@ import {
     ChevronDown, ChevronUp, CheckCircle, 
     X, Medal, Gem, Orbit, Bird, 
     Swords, BrainCircuit, Sigma, Atom, 
-    FlaskConical, Smile, EyeOff, ScrollText, Brain, Clock, ShieldCheck
+    FlaskConical, Smile, EyeOff, ScrollText, Brain, Clock, ShieldCheck,
+    ChevronRight, ArrowLeft, Loader2, Zap, Award
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
@@ -27,31 +29,38 @@ interface GameZoneTabProps {
 }
 
 export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabProps) {
-    const { gameHistory } = useAdmin();
+    const { gameHistory, claimGMBounty } = useAdmin();
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [showcaseUser, setShowcaseUser] = useState<UserWithStats | null>(null);
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [selectedHistoryEntry, setSelectedHistoryEntry] = useState<any | null>(null);
+    const [isClaiming, setIsProcessingClaim] = useState(false);
     
     const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
-    const topTwenty = users.slice(0, 20);
+    const topThree = useMemo(() => {
+        const winners = users.slice(0, 3);
+        if (winners.length < 3) return winners;
+        return [winners[1], winners[0], winners[2]]; // [2nd, 1st, 3rd]
+    }, [users]);
+
+    const registry = useMemo(() => users.slice(3, 30), [users]);
     const myRank = users.findIndex(u => u.uid === currentUserId) + 1;
     const myData = users.find(u => u.uid === currentUserId);
-    const isNotInTopTwenty = myRank > 20 || myRank === 0;
+    const isNotInTopThirty = myRank > 30 || myRank === 0;
 
-    const lastWeekWinner = gameHistory[0]?.topPerformers[0];
+    const canClaimGM = myData && myData.entertainmentTotalScore >= 1000 && !myData.isGM;
 
     const scrollToMe = useCallback(() => {
         if (currentUserId && itemRefs.current[currentUserId]) {
             itemRefs.current[currentUserId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             setExpandedId(currentUserId);
-        } else if (isNotInTopTwenty) {
+        } else if (isNotInTopThirty) {
             setExpandedId('my-rank');
             const footer = document.getElementById('personal-skill-footer');
             footer?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [currentUserId, isNotInTopTwenty]);
+    }, [currentUserId, isNotInTopThirty]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -59,133 +68,141 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
         }
     }, [scrollToMe]);
 
-    const getTierStyles = (rank: number, isMe: boolean) => {
-        if (rank === 1) return "border-[#f59e0b] shadow-[0_0_30px_rgba(245,158,11,0.2)] animate-[alpha-rainbow-gold_4s_linear_infinite] bg-gradient-to-br from-yellow-500/10 to-amber-900/20";
-        if (rank === 2) return "border-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.2)] animate-[silver-glow_3s_ease-in-out_infinite] bg-gradient-to-br from-slate-400/10 to-slate-800/20";
-        if (rank === 3) return "border-[#b45309] shadow-[0_0_15px_rgba(180,83,9,0.2)] animate-[bronze-glow_3s_ease-in-out_infinite] bg-gradient-to-br from-amber-700/10 to-orange-900/20";
-        if (isMe) return "border-rose-500/30 bg-rose-500/5";
-        return "border-white/5 bg-card/40";
+    const handleClaimBounty = async () => {
+        if (!currentUserId || isClaiming) return;
+        setIsProcessingClaim(true);
+        try {
+            await claimGMBounty(currentUserId);
+        } finally {
+            setIsProcessingClaim(false);
+        }
     };
 
     return (
-        <div className="space-y-6 max-w-7xl mx-auto w-full pb-40 px-2 sm:px-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-rose-500/5 border-rose-500/20 rounded-3xl overflow-hidden">
-                    <CardContent className="p-4 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Gamepad2 className="h-8 w-8 text-rose-500 animate-pulse" />
-                            <div>
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Skill Registry</p>
-                                <p className="font-bold text-sm sm:text-base text-foreground">Weekly Arcade Cycle</p>
-                            </div>
-                        </div>
-                        <Button variant="outline" size="sm" className="h-8 text-[10px] font-black uppercase tracking-widest border-primary/20 rounded-xl" onClick={() => setIsHistoryOpen(true)}>
-                            <History className="mr-2 h-3 w-3"/> View History
-                        </Button>
-                    </CardContent>
-                </Card>
-
-                {lastWeekWinner && (
-                    <Card className="bg-amber-500/5 border-amber-500/20 cursor-pointer group rounded-3xl overflow-hidden" onClick={() => setSelectedHistoryEntry({ user: lastWeekWinner, date: gameHistory[0].weekStartDate })}>
-                        <CardContent className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <Trophy className="h-8 w-8 text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" />
-                                <div>
-                                    <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Last Week Champion</p>
-                                    <p className="font-bold truncate max-w-[150px] text-sm sm:text-base text-foreground">{lastWeekWinner.displayName}</p>
+        <div className="space-y-12 max-w-7xl mx-auto w-full pb-60 px-2 sm:px-4">
+            
+            {/* BOUNTY CLAIM BAR */}
+            <AnimatePresence>
+                {canClaimGM && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-1 rounded-[2rem] bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 shadow-2xl shadow-yellow-500/30"
+                    >
+                        <div className="bg-black/90 backdrop-blur-xl p-4 sm:p-6 rounded-[1.9rem] flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 rounded-2xl bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">
+                                    <Crown className="h-8 w-8 animate-bounce" />
+                                </div>
+                                <div className="text-center sm:text-left">
+                                    <h4 className="text-xl font-black uppercase italic text-yellow-400 tracking-tighter">THRESHOLD BREACHED</h4>
+                                    <p className="text-xs font-medium text-slate-300">You have crossed 1000 Skill Points. Claim your Grandmaster status.</p>
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <p className="text-base sm:text-xl font-black text-amber-500 tabular-nums">{Math.round(lastWeekWinner.score)}</p>
-                                <p className="text-[8px] font-black uppercase opacity-40">Skill Points</p>
-                            </div>
-                        </CardContent>
-                    </Card>
+                            <Button 
+                                onClick={handleClaimBounty} 
+                                disabled={isClaiming}
+                                className="h-14 px-10 rounded-2xl font-black uppercase text-sm bg-yellow-400 hover:bg-yellow-500 text-black shadow-xl"
+                            >
+                                {isClaiming ? <Loader2 className="animate-spin" /> : "CLAIM 500 CR + GM BADGE"}
+                            </Button>
+                        </div>
+                    </motion.div>
                 )}
-            </div>
+            </AnimatePresence>
 
-            <div className="space-y-4">
-                {topTwenty.map((user, index) => {
-                    const rank = index + 1;
-                    const isExpanded = expandedId === user.uid;
-                    const isMe = user.uid === currentUserId;
-                    const tierStyles = getTierStyles(rank, isMe);
-
-                    return (
-                        <div key={user.uid} ref={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}>
-                            <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.03 }}>
-                                <Card 
-                                    className={cn(
-                                        "relative overflow-hidden border-2 cursor-pointer group transition-all duration-500 rounded-[2rem] sm:rounded-[2.5rem]",
-                                        isExpanded ? "ring-4 ring-rose-500/20 scale-[1.01]" : "hover:scale-[1.005]",
-                                        tierStyles
-                                    )}
-                                    onClick={() => setExpandedId(isExpanded ? null : user.uid)}
-                                >
-                                    <div className="p-4 sm:p-6 flex items-center gap-3 sm:gap-8">
-                                        <div className="w-8 sm:w-12 text-center font-black italic text-xl sm:text-3xl opacity-40 shrink-0">#{rank}</div>
-                                        
-                                        <button 
-                                            onClick={(e) => { e.stopPropagation(); setShowcaseUser(user); }} 
-                                            className="relative shrink-0"
-                                        >
-                                            <Avatar className="h-12 w-12 sm:h-16 sm:w-16 border-2 border-white/10 relative z-10">
-                                                <AvatarImage src={user.photoURL} />
-                                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                        </button>
-
-                                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <p className="font-black text-sm sm:text-xl uppercase tracking-tight truncate italic">{user.displayName}</p>
+            {/* PODIUM STAGE */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-end">
+                <div className="lg:col-span-8 h-[350px] sm:h-[480px]">
+                    <Card className="h-full bg-slate-950/40 backdrop-blur-3xl border-2 border-white/5 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden relative">
+                        <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
+                        <div className="flex items-end justify-center gap-4 sm:gap-12 w-full max-w-2xl relative z-10">
+                            {topThree.map((user) => {
+                                const actualRank = users.findIndex(u => u.uid === user.uid) + 1;
+                                const isFirst = actualRank === 1;
+                                const equippedFrameId = user.equippedFrame || 'default';
+                                
+                                return (
+                                    <div key={user.uid} className="flex flex-col items-center gap-4">
+                                        <div className="relative group">
+                                            <Gamepad2 className={cn(
+                                                "h-6 w-6 sm:h-8 sm:w-8 absolute -top-8 left-1/2 -translate-x-1/2 animate-float-trophy",
+                                                actualRank === 1 ? "text-yellow-400" : actualRank === 2 ? "text-slate-300" : "text-amber-700"
+                                            )} />
+                                            <button 
+                                                onClick={() => setExpandedId(user.uid)}
+                                                className={cn(
+                                                    "avatar-frame-base transition-all duration-500 hover:scale-110",
+                                                    equippedFrameId === 'premium' ? "avatar-frame-premium" : (actualRank === 1 ? "gold-glow" : actualRank === 2 ? "silver-glow" : "bronze-glow")
+                                                )}
+                                            >
+                                                <Avatar className={cn(
+                                                    "h-16 w-16 sm:h-24 sm:w-24 border-2 border-background shadow-2xl",
+                                                    isFirst ? "sm:h-32 sm:w-32" : ""
+                                                )}>
+                                                    <AvatarImage src={user.photoURL} />
+                                                    <AvatarFallback>U</AvatarFallback>
+                                                </Avatar>
+                                            </button>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-[10px] sm:text-xs font-black uppercase text-white truncate max-w-[80px] sm:max-w-[120px] italic">
+                                                {user.displayName.split(' ')[0]}
+                                            </p>
+                                            <div className="mt-1 scale-90">
                                                 <ShowcaseBadge user={user} />
-                                                {user.isLeaderboardPrivate && <EyeOff className="h-4 w-4 opacity-40" />}
                                             </div>
-                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-0.5">
-                                                {user.mindMateId || 'ARCADE ELITE'}
-                                            </p>
-                                        </div>
-
-                                        <div className="text-right shrink-0 ml-auto">
-                                            <p className={cn(
-                                                "font-black italic tracking-tighter text-white leading-none tabular-nums",
-                                                user.entertainmentTotalScore >= 1000 ? "text-xl sm:text-4xl" : "text-2xl sm:text-5xl"
-                                            )}>
-                                                {Math.round(user.entertainmentTotalScore).toLocaleString()}
-                                            </p>
-                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40 mt-1">Skill Points</p>
-                                        </div>
-                                        
-                                        <div className="ml-1 sm:ml-2 opacity-30 group-hover:opacity-100 transition-opacity hidden sm:block">
-                                            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
                                         </div>
                                     </div>
-
-                                    <AnimatePresence>
-                                        {isExpanded && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/5 bg-black/40">
-                                                <div className="p-4 sm:p-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                                                    <SkillBlock icon={Orbit} label="Astro Ascent" score={user.gameHighScores?.astroAscent} color="text-purple-400" />
-                                                    <SkillBlock icon={Bird} label="Flappy Mind" score={user.gameHighScores?.flappyMind} color="text-sky-400" />
-                                                    <SkillBlock icon={Swords} label="Dim. Shift" score={user.gameHighScores?.dimensionShift} color="text-rose-400" />
-                                                    <SkillBlock icon={BrainCircuit} label="Sub. Sprint" score={user.gameHighScores?.subjectSprint} color="text-emerald-400" />
-                                                    <SkillBlock icon={Smile} label="Emoji Quiz" score={user.gameHighScores?.emojiQuiz} color="text-yellow-400" />
-                                                    <SkillBlock icon={Sigma} label="Math Legend" score={user.gameHighScores?.mathematicsLegend} color="text-blue-400" />
-                                                    <SkillBlock icon={Atom} label="Element Quest" score={(user.elementQuestScores?.s || 0) + (user.elementQuestScores?.p || 0) + (user.elementQuestScores?.d || 0) + (user.elementQuestScores?.f || 0)} color="text-cyan-400" />
-                                                    <SkillBlock icon={Brain} label="Memory Pattern" score={user.gameHighScores?.memoryGame} color="text-green-400" />
-                                                </div>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </Card>
-                            </motion.div>
+                                );
+                            })}
                         </div>
-                    );
-                })}
+                    </Card>
+                </div>
+
+                <div className="lg:col-span-4 space-y-4">
+                    <Card className="bg-muted/20 border-white/5 rounded-3xl p-6">
+                        <div className="flex items-center justify-between mb-4">
+                            <h5 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">Historical Archives</h5>
+                            <Button variant="ghost" size="sm" onClick={() => setIsHistoryOpen(true)} className="h-6 text-[8px] font-black uppercase tracking-widest bg-white/5 border border-white/10">Access Logs</Button>
+                        </div>
+                        <div className="space-y-3">
+                            {gameHistory.slice(0, 3).map(h => (
+                                <div key={h.id} className="flex items-center justify-between text-xs p-2 rounded-xl bg-black/20 border border-white/5 group hover:border-primary/20 transition-all cursor-pointer" onClick={() => { setSelectedHistoryEntry({ user: h.topPerformers[0], date: h.weekStartDate }); }}>
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-6 w-6 border border-white/10"><AvatarImage src={h.topPerformers[0]?.photoURL}/></Avatar>
+                                        <span className="font-bold opacity-60">{format(parseISO(h.weekStartDate), 'MMM d')}</span>
+                                    </div>
+                                    <Trophy className="h-3 w-3 text-amber-500 opacity-20 group-hover:opacity-100 transition-opacity"/>
+                                </div>
+                            ))}
+                        </div>
+                    </Card>
+                </div>
+            </div>
+
+            {/* THE SKILL REGISTRY */}
+            <div className="space-y-4">
+                <div className="flex items-center justify-between px-4 mb-6">
+                    <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-rose-500/60">Registry Phase Index</h4>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tap Card for Tactical Dossier</p>
+                </div>
+                {registry.map((user, index) => (
+                    <RegistryFlipCard 
+                        key={user.uid}
+                        user={user}
+                        rank={index + 4}
+                        isMe={user.uid === currentUserId}
+                        isExpanded={expandedId === user.uid}
+                        onClick={() => setExpandedId(expandedId === user.uid ? null : user.uid)}
+                        onShowcase={() => setShowcaseUser(user)}
+                        itemRef={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}
+                    />
+                ))}
             </div>
 
             <AnimatePresence>
-                {isNotInTopTwenty && myData && (
+                {isNotInTopThirty && myData && (
                     <motion.div 
                         id="personal-skill-footer"
                         initial={{ y: 100 }}
@@ -194,58 +211,29 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                     >
                         <div className="max-w-7xl mx-auto pointer-events-auto">
                             <Card 
-                                className="bg-[#0a0a0a]/95 backdrop-blur-2xl border-t-2 border-rose-500 shadow-[0_-20px_50px_rgba(0,0,0,0.5)] rounded-t-[2rem] overflow-hidden relative cursor-pointer group"
+                                className="bg-[#050505]/95 backdrop-blur-3xl border-t-2 border-rose-600 shadow-[0_-20px_60px_rgba(0,0,0,0.8)] rounded-t-[2.5rem] overflow-hidden cursor-pointer"
                                 onClick={() => setExpandedId(expandedId === 'my-rank' ? null : 'my-rank')}
                             >
-                                <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
-                                <div className="p-4 sm:p-6 flex items-center justify-between text-white relative z-10">
-                                    <div className="flex items-center gap-3 sm:gap-8">
-                                        <div className="h-10 w-10 sm:h-16 sm:w-16 rounded-full bg-rose-500/20 border-2 border-rose-500/40 flex flex-col items-center justify-center font-black text-sm sm:text-2xl italic leading-none shrink-0">
-                                            <span className="text-[6px] sm:text-[8px] uppercase tracking-widest not-italic opacity-60 mb-0.5 sm:mb-1">Rank</span>
-                                            #{myRank}
+                                <div className="p-4 sm:p-8 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-2xl bg-rose-500/20 border-2 border-rose-500/40 flex flex-col items-center justify-center shrink-0">
+                                            <span className="text-[8px] font-black uppercase tracking-widest opacity-60">Skill</span>
+                                            <span className="text-xl sm:text-2xl font-black italic">#{myRank}</span>
                                         </div>
-                                        <div className="flex items-center gap-3 min-w-0">
-                                            <Avatar className="h-8 w-8 sm:h-14 sm:w-14 border-2 border-white/10 shrink-0">
-                                                <AvatarImage src={myData.photoURL} />
-                                                <AvatarFallback>ME</AvatarFallback>
-                                            </Avatar>
-                                            <div className="truncate">
-                                                <p className="font-black text-[10px] sm:text-lg uppercase tracking-widest leading-none truncate">Skill Standing</p>
-                                                <p className="text-[7px] sm:text-[8px] font-bold uppercase text-rose-500 tracking-[0.2em] mt-1 sm:mt-1.5 flex items-center gap-1.5">
-                                                    <CheckCircle className="h-2 w-2 sm:h-3 sm:w-3"/> Arcade Uplink Active
-                                                </p>
-                                            </div>
+                                        <div className="min-w-0">
+                                            <p className="font-black text-xs sm:text-xl uppercase italic tracking-tighter truncate">Personal Standing</p>
+                                            <p className="text-[8px] sm:text-[10px] font-bold uppercase text-rose-500 tracking-[0.2em] flex items-center gap-1.5 mt-1">
+                                                <CheckCircle className="h-3 w-3"/> Arcade Uplink Active
+                                            </p>
                                         </div>
                                     </div>
-                                    <div className="text-right flex items-center gap-3">
-                                        <div className="flex flex-col items-end">
-                                            <p className={cn(
-                                                "font-black italic tracking-tighter leading-none text-rose-500 tabular-nums",
-                                                myData.entertainmentTotalScore >= 1000 ? "text-xl sm:text-5xl" : "text-2xl sm:text-6xl"
-                                            )}>{Math.round(myData.entertainmentTotalScore).toLocaleString()}</p>
-                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mt-1">Skill Points</p>
-                                        </div>
-                                        <div className="opacity-30 group-hover:opacity-100 transition-opacity">
-                                            {expandedId === 'my-rank' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                                        </div>
+                                    <div className="text-right">
+                                        <p className="text-2xl sm:text-5xl font-black italic tracking-tighter text-white tabular-nums">{Math.round(myData.entertainmentTotalScore).toLocaleString()}</p>
+                                        <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40">Skill Points</p>
                                     </div>
                                 </div>
-
                                 <AnimatePresence>
-                                    {expandedId === 'my-rank' && (
-                                        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/10 bg-black/60 p-4 sm:p-6">
-                                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                                                <SkillBlock icon={Orbit} label="Astro Ascent" score={myData.gameHighScores?.astroAscent} color="text-purple-400" />
-                                                <SkillBlock icon={Bird} label="Flappy Mind" score={myData.gameHighScores?.flappyMind} color="text-sky-400" />
-                                                <SkillBlock icon={Swords} label="Dim. Shift" score={myData.gameHighScores?.dimensionShift} color="text-rose-400" />
-                                                <SkillBlock icon={BrainCircuit} label="Sub. Sprint" score={myData.gameHighScores?.subjectSprint} color="text-emerald-400" />
-                                                <SkillBlock icon={Smile} label="Emoji Quiz" score={myData.gameHighScores?.emojiQuiz} color="text-yellow-400" />
-                                                <SkillBlock icon={Sigma} label="Math Legend" score={myData.gameHighScores?.mathematicsLegend} color="text-blue-400" />
-                                                <SkillBlock icon={Atom} label="Element Quest" score={(myData.elementQuestScores?.s || 0) + (myData.elementQuestScores?.p || 0) + (myData.elementQuestScores?.d || 0) + (myData.elementQuestScores?.f || 0)} color="text-cyan-400" />
-                                                <SkillBlock icon={Brain} label="Memory Pattern" score={myData.gameHighScores?.memoryGame} color="text-green-400" />
-                                            </div>
-                                        </motion.div>
-                                    )}
+                                    {expandedId === 'my-rank' && <DossierExpansion user={myData} />}
                                 </AnimatePresence>
                             </Card>
                         </div>
@@ -295,9 +283,6 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                                     </div>
                                 </div>
                             ))}
-                            {gameHistory.length === 0 && (
-                                <div className="py-20 text-center opacity-30 italic">No historical archives found.</div>
-                            )}
                         </div>
                     </ScrollArea>
                 </DialogContent>
@@ -318,14 +303,12 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                             </CardHeader>
                             <CardContent className="p-6 space-y-4">
                                 <div className="grid grid-cols-2 gap-3">
-                                    <SkillBlock icon={Orbit} label="Astro" score={selectedHistoryEntry.user.scores.astroAscent} color="text-purple-400" isMini />
-                                    <SkillBlock icon={Bird} label="Flappy" score={selectedHistoryEntry.user.scores.flappyMind} color="text-sky-400" isMini />
-                                    <SkillBlock icon={Swords} label="Shift" score={selectedHistoryEntry.user.scores.dimensionShift} color="text-rose-400" isMini />
-                                    <SkillBlock icon={BrainCircuit} label="Sprint" score={selectedHistoryEntry.user.scores.subjectSprint} color="text-emerald-400" isMini />
-                                    <SkillBlock icon={Smile} label="Emoji" score={selectedHistoryEntry.user.scores.emojiQuiz} color="text-yellow-400" isMini />
-                                    <SkillBlock icon={Sigma} label="Math" score={selectedHistoryEntry.user.scores.mathematicsLegend} color="text-blue-400" isMini />
-                                    <SkillBlock icon={Atom} label="Element" score={selectedHistoryEntry.user.scores.elementQuestTotal} color="text-cyan-400" isMini />
-                                    <SkillBlock icon={Brain} label="Memory" score={selectedHistoryEntry.user.scores.memoryGame} color="text-green-400" isMini />
+                                    <DossierItem icon={Orbit} label="Astro" val={selectedHistoryEntry.user.scores.astroAscent} color="text-purple-400" />
+                                    <DossierItem icon={Bird} label="Flappy" val={selectedHistoryEntry.user.scores.flappyMind} color="text-sky-400" />
+                                    <DossierItem icon={Swords} label="Shift" val={selectedHistoryEntry.user.scores.dimensionShift} color="text-rose-400" />
+                                    <DossierItem icon={BrainCircuit} label="Sprint" val={selectedHistoryEntry.user.scores.subjectSprint} color="text-emerald-400" />
+                                    <DossierItem icon={Smile} label="Emoji" val={selectedHistoryEntry.user.scores.emojiQuiz} color="text-yellow-400" />
+                                    <DossierItem icon={Sigma} label="Math" val={selectedHistoryEntry.user.scores.mathematicsLegend} color="text-blue-400" />
                                 </div>
                                 <div className="pt-4 border-t border-white/5 text-center">
                                     <p className="text-3xl font-black text-amber-500 italic tabular-nums">{selectedHistoryEntry.user.score}</p>
@@ -342,21 +325,91 @@ export function GameZoneTab({ users, currentUserId, onUserClick }: GameZoneTabPr
                 </DialogContent>
             </Dialog>
 
-            <BadgeShowcaseDialog user={showcaseUser} onClose={() => setShowcaseUser(null)} />
+            <BadgeShowcaseDialog user={showcaseUser} onClose={() => showcaseUser && setShowcaseUser(null)} />
         </div>
     );
 }
 
-function SkillBlock({ icon: Icon, label, score, color, isMini = false }: any) {
+function DossierExpansion({ user }: { user: UserWithStats }) {
     return (
-        <div className={cn("flex items-center gap-3 bg-white/5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5 transition-colors")}>
-            <div className={cn("p-1 sm:p-1.5 rounded-lg bg-black/20 shrink-0", color)}>
-                <Icon className={cn(isMini ? "h-3.5 w-3.5" : "h-5 w-5")} />
+        <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/10 bg-black/60 p-4 sm:p-8">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-6">
+                <DossierItem icon={Orbit} label="Astro Ascent" val={user.gameHighScores?.astroAscent} color="text-purple-400" />
+                <DossierItem icon={Bird} label="Flappy Mind" val={user.gameHighScores?.flappyMind} color="text-sky-400" />
+                <DossierItem icon={Swords} label="Dimension Shift" val={user.gameHighScores?.dimensionShift} color="text-rose-400" />
+                <DossierItem icon={BrainCircuit} label="Subject Sprint" val={user.gameHighScores?.subjectSprint} color="text-emerald-400" />
+                <DossierItem icon={Smile} label="Emoji Quiz" val={user.gameHighScores?.emojiQuiz} color="text-yellow-400" />
+                <DossierItem icon={Sigma} label="Mathematics Legend" val={user.gameHighScores?.mathematicsLegend} color="text-blue-400" />
+                <DossierItem icon={Atom} label="Element Quest" val={user.elementQuestTotalScore} color="text-cyan-400" />
+                <DossierItem icon={Brain} label="Memory Pattern" val={user.gameHighScores?.memoryGame} color="text-green-400" />
             </div>
-            <div className="min-w-0 text-left">
-                <p className={cn("text-[7px] sm:text-[8px] font-black uppercase opacity-40 leading-none mb-0.5 sm:mb-1")}>{label}</p>
-                <p className={cn("font-bold truncate leading-none tabular-nums text-foreground", isMini ? "text-[10px]" : "text-xs")}>{score || 0}</p>
+        </motion.div>
+    );
+}
+
+function DossierItem({ icon: Icon, label, val, color }: any) {
+    return (
+        <div className="flex items-center gap-3 p-2 sm:p-3 bg-white/5 rounded-xl sm:rounded-2xl border border-white/5">
+            <div className={cn("p-1.5 sm:p-2 rounded-lg bg-black/20 shrink-0", color)}>
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
+            <div className="min-w-0">
+                <p className="text-[7px] sm:text-[8px] font-black uppercase opacity-40 leading-none truncate mb-1">{label}</p>
+                <p className="text-[9px] sm:text-xs font-black text-white truncate tabular-nums">{val || 0}</p>
+            </div>
+        </div>
+    );
+}
+
+function RegistryFlipCard({ user, rank, isMe, isExpanded, onClick, onShowcase, itemRef }: any) {
+    const equippedFrameId = user.equippedFrame || 'default';
+    return (
+        <div ref={itemRef} className="w-full flex flex-col gap-0">
+            <Card 
+                className={cn(
+                    "relative overflow-hidden border border-white/5 bg-card/40 rounded-[1.5rem] sm:rounded-[2.5rem] flex items-center px-4 sm:px-8 h-20 sm:h-24 gap-4 sm:gap-8 transition-all cursor-pointer",
+                    isMe && "bg-rose-500/5 border-rose-500/20",
+                    isExpanded && "rounded-b-none border-b-0 ring-1 ring-rose-500/20"
+                )}
+                onClick={onClick}
+            >
+                <div className="w-6 sm:w-10 text-center font-black italic text-xl sm:text-3xl opacity-40">#{rank}</div>
+                
+                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                    <button onClick={(e) => { e.stopPropagation(); onShowcase(); }}>
+                        <div className={cn("avatar-frame-base", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                            <Avatar className="h-10 w-10 sm:h-14 sm:w-14 border-2 shadow-lg bg-background relative z-10">
+                                <AvatarImage src={user.photoURL} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
+                    </button>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <p className="font-black text-sm sm:text-xl uppercase italic tracking-tight truncate">{user.displayName}</p>
+                            <ShowcaseBadge user={user} />
+                            {user.isLeaderboardPrivate && <EyeOff className="h-3 w-3 opacity-40" />}
+                        </div>
+                        <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60 mt-0.5">
+                            {user.mindMateId || 'ARCADE ELITE'}
+                        </p>
+                    </div>
+                </div>
+
+                <div className="text-right shrink-0 flex items-center gap-4">
+                    <div>
+                        <p className="text-xl sm:text-4xl font-black italic tracking-tighter leading-none tabular-nums text-white">
+                            {Math.round(user.entertainmentTotalScore).toLocaleString()}
+                        </p>
+                        <p className="text-[8px] font-black uppercase opacity-40 mt-1 tracking-widest">Skill Points</p>
+                    </div>
+                    {isExpanded ? <ChevronUp className="h-4 w-4 opacity-40"/> : <ChevronDown className="h-4 w-4 opacity-40"/>}
+                </div>
+            </Card>
+
+            <AnimatePresence>
+                {isExpanded && <DossierExpansion user={user} />}
+            </AnimatePresence>
         </div>
     );
 }
@@ -364,60 +417,63 @@ function SkillBlock({ icon: Icon, label, score, color, isMini = false }: any) {
 function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, onClose: () => void }) {
     if (!user) return null;
     const owned = getOwnedBadges(user);
+    const equippedFrameId = user.equippedFrame || 'default';
 
     return (
         <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent className="max-w-xl bg-background/95 backdrop-blur-xl border-primary/20 p-0 overflow-hidden rounded-[2.5rem] shadow-2xl">
-                <div className="h-32 bg-gradient-to-br from-rose-500/20 via-background to-background relative overflow-hidden">
-                    <div className="absolute inset-0 bg-grid-white/5" />
-                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-4 w-4"/></Button>
+            <DialogContent className="max-w-xl bg-background/95 backdrop-blur-3xl border-primary/20 p-0 overflow-hidden rounded-[3rem] shadow-2xl">
+                <div className="h-32 bg-gradient-to-br from-rose-500/20 via-background to-background relative">
+                    <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive z-50" onClick={onClose}><X className="h-6 w-6"/></Button>
                 </div>
                 
-                <div className="px-6 sm:px-8 pb-10 -mt-12 relative z-10">
+                <div className="px-6 sm:px-10 pb-12 -mt-16 relative z-10">
                     <div className="flex flex-col items-center text-center space-y-4">
-                        <Avatar className="h-24 w-24 border-4 border-rose-500 shadow-2xl bg-background">
-                            <AvatarImage src={user.photoURL} />
-                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <div className={cn("avatar-frame-base h-24 w-24 sm:h-32 sm:w-32", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                            <Avatar className={cn("h-full w-full border-4 shadow-2xl bg-background")}>
+                                <AvatarImage src={user.photoURL} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
                         <div>
-                            <h3 className="text-2xl font-black uppercase italic tracking-tight text-foreground">{user.displayName}</h3>
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Arcade Dossier • {user.mindMateId || 'LEGEND'}</p>
+                            <h3 className="text-2xl sm:text-4xl font-black uppercase italic tracking-tight">{user.displayName}</h3>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Arcade Registry • {user.mindMateId || 'LEGEND'}</p>
                         </div>
                     </div>
 
-                    <div className="mt-8 space-y-6">
-                        <div className="flex items-center justify-between border-b pb-2">
-                            <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.3em] text-rose-500 flex items-center gap-2">
-                                <Medal className="h-4 w-4"/> Verified Arcade Assets
+                    <div className="mt-10 space-y-6">
+                        <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                            <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-rose-500 flex items-center gap-3">
+                                <Award className="h-5 w-5"/> Verified Assets
                             </h4>
-                            <span className="text-[9px] sm:text-[10px] font-bold text-muted-foreground uppercase">{owned.length} Badges Unlocked</span>
+                            <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded-full">{owned.length} UNLOCKED</span>
                         </div>
 
-                        <ScrollArea className="h-64 pr-2 sm:pr-4">
+                        <ScrollArea className="h-64 pr-4 sm:pr-6">
                             <div className="space-y-3">
                                 {owned.map(key => (
-                                    <div key={key} className="flex items-center justify-between p-3 rounded-2xl bg-muted/30 border border-white/5 group hover:border-rose-500/20 transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <div className="p-2 rounded-xl bg-background shadow-inner">
-                                                <ScrollText className="h-4 w-4 text-rose-500 opacity-40"/>
+                                    <div key={key} className="flex items-center justify-between p-4 rounded-[1.5rem] bg-white/[0.03] border border-white/5 group hover:border-rose-500/30 transition-all shadow-inner">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-2.5 rounded-2xl bg-background shadow-lg">
+                                                <ScrollText className="h-5 w-5 text-rose-500 opacity-40"/>
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-foreground">{badgeMeta[key].name}</p>
-                                                <p className="text-[9px] text-muted-foreground font-medium">Unlocked through merit.</p>
+                                                <p className="text-base font-black uppercase italic text-foreground/90">{badgeMeta[key].name}</p>
+                                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest mt-0.5">Asset Log Secured</p>
                                             </div>
                                         </div>
-                                        <div className="scale-75 sm:scale-90 origin-right">{badgeMeta[key].badge}</div>
+                                        <div className="scale-90 sm:scale-110 origin-right">{badgeMeta[key].badge}</div>
                                     </div>
                                 ))}
                                 {owned.length === 0 && (
-                                    <div className="py-12 text-center opacity-30 flex flex-col items-center">
-                                        <Trophy className="h-12 w-12 mb-2" />
-                                        <p className="text-xs font-black uppercase tracking-widest">No assets found</p>
+                                    <div className="py-20 text-center opacity-30 flex flex-col items-center">
+                                        <Trophy className="h-16 w-16 mb-4" />
+                                        <p className="text-sm font-black uppercase tracking-[0.3em]">No valid signatures found</p>
                                     </div>
                                 )}
                             </div>
                         </ScrollArea>
-                        <p className="text-[8px] sm:text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest italic opacity-60 pt-4">"Viewing all badges this user's Identity record holds"</p>
+                        <p className="text-[9px] text-center text-muted-foreground font-black uppercase tracking-[0.3em] italic opacity-40 pt-6">"End of Dossier Record"</p>
                     </div>
                 </div>
             </DialogContent>

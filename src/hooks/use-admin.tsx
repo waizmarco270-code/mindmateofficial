@@ -122,7 +122,16 @@ export interface GameHistoryEntry {
         displayName: string;
         photoURL?: string;
         score: number;
-        scores: User['gameHighScores'] & { elementQuestTotal: number };
+        scores: {
+            astroAscent: number;
+            flappyMind: number;
+            dimensionShift: number;
+            subjectSprint: number;
+            emojiQuiz: number;
+            mathematicsLegend: number;
+            elementQuestTotal: number;
+            memoryGame: number;
+        };
     }[];
 }
 
@@ -206,6 +215,7 @@ interface AppDataContextType {
     completeOnboarding: (data: any) => Promise<void>;
     markTableAsMastered: (uid: string, table: number, reward: number) => Promise<void>;
     claimAllTablesBounty: (uid: string) => Promise<void>;
+    claimGMBounty: (uid: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -332,7 +342,22 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 }).toISOString();
             const sortedUsers = [...users].map(u => ({ ...u, score: (u.gameHighScores?.emojiQuiz || 0) * 1.2 + (u.gameHighScores?.memoryGame || 0) + (u.gameHighScores?.dimensionShift || 0) * 1.5 + (u.gameHighScores?.subjectSprint || 0) * 1.1 + (u.gameHighScores?.flappyMind || 0) + (u.gameHighScores?.astroAscent || 0) * 1.3 + (u.gameHighScores?.mathematicsLegend || 0) * 1.4 + (u.gameHighScores?.chronos || 0) * 1.6 + (u.gameHighScores?.formulaForge || 0) * 1.8 + (((u.elementQuestScores?.s || 0) + (u.elementQuestScores?.p || 0) + (u.elementQuestScores?.d || 0) + (u.elementQuestScores?.f || 0)) * 0.5) }))
                 .sort((a, b) => b.score - a.score);
-            const topFive = sortedUsers.slice(0, 5).map(u => ({ uid: u.uid, displayName: u.displayName, photoURL: u.photoURL, score: Math.round(u.score), scores: { ...u.gameHighScores, elementQuestTotal: (u.elementQuestScores?.s || 0) + (u.elementQuestScores?.p || 0) + (u.elementQuestScores?.d || 0) + (u.elementQuestScores?.f || 0) } }));
+            const topFive = sortedUsers.slice(0, 5).map(u => ({ 
+                uid: u.uid, 
+                displayName: u.displayName, 
+                photoURL: u.photoURL, 
+                score: Math.round(u.score), 
+                scores: { 
+                    astroAscent: u.gameHighScores?.astroAscent || 0,
+                    flappyMind: u.gameHighScores?.flappyMind || 0,
+                    dimensionShift: u.gameHighScores?.dimensionShift || 0,
+                    subjectSprint: u.gameHighScores?.subjectSprint || 0,
+                    emojiQuiz: u.gameHighScores?.emojiQuiz || 0,
+                    mathematicsLegend: u.gameHighScores?.mathematicsLegend || 0,
+                    elementQuestTotal: (u.elementQuestScores?.s || 0) + (u.elementQuestScores?.p || 0) + (u.elementQuestScores?.d || 0) + (u.elementQuestScores?.f || 0),
+                    memoryGame: u.gameHighScores?.memoryGame || 0
+                } 
+            }));
             const batch = writeBatch(db);
             batch.set(doc(collection(db, 'gameZoneHistory')), { weekStartDate: currentWeekStart, topPerformers: topFive, createdAt: serverTimestamp() });
             users.forEach(u => batch.update(doc(db, 'users', u.uid), { gameHighScores: { memoryGame: 0, emojiQuiz: 0, dimensionShift: 0, subjectSprint: 0, flappyMind: 0, astroAscent: 0, mathematicsLegend: 0, chronos: 0, formulaForge: 0 }, elementQuestScores: { s: 0, p: 0, d: 0, f: 0 }, dimensionShiftClaims: {}, flappyMindClaims: {}, astroAscentClaims: {}, mathematicsLegendClaims: {} }));
@@ -377,6 +402,17 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "Welcome to MindMate Plus!" });
     };
 
+    const claimGMBounty = async (userId: string) => {
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, {
+            isGM: true,
+            showcasedBadge: 'gm',
+            credits: increment(500),
+            rewardHistory: arrayUnion({ reward: 500, date: new Date(), source: 'Game Master Ascension' })
+        });
+        toast({ title: "GRANDMASTER ASCENDED", description: "+500 Credits injected into your treasury.", className: "bg-amber-500 text-black font-black" });
+    };
+
     const value = {
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
         announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
@@ -393,7 +429,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         resetAllUserCredits: (v: number) => systemActions.resetAllUserCredits(v),
         performGameReset, resetAllChallenges, claimPlusMembership, completeOnboarding,
         markTableAsMastered: (uid: string, t: number, r: number) => userActions.markTableAsMastered(uid, t, r),
-        claimAllTablesBounty: (uid: string) => userActions.claimAllTablesBounty(uid)
+        claimAllTablesBounty: (uid: string) => userActions.claimAllTablesBounty(uid),
+        claimGMBounty
     };
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
