@@ -128,9 +128,9 @@ export default function GameZoneHubPage() {
                     </h1>
                     <p className="text-muted-foreground">Relax, play some games, and earn credits!</p>
                 </div>
-                <Button asChild variant="outline" className="rounded-full border-amber-500/20 bg-amber-500/5 hover:bg-amber-500/10 text-amber-500 font-black uppercase tracking-widest text-[10px]">
-                    <Link href="/dashboard/leaderboard?tab=game-zone">
-                        <Trophy className="mr-2 h-4 w-4"/> Global Game Leaderboard
+                <Button asChild variant="outline" className="rounded-[1.5rem] border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10 text-rose-500 font-black uppercase tracking-widest text-[10px] px-8 h-12 shadow-xl shadow-rose-500/10">
+                    <Link href="/dashboard/game-zone/leaderboard">
+                        <Trophy className="mr-3 h-4 w-4"/> ARCADE ARENA REGISTRY
                     </Link>
                 </Button>
             </div>
@@ -160,7 +160,9 @@ export default function GameZoneHubPage() {
                 <div className="grid grid-cols-2 gap-4">
                     {gameCategories.map((category) => (
                          <Link href={category.href} className="group block" key={category.title}>
-                            <Card className="group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-center h-full">
+                            <Card className={cn(
+                                "group relative text-white overflow-hidden rounded-xl p-px hover:shadow-lg hover:-translate-y-1 transition-all duration-300 flex flex-col justify-center h-full"
+                            )}>
                                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-950 z-0 opacity-80"></div>
                                 <div className="absolute inset-0 bg-grid-slate-800/50 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 <CardContent className="p-4 sm:p-6 text-center relative z-10 space-y-3">

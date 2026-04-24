@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useUsers } from '@/hooks/use-admin';
 import { useLeaderboardData, UserWithStats } from '@/hooks/use-leaderboard-data';
@@ -11,7 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Settings2, Loader2, Trophy, ShieldCheck, Globe, Info, X, Target, Star, Medal, Clock, Flame, ShieldAlert, Award, Gem } from 'lucide-react';
 import { AllTimeTab } from '@/components/leaderboard/tabs/all-time-tab';
 import { WeeklyTab } from '@/components/leaderboard/tabs/weekly-tab';
-import { GameZoneTab } from '@/components/leaderboard/tabs/game-zone-tab';
 import { PrivacyDialog } from '@/components/leaderboard/shared/privacy-dialog';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -31,16 +30,14 @@ export default function LeaderboardPage() {
 
     const sortedByScore = useMemo(() => [...filteredUsers].sort((a, b) => b.totalScore - a.totalScore), [filteredUsers]);
     const sortedByWeekly = useMemo(() => [...filteredUsers].sort((a, b) => b.weeklyTime - a.weeklyTime), [filteredUsers]);
-    const sortedByGames = useMemo(() => [...filteredUsers].sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore), [filteredUsers]);
 
     const lastWeekWeeklyWinner = useMemo(() => [...processedUsers].sort((a, b) => b.prevWeeklyTime - a.prevWeeklyTime)[0], [processedUsers]);
-    const lastWeekGameWinner = useMemo(() => [...processedUsers].sort((a, b) => b.prevWeekEntertainmentTotalScore - a.prevWeekEntertainmentTotalScore)[0], [processedUsers]);
 
-    const handleFindMe = () => {
+    const scrollToMe = useCallback(() => {
         if (typeof window !== 'undefined' && (window as any).scrollToUserRank) {
             (window as any).scrollToUserRank();
         }
-    };
+    }, []);
 
     if (loading) {
         return (
@@ -78,7 +75,7 @@ export default function LeaderboardPage() {
                     <Button 
                         variant="outline" 
                         className="flex-1 md:flex-none h-12 rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10 font-black uppercase text-[10px] tracking-widest px-6"
-                        onClick={handleFindMe}
+                        onClick={scrollToMe}
                     >
                         <Target className="mr-2 h-4 w-4"/> Find Me
                     </Button>
@@ -102,10 +99,9 @@ export default function LeaderboardPage() {
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="flex justify-center mb-12">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-3 h-16 p-1.5 bg-muted/30 backdrop-blur-xl rounded-[2.5rem] border-2 border-white/5">
+                    <TabsList className="grid w-full max-w-md grid-cols-2 h-16 p-1.5 bg-muted/30 backdrop-blur-xl rounded-[2.5rem] border-2 border-white/5">
                         <TabsTrigger value="all-time" className="rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-[0.2em] data-[state=active]:bg-primary data-[state=active]:text-white shadow-xl transition-all">All-Time</TabsTrigger>
                         <TabsTrigger value="weekly" className="rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-[0.2em] data-[state=active]:bg-primary data-[state=active]:text-white shadow-xl transition-all">Weekly</TabsTrigger>
-                        <TabsTrigger value="game-zone" className="rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-[0.2em] data-[state=active]:bg-primary data-[state=active]:text-white shadow-xl transition-all">Arcade</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -116,10 +112,6 @@ export default function LeaderboardPage() {
                     
                     <TabsContent value="weekly" className="m-0">
                         <WeeklyTab users={sortedByWeekly} currentUserId={currentUser?.id} onUserClick={() => {}} lastWeekWinner={lastWeekWeeklyWinner} />
-                    </TabsContent>
-                    
-                    <TabsContent value="game-zone" className="m-0">
-                        <GameZoneTab users={sortedByGames} currentUserId={currentUser?.id} onUserClick={() => {}} lastWeekWinner={lastWeekGameWinner} />
                     </TabsContent>
                 </div>
             </Tabs>
@@ -181,4 +173,8 @@ function InfoBlock({ label, desc, color, icon: Icon }: any) {
             </div>
         </div>
     );
+}
+
+function useCallback(arg0: () => void, arg1: (string | undefined | boolean)[]) {
+    throw new Error('Function not implemented.');
 }
