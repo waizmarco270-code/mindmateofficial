@@ -148,10 +148,13 @@ export function ArenaLeaderboard() {
                                                 transition={{ duration: 4, repeat: Infinity }}
                                                 className={cn("absolute -inset-4 rounded-full blur-2xl", isFirst ? "bg-yellow-400/20" : "bg-primary/10")}
                                             />
-                                            <div className={cn(
-                                                "avatar-frame-base transition-all duration-500 hover:scale-110",
-                                                (user.equippedFrame || 'default') === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default'
-                                            )}>
+                                            <button 
+                                                onClick={() => setShowcaseUser(user)}
+                                                className={cn(
+                                                    "avatar-frame-base transition-all duration-500 hover:scale-110",
+                                                    (user.equippedFrame || 'default') === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default'
+                                                )}
+                                            >
                                                 <Avatar className={cn(
                                                     "h-12 w-12 sm:h-24 sm:w-24 border-2 shadow-2xl relative z-10 bg-background",
                                                     isFirst && "sm:h-40 sm:w-40 h-24 w-24"
@@ -159,7 +162,7 @@ export function ArenaLeaderboard() {
                                                     <AvatarImage src={user.photoURL} />
                                                     <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                                 </Avatar>
-                                            </div>
+                                            </button>
                                             <div className={cn(
                                                 "absolute -bottom-4 left-1/2 -translate-x-1/2 h-6 w-6 sm:h-8 sm:w-8 rounded-full border-2 bg-background flex items-center justify-center font-black italic shadow-xl z-20 text-[10px] sm:text-sm",
                                                 stageColor
@@ -172,18 +175,21 @@ export function ArenaLeaderboard() {
                                             <div className="scale-75"><ShowcaseBadge user={user} /></div>
                                         </div>
                                         {/* The Arena Pedestal */}
-                                        <div className={cn(
-                                            "w-full rounded-t-[2rem] border-t-4 bg-gradient-to-b from-white/10 to-transparent transition-all duration-700",
-                                            stageColor,
-                                            isFirst ? "h-32 sm:h-48" : originalRank === 2 ? "h-24 sm:h-32" : "h-16 sm:h-24"
-                                        )}>
+                                        <button 
+                                            onClick={() => setShowcaseUser(user)}
+                                            className={cn(
+                                                "w-full rounded-t-[2rem] border-t-4 bg-gradient-to-b from-white/10 to-transparent transition-all duration-700 hover:brightness-125",
+                                                stageColor,
+                                                isFirst ? "h-32 sm:h-48" : originalRank === 2 ? "h-24 sm:h-32" : "h-16 sm:h-24"
+                                            )}
+                                        >
                                             <div className="p-2 sm:p-4 text-center">
-                                                <p className="text-sm sm:text-3xl font-black italic tabular-nums text-white">
+                                                <p className="text-lg sm:text-4xl font-black italic tabular-nums text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
                                                     {Math.round(user.entertainmentTotalScore).toLocaleString()}
                                                 </p>
                                                 <p className="text-[6px] sm:text-[9px] font-black uppercase tracking-widest opacity-40">Points</p>
                                             </div>
-                                        </div>
+                                        </button>
                                     </div>
                                 );
                             })}
@@ -448,7 +454,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                 <div className="px-6 sm:px-10 pb-12 -mt-16 relative z-10">
                     <div className="flex flex-col items-center text-center space-y-4">
                         <div className={cn("avatar-frame-base h-24 w-24 sm:h-32 sm:w-32", frameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
-                            <Avatar className="h-full w-full border-4 shadow-2xl bg-background">
+                            <Avatar className="h-full w-full border-4 shadow-2xl bg-background relative z-10">
                                 <AvatarImage src={user.photoURL} />
                                 <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
@@ -459,7 +465,23 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                         </div>
                     </div>
 
-                    <div className="mt-10 space-y-6">
+                    <div className="mt-8 space-y-6">
+                        <div className="p-6 rounded-[2rem] bg-rose-500/5 border border-rose-500/20">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-rose-500/60 mb-6 flex items-center gap-2"><LayoutDashboard className="h-3 w-3"/> Registry Record</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                <DossierItem icon={Orbit} label="Astro Ascent" val={user.gameHighScores?.astroAscent} color="text-purple-400" />
+                                <DossierItem icon={Bird} label="Flappy Mind" val={user.gameHighScores?.flappyMind} color="text-sky-400" />
+                                <DossierItem icon={Swords} label="Dimension Shift" val={user.gameHighScores?.dimensionShift} color="text-rose-400" />
+                                <DossierItem icon={BrainCircuit} label="Subject Sprint" val={user.gameHighScores?.subjectSprint} color="text-emerald-400" />
+                                <DossierItem icon={Smile} label="Emoji Quiz" val={user.gameHighScores?.emojiQuiz} color="text-yellow-400" />
+                                <DossierItem icon={Sigma} label="Math Legend" val={user.gameHighScores?.mathematicsLegend} color="text-blue-400" />
+                                <DossierItem icon={Atom} label="Element Quest" val={user.elementQuestTotalScore} color="text-cyan-400" />
+                                <DossierItem icon={Clock} label="Chronos" val={user.gameHighScores?.chronos} color="text-amber-400" />
+                                <DossierItem icon={Beaker} label="Formula Forge" val={user.gameHighScores?.formulaForge} color="text-rose-600" />
+                                <DossierItem icon={Brain} label="Memory Pattern" val={user.gameHighScores?.memoryGame} color="text-green-500" />
+                            </div>
+                        </div>
+
                         <div className="flex items-center justify-between border-b border-white/10 pb-3">
                             <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-rose-500 flex items-center gap-3">
                                 <Medal className="h-5 w-5"/> Identity Portfolio
@@ -467,7 +489,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                             <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded-full">{owned.length} Assets Unlocked</span>
                         </div>
 
-                        <ScrollArea className="h-64 pr-4 sm:pr-6">
+                        <ScrollArea className="h-48 pr-4 sm:pr-6">
                             <div className="space-y-3">
                                 {owned.map(key => (
                                     <div key={key} className="flex items-center justify-between p-4 rounded-[1.5rem] bg-white/[0.03] border border-white/5 group hover:border-rose-500/30 transition-all shadow-inner">
@@ -484,7 +506,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                                     </div>
                                 ))}
                                 {owned.length === 0 && (
-                                    <div className="py-20 text-center opacity-30 flex flex-col items-center">
+                                    <div className="py-12 text-center opacity-30 flex flex-col items-center">
                                         <Trophy className="h-16 w-16 mb-4" />
                                         <p className="text-sm font-black uppercase tracking-[0.3em]">No valid signatures found</p>
                                     </div>
