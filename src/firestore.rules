@@ -43,13 +43,24 @@ service cloud.firestore {
       }
     }
     
+    // Mentor Sessions
+    match /mentorSessions/{sessionId} {
+        allow read: if isSignedIn();
+        allow create: if isAdmin() || isSuperAdmin();
+        allow update: if isSignedIn() && (
+            (isAdmin() || isSuperAdmin()) || 
+            (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']))
+        );
+        allow delete: if isAdmin() || isSuperAdmin();
+    }
+    
     // Presence System
     match /presence/{userId} {
       allow read: if isSignedIn();
       allow write: if isOwner(userId);
     }
     
-    // FCM Tokens (Needed for Push Notifications list)
+    // FCM Tokens
     match /fcmTokens/{userId} {
       allow read: if isAdmin() || isSuperAdmin();
       allow write: if isOwner(userId);
@@ -61,7 +72,7 @@ service cloud.firestore {
       allow write: if isSuperAdmin();
     }
     
-    // Calls Collection (Voice Calls)
+    // Calls Collection
     match /calls/{callId} {
       allow read, write: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.receiverId || request.auth.uid == request.resource.data.callerId);
       
@@ -130,7 +141,7 @@ service cloud.firestore {
         allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
     }
     
-    // World Chat (Global Chat)
+    // World Chat
     match /world_chat/{messageId} {
         allow read, create: if isSignedIn();
         allow update: if isSignedIn(); 
@@ -150,7 +161,7 @@ service cloud.firestore {
         allow create: if isSignedIn();
     }
     
-    // Global Gifts (Popups)
+    // Global Gifts
     match /globalGifts/{giftId} {
         allow read: if isSignedIn();
         allow create, update, delete: if isSuperAdmin();

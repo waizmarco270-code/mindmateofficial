@@ -47,7 +47,8 @@ import {
   ShieldAlert,
   Lock,
   FileCheck,
-  Sigma
+  Sigma,
+  Video
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -61,6 +62,7 @@ const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
   { href: '/dashboard/guide', icon: Book, label: 'App Guide', glow: 'text-emerald-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
+  { href: '/dashboard/mentor', icon: Video, label: 'Mentor Mode', glow: 'text-emerald-400' },
   { href: '/dashboard/math-sovereign', icon: Sigma, label: 'Master Maths', glow: 'text-blue-400' },
   { href: '/dashboard/ai-assistant', icon: Bot, label: 'Marco AI', glow: 'text-purple-400' },
   { href: '/dashboard/proof-of-work', icon: FileCheck, label: 'Sovereign Ledger', glow: 'text-amber-400' },
@@ -291,3 +293,4 @@ export default function SidebarContent() {
     </div>
   );
 }
+
