@@ -19,6 +19,8 @@ export type UserWithStats = User & {
     astroAscentHighScore: number;
     mathematicsLegendHighScore: number;
     elementQuestTotalScore: number;
+    unitDimensionsEasyHighScore: number;
+    unitDimensionsHardHighScore: number;
     prevWeekEntertainmentTotalScore: number;
     weeklySubjectBreakdown: { [subjectName: string]: number };
     weeklyPomodoroBreakdown: {
@@ -167,6 +169,9 @@ export function useLeaderboardData() {
                 const flappyMindHighScore = user.gameHighScores?.flappyMind || 0;
                 const astroAscentHighScore = user.gameHighScores?.astroAscent || 0;
                 const mathematicsLegendHighScore = user.gameHighScores?.mathematicsLegend || 0;
+                const unitDimensionsEasyHighScore = user.gameHighScores?.unitDimensionsEasy || 0;
+                const unitDimensionsHardHighScore = user.gameHighScores?.unitDimensionsHard || 0;
+
                 const { s = 0, p = 0, d = 0, f = 0 } = user.elementQuestScores || {};
                 const elementQuestTotalScore = s + p + d + f;
                 
@@ -178,7 +183,9 @@ export function useLeaderboardData() {
                     flappyMindHighScore + 
                     (astroAscentHighScore * 1.3) + 
                     (mathematicsLegendHighScore * 1.4) + 
-                    (elementQuestTotalScore * 0.5);
+                    (elementQuestTotalScore * 0.5) +
+                    (unitDimensionsEasyHighScore) +
+                    (unitDimensionsHardHighScore * 2);
 
                 return { 
                     ...user, 
@@ -196,6 +203,8 @@ export function useLeaderboardData() {
                     astroAscentHighScore,
                     mathematicsLegendHighScore,
                     elementQuestTotalScore,
+                    unitDimensionsEasyHighScore,
+                    unitDimensionsHardHighScore,
                     prevWeekEntertainmentTotalScore: 0,
                     breakdown: {
                         creditsPoints,

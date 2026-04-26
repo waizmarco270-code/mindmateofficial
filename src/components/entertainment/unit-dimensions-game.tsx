@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -14,7 +15,8 @@ import {
     Lightbulb, Beaker, Search,
     Maximize, Minimize, Box, 
     Settings, Plus, Minus, Check,
-    BookOpen, Trash2, X, ShieldX
+    BookOpen, Trash2, X, ShieldX,
+    Target
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -119,6 +121,7 @@ export function UnitDimensionsGame() {
     const { toast } = useToast();
 
     const [view, setView] = useState<'hub' | 'learning' | 'challenge' | 'gameOver' | 'won'>('hub');
+    const [challengeMode, setChallengeMode] = useState<'easy' | 'hard'>('easy');
     const [searchTerm, setSearchTerm] = useState('');
     const [currentQty, setCurrentQty] = useState<PhysicalQuantity | null>(null);
     const [deck, setDeck] = useState<PhysicalQuantity[]>([]);
@@ -133,36 +136,30 @@ export function UnitDimensionsGame() {
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // SOVEREIGN ANTI-CHEAT SENTINEL
+    // Sync High Score
+    useEffect(() => {
+        const scoreKey = challengeMode === 'easy' ? 'unitDimensionsEasy' : 'unitDimensionsHard';
+        if (currentUserData?.gameHighScores?.[scoreKey]) {
+            setHighScore(currentUserData.gameHighScores[scoreKey]!);
+        } else {
+            setHighScore(0);
+        }
+    }, [currentUserData, challengeMode]);
+
+    // ANTI-CHEAT
     useEffect(() => {
         const handleVisibility = () => {
             if (view === 'challenge' && document.visibilityState === 'hidden') {
                 stopTimer();
                 setIsCheatingDialogOpen(true);
                 setView('hub');
-                toast({ variant: 'destructive', title: "PROTOCOL BREACHED", description: "The Sovereign Sentinel caught you switching signals." });
             }
         };
         document.addEventListener('visibilitychange', handleVisibility);
         return () => document.removeEventListener('visibilitychange', handleVisibility);
-    }, [view, toast]);
-
-    useEffect(() => {
-        if (currentUserData?.gameHighScores?.unitDimensions) {
-            setHighScore(currentUserData.gameHighScores.unitDimensions);
-        }
-    }, [currentUserData]);
+    }, [view]);
 
     const stopTimer = () => { if (timerRef.current) clearInterval(timerRef.current); };
-
-    const startChallenge = useCallback(() => {
-        const shuffled = [...QUANTITY_DATA].sort(() => Math.random() - 0.5);
-        setDeck(shuffled);
-        prepareQuestion(shuffled[shuffled.length - 1]);
-        setScore(0);
-        setLives(MAX_LIVES);
-        setView('challenge');
-    }, [score]);
 
     const prepareQuestion = (qty: PhysicalQuantity) => {
         setCurrentQty(qty);
@@ -185,6 +182,24 @@ export function UnitDimensionsGame() {
         }, 1000);
     };
 
+    const startChallenge = useCallback((mode: 'easy' | 'hard') => {
+        let pool = [...QUANTITY_DATA];
+        if (mode === 'hard') {
+            pool = pool.sort(() => Math.random() - 0.5);
+        } else {
+            // Easy Mode: Sort by category flow
+            const order = ['Mechanics', 'Heat & Thermo', 'Electromagnetism', 'Optics', 'Modern Physics', 'General'];
+            pool = pool.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
+        }
+        
+        setDeck(pool);
+        setChallengeMode(mode);
+        setScore(0);
+        setLives(MAX_LIVES);
+        setView('challenge');
+        prepareQuestion(pool[0]);
+    }, []);
+
     const handleBreach = (msg: string) => {
         const newLives = lives - 1;
         setLives(newLives);
@@ -192,18 +207,23 @@ export function UnitDimensionsGame() {
         
         if (newLives <= 0) {
             stopTimer();
-            if (score > highScore) {
-                setHighScore(score);
-                if (user) updateGameHighScore(user.id, 'unitDimensions', score);
-            }
+            saveHighScore();
             setView('gameOver');
         } else if (currentQty) {
-            prepareQuestion(currentQty); // Restart same question
+            prepareQuestion(currentQty); // Restart same question with fresh timer
+        }
+    };
+
+    const saveHighScore = () => {
+        const scoreKey = challengeMode === 'easy' ? 'unitDimensionsEasy' : 'unitDimensionsHard';
+        if (score > highScore) {
+            setHighScore(score);
+            if (user) updateGameHighScore(user.id, scoreKey, score);
         }
     };
 
     const addComponent = (base: string) => {
-        if (components.length >= 5) return;
+        if (components.length >= 6) return;
         setComponents([...components, { base, power: 1 }]);
     };
 
@@ -220,17 +240,6 @@ export function UnitDimensionsGame() {
     const validateConstruction = () => {
         if (!currentQty) return;
 
-        // Special case for dimensionless
-        if (currentQty.dimension === '') {
-            if (components.length === 0) {
-                handleSuccess();
-            } else {
-                handleBreach("Incorrect construction. This quantity is dimensionless.");
-            }
-            return;
-        }
-
-        // Parse built dimension into comparable string
         const sortedComponents = [...components]
             .filter(c => c.power !== 0)
             .sort((a, b) => DIMENSION_BASES.indexOf(a.base) - DIMENSION_BASES.indexOf(b.base));
@@ -242,7 +251,7 @@ export function UnitDimensionsGame() {
         if (builtStr === currentQty.dimension) {
             handleSuccess();
         } else {
-            handleBreach(`Structural misalignment! Incorrect configuration.`);
+            handleBreach(`Structural misalignment detected.`);
         }
     };
 
@@ -253,26 +262,18 @@ export function UnitDimensionsGame() {
         toast({ title: "STRUCTURE SECURED", description: `Verified: ${currentQty?.name}`, className: "bg-green-600 text-white" });
 
         if (newScore % 10 === 0) {
-            addCreditsToUser(user!.id, newScore);
-            toast({ title: "Bounty Detected!", description: `+${newScore} Credits for Tier ${newScore / 10} mastery.` });
+            addCreditsToUser(user!.id, 10);
+            toast({ title: "Bounty Detected!", description: `+10 Credits for sequential mastery.` });
         }
 
-        const nextDeck = [...deck];
-        nextDeck.pop();
-        if (nextDeck.length === 0) {
+        const nextIndex = deck.indexOf(currentQty!) + 1;
+        if (nextIndex >= deck.length) {
+            saveHighScore();
             setView('won');
         } else {
-            setDeck(nextDeck);
-            setTimeout(() => prepareQuestion(nextDeck[nextDeck.length - 1]), 1000);
+            prepareQuestion(deck[nextIndex]);
         }
     };
-
-    const filteredQuantities = useMemo(() => {
-        return QUANTITY_DATA.filter(q => 
-            q.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-            q.category.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }, [searchTerm]);
 
     if (view === 'learning') {
         return (
@@ -291,22 +292,17 @@ export function UnitDimensionsGame() {
                         />
                     </div>
                 </header>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredQuantities.map((q, i) => (
-                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.01 }}>
-                            <Card className="bg-card/40 border-primary/5 hover:border-primary/20 transition-all group overflow-hidden">
-                                <CardHeader className="p-4 bg-primary/5 border-b border-white/5">
-                                    <div className="flex justify-between items-start">
-                                        <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest">{q.category}</Badge>
-                                    </div>
-                                    <CardTitle className="text-base font-bold text-foreground mt-2">{q.name}</CardTitle>
-                                </CardHeader>
-                                <CardContent className="p-4 flex items-center justify-center bg-black/10">
-                                    <p className="text-2xl font-black text-primary font-mono tracking-tighter italic">{q.display}</p>
-                                </CardContent>
-                            </Card>
-                        </motion.div>
+                    {QUANTITY_DATA.filter(q => q.name.toLowerCase().includes(searchTerm.toLowerCase())).map((q, i) => (
+                        <Card key={i} className="bg-card/40 border-primary/5 hover:border-primary/20 transition-all group overflow-hidden">
+                            <CardHeader className="p-4 bg-primary/5 border-b border-white/5">
+                                <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest">{q.category}</Badge>
+                                <CardTitle className="text-base font-bold text-foreground mt-2">{q.name}</CardTitle>
+                            </CardHeader>
+                            <CardContent className="p-4 flex items-center justify-center bg-black/10">
+                                <p className="text-2xl font-black text-primary font-mono tracking-tighter italic">{q.display}</p>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             </div>
@@ -318,146 +314,76 @@ export function UnitDimensionsGame() {
             <div className="min-h-[80vh] flex flex-col space-y-8 max-w-5xl mx-auto pb-40">
                 <header className="flex justify-between items-center bg-black/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-xl">
                     <div className="flex items-center gap-6">
-                         <div className="h-12 w-12 rounded-2xl bg-primary/20 flex items-center justify-center border-2 border-primary/40 font-black text-lg italic text-primary">
+                        <div className="h-12 w-12 rounded-2xl bg-primary/20 flex items-center justify-center border-2 border-primary/40 font-black text-lg italic text-primary">
                             #{score + 1}
                         </div>
-                        <div>
+                        <div className="flex flex-col">
                             <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">Reactor Stability</p>
                             <div className="flex gap-1.5 mt-1">
                                 {[...Array(MAX_LIVES)].map((_, i) => (
-                                    <Heart key={i} className={cn("h-5 w-5", i < lives ? "text-red-500 fill-red-500 drop-shadow-[0_0_8px_#ef4444]" : "text-white/10")} />
+                                    <Heart key={i} className={cn("h-5 w-5", i < lives ? "text-red-500 fill-red-500" : "text-white/10")} />
                                 ))}
                             </div>
                         </div>
                     </div>
-
-                    <div className="flex items-center gap-8">
-                        <div className="text-right">
-                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Temporal Clock</p>
-                            <p className={cn("text-3xl font-black italic tabular-nums", timeLeft <= 5 ? "text-red-500 animate-pulse" : "text-white")}>
-                                {timeLeft}s
-                            </p>
-                        </div>
+                    <div className="text-right">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Temporal Clock</p>
+                        <p className={cn("text-3xl font-black italic tabular-nums", timeLeft <= 5 ? "text-red-500 animate-pulse" : "text-white")}>{timeLeft}s</p>
                     </div>
                 </header>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    {/* QUANTITY MANIFEST */}
                     <div className="lg:col-span-4">
-                        <Card className="bg-slate-900 border-2 border-primary/30 shadow-[0_0_60px_rgba(139,92,246,0.1)] rounded-[2.5rem] overflow-hidden">
+                        <Card className="bg-slate-900 border-2 border-primary/30 rounded-[2.5rem] overflow-hidden">
                             <CardHeader className="text-center p-8 bg-primary/5">
-                                <Badge className="mx-auto mb-4 bg-primary/20 text-primary border-primary/30 uppercase font-black tracking-widest text-[9px]">Target Manifest</Badge>
-                                <CardTitle className="text-4xl font-black italic uppercase tracking-tighter leading-none text-white">{currentQty.name}</CardTitle>
-                                <CardDescription className="text-sm font-bold text-slate-400 mt-2">"{currentQty.category}"</CardDescription>
+                                <Badge className="mx-auto mb-4 bg-primary/20 text-primary border-primary/30 uppercase font-black tracking-widest text-[9px]">Target Quantity</Badge>
+                                <CardTitle className="text-4xl font-black italic uppercase tracking-tighter text-white">{currentQty.name}</CardTitle>
+                                <CardDescription className="text-xs font-bold text-slate-400 mt-2">{currentQty.category}</CardDescription>
                             </CardHeader>
-                            <CardContent className="p-8 text-center space-y-6">
-                                <div className="p-6 rounded-2xl bg-black/40 border border-white/5 border-dashed">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground mb-4">Construction Zone</p>
-                                    <div className="flex flex-wrap justify-center gap-3 min-h-[60px]">
-                                        <AnimatePresence>
-                                            {components.map((c, i) => (
-                                                <motion.button 
-                                                    key={i} 
-                                                    initial={{ scale: 0, x: 20 }} 
-                                                    animate={{ scale: 1, x: 0 }} 
-                                                    exit={{ scale: 0, opacity: 0 }}
-                                                    onClick={() => removeComponent(i)}
-                                                    className="relative h-14 w-12 rounded-xl bg-primary text-white font-black text-xl flex items-center justify-center shadow-lg border-t border-white/30 group"
-                                                >
-                                                    {c.base}
-                                                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-black text-[10px] flex items-center justify-center border border-white/20">{c.power}</span>
-                                                    <div className="absolute inset-0 bg-red-600 rounded-xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Trash2 className="h-5 w-5" />
-                                                    </div>
-                                                </motion.button>
-                                            ))}
-                                        </AnimatePresence>
-                                        {components.length === 0 && <p className="text-slate-700 font-bold uppercase text-[10px] tracking-widest self-center">No units docked</p>}
-                                    </div>
+                            <CardContent className="p-8 space-y-6 text-center">
+                                <div className="p-6 rounded-2xl bg-black/40 border border-white/5 border-dashed min-h-[100px] flex flex-wrap justify-center gap-2">
+                                    <AnimatePresence>
+                                        {components.map((c, i) => (
+                                            <motion.button key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ opacity: 0 }} onClick={() => removeComponent(i)} className="relative h-12 w-10 rounded-lg bg-primary text-white font-black text-sm flex items-center justify-center">
+                                                {c.base}<sup>{c.power}</sup>
+                                            </motion.button>
+                                        ))}
+                                    </AnimatePresence>
+                                    {components.length === 0 && <p className="text-slate-700 font-bold uppercase text-[10px] tracking-widest self-center">Reactor Core Idle</p>}
                                 </div>
-                                <Button onClick={validateConstruction} className="w-full h-16 rounded-2xl text-lg font-black uppercase italic shadow-2xl shadow-primary/20">
-                                    VERIFY STRUCTURE <CheckCircle2 className="ml-2 h-6 w-6"/>
-                                </Button>
+                                <Button onClick={validateConstruction} className="w-full h-16 rounded-2xl text-lg font-black uppercase italic shadow-2xl">VERIFY STRUCTURE</Button>
                             </CardContent>
                         </Card>
                     </div>
 
-                    {/* LAB TERMINAL */}
                     <div className="lg:col-span-8">
                         <Card className="bg-card/30 backdrop-blur-xl border-white/5 rounded-[2.5rem] p-8 space-y-10">
                             <div className="space-y-4">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Inject Base Dimensions</h4>
                                 <div className="grid grid-cols-4 sm:grid-cols-7 gap-3">
                                     {DIMENSION_BASES.map(base => (
-                                        <Button 
-                                            key={base} 
-                                            variant="outline" 
-                                            onClick={() => addComponent(base)}
-                                            className="h-16 rounded-2xl border-white/5 bg-black/20 font-black text-xl hover:bg-primary/20 hover:border-primary/40 hover:text-primary"
-                                        >
-                                            {base}
-                                        </Button>
+                                        <Button key={base} variant="outline" onClick={() => addComponent(base)} className="h-14 rounded-xl font-black text-lg bg-black/20 hover:bg-primary/20">{base}</Button>
                                     ))}
                                 </div>
                             </div>
-
                             <div className="space-y-4">
                                 <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Calibrate Powers</h4>
                                 <div className="space-y-3">
                                     {components.map((c, i) => (
-                                        <motion.div key={i} layout className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5">
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center font-black text-primary border border-primary/20">{c.base}</div>
-                                                <div className="text-center w-12">
-                                                    <p className="text-[8px] font-black uppercase text-muted-foreground">Power</p>
-                                                    <p className="text-xl font-black text-white italic">{c.power}</p>
-                                                </div>
-                                            </div>
+                                        <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-black/20 border border-white/5">
+                                            <div className="flex items-center gap-4"><div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center font-black text-primary">{c.base}</div><p className="text-xl font-black text-white italic">P: {c.power}</p></div>
                                             <div className="flex gap-2">
-                                                <Button size="icon" variant="ghost" onClick={() => adjustPower(i, -1)} className="rounded-xl h-10 w-10 bg-white/5 border border-white/5"><Minus className="h-4 w-4"/></Button>
-                                                <Button size="icon" variant="ghost" onClick={() => adjustPower(i, 1)} className="rounded-xl h-10 w-10 bg-white/5 border border-white/5"><Plus className="h-4 w-4"/></Button>
-                                                <Button size="icon" variant="ghost" onClick={() => removeComponent(i)} className="rounded-xl h-10 w-10 text-red-500 hover:bg-red-500/10"><Trash2 className="h-4 w-4"/></Button>
+                                                <Button size="icon" variant="ghost" onClick={() => adjustPower(i, -1)} className="rounded-lg h-9 w-9 bg-white/5"><Minus/></Button>
+                                                <Button size="icon" variant="ghost" onClick={() => adjustPower(i, 1)} className="rounded-lg h-9 w-9 bg-white/5"><Plus/></Button>
+                                                <Button size="icon" variant="ghost" onClick={() => removeComponent(i)} className="rounded-lg h-9 w-9 text-red-500"><Trash2/></Button>
                                             </div>
-                                        </motion.div>
-                                    ))}
-                                    {components.length === 0 && (
-                                        <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[2rem] opacity-20">
-                                            <Box className="h-12 w-12 mx-auto mb-2" />
-                                            <p className="text-xs font-black uppercase tracking-widest">Reactor Core Idle</p>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
                             </div>
                         </Card>
                     </div>
                 </div>
-            </div>
-        );
-    }
-
-    if (view === 'gameOver') {
-        return (
-            <div className="flex items-center justify-center min-h-[70vh] p-4">
-                <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-xl">
-                    <Card className="border-red-600/50 bg-red-950/20 backdrop-blur-3xl rounded-[3rem] text-center p-8 sm:p-12 shadow-2xl">
-                        <div className="mx-auto w-24 h-24 bg-red-600/10 rounded-full border-4 border-red-600 flex items-center justify-center mb-8">
-                            <ShieldAlert className="h-12 w-12 text-red-600 animate-pulse" />
-                        </div>
-                        <h2 className="text-4xl font-black text-red-600 uppercase italic tracking-tighter mb-4">DIMENSIONAL COLLAPSE</h2>
-                        <p className="text-xl text-slate-200 font-bold mb-6 italic">Protocol terminated at Phase {score + 1}.</p>
-                        <div className="grid grid-cols-2 gap-4 mb-8">
-                            <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Final Score</p>
-                                <p className="text-2xl font-black text-white">{score}</p>
-                            </div>
-                            <div className="p-4 rounded-2xl bg-black/40 border border-white/5">
-                                <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest mb-1">Mainframe High</p>
-                                <p className="text-2xl font-black text-primary">{highScore}</p>
-                            </div>
-                        </div>
-                        <Button size="lg" className="w-full h-16 rounded-2xl font-black text-xl bg-red-600 hover:bg-red-700" onClick={() => setView('hub')}>RE-INITIALIZE HUB</Button>
-                    </Card>
-                </motion.div>
             </div>
         );
     }
@@ -465,101 +391,82 @@ export function UnitDimensionsGame() {
     return (
         <div className="space-y-12 pb-40 relative">
             <header className="text-center space-y-4">
-                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mx-auto w-24 h-24 rounded-[2.5rem] bg-primary/10 border-2 border-primary/20 flex items-center justify-center shadow-2xl backdrop-blur-md">
+                <div className="mx-auto w-24 h-24 rounded-[2.5rem] bg-primary/10 border-2 border-primary/20 flex items-center justify-center shadow-2xl backdrop-blur-md">
                     <Ruler className="h-12 w-12 text-primary" />
-                </motion.div>
+                </div>
                 <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent">Units & Dimensions</h1>
-                <p className="text-slate-400 font-medium max-w-2xl mx-auto text-lg leading-relaxed">
-                    Master the structural DNA of the universe. Decode and construct the dimensional identities of 100+ physical quantities.
-                </p>
+                <p className="text-slate-400 font-medium max-w-2xl mx-auto text-lg leading-relaxed">Master the structural DNA of the universe. Decode and construct the dimensional identities of 100+ physical quantities.</p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto relative">
-                <SignedOut>
-                    <LoginWall title="Initialize Lab Ingress" description="Sign up to participate in the Dimensional War and earn credit bounties for structural mastery." />
-                </SignedOut>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
+                <SignedOut><LoginWall title="Initialize Lab" description="Sign up to become a Sovereign Engineer and earn credits for structural mastery." /></SignedOut>
                 
                 <ProtocolCard 
-                    icon={BookOpen} 
-                    label="Learning Protocol" 
-                    desc="Access the Global Registry of physical quantities and their dimensions."
-                    color="text-emerald-400"
-                    bg="bg-emerald-500/5"
-                    onClick={() => setView('learning')}
+                    icon={BookOpen} label="Learning" desc="Registry of 100+ physical quantities and their dimensions."
+                    color="text-emerald-400" bg="bg-emerald-500/5" onClick={() => setView('learning')}
                 />
                 
                 <ProtocolCard 
-                    icon={Zap} 
-                    label="Challenge Protocol" 
-                    desc="High-stakes dimensional construction against the temporal clock."
-                    color="text-yellow-400"
-                    bg="bg-yellow-500/5"
-                    onClick={startChallenge}
+                    icon={Zap} label="Tactical (Easy)" desc="Sequential flow from Mechanics to Modern Physics. Standard rewards."
+                    color="text-sky-400" bg="bg-sky-500/5" onClick={() => startChallenge('easy')}
+                />
+
+                <ProtocolCard 
+                    icon={ShieldAlert} label="Sovereign (Hard)" desc="Total randomization. 2X Skill Points. For absolute masters."
+                    color="text-rose-400" bg="bg-rose-500/5" onClick={() => startChallenge('hard')}
                 />
             </div>
 
-            <div className="p-8 rounded-[3rem] bg-primary/5 border border-primary/20 text-center max-w-3xl mx-auto space-y-4">
-                <h4 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center justify-center gap-2">
-                    <Info className="h-4 w-4"/> Manual Briefing
-                </h4>
-                <p className="text-slate-400 text-sm font-medium italic">
-                    "Structural mastery of units and dimensions is required for any serious academic ascent. Challenge Protocol is guarded by a Sovereign Anti-Cheat system. Tab switching will terminate the session."
-                </p>
-            </div>
-
-            {/* CHEATING DETECTED DIALOG */}
             <Dialog open={isCheatingDialogOpen} onOpenChange={setIsCheatingDialogOpen}>
                 <DialogContent className="border-red-600/50 bg-red-950/95 backdrop-blur-2xl rounded-[2.5rem]">
                     <DialogHeader>
-                        <div className="flex justify-center mb-6">
-                            <div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse">
-                                <ShieldX className="h-16 w-16 text-red-600" />
-                            </div>
-                        </div>
+                        <div className="flex justify-center mb-6"><div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse"><ShieldX className="h-16 w-16 text-red-600" /></div></div>
                         <DialogTitle className="text-center text-3xl font-black uppercase italic text-white tracking-tighter">PROTOCOL VIOLATED</DialogTitle>
-                        <DialogDescription className="text-center text-lg font-bold text-red-200 mt-2">
-                            YOU WERE CAUGHT CHEATING!
-                        </DialogDescription>
+                        <DialogDescription className="text-center text-lg font-bold text-red-200 mt-2">YOU WERE CAUGHT CHEATING!</DialogDescription>
                     </DialogHeader>
                     <div className="p-6 rounded-2xl bg-black/40 border border-white/5 space-y-4 text-sm text-slate-300">
                         <p className="font-bold text-red-400 uppercase tracking-widest text-center">Anti-Cheat Sentinel Report:</p>
-                        <ul className="list-disc list-inside space-y-2">
-                            <li>Signal lost due to tab switching or backgrounding.</li>
-                            <li>Session terminated immediately.</li>
-                            <li>No rewards granted for corrupted cycles.</li>
-                        </ul>
+                        <ul className="list-disc list-inside space-y-2"><li>Signal lost due to tab switching or backgrounding.</li><li>Session terminated immediately.</li><li>No rewards granted for corrupted cycles.</li></ul>
                         <p className="italic text-center text-xs opacity-60">"Legends win through focus, not through manipulation."</p>
                     </div>
-                    <DialogFooter className="pt-4">
-                        <DialogClose asChild>
-                            <Button className="w-full h-14 bg-white text-black font-black text-xl rounded-2xl hover:bg-slate-200">I UNDERSTAND</Button>
-                        </DialogClose>
-                    </DialogFooter>
+                    <DialogFooter className="pt-4"><DialogClose asChild><Button className="w-full h-14 bg-white text-black font-black text-xl rounded-2xl hover:bg-slate-200">I UNDERSTAND</Button></DialogClose></DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {view === 'gameOver' && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+                    <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="max-w-md w-full">
+                        <Card className="border-red-600/50 bg-slate-900 rounded-[3rem] p-8 text-center space-y-6">
+                            <Skull className="h-16 w-16 text-red-600 mx-auto" />
+                            <h2 className="text-4xl font-black italic uppercase text-white">MISSION FAILED</h2>
+                            <div className="p-6 rounded-2xl bg-black/40 border border-white/5">
+                                <p className="text-[10px] font-black uppercase text-red-500 tracking-widest mb-1">Final Standing</p>
+                                <p className="text-5xl font-black text-white">{score}</p>
+                            </div>
+                            <Button className="w-full h-16 rounded-2xl bg-red-600 font-black uppercase" onClick={() => setView('hub')}>RE-INITIALIZE HUB</Button>
+                        </Card>
+                    </motion.div>
+                </div>
+            )}
         </div>
     );
 }
 
 function ProtocolCard({ icon: Icon, label, desc, color, bg, onClick }: any) {
     return (
-        <Card 
-            className={cn("relative overflow-hidden cursor-pointer group hover:scale-[1.02] transition-all duration-500 rounded-[3rem] border-2 border-white/5", bg)}
-            onClick={onClick}
-        >
+        <Card className={cn("relative overflow-hidden cursor-pointer group hover:scale-[1.02] transition-all duration-500 rounded-[3rem] border-2 border-white/5", bg)} onClick={onClick}>
             <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
             <CardContent className="p-10 flex flex-col items-center text-center gap-6 relative z-10">
-                <div className={cn("p-6 rounded-3xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}>
-                    <Icon className="h-10 w-10" />
-                </div>
-                <div>
-                    <h3 className="text-2xl font-black uppercase italic tracking-tight">{label}</h3>
-                    <p className="text-slate-500 font-medium text-sm mt-2">{desc}</p>
-                </div>
-                <Button variant="ghost" className="mt-4 font-black uppercase text-[10px] tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
-                    Initialize Protocol <ArrowRight className="ml-2 h-4 w-4"/>
-                </Button>
+                <div className={cn("p-6 rounded-3xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}><Icon className="h-10 w-10" /></div>
+                <div><h3 className="text-2xl font-black uppercase italic tracking-tight">{label}</h3><p className="text-slate-500 font-medium text-sm mt-2">{desc}</p></div>
+                <Button variant="ghost" className="mt-4 font-black uppercase text-[10px] tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity">Initialize Protocol <ArrowRight className="ml-2 h-4 w-4"/></Button>
             </CardContent>
         </Card>
     );
+}
+
+function formatTime(seconds: number) {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
 }
