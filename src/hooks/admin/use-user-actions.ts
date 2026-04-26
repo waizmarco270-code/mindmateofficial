@@ -163,6 +163,18 @@ export const useUserActions = (db: any, toast: any) => {
         elementQuestMilestonesClaimed: arrayUnion(m) 
     });
 
+    const claimUnitDimensionsMilestone = async (uid: string, milestoneKey: string, reward: number) => {
+        const snap = await getDoc(doc(db, 'users', uid));
+        if (!snap.exists()) return;
+        const data = snap.data() as User;
+        if (data.unitDimensionsMilestonesClaimed?.includes(milestoneKey)) throw new Error("Milestone already claimed.");
+        
+        await updateDoc(snap.ref, { 
+            credits: increment(Number(reward)),
+            unitDimensionsMilestonesClaimed: arrayUnion(milestoneKey)
+        });
+    };
+
     const claimDimensionShiftMilestone = async (uid: string, m: number) => {
         const snap = await getDoc(doc(db, 'users', uid));
         const wk = todayString();
@@ -216,8 +228,8 @@ export const useUserActions = (db: any, toast: any) => {
         addCreditsToUser, toggleUserBlock, toggleLeaderboardPrivacy, applyFocusPenalty, grantMasterCard, revokeMasterCard,
         setShowcaseBadge, setEquippedFrame, makeUserAdmin, removeUserAdmin, makeUserVip, removeUserVip,
         makeUserGM, removeUserGM, makeUserCoDev, removeUserCoDev, makeUserChallenger, addPerfectedQuiz,
-        incrementQuizAttempt, incrementFocusSessions, updateStudyTime, claimDailyTaskReward, claimEliteDailyReward,
-        updateGameHighScore, updateElementQuestScore, claimElementQuestMilestone,
+        incrementQuizAttempt, incrementQuizAttempt, incrementFocusSessions, updateStudyTime, claimDailyTaskReward, claimEliteDailyReward,
+        updateGameHighScore, updateElementQuestScore, claimElementQuestMilestone, claimUnitDimensionsMilestone,
         claimDimensionShiftMilestone, claimFlappyMindMilestone, claimAstroAscentMilestone,
         claimMathematicsLegendMilestone, generateAiAccessToken, unlockResourceSection,
         unlockFeatureForUser, unlockThemeForUser, markTableAsMastered, claimAllTablesBounty

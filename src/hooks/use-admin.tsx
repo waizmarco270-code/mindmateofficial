@@ -107,6 +107,7 @@ export interface User {
   };
   elementQuestScores?: { s?: number; p?: number; d?: number; f?: number; };
   elementQuestMilestonesClaimed?: number[];
+  unitDimensionsMilestonesClaimed?: string[];
   dimensionShiftClaims?: Record<string, number[]>;
   flappyMindClaims?: Record<string, number[]>;
   astroAscentClaims?: Record<string, number[]>;
@@ -218,6 +219,7 @@ interface AppDataContextType {
     markTableAsMastered: (uid: string, table: number, reward: number) => Promise<void>;
     claimAllTablesBounty: (uid: string) => Promise<void>;
     claimGMBounty: (uid: string) => Promise<void>;
+    claimUnitDimensionsMilestone: (userId: string, milestoneKey: string, reward: number) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -432,7 +434,8 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         performGameReset, resetAllChallenges, claimPlusMembership, completeOnboarding,
         markTableAsMastered: (uid: string, t: number, r: number) => userActions.markTableAsMastered(uid, t, r),
         claimAllTablesBounty: (uid: string) => userActions.claimAllTablesBounty(uid),
-        claimGMBounty
+        claimGMBounty,
+        claimUnitDimensionsMilestone: (userId: string, milestoneKey: string, reward: number) => userActions.claimUnitDimensionsMilestone(userId, milestoneKey, reward)
     };
 
     return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;

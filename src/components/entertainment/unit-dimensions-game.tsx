@@ -16,12 +16,12 @@ import {
     Maximize, Minimize, Box, 
     Settings, Plus, Minus, Check,
     BookOpen, Trash2, X, ShieldX,
-    Target
+    Target, Skull, Award
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useUser, SignedOut } from '@clerk/nextjs';
-import { useUsers } from '@/hooks/use-admin';
+import { useUsers, useAdmin } from '@/hooks/use-admin';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { LoginWall } from '../ui/login-wall';
@@ -117,7 +117,7 @@ const MAX_LIVES = 3;
 
 export function UnitDimensionsGame() {
     const { user, isSignedIn } = useUser();
-    const { currentUserData, updateGameHighScore, addCreditsToUser } = useUsers();
+    const { currentUserData, updateGameHighScore, addCreditsToUser, claimUnitDimensionsMilestone } = useUsers();
     const { toast } = useToast();
 
     const [view, setView] = useState<'hub' | 'learning' | 'challenge' | 'gameOver' | 'won'>('hub');
@@ -133,6 +133,7 @@ export function UnitDimensionsGame() {
     const [lives, setLives] = useState(MAX_LIVES);
     const [timeLeft, setTimeLeft] = useState(30);
     const [isCheatingDialogOpen, setIsCheatingDialogOpen] = useState(false);
+    const [isClaiming, setIsClaiming] = useState<string | null>(null);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -198,7 +199,7 @@ export function UnitDimensionsGame() {
         setLives(MAX_LIVES);
         setView('challenge');
         prepareQuestion(pool[0]);
-    }, []);
+    }, [prepareQuestion]);
 
     const handleBreach = (msg: string) => {
         const newLives = lives - 1;
@@ -210,7 +211,10 @@ export function UnitDimensionsGame() {
             saveHighScore();
             setView('gameOver');
         } else if (currentQty) {
-            prepareQuestion(currentQty); // Restart same question with fresh timer
+            // RE-CALIBRATION: Reset timer and UI for the current question
+            setTimeLeft(Math.max(15, 45 - score));
+            setComponents([]);
+            startTimer();
         }
     };
 
@@ -261,17 +265,25 @@ export function UnitDimensionsGame() {
         setScore(newScore);
         toast({ title: "STRUCTURE SECURED", description: `Verified: ${currentQty?.name}`, className: "bg-green-600 text-white" });
 
-        if (newScore % 10 === 0) {
-            addCreditsToUser(user!.id, 10);
-            toast({ title: "Bounty Detected!", description: `+10 Credits for sequential mastery.` });
-        }
-
         const nextIndex = deck.indexOf(currentQty!) + 1;
         if (nextIndex >= deck.length) {
             saveHighScore();
             setView('won');
         } else {
             prepareQuestion(deck[nextIndex]);
+        }
+    };
+
+    const handleClaim = async (milestoneKey: string, reward: number) => {
+        if (!user || isClaiming) return;
+        setIsClaiming(milestoneKey);
+        try {
+            await claimUnitDimensionsMilestone(user.id, milestoneKey, reward);
+            toast({ title: "BOUNTY SECURED!", description: `+${reward} Credits added to your mainframe.` });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Claim Failed", description: e.message });
+        } finally {
+            setIsClaiming(null);
         }
     };
 
@@ -314,9 +326,6 @@ export function UnitDimensionsGame() {
             <div className="min-h-[80vh] flex flex-col space-y-8 max-w-5xl mx-auto pb-40">
                 <header className="flex justify-between items-center bg-black/40 p-6 rounded-[2rem] border border-white/5 backdrop-blur-xl">
                     <div className="flex items-center gap-6">
-                        <div className="h-12 w-12 rounded-2xl bg-primary/20 flex items-center justify-center border-2 border-primary/40 font-black text-lg italic text-primary">
-                            #{score + 1}
-                        </div>
                         <div className="flex flex-col">
                             <p className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">Reactor Stability</p>
                             <div className="flex gap-1.5 mt-1">
@@ -325,8 +334,17 @@ export function UnitDimensionsGame() {
                                 ))}
                             </div>
                         </div>
+                        <Separator orientation="vertical" className="h-10 bg-white/10" />
+                        <div>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Current Forge</p>
+                            <p className="text-2xl font-black italic text-white tabular-nums">{score}</p>
+                        </div>
                     </div>
                     <div className="text-right">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Mainframe Peak</p>
+                        <p className="text-2xl font-black italic text-yellow-400 tabular-nums">{highScore}</p>
+                    </div>
+                    <div className="text-right hidden sm:block">
                         <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Temporal Clock</p>
                         <p className={cn("text-3xl font-black italic tabular-nums", timeLeft <= 5 ? "text-red-500 animate-pulse" : "text-white")}>{timeLeft}s</p>
                     </div>
@@ -398,23 +416,77 @@ export function UnitDimensionsGame() {
                 <p className="text-slate-400 font-medium max-w-2xl mx-auto text-lg leading-relaxed">Master the structural DNA of the universe. Decode and construct the dimensional identities of 100+ physical quantities.</p>
             </header>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-5xl mx-auto relative">
-                <SignedOut><LoginWall title="Initialize Lab" description="Sign up to become a Sovereign Engineer and earn credits for structural mastery." /></SignedOut>
-                
-                <ProtocolCard 
-                    icon={BookOpen} label="Learning" desc="Registry of 100+ physical quantities and their dimensions."
-                    color="text-emerald-400" bg="bg-emerald-500/5" onClick={() => setView('learning')}
-                />
-                
-                <ProtocolCard 
-                    icon={Zap} label="Tactical (Easy)" desc="Sequential flow from Mechanics to Modern Physics. Standard rewards."
-                    color="text-sky-400" bg="bg-sky-500/5" onClick={() => startChallenge('easy')}
-                />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start max-w-6xl mx-auto px-4 relative z-10">
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <ProtocolCard 
+                            icon={BookOpen} label="Learning" desc="Registry of 100+ physical quantities."
+                            color="text-emerald-400" bg="bg-emerald-500/5" onClick={() => setView('learning')}
+                        />
+                        <ProtocolCard 
+                            icon={Zap} label="Tactical (Easy)" desc="Ordered sequence. Build your path."
+                            color="text-sky-400" bg="bg-sky-500/5" onClick={() => startChallenge('easy')}
+                        />
+                        <ProtocolCard 
+                            icon={ShieldAlert} label="Sovereign (Hard)" desc="Absolute Randomness. Master level."
+                            color="text-rose-400" bg="bg-rose-500/5" onClick={() => startChallenge('hard')}
+                        />
+                    </div>
 
-                <ProtocolCard 
-                    icon={ShieldAlert} label="Sovereign (Hard)" desc="Total randomization. 2X Skill Points. For absolute masters."
-                    color="text-rose-400" bg="bg-rose-500/5" onClick={() => startChallenge('hard')}
-                />
+                    <Card className="bg-slate-900/60 border-primary/10 rounded-[3rem] overflow-hidden">
+                        <CardHeader className="p-8 border-b border-white/5">
+                            <CardTitle className="text-2xl font-black uppercase italic flex items-center gap-3">
+                                <Target className="text-primary"/> Milestone Roadmap
+                            </CardTitle>
+                            <CardDescription className="font-bold">Protocol: Proof of Mastery Bounties</CardDescription>
+                        </CardHeader>
+                        <CardContent className="p-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <MilestoneSection 
+                                    title="Easy Mode Mastery"
+                                    items={[10, 20, 30, 40, 50, 60, 70, 80, 90, 100].map(m => ({
+                                        key: `easy-${m}`,
+                                        label: `Registry Peak: ${m}`,
+                                        reward: m * 5,
+                                        isReached: (currentUserData?.gameHighScores?.unitDimensionsEasy || 0) >= m,
+                                        isClaimed: currentUserData?.unitDimensionsMilestonesClaimed?.includes(`easy-${m}`)
+                                    }))}
+                                    onClaim={handleClaim}
+                                    isClaiming={isClaiming}
+                                />
+                                <MilestoneSection 
+                                    title="Hard Mode Sovereign"
+                                    items={[
+                                        { key: 'hard-50', label: 'Advanced Core (50)', reward: 2500, isReached: (currentUserData?.gameHighScores?.unitDimensionsHard || 0) >= 50, isClaimed: currentUserData?.unitDimensionsMilestonesClaimed?.includes('hard-50') },
+                                        { key: 'hard-100', label: 'Sovereign Core (100)', reward: 5000, isReached: (currentUserData?.gameHighScores?.unitDimensionsHard || 0) >= 100, isClaimed: currentUserData?.unitDimensionsMilestonesClaimed?.includes('hard-100') }
+                                    ]}
+                                    onClaim={handleClaim}
+                                    isClaiming={isClaiming}
+                                    isLegendary
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                <div className="lg:col-span-1 space-y-6">
+                    <Card className="bg-card/40 border-white/5 rounded-[2.5rem] p-8">
+                        <CardHeader className="p-0 mb-6"><CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-primary">Your Standings</CardTitle></CardHeader>
+                        <div className="space-y-4">
+                            <StandingItem label="Tactical Peak" val={currentUserData?.gameHighScores?.unitDimensionsEasy || 0} color="text-sky-400" />
+                            <StandingItem label="Sovereign Peak" val={currentUserData?.gameHighScores?.unitDimensionsHard || 0} color="text-rose-400" />
+                        </div>
+                    </Card>
+
+                    <Card className="border-red-500/20 bg-red-500/5 rounded-[2.5rem] p-8">
+                        <div className="flex items-start gap-3">
+                            <ShieldX className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                            <p className="text-[10px] font-black uppercase tracking-widest text-red-500/80 leading-relaxed italic">
+                                "The Lab is monitored. Any tab-switching or focus loss will terminate the forge cycle immediately."
+                            </p>
+                        </div>
+                    </Card>
+                </div>
             </div>
 
             <Dialog open={isCheatingDialogOpen} onOpenChange={setIsCheatingDialogOpen}>
@@ -456,12 +528,66 @@ function ProtocolCard({ icon: Icon, label, desc, color, bg, onClick }: any) {
     return (
         <Card className={cn("relative overflow-hidden cursor-pointer group hover:scale-[1.02] transition-all duration-500 rounded-[3rem] border-2 border-white/5", bg)} onClick={onClick}>
             <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
-            <CardContent className="p-10 flex flex-col items-center text-center gap-6 relative z-10">
-                <div className={cn("p-6 rounded-3xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}><Icon className="h-10 w-10" /></div>
-                <div><h3 className="text-2xl font-black uppercase italic tracking-tight">{label}</h3><p className="text-slate-500 font-medium text-sm mt-2">{desc}</p></div>
-                <Button variant="ghost" className="mt-4 font-black uppercase text-[10px] tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity">Initialize Protocol <ArrowRight className="ml-2 h-4 w-4"/></Button>
+            <CardContent className="p-8 flex flex-col items-center text-center gap-4 relative z-10">
+                <div className={cn("p-4 rounded-2xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}><Icon className="h-8 w-8" /></div>
+                <div><h3 className="text-xl font-black uppercase italic tracking-tight">{label}</h3><p className="text-slate-500 font-medium text-[10px] mt-1">{desc}</p></div>
             </CardContent>
         </Card>
+    );
+}
+
+function StandingItem({ label, val, color }: any) {
+    return (
+        <div className="flex items-center justify-between p-4 rounded-2xl bg-black/20 border border-white/5 group hover:border-primary/20 transition-all">
+            <p className="text-[10px] font-black uppercase text-muted-foreground group-hover:text-white transition-colors">{label}</p>
+            <p className={cn("text-2xl font-black italic", color)}>{val}</p>
+        </div>
+    );
+}
+
+function MilestoneSection({ title, items, onClaim, isClaiming, isLegendary = false }: any) {
+    return (
+        <div className="space-y-4">
+            <h4 className={cn("text-[10px] font-black uppercase tracking-[0.3em] mb-4", isLegendary ? "text-yellow-400" : "text-primary")}>{title}</h4>
+            <div className="grid gap-2">
+                {items.map((item: any) => (
+                    <div key={item.key} className={cn(
+                        "flex items-center justify-between p-3 rounded-2xl border transition-all",
+                        item.isClaimed ? "bg-green-500/5 border-green-500/20 opacity-60" : 
+                        item.isReached ? "bg-primary/10 border-primary/40 shadow-lg" : "bg-black/20 border-white/5"
+                    )}>
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "h-8 w-8 rounded-xl flex items-center justify-center border",
+                                item.isReached ? "bg-primary/20 border-primary/30" : "bg-muted border-white/5"
+                            )}>
+                                {item.isClaimed ? <CheckCircle2 className="h-4 w-4 text-green-500"/> : 
+                                 item.isReached ? <Sparkles className="h-4 w-4 text-primary animate-pulse"/> : 
+                                 <Lock className="h-4 w-4 text-muted-foreground opacity-40"/>}
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black uppercase tracking-tight">{item.label}</p>
+                                <p className="text-[9px] font-bold text-emerald-500">+{item.reward} Credits</p>
+                            </div>
+                        </div>
+                        {item.isReached && !item.isClaimed ? (
+                            <Button 
+                                size="sm" 
+                                className="h-8 rounded-lg font-black uppercase text-[8px] tracking-widest bg-emerald-500 hover:bg-emerald-600"
+                                onClick={() => onClaim(item.key, item.reward)}
+                                disabled={isClaiming === item.key}
+                            >
+                                {isClaiming === item.key ? <Loader2 className="h-3 w-3 animate-spin"/> : "Claim Bounty"}
+                            </Button>
+                        ) : item.isClaimed ? (
+                            <div className="text-[8px] font-black uppercase text-green-500 flex items-center gap-1"><Check className="h-3 w-3"/> Secured</div>
+                        ) : (
+                            <div className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Locked</div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }
 
