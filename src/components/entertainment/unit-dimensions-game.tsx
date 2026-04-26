@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
@@ -28,6 +27,7 @@ import { LoginWall } from '../ui/login-wall';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
 import { 
     Dialog, 
     DialogContent, 
@@ -354,7 +354,7 @@ export function UnitDimensionsGame() {
                     <div className="lg:col-span-4">
                         <Card className="bg-slate-900 border-2 border-primary/30 rounded-[2.5rem] overflow-hidden">
                             <CardHeader className="text-center p-8 bg-primary/5">
-                                <Badge className="mx-auto mb-4 bg-primary/20 text-primary border-primary/30 uppercase font-black tracking-widest text-[9px]">Target Quantity</Badge>
+                                <Badge variant="outline" className="mx-auto mb-4 bg-primary/20 text-primary border-primary/30 uppercase font-black tracking-widest text-[9px]">Target Quantity</Badge>
                                 <CardTitle className="text-4xl font-black italic uppercase tracking-tighter text-white">{currentQty.name}</CardTitle>
                                 <CardDescription className="text-xs font-bold text-slate-400 mt-2">{currentQty.category}</CardDescription>
                             </CardHeader>
