@@ -6,10 +6,12 @@ import { useParams, useRouter } from 'next/navigation';
 import { useMentor, MentorSession } from '@/hooks/use-mentor';
 import { useUser } from '@clerk/nextjs';
 import { useImmersive } from '@/hooks/use-immersive';
-import { Loader2, ShieldX, X, MessageSquare, Info, Star } from 'lucide-react';
+import { Loader2, ShieldX, X, MessageSquare, Info, Star, Video, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 import Script from 'next/script';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -37,7 +39,10 @@ export default function MentorMeetingRoom() {
             const found = sessions.find(s => s.id === sessionId);
             if (found) {
                 setSession(found);
-                setIsAuthorized(found.participants.includes(user.id));
+                // Check if user is participant or the mentor/admin
+                // Note: We'd ideally have isAdmin/isSuperAdmin here too for full parity
+                const isMentor = found.mentorId === user.id;
+                setIsAuthorized(found.participants.includes(user.id) || isMentor);
                 setIsEnded(found.status === 'ended');
             } else {
                 setIsAuthorized(false);

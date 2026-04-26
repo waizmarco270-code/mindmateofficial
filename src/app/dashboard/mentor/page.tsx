@@ -66,7 +66,13 @@ export default function MentorHub() {
 
                     <div className="grid gap-6">
                         {upcoming.map((session, i) => (
-                            <SessionCard key={session.id} session={session} userId={user?.id} onBook={() => bookSlot(session.id)} />
+                            <SessionCard 
+                                key={session.id} 
+                                session={session} 
+                                userId={user?.id} 
+                                onBook={() => bookSlot(session.id)}
+                                isAdmin={isAdmin || isSuperAdmin}
+                            />
                         ))}
                         {upcoming.length === 0 && (
                             <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[3rem] opacity-30">
@@ -109,11 +115,12 @@ export default function MentorHub() {
     );
 }
 
-function SessionCard({ session, userId, onBook }: { session: MentorSession, userId?: string, onBook: () => void }) {
+function SessionCard({ session, userId, onBook, isAdmin }: { session: MentorSession, userId?: string, onBook: () => void, isAdmin: boolean }) {
     const [timeLeft, setTimeLeft] = useState<string>('');
     const [isLive, setIsLive] = useState(false);
     
     const isParticipant = session.participants.includes(userId || '');
+    const isHost = userId === session.mentorId || isAdmin;
     const isFull = session.participants.length >= session.maxUsers;
     const startTime = session.startTime.toDate();
 
@@ -144,7 +151,7 @@ function SessionCard({ session, userId, onBook }: { session: MentorSession, user
                     <div className="p-6 rounded-[2rem] bg-white/5 border border-white/10 shadow-2xl group-hover:scale-110 transition-transform duration-500">
                         <Video className={cn("h-10 w-10", isLive ? "text-emerald-500 animate-pulse" : "text-primary")} />
                     </div>
-                    {isParticipant && (
+                    {(isParticipant || isHost) && (
                         <div className="absolute -top-3 -right-2 bg-emerald-500 text-black rounded-full p-1 border-4 border-slate-900">
                             <CheckCircle className="h-4 w-4" />
                         </div>
@@ -181,17 +188,17 @@ function SessionCard({ session, userId, onBook }: { session: MentorSession, user
                         </div>
                     )}
 
-                    {isParticipant ? (
+                    { (isParticipant || isHost) ? (
                         <Button 
                             asChild 
-                            disabled={!isLive} 
+                            disabled={!isLive && !isHost} 
                             size="lg" 
                             className={cn(
                                 "h-16 px-10 rounded-2xl font-black text-lg uppercase italic shadow-2xl transition-all",
-                                isLive ? "bg-emerald-500 hover:bg-emerald-600 text-black shadow-emerald-500/20" : "bg-white/5 text-white/20 border-white/5 cursor-not-allowed"
+                                (isLive || isHost) ? "bg-emerald-500 hover:bg-emerald-600 text-black shadow-emerald-500/20" : "bg-white/5 text-white/20 border-white/5 cursor-not-allowed"
                             )}
                         >
-                            {isLive ? <Link href={`/dashboard/mentor/${session.id}`}>BREACH ROOM <ArrowRight className="ml-2"/></Link> : <span>ROOM LOCKED</span>}
+                            {(isLive || isHost) ? <Link href={`/dashboard/mentor/${session.id}`}>BREACH ROOM <ArrowRight className="ml-2"/></Link> : <span>ROOM LOCKED</span>}
                         </Button>
                     ) : (
                         <Button 
