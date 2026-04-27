@@ -13,13 +13,15 @@ import {
     Lock, Timer, ShieldCheck, 
     Video, MessageSquare, Star,
     AlertTriangle, Loader2, Sparkles,
-    UserCircle, Info
+    UserCircle, Info, Share2, Copy,
+    Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInSeconds, isPast } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MentorHub() {
     const { user } = useUser();
@@ -91,8 +93,8 @@ export default function MentorHub() {
                         <div className="space-y-4 text-xs font-medium leading-relaxed italic text-slate-400">
                             <p>"Secure your slot early. Each session is hard-capped at 5 Citizens to ensure high-fidelity interaction."</p>
                             <div className="flex items-start gap-3 p-4 rounded-2xl bg-black/20 border border-white/5">
-                                <ShieldCheck className="h-5 w-5 text-emerald-500 shrink-0" />
-                                <p>Join button activates exactly at T-Minus 0. Connection must be established via Desktop or Browser.</p>
+                                <Lock className="h-5 w-5 text-amber-500 shrink-0" />
+                                <p>Sessions are protected by Sovereign Passcodes. Join button activates at T-Minus 0.</p>
                             </div>
                         </div>
                     </Card>
@@ -116,6 +118,7 @@ export default function MentorHub() {
 }
 
 function SessionCard({ session, userId, onBook, isAdmin }: { session: MentorSession, userId?: string, onBook: () => void, isAdmin: boolean }) {
+    const { toast } = useToast();
     const [timeLeft, setTimeLeft] = useState<string>('');
     const [isLive, setIsLive] = useState(false);
     
@@ -142,6 +145,23 @@ function SessionCard({ session, userId, onBook, isAdmin }: { session: MentorSess
         }, 1000);
         return () => clearInterval(interval);
     }, [startTime]);
+
+    const handleShare = async () => {
+        const shareData = {
+            title: `MindMate Briefing: ${session.title}`,
+            text: `Legend! You are invited to a Sovereign Mentorship Session.\n\n📚 Title: ${session.title}\n⏰ Start: ${format(startTime, 'h:mm a, MMM do')}\n🔐 Passcode: ${session.passcode || 'Contact Admin'}\n\nJoin the uplink here:`,
+            url: `${window.location.origin}/dashboard/mentor/${session.id}`
+        };
+
+        if (navigator.share) {
+            try {
+                await navigator.share(shareData);
+            } catch (e) {}
+        } else {
+            navigator.clipboard.writeText(`${shareData.text} ${shareData.url}`);
+            toast({ title: "Briefing Copied", description: "Strategic data stored in clipboard." });
+        }
+    };
 
     return (
         <Card className="relative overflow-hidden bg-slate-900/40 backdrop-blur-xl border-white/10 rounded-[3rem] group hover:border-primary/30 transition-all duration-500">
@@ -177,6 +197,12 @@ function SessionCard({ session, userId, onBook, isAdmin }: { session: MentorSess
                                 {session.participants.length} / {session.maxUsers} SEATS
                             </span>
                         </div>
+                        {isParticipant && (
+                            <div className="flex items-center gap-2">
+                                <Key className="h-4 w-4 text-amber-500" />
+                                <span className="text-xs font-black text-white tabular-nums">CODE: {session.passcode}</span>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -188,31 +214,43 @@ function SessionCard({ session, userId, onBook, isAdmin }: { session: MentorSess
                         </div>
                     )}
 
-                    { (isParticipant || isHost) ? (
-                        <Button 
-                            asChild 
-                            disabled={!isLive && !isHost} 
-                            size="lg" 
-                            className={cn(
-                                "h-16 px-10 rounded-2xl font-black text-lg uppercase italic shadow-2xl transition-all",
-                                (isLive || isHost) ? "bg-emerald-500 hover:bg-emerald-600 text-black shadow-emerald-500/20" : "bg-white/5 text-white/20 border-white/5 cursor-not-allowed"
-                            )}
-                        >
-                            {(isLive || isHost) ? <Link href={`/dashboard/mentor/${session.id}`}>BREACH ROOM <ArrowRight className="ml-2"/></Link> : <span>ROOM LOCKED</span>}
-                        </Button>
-                    ) : (
-                        <Button 
-                            onClick={onBook} 
-                            disabled={isFull} 
-                            size="lg" 
-                            className={cn(
-                                "h-16 px-10 rounded-2xl font-black text-lg uppercase italic shadow-2xl transition-all",
-                                isFull ? "bg-white/5 text-white/20 border-white/5" : "bg-primary hover:bg-primary/90 text-white shadow-primary/20"
-                            )}
-                        >
-                            {isFull ? 'CAPACITY REACHED' : 'BOOK SLOT'}
-                        </Button>
-                    )}
+                    <div className="flex flex-col gap-2 w-full">
+                        { (isParticipant || isHost) ? (
+                            <Button 
+                                asChild 
+                                disabled={!isLive && !isHost} 
+                                size="lg" 
+                                className={cn(
+                                    "h-16 px-10 rounded-2xl font-black text-lg uppercase italic shadow-2xl transition-all",
+                                    (isLive || isHost) ? "bg-emerald-500 hover:bg-emerald-600 text-black shadow-emerald-500/20" : "bg-white/5 text-white/20 border-white/5 cursor-not-allowed"
+                                )}
+                            >
+                                {(isLive || isHost) ? <Link href={`/dashboard/mentor/${session.id}`}>BREACH ROOM <ArrowRight className="ml-2"/></Link> : <span>ROOM LOCKED</span>}
+                            </Button>
+                        ) : (
+                            <Button 
+                                onClick={onBook} 
+                                disabled={isFull} 
+                                size="lg" 
+                                className={cn(
+                                    "h-16 px-10 rounded-2xl font-black text-lg uppercase italic shadow-2xl transition-all",
+                                    isFull ? "bg-white/5 text-white/20 border-white/5" : "bg-primary hover:bg-primary/90 text-white shadow-primary/20"
+                                )}
+                            >
+                                {isFull ? 'CAPACITY REACHED' : 'BOOK SLOT'}
+                            </Button>
+                        )}
+                        
+                        {(isParticipant || isHost) && (
+                            <Button 
+                                variant="ghost" 
+                                className="text-xs font-black uppercase text-slate-500 hover:text-white"
+                                onClick={handleShare}
+                            >
+                                <Share2 className="mr-2 h-3 w-3"/> Dispatch Invite
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </CardContent>
         </Card>

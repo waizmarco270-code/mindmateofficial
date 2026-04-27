@@ -22,6 +22,7 @@ export interface MentorSession {
     maxUsers: number;
     participants: string[];
     roomId: string;
+    passcode: string; // New: Sovereign Passcode
     status: 'upcoming' | 'live' | 'ended';
     createdAt: any;
     feedback?: Record<string, { rating: number; comment: string }>;
@@ -43,18 +44,22 @@ export function useMentor() {
         return () => unsubscribe();
     }, []);
 
-    const createSession = async (data: Omit<MentorSession, 'id' | 'participants' | 'status' | 'createdAt' | 'roomId'>) => {
+    const createSession = async (data: Omit<MentorSession, 'id' | 'participants' | 'status' | 'createdAt' | 'roomId' | 'passcode'>) => {
         const id = `session-${Date.now()}`;
+        // Generate a legendary 6-char passcode
+        const passcode = Math.random().toString(36).substring(2, 8).toUpperCase();
+        
         const newSession = {
             ...data,
             id,
             participants: [],
             status: 'upcoming',
             roomId: `mentor-${id}`,
+            passcode,
             createdAt: serverTimestamp()
         };
         await setDoc(doc(db, 'mentorSessions', id), newSession);
-        toast({ title: "Mission Scheduled", description: "The mentorship session is now live in the hub." });
+        toast({ title: "Mission Scheduled", description: `Session live with passcode: ${passcode}` });
     };
 
     const bookSlot = async (sessionId: string) => {

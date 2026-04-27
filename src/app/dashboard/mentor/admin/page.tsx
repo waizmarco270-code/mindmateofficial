@@ -13,7 +13,8 @@ import {
     Plus, Trash2, ArrowLeft, 
     Clock, Users, CheckCircle, 
     Loader2, ShieldAlert, Video,
-    Calendar, Megaphone, Target
+    Calendar, Megaphone, Target,
+    Key, Lock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -81,7 +82,7 @@ export default function MentorAdmin() {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                <Card className="lg:col-span-5 border-primary/20 bg-primary/5 rounded-[2.5rem]">
+                <Card className="lg:col-span-4 border-primary/20 bg-primary/5 rounded-[2.5rem]">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 uppercase italic text-primary"><Video className="h-5 w-5"/> Initialize Session</CardTitle>
                         <CardDescription>Configure a new encrypted meeting terminal.</CardDescription>
@@ -119,7 +120,7 @@ export default function MentorAdmin() {
                     </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-7">
+                <Card className="lg:col-span-8">
                     <CardHeader className="border-b">
                         <CardTitle className="text-base flex items-center gap-2 uppercase tracking-widest"><Target className="h-4 w-4 text-primary"/> Active Registry</CardTitle>
                     </CardHeader>
@@ -129,6 +130,7 @@ export default function MentorAdmin() {
                                 <TableRow>
                                     <TableHead>Session</TableHead>
                                     <TableHead>Capacity</TableHead>
+                                    <TableHead>Authorization</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Action</TableHead>
                                 </TableRow>
@@ -141,6 +143,12 @@ export default function MentorAdmin() {
                                             <p className="text-[10px] opacity-40">{format(s.startTime.toDate(), 'MMM d, HH:mm')}</p>
                                         </TableCell>
                                         <TableCell className="font-mono text-xs">{s.participants.length} / {s.maxUsers}</TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-2">
+                                                <Key className="h-3 w-3 text-amber-500"/>
+                                                <code className="bg-muted px-1.5 py-0.5 rounded text-[10px] font-black">{s.passcode || 'N/A'}</code>
+                                            </div>
+                                        </TableCell>
                                         <TableCell>
                                             <Badge variant={s.status === 'live' ? 'default' : 'secondary'} className="text-[8px] uppercase">{s.status}</Badge>
                                         </TableCell>
