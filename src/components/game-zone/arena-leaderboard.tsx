@@ -13,7 +13,7 @@ import {
     ArrowRight, Info, EyeOff, Loader2, Maximize2,
     Settings, Globe, Medal, Sparkles, X, LayoutDashboard,
     ScrollText, Orbit, Flame, Brain, ShieldX, Beaker,
-    Target, GripVertical, Ruler
+    Target, GripVertical, Ruler, Skull
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -522,4 +522,3 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
         </Dialog>
     );
 }
-

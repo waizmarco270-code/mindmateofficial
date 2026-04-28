@@ -162,14 +162,7 @@ export function UnitDimensionsGame() {
 
     const stopTimer = () => { if (timerRef.current) clearInterval(timerRef.current); };
 
-    const prepareQuestion = (qty: PhysicalQuantity) => {
-        setCurrentQty(qty);
-        setComponents([]);
-        setTimeLeft(Math.max(15, 45 - score)); 
-        startTimer();
-    };
-
-    const startTimer = () => {
+    const startTimer = useCallback(() => {
         stopTimer();
         timerRef.current = setInterval(() => {
             setTimeLeft(prev => {
@@ -181,7 +174,14 @@ export function UnitDimensionsGame() {
                 return prev - 1;
             });
         }, 1000);
-    };
+    }, [handleBreach]);
+
+    const prepareQuestion = useCallback((qty: PhysicalQuantity) => {
+        setCurrentQty(qty);
+        setComponents([]);
+        setTimeLeft(Math.max(15, 45 - score)); 
+        startTimer();
+    }, [score, startTimer]);
 
     const startChallenge = useCallback((mode: 'easy' | 'hard') => {
         let pool = [...QUANTITY_DATA];
@@ -201,7 +201,15 @@ export function UnitDimensionsGame() {
         prepareQuestion(pool[0]);
     }, [prepareQuestion]);
 
-    const handleBreach = (msg: string) => {
+    const saveHighScore = useCallback(() => {
+        const scoreKey = challengeMode === 'easy' ? 'unitDimensionsEasy' : 'unitDimensionsHard';
+        if (score > highScore) {
+            setHighScore(score);
+            if (user) updateGameHighScore(user.id, scoreKey, score);
+        }
+    }, [score, highScore, user, challengeMode, updateGameHighScore]);
+
+    const handleBreach = useCallback((msg: string) => {
         const newLives = lives - 1;
         setLives(newLives);
         toast({ variant: 'destructive', title: "DIMENSIONAL FRACTURE", description: msg });
@@ -216,15 +224,7 @@ export function UnitDimensionsGame() {
             setComponents([]);
             startTimer();
         }
-    };
-
-    const saveHighScore = () => {
-        const scoreKey = challengeMode === 'easy' ? 'unitDimensionsEasy' : 'unitDimensionsHard';
-        if (score > highScore) {
-            setHighScore(score);
-            if (user) updateGameHighScore(user.id, scoreKey, score);
-        }
-    };
+    }, [lives, score, currentQty, toast, saveHighScore, startTimer]);
 
     const addComponent = (base: string) => {
         if (components.length >= 6) return;
@@ -241,6 +241,21 @@ export function UnitDimensionsGame() {
         setComponents(newComps);
     };
 
+    const handleSuccess = useCallback(() => {
+        stopTimer();
+        const newScore = score + 1;
+        setScore(newScore);
+        toast({ title: "STRUCTURE SECURED", description: `Verified: ${currentQty?.name}`, className: "bg-green-600 text-white" });
+
+        const nextIndex = deck.indexOf(currentQty!) + 1;
+        if (nextIndex >= deck.length) {
+            saveHighScore();
+            setView('won');
+        } else {
+            prepareQuestion(deck[nextIndex]);
+        }
+    }, [score, currentQty, deck, toast, saveHighScore, prepareQuestion]);
+
     const validateConstruction = () => {
         if (!currentQty) return;
 
@@ -256,21 +271,6 @@ export function UnitDimensionsGame() {
             handleSuccess();
         } else {
             handleBreach(`Structural misalignment detected.`);
-        }
-    };
-
-    const handleSuccess = () => {
-        stopTimer();
-        const newScore = score + 1;
-        setScore(newScore);
-        toast({ title: "STRUCTURE SECURED", description: `Verified: ${currentQty?.name}`, className: "bg-green-600 text-white" });
-
-        const nextIndex = deck.indexOf(currentQty!) + 1;
-        if (nextIndex >= deck.length) {
-            saveHighScore();
-            setView('won');
-        } else {
-            prepareQuestion(deck[nextIndex]);
         }
     };
 
