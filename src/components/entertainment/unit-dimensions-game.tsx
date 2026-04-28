@@ -15,7 +15,7 @@ import {
     Maximize, Minimize, Box, 
     Settings, Plus, Minus, Check,
     BookOpen, Trash2, X, ShieldX,
-    Target, Skull, Award
+    Target, Skull, Award, Lock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -79,8 +79,8 @@ const QUANTITY_DATA: PhysicalQuantity[] = [
     { name: 'Magnetic Field (B)', dimension: 'M^1 T^-2 A^-1', display: '[M T⁻² A⁻¹]', category: 'Electromagnetism' },
     { name: 'Magnetic Flux', dimension: 'M^1 L^2 T^-2 A^-1', display: '[M L² T⁻² A⁻¹]', category: 'Electromagnetism' },
     { name: 'Inductance', dimension: 'M^1 L^2 T^-2 A^-2', display: '[M L² T⁻² A⁻²]', category: 'Electromagnetism' },
-    { name: 'Conductivity', dimension: 'M^-1 L^-3 T^3 A^2', display: '[M⁻¹ L⁻³ T³ A²]', category: 'Electromagnetism' },
-    { name: 'Permittivity (ε₀)', dimension: 'M^-1 L^-3 T^4 A^2', display: '[M⁻¹ L⁻³ T⁴ A²]', category: 'Electromagnetism' },
+    { name: 'Conductivity', dimension: 'M^-1 L^-3 T^3 A^2', display: '[M⁻¹ L^-3 T³ A²]', category: 'Electromagnetism' },
+    { name: 'Permittivity (ε₀)', dimension: 'M^-1 L^-3 T^4 A^2', display: '[M⁻¹ L^-3 T⁴ A²]', category: 'Electromagnetism' },
     { name: 'Permeability (μ₀)', dimension: 'M^1 L^1 T^-2 A^-2', display: '[M L T⁻² A⁻²]', category: 'Electromagnetism' },
     { name: 'Electric Dipole Moment', dimension: 'L^1 T^1 A^1', display: '[L T A]', category: 'Electromagnetism' },
     { name: 'Current Density', dimension: 'L^-2 A^1', display: '[L⁻² A]', category: 'Electromagnetism' },
@@ -290,13 +290,6 @@ export function UnitDimensionsGame() {
         }
     };
 
-    useEffect(() => {
-        if (view === 'challenge' && timeLeft > 0) {
-            // Already handled by startTimer
-        }
-        return stopTimer;
-    }, [view]);
-
     if (view === 'learning') {
         return (
             <div className="space-y-8 animate-in fade-in duration-500 max-w-5xl mx-auto">
@@ -318,7 +311,7 @@ export function UnitDimensionsGame() {
                     {QUANTITY_DATA.filter(q => q.name.toLowerCase().includes(searchTerm.toLowerCase())).map((q, i) => (
                         <Card key={i} className="bg-card/40 border-primary/5 hover:border-primary/20 transition-all group overflow-hidden">
                             <CardHeader className="p-4 bg-primary/5 border-b border-white/5">
-                                <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest">{q.category}</Badge>
+                                <Badge variant="outline" className="mx-auto mb-4 bg-primary/20 text-primary border-primary/30 uppercase font-black tracking-widest text-[9px]">Target Quantity</Badge>
                                 <CardTitle className="text-base font-bold text-foreground mt-2">{q.name}</CardTitle>
                             </CardHeader>
                             <CardContent className="p-4 flex items-center justify-center bg-black/10">
@@ -422,7 +415,7 @@ export function UnitDimensionsGame() {
                 <div className="mx-auto w-24 h-24 rounded-[2.5rem] bg-primary/10 border-2 border-primary/20 flex items-center justify-center shadow-2xl backdrop-blur-md">
                     <Ruler className="h-12 w-12 text-primary" />
                 </div>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent">Units & Dimensions</h1>
+                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent">Units &amp; Dimensions</h1>
                 <p className="text-slate-400 font-medium max-w-2xl mx-auto text-lg leading-relaxed">Master the structural DNA of the universe. Decode and construct the dimensional identities of 100+ physical quantities.</p>
             </header>
 
