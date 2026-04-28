@@ -136,6 +136,7 @@ export function UnitDimensionsGame() {
     const [isClaiming, setIsClaiming] = useState<string | null>(null);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const startTimerRef = useRef<() => void>();
 
     // Sync High Score
     useEffect(() => {
@@ -162,45 +163,6 @@ export function UnitDimensionsGame() {
 
     const stopTimer = () => { if (timerRef.current) clearInterval(timerRef.current); };
 
-    const startTimer = useCallback(() => {
-        stopTimer();
-        timerRef.current = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    stopTimer();
-                    handleBreach("Temporal breach! Time limit exceeded.");
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-    }, [handleBreach]);
-
-    const prepareQuestion = useCallback((qty: PhysicalQuantity) => {
-        setCurrentQty(qty);
-        setComponents([]);
-        setTimeLeft(Math.max(15, 45 - score)); 
-        startTimer();
-    }, [score, startTimer]);
-
-    const startChallenge = useCallback((mode: 'easy' | 'hard') => {
-        let pool = [...QUANTITY_DATA];
-        if (mode === 'hard') {
-            pool = pool.sort(() => Math.random() - 0.5);
-        } else {
-            // Easy Mode: Sort by category flow
-            const order = ['Mechanics', 'Heat & Thermo', 'Electromagnetism', 'Optics', 'Modern Physics', 'General'];
-            pool = pool.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
-        }
-        
-        setDeck(pool);
-        setChallengeMode(mode);
-        setScore(0);
-        setLives(MAX_LIVES);
-        setView('challenge');
-        prepareQuestion(pool[0]);
-    }, [prepareQuestion]);
-
     const saveHighScore = useCallback(() => {
         const scoreKey = challengeMode === 'easy' ? 'unitDimensionsEasy' : 'unitDimensionsHard';
         if (score > highScore) {
@@ -219,12 +181,53 @@ export function UnitDimensionsGame() {
             saveHighScore();
             setView('gameOver');
         } else if (currentQty) {
-            // RE-CALIBRATION: Reset timer and UI for the current question
             setTimeLeft(Math.max(15, 45 - score));
             setComponents([]);
-            startTimer();
+            startTimerRef.current?.(); // Call via ref to avoid circularity
         }
-    }, [lives, score, currentQty, toast, saveHighScore, startTimer]);
+    }, [lives, score, currentQty, toast, saveHighScore]);
+
+    const startTimer = useCallback(() => {
+        stopTimer();
+        timerRef.current = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    stopTimer();
+                    handleBreach("Temporal breach! Time limit exceeded.");
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    }, [handleBreach]);
+
+    useEffect(() => {
+        startTimerRef.current = startTimer;
+    }, [startTimer]);
+
+    const prepareQuestion = useCallback((qty: PhysicalQuantity) => {
+        setCurrentQty(qty);
+        setComponents([]);
+        setTimeLeft(Math.max(15, 45 - score)); 
+        startTimer();
+    }, [score, startTimer]);
+
+    const startChallenge = useCallback((mode: 'easy' | 'hard') => {
+        let pool = [...QUANTITY_DATA];
+        if (mode === 'hard') {
+            pool = pool.sort(() => Math.random() - 0.5);
+        } else {
+            const order = ['Mechanics', 'Heat & Thermo', 'Electromagnetism', 'Optics', 'Modern Physics', 'General'];
+            pool = pool.sort((a, b) => order.indexOf(a.category) - order.indexOf(b.category));
+        }
+        
+        setDeck(pool);
+        setChallengeMode(mode);
+        setScore(0);
+        setLives(MAX_LIVES);
+        setView('challenge');
+        prepareQuestion(pool[0]);
+    }, [prepareQuestion]);
 
     const addComponent = (base: string) => {
         if (components.length >= 6) return;
@@ -286,6 +289,13 @@ export function UnitDimensionsGame() {
             setIsClaiming(null);
         }
     };
+
+    useEffect(() => {
+        if (view === 'challenge' && timeLeft > 0) {
+            // Already handled by startTimer
+        }
+        return stopTimer;
+    }, [view]);
 
     if (view === 'learning') {
         return (
@@ -359,7 +369,7 @@ export function UnitDimensionsGame() {
                                 <CardDescription className="text-xs font-bold text-slate-400 mt-2">{currentQty.category}</CardDescription>
                             </CardHeader>
                             <CardContent className="p-8 space-y-6 text-center">
-                                <div className="p-6 rounded-2xl bg-black/40 border border-white/5 border-dashed min-h-[100px] flex flex-wrap justify-center gap-2">
+                                <div className="p-6 rounded-2xl bg-black/40 border-2 border-dashed border-white/5 shadow-inner min-h-[100px] flex flex-wrap justify-center gap-2">
                                     <AnimatePresence>
                                         {components.map((c, i) => (
                                             <motion.button key={i} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ opacity: 0 }} onClick={() => removeComponent(i)} className="relative h-12 w-10 rounded-lg bg-primary text-white font-black text-sm flex items-center justify-center">
