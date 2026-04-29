@@ -53,6 +53,14 @@ service cloud.firestore {
         );
         allow delete: if isAdmin() || isSuperAdmin();
     }
+
+    // Mentor Requests
+    match /mentorRequests/{requestId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isAdmin() || isSuperAdmin();
+        allow delete: if isAdmin() || isSuperAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid && resource.data.status == 'pending');
+    }
     
     // Presence System
     match /presence/{userId} {

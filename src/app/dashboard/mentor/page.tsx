@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useMentor, MentorSession } from '@/hooks/use-mentor';
-import { useAdmin } from '@/hooks/use-admin';
+import { useMentor, MentorSession, MentorRequest } from '@/hooks/use-mentor';
+import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,8 @@ import {
     Video, MessageSquare, Star,
     AlertTriangle, Loader2, Sparkles,
     UserCircle, Info, Share2, Copy,
-    Key
+    Key, Plus, Gem, Wallet, CreditCard,
+    XCircle, History, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInSeconds, isPast } from 'date-fns';
@@ -22,11 +22,23 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { createRazorpayOrder } from '@/app/actions/razorpay';
+import Script from 'next/script';
 
 export default function MentorHub() {
     const { user } = useUser();
-    const { sessions, loading, bookSlot } = useMentor();
-    const { isAdmin, isSuperAdmin } = useAdmin();
+    const { sessions, requests, loading, bookSlot, submitMeetingRequest } = useMentor();
+    const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
+    const { addCreditsToUser } = useUsers();
+    const { toast } = useToast();
+
+    const [isRequestOpen, setIsRequestOpen] = useState(false);
+    const [requestType, setRequestType] = useState<'standard' | 'guaranteed' | null>(null);
+    const [requestMsg, setRequestMsg] = useState('');
+    const [isProcessing, setIsProcessing] = useState(false);
 
     if (loading) return (
         <div className="flex h-full w-full items-center justify-center p-20">
@@ -36,9 +48,69 @@ export default function MentorHub() {
 
     const upcoming = sessions.filter(s => s.status !== 'ended');
     const past = sessions.filter(s => s.status === 'ended');
+    const myRequests = requests.filter(r => r.userId === user?.id);
+
+    const handleStandardRequest = async () => {
+        if (!user || !currentUserData) return;
+        const cost = 100;
+        const hasMaster = currentUserData.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+
+        if (!hasMaster && currentUserData.credits < cost) {
+            toast({ variant: 'destructive', title: "Insufficient Credits", description: `You need ${cost} credits to file a petition.` });
+            return;
+        }
+
+        setIsProcessing(true);
+        try {
+            if (!hasMaster) await addCreditsToUser(user.id, -cost);
+            await submitMeetingRequest(requestMsg, 'standard');
+            setIsRequestOpen(false);
+            setRequestType(null);
+            setRequestMsg('');
+        } finally {
+            setIsProcessing(false);
+        }
+    };
+
+    const handleGuaranteedRequest = async () => {
+        if (!user) return;
+        setIsProcessing(true);
+        try {
+            const order = await createRazorpayOrder(49, {
+                userId: user.id,
+                packName: 'Guaranteed Meeting Request',
+                credits: 0
+            });
+
+            const options = {
+                key: order.keyId,
+                amount: order.amount,
+                currency: order.currency,
+                name: 'MindMate Sovereign',
+                description: 'Guaranteed Briefing Request',
+                order_id: order.id,
+                handler: async function (response: any) {
+                    await submitMeetingRequest(requestMsg, 'guaranteed', response.razorpay_payment_id);
+                    setIsRequestOpen(false);
+                    setRequestType(null);
+                    setRequestMsg('');
+                    setIsProcessing(false);
+                },
+                theme: { color: '#8b5cf6' },
+                modal: { ondismiss: () => setIsProcessing(false) }
+            };
+            const rzp = new (window as any).Razorpay(options);
+            rzp.open();
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Payment Signal Lost", description: e.message });
+            setIsProcessing(false);
+        }
+    };
 
     return (
         <div className="space-y-12 pb-20 max-w-7xl mx-auto px-4">
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" />
+            
             <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h1 className="text-5xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent">
@@ -49,8 +121,11 @@ export default function MentorHub() {
                     </p>
                 </div>
                 <div className="flex gap-3">
+                    <Button onClick={() => setIsRequestOpen(true)} className="rounded-2xl bg-primary hover:bg-primary/90 text-white font-black uppercase text-[10px] tracking-widest h-12 px-6 shadow-lg shadow-primary/20">
+                        <Plus className="mr-2 h-4 w-4"/> Request Briefing
+                    </Button>
                     {(isAdmin || isSuperAdmin) && (
-                        <Button asChild variant="outline" className="rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10 font-black uppercase text-[10px] tracking-widest h-12">
+                        <Button asChild variant="outline" className="rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10 font-black uppercase text-[10px] tracking-widest h-12 px-6">
                             <Link href="/dashboard/mentor/admin">Command Center</Link>
                         </Button>
                     )}
@@ -58,31 +133,71 @@ export default function MentorHub() {
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-                <div className="lg:col-span-8 space-y-8">
-                    <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                        <h3 className="text-xl font-black uppercase italic tracking-tight flex items-center gap-3">
-                            <Calendar className="text-primary"/> Scheduled Briefings
-                        </h3>
-                        <Badge variant="outline" className="font-bold opacity-60">{upcoming.length} ACTIVE</Badge>
+                <div className="lg:col-span-8 space-y-12">
+                    {/* UPCOMING SESSIONS */}
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between border-b border-white/5 pb-4">
+                            <h3 className="text-xl font-black uppercase italic tracking-tight flex items-center gap-3">
+                                <Calendar className="text-primary"/> Scheduled Briefings
+                            </h3>
+                            <Badge variant="outline" className="font-bold opacity-60">{upcoming.length} ACTIVE</Badge>
+                        </div>
+
+                        <div className="grid gap-6">
+                            {upcoming.map((session, i) => (
+                                <SessionCard 
+                                    key={session.id} 
+                                    session={session} 
+                                    userId={user?.id} 
+                                    onBook={() => bookSlot(session.id)}
+                                    isAdmin={isAdmin || isSuperAdmin}
+                                />
+                            ))}
+                            {upcoming.length === 0 && (
+                                <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[3rem] opacity-30">
+                                    <Users className="h-16 w-16 mx-auto mb-4" />
+                                    <p className="text-sm font-black uppercase tracking-widest">No active sessions manifest</p>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    <div className="grid gap-6">
-                        {upcoming.map((session, i) => (
-                            <SessionCard 
-                                key={session.id} 
-                                session={session} 
-                                userId={user?.id} 
-                                onBook={() => bookSlot(session.id)}
-                                isAdmin={isAdmin || isSuperAdmin}
-                            />
-                        ))}
-                        {upcoming.length === 0 && (
-                            <div className="py-20 text-center border-2 border-dashed border-white/5 rounded-[3rem] opacity-30">
-                                <Users className="h-16 w-16 mx-auto mb-4" />
-                                <p className="text-sm font-black uppercase tracking-widest">No active sessions manifest</p>
-                            </div>
+                    {/* USER REQUESTS LOG */}
+                    <AnimatePresence>
+                        {myRequests.length > 0 && (
+                            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 pt-12 border-t border-white/5">
+                                <div className="flex items-center gap-3">
+                                    <History className="text-primary h-6 w-6" />
+                                    <h3 className="text-xl font-black uppercase italic tracking-tight text-white">Petition History</h3>
+                                </div>
+                                <div className="grid gap-4">
+                                    {myRequests.map(req => (
+                                        <Card key={req.id} className="bg-white/[0.02] border-white/5 rounded-2xl p-6">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className="flex items-center gap-3">
+                                                    {req.type === 'guaranteed' ? <Badge className="bg-yellow-400 text-black font-black">GUARANTEED</Badge> : <Badge variant="outline" className="font-black">STANDARD</Badge>}
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{format(req.createdAt.toDate(), 'PPp')}</span>
+                                                </div>
+                                                <Badge className={cn(
+                                                    "font-black uppercase text-[10px]",
+                                                    req.status === 'confirmed' ? "bg-emerald-500" : req.status === 'rejected' ? "bg-red-500" : "bg-amber-500"
+                                                )}>
+                                                    {req.status}
+                                                </Badge>
+                                            </div>
+                                            <p className="text-sm font-bold text-slate-300 italic">"{req.message}"</p>
+                                            {req.adminReply && (
+                                                <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
+                                                    <p className="text-[9px] font-black uppercase text-primary mb-1 flex items-center gap-1.5"><ShieldCheck className="h-3 w-3"/> High Council Response</p>
+                                                    <p className="text-xs font-medium text-slate-400">{req.adminReply}</p>
+                                                </div>
+                                            )}
+                                        </Card>
+                                    ))}
+                                </div>
+                            </motion.div>
                         )}
-                    </div>
+                    </AnimatePresence>
                 </div>
 
                 <div className="lg:col-span-4 space-y-8">
@@ -113,6 +228,82 @@ export default function MentorHub() {
                     </div>
                 </div>
             </div>
+
+            {/* REQUEST PETITION DIALOG */}
+            <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
+                <DialogContent className="max-w-2xl bg-slate-950 border-primary/20 rounded-[3rem] p-0 overflow-hidden shadow-2xl">
+                    <div className="p-8 sm:p-12 space-y-8">
+                        <DialogHeader>
+                            <DialogTitle className="text-3xl font-black uppercase italic tracking-tighter text-white">Petition for Briefing</DialogTitle>
+                            <DialogDescription className="text-sm font-medium text-slate-400">Request a dedicated micro-session for a specific tactical objective.</DialogDescription>
+                        </DialogHeader>
+
+                        <div className="space-y-6">
+                            <div className="space-y-3">
+                                <Label className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Briefing Topic / Mission Directive</Label>
+                                <Textarea 
+                                    value={requestMsg} 
+                                    onChange={e => setRequestMsg(e.target.value)} 
+                                    placeholder="e.g. Needs immediate guidance on Backlog Management & Fluid Mechanics..." 
+                                    className="bg-black/40 border-white/10 rounded-2xl min-h-[120px] text-base"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <button 
+                                    onClick={() => setRequestType('standard')}
+                                    className={cn(
+                                        "p-6 rounded-[2rem] border-2 text-left space-y-3 transition-all",
+                                        requestType === 'standard' ? "bg-primary/10 border-primary shadow-xl" : "bg-white/5 border-white/5 hover:border-white/10"
+                                    )}
+                                >
+                                    <div className="flex justify-between items-start">
+                                        <div className="p-3 rounded-2xl bg-black/20 border border-white/5"><Gem className="h-5 w-5 text-primary"/></div>
+                                        <span className="text-[10px] font-black text-slate-500 uppercase">100 CR</span>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-lg uppercase italic leading-none">Standard Ingress</h4>
+                                        <p className="text-[9px] text-muted-foreground font-medium mt-1 leading-relaxed">High Council review required. No guarantee of fulfillment.</p>
+                                    </div>
+                                </button>
+
+                                <button 
+                                    onClick={() => setRequestType('guaranteed')}
+                                    className={cn(
+                                        "p-6 rounded-[2rem] border-2 text-left space-y-3 transition-all relative overflow-hidden",
+                                        requestType === 'guaranteed' ? "bg-yellow-400/10 border-yellow-400 shadow-xl" : "bg-white/5 border-white/5 hover:border-white/10"
+                                    )}
+                                >
+                                    <div className="absolute top-0 right-0 p-2 bg-yellow-400 text-black font-black text-[8px] uppercase rounded-bl-xl tracking-tighter">Guaranteed</div>
+                                    <div className="flex justify-between items-start">
+                                        <div className="p-3 rounded-2xl bg-black/20 border border-white/5 text-yellow-400"><CreditCard className="h-5 w-5"/></div>
+                                        <span className="text-[10px] font-black text-yellow-400 uppercase">₹49</span>
+                                    </div>
+                                    <div>
+                                        <h4 className="font-black text-lg uppercase italic leading-none text-white">Sovereign Link</h4>
+                                        <p className="text-[9px] text-muted-foreground font-medium mt-1 leading-relaxed">Priority Ingress. Session fulfillment is officially mandated.</p>
+                                    </div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <DialogFooter className="flex flex-col sm:flex-row gap-3">
+                            <DialogClose asChild><Button variant="ghost" className="rounded-xl font-bold">ABORT</Button></DialogClose>
+                            <Button 
+                                disabled={isProcessing || !requestType || !requestMsg.trim()} 
+                                onClick={requestType === 'standard' ? handleStandardRequest : handleGuaranteedRequest}
+                                className={cn(
+                                    "h-16 px-10 rounded-2xl font-black text-lg uppercase italic shadow-2xl",
+                                    requestType === 'guaranteed' ? "bg-yellow-400 hover:bg-yellow-500 text-black" : "bg-primary"
+                                )}
+                            >
+                                {isProcessing ? <Loader2 className="animate-spin mr-2"/> : <Send className="mr-2 h-5 w-5"/>}
+                                {requestType === 'guaranteed' ? 'AUTHORIZE SOVEREIGN LINK' : 'FILE PETITION'}
+                            </Button>
+                        </DialogFooter>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
