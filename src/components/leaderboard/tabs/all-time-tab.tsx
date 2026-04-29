@@ -39,19 +39,13 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
         return [winners[1], winners[0], winners[2]]; // [2nd, 1st, 3rd]
     }, [users]);
 
-    const registry = useMemo(() => users.slice(3, 30), [users]);
-    const myRank = users.findIndex(u => u.uid === currentUserId) + 1;
-    const myData = users.find(u => u.uid === currentUserId);
-    const isNotInTopThirty = myRank > 30 || myRank === 0;
+    const registry = useMemo(() => users.slice(3, 50), [users]);
 
     const scrollToMe = useCallback(() => {
         if (currentUserId && itemRefs.current[currentUserId]) {
             itemRefs.current[currentUserId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (isNotInTopThirty) {
-            const footer = document.getElementById('personal-rank-footer');
-            footer?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [currentUserId, isNotInTopThirty]);
+    }, [currentUserId]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -64,10 +58,10 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
     };
 
     return (
-        <div className="space-y-12 max-w-7xl mx-auto w-full pb-60 px-2 sm:px-4">
+        <div className="space-y-12 max-w-7xl mx-auto w-full pb-60 px-2 sm:px-4 relative">
             
             {/* THE GLASS PODIUM STAGE */}
-            <div className="perspective-1000 w-full h-[350px] sm:h-[480px] relative">
+            <div className="perspective-1000 w-full h-[350px] sm:h-[480px] relative z-10">
                 <motion.div
                     animate={{ rotateY: activePodiumRank ? 180 : 0 }}
                     transition={{ duration: 0.8, type: 'spring', stiffness: 100, damping: 20 }}
@@ -76,7 +70,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                     {/* FRONT: THE STAGE */}
                     <div className="absolute inset-0 backface-hidden">
                         <Card className="h-full bg-white/5 backdrop-blur-3xl border-2 border-white/10 rounded-[3rem] shadow-2xl flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden relative">
-                            <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                            <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
                             
                             <div className="flex items-end justify-center gap-4 sm:gap-12 w-full max-w-2xl relative z-10">
                                 {topThree.map((user) => {
@@ -84,18 +78,25 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                     const isFirst = actualRank === 1;
                                     const equippedFrameId = user.equippedFrame || 'default';
                                     
+                                    // Legendary Colorful Backgrounds
+                                    const podiumStyles = {
+                                        1: "bg-gradient-to-br from-yellow-400 via-amber-500 to-orange-600 border-yellow-300 shadow-yellow-500/40",
+                                        2: "bg-gradient-to-br from-slate-300 via-blue-400 to-indigo-600 border-slate-200 shadow-blue-500/30",
+                                        3: "bg-gradient-to-br from-orange-800 via-red-700 to-rose-900 border-orange-600 shadow-red-500/30",
+                                    }[actualRank as 1|2|3] || "bg-white/5";
+
                                     return (
                                         <div key={user.uid} className="flex flex-col items-center gap-4">
                                             <div className="relative group">
                                                 <Trophy className={cn(
                                                     "h-6 w-6 sm:h-8 sm:w-8 absolute -top-8 left-1/2 -translate-x-1/2 animate-float-trophy",
-                                                    actualRank === 1 ? "text-yellow-400" : actualRank === 2 ? "text-slate-300" : "text-amber-700"
+                                                    actualRank === 1 ? "text-yellow-400" : actualRank === 2 ? "text-slate-200" : "text-orange-500"
                                                 )} />
                                                 <button 
                                                     onClick={() => setActivePodiumRank(actualRank)}
                                                     className={cn(
                                                         "avatar-frame-base transition-all duration-500 hover:scale-110",
-                                                        equippedFrameId === 'premium' ? "avatar-frame-premium" : (actualRank === 1 ? "gold-glow" : actualRank === 2 ? "silver-glow" : "bronze-glow")
+                                                        equippedFrameId === 'premium' ? "avatar-frame-premium" : "border-4 border-white/20 p-1"
                                                     )}
                                                 >
                                                     <Avatar className={cn(
@@ -120,12 +121,20 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                 <div className="mt-1 scale-90">
                                                     <ShowcaseBadge user={user} />
                                                 </div>
-                                                <div className="mt-4 p-2 sm:p-4 rounded-t-2xl border-t-2 border-x-2 bg-white/5 transition-all duration-500">
-                                                     <p className="text-sm sm:text-3xl font-black italic tabular-nums text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
+                                                {/* THE COLOURFUL LEGENDARY PEDESTAL */}
+                                                <button 
+                                                    onClick={() => setActivePodiumRank(actualRank)}
+                                                    className={cn(
+                                                        "mt-4 w-24 sm:w-40 rounded-t-3xl border-t-4 border-x-2 transition-all duration-700 hover:brightness-110",
+                                                        podiumStyles,
+                                                        isFirst ? "h-24 sm:h-40" : actualRank === 2 ? "h-20 sm:h-28" : "h-14 sm:h-20"
+                                                    )}
+                                                >
+                                                     <p className="text-sm sm:text-3xl font-black italic tabular-nums text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.4)]">
                                                         {user.totalScore.toLocaleString()}
                                                     </p>
-                                                    <p className="text-[6px] sm:text-[9px] font-black uppercase tracking-widest opacity-40">Points</p>
-                                                </div>
+                                                    <p className="text-[6px] sm:text-[9px] font-black uppercase tracking-widest text-white/60">Points</p>
+                                                </button>
                                             </div>
                                         </div>
                                     );
@@ -134,7 +143,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                         </Card>
                     </div>
 
-                    {/* BACK: THE TACTICAL DOSSIER (DUAL-PANE) */}
+                    {/* BACK: THE TACTICAL DOSSIER */}
                     <div className="absolute inset-0 backface-hidden rotate-y-180">
                         <Card className="h-full bg-slate-950/95 backdrop-blur-3xl border-2 border-primary/30 rounded-[3rem] shadow-2xl overflow-hidden relative">
                             <div className="absolute inset-0 bg-grid-slate-800/50 opacity-20" />
@@ -208,8 +217,8 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                 </motion.div>
             </div>
 
-            {/* THE KINETIC REGISTRY (RANK 4-30) */}
-            <div className="space-y-4">
+            {/* THE KINETIC REGISTRY (RANK 4+) */}
+            <div className="space-y-4 relative z-10">
                 <div className="flex items-center justify-between px-4 mb-6">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Registry Index</h4>
                     <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Tap Card to Inspect Dossier</p>
@@ -227,40 +236,6 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                     />
                 ))}
             </div>
-
-            <AnimatePresence>
-                {isNotInTopThirty && myData && (
-                    <motion.div 
-                        id="personal-rank-footer"
-                        initial={{ y: 100 }}
-                        animate={{ y: 0 }}
-                        className="fixed bottom-[80px] sm:bottom-[88px] left-0 right-0 z-[100] px-2 sm:px-4 pointer-events-none"
-                    >
-                        <div className="max-w-7xl mx-auto pointer-events-auto">
-                            <Card className="bg-[#050505]/95 backdrop-blur-3xl border-t-2 border-primary shadow-[0_-20px_60px_rgba(0,0,0,0.8)] rounded-t-[2.5rem] overflow-hidden">
-                                <div className="p-4 sm:p-8 flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className="h-12 w-12 sm:h-16 sm:w-16 rounded-full bg-primary/20 border-2 border-primary/40 flex flex-col items-center justify-center shrink-0">
-                                            <span className="text-[8px] font-black uppercase tracking-widest opacity-60">Rank</span>
-                                            <span className="text-xl sm:text-2xl font-black italic">#{myRank}</span>
-                                        </div>
-                                        <div className="min-w-0">
-                                            <p className="font-black text-xs sm:text-xl uppercase italic tracking-tighter truncate">Personal Standing</p>
-                                            <p className="text-[8px] sm:text-[10px] font-bold uppercase text-primary tracking-[0.2em] flex items-center gap-1.5 mt-1">
-                                                <CheckCircle className="h-3 w-3"/> Mainframe Link Active
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-2xl sm:text-5xl font-black italic tracking-tighter text-white tabular-nums">{myData.totalScore.toLocaleString()}</p>
-                                        <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest opacity-40">Total Points</p>
-                                    </div>
-                                </div>
-                            </Card>
-                        </div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
 
             <BadgeShowcaseDialog user={showcaseUser} onClose={() => showcaseUser && setShowcaseUser(null)} />
         </div>
@@ -333,7 +308,7 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                     </Card>
                 </div>
 
-                {/* BACK: THE DATA DOSSIER (DUAL-PANE) */}
+                {/* BACK: THE DATA DOSSIER */}
                 <div className="absolute inset-0 backface-hidden rotate-y-180">
                     <Card className="h-full border-primary/30 bg-slate-900/95 rounded-[1.5rem] sm:rounded-[2.5rem] flex items-stretch p-2 sm:p-4 relative overflow-hidden">
                         <div className="absolute inset-0 bg-grid-white/5 opacity-10" />

@@ -21,7 +21,7 @@ import { PrivacyDialog } from '@/components/leaderboard/shared/privacy-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ShowcaseBadge } from '@/components/leaderboard/shared/badge-renderer';
+import { ShowcaseBadge, getOwnedBadges } from '@/components/leaderboard/shared/badge-renderer';
 
 export default function LeaderboardPage() {
     const { user: currentUser } = useUser();
@@ -70,9 +70,19 @@ export default function LeaderboardPage() {
 
     return (
         <div className="min-h-full flex flex-col space-y-8 pb-40 max-w-7xl mx-auto px-4 w-full relative overflow-hidden">
-            {/* Background Atmosphere */}
+            {/* SOVEREIGN BREATHING AURA BACKGROUND */}
             <div className="fixed inset-0 z-0 pointer-events-none">
-                <div className="absolute inset-0 golden-legend-bg opacity-30" />
+                <div className="absolute inset-0 bg-[#050505]" />
+                <motion.div 
+                    className="absolute top-[20%] left-[10%] w-[60%] h-[60%] rounded-full bg-yellow-500/10 blur-[100px] aura-breathing"
+                    animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
+                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div 
+                    className="absolute bottom-[20%] right-[10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[100px] aura-breathing"
+                    animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
+                    transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                />
                 <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(ellipse_at_center,white,transparent)] opacity-10" />
             </div>
 
@@ -89,8 +99,8 @@ export default function LeaderboardPage() {
                         <h1 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white via-white to-slate-500 bg-clip-text text-transparent leading-none">
                             HALL OF LEGENDS
                         </h1>
-                        <p className="text-muted-foreground font-black uppercase text-[10px] sm:text-xs tracking-[0.3em] flex items-center gap-2 mt-2">
-                            <Globe className="h-3 w-3 text-primary animate-pulse"/> Sovereign performance registry
+                        <p className="text-muted-foreground font-black uppercase text-[10px] sm:text-xs tracking-[0.3em] flex items-center gap-2 mt-2 text-yellow-500/60">
+                            <Globe className="h-3 w-3 animate-pulse"/> Sovereign performance registry
                         </p>
                     </div>
                 </motion.div>

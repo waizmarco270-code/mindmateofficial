@@ -1,11 +1,12 @@
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from '@/components/ui/card';
-import { Clock, History, ChevronDown, ChevronUp, CheckCircle, Gem, Medal, EyeOff, X, ScrollText, Flame } from 'lucide-react';
+import { Clock, History, ChevronDown, ChevronUp, CheckCircle, Gem, Medal, EyeOff, X, ScrollText, Flame, ArrowLeft, Trophy } from 'lucide-react';
 import { endOfWeek, format as formatDate, isSameDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { ShowcaseBadge, getOwnedBadges, badgeMeta } from '../shared/badge-renderer';
@@ -28,10 +29,9 @@ export function WeeklyTab({ users, currentUserId, onUserClick, lastWeekWinner }:
     const [timeLeft, setTimeLeft] = useState('');
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [showcaseUser, setShowcaseUser] = useState<UserWithStats | null>(null);
+    const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
     const topFifty = users.slice(0, 50);
-    const myRank = users.findIndex(u => u.uid === currentUserId) + 1;
-    const myData = users.find(u => u.uid === currentUserId);
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -54,14 +54,27 @@ export function WeeklyTab({ users, currentUserId, onUserClick, lastWeekWinner }:
         return h > 0 ? `${h}h ${m}m` : `${m}m`;
     };
 
+    const scrollToMe = useCallback(() => {
+        if (currentUserId && itemRefs.current[currentUserId]) {
+            itemRefs.current[currentUserId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            setExpandedId(currentUserId);
+        }
+    }, [currentUserId]);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            (window as any).scrollToUserRank = scrollToMe;
+        }
+    }, [scrollToMe]);
+
     return (
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6 max-w-7xl mx-auto w-full pb-40 px-2 sm:px-4"
+            className="space-y-6 max-w-7xl mx-auto w-full pb-40 px-2 sm:px-4 relative z-10"
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-primary/5 border-primary/20 rounded-3xl overflow-hidden">
+                <Card className="bg-primary/5 border-primary/20 rounded-3xl overflow-hidden backdrop-blur-md">
                     <CardContent className="p-4 sm:p-6 flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <div className="p-2 rounded-xl bg-primary/10 text-primary">
@@ -79,7 +92,7 @@ export function WeeklyTab({ users, currentUserId, onUserClick, lastWeekWinner }:
                 </Card>
 
                 {lastWeekWinner && lastWeekWinner.prevWeeklyTime > 0 && (
-                    <Card className="bg-amber-500/5 border-amber-500/20 rounded-3xl overflow-hidden">
+                    <Card className="bg-amber-500/5 border-amber-500/20 rounded-3xl overflow-hidden backdrop-blur-md">
                         <CardContent className="p-4 sm:p-6 flex items-center justify-between">
                             <div className="flex items-center gap-3">
                                 <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500">
@@ -105,9 +118,10 @@ export function WeeklyTab({ users, currentUserId, onUserClick, lastWeekWinner }:
                     const isExpanded = expandedId === user.uid;
                     const isMe = user.uid === currentUserId;
                     const isTopThree = rank <= 3;
+                    const equippedFrameId = user.equippedFrame || 'default';
 
                     return (
-                        <div key={user.uid}>
+                        <div key={user.uid} ref={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}>
                             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: index * 0.03 }}>
                                 <Card 
                                     className={cn(
@@ -124,19 +138,21 @@ export function WeeklyTab({ users, currentUserId, onUserClick, lastWeekWinner }:
                                             onClick={(e) => { e.stopPropagation(); setShowcaseUser(user); }} 
                                             className="relative shrink-0"
                                         >
-                                            <Avatar className="h-10 w-10 sm:h-16 sm:w-16 border-2 border-white/10 relative z-10">
-                                                <AvatarImage src={user.photoURL} />
-                                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                                            </Avatar>
+                                            <div className={cn("avatar-frame-base", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                                                <Avatar className="h-10 w-10 sm:h-16 sm:w-16 border-2 border-background relative z-10 bg-background">
+                                                    <AvatarImage src={user.photoURL} />
+                                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                            </div>
                                         </button>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <p className="font-black text-sm sm:text-xl uppercase tracking-tight truncate italic">{user.displayName}</p>
                                                 {user.isLeaderboardPrivate && <EyeOff className="h-3 w-3 opacity-40" />}
                                             </div>
-                                            <p className="text-[8px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">
-                                                {user.mindMateId || 'LEGEND'}
-                                            </p>
+                                            <div className="mt-1 scale-75 origin-left">
+                                                <ShowcaseBadge user={user} />
+                                            </div>
                                         </div>
                                         <div className="text-right shrink-0">
                                             <p className="text-lg sm:text-4xl font-black italic tracking-tighter text-primary leading-none tabular-nums">
@@ -151,24 +167,12 @@ export function WeeklyTab({ users, currentUserId, onUserClick, lastWeekWinner }:
                                     
                                     <AnimatePresence>
                                         {isExpanded && (
-                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/5 bg-black/40">
-                                                <div className="p-4 sm:p-6 grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                                                    <div className="flex items-center gap-3 bg-white/5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5">
-                                                        <div className="p-1.5 rounded-lg bg-sky-500/20 text-sky-400"><Clock className="h-4 w-4"/></div>
-                                                        <div className="min-w-0 text-left"><p className="text-[7px] uppercase font-black opacity-40 leading-none mb-0.5">Total</p><p className="text-[10px] font-bold">{formatHours(user.totalStudyTime || 0)}h</p></div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 bg-white/5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5">
-                                                        <div className="p-1.5 rounded-lg bg-orange-500/20 text-orange-400"><Flame className="h-4 w-4"/></div>
-                                                        <div className="min-w-0 text-left"><p className="text-[7px] uppercase font-black opacity-40 leading-none mb-0.5">Streak</p><p className="text-[10px] font-bold">{user.streak}d</p></div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 bg-white/5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5">
-                                                        <div className="p-1.5 rounded-lg bg-amber-500/20 text-amber-400"><Gem className="h-4 w-4"/></div>
-                                                        <div className="min-w-0 text-left"><p className="text-[7px] uppercase font-black opacity-40 leading-none mb-0.5">Credits</p><p className="text-[10px] font-bold">{user.credits}</p></div>
-                                                    </div>
-                                                    <div className="flex items-center gap-3 bg-white/5 p-2 sm:p-3 rounded-xl sm:rounded-2xl border border-white/5">
-                                                        <div className="p-1.5 rounded-lg bg-fuchsia-500/20 text-fuchsia-400"><Medal className="h-4 w-4"/></div>
-                                                        <div className="min-w-0 text-left"><p className="text-[7px] uppercase font-black opacity-40 leading-none mb-0.5">Assets</p><p className="text-[10px] font-bold">{getOwnedBadges(user).length}</p></div>
-                                                    </div>
+                                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-white/5 bg-black/40 p-4 sm:p-6">
+                                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                                                    <DossierCell icon={Clock} label="Total Study" val={`${formatHours(user.totalStudyTime || 0)}h`} color="text-sky-400" />
+                                                    <DossierCell icon={Flame} label="Daily Streak" val={`${user.streak}d`} color="text-orange-500" />
+                                                    <DossierCell icon={Gem} label="Registry Credits" val={user.credits.toLocaleString()} color="text-amber-400" />
+                                                    <DossierCell icon={Medal} label="Assets" val={`${getOwnedBadges(user).length} Badges`} color="text-fuchsia-400" />
                                                 </div>
                                             </motion.div>
                                         )}
@@ -188,9 +192,24 @@ export function WeeklyTab({ users, currentUserId, onUserClick, lastWeekWinner }:
     );
 }
 
+function DossierCell({ icon: Icon, label, val, color }: any) {
+    return (
+        <div className="flex items-center gap-3 bg-white/5 p-3 rounded-2xl border border-white/5 shadow-inner">
+            <div className={cn("p-1.5 rounded-lg bg-black/20 shrink-0", color)}>
+                <Icon className="h-4 w-4"/>
+            </div>
+            <div className="min-w-0">
+                <p className="text-[7px] uppercase font-black opacity-40 leading-none mb-0.5 truncate">{label}</p>
+                <p className="text-[10px] font-bold text-white truncate">{val}</p>
+            </div>
+        </div>
+    );
+}
+
 function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, onClose: () => void }) {
     if (!user) return null;
     const owned = getOwnedBadges(user);
+    const equippedFrameId = user.equippedFrame || 'default';
 
     return (
         <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
@@ -202,10 +221,12 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                 
                 <div className="px-6 sm:px-8 pb-10 -mt-12 relative z-10">
                     <div className="flex flex-col items-center text-center space-y-4">
-                        <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-4 border-primary shadow-2xl bg-background">
-                            <AvatarImage src={user.photoURL} />
-                            <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                        </Avatar>
+                        <div className={cn("avatar-frame-base h-24 w-24 sm:h-32 sm:w-32", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                            <Avatar className="h-full w-full border-4 shadow-2xl bg-background relative z-10">
+                                <AvatarImage src={user.photoURL} />
+                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                        </div>
                         <div>
                             <h3 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight">{user.displayName}</h3>
                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mt-1">Identity Dossier • {user.mindMateId || 'LEGEND'}</p>
