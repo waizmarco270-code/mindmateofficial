@@ -39,19 +39,19 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
         return [winners[1], winners[0], winners[2]]; // [2nd, 1st, 3rd]
     }, [users]);
 
-    const registry = useMemo(() => users.slice(3, 20), [users]);
+    const registry = useMemo(() => users.slice(3, 30), [users]);
     const myRank = users.findIndex(u => u.uid === currentUserId) + 1;
     const myData = users.find(u => u.uid === currentUserId);
-    const isNotInTopTwenty = myRank > 20 || myRank === 0;
+    const isNotInTopThirty = myRank > 30 || myRank === 0;
 
     const scrollToMe = useCallback(() => {
         if (currentUserId && itemRefs.current[currentUserId]) {
             itemRefs.current[currentUserId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else if (isNotInTopTwenty) {
+        } else if (isNotInTopThirty) {
             const footer = document.getElementById('personal-rank-footer');
             footer?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [currentUserId, isNotInTopTwenty]);
+    }, [currentUserId, isNotInTopThirty]);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -99,29 +99,37 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                                                     )}
                                                 >
                                                     <Avatar className={cn(
-                                                        "h-16 w-16 sm:h-24 sm:w-24 border-2 border-background shadow-2xl",
+                                                        "h-16 w-16 sm:h-24 sm:w-24 border-2 border-background shadow-2xl relative z-10 bg-background",
                                                         isFirst ? "sm:h-32 sm:w-32" : ""
                                                     )}>
                                                         <AvatarImage src={user.photoURL} />
                                                         <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                                                     </Avatar>
                                                 </button>
+                                                <div className={cn(
+                                                    "absolute -bottom-4 left-1/2 -translate-x-1/2 h-6 w-6 sm:h-8 sm:w-8 rounded-full border-2 bg-background flex items-center justify-center font-black italic shadow-xl z-20 text-[10px] sm:text-sm",
+                                                    actualRank === 1 ? "border-yellow-400" : actualRank === 2 ? "border-slate-300" : "border-amber-700"
+                                                )}>
+                                                    {actualRank}
+                                                </div>
                                             </div>
-                                            <div className="text-center">
-                                                <p className="text-[10px] sm:text-xs font-black uppercase tighter text-white truncate max-w-[80px] sm:max-w-[120px]">
-                                                    {user.displayName.split(' ')[0]}
+                                            <div className="text-center mt-4">
+                                                <p className="text-[10px] sm:text-base font-black uppercase italic text-white truncate max-w-[80px] sm:max-w-[150px]">
+                                                    {user.displayName}
                                                 </p>
                                                 <div className="mt-1 scale-90">
                                                     <ShowcaseBadge user={user} />
+                                                </div>
+                                                <div className="mt-4 p-2 sm:p-4 rounded-t-2xl border-t-2 border-x-2 bg-white/5 transition-all duration-500">
+                                                     <p className="text-sm sm:text-3xl font-black italic tabular-nums text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
+                                                        {user.totalScore.toLocaleString()}
+                                                    </p>
+                                                    <p className="text-[6px] sm:text-[9px] font-black uppercase tracking-widest opacity-40">Points</p>
                                                 </div>
                                             </div>
                                         </div>
                                     );
                                 })}
-                            </div>
-                            
-                            <div className="mt-8 text-center">
-                                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 animate-pulse">Tap Avatar to Inspect</p>
                             </div>
                         </Card>
                     </div>
@@ -200,7 +208,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                 </motion.div>
             </div>
 
-            {/* THE KINETIC REGISTRY (RANK 4-20) */}
+            {/* THE KINETIC REGISTRY (RANK 4-30) */}
             <div className="space-y-4">
                 <div className="flex items-center justify-between px-4 mb-6">
                     <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Registry Index</h4>
@@ -221,7 +229,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
             </div>
 
             <AnimatePresence>
-                {isNotInTopTwenty && myData && (
+                {isNotInTopThirty && myData && (
                     <motion.div 
                         id="personal-rank-footer"
                         initial={{ y: 100 }}
@@ -363,7 +371,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
     return (
         <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
             <DialogContent className="max-w-xl bg-background/95 backdrop-blur-3xl border-primary/20 p-0 overflow-hidden rounded-[3rem] shadow-2xl">
-                <div className="h-32 bg-gradient-to-br from-primary/20 via-background to-background relative">
+                <div className="h-32 bg-gradient-to-br from-primary/20 via-background to-background relative overflow-hidden">
                     <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
                     <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive z-50" onClick={onClose}><X className="h-6 w-6"/></Button>
                 </div>
@@ -371,7 +379,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                 <div className="px-6 sm:px-10 pb-12 -mt-16 relative z-10">
                     <div className="flex flex-col items-center text-center space-y-4">
                         <div className={cn("avatar-frame-base h-24 w-24 sm:h-32 sm:w-32", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
-                            <Avatar className={cn("h-full w-full border-4 shadow-2xl bg-background")}>
+                            <Avatar className={cn("h-full w-full border-4 shadow-2xl bg-background relative z-10")}>
                                 <AvatarImage src={user.photoURL} />
                                 <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
@@ -380,7 +388,7 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                             {user.isPlusMember && (
                                 <p className="text-[10px] font-black uppercase tracking-[0.3em] premium-text-gradient mb-1">MindMate Plus Member</p>
                             )}
-                            <h3 className="text-2xl sm:text-4xl font-black uppercase italic tracking-tight">{user.displayName}</h3>
+                            <h3 className="text-2xl sm:text-4xl font-black uppercase italic tracking-tight leading-none">{user.displayName}</h3>
                             <p className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground mt-2">Identity Registry • {user.mindMateId || 'LEGEND'}</p>
                         </div>
                     </div>

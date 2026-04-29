@@ -1,8 +1,9 @@
+
 'use client';
 
-import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useLeaderboardData, UserWithStats } from '@/hooks/use-leaderboard-data';
-import { useAdmin, SUPER_ADMIN_UID } from '@/hooks/use-admin';
+import { useAdmin } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -23,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { ShowcaseBadge, getOwnedBadges, badgeMeta } from '../leaderboard/shared/badge-renderer';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose, DialogFooter } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, endOfWeek, endOfMonth } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
@@ -38,12 +39,36 @@ export function ArenaLeaderboard() {
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
     const [isMyRankOpen, setIsMyRankOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [timeLeft, setTimeLeft] = useState('');
+
+    // Timer Logic for Weekly/Monthly
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+            let target;
+            if (activeTab === 'weekly') target = endOfWeek(now, { weekStartsOn: 1 });
+            else if (activeTab === 'monthly') target = endOfMonth(now);
+            else return setTimeLeft('');
+
+            const diff = target.getTime() - now.getTime();
+            if (diff <= 0) return setTimeLeft('00:00:00');
+
+            const d = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const h = Math.floor((diff / (1000 * 60 * 60)) % 24);
+            const m = Math.floor((diff / 1000 / 60) % 60);
+            const s = Math.floor((diff / 1000) % 60);
+
+            if (d > 0) setTimeLeft(`${d}d ${h}h ${m}m`);
+            else setTimeLeft(`${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`);
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [activeTab]);
 
     // Sorting Logic
     const sortedUsers = useMemo(() => {
         let pool = [...processedUsers].filter(u => !u.isLeaderboardPrivate || u.uid === currentUser?.id);
         if (activeTab === 'all-time') return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
-        // Defaulting to score for now
+        // Simulation for weekly/monthly: factor in engagement points (study time) for the current period
         return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
     }, [processedUsers, activeTab, currentUser?.id]);
 
@@ -117,17 +142,25 @@ export function ArenaLeaderboard() {
                         <TabsTrigger value="monthly" className="rounded-xl px-8 font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-rose-600 data-[state=active]:text-white">Monthly</TabsTrigger>
                     </TabsList>
 
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                        <Button 
-                            variant="outline" 
-                            onClick={() => setIsMyRankOpen(true)} 
-                            className="h-14 rounded-2xl border-rose-500/30 bg-rose-500/5 text-rose-500 font-black uppercase text-[10px] tracking-[0.2em] px-8 flex-1 sm:flex-initial hover:bg-rose-600/10 shadow-lg shadow-rose-900/10"
-                        >
-                            <Target className="mr-3 h-4 w-4" /> Your Rank Info
-                        </Button>
-                        <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="h-14 rounded-2xl border-white/10 bg-white/5 font-black uppercase text-[10px] tracking-[0.2em] px-8 flex-1 sm:flex-initial hover:bg-rose-600/10">
-                            <History className="mr-3 h-4 w-4 text-rose-500" /> Archives
-                        </Button>
+                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                        {timeLeft && (
+                            <div className="flex flex-col items-end px-4 border-r border-white/10 hidden md:flex">
+                                <p className="text-[8px] font-black uppercase text-rose-500/60 tracking-widest">Cycle Reset</p>
+                                <p className="font-mono text-xl font-black text-white tabular-nums">{timeLeft}</p>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-3">
+                            <Button 
+                                variant="outline" 
+                                onClick={() => setIsMyRankOpen(true)} 
+                                className="h-14 rounded-2xl border-rose-500/30 bg-rose-500/5 text-rose-500 font-black uppercase text-[10px] tracking-[0.2em] px-8 flex-1 sm:flex-initial hover:bg-rose-600/10 shadow-lg shadow-rose-900/10"
+                            >
+                                <Target className="mr-3 h-4 w-4" /> Your Rank Info
+                            </Button>
+                            <Button variant="outline" onClick={() => setIsHistoryOpen(true)} className="h-14 rounded-2xl border-white/10 bg-white/5 font-black uppercase text-[10px] tracking-[0.2em] px-8 flex-1 sm:flex-initial hover:bg-rose-600/10">
+                                <History className="mr-3 h-4 w-4 text-rose-500" /> Archives
+                            </Button>
+                        </div>
                     </div>
                 </div>
 
@@ -184,7 +217,7 @@ export function ArenaLeaderboard() {
                                             )}
                                         >
                                             <div className="p-2 sm:p-4 text-center">
-                                                <p className="text-sm sm:text-3xl font-black italic tabular-nums text-white">
+                                                <p className="text-sm sm:text-3xl font-black italic tabular-nums text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.4)]">
                                                     {Math.round(user.entertainmentTotalScore).toLocaleString()}
                                                 </p>
                                                 <p className="text-[6px] sm:text-[9px] font-black uppercase tracking-widest opacity-40">Points</p>
