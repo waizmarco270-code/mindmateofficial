@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
@@ -64,12 +63,11 @@ export function ArenaLeaderboard() {
         return () => clearInterval(interval);
     }, [activeTab]);
 
-    // Sorting Logic
+    // Sorting Logic - Strictly TOP 25
     const sortedUsers = useMemo(() => {
         let pool = [...processedUsers].filter(u => !u.isLeaderboardPrivate || u.uid === currentUser?.id);
-        if (activeTab === 'all-time') return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
-        // Simulation for weekly/monthly: factor in engagement points (study time) for the current period
-        return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore);
+        if (activeTab === 'all-time') return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore).slice(0, 25);
+        return pool.sort((a, b) => b.entertainmentTotalScore - a.entertainmentTotalScore).slice(0, 25);
     }, [processedUsers, activeTab, currentUser?.id]);
 
     const topThree = useMemo(() => {
@@ -78,7 +76,7 @@ export function ArenaLeaderboard() {
         return [top[1], top[0], top[2]]; // [2nd, 1st, 3rd]
     }, [sortedUsers]);
 
-    const registry = useMemo(() => sortedUsers.slice(3, 50), [sortedUsers]);
+    const registry = useMemo(() => sortedUsers.slice(3, 25), [sortedUsers]);
     const myRank = sortedUsers.findIndex(u => u.uid === currentUser?.id) + 1;
     const myData = sortedUsers.find(u => u.uid === currentUser?.id);
     const canClaimGM = myData && myData.entertainmentTotalScore >= 1000 && !myData.isGM;
@@ -167,14 +165,14 @@ export function ArenaLeaderboard() {
                 <TabsContent value={activeTab} className="m-0 space-y-12">
                     {/* ARENA PODIUM */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-end relative">
-                        <div className="lg:col-span-2 grid grid-cols-3 gap-2 sm:gap-8 items-end h-[350px] sm:h-[500px]">
+                        <div className="lg:col-span-2 grid grid-cols-3 gap-1 sm:gap-8 items-end h-[350px] sm:h-[500px]">
                             {topThree.map((user, idx) => {
                                 const originalRank = sortedUsers.findIndex(u => u.uid === user.uid) + 1;
                                 const isFirst = originalRank === 1;
                                 const stageColor = isFirst ? 'border-yellow-400' : originalRank === 2 ? 'border-slate-300' : 'border-amber-700';
                                 
                                 return (
-                                    <div key={user.uid} className="flex flex-col items-center gap-6 group">
+                                    <div key={user.uid} className="flex flex-col items-center gap-4 sm:gap-6 group">
                                         <div className="relative">
                                             <motion.div 
                                                 animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.6, 0.3] }}
@@ -190,7 +188,7 @@ export function ArenaLeaderboard() {
                                             >
                                                 <Avatar className={cn(
                                                     "h-12 w-12 sm:h-24 sm:w-24 border-2 shadow-2xl relative z-10 bg-background",
-                                                    isFirst && "sm:h-40 sm:w-40 h-24 w-24"
+                                                    isFirst && "sm:h-40 sm:w-40 h-20 w-20"
                                                 )}>
                                                     <AvatarImage src={user.photoURL} />
                                                     <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
@@ -205,15 +203,15 @@ export function ArenaLeaderboard() {
                                         </div>
                                         <div className="text-center space-y-1">
                                             <p className="text-[10px] sm:text-xl font-black uppercase italic tracking-tighter truncate max-w-[70px] sm:max-w-none">{user.displayName}</p>
-                                            <div className="scale-75"><ShowcaseBadge user={user} /></div>
+                                            <div className="scale-[0.6] sm:scale-75"><ShowcaseBadge user={user} /></div>
                                         </div>
                                         {/* The Arena Pedestal */}
                                         <button 
                                             onClick={() => setShowcaseUser(user)}
                                             className={cn(
-                                                "w-full rounded-t-[2rem] border-t-4 bg-gradient-to-b from-white/10 to-transparent transition-all duration-700 hover:brightness-125",
+                                                "w-full rounded-t-[1.5rem] sm:rounded-t-[2rem] border-t-4 bg-gradient-to-b from-white/10 to-transparent transition-all duration-700 hover:brightness-125",
                                                 stageColor,
-                                                isFirst ? "h-32 sm:h-48" : originalRank === 2 ? "h-24 sm:h-32" : "h-16 sm:h-24"
+                                                isFirst ? "h-24 sm:h-48" : originalRank === 2 ? "h-16 sm:h-32" : "h-12 sm:h-24"
                                             )}
                                         >
                                             <div className="p-2 sm:p-4 text-center">
@@ -250,7 +248,7 @@ export function ArenaLeaderboard() {
                     {/* REGISTRY LIST */}
                     <div className="space-y-4 max-w-5xl mx-auto">
                         <div className="flex items-center justify-between px-6 mb-8">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Arena Registry Index</h4>
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Elite Index (Top 25)</h4>
                             <div className="flex items-center gap-2">
                                 <div className="h-1 w-8 bg-primary rounded-full animate-pulse" />
                                 <p className="text-[10px] font-bold text-muted-foreground uppercase">Phase v2.5 Stable</p>
@@ -314,15 +312,19 @@ export function ArenaLeaderboard() {
                                     <DossierItem icon={Ruler} label="Units (Easy)" val={myData.gameHighScores?.unitDimensionsEasy} color="text-sky-400" />
                                     <DossierItem icon={ShieldAlert} label="Units (Hard)" val={myData.gameHighScores?.unitDimensionsHard} color="text-rose-500" />
                                     <DossierItem icon={Orbit} label="Astro Ascent" val={myData.gameHighScores?.astroAscent} color="text-purple-400" />
-                                    <DossierItem icon={Beaker} label="Formula Forge" val={myData.gameHighScores?.formulaForge} color="text-rose-600" />
+                                    <DossierItem icon={Bird} label="Flappy Mind" val={myData.gameHighScores?.flappyMind} color="text-sky-400" />
+                                    <DossierItem icon={Swords} label="Dimension Shift" val={myData.gameHighScores?.dimensionShift} color="text-rose-400" />
+                                    <DossierItem icon={BrainCircuit} label="Subject Sprint" val={myData.gameHighScores?.subjectSprint} color="text-emerald-400" />
+                                    <DossierItem icon={Smile} label="Emoji Quiz" val={myData.gameHighScores?.emojiQuiz} color="text-yellow-400" />
                                     <DossierItem icon={Sigma} label="Math Legend" val={myData.gameHighScores?.mathematicsLegend} color="text-blue-400" />
                                     <DossierItem icon={Atom} label="Element Quest" val={myData.elementQuestTotalScore} color="text-cyan-400" />
                                     <DossierItem icon={Clock} label="Chronos" val={myData.gameHighScores?.chronos} color="text-amber-400" />
-                                    <DossierItem icon={Smile} label="Emoji Quiz" val={myData.gameHighScores?.emojiQuiz} color="text-yellow-400" />
+                                    <DossierItem icon={Beaker} label="Formula Forge" val={myData.gameHighScores?.formulaForge} color="text-rose-600" />
+                                    <DossierItem icon={Brain} label="Memory Pattern" val={myData.gameHighScores?.memoryGame} color="text-green-500" />
                                 </div>
                             </div>
                             <DialogFooter className="p-6 bg-muted/20 border-t">
-                                <DialogClose asChild><Button className="w-full h-14 rounded-2xl font-black uppercase">Dismiss Briefing</Button></DialogClose>
+                                <DialogClose asChild><Button className="w-full h-12 font-black uppercase">Dismiss Briefing</Button></DialogClose>
                             </DialogFooter>
                         </>
                     ) : (
@@ -460,7 +462,7 @@ function ArenaRankCard({ user, rank, isMe, isExpanded, onToggle, onInspect }: an
 function DossierItem({ icon: Icon, label, val, color }: any) {
     return (
         <div className="flex items-center gap-3 p-3 bg-white/[0.03] rounded-2xl border border-white/5 shadow-inner group/cell hover:border-white/10 transition-all">
-            <div className={cn("p-2 rounded-lg bg-black/20 shrink-0 group-hover/cell:scale-110 transition-transform", color)}>
+            <div className={cn("p-2 rounded-lg bg-black/20 shrink-0", color)}>
                 <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
@@ -478,53 +480,53 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
 
     return (
         <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
-            <DialogContent className="max-w-xl bg-background/95 backdrop-blur-3xl border-rose-500/20 p-0 overflow-hidden rounded-[3rem] shadow-2xl">
-                <div className="h-32 bg-gradient-to-br from-rose-500/20 via-background to-background relative overflow-hidden">
+            <DialogContent className="max-w-xl bg-background/95 backdrop-blur-3xl border-rose-500/20 p-0 overflow-hidden rounded-[2.5rem] sm:rounded-[3rem] shadow-2xl h-fit max-h-[90vh] flex flex-col">
+                <div className="h-32 sm:h-40 bg-gradient-to-br from-rose-500/20 via-background to-background relative overflow-hidden flex-shrink-0">
                     <div className="absolute inset-0 bg-grid-white/5" />
                     <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive z-50" onClick={onClose}><X className="h-6 w-6"/></Button>
                 </div>
                 
-                <div className="px-6 sm:px-10 pb-12 -mt-16 relative z-10">
-                    <div className="flex flex-col items-center text-center space-y-4">
-                        <div className={cn("avatar-frame-base h-24 w-24 sm:h-32 sm:w-32", frameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
-                            <Avatar className="h-full w-full border-4 shadow-2xl bg-background relative z-10">
-                                <AvatarImage src={user.photoURL} />
-                                <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                        </div>
-                        <div>
-                            <h3 className="text-2xl sm:text-4xl font-black uppercase italic tracking-tight leading-none">{user.displayName}</h3>
-                            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-500 mt-2">Arena Identity • {user.mindMateId || 'UNREGISTERED'}</p>
-                        </div>
-                    </div>
-
-                    <div className="mt-8 space-y-6">
-                        <div className="p-6 rounded-[2rem] bg-rose-500/5 border border-rose-500/20">
-                            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-rose-500/60 mb-6 flex items-center gap-2"><LayoutDashboard className="h-3 w-3"/> Registry Record</h4>
-                            <div className="grid grid-cols-2 gap-3">
-                                <DossierItem icon={Ruler} label="Units (Easy)" val={user.gameHighScores?.unitDimensionsEasy} color="text-sky-400" />
-                                <DossierItem icon={ShieldAlert} label="Units (Hard)" val={user.gameHighScores?.unitDimensionsHard} color="text-rose-500" />
-                                <DossierItem icon={Orbit} label="Astro Ascent" val={user.gameHighScores?.astroAscent} color="text-purple-400" />
-                                <DossierItem icon={Bird} label="Flappy Mind" val={user.gameHighScores?.flappyMind} color="text-sky-400" />
-                                <DossierItem icon={Swords} label="Dimension Shift" val={user.gameHighScores?.dimensionShift} color="text-rose-400" />
-                                <DossierItem icon={BrainCircuit} label="Subject Sprint" val={user.gameHighScores?.subjectSprint} color="text-emerald-400" />
-                                <DossierItem icon={Smile} label="Emoji Quiz" val={user.gameHighScores?.emojiQuiz} color="text-yellow-400" />
-                                <DossierItem icon={Sigma} label="Math Legend" val={user.gameHighScores?.mathematicsLegend} color="text-blue-400" />
-                                <DossierItem icon={Atom} label="Element Quest" val={user.elementQuestTotalScore} color="text-cyan-400" />
-                                <DossierItem icon={Clock} label="Chronos" val={user.gameHighScores?.chronos} color="text-amber-400" />
-                                <DossierItem icon={Beaker} label="Formula Forge" val={user.gameHighScores?.formulaForge} color="text-rose-600" />
-                                <DossierItem icon={Brain} label="Memory Pattern" val={user.gameHighScores?.memoryGame} color="text-green-500" />
+                <ScrollArea className="flex-1 overflow-y-auto">
+                    <div className="px-6 sm:px-10 pb-12 -mt-16 relative z-10">
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            <div className={cn("avatar-frame-base h-24 w-24 sm:h-32 sm:w-32", frameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
+                                <Avatar className="h-full w-full border-4 shadow-2xl bg-background relative z-10">
+                                    <AvatarImage src={user.photoURL} />
+                                    <AvatarFallback>{user.displayName.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <div>
+                                <h3 className="text-2xl sm:text-4xl font-black uppercase italic tracking-tight leading-none">{user.displayName}</h3>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em] text-rose-500 mt-2">Arena Identity • {user.mindMateId || 'UNREGISTERED'}</p>
                             </div>
                         </div>
 
-                        <div className="flex items-center justify-between border-b border-white/10 pb-3">
-                            <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-rose-500 flex items-center gap-3">
-                                <Medal className="h-5 w-5"/> Identity Portfolio
-                            </h4>
-                            <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded-full">{owned.length} Assets Unlocked</span>
-                        </div>
+                        <div className="mt-8 space-y-6">
+                            <div className="p-6 rounded-[2rem] bg-rose-500/5 border border-rose-500/20">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-rose-500/60 mb-6 flex items-center gap-2"><LayoutDashboard className="h-3 w-3"/> Registry Record</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <DossierItem icon={Ruler} label="Units (Easy)" val={user.gameHighScores?.unitDimensionsEasy} color="text-sky-400" />
+                                    <DossierItem icon={ShieldAlert} label="Units (Hard)" val={user.gameHighScores?.unitDimensionsHard} color="text-rose-500" />
+                                    <DossierItem icon={Orbit} label="Astro Ascent" val={user.gameHighScores?.astroAscent} color="text-purple-400" />
+                                    <DossierItem icon={Bird} label="Flappy Mind" val={user.gameHighScores?.flappyMind} color="text-sky-400" />
+                                    <DossierItem icon={Swords} label="Dimension Shift" val={user.gameHighScores?.dimensionShift} color="text-rose-400" />
+                                    <DossierItem icon={BrainCircuit} label="Subject Sprint" val={user.gameHighScores?.subjectSprint} color="text-emerald-400" />
+                                    <DossierItem icon={Smile} label="Emoji Quiz" val={user.gameHighScores?.emojiQuiz} color="text-yellow-400" />
+                                    <DossierItem icon={Sigma} label="Math Legend" val={user.gameHighScores?.mathematicsLegend} color="text-blue-400" />
+                                    <DossierItem icon={Atom} label="Element Quest" val={user.elementQuestTotalScore} color="text-cyan-400" />
+                                    <DossierItem icon={Clock} label="Chronos" val={user.gameHighScores?.chronos} color="text-amber-400" />
+                                    <DossierItem icon={Beaker} label="Formula Forge" val={user.gameHighScores?.formulaForge} color="text-rose-600" />
+                                    <DossierItem icon={Brain} label="Memory Pattern" val={user.gameHighScores?.memoryGame} color="text-green-500" />
+                                </div>
+                            </div>
 
-                        <ScrollArea className="h-48 pr-4 sm:pr-6">
+                            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                                <h4 className="text-[10px] sm:text-xs font-black uppercase tracking-[0.4em] text-rose-500 flex items-center gap-3">
+                                    <Medal className="h-5 w-5"/> Identity Portfolio
+                                </h4>
+                                <span className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase bg-muted px-2 py-0.5 rounded-full">{owned.length} Assets Unlocked</span>
+                            </div>
+
                             <div className="space-y-3">
                                 {owned.map(key => (
                                     <div key={key} className="flex items-center justify-between p-4 rounded-[1.5rem] bg-white/[0.03] border border-white/5 group hover:border-rose-500/30 transition-all shadow-inner">
@@ -547,11 +549,15 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                                     </div>
                                 )}
                             </div>
-                        </ScrollArea>
-                        <p className="text-[9px] text-center text-muted-foreground font-black uppercase tracking-[0.3em] italic opacity-40 pt-6">"End of Dossier Record"</p>
+                            <p className="text-[9px] text-center text-muted-foreground font-black uppercase tracking-[0.3em] italic opacity-40 pt-6">"End of Dossier Record"</p>
+                        </div>
                     </div>
-                </div>
+                </ScrollArea>
+                <DialogFooter className="p-6 bg-muted/20 border-t flex-shrink-0">
+                    <Button className="w-full h-12 font-black uppercase" onClick={onClose}>UPLINK CLOSED</Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );
 }
+
