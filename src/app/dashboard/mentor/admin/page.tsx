@@ -178,7 +178,9 @@ export default function MentorAdmin() {
                                             <TableRow key={s.id}>
                                                 <TableCell>
                                                     <p className="font-bold text-sm uppercase">{s.title}</p>
-                                                    <p className="text-[10px] opacity-40">{format(s.startTime.toDate(), 'MMM d, HH:mm')}</p>
+                                                    <p className="text-[10px] opacity-40">
+                                                        {s.startTime ? format(s.startTime.toDate(), 'MMM d, HH:mm') : 'Pending...'}
+                                                    </p>
                                                 </TableCell>
                                                 <TableCell className="font-mono text-xs">{s.participants.length} / {s.maxUsers}</TableCell>
                                                 <TableCell>
@@ -273,7 +275,7 @@ export default function MentorAdmin() {
             </Tabs>
 
             {/* RESPONSE DIALOG */}
-            <Dialog open={!!respondingTo} onOpenChange={() => setRespondingTo(null)}>
+            <Dialog open={!!respondingTo} onOpenChange={setRespondingTo(null)}>
                 <DialogContent className="max-w-md bg-slate-950 border-primary/20">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black uppercase italic text-white">Directive Response</DialogTitle>

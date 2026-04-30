@@ -14,7 +14,7 @@ import {
     AlertTriangle, Loader2, Sparkles,
     UserCircle, Info, Share2, Copy,
     Key, Plus, Gem, Wallet, CreditCard,
-    XCircle, History, Send
+    History, Send
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, differenceInSeconds, isPast } from 'date-fns';
@@ -176,7 +176,9 @@ export default function MentorHub() {
                                             <div className="flex justify-between items-start mb-4">
                                                 <div className="flex items-center gap-3">
                                                     {req.type === 'guaranteed' ? <Badge className="bg-yellow-400 text-black font-black">GUARANTEED</Badge> : <Badge variant="outline" className="font-black">STANDARD</Badge>}
-                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">{format(req.createdAt.toDate(), 'PPp')}</span>
+                                                    <span className="text-[10px] font-bold text-muted-foreground uppercase">
+                                                        {req.createdAt ? format(req.createdAt.toDate(), 'PPp') : 'Processing...'}
+                                                    </span>
                                                 </div>
                                                 <Badge className={cn(
                                                     "font-black uppercase text-[10px]",
