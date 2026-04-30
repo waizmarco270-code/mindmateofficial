@@ -38,6 +38,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 export default function MentorAdmin() {
     const { sessions, requests, loading, createSession, deleteSession, updateSessionStatus, respondToRequest, deleteRequest } = useMentor();
