@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useEffect, useCallback, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, useCallback, createContext, useContext, ReactNode, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, updateDoc, increment, setDoc, Timestamp, getDoc, serverTimestamp, writeBatch, collection, addDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
@@ -102,7 +103,7 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
         return () => unsubscribe();
     }, [user]);
 
-    const startIsolation = async (durationId: IsolationDuration, method: 'credits' | 'money' | 'free', transactionId?: string) => {
+    const startIsolation = useCallback(async (durationId: IsolationDuration, method: 'credits' | 'money' | 'free', transactionId?: string) => {
         if (!user || !currentUserData) return;
         
         const config = ISOLATION_CONFIGS[durationId];
@@ -142,9 +143,9 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
             description: `You are now locked in for ${config.label}. Farewell, Legend.`,
             className: "bg-black text-white border-primary"
         });
-    };
+    }, [user, currentUserData, addCreditsToUser, toast]);
 
-    const updateProgress = async (seconds: number) => {
+    const updateProgress = useCallback(async (seconds: number) => {
         if (!user || !activeSession || activeSession.status !== 'active') return;
         
         const todayKey = format(new Date(), 'yyyy-MM-dd');
@@ -155,9 +156,9 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
             [`dailyLogs.${todayKey}`]: increment(seconds),
             lastHeartbeat: new Date().toISOString()
         });
-    };
+    }, [user, activeSession]);
 
-    const addIsolationTask = async (dateKey: string, text: string) => {
+    const addIsolationTask = useCallback(async (dateKey: string, text: string) => {
         if (!user || !activeSession) return;
         const sessionRef = doc(db, 'users', user.id, 'isolation', 'current');
         const newTask: IsolationTask = {
@@ -170,9 +171,9 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(sessionRef, {
             [`dailyTasks.${dateKey}`]: arrayUnion(newTask)
         });
-    };
+    }, [user, activeSession]);
 
-    const toggleIsolationTask = async (dateKey: string, taskId: string) => {
+    const toggleIsolationTask = useCallback(async (dateKey: string, taskId: string) => {
         if (!user || !activeSession) return;
         const sessionRef = doc(db, 'users', user.id, 'isolation', 'current');
         const currentTasks = activeSession.dailyTasks?.[dateKey] || [];
@@ -187,21 +188,21 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(sessionRef, {
             [`dailyTasks.${dateKey}`]: updatedTasks
         });
-    };
+    }, [user, activeSession]);
 
-    const setSessionVideoId = async (videoId: string | null) => {
+    const setSessionVideoId = useCallback(async (videoId: string | null) => {
         if (!user || !activeSession) return;
         const sessionRef = doc(db, 'users', user.id, 'isolation', 'current');
         await updateDoc(sessionRef, { currentVideoId: videoId });
-    };
+    }, [user, activeSession]);
 
-    const failIsolation = async () => {
+    const failIsolation = useCallback(async () => {
         if (!user || !activeSession) return;
         await updateDoc(doc(db, 'users', user.id, 'isolation', 'current'), { status: 'failed' });
         toast({ variant: 'destructive', title: "ISOLATION BREACHED", description: "You have failed the protocol. Ingress fee is forfeit." });
-    };
+    }, [user, activeSession, toast]);
 
-    const emergeVictory = async () => {
+    const emergeVictory = useCallback(async () => {
         if (!user || !activeSession || activeSession.status !== 'active') return;
         const config = ISOLATION_CONFIGS[activeSession.durationId];
         
@@ -220,9 +221,9 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
         
         await batch.commit();
         toast({ title: "ASCENSION COMPLETE!", description: "You have emerged from isolation as a true legend.", className: "bg-green-500 text-white" });
-    };
+    }, [user, activeSession, toast]);
 
-    const payForEarlyExit = async (method: 'credits' | 'wallet' | 'razorpay', transactionId?: string) => {
+    const payForEarlyExit = useCallback(async (method: 'credits' | 'wallet' | 'razorpay', transactionId?: string) => {
         if (!user || !activeSession || !currentUserData) return;
         const config = ISOLATION_CONFIGS[activeSession.durationId];
 
@@ -239,10 +240,18 @@ export const IsolationProvider = ({ children }: { children: ReactNode }) => {
 
         await deleteDoc(sessionRef);
         toast({ title: "ISOLATION TERMINATED", description: "You have paid for an early extraction. Protocol ended." });
-    };
+    }, [user, activeSession, currentUserData, toast]);
+
+    const contextValue = useMemo(() => ({
+        activeSession, loading, startIsolation, updateProgress, setSessionVideoId, 
+        addIsolationTask, toggleIsolationTask, failIsolation, emergeVictory, payForEarlyExit 
+    }), [
+        activeSession, loading, startIsolation, updateProgress, setSessionVideoId, 
+        addIsolationTask, toggleIsolationTask, failIsolation, emergeVictory, payForEarlyExit
+    ]);
 
     return (
-        <IsolationContext.Provider value={{ activeSession, loading, startIsolation, updateProgress, setSessionVideoId, addIsolationTask, toggleIsolationTask, failIsolation, emergeVictory, payForEarlyExit }}>
+        <IsolationContext.Provider value={contextValue}>
             {children}
         </IsolationContext.Provider>
     );

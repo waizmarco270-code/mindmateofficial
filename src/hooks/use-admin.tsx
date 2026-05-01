@@ -382,12 +382,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         } catch (e: any) { toast({ variant: 'destructive', title: "Purge Failed", description: e.message }); }
     }, [isSuperAdmin, toast]);
 
-    const claimPlusMembership = async (paymentId: string) => {
+    const claimPlusMembership = useCallback(async (paymentId: string) => {
         if (!authUser || !currentUserData) return;
         await runTransaction(db, async (transaction) => {
             const userRef = doc(db, 'users', authUser.id);
             const settingsRef = doc(db, 'appConfig', 'settings');
-            const settingsSnap = await transaction.get(settingsRef);
             const alphaExpiry = addYears(new Date(), 99).toISOString();
             transaction.update(userRef, {
                 isPlusMember: true,
@@ -404,9 +403,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             transaction.update(settingsRef, { plusMemberCount: increment(1) });
         });
         toast({ title: "Welcome to MindMate Plus!" });
-    };
+    }, [authUser, currentUserData, toast]);
 
-    const claimGMBounty = async (userId: string) => {
+    const claimGMBounty = useCallback(async (userId: string) => {
         const userRef = doc(db, 'users', userId);
         await updateDoc(userRef, {
             isGM: true,
@@ -415,9 +414,9 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
             rewardHistory: arrayUnion({ reward: 500, date: new Date(), source: 'Game Master Ascension' })
         });
         toast({ title: "GRANDMASTER ASCENDED", description: "+500 Credits injected into your treasury.", className: "bg-amber-500 text-black font-black" });
-    };
+    }, [toast]);
 
-    const value = {
+    const contextValue = useMemo(() => ({
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
         announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
@@ -436,9 +435,16 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         claimAllTablesBounty: (uid: string) => userActions.claimAllTablesBounty(uid),
         claimGMBounty,
         claimUnitDimensionsMilestone: (userId: string, milestoneKey: string, reward: number) => userActions.claimUnitDimensionsMilestone(userId, milestoneKey, reward)
-    };
+    }), [
+        isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, announcements, resources, 
+        resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
+        featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, redeemCodes, 
+        gameHistory, subscribedUserIds, userActions, contentActions, storeActions, systemActions, 
+        codeActions, authUser, performGameReset, resetAllChallenges, claimPlusMembership, 
+        completeOnboarding, claimGMBounty
+    ]);
 
-    return <AppDataContext.Provider value={value as any}>{children}</AppDataContext.Provider>;
+    return <AppDataContext.Provider value={contextValue as any}>{children}</AppDataContext.Provider>;
 };
 
 export const useAdmin = () => {

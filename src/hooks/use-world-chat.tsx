@@ -387,8 +387,19 @@ export const WorldChatProvider = ({ children }: { children: ReactNode }) => {
         }, { merge: true });
     }, [currentUser, currentUserData]);
 
-    const value = { messages, loading, sendMessage, sendRain, sendPoll, claimRain, editMessage, deleteMessage, toggleReaction, toggleNugget, submitPollVote, pinnedMessage, pinMessage, unpinMessage, clearMessages, toggleLock, setSlowMode, isLocked, slowMode, typingUsers, updateTypingStatus };
-    return <WorldChatContext.Provider value={value}>{children}</WorldChatContext.Provider>;
+    const contextValue = useMemo(() => ({ 
+        messages, loading, sendMessage, sendRain, sendPoll, claimRain, editMessage, 
+        deleteMessage, toggleReaction, toggleNugget, submitPollVote, pinnedMessage, 
+        pinMessage, unpinMessage, clearMessages, toggleLock, setSlowMode, isLocked, 
+        slowMode, typingUsers, updateTypingStatus 
+    }), [
+        messages, loading, sendMessage, sendRain, sendPoll, claimRain, editMessage, 
+        deleteMessage, toggleReaction, toggleNugget, submitPollVote, pinnedMessage, 
+        pinMessage, unpinMessage, clearMessages, toggleLock, setSlowMode, isLocked, 
+        slowMode, typingUsers, updateTypingStatus
+    ]);
+
+    return <WorldChatContext.Provider value={contextValue}>{children}</WorldChatContext.Provider>;
 };
 
 export const useWorldChat = () => {

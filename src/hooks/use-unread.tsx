@@ -195,7 +195,7 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   }, [user, unreadChats]);
 
 
-  const value = {
+  const contextValue = useMemo(() => ({
     unreadChats,
     chatsMetadata: chats,
     hasUnread: unreadChats.size > 0 || hasGlobalUnread || hasInboxUnread,
@@ -208,10 +208,14 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
     markAnnouncementsAsRead,
     hasUnreadFriendRequests,
     markFriendRequestsAsRead,
-  };
+  }), [
+    unreadChats, chats, hasGlobalUnread, hasInboxUnread, hasUnreadFrom, 
+    markAsRead, markGlobalAsRead, hasUnreadAnnouncements, 
+    markAnnouncementsAsRead, hasUnreadFriendRequests, markFriendRequestsAsRead
+  ]);
 
   return (
-    <UnreadMessagesContext.Provider value={value}>
+    <UnreadMessagesContext.Provider value={contextValue}>
       {children}
     </UnreadMessagesContext.Provider>
   );
