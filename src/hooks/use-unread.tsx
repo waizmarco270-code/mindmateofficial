@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
@@ -175,18 +174,26 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   }, [setLastReadTimestamps]);
 
   const markAnnouncementsAsRead = useCallback(() => {
-    setLastReadTimestamps(prev => ({
-        ...prev,
-        announcements_inbox: Date.now()
-    }));
-  }, [setLastReadTimestamps]);
+    // Protocol Fix: Anchor the read-time to the latest data timestamp to prevent loop
+    if (announcements.length > 0) {
+        const latestTime = announcements[0].createdAt.getTime();
+        setLastReadTimestamps(prev => ({
+            ...prev,
+            announcements_inbox: latestTime
+        }));
+    }
+  }, [announcements, setLastReadTimestamps]);
   
   const markFriendRequestsAsRead = useCallback(() => {
-    setLastReadTimestamps(prev => ({
-        ...prev,
-        friend_requests_inbox: Date.now()
-    }));
-  }, [setLastReadTimestamps]);
+    // Protocol Fix: Anchor the read-time to the latest request timestamp
+    if (friendRequests.length > 0) {
+        const latestTime = new Date(friendRequests[0].createdAt).getTime();
+        setLastReadTimestamps(prev => ({
+            ...prev,
+            friend_requests_inbox: latestTime
+        }));
+    }
+  }, [friendRequests, setLastReadTimestamps]);
 
   const hasUnreadFrom = useCallback((friendId: string) => {
        if (!user) return false;

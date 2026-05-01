@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -225,7 +224,8 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 const safeToDate = (val: any) => {
-    if (!val) return new Date();
+    // Protocol Fix: Return epoch for missing timestamps instead of current date to prevent unread loop
+    if (!val) return new Date(0); 
     if (typeof val.toDate === 'function') return val.toDate();
     return new Date(val);
 };
@@ -258,6 +258,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
     const isSuperAdmin = authUser?.id === SUPER_ADMIN_UID;
     const isCoDev = currentUserData?.isCoDev ?? false;
 
+    // Actions initialization - Stable via useMemo
     const userActions = useMemo(() => useUserActions(db, toast), [toast]);
     const contentActions = useMemo(() => useContentActions(db, toast), [toast]);
     const storeActions = useMemo(() => useStoreActions(db, toast), [toast]);
@@ -418,7 +419,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
 
     const contextValue = useMemo(() => ({
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
-        announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
+        announcements, resources, resourcesSections: resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
         videoCategories, videoLectures, redeemCodes, activePoll: allPolls.find(p => p.isActive) || null,
         gameHistory, subscribedUserIds,

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { AppDataProvider } from "@/hooks/use-admin";
@@ -8,6 +7,7 @@ import { WorldChatProvider } from "@/hooks/use-world-chat.tsx";
 import { FriendsProvider } from "@/hooks/use-friends";
 import { GroupsProvider } from "@/hooks/use-groups.tsx";
 import { IsolationProvider } from "@/hooks/use-isolation";
+import { MentorProvider } from "@/hooks/use-mentor";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -18,7 +18,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
                 <UnreadMessagesProvider>
                     <WorldChatProvider>
                         <RoadmapsProvider>
-                            {children}
+                            <MentorProvider>
+                                {children}
+                            </MentorProvider>
                         </RoadmapsProvider>
                     </WorldChatProvider>
                 </UnreadMessagesProvider>
