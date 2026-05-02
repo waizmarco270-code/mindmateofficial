@@ -39,7 +39,7 @@ interface UnreadMessagesContextType {
   unreadChats: Set<string>;
   chatsMetadata: ChatMetadata[];
   hasUnread: boolean;
-  hasInboxUnread: boolean; // Specifically for Announcements & Friend Requests
+  hasInboxUnread: boolean; 
   hasUnreadFrom: (friendId: string) => boolean;
   markAsRead: (friendId: string) => void;
   hasGlobalUnread: boolean;
@@ -174,26 +174,30 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   }, [setLastReadTimestamps]);
 
   const markAnnouncementsAsRead = useCallback(() => {
-    // Protocol Fix: Anchor the read-time to the latest data timestamp to prevent loop
     if (announcements.length > 0) {
         const latestTime = announcements[0].createdAt.getTime();
-        setLastReadTimestamps(prev => ({
-            ...prev,
-            announcements_inbox: latestTime
-        }));
+        // Logic Guard: Only update if the timestamp has actually advanced
+        if (latestTime > (lastReadTimestamps['announcements_inbox'] || 0)) {
+            setLastReadTimestamps(prev => ({
+                ...prev,
+                announcements_inbox: latestTime
+            }));
+        }
     }
-  }, [announcements, setLastReadTimestamps]);
+  }, [announcements, lastReadTimestamps, setLastReadTimestamps]);
   
   const markFriendRequestsAsRead = useCallback(() => {
-    // Protocol Fix: Anchor the read-time to the latest request timestamp
     if (friendRequests.length > 0) {
         const latestTime = new Date(friendRequests[0].createdAt).getTime();
-        setLastReadTimestamps(prev => ({
-            ...prev,
-            friend_requests_inbox: latestTime
-        }));
+        // Logic Guard: Only update if the timestamp has actually advanced
+        if (latestTime > (lastReadTimestamps['friend_requests_inbox'] || 0)) {
+            setLastReadTimestamps(prev => ({
+                ...prev,
+                friend_requests_inbox: latestTime
+            }));
+        }
     }
-  }, [friendRequests, setLastReadTimestamps]);
+  }, [friendRequests, lastReadTimestamps, setLastReadTimestamps]);
 
   const hasUnreadFrom = useCallback((friendId: string) => {
        if (!user) return false;

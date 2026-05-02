@@ -190,7 +190,7 @@ interface AppDataContextType {
     toggleUserBlock: any; toggleLeaderboardPrivacy: any; addCreditsToUser: any; applyFocusPenalty: any;
     grantMasterCard: any; revokeMasterCard: any; setShowcaseBadge: any; setEquippedFrame: any; makeUserAdmin: any; removeUserAdmin: any;
     makeUserVip: any; removeUserVip: any; makeUserGM: any; removeUserGM: any; makeUserCoDev: any; removeUserCoDev: any;
-    addPerfectedQuiz: any; incrementQuizAttempt: any; incrementFocusSessions: any; claimDailyTaskReward: any;
+    addPerfectedQuiz: any; incrementQuizAttempt: any; incrementQuizAttempt: any; incrementFocusSessions: any; claimDailyTaskReward: any;
     claimEliteDailyReward: any; updateGameHighScore: any; updateElementQuestScore: any; claimElementQuestMilestone: any;
     claimDimensionShiftMilestone: any; claimFlappyMindMilestone: any; claimAstroAscentMilestone: any;
     claimMathematicsLegendMilestone: any; addAnnouncement: any; updateAnnouncement: any; deleteAnnouncement: any;
@@ -224,7 +224,8 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 const safeToDate = (val: any) => {
-    // Protocol Fix: Return epoch for missing timestamps instead of current date to prevent unread loop
+    // Protocol Fix: Return a stable epoch date if timestamp is pending or null
+    // This prevents re-render loops in Inbox components that compare timestamps.
     if (!val) return new Date(0); 
     if (typeof val.toDate === 'function') return val.toDate();
     return new Date(val);

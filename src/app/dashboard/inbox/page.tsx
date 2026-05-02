@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -11,18 +10,13 @@ import Link from 'next/link';
 import { useUnreadMessages } from '@/hooks/use-unread';
 
 export default function InboxPage() {
-    const { hasUnreadAnnouncements, hasUnreadFriendRequests, markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
+    const { markAnnouncementsAsRead, markFriendRequestsAsRead } = useUnreadMessages();
 
     useEffect(() => {
-        // Only trigger mark as read if there is actually unread content
-        // This prevents the "Maximum update depth exceeded" infinite loop
-        if (hasUnreadAnnouncements) {
-            markAnnouncementsAsRead();
-        }
-        if (hasUnreadFriendRequests) {
-            markFriendRequestsAsRead();
-        }
-    }, [hasUnreadAnnouncements, hasUnreadFriendRequests, markAnnouncementsAsRead, markFriendRequestsAsRead]);
+        // One-time synchronization on ingress to the page
+        markAnnouncementsAsRead();
+        markFriendRequestsAsRead();
+    }, [markAnnouncementsAsRead, markFriendRequestsAsRead]);
 
     return (
         <div className="space-y-8 max-w-6xl mx-auto pb-20">
