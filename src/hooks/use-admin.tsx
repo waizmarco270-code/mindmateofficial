@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -51,6 +50,7 @@ export interface User {
   unlockedResourceSections?: string[];
   unlockedFeatures?: string[];
   unlockedThemes?: AppThemeId[];
+  claimedClanMilestones?: Record<string, string[]>; // { groupId: [milestoneIds] }
   hasAiAccess?: boolean;
   hasFreeIsolation?: boolean;
   perfectedQuizzes?: string[];

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft, Info, Zap, Crown as CrownIcon, TrendingUp, Sparkles, Clock, Target, Pin, Globe, UserCheck, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft, Info, Zap, Crown as CrownIcon, TrendingUp, Sparkles, Clock, Target, Pin, Globe, UserCheck, ShieldAlert, Award, Gift } from 'lucide-react';
 import { GroupChat } from '@/components/groups/group-chat';
 import { GroupLeaderboard } from '@/components/groups/group-leaderboard';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -25,6 +25,7 @@ import { GroupFocus } from '@/components/groups/group-focus';
 import { useGroups } from '@/hooks/use-groups';
 import { useToast } from '@/hooks/use-toast';
 import { usePresence } from '@/hooks/use-presence';
+import { ClanMilestonesDialog } from '@/components/groups/clan-milestones-dialog';
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -49,6 +50,7 @@ export default function GroupDetailPage() {
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
     const [isRoadmapOpen, setIsRoadmapOpen] = useState(false);
+    const [isMilestonesOpen, setIsMilestonesOpen] = useState(false);
     const [showXpPulse, setShowXpPulse] = useState(false);
     const [isBoosting, setIsBoosting] = useState(false);
 
@@ -71,7 +73,7 @@ export default function GroupDetailPage() {
                     return userDetail ? { ...userDetail, role: m.role, studyContribution: m.studyContribution || 0 } : null;
                 }).filter(Boolean) as (User & { role: GroupRole; studyContribution: number })[];
                 
-                setGroup({ id: docSnap.id, ...data, memberDetails, level: data.level || 1, xp: data.xp || 0, todayStudySeconds: data.todayStudySeconds || 0 } as Group);
+                setGroup({ id: docSnap.id, ...data, memberDetails, level: data.level || 1, xp: data.xp || 0, todayStudySeconds: data.todayStudySeconds || 0, totalStudySeconds: data.totalStudySeconds || 0 } as Group);
             } else {
                 setGroup(null);
                 router.push('/dashboard/groups');
@@ -207,6 +209,16 @@ export default function GroupDetailPage() {
                         </div>
                     </div>
                      <div className="flex items-center gap-3 w-full sm:w-auto">
+                        <Button 
+                            variant="outline" 
+                            className={cn(
+                                "flex-1 sm:flex-none h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest px-8 transition-all border-white/10 bg-white/5",
+                                isMilestonesOpen && "bg-amber-500 text-black border-amber-400 shadow-xl shadow-amber-500/20"
+                            )}
+                            onClick={() => setIsMilestonesOpen(true)}
+                        >
+                           <Gift className={cn("mr-3 h-4 w-4", isMilestonesOpen ? "text-black" : "text-amber-500")}/> {isMilestonesOpen ? 'CLAIMING HUB' : 'REWARDS'}
+                        </Button>
                         <Button 
                             variant="outline" 
                             className={cn(
@@ -385,6 +397,7 @@ export default function GroupDetailPage() {
 
             <ClanSettingsDialog group={group} isOpen={isSettingsOpen} onOpenChange={setIsSettingsOpen}/>
             <ClanLevelRoadmapDialog isOpen={isRoadmapOpen} onOpenChange={setIsRoadmapOpen} groupLogo={group.logoUrl} currentLevel={currentEffectiveLevel}/>
+            <ClanMilestonesDialog group={group} isOpen={isMilestonesOpen} onOpenChange={setIsMilestonesOpen} claimedMilestones={currentUserData?.claimedClanMilestones?.[group.id] || []} />
        </div>
     );
 }

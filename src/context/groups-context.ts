@@ -36,6 +36,7 @@ export interface Group {
     level: number;
     xp: number;
     todayStudySeconds: number; // Total seconds the whole clan studied today
+    totalStudySeconds: number; // Lifetime study seconds of the clan
     lastResetDate?: string; // YYYY-MM-DD to reset todayStudySeconds
     tempMaxLevelExpires?: string; // ISO string for temporary level 5
     lastMessage?: {

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
@@ -43,6 +42,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
                     level: data.level || 1,
                     xp: data.xp || 0,
                     todayStudySeconds: data.todayStudySeconds || 0,
+                    totalStudySeconds: data.totalStudySeconds || 0,
                     createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
                     lastMessage: data.lastMessage ? { ...data.lastMessage, timestamp: (data.lastMessage.timestamp as Timestamp)?.toDate() || new Date() } : undefined,
                 } as Group;
@@ -54,13 +54,12 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         const unsubPublicGroups = onSnapshot(publicGroupsQuery, (snapshot) => {
              const publicGroupsData = snapshot.docs.map(doc => {
                 const data = doc.data();
-                const members = data.members || [];
-                const memberUids = members.map((m: GroupMember) => m.uid);
                 return { 
                     id: doc.id, ...data,
                     level: data.level || 1,
                     xp: data.xp || 0,
                     todayStudySeconds: data.todayStudySeconds || 0,
+                    totalStudySeconds: data.totalStudySeconds || 0,
                     createdAt: (data.createdAt as Timestamp)?.toDate() || new Date() 
                 } as Group;
             });
@@ -106,12 +105,13 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
                 // 1. Calculate XP (1 hour = 50 XP)
                 const xpGain = (durationSeconds / 3600) * 50;
                 
-                // 2. Daily Hours Reset logic
+                // 2. Study Hours logic
                 let todayStudySeconds = groupData.todayStudySeconds || 0;
                 if (groupData.lastResetDate !== todayKey) {
                     todayStudySeconds = 0;
                 }
                 todayStudySeconds += durationSeconds;
+                const totalStudySeconds = (groupData.totalStudySeconds || 0) + durationSeconds;
 
                 // 3. Member Contribution
                 const newMembers = groupData.members.map(m => {
@@ -143,6 +143,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
                     xp: newXp,
                     level: newLevel,
                     todayStudySeconds,
+                    totalStudySeconds,
                     lastResetDate: todayKey,
                     members: newMembers
                 });
@@ -186,7 +187,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             id: newDocRef.id, name: name.trim(), motto: motto || '', logoUrl: logoUrl || null, banner: banner || 'default',
             createdBy: user.id, createdAt: serverTimestamp(), members: initialMembers, memberUids: [user.id, ...memberIds],
             isPublic: true, joinMode: 'auto',
-            level: 1, xp: 0, todayStudySeconds: 0, lastResetDate: todayKey
+            level: 1, xp: 0, todayStudySeconds: 0, totalStudySeconds: 0, lastResetDate: todayKey
         });
 
         if (!hasMasterCard) await addCreditsToUser(user.id, -CLAN_CREATION_COST);
