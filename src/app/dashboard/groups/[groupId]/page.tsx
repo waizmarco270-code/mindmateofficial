@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft, Info, Zap, Crown as CrownIcon, TrendingUp, Sparkles, Clock, Target, Pin, Globe, UserCheck } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft, Info, Zap, Crown as CrownIcon, TrendingUp, Sparkles, Clock, Target, Pin, Globe, UserCheck, ShieldAlert } from 'lucide-react';
 import { GroupChat } from '@/components/groups/group-chat';
 import { GroupLeaderboard } from '@/components/groups/group-leaderboard';
 import { doc, onSnapshot } from 'firebase/firestore';
@@ -331,7 +331,7 @@ export default function GroupDetailPage() {
                                                             <AvatarImage src={member.photoURL} />
                                                             <AvatarFallback>{member.displayName.charAt(0)}</AvatarFallback>
                                                         </Avatar>
-                                                        {isOnline && <span className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-background rounded-full shadow-[0_0_5px_#22c55e]" />}
+                                                        {isOnline && <span className="absolute bottom-0 right-0 h-3.5 w-3.5 bg-green-500 border-2 border-background rounded-full shadow-[0_0_5px_#22c55e]" />}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
                                                         <p className="font-bold text-sm truncate uppercase tracking-tight">{member.displayName}</p>
