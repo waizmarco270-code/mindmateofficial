@@ -1,4 +1,3 @@
-
 'use client';
 
 import { createContext } from 'react';
@@ -19,6 +18,7 @@ export interface GroupMessage {
     text?: string;
     imageUrl?: string;
     timestamp: Date;
+    isPinned?: boolean;
 }
 
 export interface Group {
@@ -77,6 +77,7 @@ export interface GroupsContextType {
     logXp: (groupId: string, amount: number) => Promise<void>;
     applyXpBooster: (groupId: string) => Promise<boolean>;
     applyLevelMaxer: (groupId: string) => Promise<boolean>;
+    pinMessage: (groupId: string, messageId: string, status: boolean) => Promise<void>;
 }
 
 export const GroupsContext = createContext<GroupsContextType | undefined>(undefined);

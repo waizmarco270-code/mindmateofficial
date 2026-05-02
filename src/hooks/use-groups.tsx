@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc, getDocs, increment, writeBatch, arrayUnion, setDoc, runTransaction } from 'firebase/firestore';
@@ -357,10 +356,16 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         }
     }, [user, currentUserData, toast]);
 
+    const pinMessage = useCallback(async (groupId: string, messageId: string, status: boolean) => {
+        const msgRef = doc(db, 'groups', groupId, 'messages', messageId);
+        await updateDoc(msgRef, { isPinned: status });
+        toast({ title: status ? "Message Pinned" : "Message Unpinned" });
+    }, [toast]);
+
     const value: GroupsContextType = {
         groups, allPublicGroups, joinRequests, sentJoinRequests, loading: loading || usersLoading,
         createGroup, updateGroup, updateMemberRole, removeMember, leaveGroup, deleteGroup, sendJoinRequest, approveJoinRequest,
-        declineJoinRequest, addMemberToAutoJoinClan, logXp, applyXpBooster, applyLevelMaxer
+        declineJoinRequest, addMemberToAutoJoinClan, logXp, applyXpBooster, applyLevelMaxer, pinMessage
     };
 
     return (
