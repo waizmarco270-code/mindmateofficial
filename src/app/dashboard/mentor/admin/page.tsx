@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -275,7 +276,7 @@ export default function MentorAdmin() {
             </Tabs>
 
             {/* RESPONSE DIALOG */}
-            <Dialog open={!!respondingTo} onOpenChange={setRespondingTo(null)}>
+            <Dialog open={!!respondingTo} onOpenChange={(open) => !open && setRespondingTo(null)}>
                 <DialogContent className="max-w-md bg-slate-950 border-primary/20">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-black uppercase italic text-white">Directive Response</DialogTitle>

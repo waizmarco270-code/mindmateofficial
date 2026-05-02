@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useCallback, createContext, useContext, useMemo, ReactNode } from 'react';
@@ -198,7 +199,7 @@ export const MentorProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "Feedback Recorded", description: "Thank you for contributing to the collective intelligence." });
     }, [user, toast]);
 
-    const value = useMemo(() => ({
+    const contextValue = useMemo(() => ({
         sessions, requests, loading, 
         createSession, bookSlot, submitMeetingRequest, 
         respondToRequest, deleteRequest, updateSessionStatus, 
@@ -206,7 +207,7 @@ export const MentorProvider = ({ children }: { children: ReactNode }) => {
     }), [sessions, requests, loading, createSession, bookSlot, submitMeetingRequest, respondToRequest, deleteRequest, updateSessionStatus, deleteSession, submitFeedback]);
 
     return (
-        <MentorContext.Provider value={value}>
+        <MentorContext.Provider value={contextValue}>
             {children}
         </MentorContext.Provider>
     );

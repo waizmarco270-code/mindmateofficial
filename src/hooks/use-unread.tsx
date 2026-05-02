@@ -1,14 +1,14 @@
+
 'use client';
 
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { collection, query, where, onSnapshot, orderBy, limit, Timestamp } from 'firebase/firestore';
 import { useLocalStorage } from './use-local-storage';
-import { useAnnouncements } from './use-admin';
+import { useAdmin } from './use-admin';
 import { useFriends } from './use-friends';
 
-// Private chat interfaces
 export interface ChatMetadata {
   id: string;
   friendId: string;
@@ -19,7 +19,6 @@ export interface ChatMetadata {
   } | null;
 }
 
-// Global chat interfaces
 interface GlobalChat {
     lastMessage: {
         text: string;
@@ -58,13 +57,18 @@ const getChatId = (uid1: string, uid2: string) => {
 
 export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
-  const { announcements, loading: announcementsLoading } = useAnnouncements();
+  const { announcements, loading: adminLoading } = useAdmin();
   const { friendRequests, loading: friendsLoading } = useFriends();
   const [chats, setChats] = useState<ChatMetadata[]>([]);
   const [globalChat, setGlobalChat] = useState<GlobalChat>({ lastMessage: null });
   const [lastReadTimestamps, setLastReadTimestamps] = useLocalStorage<LastReadTimestamps>('lastReadTimestamps', {});
+  
+  // Use a Ref to break the recursive dependency loop
+  const timestampsRef = useRef(lastReadTimestamps);
+  useEffect(() => {
+    timestampsRef.current = lastReadTimestamps;
+  }, [lastReadTimestamps]);
 
-  // Listen to all private chats the current user is part of
   useEffect(() => {
     if (!user) {
       setChats([]);
@@ -140,11 +144,11 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   }, [globalChat, user, lastReadTimestamps]);
 
   const hasUnreadAnnouncements = useMemo(() => {
-      if (announcementsLoading || announcements.length === 0) return false;
+      if (adminLoading || announcements.length === 0) return false;
       const latestAnnouncementTime = announcements[0].createdAt.getTime();
       const lastInboxCheckTime = lastReadTimestamps['announcements_inbox'] || 0;
       return latestAnnouncementTime > lastInboxCheckTime;
-  }, [announcements, announcementsLoading, lastReadTimestamps]);
+  }, [announcements, adminLoading, lastReadTimestamps]);
   
   const hasUnreadFriendRequests = useMemo(() => {
       if (friendsLoading || friendRequests.length === 0) return false;
@@ -160,51 +164,48 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
   const markAsRead = useCallback((friendId: string) => {
     if (!user) return;
     const chatId = getChatId(user.id, friendId);
-    setLastReadTimestamps(prev => ({
-        ...prev,
-        [chatId]: Date.now()
-    }));
+    setLastReadTimestamps(prev => {
+        if (prev[chatId] >= Date.now()) return prev;
+        return { ...prev, [chatId]: Date.now() };
+    });
   }, [user, setLastReadTimestamps]);
   
   const markGlobalAsRead = useCallback(() => {
-      setLastReadTimestamps(prev => ({
-          ...prev,
-          global_chat: Date.now()
-      }));
+      setLastReadTimestamps(prev => {
+          if (prev.global_chat >= Date.now()) return prev;
+          return { ...prev, global_chat: Date.now() };
+      });
   }, [setLastReadTimestamps]);
 
   const markAnnouncementsAsRead = useCallback(() => {
     if (announcements.length > 0) {
         const latestTime = announcements[0].createdAt.getTime();
-        // Logic Guard: Only update if the timestamp has actually advanced
-        if (latestTime > (lastReadTimestamps['announcements_inbox'] || 0)) {
+        if (latestTime > (timestampsRef.current['announcements_inbox'] || 0)) {
             setLastReadTimestamps(prev => ({
                 ...prev,
                 announcements_inbox: latestTime
             }));
         }
     }
-  }, [announcements, lastReadTimestamps, setLastReadTimestamps]);
+  }, [announcements, setLastReadTimestamps]);
   
   const markFriendRequestsAsRead = useCallback(() => {
     if (friendRequests.length > 0) {
         const latestTime = new Date(friendRequests[0].createdAt).getTime();
-        // Logic Guard: Only update if the timestamp has actually advanced
-        if (latestTime > (lastReadTimestamps['friend_requests_inbox'] || 0)) {
+        if (latestTime > (timestampsRef.current['friend_requests_inbox'] || 0)) {
             setLastReadTimestamps(prev => ({
                 ...prev,
                 friend_requests_inbox: latestTime
             }));
         }
     }
-  }, [friendRequests, lastReadTimestamps, setLastReadTimestamps]);
+  }, [friendRequests, setLastReadTimestamps]);
 
   const hasUnreadFrom = useCallback((friendId: string) => {
        if (!user) return false;
        const chatId = getChatId(user.id, friendId);
        return unreadChats.has(chatId);
   }, [user, unreadChats]);
-
 
   const contextValue = useMemo(() => ({
     unreadChats,
@@ -231,7 +232,6 @@ export const UnreadMessagesProvider = ({ children }: { children: ReactNode }) =>
     </UnreadMessagesContext.Provider>
   );
 };
-
 
 export const useUnreadMessages = () => {
   const context = useContext(UnreadMessagesContext);

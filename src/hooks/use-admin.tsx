@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
@@ -177,7 +178,7 @@ export interface AppSettings {
 interface AppDataContextType {
     isAdmin: boolean; isCoDev: boolean; isSuperAdmin: boolean; loading: boolean;
     users: User[]; currentUserData: User | null; transactions: User['transactions'];
-    announcements: Announcement[]; resources: Resource[]; resourcesSections: ResourceSection[];
+    announcements: Announcement[]; resources: Resource[]; resourceSections: ResourceSection[];
     dailySurprises: DailySurprise[]; supportTickets: SupportTicket[]; allPolls: Poll[];
     appSettings: AppSettings | null; globalGifts: GlobalGift[]; activeGlobalGift: GlobalGift | null;
     featureShowcases: FeatureShowcase[]; creditPacks: any[]; storeItems: StoreItem[];
@@ -224,8 +225,6 @@ interface AppDataContextType {
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
 
 const safeToDate = (val: any) => {
-    // Protocol Fix: Return a stable epoch date if timestamp is pending or null
-    // This prevents re-render loops in Inbox components that compare timestamps.
     if (!val) return new Date(0); 
     if (typeof val.toDate === 'function') return val.toDate();
     return new Date(val);
@@ -418,9 +417,11 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "GRANDMASTER ASCENDED", description: "+500 Credits injected into your treasury.", className: "bg-amber-500 text-black font-black" });
     }, [toast]);
 
+    const transactions = useMemo(() => currentUserData?.transactions || [], [currentUserData?.transactions]);
+
     const contextValue = useMemo(() => ({
-        isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions: currentUserData?.transactions || [],
-        announcements, resources, resourcesSections: resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
+        isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions,
+        announcements, resources, resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         activeGlobalGift: globalGifts.find(g => g.isActive) || null, featureShowcases, creditPacks, storeItems,
         videoCategories, videoLectures, redeemCodes, activePoll: allPolls.find(p => p.isActive) || null,
         gameHistory, subscribedUserIds,
@@ -438,7 +439,7 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         claimGMBounty,
         claimUnitDimensionsMilestone: (userId: string, milestoneKey: string, reward: number) => userActions.claimUnitDimensionsMilestone(userId, milestoneKey, reward)
     }), [
-        isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, announcements, resources, 
+        isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions, announcements, resources, 
         resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, redeemCodes, 
         gameHistory, subscribedUserIds, userActions, contentActions, storeActions, systemActions, 
@@ -455,7 +456,7 @@ export const useAdmin = () => {
     return context;
 };
 export const useUsers = () => useAdmin();
-export const useAnnouncements = () => { const { announcements, loading } = useAdmin(); return { announcements, loading }; };
-export const useResources = () => { const { resources, resourceSections, loading } = useAdmin(); return { allResources: resources, allSections: resourceSections, loading }; };
+export const useAnnouncements = () => useAdmin();
+export const useResources = () => useAdmin();
 export const usePolls = () => useAdmin();
-export const useDailySurprises = () => { const { dailySurprises, loading } = useAdmin(); return { dailySurprises, loading }; };
+export const useDailySurprises = () => useAdmin();
