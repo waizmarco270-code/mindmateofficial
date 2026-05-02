@@ -37,7 +37,7 @@ export default function GroupDetailPage() {
     const params = useParams();
     const router = useRouter();
     const groupId = params.groupId as string;
-    const { users, loading: usersLoading, currentUserData } = useUsers();
+    const { users, loading: usersLoading } = useUsers();
     const { user: currentUser } = useUser();
     const { applyXpBooster, applyLevelMaxer } = useGroups();
     const { onlineUsers } = usePresence();
@@ -52,6 +52,11 @@ export default function GroupDetailPage() {
     const [showXpPulse, setShowXpPulse] = useState(false);
     const [isBoosting, setIsBoosting] = useState(false);
 
+    // CRITICAL: All hooks must be called at the top, before any returns.
+    const onlineInClan = useMemo(() => {
+        const memberUids = group?.memberUids || [];
+        return onlineUsers.filter(u => u.isOnline && memberUids.includes(u.uid)).length;
+    }, [onlineUsers, group?.memberUids]);
 
     useEffect(() => {
         if (!groupId) return;
@@ -82,6 +87,38 @@ export default function GroupDetailPage() {
         return () => unsubscribe();
     }, [groupId, users, router]);
 
+    const handleUseXpBooster = async () => {
+        if (!currentUser || isBoosting || !group) return;
+        setIsBoosting(true);
+        try {
+            const success = await applyXpBooster(group.id);
+            if (success) {
+                setShowXpPulse(true);
+                setTimeout(() => setShowXpPulse(false), 2000);
+                toast({ title: "XP Boost Applied!", description: "+500 Clan XP injected successfully." });
+            }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Boost Failed", description: e.message });
+        } finally {
+            setIsBoosting(false);
+        }
+    };
+
+    const handleUseLevelMaxer = async () => {
+        if (!currentUser || isBoosting || !group) return;
+        setIsBoosting(true);
+        try {
+            const success = await applyLevelMaxer(group.id);
+            if (success) {
+                toast({ title: "CLAN ASCENDED!", description: "Your clan is now MAX LEVEL for the next 7 days!", className: "bg-yellow-500/10 border-yellow-500/50" });
+            }
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Ascension Failed", description: e.message });
+        } finally {
+            setIsBoosting(false);
+        }
+    };
+
     if (loading || usersLoading) {
         return <div className="flex items-center justify-center h-full"><Loader2 className="h-10 w-10 animate-spin text-primary opacity-50"/></div>
     }
@@ -107,44 +144,6 @@ export default function GroupDetailPage() {
     const levelInfo = clanLevelConfig.find(l => l.level === currentEffectiveLevel) || clanLevelConfig[0];
     const nextLevelInfo = clanLevelConfig.find(l => l.level === currentEffectiveLevel + 1);
     const xpPercentage = nextLevelInfo ? (group.xp / nextLevelInfo.xpRequired) * 100 : 100;
-
-    const onlineInClan = useMemo(() => {
-        const memberUids = group.memberUids || [];
-        return onlineUsers.filter(u => u.isOnline && memberUids.includes(u.uid)).length;
-    }, [onlineUsers, group.memberUids]);
-
-    const handleUseXpBooster = async () => {
-        if (!currentUser || isBoosting) return;
-        setIsBoosting(true);
-        try {
-            const success = await applyXpBooster(group.id);
-            if (success) {
-                setShowXpPulse(true);
-                setTimeout(() => setShowXpPulse(false), 2000);
-                toast({ title: "XP Boost Applied!", description: "+500 Clan XP injected successfully." });
-            }
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Boost Failed", description: e.message });
-        } finally {
-            setIsBoosting(false);
-        }
-    };
-
-    const handleUseLevelMaxer = async () => {
-        if (!currentUser || isBoosting) return;
-        setIsBoosting(true);
-        try {
-            const success = await applyLevelMaxer(group.id);
-            if (success) {
-                toast({ title: "CLAN ASCENDED!", description: "Your clan is now MAX LEVEL for the next 7 days!", className: "bg-yellow-500/10 border-yellow-500/50" });
-            }
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Ascension Failed", description: e.message });
-        } finally {
-            setIsBoosting(false);
-        }
-    };
-
 
     return (
        <div className="h-full relative overflow-hidden pb-32 max-w-7xl mx-auto px-4 sm:px-6">
@@ -200,7 +199,7 @@ export default function GroupDetailPage() {
                             <h1 className={cn("text-3xl sm:text-5xl font-black tracking-tighter uppercase italic truncate leading-none", isTempMax && "text-yellow-400")}>{group.name}</h1>
                             <div className="flex items-center gap-3 mt-2">
                                 <p className="text-muted-foreground italic text-xs sm:text-sm font-medium">"{group.motto || 'No tactical objective set.'}"</p>
-                                <div className="h-1 w-1 rounded-full bg-muted-foreground opacity-30" />
+                                <div className="h-1 - 1 rounded-full bg-muted-foreground opacity-30" />
                                 <div className="flex items-center gap-1.5">
                                     <span className="h-1.5 w-1.5 rounded-full bg-green-500 shadow-[0_0_5px_#22c55e]" />
                                     <span className="text-[10px] font-black uppercase tracking-widest text-green-500/80">{onlineInClan} Online</span>
