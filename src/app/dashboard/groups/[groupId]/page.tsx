@@ -1,14 +1,14 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft, Info, Zap, Crown as CrownIcon, TrendingUp, Sparkles } from 'lucide-react';
+import { ArrowLeft, Loader2, Users, MessageSquare, Menu, Settings, Trophy, PanelLeft, Info, Zap, Crown as CrownIcon, TrendingUp, Sparkles, Clock, Target } from 'lucide-react';
 import { GroupChat } from '@/components/groups/group-chat';
 import { GroupLeaderboard } from '@/components/groups/group-leaderboard';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import type { Group, GroupMember } from '@/context/groups-context';
+import type { Group, GroupMember, GroupRole } from '@/context/groups-context';
 import { useUsers, User } from '@/hooks/use-admin';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from '@/components/ui/card';
@@ -25,6 +25,13 @@ import { ClanLevelRoadmapDialog } from '@/components/groups/clan-level-roadmap';
 import { GroupFocus } from '@/components/groups/group-focus';
 import { useGroups } from '@/hooks/use-groups';
 import { useToast } from '@/hooks/use-toast';
+
+const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m`;
+};
 
 export default function GroupDetailPage() {
     const params = useParams();
@@ -56,10 +63,10 @@ export default function GroupDetailPage() {
                 
                 const memberDetails = (data.members as GroupMember[]).map((m: GroupMember) => {
                     const userDetail = users.find(u => u.uid === m.uid);
-                    return userDetail ? { ...userDetail, role: m.role } : null;
-                }).filter(Boolean) as (User & { role: GroupMember['role'] })[];
+                    return userDetail ? { ...userDetail, role: m.role, studyContribution: m.studyContribution || 0 } : null;
+                }).filter(Boolean) as (User & { role: GroupRole; studyContribution: number })[];
                 
-                setGroup({ id: docSnap.id, ...data, memberDetails, level: data.level || 1, xp: data.xp || 0 } as Group);
+                setGroup({ id: docSnap.id, ...data, memberDetails, level: data.level || 1, xp: data.xp || 0, todayStudySeconds: data.todayStudySeconds || 0 } as Group);
             } else {
                 setGroup(null);
                 router.push('/dashboard/groups');
@@ -93,7 +100,6 @@ export default function GroupDetailPage() {
     const isClanAdmin = currentUser?.id === group.createdBy;
     const isMember = group.memberUids?.includes(currentUser?.id || '');
     
-    // Level logic including temporary max level
     const isTempMax = group.tempMaxLevelExpires && new Date(group.tempMaxLevelExpires) > new Date();
     const currentEffectiveLevel = isTempMax ? 5 : group.level;
 
@@ -135,8 +141,7 @@ export default function GroupDetailPage() {
 
 
     return (
-       <div className="h-full relative overflow-hidden">
-            {/* XP Pulse Animation Layer */}
+       <div className="h-full relative overflow-hidden pb-20">
             <AnimatePresence>
                 {showXpPulse && (
                     <motion.div
@@ -201,28 +206,44 @@ export default function GroupDetailPage() {
                         )}
                     </div>
                 </div>
-                
-                 <Card className={cn("transition-colors duration-500", isTempMax ? "bg-yellow-500/10 border-yellow-500/30" : "bg-muted/30")}>
-                    <CardHeader className="flex flex-row items-center justify-between p-4">
-                         <div className="flex items-center gap-3">
-                             <span className={cn("font-bold text-lg", isTempMax ? "text-yellow-500" : "text-primary")}>
-                                {isTempMax ? "Level 5 (MAX ASCENDED)" : levelInfo.name}
-                             </span>
-                             {isTempMax && <Badge variant="outline" className="text-yellow-500 border-yellow-500/50 animate-pulse">Artifact Active</Badge>}
-                         </div>
-                         <Button variant="secondary" size="sm" onClick={() => setIsRoadmapOpen(true)}>
-                            <Info className="mr-2 h-4 w-4"/> View All Levels
-                        </Button>
-                    </CardHeader>
-                    <CardContent className="px-4 pb-4">
-                         <Progress value={xpPercentage} className="h-2" indicatorClassName={isTempMax ? "bg-yellow-400" : ""} />
-                         <p className="text-xs text-muted-foreground mt-2 text-right">
-                           XP: {group.xp} / {nextLevelInfo ? nextLevelInfo.xpRequired : 'MAX'}
-                        </p>
-                    </CardContent>
-                </Card>
 
-                {/* Clan Boost Controls - All Members can now use their artifacts to help */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <Card className={cn("md:col-span-2 transition-colors duration-500", isTempMax ? "bg-yellow-500/10 border-yellow-500/30" : "bg-muted/30")}>
+                        <CardHeader className="flex flex-row items-center justify-between p-4">
+                             <div className="flex items-center gap-3">
+                                 <span className={cn("font-bold text-lg", isTempMax ? "text-yellow-500" : "text-primary")}>
+                                    {isTempMax ? "Level 5 (MAX ASCENDED)" : levelInfo.name}
+                                 </span>
+                                 {isTempMax && <Badge variant="outline" className="text-yellow-500 border-yellow-500/50 animate-pulse">Artifact Active</Badge>}
+                             </div>
+                             <Button variant="secondary" size="sm" onClick={() => setIsRoadmapOpen(true)}>
+                                <Info className="mr-2 h-4 w-4"/> View All Levels
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="px-4 pb-4">
+                             <Progress value={xpPercentage} className="h-2" indicatorClassName={isTempMax ? "bg-yellow-400" : ""} />
+                             <p className="text-xs text-muted-foreground mt-2 text-right font-mono">
+                               XP: {Math.round(group.xp).toLocaleString()} / {nextLevelInfo ? nextLevelInfo.xpRequired.toLocaleString() : 'MAX'}
+                            </p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-primary/5 border-primary/20">
+                        <CardHeader className="p-4 pb-2">
+                            <CardTitle className="text-sm flex items-center gap-2 uppercase tracking-widest text-primary">
+                                <Target className="h-4 w-4"/> Today's Synergy
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 pt-0 text-center">
+                            <p className="text-4xl font-black text-white italic tracking-tighter">
+                                {formatTime(group.todayStudySeconds)}
+                            </p>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase mt-1">Collective Study Hours</p>
+                        </CardContent>
+                    </Card>
+                </div>
+                
+                {/* Clan Boost Controls */}
                 {isMember && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {(currentUserData?.inventory?.clanXpBoosters || 0) > 0 && (
@@ -273,7 +294,10 @@ export default function GroupDetailPage() {
                                             <AvatarImage src={member.photoURL} />
                                             <AvatarFallback>{member.displayName.charAt(0)}</AvatarFallback>
                                         </Avatar>
-                                        <span className="font-medium">{member.displayName}</span>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-bold text-sm truncate">{member.displayName}</p>
+                                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-widest">{formatTime(member.studyContribution)} contributed</p>
+                                        </div>
                                         <Badge className="ml-auto capitalize" variant={member.role === 'leader' ? 'default' : 'secondary'}>
                                             {member.role}
                                         </Badge>

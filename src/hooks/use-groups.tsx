@@ -4,12 +4,12 @@
 import { useState, useEffect, useContext, ReactNode, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc, getDocs, increment, writeBatch, arrayUnion, setDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, Timestamp, doc, updateDoc, getDoc, arrayRemove, deleteDoc, getDocs, increment, writeBatch, arrayUnion, setDoc, runTransaction } from 'firebase/firestore';
 import { User, useUsers } from './use-admin';
 import { useToast } from './use-toast';
-import { GroupsContext, type GroupsContextType, type Group, type GroupJoinRequest, type GroupMember } from '@/context/groups-context';
+import { GroupsContext, type GroupsContextType, type Group, type GroupJoinRequest, type GroupMember, type GroupRole } from '@/context/groups-context';
 import { clanLevelConfig } from '@/app/lib/clan-levels';
-import { addDays } from 'date-fns';
+import { addDays, format } from 'date-fns';
 
 export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     const { user } = useUser();
@@ -28,17 +28,21 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
         const groupsRef = collection(db, 'groups');
         
-        // Listen to groups where current user is a member
         const userGroupsQuery = user ? query(groupsRef, where('memberUids', 'array-contains', user.id)) : null;
         const unsubUserGroups = userGroupsQuery ? onSnapshot(userGroupsQuery, (snapshot) => {
             const userGroupsData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 const members = data.members || [];
-                const memberDetails = members.map((m: GroupMember) => users.find(u => u.uid === m.uid)).filter(Boolean) as User[];
+                const memberDetails = members.map((m: GroupMember) => {
+                    const ud = users.find(u => u.uid === m.uid);
+                    return ud ? { ...ud, role: m.role, studyContribution: m.studyContribution || 0 } : null;
+                }).filter(Boolean);
+
                 return {
                     id: doc.id, ...data, memberDetails,
                     level: data.level || 1,
                     xp: data.xp || 0,
+                    todayStudySeconds: data.todayStudySeconds || 0,
                     createdAt: (data.createdAt as Timestamp)?.toDate() || new Date(),
                     lastMessage: data.lastMessage ? { ...data.lastMessage, timestamp: (data.lastMessage.timestamp as Timestamp)?.toDate() || new Date() } : undefined,
                 } as Group;
@@ -46,25 +50,23 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             setGroups(userGroupsData);
         }) : () => {};
 
-        // Listen to all public groups
         const publicGroupsQuery = query(groupsRef, where('isPublic', '==', true));
         const unsubPublicGroups = onSnapshot(publicGroupsQuery, (snapshot) => {
              const publicGroupsData = snapshot.docs.map(doc => {
                 const data = doc.data();
                 const members = data.members || [];
                 const memberUids = members.map((m: GroupMember) => m.uid);
-                const memberDetails = memberUids.map((uid: string) => users.find(u => u.uid === uid)).filter(Boolean) as User[];
                 return { 
-                    id: doc.id, ...data, memberDetails,
+                    id: doc.id, ...data,
                     level: data.level || 1,
                     xp: data.xp || 0,
+                    todayStudySeconds: data.todayStudySeconds || 0,
                     createdAt: (data.createdAt as Timestamp)?.toDate() || new Date() 
                 } as Group;
             });
             setAllPublicGroups(publicGroupsData);
         });
 
-        // Listen to join requests
         const requestsRef = collection(db, 'groupJoinRequests');
         const receivedRequestsQuery = user ? query(requestsRef, where('clanAdminId', '==', user.id), where('status', '==', 'pending')) : null;
         const sentRequestsQuery = user ? query(requestsRef, where('senderId', '==', user.id), where('status', '==', 'pending')) : null;
@@ -88,35 +90,67 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
     }, [user, users, usersLoading]);
     
-    const logXp = useCallback(async (groupId: string, amount: number) => {
-        if (amount <= 0) return;
+    const logXp = useCallback(async (groupId: string, durationSeconds: number) => {
+        if (!user || durationSeconds <= 0) return;
 
-        const groupRef = doc(db, 'groups', groupId);
-        const groupSnap = await getDoc(groupRef);
-        if (!groupSnap.exists()) return;
+        const todayKey = format(new Date(), 'yyyy-MM-dd');
+        
+        try {
+            await runTransaction(db, async (transaction) => {
+                const groupRef = doc(db, 'groups', groupId);
+                const groupSnap = await transaction.get(groupRef);
+                if (!groupSnap.exists()) return;
 
-        const groupData = groupSnap.data() as Group;
-        
-        // If temp max level is active, we don't handle level ups via XP but we still log it.
-        const isTempMax = groupData.tempMaxLevelExpires && new Date(groupData.tempMaxLevelExpires) > new Date();
-        
-        const newXp = (groupData.xp || 0) + amount;
-        
-        let newLevel = groupData.level;
-        let xpForNextLevel = newXp;
-        
-        const nextLevelInfo = clanLevelConfig.find(l => l.level === groupData.level + 1);
-        if (nextLevelInfo && newXp >= nextLevelInfo.xpRequired && !isTempMax) {
-            newLevel++;
-            xpForNextLevel = newXp - nextLevelInfo.xpRequired;
+                const groupData = groupSnap.data() as Group;
+                
+                // 1. Calculate XP (1 hour = 50 XP)
+                const xpGain = (durationSeconds / 3600) * 50;
+                
+                // 2. Daily Hours Reset logic
+                let todayStudySeconds = groupData.todayStudySeconds || 0;
+                if (groupData.lastResetDate !== todayKey) {
+                    todayStudySeconds = 0;
+                }
+                todayStudySeconds += durationSeconds;
+
+                // 3. Member Contribution
+                const newMembers = groupData.members.map(m => {
+                    if (m.uid === user.id) {
+                        return {
+                            ...m,
+                            xpContribution: (m.xpContribution || 0) + xpGain,
+                            studyContribution: (m.studyContribution || 0) + durationSeconds
+                        };
+                    }
+                    return m;
+                });
+
+                // 4. Level Up logic
+                let newXp = (groupData.xp || 0) + xpGain;
+                let newLevel = groupData.level || 1;
+                const isTempMax = groupData.tempMaxLevelExpires && new Date(groupData.tempMaxLevelExpires) > new Date();
+
+                if (!isTempMax) {
+                    let nextLevelInfo = clanLevelConfig.find(l => l.level === newLevel + 1);
+                    while (nextLevelInfo && newXp >= nextLevelInfo.xpRequired) {
+                        newXp -= nextLevelInfo.xpRequired;
+                        newLevel++;
+                        nextLevelInfo = clanLevelConfig.find(l => l.level === newLevel + 1);
+                    }
+                }
+
+                transaction.update(groupRef, {
+                    xp: newXp,
+                    level: newLevel,
+                    todayStudySeconds,
+                    lastResetDate: todayKey,
+                    members: newMembers
+                });
+            });
+        } catch (e) {
+            console.error("Clan XP Log Failed:", e);
         }
-        
-        await updateDoc(groupRef, {
-            xp: xpForNextLevel,
-            level: newLevel
-        });
-    }, []);
-
+    }, [user]);
 
     const createGroup = useCallback(async (name: string, memberIds: string[], motto?: string, logoUrl?: string | null, banner?: string) => {
         if (!user || !currentUserData) throw new Error("User not found.");
@@ -141,17 +175,18 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         }
 
         const initialMembers: GroupMember[] = [
-            { uid: user.id, role: 'leader' },
-            ...memberIds.map(id => ({ uid: id, role: 'member' as const }))
+            { uid: user.id, role: 'leader', xpContribution: 0, studyContribution: 0 },
+            ...memberIds.map(id => ({ uid: id, role: 'member' as const, xpContribution: 0, studyContribution: 0 }))
         ];
         
         const newDocRef = doc(collection(db, 'groups'));
+        const todayKey = format(new Date(), 'yyyy-MM-dd');
         
         await setDoc(newDocRef, {
             id: newDocRef.id, name: name.trim(), motto: motto || '', logoUrl: logoUrl || null, banner: banner || 'default',
             createdBy: user.id, createdAt: serverTimestamp(), members: initialMembers, memberUids: [user.id, ...memberIds],
             isPublic: true, joinMode: 'auto',
-            level: 1, xp: 0,
+            level: 1, xp: 0, todayStudySeconds: 0, lastResetDate: todayKey
         });
 
         if (!hasMasterCard) await addCreditsToUser(user.id, -CLAN_CREATION_COST);
@@ -176,7 +211,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
         await updateDoc(groupRef, data);
     }, [user, currentUserData, addCreditsToUser]);
 
-    const updateMemberRole = useCallback(async (groupId: string, memberId: string, role: GroupMember['role']) => {
+    const updateMemberRole = useCallback(async (groupId: string, memberId: string, role: GroupRole) => {
         const groupRef = doc(db, 'groups', groupId);
         const groupDoc = await getDoc(groupRef);
         if (!groupDoc.exists()) return;
@@ -235,7 +270,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
             return;
         }
 
-        const newMember: GroupMember = { uid: user.id, role: 'member' };
+        const newMember: GroupMember = { uid: user.id, role: 'member', xpContribution: 0, studyContribution: 0 };
         await updateDoc(doc(db, 'groups', group.id), { 
             members: arrayUnion(newMember), 
             memberUids: arrayUnion(user.id) 
@@ -245,7 +280,7 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
 
     const approveJoinRequest = useCallback(async (request: GroupJoinRequest) => {
         const batch = writeBatch(db);
-        const newMember: GroupMember = { uid: request.senderId, role: 'member' };
+        const newMember: GroupMember = { uid: request.senderId, role: 'member', xpContribution: 0, studyContribution: 0 };
         batch.update(doc(db, 'groups', request.groupId), { 
             members: arrayUnion(newMember), 
             memberUids: arrayUnion(request.senderId) 
@@ -283,10 +318,11 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
                 let newLevel = groupData.level;
                 let xpRemaining = newXp;
                 
-                const nextLevelInfo = clanLevelConfig.find(l => l.level === groupData.level + 1);
-                if (nextLevelInfo && newXp >= nextLevelInfo.xpRequired) {
+                let nextLevelInfo = clanLevelConfig.find(l => l.level === newLevel + 1);
+                while (nextLevelInfo && xpRemaining >= nextLevelInfo.xpRequired) {
+                    xpRemaining -= nextLevelInfo.xpRequired;
                     newLevel++;
-                    xpRemaining = newXp - nextLevelInfo.xpRequired;
+                    nextLevelInfo = clanLevelConfig.find(l => l.level === newLevel + 1);
                 }
                 
                 transaction.update(groupRef, { xp: xpRemaining, level: newLevel });

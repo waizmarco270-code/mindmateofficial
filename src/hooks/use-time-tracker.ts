@@ -200,7 +200,12 @@ export function useTimeTracker() {
     const newTotalStudyTime = (currentUserData?.totalStudyTime || 0) + sessionData.duration;
     await updateStudyTime(user.id, newTotalStudyTime);
 
-  }, [user, currentUserData, updateStudyTime]);
+    // Update Clan Stats
+    if (groups.length > 0) {
+        await logXp(groups[0].id, sessionData.duration);
+    }
+
+  }, [user, currentUserData, updateStudyTime, groups, logXp]);
 
   const finishSession = useCallback(async (subjectId: string, startTime: string, endTimeOverride?: Date): Promise<number> => {
     if (!user) return 0;
@@ -228,12 +233,8 @@ export function useTimeTracker() {
 
     // Award Clan XP if in a clan
     if (groups.length > 0) {
-        // Assuming user can only be in one clan for now
         const clanId = groups[0].id; 
-        const xpAmount = Math.floor(duration / 600); // 1 XP per 10 minutes
-        if (xpAmount > 0) {
-            await logXp(clanId, xpAmount);
-        }
+        await logXp(clanId, duration);
     }
     
     return subject.timeTracked + duration;
@@ -328,5 +329,3 @@ export function useTimeTracker() {
     addPomodoroSession
   };
 }
-
-    

@@ -9,6 +9,8 @@ export type GroupRole = 'leader' | 'co-leader' | 'elder' | 'member';
 export interface GroupMember {
     uid: string;
     role: GroupRole;
+    xpContribution: number; // Total XP this member gave to the clan
+    studyContribution: number; // Total seconds this member studied in the clan
 }
 
 export interface GroupMessage {
@@ -30,9 +32,11 @@ export interface Group {
     createdAt: Date;
     members: GroupMember[];
     memberUids: string[];
-    memberDetails?: User[];
+    memberDetails?: (User & { role: GroupRole; studyContribution: number })[];
     level: number;
     xp: number;
+    todayStudySeconds: number; // Total seconds the whole clan studied today
+    lastResetDate?: string; // YYYY-MM-DD to reset todayStudySeconds
     tempMaxLevelExpires?: string; // ISO string for temporary level 5
     lastMessage?: {
         text: string;
