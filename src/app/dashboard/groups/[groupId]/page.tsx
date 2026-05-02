@@ -37,7 +37,7 @@ export default function GroupDetailPage() {
     const params = useParams();
     const router = useRouter();
     const groupId = params.groupId as string;
-    const { users, loading: usersLoading } = useUsers();
+    const { users, currentUserData, loading: usersLoading } = useUsers();
     const { user: currentUser } = useUser();
     const { applyXpBooster, applyLevelMaxer } = useGroups();
     const { onlineUsers } = usePresence();
@@ -52,7 +52,6 @@ export default function GroupDetailPage() {
     const [showXpPulse, setShowXpPulse] = useState(false);
     const [isBoosting, setIsBoosting] = useState(false);
 
-    // CRITICAL: All hooks must be called at the top, before any returns.
     const onlineInClan = useMemo(() => {
         const memberUids = group?.memberUids || [];
         return onlineUsers.filter(u => u.isOnline && memberUids.includes(u.uid)).length;
@@ -256,7 +255,7 @@ export default function GroupDetailPage() {
                             <Card className="bg-primary/5 border-2 border-primary/20 rounded-[2.5rem] relative overflow-hidden shadow-2xl">
                                 <div className="absolute top-0 right-0 p-4"><Sparkles className="h-5 w-5 text-primary/20 animate-pulse"/></div>
                                 <CardHeader className="p-6 pb-2 text-center">
-                                    <CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center justify-center gap-2">
+                                    <CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
                                         <Target className="h-4 w-4"/> TODAY'S SYNERGY
                                     </CardTitle>
                                 </CardHeader>
