@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -309,7 +308,11 @@ export function ClanSettingsDialog({ group, isOpen, onOpenChange }: ClanSettings
                         </Button>
                     </TabsContent>
                      <TabsContent value="members" className="py-4">
-                        <MemberManagement group={group} onRemoveMember={removeMember} onUpdateRole={updateMemberRole}/>
+                        <MemberManagement 
+                            group={group} 
+                            onRemoveMember={(mId) => removeMember(group.id, mId)} 
+                            onUpdateRole={(mId, role) => updateMemberRole(group.id, mId, role)}
+                        />
                      </TabsContent>
                      <TabsContent value="danger" className="py-4">
                         <div className="p-4 border border-destructive/50 rounded-lg space-y-4">

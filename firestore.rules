@@ -43,7 +43,72 @@ service cloud.firestore {
       }
     }
     
-    // Calls Collection (Voice Calls)
+    // Mentor Sessions
+    match /mentorSessions/{sessionId} {
+        allow read: if isSignedIn();
+        allow create: if isAdmin() || isSuperAdmin();
+        allow update: if isSignedIn() && (
+            (isAdmin() || isSuperAdmin()) || 
+            (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants']))
+        );
+        allow delete: if isAdmin() || isSuperAdmin();
+    }
+
+    // Mentor Requests
+    match /mentorRequests/{requestId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isAdmin() || isSuperAdmin();
+        allow delete: if isAdmin() || isSuperAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid && resource.data.status == 'pending');
+    }
+    
+    // Study Groups (Clans)
+    match /groups/{groupId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && (
+        resource.data.createdBy == request.auth.uid || 
+        request.auth.uid in resource.data.memberUids
+      );
+      allow delete: if isSignedIn() && resource.data.createdBy == request.auth.uid;
+      
+      match /messages/{messageId} {
+        allow read: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberUids;
+        allow create: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberUids;
+        allow update: if isSignedIn() && request.auth.uid in get(/databases/$(database)/documents/groups/$(groupId)).data.memberUids;
+        allow delete: if isSignedIn() && (
+          request.auth.uid == resource.data.senderId ||
+          request.auth.uid == get(/databases/$(database)/documents/groups/$(groupId)).data.createdBy
+        );
+      }
+    }
+    
+    // Group Join Requests
+    match /groupJoinRequests/{requestId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.clanAdminId);
+      allow create: if isSignedIn();
+      allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.clanAdminId);
+    }
+    
+    // Presence System
+    match /presence/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner(userId);
+    }
+    
+    // FCM Tokens
+    match /fcmTokens/{userId} {
+      allow read: if isAdmin() || isSuperAdmin();
+      allow write: if isOwner(userId);
+    }
+    
+    // Game Zone History
+    match /gameZoneHistory/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isSuperAdmin();
+    }
+    
+    // Calls Collection
     match /calls/{callId} {
       allow read, write: if isSignedIn() && (request.auth.uid == resource.data.callerId || request.auth.uid == resource.data.receiverId || request.auth.uid == request.resource.data.callerId);
       
@@ -112,10 +177,10 @@ service cloud.firestore {
         allow delete: if isSignedIn() && (request.auth.uid == resource.data.senderId || request.auth.uid == resource.data.receiverId);
     }
     
-    // Global Chat
-    match /global_chat/{messageId} {
+    // World Chat
+    match /world_chat/{messageId} {
         allow read, create: if isSignedIn();
-        allow update: if false;
+        allow update: if isSignedIn(); 
         allow delete: if isOwner(resource.data.senderId) || isAdmin() || isSuperAdmin();
     }
     
@@ -132,7 +197,7 @@ service cloud.firestore {
         allow create: if isSignedIn();
     }
     
-    // Global Gifts (Popups)
+    // Global Gifts
     match /globalGifts/{giftId} {
         allow read: if isSignedIn();
         allow create, update, delete: if isSuperAdmin();

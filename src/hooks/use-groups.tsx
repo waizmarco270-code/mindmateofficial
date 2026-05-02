@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useContext, ReactNode, useCallback, useMemo } from 'react';
@@ -211,26 +212,36 @@ export const GroupsProvider = ({ children }: { children: ReactNode }) => {
     }, [user, currentUserData, addCreditsToUser]);
 
     const updateMemberRole = useCallback(async (groupId: string, memberId: string, role: GroupRole) => {
-        const groupRef = doc(db, 'groups', groupId);
-        const groupDoc = await getDoc(groupRef);
-        if (!groupDoc.exists()) return;
+        try {
+            const groupRef = doc(db, 'groups', groupId);
+            const groupDoc = await getDoc(groupRef);
+            if (!groupDoc.exists()) return;
 
-        const groupData = groupDoc.data() as Group;
-        const newMembers = groupData.members.map(m => m.uid === memberId ? { ...m, role } : m);
-        await updateDoc(groupRef, { members: newMembers });
-    }, []);
+            const groupData = groupDoc.data() as Group;
+            const newMembers = groupData.members.map(m => m.uid === memberId ? { ...m, role } : m);
+            await updateDoc(groupRef, { members: newMembers });
+            toast({ title: "Rank Updated", description: "Identity registry synchronized." });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Update Failed", description: e.message });
+        }
+    }, [toast]);
 
     const removeMember = useCallback(async (groupId: string, memberId: string) => {
-        const groupRef = doc(db, 'groups', groupId);
-        const groupDoc = await getDoc(groupRef);
-        if (!groupDoc.exists()) return;
-        
-        const groupData = groupDoc.data() as Group;
-        const newMembers = groupData.members.filter(m => m.uid !== memberId);
-        const newMemberUids = groupData.memberUids.filter(uid => uid !== memberId);
+        try {
+            const groupRef = doc(db, 'groups', groupId);
+            const groupDoc = await getDoc(groupRef);
+            if (!groupDoc.exists()) return;
+            
+            const groupData = groupDoc.data() as Group;
+            const newMembers = groupData.members.filter(m => m.uid !== memberId);
+            const newMemberUids = groupData.memberUids.filter(uid => uid !== memberId);
 
-        await updateDoc(groupRef, { members: newMembers, memberUids: newMemberUids });
-    }, []);
+            await updateDoc(groupRef, { members: newMembers, memberUids: newMemberUids });
+            toast({ title: "Warrior Removed", description: "Member record purged from clan." });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Action Failed", description: e.message });
+        }
+    }, [toast]);
 
     const leaveGroup = useCallback(async (groupId: string) => {
         if (!user) return;
