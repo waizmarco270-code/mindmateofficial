@@ -30,6 +30,7 @@ import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Separator } from '../ui/separator';
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
