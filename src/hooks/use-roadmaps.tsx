@@ -1,10 +1,8 @@
-
-
 'use client';
-import { useState, useEffect, createContext, useContext, ReactNode, useCallback } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, addDoc, updateDoc, getDoc, serverTimestamp, increment, arrayUnion } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, query, orderBy, updateDoc, getDoc, arrayUnion } from 'firebase/firestore';
 
 // --- TYPE DEFINITIONS ---
 
@@ -36,6 +34,7 @@ export interface Roadmap {
   milestones: RoadmapMilestone[];
   dailyStudyTime: Record<string, number>; // { 'YYYY-MM-DD': seconds }
   weeklyReflections: Record<string, { rating: number; note: string; }>; // { 'week-start-date': { ... } }
+  monthlyTargets: Record<string, string[]>; // { 'YYYY-MM': ['Target 1', 'Target 2'] }
   // Discipline Trackers
   hasNoFapTracker?: boolean;
   noFapStartDate?: string; // ISO string
@@ -54,16 +53,14 @@ interface RoadmapsContextType {
   deleteRoadmap: (id: string) => Promise<void>;
   logStudyTime: (roadmapId: string, date: string, seconds: number) => Promise<void>;
   addWeeklyReflection: (roadmapId: string, weekStartDate: string, reflection: { rating: number; note: string; }) => Promise<void>;
+  addMonthlyTarget: (roadmapId: string, monthKey: string, target: string) => Promise<void>;
+  removeMonthlyTarget: (roadmapId: string, monthKey: string, target: string) => Promise<void>;
   toggleTaskCompletion: (roadmapId: string, day: number, categoryId: string, taskId: string) => Promise<void>;
   handleRelapse: (roadmapId: string) => Promise<void>;
   toggleWorkoutDay: (roadmapId: string, date: string) => Promise<void>;
 }
 
-// --- CONTEXT ---
-
 const RoadmapsContext = createContext<RoadmapsContextType | undefined>(undefined);
-
-// --- PROVIDER ---
 
 export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useUser();
@@ -82,7 +79,10 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     const q = query(roadmapsColRef, orderBy('startDate', 'desc'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedRoadmaps = snapshot.docs.map(doc => doc.data() as Roadmap);
+      const fetchedRoadmaps = snapshot.docs.map(doc => ({
+          ...doc.data(),
+          monthlyTargets: doc.data().monthlyTargets || {}
+      } as Roadmap));
       setRoadmaps(fetchedRoadmaps);
       setLoading(false);
     }, (error) => {
@@ -101,6 +101,7 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
       ...roadmapData,
       id: newDocRef.id,
       userId: user.id,
+      monthlyTargets: {},
     };
     await setDoc(newDocRef, newRoadmap);
     return newDocRef.id;
@@ -138,6 +139,36 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     const roadmapDocRef = doc(db, 'users', user.id, 'roadmaps', roadmapId);
     await updateDoc(roadmapDocRef, {
         [`weeklyReflections.${weekStartDate}`]: reflection
+    });
+  }, [user]);
+
+  const addMonthlyTarget = useCallback(async (roadmapId: string, monthKey: string, target: string) => {
+    if (!user) return;
+    const roadmapDocRef = doc(db, 'users', user.id, 'roadmaps', roadmapId);
+    const roadmapSnap = await getDoc(roadmapDocRef);
+    if (!roadmapSnap.exists()) return;
+
+    const currentData = roadmapSnap.data() as Roadmap;
+    const currentTargets = currentData.monthlyTargets || {};
+    const monthTargets = currentTargets[monthKey] || [];
+    
+    await updateDoc(roadmapDocRef, {
+        [`monthlyTargets.${monthKey}`]: [...monthTargets, target]
+    });
+  }, [user]);
+
+  const removeMonthlyTarget = useCallback(async (roadmapId: string, monthKey: string, target: string) => {
+    if (!user) return;
+    const roadmapDocRef = doc(db, 'users', user.id, 'roadmaps', roadmapId);
+    const roadmapSnap = await getDoc(roadmapDocRef);
+    if (!roadmapSnap.exists()) return;
+
+    const currentData = roadmapSnap.data() as Roadmap;
+    const currentTargets = currentData.monthlyTargets || {};
+    const monthTargets = currentTargets[monthKey] || [];
+    
+    await updateDoc(roadmapDocRef, {
+        [`monthlyTargets.${monthKey}`]: monthTargets.filter(t => t !== target)
     });
   }, [user]);
 
@@ -198,9 +229,9 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
   }, [user, roadmaps, updateRoadmap]);
 
   
-  const selectedRoadmap = roadmaps.find(r => r.id === selectedRoadmapId) || null;
+  const selectedRoadmap = useMemo(() => roadmaps.find(r => r.id === selectedRoadmapId) || null, [roadmaps, selectedRoadmapId]);
 
-  const value = {
+  const value = useMemo(() => ({
     roadmaps,
     loading,
     selectedRoadmap,
@@ -210,16 +241,15 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     deleteRoadmap,
     logStudyTime,
     addWeeklyReflection,
+    addMonthlyTarget,
+    removeMonthlyTarget,
     toggleTaskCompletion,
     handleRelapse,
     toggleWorkoutDay,
-  };
+  }), [roadmaps, loading, selectedRoadmap, addRoadmap, updateRoadmap, deleteRoadmap, logStudyTime, addWeeklyReflection, addMonthlyTarget, removeMonthlyTarget, toggleTaskCompletion, handleRelapse, toggleWorkoutDay]);
 
   return <RoadmapsContext.Provider value={value}>{children}</RoadmapsContext.Provider>;
 };
-
-
-// --- HOOK ---
 
 export const useRoadmaps = () => {
   const context = useContext(RoadmapsContext);

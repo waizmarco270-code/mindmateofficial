@@ -1,10 +1,21 @@
-
 'use client';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Edit, CheckCircle, CalendarDays, Milestone as MilestoneIcon, Clock, Star, MessageSquare, Target, Play, Trash2, AlertTriangle, X, Flame, Dumbbell } from 'lucide-react';
-import { addDays, format, isPast, isToday, endOfWeek, startOfWeek, differenceInSeconds, startOfToday } from 'date-fns';
+import { 
+    ArrowLeft, Edit, CheckCircle, CalendarDays, 
+    Milestone as MilestoneIcon, Clock, Star, MessageSquare, 
+    Target, Play, Trash2, AlertTriangle, X, Flame, 
+    Dumbbell, ChevronLeft, ChevronRight, LayoutGrid, List,
+    Pin, Sparkles, Check
+} from 'lucide-react';
+import { 
+    addDays, format, isPast, isToday, 
+    endOfWeek, startOfWeek, differenceInSeconds, 
+    startOfToday, subMonths, addMonths, startOfMonth, 
+    endOfMonth, eachDayOfInterval, isSameMonth, isSameDay,
+    parseISO, differenceInDays
+} from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
 import { useState, useMemo, useEffect } from 'react';
@@ -12,11 +23,13 @@ import { Progress } from '../ui/progress';
 import { ScrollArea } from '../ui/scroll-area';
 import { TimeTracker } from '../tracker/time-tracker';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '../ui/alert-dialog';
-import { useLocalStorage } from '@/hooks/use-local-storage';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
@@ -25,216 +38,33 @@ const formatTime = (seconds: number) => {
     return `${m}m`;
 };
 
-interface WeeklyReflectionFormProps {
-    weekStartDate: Date;
-    roadmapId: string;
-    onSave: () => void;
-}
-
-function WeeklyReflectionForm({ weekStartDate, roadmapId, onSave }: WeeklyReflectionFormProps) {
-    const [rating, setRating] = useState(0);
-    const [note, setNote] = useState('');
-    const { addWeeklyReflection } = useRoadmaps();
+export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
+    const { toggleTaskCompletion, logStudyTime, addMonthlyTarget, removeMonthlyTarget } = useRoadmaps();
+    const { activeSubjectId, currentSessionStart } = useTimeTracker();
+    const [view, setView] = useState<'timeline' | 'monthly'>('timeline');
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [newTarget, setNewTarget] = useState('');
     const { toast } = useToast();
 
-    const handleSubmit = async () => {
-        if (rating === 0) {
-            toast({ variant: 'destructive', title: 'Please provide a rating.' });
-            return;
-        }
-        await addWeeklyReflection(roadmapId, format(weekStartDate, 'yyyy-MM-dd'), { rating, note });
-        toast({ title: 'Reflection Saved!', description: 'Great job on completing another week.' });
-        onSave();
+    // Timeline logic
+    const startDate = useMemo(() => new Date(roadmap.startDate), [roadmap.startDate]);
+    const examDate = useMemo(() => new Date(roadmap.examDate), [roadmap.examDate]);
+    const monthKey = format(currentMonth, 'yyyy-MM');
+    const monthTargets = roadmap.monthlyTargets?.[monthKey] || [];
+
+    const handleAddTarget = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newTarget.trim()) return;
+        await addMonthlyTarget(roadmap.id, monthKey, newTarget.trim());
+        setNewTarget('');
+        toast({ title: "Target Fixed", description: "Monthly directive synchronized." });
     };
 
-    return (
-        <div className="space-y-4">
-            <p className="text-center text-muted-foreground">Rate your progress and productivity for the week.</p>
-            <div className="flex justify-center gap-2">
-                {[1, 2, 3, 4, 5].map(star => (
-                    <button key={star} onClick={() => setRating(star)}>
-                        <Star className={cn("h-8 w-8 transition-colors", rating >= star ? "text-yellow-400 fill-yellow-400" : "text-gray-300")} />
-                    </button>
-                ))}
-            </div>
-            <Textarea 
-                value={note}
-                onChange={e => setNote(e.target.value)}
-                placeholder="What went well? What could be improved? (Optional)"
-                rows={4}
-            />
-            <Button onClick={handleSubmit} className="w-full">Save Reflection</Button>
-        </div>
-    );
-}
-
-function ExamCountdown({ examDate }: { examDate: Date }) {
-    const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-    const [isClient, setIsClient] = useState(false);
-
-    useEffect(() => {
-        setIsClient(true);
-        const interval = setInterval(() => {
-            const totalSeconds = differenceInSeconds(examDate, new Date());
-            if (totalSeconds <= 0) {
-                setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-                clearInterval(interval);
-                return;
-            }
-            const days = Math.floor(totalSeconds / 86400);
-            const hours = Math.floor((totalSeconds % 86400) / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            setTimeLeft({ days, hours, minutes, seconds });
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [examDate]);
-
-    if (!isClient) return null;
-
-    return (
-        <div className="grid grid-cols-4 gap-2 text-center font-mono">
-            <div><p className="text-3xl font-bold">{String(timeLeft.days).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Days</p></div>
-            <div><p className="text-3xl font-bold">{String(timeLeft.hours).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Hours</p></div>
-            <div><p className="text-3xl font-bold">{String(timeLeft.minutes).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Mins</p></div>
-            <div><p className="text-3xl font-bold">{String(timeLeft.seconds).padStart(2, '0')}</p><p className="text-xs text-muted-foreground">Secs</p></div>
-        </div>
-    );
-}
-
-function DisciplineTrackers({ roadmap }: { roadmap: Roadmap }) {
-    const { handleRelapse, toggleWorkoutDay } = useRoadmaps();
-    const [streak, setStreak] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-
-    const noFapStartDate = useMemo(() => {
-        const history = roadmap.relapseHistory || [];
-        const lastRelapse = history.length > 0 ? history[history.length - 1] : null;
-        return lastRelapse ? new Date(lastRelapse) : new Date(roadmap.noFapStartDate!);
-    }, [roadmap.noFapStartDate, roadmap.relapseHistory]);
-
-    useEffect(() => {
-        if (!roadmap.hasNoFapTracker) return;
-
-        const interval = setInterval(() => {
-            const totalSeconds = differenceInSeconds(new Date(), noFapStartDate);
-            if (totalSeconds < 0) return;
-            const days = Math.floor(totalSeconds / 86400);
-            const hours = Math.floor((totalSeconds % 86400) / 3600);
-            const minutes = Math.floor((totalSeconds % 3600) / 60);
-            const seconds = totalSeconds % 60;
-            setStreak({ days, hours, minutes, seconds });
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [noFapStartDate, roadmap.hasNoFapTracker]);
-    
-    const currentWeekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
-    const weekDays = Array.from({length: 7}).map((_, i) => addDays(currentWeekStart, i));
-
-    if (!roadmap.hasNoFapTracker && !roadmap.hasWorkoutTracker) {
-        return null;
-    }
-
-    return (
-        <div className="space-y-6">
-            <h2 className="text-xl font-bold">Discipline Trackers</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {roadmap.hasNoFapTracker && (
-                    <Card className="bg-gradient-to-br from-orange-900/80 via-slate-900 to-slate-900 border-orange-700/50">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-orange-400"><Flame /> NoFap Streak</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-center">
-                            <div className="grid grid-cols-4 gap-2 text-white font-mono">
-                                <div><p className="text-4xl font-bold">{String(streak.days).padStart(2, '0')}</p><p className="text-xs">Days</p></div>
-                                <div><p className="text-4xl font-bold">{String(streak.hours).padStart(2, '0')}</p><p className="text-xs">Hours</p></div>
-                                <div><p className="text-4xl font-bold">{String(streak.minutes).padStart(2, '0')}</p><p className="text-xs">Mins</p></div>
-                                <div><p className="text-4xl font-bold">{String(streak.seconds).padStart(2, '0')}</p><p className="text-xs">Secs</p></div>
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" className="w-full"><AlertTriangle className="mr-2 h-4 w-4"/> Relapsed</Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>This will reset your streak counter to zero. Acknowledge the slip-up and start again stronger.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={() => handleRelapse(roadmap.id)}>Reset My Streak</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </CardFooter>
-                    </Card>
-                )}
-                {roadmap.hasWorkoutTracker && (
-                    <Card className="bg-gradient-to-br from-emerald-900/80 via-slate-900 to-slate-900 border-emerald-700/50">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2 text-emerald-400"><Dumbbell/> Workout Log</CardTitle>
-                            <CardDescription>Mark the days you've completed your workout this week.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex justify-around items-center">
-                            {weekDays.map(day => {
-                                const dateKey = format(day, 'yyyy-MM-dd');
-                                const isCompleted = roadmap.workoutLog?.[dateKey];
-                                return (
-                                    <button
-                                        key={dateKey}
-                                        onClick={() => toggleWorkoutDay(roadmap.id, dateKey)}
-                                        className={cn(
-                                            "flex flex-col items-center justify-center h-16 w-12 rounded-lg border-2 transition-all duration-200",
-                                            isCompleted ? "bg-green-500/20 border-green-500 text-green-400" : "bg-muted/10 border-transparent hover:bg-muted/30",
-                                            isToday(day) && "ring-2 ring-primary ring-offset-2 ring-offset-background"
-                                        )}
-                                    >
-                                        <span className="text-xs">{format(day, 'EEE')}</span>
-                                        <span className="text-lg font-bold">{format(day, 'd')}</span>
-                                        {isCompleted && <CheckCircle className="h-4 w-4 mt-1"/>}
-                                    </button>
-                                )
-                            })}
-                        </CardContent>
-                    </Card>
-                )}
-            </div>
-        </div>
-    );
-}
-
-
-export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
-    const { toggleTaskCompletion, logStudyTime } = useRoadmaps();
-    const { activeSubjectId, currentSessionStart } = useTimeTracker();
-    const [isCountdownActive, setIsCountdownActive] = useLocalStorage(`roadmap-countdown-active-${roadmap.id}`, false);
-
-    // This effect logs study time for the active subject to the current roadmap.
-    useEffect(() => {
-      let interval: NodeJS.Timeout;
-      if (activeSubjectId && currentSessionStart) {
-        // Log time every 30 seconds
-        interval = setInterval(() => {
-          const now = new Date();
-          const start = new Date(currentSessionStart);
-          const duration = differenceInSeconds(now, start);
-          const dateKey = format(now, 'yyyy-MM-dd');
-          
-          // To prevent logging huge amounts of time if a session was left running,
-          // we only log small increments.
-          const timeSinceLastLog = duration % 30;
-
-          if (timeSinceLastLog > 0) {
-            logStudyTime(roadmap.id, dateKey, timeSinceLastLog);
-          }
-        }, 30000);
-      }
-      return () => {
-        if(interval) clearInterval(interval);
-      };
-    }, [activeSubjectId, currentSessionStart, roadmap.id, logStudyTime]);
-
+    const calendarDays = useMemo(() => {
+        const start = startOfWeek(startOfMonth(currentMonth), { weekStartsOn: 1 });
+        const end = endOfWeek(endOfMonth(currentMonth), { weekStartsOn: 1 });
+        return eachDayOfInterval({ start, end });
+    }, [currentMonth]);
 
     const { totalTasks, completedTasks, progress } = useMemo(() => {
         const allTasks = roadmap.milestones.flatMap(m => m.categories.flatMap(c => c.tasks));
@@ -246,207 +76,244 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
         };
     }, [roadmap.milestones]);
 
-    const startDate = new Date(roadmap.startDate);
-    const examDate = new Date(roadmap.examDate);
-    
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
-            {/* Left Panel - Details and Actions */}
-            <div className="lg:col-span-4 space-y-6">
-                 <div className="flex items-center gap-4">
-                    <Button variant="outline" size="icon" onClick={onBack}>
-                        <ArrowLeft className="h-4 w-4" />
+        <div className="space-y-8 pb-40">
+            <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6">
+                <div className="flex items-center gap-6">
+                    <Button variant="outline" size="icon" onClick={onBack} className="rounded-full h-12 w-12 border-primary/20">
+                        <ArrowLeft className="h-5 w-5" />
                     </Button>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">{roadmap.name}</h1>
-                        <p className="text-muted-foreground capitalize">
-                            {roadmap.duration} Day Plan
-                        </p>
+                        <h1 className="text-4xl font-black tracking-tighter uppercase italic">{roadmap.name}</h1>
+                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">{roadmap.duration} Day Strategic Path</p>
                     </div>
                 </div>
-                 <div className="flex gap-2">
-                    <Button variant="outline" onClick={onPlan} className="w-full">
-                        <Edit className="mr-2 h-4 w-4" /> Plan / Edit Tasks
+                <div className="flex items-center gap-3 bg-muted/30 p-1 rounded-2xl border">
+                    <Button 
+                        variant={view === 'timeline' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setView('timeline')}
+                        className="rounded-xl font-black uppercase text-[10px] tracking-widest px-6"
+                    >
+                        <List className="mr-2 h-4 w-4" /> Timeline
                     </Button>
-                 </div>
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Target className="text-destructive h-5 w-5"/> Countdown to Exam
-                        </CardTitle>
-                        <CardDescription>Target Date: {format(examDate, 'PPP')}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {isCountdownActive ? (
-                            <ExamCountdown examDate={examDate} />
-                        ) : (
-                            <div className="text-center p-4">
-                                <Button onClick={() => setIsCountdownActive(true)}>
-                                    <Play className="mr-2 h-4 w-4"/> Start Countdown
-                                </Button>
+                    <Button 
+                        variant={view === 'monthly' ? 'secondary' : 'ghost'} 
+                        size="sm" 
+                        onClick={() => setView('monthly')}
+                        className="rounded-xl font-black uppercase text-[10px] tracking-widest px-6"
+                    >
+                        <CalendarDays className="mr-2 h-4 w-4" /> Monthly
+                    </Button>
+                </div>
+            </header>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Statistics Sidebar */}
+                <div className="lg:col-span-4 space-y-6">
+                    <Card className="bg-primary/5 border-primary/20 rounded-[2.5rem] overflow-hidden">
+                        <CardHeader className="p-8 pb-4">
+                            <CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
+                                <Target className="h-4 w-4"/> Overall Synchronization
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-8 pt-0 space-y-6">
+                            <div className="flex items-center justify-between">
+                                <p className="text-5xl font-black text-white italic tracking-tighter">{progress.toFixed(0)}%</p>
+                                <div className="text-right">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">{completedTasks} / {totalTasks}</p>
+                                    <p className="text-[10px] font-black text-primary uppercase">Objectives Secured</p>
+                                </div>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                            <Progress value={progress} className="h-2 bg-black/20" indicatorClassName="animated-rainbow-progress" />
+                        </CardContent>
+                    </Card>
 
-                
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Overall Progress</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Progress value={progress} className="h-2" />
-                        <p className="text-sm text-muted-foreground mt-2 text-center">
-                            {completedTasks} of {totalTasks} tasks completed ({progress.toFixed(0)}%)
-                        </p>
-                    </CardContent>
-                </Card>
-                <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" className="w-full"><Clock className="mr-2 h-4 w-4"/> Open Time Tracker</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Time Tracker</DialogTitle>
-                            <DialogDescription>Track study time for subjects in this roadmap.</DialogDescription>
-                        </DialogHeader>
-                        <TimeTracker />
-                    </DialogContent>
-                </Dialog>
-            </div>
-            
-            {/* Right Panel - Timeline */}
-            <Card className="lg:col-span-8 h-full flex flex-col">
-                <CardHeader>
-                    <CardTitle>Roadmap Timeline</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-hidden">
-                    <ScrollArea className="h-full pr-6">
-                        <div className="space-y-8">
-                             {(roadmap.hasNoFapTracker || roadmap.hasWorkoutTracker) && <DisciplineTrackers roadmap={roadmap} />}
-                            {Array.from({ length: roadmap.duration }).map((_, i) => {
-                                const dayNumber = i + 1;
-                                const dayMilestone = roadmap.milestones.find(m => m.day === dayNumber);
-                                const dayDate = addDays(startDate, i);
-                                const dateKey = format(dayDate, 'yyyy-MM-dd');
-                                const timeTrackedToday = roadmap.dailyStudyTime?.[dateKey] || 0;
-                                
-                                const isDayPast = isPast(dayDate) && !isToday(dayDate);
-                                const isDayToday = isToday(dayDate);
-
-                                const tasksForDay = dayMilestone?.categories.flatMap(c => c.tasks) || [];
-                                const allTasksCompleted = tasksForDay.length > 0 && tasksForDay.every(t => t.completed);
-                                const isFailedDay = isDayPast && tasksForDay.length > 0 && !allTasksCompleted;
-                                
-                                // Weekly Reflection Logic
-                                const isEndOfWeek = dayDate.getDay() === 0; // Sunday
-                                const weekStartDate = startOfWeek(dayDate, { weekStartsOn: 1 });
-                                const weekStartDateKey = format(weekStartDate, 'yyyy-MM-dd');
-                                const reflection = roadmap.weeklyReflections?.[weekStartDateKey];
-                                const showReflectionPrompt = isEndOfWeek && isDayPast && !reflection;
-
-                                return (
-                                    <div key={dayNumber} className="flex gap-4 sm:gap-6">
-                                        <div className="flex flex-col items-center">
-                                            <div className={cn(
-                                                "flex h-12 w-12 items-center justify-center rounded-full border-2 font-bold text-lg",
-                                                isDayToday ? "bg-primary text-primary-foreground border-primary" :
-                                                allTasksCompleted ? "bg-green-500/20 border-green-500 text-green-500" :
-                                                isFailedDay ? "bg-destructive/20 border-destructive text-destructive" :
-                                                isDayPast ? "bg-muted border-dashed" : "bg-muted/50"
-                                            )}>
-                                                {allTasksCompleted ? <CheckCircle className="h-6 w-6"/> : isFailedDay ? <X className="h-6 w-6"/> : dayNumber}
-                                            </div>
-                                            <div className="w-0.5 flex-1 bg-border my-2"></div>
-                                        </div>
-                                        <div className="flex-1 pb-8">
-                                            <div className="flex justify-between items-start">
-                                                 <p className="font-semibold text-muted-foreground">{format(dayDate, 'EEEE, d MMMM')}</p>
-                                                 {timeTrackedToday > 0 && (
-                                                     <div className="flex items-center gap-1.5 text-sm font-semibold text-primary">
-                                                        <Clock className="h-4 w-4"/>
-                                                        <span>{formatTime(timeTrackedToday)}</span>
-                                                     </div>
-                                                 )}
-                                            </div>
-                                            <div className="space-y-4 mt-2">
-                                                {dayMilestone && dayMilestone.categories.length > 0 ? (
-                                                    dayMilestone.categories.map(category => (
-                                                        <Card key={category.id} className="overflow-hidden bg-background">
-                                                            <div className="p-3 border-b flex items-center gap-3" style={{ borderLeft: `4px solid ${category.color}` }}>
-                                                                <h4 className="font-semibold">{category.title}</h4>
-                                                            </div>
-                                                            <div className="p-3 space-y-3">
-                                                                {category.tasks.map(task => (
-                                                                    <div key={task.id} className="flex items-center gap-3">
-                                                                        <Checkbox
-                                                                            id={task.id}
-                                                                            checked={task.completed}
-                                                                            onCheckedChange={() => toggleTaskCompletion(roadmap.id, dayNumber, category.id, task.id)}
-                                                                        />
-                                                                        <label
-                                                                            htmlFor={task.id}
-                                                                            className={cn("text-sm", task.completed && "line-through text-muted-foreground")}
-                                                                        >
-                                                                            {task.text}
-                                                                        </label>
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        </Card>
-                                                    ))
-                                                ) : (
-                                                    <p className="text-sm text-muted-foreground italic">No tasks planned for this day.</p>
-                                                )}
-                                                {showReflectionPrompt && (
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                            <Button variant="outline" className="w-full">
-                                                                <MessageSquare className="mr-2 h-4 w-4" /> Add Weekly Reflection
-                                                            </Button>
-                                                        </DialogTrigger>
-                                                        <DialogContent>
-                                                            <DialogHeader>
-                                                                <DialogTitle>Reflection for Week Ending {format(dayDate, 'd MMM')}</DialogTitle>
-                                                            </DialogHeader>
-                                                            <WeeklyReflectionForm roadmapId={roadmap.id} weekStartDate={weekStartDate} onSave={() => {}} />
-                                                        </DialogContent>
-                                                    </Dialog>
-                                                )}
-                                                 {reflection && (
-                                                    <Card className="bg-amber-500/10 border-amber-500/20">
-                                                        <CardHeader>
-                                                            <CardTitle className="text-base flex items-center justify-between">
-                                                                <span>Weekly Reflection</span>
-                                                                <div className="flex">{Array.from({length: 5}).map((_, i) => <Star key={i} className={cn("h-4 w-4", i < reflection.rating ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground/50")} />)}</div>
-                                                            </CardTitle>
-                                                        </CardHeader>
-                                                        <CardContent>
-                                                            <p className="text-sm italic text-muted-foreground">"{reflection.note}"</p>
-                                                        </CardContent>
-                                                    </Card>
-                                                )}
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                            <div className="flex gap-4 sm:gap-6">
-                                <div className="flex flex-col items-center">
-                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-500/20 border-2 border-green-500 font-bold text-lg text-green-500">
-                                    <CheckCircle />
-                                    </div>
-                                </div>
-                                <div className="flex-1 pt-2">
-                                    <p className="font-bold text-lg">End of Roadmap!</p>
-                                    <p className="text-muted-foreground">Congratulations on completing your plan.</p>
-                                </div>
+                    <Card className="bg-slate-900/60 border-white/5 rounded-[2.5rem] p-8 space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Target Month</h4>
+                            <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}><ChevronLeft/></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}><ChevronRight/></Button>
                             </div>
                         </div>
-                    </ScrollArea>
-                </CardContent>
-            </Card>
+                        <h3 className="text-2xl font-black uppercase italic text-white">{format(currentMonth, 'MMMM yyyy')}</h3>
+                        
+                        <Separator className="bg-white/5" />
+
+                        <div className="space-y-4">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-primary flex items-center gap-2">
+                                <Pin className="h-3.5 w-3.5"/> Monthly Directives
+                            </Label>
+                            <form onSubmit={handleAddTarget} className="flex gap-2">
+                                <Input 
+                                    value={newTarget} 
+                                    onChange={e => setNewTarget(e.target.value)} 
+                                    placeholder="Set macro goal..." 
+                                    className="bg-black/40 border-white/10 h-10 rounded-xl text-xs"
+                                />
+                                <Button type="submit" size="icon" className="h-10 w-10 rounded-xl shrink-0"><PlusCircle className="h-4 w-4"/></Button>
+                            </form>
+                            <div className="space-y-2">
+                                {monthTargets.map((t, idx) => (
+                                    <div key={idx} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group">
+                                        <p className="text-xs font-medium text-slate-300 italic">"{t}"</p>
+                                        <button onClick={() => removeMonthlyTarget(roadmap.id, monthKey, t)} className="opacity-0 group-hover:opacity-100 text-red-500 transition-opacity">
+                                            <Trash2 className="h-3.5 w-3.5"/>
+                                        </button>
+                                    </div>
+                                ))}
+                                {monthTargets.length === 0 && <p className="text-center text-[10px] text-muted-foreground uppercase font-bold py-4 opacity-40">No directives set</p>}
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Button onClick={onPlan} className="w-full h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20">
+                        <Edit className="mr-2 h-4 w-4"/> Re-Calibrate Tasks
+                    </Button>
+                </div>
+
+                {/* Main View Area */}
+                <div className="lg:col-span-8">
+                    <AnimatePresence mode="wait">
+                        {view === 'timeline' ? (
+                            <motion.div 
+                                key="timeline"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="space-y-8"
+                            >
+                                <ScrollArea className="h-[70vh] pr-4 sm:pr-8">
+                                    <div className="space-y-8">
+                                        {Array.from({ length: roadmap.duration }).map((_, i) => {
+                                            const dayNumber = i + 1;
+                                            const dayMilestone = roadmap.milestones.find(m => m.day === dayNumber);
+                                            const dayDate = addDays(startDate, i);
+                                            const isDayPast = isPast(dayDate) && !isToday(dayDate);
+                                            const isDayToday = isToday(dayDate);
+
+                                            return (
+                                                <div key={dayNumber} className="flex gap-6 group">
+                                                    <div className="flex flex-col items-center">
+                                                        <div className={cn(
+                                                            "h-12 w-12 rounded-full border-2 flex items-center justify-center font-black text-sm transition-all",
+                                                            isDayToday ? "bg-primary text-white border-primary shadow-lg shadow-primary/20 ring-4 ring-primary/10" :
+                                                            isDayPast ? "bg-muted text-muted-foreground border-transparent opacity-60" : "bg-card border-white/10"
+                                                        )}>
+                                                            {dayNumber}
+                                                        </div>
+                                                        <div className="w-px flex-1 bg-white/5 my-2" />
+                                                    </div>
+                                                    <div className="flex-1 pb-10">
+                                                        <div className="flex justify-between items-center mb-4">
+                                                            <h4 className={cn("font-bold text-sm uppercase tracking-widest", isDayToday ? "text-primary" : "text-muted-foreground")}>
+                                                                {format(dayDate, 'EEEE, MMM do')}
+                                                            </h4>
+                                                        </div>
+                                                        <div className="grid gap-4">
+                                                            {dayMilestone?.categories.map(cat => (
+                                                                <div key={cat.id} className="p-5 rounded-3xl bg-white/[0.03] border border-white/5 space-y-4" style={{ borderLeft: `4px solid ${cat.color}` }}>
+                                                                    <p className="text-[10px] font-black uppercase text-muted-foreground tracking-widest">{cat.title}</p>
+                                                                    <div className="space-y-3">
+                                                                        {cat.tasks.map(task => (
+                                                                            <div key={task.id} className="flex items-center gap-3">
+                                                                                <Checkbox 
+                                                                                    checked={task.completed} 
+                                                                                    onCheckedChange={() => toggleTaskCompletion(roadmap.id, dayNumber, cat.id, task.id)}
+                                                                                    className="border-white/20 data-[state=checked]:bg-primary"
+                                                                                />
+                                                                                <span className={cn("text-sm font-medium", task.completed ? "text-slate-500 line-through" : "text-slate-200")}>
+                                                                                    {task.text}
+                                                                                </span>
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+                                                            {!dayMilestone && (
+                                                                <p className="text-[10px] text-muted-foreground italic uppercase tracking-widest opacity-30">No tactical objectives</p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </ScrollArea>
+                            </motion.div>
+                        ) : (
+                            <motion.div 
+                                key="monthly"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                            >
+                                <Card className="bg-black/20 border-white/5 rounded-[3rem] overflow-hidden">
+                                    <div className="grid grid-cols-7 border-b border-white/5 bg-white/5">
+                                        {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(d => (
+                                            <div key={d} className="py-4 text-center text-[10px] font-black uppercase tracking-widest text-muted-foreground">{d}</div>
+                                        ))}
+                                    </div>
+                                    <div className="grid grid-cols-7">
+                                        {calendarDays.map((day, i) => {
+                                            const dayKey = format(day, 'yyyy-MM-dd');
+                                            const dayOfRoadmap = differenceInDays(day, startDate) + 1;
+                                            const milestone = dayOfRoadmap > 0 && dayOfRoadmap <= roadmap.duration ? roadmap.milestones.find(m => m.day === dayOfRoadmap) : null;
+                                            const hasTasks = milestone && milestone.categories.length > 0;
+
+                                            return (
+                                                <div key={i} className={cn(
+                                                    "aspect-square p-2 border-r border-b border-white/5 relative group transition-colors",
+                                                    !isSameMonth(day, currentMonth) && "opacity-20",
+                                                    isToday(day) && "bg-primary/5"
+                                                )}>
+                                                    <span className={cn(
+                                                        "text-xs font-black italic",
+                                                        isToday(day) ? "text-primary" : "text-muted-foreground/60"
+                                                    )}>{format(day, 'd')}</span>
+                                                    
+                                                    {dayOfRoadmap > 0 && dayOfRoadmap <= roadmap.duration && (
+                                                        <div className="absolute top-2 right-2 text-[8px] font-black text-primary/40">D-{dayOfRoadmap}</div>
+                                                    )}
+
+                                                    {hasTasks && (
+                                                        <div className="mt-1 flex flex-col gap-0.5">
+                                                            {milestone.categories.slice(0, 2).map(cat => (
+                                                                <div key={cat.id} className="h-1 w-full rounded-full opacity-60" style={{ backgroundColor: cat.color }} />
+                                                            ))}
+                                                            {milestone.categories.length > 2 && <div className="h-1 w-2 rounded-full bg-white/20" />}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* Peek Overlay */}
+                                                    <AnimatePresence>
+                                                        {hasTasks && (
+                                                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 bg-background/95 z-20 p-2 flex flex-col justify-center text-center transition-opacity pointer-events-none">
+                                                                <p className="text-[8px] font-black uppercase text-primary">Day {dayOfRoadmap}</p>
+                                                                <p className="text-[10px] font-bold truncate text-white">{milestone.categories[0].title}</p>
+                                                                <p className="text-[8px] font-medium text-muted-foreground">+{milestone.categories.length - 1} more</p>
+                                                            </div>
+                                                        )}
+                                                    </AnimatePresence>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </Card>
+                                
+                                <div className="mt-8 p-8 rounded-[2.5rem] bg-primary/5 border border-primary/10 flex items-start gap-4">
+                                    <div className="p-3 rounded-2xl bg-primary/10 text-primary"><Info className="h-5 w-5"/></div>
+                                    <div className="space-y-1">
+                                        <h5 className="font-black uppercase text-xs tracking-widest text-primary">Temporal Awareness</h5>
+                                        <p className="text-xs font-medium text-slate-400 italic">"The Monthly view aligns your relative day-based tasks with actual calendar time. Use the Peak view to spot heavy load days and prepare your cognitive reserves."</p>
+                                    </div>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            </div>
         </div>
     );
 }
