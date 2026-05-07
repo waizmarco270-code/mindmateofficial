@@ -7,7 +7,7 @@ import {
     Milestone as MilestoneIcon, Clock, Star, MessageSquare, 
     Target, Play, Trash2, AlertTriangle, X, Flame, 
     Dumbbell, ChevronLeft, ChevronRight, LayoutGrid, List,
-    Pin, Sparkles, Check
+    Pin, Sparkles, Check, PlusCircle
 } from 'lucide-react';
 import { 
     addDays, format, isPast, isToday, 
