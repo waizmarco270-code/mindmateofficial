@@ -9,7 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import syllabusData from '@/app/lib/syllabus-data.json';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -104,7 +104,6 @@ export function TaskPlanner({ roadmap, onComplete, onCancel }: TaskPlannerProps)
         
         const dayMilestone = getMilestoneForDay(activeTargetDay);
         if (!dayMilestone || dayMilestone.categories.length === 0) {
-            // Auto-create category if none exist
             const newCategories: RoadmapCategory[] = [{
                 id: `cat-${Date.now()}`,
                 title: 'Imported Tasks',
@@ -113,7 +112,6 @@ export function TaskPlanner({ roadmap, onComplete, onCancel }: TaskPlannerProps)
             }];
             updateMilestone(activeTargetDay, newCategories);
         } else {
-            // Inject into the first category for simplicity, or we could add a picker
             addTask(activeTargetDay, 0, `Study: ${chapter}`);
         }
         setIsSyllabusOpen(false);
