@@ -57,6 +57,7 @@ import { useNewQuiz } from '@/hooks/use-new-quiz';
 import { useAdmin } from '@/hooks/use-admin';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
+import { useSidebar } from '../ui/sidebar';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
@@ -123,10 +124,12 @@ export default function SidebarContent() {
   const { hasUnread, hasGlobalUnread } = useUnreadMessages();
   const { hasNewQuiz } = useNewQuiz();
   const { isAdmin, isSuperAdmin, currentUserData } = useAdmin();
+  const { setOpenMobile } = useSidebar();
   
   const isVip = currentUserData?.isVip || false;
   const isGM = currentUserData?.isGM || false;
   const isSpecialUser = isVip || isGM || isAdmin || isSuperAdmin;
+  const showDevLink = isSuperAdmin || currentUserData?.isCoDev;
   
   const isActive = (href: string) => {
     if (href === '/dashboard' && pathname === href) return true;
@@ -138,6 +141,10 @@ export default function SidebarContent() {
     if (href === '/dashboard/social' && pathname.startsWith('/dashboard/groups')) return true;
     return false;
   };
+
+  const closeSidebar = () => {
+    setOpenMobile(false);
+  };
   
   const renderNavLinks = (navItems: any[]) => (
     <div className="space-y-1">
@@ -146,6 +153,7 @@ export default function SidebarContent() {
             key={item.label}
             href={item.href}
             prefetch={true}
+            onClick={closeSidebar}
             className={cn(
               'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
               isActive(item.href) ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary',
@@ -165,13 +173,13 @@ export default function SidebarContent() {
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="flex h-20 items-center justify-between border-b border-sidebar-border px-4">
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold" prefetch={true}>
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold" prefetch={true} onClick={closeSidebar}>
             <Logo className="h-8 w-8" />
             <span className="text-xl text-nowrap">MindMate</span>
         </Link>
 
         <div className="flex items-center gap-3">
-            <Link href="/dashboard/settings" prefetch={true}>
+            <Link href="/dashboard/settings" prefetch={true} onClick={closeSidebar}>
                 <Button variant="ghost" size="icon" className={cn(
                     "h-10 w-10 rounded-full transition-all group/settings",
                     "bg-yellow-400/10 text-yellow-400/80 shadow-[0_0_15px_rgba(250,204,21,0.3)] ring-1 ring-yellow-400/30",
@@ -186,7 +194,7 @@ export default function SidebarContent() {
                 </Button>
             </Link>
 
-            <Link href="/dashboard" aria-label="Go to Home" prefetch={true}>
+            <Link href="/dashboard" aria-label="Go to Home" prefetch={true} onClick={closeSidebar}>
                 <Button 
                     variant="ghost" 
                     className={cn(
@@ -203,14 +211,14 @@ export default function SidebarContent() {
 
        <div className="p-4 border-b border-sidebar-border space-y-3">
           {isSpecialUser && (
-            <Link href="/dashboard/premium/elite-lounge" prefetch={true} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
+            <Link href="/dashboard/premium/elite-lounge" prefetch={true} onClick={closeSidebar} className={cn('group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative', isActive('/dashboard/premium/elite-lounge') ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary', 'text-yellow-400 [text-shadow:0_0_8px_currentColor]')}>
                 <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive('/dashboard/premium/elite-lounge') ? "bg-current" : "group-hover:scale-y-50" )}></div>
                 <Crown className="h-5 w-5"/> Elite Lounge
             </Link>
           )}
 
           <div className="flex gap-2">
-              <Link href="/dashboard/store" prefetch={true} className={cn(
+              <Link href="/dashboard/store" prefetch={true} onClick={closeSidebar} className={cn(
                   'flex-1 group flex items-center gap-2 rounded-xl px-3 py-3 transition-all relative overflow-hidden border-2',
                   isActive('/dashboard/store') 
                     ? 'bg-green-500 text-white border-green-400 shadow-lg shadow-green-500/30' 
@@ -221,7 +229,7 @@ export default function SidebarContent() {
                   <span className="font-black uppercase tracking-tighter text-[10px] sm:text-xs whitespace-nowrap">Emporium</span>
               </Link>
 
-              <Link href="/dashboard/pricing" prefetch={true} className={cn(
+              <Link href="/dashboard/pricing" prefetch={true} onClick={closeSidebar} className={cn(
                   'flex-1 group flex items-center justify-center gap-2 rounded-xl px-3 py-3 transition-all relative overflow-hidden border-2',
                   isActive('/dashboard/pricing')
                     ? 'border-white/60 shadow-xl'
@@ -264,7 +272,7 @@ export default function SidebarContent() {
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-4">
           <div className="grid grid-cols-2 gap-2 p-1 bg-muted/20 rounded-xl border border-white/5">
               {helpNav.map(item => (
-                  <Link key={item.label} href={item.href} className={cn(
+                  <Link key={item.label} href={item.href} onClick={closeSidebar} className={cn(
                       "flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all",
                       isActive(item.href) ? "bg-primary/20 text-primary" : "hover:bg-primary/5 text-muted-foreground hover:text-primary"
                   )}>
@@ -293,4 +301,3 @@ export default function SidebarContent() {
     </div>
   );
 }
-
