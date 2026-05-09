@@ -1,3 +1,4 @@
+
 'use client';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -7,7 +8,8 @@ import {
     Milestone as MilestoneIcon, Clock, Star, MessageSquare, 
     Target, Play, Trash2, AlertTriangle, X, Flame, 
     Dumbbell, ChevronLeft, ChevronRight, LayoutGrid, List,
-    Pin, Sparkles, Check, PlusCircle
+    Pin, Sparkles, Check, PlusCircle, Info, Download, FileJson,
+    Timer
 } from 'lucide-react';
 import { 
     addDays, format, isPast, isToday, 
@@ -39,6 +41,51 @@ const formatTime = (seconds: number) => {
     return `${m}m`;
 };
 
+function ExamCountdown({ targetDate }: { targetDate: Date }) {
+    const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date();
+            const diff = targetDate.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeLeft({ d: 0, h: 0, m: 0, s: 0 });
+                clearInterval(interval);
+                return;
+            }
+
+            setTimeLeft({
+                d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+                h: Math.floor((diff / (1000 * 60 * 60)) % 24),
+                m: Math.floor((diff / 1000 / 60) % 60),
+                s: Math.floor((diff / 1000) % 60)
+            });
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [targetDate]);
+
+    if (!timeLeft) return null;
+
+    return (
+        <div className="grid grid-cols-4 gap-2 text-center">
+            <CountdownPill val={timeLeft.d} label="Days" />
+            <CountdownPill val={timeLeft.h} label="Hrs" />
+            <CountdownPill val={timeLeft.m} label="Min" />
+            <CountdownPill val={timeLeft.s} label="Sec" />
+        </div>
+    );
+}
+
+function CountdownPill({ val, label }: { val: number, label: string }) {
+    return (
+        <div className="bg-black/40 rounded-xl p-2 border border-white/5">
+            <p className="text-xl font-black text-white tabular-nums leading-none">{String(val).padStart(2, '0')}</p>
+            <p className="text-[7px] font-black uppercase text-primary mt-1">{label}</p>
+        </div>
+    );
+}
+
 export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onBack: () => void; onPlan: () => void; }) {
     const { toggleTaskCompletion, logStudyTime, addMonthlyTarget, removeMonthlyTarget } = useRoadmaps();
     const { activeSubjectId, currentSessionStart } = useTimeTracker();
@@ -59,6 +106,17 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
         await addMonthlyTarget(roadmap.id, monthKey, newTarget.trim());
         setNewTarget('');
         toast({ title: "Target Fixed", description: "Monthly directive synchronized." });
+    };
+
+    const handleExportPlan = () => {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(roadmap, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", `${roadmap.name.toLowerCase().replace(/\s+/g, '-')}-plan.json`);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+        toast({ title: "Strategic Plan Exported", description: "Your roadmap configuration has been saved as a JSON file." });
     };
 
     const calendarDays = useMemo(() => {
@@ -112,6 +170,20 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Statistics Sidebar */}
                 <div className="lg:col-span-4 space-y-6">
+                    {/* LIVE COUNTDOWN */}
+                    <Card className="bg-slate-900 border-2 border-red-500/30 rounded-[2.5rem] overflow-hidden relative shadow-2xl">
+                        <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
+                        <CardHeader className="p-6 pb-2 text-center relative z-10">
+                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500 flex items-center justify-center gap-2">
+                                <Timer className="h-3 w-3" /> MISSION DEADLINE
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6 pt-2 relative z-10">
+                            <ExamCountdown targetDate={examDate} />
+                            <p className="text-[9px] text-center text-muted-foreground uppercase font-bold tracking-widest mt-4">Target: {format(examDate, 'PPP')}</p>
+                        </CardContent>
+                    </Card>
+
                     <Card className="bg-primary/5 border-primary/20 rounded-[2.5rem] overflow-hidden">
                         <CardHeader className="p-8 pb-4">
                             <CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
@@ -169,9 +241,14 @@ export function RoadmapView({ roadmap, onBack, onPlan }: { roadmap: Roadmap; onB
                         </div>
                     </Card>
 
-                    <Button onClick={onPlan} className="w-full h-14 rounded-2xl font-black uppercase tracking-widest shadow-xl shadow-primary/20">
-                        <Edit className="mr-2 h-4 w-4"/> Re-Calibrate Tasks
-                    </Button>
+                    <div className="grid grid-cols-1 gap-3">
+                        <Button onClick={onPlan} variant="outline" className="w-full h-14 rounded-2xl font-black uppercase tracking-widest border-white/10 bg-white/5">
+                            <Edit className="mr-2 h-4 w-4"/> Re-Calibrate Tasks
+                        </Button>
+                        <Button onClick={handleExportPlan} variant="outline" className="w-full h-14 rounded-2xl font-black uppercase tracking-widest border-emerald-500/20 text-emerald-500 bg-emerald-500/5 hover:bg-emerald-500/10">
+                            <FileJson className="mr-2 h-4 w-4"/> Export Strategic Plan
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Main View Area */}

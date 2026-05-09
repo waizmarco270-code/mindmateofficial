@@ -1,3 +1,4 @@
+
 'use client';
 import { useState } from 'react';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
@@ -20,11 +21,11 @@ interface RoadmapCreationProps {
 }
 
 const EXAM_PRESETS = [
-    { name: 'JEE Mains (S1)', date: new Date('2026-01-21'), icon: Rocket, color: 'text-rose-400' },
-    { name: 'JEE Mains (S2)', date: new Date('2026-04-02'), icon: Rocket, color: 'text-rose-400' },
-    { name: '10th Boards', date: new Date('2026-02-15'), icon: Trophy, color: 'text-amber-400' },
-    { name: '12th Boards', date: new Date('2026-02-17'), icon: Trophy, color: 'text-amber-400' },
-    { name: 'NEET 2026', date: new Date('2026-05-02'), icon: Brain, color: 'text-emerald-400' },
+    { name: 'JEE Mains (Jan 21)', date: new Date('2026-01-21'), icon: Rocket, color: 'text-rose-400' },
+    { name: 'JEE Mains (Apr 2)', date: new Date('2026-04-02'), icon: Rocket, color: 'text-rose-400' },
+    { name: '10th Boards (Feb 15)', date: new Date('2026-02-15'), icon: Trophy, color: 'text-amber-400' },
+    { name: '12th Boards (Feb 17)', date: new Date('2026-02-17'), icon: Trophy, color: 'text-amber-400' },
+    { name: 'NEET (May 2)', date: new Date('2026-05-02'), icon: Brain, color: 'text-emerald-400' },
 ];
 
 export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) {
@@ -42,7 +43,7 @@ export function RoadmapCreation({ onCancel, onComplete }: RoadmapCreationProps) 
         setName(`Mission: ${preset.name}`);
         setExamDate(preset.date);
         const daysToExam = differenceInDays(preset.date, new Date());
-        setDuration(Math.max(30, Math.min(365, daysToExam)));
+        setDuration(Math.max(7, Math.min(365, daysToExam)));
         toast({ title: "Mission Synchronized", description: `Template applied for ${preset.name}.` });
     };
 
