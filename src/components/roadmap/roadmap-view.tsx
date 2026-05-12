@@ -19,7 +19,7 @@ import {
 } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '../ui/checkbox';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { Progress } from '../ui/progress';
 import { ScrollArea } from '../ui/scroll-area';
 import { TimeTracker } from '../tracker/time-tracker';
@@ -44,26 +44,32 @@ const formatTime = (seconds: number) => {
 function ExamCountdown({ targetDate }: { targetDate: Date }) {
     const [timeLeft, setTimeLeft] = useState<{ d: number, h: number, m: number, s: number } | null>(null);
 
+    const calculateTimeLeft = useCallback(() => {
+        const now = new Date();
+        const diff = targetDate.getTime() - now.getTime();
+
+        if (diff <= 0) {
+            setTimeLeft({ d: 0, h: 0, m: 0, s: 0 });
+            return false;
+        }
+
+        setTimeLeft({
+            d: Math.floor(diff / (1000 * 60 * 60 * 24)),
+            h: Math.floor((diff / (1000 * 60 * 60)) % 24),
+            m: Math.floor((diff / 1000 / 60) % 60),
+            s: Math.floor((diff / 1000) % 60)
+        });
+        return true;
+    }, [targetDate]);
+
     useEffect(() => {
+        calculateTimeLeft(); // Immediate call to remove 1s lag
         const interval = setInterval(() => {
-            const now = new Date();
-            const diff = targetDate.getTime() - now.getTime();
-
-            if (diff <= 0) {
-                setTimeLeft({ d: 0, h: 0, m: 0, s: 0 });
-                clearInterval(interval);
-                return;
-            }
-
-            setTimeLeft({
-                d: Math.floor(diff / (1000 * 60 * 60 * 24)),
-                h: Math.floor((diff / (1000 * 60 * 60)) % 24),
-                m: Math.floor((diff / 1000 / 60) % 60),
-                s: Math.floor((diff / 1000) % 60)
-            });
+            const hasTime = calculateTimeLeft();
+            if (!hasTime) clearInterval(interval);
         }, 1000);
         return () => clearInterval(interval);
-    }, [targetDate]);
+    }, [calculateTimeLeft]);
 
     if (!timeLeft) return null;
 

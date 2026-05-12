@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useRoadmaps, Roadmap, RoadmapMilestone, RoadmapCategory } from "@/hooks/use-roadmaps";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Map, Loader2, Sparkles, FilePlus, Trash2, Upload, Bot, Brain, ArrowRight, ExternalLink, MessageSquare, ChevronRight, X } from "lucide-react";
+import { PlusCircle, Map, Loader2, Sparkles, FilePlus, Trash2, Upload, Bot, Brain, ArrowRight, ExternalLink, MessageSquare, ChevronRight, X, Info } from "lucide-react";
 import { RoadmapCreation } from "@/components/roadmap/roadmap-creation";
 import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { TaskPlanner } from "@/components/roadmap/task-planner";
