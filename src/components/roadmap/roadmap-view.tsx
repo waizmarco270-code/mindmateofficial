@@ -1,4 +1,3 @@
-
 'use client';
 import { Roadmap, useRoadmaps } from '@/hooks/use-roadmaps';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
@@ -33,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Separator } from '../ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 const formatTime = (seconds: number) => {
     const h = Math.floor(seconds / 3600);
