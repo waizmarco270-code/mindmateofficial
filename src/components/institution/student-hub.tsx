@@ -21,6 +21,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { useAdmin } from '@/hooks/use-admin';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 export function StudentHub() {
     const { academy, directives, leaveAcademy, students } = useInstitution();
@@ -203,8 +205,4 @@ export function StudentHub() {
             </div>
         </div>
     );
-}
-
-function Separator({ className }: { className?: string }) {
-    return <div className={cn("h-px w-full", className)} />;
 }

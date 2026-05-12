@@ -13,7 +13,7 @@ import {
     X, CheckCircle, ShieldAlert,
     LayoutDashboard, History, Send,
     UserCog, Crown, Star, MoreVertical,
-    BarChart3
+    BarChart3, ShieldX, Trash2, Megaphone
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -24,6 +24,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { 
+    DropdownMenu, 
+    DropdownMenuContent, 
+    DropdownMenuItem, 
+    DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 export function ProctorCommand() {
     const { academy, students, directives, deployDirective, setStudentRole, rewardStudent, leaveAcademy } = useInstitution();
@@ -207,7 +214,7 @@ export function ProctorCommand() {
                         <div className="p-4 rounded-full bg-primary/10 w-fit mx-auto border-2 border-primary/20 shadow-xl">
                             <BarChart3 className="h-10 w-10 text-primary" />
                         </div>
-                        <h4 className="text-xl font-black uppercase italic italic text-white tracking-tighter leading-none">Synergy Statistics</h4>
+                        <h4 className="text-xl font-black uppercase italic text-white tracking-tighter leading-none">Synergy Statistics</h4>
                         <p className="text-xs font-medium text-slate-400">Advanced cognitive analysis for the entire academy will manifest in the next briefing.</p>
                         <Button variant="outline" className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest border-primary/20 bg-primary/5">GENERATE BRIEFING</Button>
                     </Card>
@@ -281,8 +288,3 @@ function BadgeIcon({ role }: { role: any }) {
     if (role === 'monitor') return <ShieldCheck className="h-3 w-3 text-primary fill-current" />;
     return <Users className="h-3 w-3 text-slate-400" />;
 }
-
-function DropdownMenu({ children }: any) { return <div className="relative inline-block text-left">{children}</div>; }
-function DropdownMenuTrigger({ asChild, children }: any) { return children; }
-function DropdownMenuContent({ children, className, align }: any) { return <div className={cn("absolute right-0 mt-2 z-50", className)}>{children}</div>; }
-function DropdownMenuItem({ children, className, onClick, disabled }: any) { return <button disabled={disabled} onClick={onClick} className={cn("w-full text-left transition-colors flex items-center", className)}>{children}</button>; }
