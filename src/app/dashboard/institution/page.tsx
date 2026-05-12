@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useInstitution } from '@/hooks/use-institution';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -12,9 +12,10 @@ import {
     Users, UserCog, Crown, Star, 
     BarChart3, Settings, Clock,
     Megaphone, Timer, Lock, ArrowRight,
-    Sparkles, Construction, Globe
+    Sparkles, Construction, Globe, Info
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function InstitutionHubPage() {
@@ -26,6 +27,7 @@ export default function InstitutionHubPage() {
             {/* Background Atmosphere */}
             <div className="fixed inset-0 z-0 pointer-events-none">
                 <div className="absolute inset-0 blue-nebula-bg opacity-30" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.15)_0%,_transparent_70%)]" />
                 <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
             </div>
 
