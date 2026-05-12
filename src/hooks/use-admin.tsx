@@ -16,7 +16,7 @@ import { useSystemActions } from './admin/use-system-actions';
 import { useCodeActions } from './admin/use-code-actions';
 
 export const SUPER_ADMIN_UID = "user_32WgV1OikpqTXO9pFApoPRLLarF";
-export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'champion' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign' | 'premium';
+export type BadgeType = 'admin' | 'vip' | 'gm' | 'challenger' | 'champion' | 'dev' | 'co-dev' | 'early-bird' | 'night-owl' | 'knowledge-knight' | 'streaker' | 'isolater' | 'iso-warrior' | 'warrior' | 'iso-master' | 'sovereign' | 'premium' | 'centurion';
 
 export interface WalletTransaction {
     id: string;
@@ -85,6 +85,8 @@ export interface User {
   lastStreakCheck?: string;
   onboardingCompleted?: boolean;
   onboardingData?: any;
+  institutionId?: string | null;
+  institutionRole?: 'proctor' | 'monitor' | 'student' | null;
   inventory?: {
     penaltyShields?: number;
     streakFreezes?: number;

@@ -9,5 +9,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Entry Point for Global CSS */
-/* All specific category logic has been migrated to src/app/styles/ for modular stability. */
+@layer base {
+  .animated-rainbow-progress {
+    background: linear-gradient(
+      90deg,
+      #ff0000,
+      #ff7f00,
+      #ffff00,
+      #00ff00,
+      #0000ff,
+      #4b0082,
+      #8b00ff,
+      #ff0000
+    );
+    background-size: 200% auto;
+    animation: rainbow-progress 2s linear infinite;
+  }
+}

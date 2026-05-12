@@ -8,6 +8,7 @@ import { FriendsProvider } from "@/hooks/use-friends";
 import { GroupsProvider } from "@/hooks/use-groups.tsx";
 import { IsolationProvider } from "@/hooks/use-isolation";
 import { MentorProvider } from "@/hooks/use-mentor";
+import { InstitutionProvider } from "@/hooks/use-institution";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -19,7 +20,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
                     <WorldChatProvider>
                         <RoadmapsProvider>
                             <MentorProvider>
-                                {children}
+                                <InstitutionProvider>
+                                    {children}
+                                </InstitutionProvider>
                             </MentorProvider>
                         </RoadmapsProvider>
                     </WorldChatProvider>
