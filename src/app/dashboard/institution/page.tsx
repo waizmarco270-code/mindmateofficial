@@ -2,202 +2,136 @@
 
 import { useState } from 'react';
 import { useInstitution } from '@/hooks/use-institution';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { 
-    School, Users, Plus, 
-    ArrowRight, Loader2, ShieldCheck, 
-    Zap, Gem, Trophy, Globe,
-    ChevronRight, Info, ShieldAlert,
-    Building2, BookOpen
+    School, ShieldAlert, Zap, 
+    Trophy, Rocket, ShieldCheck, 
+    Target, LayoutDashboard, History,
+    Users, UserCog, Crown, Star, 
+    BarChart3, Settings, Clock,
+    Megaphone, Timer, Lock, ArrowRight,
+    Sparkles, Construction, Globe
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ProctorCommand } from '@/components/institution/proctor-command';
-import { StudentHub } from '@/components/institution/student-hub';
-import { useAdmin } from '@/hooks/use-admin';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 
 export default function InstitutionHubPage() {
-    const { academy, loading, createAcademy, joinAcademy } = useInstitution();
-    const { currentUserData } = useAdmin();
-    const { toast } = useToast();
-
-    const [view, setView] = useState<'hub' | 'create' | 'join'>('hub');
-    const [name, setName] = useState('');
-    const [desc, setDesc] = useState('');
-    const [code, setCode] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-
-    const handleCreate = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!name.trim()) return;
-        setIsSubmitting(true);
-        try {
-            await createAcademy(name, desc);
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    const handleJoin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!code.trim()) return;
-        setIsSubmitting(true);
-        try {
-            await joinAcademy(code);
-        } catch (e: any) {
-            toast({ variant: 'destructive', title: "Join Error", description: e.message });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    if (loading) return (
-        <div className="flex h-full w-full items-center justify-center p-20">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-    );
-
-    if (academy) {
-        return currentUserData?.institutionRole === 'proctor' ? <ProctorCommand /> : <StudentHub />;
-    }
+    // Note: underlying hooks are kept for future re-activation but logic is currently bypassed by the maintenance view.
+    const { academy } = useInstitution();
 
     return (
-        <div className="max-w-6xl mx-auto space-y-12 animate-in fade-in duration-700">
-            <header className="text-center space-y-4">
-                <div className="mx-auto w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center border-2 border-primary/20 shadow-2xl backdrop-blur-md">
-                    <School className="h-12 w-12 text-primary" />
-                </div>
-                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent">Academy Hub</h1>
-                <p className="text-slate-400 font-medium max-w-xl mx-auto text-lg leading-relaxed">
-                    Protocol: Professional-Grade Institutional Monitoring. <br />
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Enterprise Architecture v1.0</span>
-                </p>
-            </header>
+        <div className="min-h-full flex flex-col items-center justify-center p-4 sm:p-8 relative overflow-hidden">
+            {/* Background Atmosphere */}
+            <div className="fixed inset-0 z-0 pointer-events-none">
+                <div className="absolute inset-0 blue-nebula-bg opacity-30" />
+                <div className="absolute inset-0 bg-grid-slate-800/50 [mask-image:linear-gradient(to_bottom,white_10%,transparent_90%)]" />
+            </div>
 
-            <AnimatePresence mode="wait">
-                {view === 'hub' && (
-                    <motion.div 
-                        key="hub"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95 }}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto"
-                    >
-                        <SelectionCard 
-                            icon={Building2} 
-                            label="PROCTOR INGRESS" 
-                            desc="Establish a new academy. Monitor students, set directives, and manage hierarchies."
-                            color="text-emerald-400"
-                            onClick={() => setView('create')}
-                            badge="TEACHERS / ADMINS"
+            <motion.div 
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="max-w-4xl w-full relative z-10 space-y-12"
+            >
+                <header className="text-center space-y-6">
+                    <div className="mx-auto w-24 h-24 bg-primary/10 rounded-[2.5rem] flex items-center justify-center border-2 border-primary/20 shadow-2xl backdrop-blur-md relative">
+                        <motion.div 
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
+                            className="absolute -inset-4 border border-dashed border-primary/30 rounded-full"
                         />
-                        <SelectionCard 
-                            icon={Users} 
-                            label="CITIZEN JOIN" 
-                            desc="Enter an existing academy registry using a valid Sovereign code."
-                            color="text-sky-400"
-                            onClick={() => setView('join')}
-                            badge="STUDENTS"
-                        />
-                    </motion.div>
-                )}
+                        <School className="h-12 w-12 text-primary" />
+                    </div>
+                    <div className="space-y-2">
+                        <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white to-slate-500 bg-clip-text text-transparent">
+                            Academy Hub
+                        </h1>
+                        <div className="flex items-center justify-center gap-3">
+                            <Badge className="bg-amber-500 text-black font-black uppercase tracking-widest px-4 py-1">
+                                PROTOCOL: RESTRICTED ACCESS
+                            </Badge>
+                        </div>
+                    </div>
+                </header>
 
-                {view === 'create' && (
-                    <motion.div key="create" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-2xl mx-auto">
-                        <Card className="bg-slate-900/60 border-primary/20 rounded-[3rem] overflow-hidden shadow-2xl">
-                            <CardHeader className="p-8 sm:p-12 border-b border-white/5 bg-primary/5">
-                                <Button variant="ghost" size="sm" onClick={() => setView('hub')} className="mb-4 rounded-full text-slate-500 hover:text-white"><ArrowRight className="rotate-180 mr-2 h-4 w-4"/> Back</Button>
-                                <CardTitle className="text-3xl font-black italic uppercase text-primary">Initialize Academy</CardTitle>
-                                <CardDescription>Forge a private ecosystem for your student fleet.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-8 sm:p-12 space-y-6">
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Institution Name</Label>
-                                    <Input value={name} onChange={e => setName(e.target.value)} placeholder="e.g. Imperial Science Academy" className="h-14 bg-black/20 text-lg font-bold rounded-2xl" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest opacity-40">Operational Intel</Label>
-                                    <Textarea value={desc} onChange={e => setDesc(e.target.value)} placeholder="Brief description of your academy..." className="bg-black/20 rounded-2xl min-h-[120px]" />
-                                </div>
-                                <div className="p-6 rounded-3xl bg-amber-500/5 border border-amber-500/20 flex items-start gap-4">
-                                    <ShieldAlert className="h-6 w-6 text-amber-500 shrink-0" />
-                                    <p className="text-xs font-medium text-amber-200/60 leading-relaxed italic">"As a Proctor, you will have root-access visibility into your students' Focus Sessions, Study Hours, and Milestone progress."</p>
-                                </div>
-                            </CardContent>
-                            <CardFooter className="p-8 sm:p-12 pt-0">
-                                <Button onClick={handleCreate} disabled={isSubmitting || !name.trim()} className="w-full h-16 rounded-[2rem] text-xl font-black uppercase italic shadow-xl">
-                                    {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Plus className="mr-2"/>} ESTABLISH REGISTRY
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </motion.div>
-                )}
+                <Card className="bg-slate-900/60 border-primary/30 backdrop-blur-3xl rounded-[3rem] overflow-hidden shadow-2xl">
+                    <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                    <CardHeader className="p-8 sm:p-12 text-center relative z-10 border-b border-white/5 bg-primary/5">
+                        <div className="flex justify-center mb-6">
+                            <div className="p-4 rounded-full bg-amber-500/10 border-2 border-amber-500/20 text-amber-500 animate-pulse">
+                                <Construction className="h-10 w-10" />
+                            </div>
+                        </div>
+                        <CardTitle className="text-3xl font-black uppercase italic text-white tracking-tight">Phase 1: Deployment</CardTitle>
+                        <CardDescription className="text-lg font-medium text-slate-400 mt-2 max-w-xl mx-auto">
+                            The Institutional Monitoring ecosystem is currently undergoing core calibration. Full proctoring authority will manifest in a future briefing.
+                        </CardDescription>
+                    </CardHeader>
 
-                {view === 'join' && (
-                    <motion.div key="join" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="max-w-xl mx-auto">
-                        <Card className="bg-slate-900/60 border-white/10 rounded-[3rem] overflow-hidden shadow-2xl">
-                            <CardHeader className="p-8 sm:p-12 border-b border-white/5">
-                                <Button variant="ghost" size="icon" onClick={() => setView('hub')} className="mb-4 rounded-full"><ArrowRight className="rotate-180"/></Button>
-                                <CardTitle className="text-3xl font-black italic uppercase tracking-tighter">Enter Academy</CardTitle>
-                                <CardDescription>Provide your Sovereign Code to link with your Proctor.</CardDescription>
-                            </CardHeader>
-                            <CardContent className="p-8 sm:p-12 space-y-8">
-                                <div className="space-y-4 text-center">
-                                    <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Academy Join Code</Label>
-                                    <Input 
-                                        value={code} 
-                                        onChange={e => setCode(e.target.value.toUpperCase())} 
-                                        placeholder="XXXXXX" 
-                                        className="h-20 text-center text-5xl font-black tracking-[0.5em] bg-black/40 border-primary/20 rounded-3xl focus-visible:ring-primary/30"
-                                        maxLength={6}
-                                    />
-                                </div>
-                                <div className="p-6 rounded-[2rem] bg-blue-500/5 border border-blue-500/10 text-center">
-                                    <p className="text-xs font-medium text-slate-400 italic">"Uplinking will share your study logs and progress with the Academy Proctor."</p>
-                                </div>
-                            </CardContent>
-                            <CardFooter className="p-8 sm:p-12 pt-0">
-                                <Button onClick={handleJoin} disabled={isSubmitting || code.length < 6} className="w-full h-16 rounded-2xl text-xl font-black uppercase bg-primary shadow-xl">
-                                    {isSubmitting ? <Loader2 className="animate-spin mr-2"/> : <Zap className="mr-2 h-6 w-6 fill-current"/>}
-                                    AUTHORIZE UPLINK
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    <CardContent className="p-8 sm:p-12 space-y-12 relative z-10">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <FeaturePreview 
+                                icon={LayoutDashboard} 
+                                label="Proctor Command" 
+                                desc="A centralized mission-control terminal for teachers and academy heads."
+                                color="text-emerald-400"
+                            />
+                            <FeaturePreview 
+                                icon={ShieldCheck} 
+                                label="Live Surveillance" 
+                                desc="Real-time monitoring of student focus sessions and discipline fidelity."
+                                color="text-sky-400"
+                            />
+                            <FeaturePreview 
+                                icon={Crown} 
+                                label="Centurion Ranks" 
+                                desc="Appoint student monitors with peer governance authority and special badges."
+                                color="text-yellow-400"
+                            />
+                            <FeaturePreview 
+                                icon={Target} 
+                                label="Strategic Directives" 
+                                desc="Inject bulk study objectives directly into student roadmaps with auto-verification."
+                                color="text-rose-400"
+                            />
+                        </div>
+
+                        <div className="p-8 rounded-[2.5rem] bg-primary/5 border border-primary/20 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                            <div className="p-4 rounded-2xl bg-primary/10 text-primary shadow-xl">
+                                <Info className="h-8 w-8" />
+                            </div>
+                            <div className="space-y-1">
+                                <h4 className="text-lg font-black uppercase italic text-white">Why Academy Hub?</h4>
+                                <p className="text-sm text-slate-400 leading-relaxed font-medium italic">
+                                    "Standard study is solitary. Academy study is elite. We are building the tools for institutes to forge high-performance student fleets through data-driven accountability."
+                                </p>
+                            </div>
+                        </div>
+                    </CardContent>
+
+                    <CardFooter className="p-8 sm:p-12 pt-0 relative z-10 flex flex-col gap-4">
+                        <Button asChild size="lg" className="w-full h-16 rounded-2xl font-black text-xl italic shadow-xl shadow-primary/20">
+                            <Link href="/dashboard">RETURN TO MAIN HUD <ArrowRight className="ml-2"/></Link>
+                        </Button>
+                        <p className="text-[10px] text-center font-black uppercase tracking-[0.4em] text-slate-600">Sovereign Registry Persistence: ACTIVE</p>
+                    </CardFooter>
+                </Card>
+            </motion.div>
         </div>
     );
 }
 
-function SelectionCard({ icon: Icon, label, desc, onClick, color, badge }: any) {
+function FeaturePreview({ icon: Icon, label, desc, color }: any) {
     return (
-        <Card 
-            className="bg-black/40 border-2 border-white/5 cursor-pointer group hover:bg-primary/10 hover:border-primary/30 transition-all duration-500 rounded-[3rem] overflow-hidden relative"
-            onClick={onClick}
-        >
-            <div className="absolute inset-0 bg-grid-white/5 opacity-5" />
-            <div className="absolute top-6 right-6">
-                <Badge variant="outline" className="text-[8px] font-black tracking-widest border-white/10 uppercase">{badge}</Badge>
+        <div className="p-6 rounded-[2rem] bg-black/40 border border-white/5 space-y-4 group hover:border-primary/20 transition-all">
+            <div className={cn("p-3 rounded-2xl bg-white/5 w-fit border border-white/5 group-hover:scale-110 transition-transform", color)}>
+                <Icon className="h-6 w-6" />
             </div>
-            <CardContent className="p-12 flex flex-col items-center text-center gap-6 relative z-10">
-                <div className={cn("p-6 rounded-3xl bg-white/5 border border-white/10 group-hover:scale-110 transition-transform duration-500", color)}>
-                    <Icon className="h-10 w-10" />
-                </div>
-                <div>
-                    <h3 className="text-2xl font-black uppercase italic tracking-tighter text-white">{label}</h3>
-                    <p className="text-slate-500 font-medium text-sm mt-2 leading-relaxed">{desc}</p>
-                </div>
-                <Button variant="ghost" className="mt-4 font-black uppercase text-[10px] tracking-[0.3em] opacity-0 group-hover:opacity-100 transition-opacity">
-                    Initialize <ChevronRight className="ml-1 h-3 w-3"/>
-                </Button>
-            </CardContent>
-        </Card>
+            <div className="space-y-1">
+                <h4 className="font-black uppercase italic text-white">{label}</h4>
+                <p className="text-xs text-slate-500 font-medium leading-relaxed">{desc}</p>
+            </div>
+        </div>
     );
 }
