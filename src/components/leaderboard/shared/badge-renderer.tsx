@@ -1,4 +1,3 @@
-
 'use client';
 
 import { BadgeType, SUPER_ADMIN_UID } from '@/hooks/use-admin';
@@ -9,7 +8,7 @@ import {
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { cn } from '@/lib/utils';
 
-export const badgeMeta: Record<BadgeType, { name: string; badge: JSX.Element }> = {
+export const badgeMeta: Record<BadgeType | 'centurion', { name: string; badge: JSX.Element }> = {
     dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
     'co-dev': { name: 'Co-Developer', badge: <span className="co-dev-badge"><Code className="h-3 w-3"/> Co-Dev</span> },
     admin: { name: 'Admin', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3" /> ADMIN</span> },
@@ -26,19 +25,21 @@ export const badgeMeta: Record<BadgeType, { name: string; badge: JSX.Element }> 
     warrior: { name: 'Warrior', badge: <span className="warrior-badge">WARRIOR</span> },
     'iso-master': { name: 'ISO-Master', badge: <span className="iso-master-badge">ISO-MASTER</span> },
     sovereign: { name: 'Sovereign', badge: <span className="sovereign-badge">Sovereign</span> },
+    centurion: { name: 'Academy Monitor', badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> CENTURION</span> },
     premium: { name: 'Premium', badge: <span className="premium-badge"><Crown className="h-3 w-3"/> PREMIUM</span> }
 };
 
 export function getOwnedBadges(user: any) {
     if (!user) return [];
     const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
-    const badges: BadgeType[] = [];
+    const badges: (BadgeType | 'centurion')[] = [];
     if (isSuperAdmin) badges.push('dev');
     if (user.isPlusMember) badges.push('premium');
     if (user.isCoDev) badges.push('co-dev');
     if (user.isAdmin) badges.push('admin');
     if (user.isVip) badges.push('vip');
     if (user.isGM) badges.push('gm');
+    if (user.institutionRole === 'monitor') badges.push('centurion');
     if (user.isChallenger) badges.push('challenger');
     if (user.isChampion) badges.push('champion');
     if (user.isEarlyBird) badges.push('early-bird');
@@ -58,9 +59,9 @@ export function ShowcaseBadge({ user }: { user: any }) {
     const owned = getOwnedBadges(user);
     if (owned.length === 0) return null;
     
-    const badgeKey = user.showcasedBadge && owned.includes(user.showcasedBadge) 
+    const badgeKey = user.showcasedBadge && owned.includes(user.showcasedBadge as any) 
         ? user.showcasedBadge 
         : owned[0];
         
-    return badgeMeta[badgeKey]?.badge ?? null;
+    return badgeMeta[badgeKey as BadgeType]?.badge ?? null;
 }

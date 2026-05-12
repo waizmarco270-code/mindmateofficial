@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useInstitution } from '@/hooks/use-institution';
+import { useInstitution, AcademyDirective } from '@/hooks/use-institution';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { 
     Users, Target, Zap, 
     ShieldCheck, Gem, Trophy, 
@@ -15,7 +16,8 @@ import {
     X, CheckCircle, ShieldAlert,
     LayoutDashboard, History, Send,
     UserCog, Crown, Star, MoreVertical,
-    BarChart3, ShieldX, Trash2, Megaphone
+    BarChart3, ShieldX, Trash2, Megaphone,
+    Timer
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -25,7 +27,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
@@ -48,7 +49,7 @@ export function ProctorCommand() {
     const stats = [
         { label: 'Total Citizens', val: students.length, icon: Users, color: 'text-primary' },
         { label: 'Avg Discipline', val: '88%', icon: ShieldCheck, color: 'text-emerald-400' },
-        { label: 'Active Missions', val: directives.length, icon: Target, color: 'text-rose-400' },
+        { label: 'Active Missions', val: directives.filter(d => d.status === 'active').length, icon: Target, color: 'text-rose-400' },
         { label: 'Sovereign Pulse', val: 'Active', icon: Zap, color: 'text-yellow-400' },
     ];
 
@@ -114,7 +115,6 @@ export function ProctorCommand() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                {/* STUDENT REGISTRY */}
                 <Card className="lg:col-span-8 bg-black/20 border-white/5 rounded-[3rem] overflow-hidden">
                     <CardHeader className="p-8 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
                         <div>
@@ -178,7 +178,6 @@ export function ProctorCommand() {
                     </CardContent>
                 </Card>
 
-                {/* ACTIVE DIRECTIVES */}
                 <div className="lg:col-span-4 space-y-6">
                     <Card className="bg-slate-900/60 border-white/5 rounded-[2.5rem]">
                         <CardHeader className="p-8 border-b border-white/5 bg-white/5">
@@ -222,7 +221,6 @@ export function ProctorCommand() {
                 </div>
             </div>
 
-            {/* DIRECTIVE MODAL */}
             <Dialog open={isDirectiveOpen} onOpenChange={setIsDirectiveOpen}>
                 <DialogContent className="max-w-xl bg-slate-950 border-primary/30 rounded-[3rem] p-0 overflow-hidden shadow-2xl">
                     <div className="p-8 sm:p-12 space-y-8">
@@ -254,7 +252,6 @@ export function ProctorCommand() {
                 </DialogContent>
             </Dialog>
 
-            {/* REWARD MODAL */}
             <Dialog open={!!rewardUser} onOpenChange={() => setRewardUser(null)}>
                 <DialogContent className="max-w-md bg-slate-950 border-emerald-500/30 rounded-[2.5rem]">
                     <DialogHeader>

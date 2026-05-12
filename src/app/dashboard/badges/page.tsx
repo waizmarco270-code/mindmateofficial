@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-const badgeMeta: Record<BadgeType, { 
+const badgeMeta: Record<BadgeType | 'centurion', { 
     name: string; 
     icon: React.ElementType; 
     gradient: string; 
@@ -153,6 +153,14 @@ const badgeMeta: Record<BadgeType, {
         requirement: 'Successfully emerge from a 1-Year Isolation Protocol.',
         badge: <span className="sovereign-badge">Sovereign</span>
     },
+    centurion: {
+        name: 'Academy Monitor',
+        icon: ShieldCheck,
+        gradient: 'from-primary to-indigo-600',
+        description: 'Elite students appointed by Proctors to oversee academy discipline.',
+        requirement: 'Appointed as a Monitor within an official Academy Hub.',
+        badge: <span className="admin-badge"><ShieldCheck className="h-3 w-3"/> CENTURION</span>
+    },
     premium: {
         name: 'Premium',
         icon: Crown,
@@ -163,7 +171,7 @@ const badgeMeta: Record<BadgeType, {
     }
 };
 
-function BadgeDetailsDialog({ badgeKey, isOpen, onOpenChange, users }: { badgeKey: BadgeType | null, isOpen: boolean, onOpenChange: (o: boolean) => void, users: User[] }) {
+function BadgeDetailsDialog({ badgeKey, isOpen, onOpenChange, users }: { badgeKey: BadgeType | 'centurion' | null, isOpen: boolean, onOpenChange: (o: boolean) => void, users: User[] }) {
     const [seeAll, setSeeAll] = useState(false);
     
     const owners = useMemo(() => {
@@ -175,6 +183,7 @@ function BadgeDetailsDialog({ badgeKey, isOpen, onOpenChange, users }: { badgeKe
             if (badgeKey === 'admin') return u.isAdmin;
             if (badgeKey === 'vip') return u.isVip;
             if (badgeKey === 'gm') return u.isGM;
+            if (badgeKey === 'centurion') return u.institutionRole === 'monitor';
             if (badgeKey === 'challenger') return u.isChallenger;
             if (badgeKey === 'champion') return u.isChampion;
             if (badgeKey === 'streaker') return u.isStreaker;
@@ -265,11 +274,11 @@ function BadgeDetailsDialog({ badgeKey, isOpen, onOpenChange, users }: { badgeKe
 
 export default function BadgesTreasuryPage() {
     const { users, loading } = useAdmin();
-    const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
+    const [selectedBadge, setSelectedBadge] = useState<BadgeType | 'centurion' | null>(null);
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredBadges = useMemo(() => {
-        return (Object.keys(badgeMeta) as BadgeType[]).filter(key => 
+        return (Object.keys(badgeMeta) as (BadgeType | 'centurion')[]).filter(key => 
             badgeMeta[key].name.toLowerCase().includes(searchTerm.toLowerCase()) ||
             badgeMeta[key].description.toLowerCase().includes(searchTerm.toLowerCase())
         );
@@ -310,6 +319,7 @@ export default function BadgesTreasuryPage() {
                         if (key === 'admin') return u.isAdmin;
                         if (key === 'vip') return u.isVip;
                         if (key === 'gm') return u.isGM;
+                        if (key === 'centurion') return u.institutionRole === 'monitor';
                         if (key === 'challenger') return u.isChallenger;
                         if (key === 'champion') return u.isChampion;
                         if (key === 'streaker') return u.isStreaker;

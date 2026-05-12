@@ -159,7 +159,7 @@ export default function InstitutionHubPage() {
                                     />
                                 </div>
                                 <div className="p-6 rounded-[2rem] bg-blue-500/5 border border-blue-500/10 text-center">
-                                    <p className="text-xs text-slate-400 font-medium italic">"Uplinking will share your study logs and progress with the Academy Proctor."</p>
+                                    <p className="text-xs font-medium text-slate-400 italic">"Uplinking will share your study logs and progress with the Academy Proctor."</p>
                                 </div>
                             </CardContent>
                             <CardFooter className="p-8 sm:p-12 pt-0">

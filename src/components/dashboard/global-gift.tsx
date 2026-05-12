@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAdmin, BadgeType } from '@/hooks/use-admin';
+import { useAdmin, User, BadgeType } from '@/hooks/use-admin';
 import { useUser } from '@clerk/nextjs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
 
 // Synchronized Badge Registry for high-fidelity rendering
 const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {

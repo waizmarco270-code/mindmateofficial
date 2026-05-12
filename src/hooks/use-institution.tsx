@@ -60,9 +60,13 @@ export const InstitutionProvider = ({ children }: { children: ReactNode }) => {
     const [loading, setLoading] = useState(true);
 
     // Filter students belonging to this academy
-    const students = useMemo(() => {
+    const studentsList = useMemo(() => {
         if (!academy) return [];
-        return users.filter(u => academy.students.includes(u.uid) || academy.monitors.includes(u.uid) || academy.proctors.includes(u.uid));
+        return users.filter(u => 
+            academy.students.includes(u.uid) || 
+            academy.monitors.includes(u.uid) || 
+            academy.proctors.includes(u.uid)
+        );
     }, [academy, users]);
 
     useEffect(() => {
@@ -228,16 +232,15 @@ export const InstitutionProvider = ({ children }: { children: ReactNode }) => {
 
     const deleteAcademy = useCallback(async () => {
         if (!academy || !user || academy.createdBy !== user.id) return;
-        // In a real app, you'd need to update all users to remove institutionId
         await deleteDoc(doc(db, 'institutions', academy.id));
         toast({ title: "Academy Dissolved" });
     }, [academy, user, toast]);
 
     const value = useMemo(() => ({
-        academy, students, directives, loading,
+        academy, students: studentsList, directives, loading,
         createAcademy, joinAcademy, leaveAcademy,
         deployDirective, setStudentRole, rewardStudent, deleteAcademy
-    }), [academy, students, directives, loading, createAcademy, joinAcademy, leaveAcademy, deployDirective, setStudentRole, rewardStudent, deleteAcademy]);
+    }), [academy, studentsList, directives, loading, createAcademy, joinAcademy, leaveAcademy, deployDirective, setStudentRole, rewardStudent, deleteAcademy]);
 
     return (
         <InstitutionContext.Provider value={value}>
