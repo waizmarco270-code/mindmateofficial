@@ -200,7 +200,3 @@ function SelectionCard({ icon: Icon, label, desc, onClick, color, badge }: any) 
         </Card>
     );
 }
-
-function Badge({ children, variant, className }: any) {
-    return <span className={cn("px-2 py-0.5 rounded-full text-[10px] font-bold border", className)}>{children}</span>;
-}

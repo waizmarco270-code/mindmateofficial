@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { 
     Users, Target, Zap, 
     ShieldCheck, Gem, Trophy, 
@@ -33,7 +34,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 export function ProctorCommand() {
-    const { academy, students, directives, deployDirective, setStudentRole, rewardStudent, leaveAcademy } = useInstitution();
+    const { academy, students, directives, deployDirective, setStudentRole, rewardStudent, deleteAcademy } = useInstitution();
     const { toast } = useToast();
     
     const [isDirectiveOpen, setIsDirectiveOpen] = useState(false);
