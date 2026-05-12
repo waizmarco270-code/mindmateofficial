@@ -47,8 +47,9 @@ interface RoadmapsContextType {
   roadmaps: Roadmap[];
   loading: boolean;
   selectedRoadmap: Roadmap | null;
+  selectedRoadmapId: string | null;
   setSelectedRoadmapId: (id: string | null) => void;
-  addRoadmap: (roadmapData: Omit<Roadmap, 'id' | 'userId'>) => Promise<string | undefined>;
+  addRoadmap: (roadmapData: Partial<Roadmap>) => Promise<string | undefined>;
   updateRoadmap: (id: string, data: Partial<Roadmap>) => Promise<void>;
   deleteRoadmap: (id: string) => Promise<void>;
   logStudyTime: (roadmapId: string, date: string, seconds: number) => Promise<void>;
@@ -76,13 +77,23 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     }
     setLoading(true);
     const roadmapsColRef = collection(db, 'users', user.id, 'roadmaps');
+    // CRITICAL: We MUST order by startDate to ensure the UI list is predictable.
+    // Documents missing this field will be hidden from the query results.
     const q = query(roadmapsColRef, orderBy('startDate', 'desc'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      const fetchedRoadmaps = snapshot.docs.map(doc => ({
-          ...doc.data(),
-          monthlyTargets: doc.data().monthlyTargets || {}
-      } as Roadmap));
+      const fetchedRoadmaps = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+              ...data,
+              id: doc.id,
+              monthlyTargets: data.monthlyTargets || {},
+              dailyStudyTime: data.dailyStudyTime || {},
+              weeklyReflections: data.weeklyReflections || {},
+              relapseHistory: data.relapseHistory || [],
+              workoutLog: data.workoutLog || {}
+          } as Roadmap;
+      });
       setRoadmaps(fetchedRoadmaps);
       setLoading(false);
     }, (error) => {
@@ -93,16 +104,33 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     return () => unsubscribe();
   }, [user]);
 
-  const addRoadmap = useCallback(async (roadmapData: Omit<Roadmap, 'id' | 'userId'>) => {
+  const addRoadmap = useCallback(async (roadmapData: Partial<Roadmap>) => {
     if (!user) return;
     const roadmapsColRef = collection(db, 'users', user.id, 'roadmaps');
     const newDocRef = doc(roadmapsColRef);
+    
+    // Ensure the document has all required fields for query visibility and logic stability
     const newRoadmap: Roadmap = {
-      ...roadmapData,
       id: newDocRef.id,
       userId: user.id,
+      name: roadmapData.name || 'Untitled Mission',
+      examDate: roadmapData.examDate || new Date().toISOString(),
+      duration: roadmapData.duration || 30,
+      startDate: new Date().toISOString(), // Required for the query orderBy
+      milestones: roadmapData.milestones || [],
+      dailyStudyTime: {},
+      weeklyReflections: {},
       monthlyTargets: {},
+      relapseHistory: [],
+      workoutLog: {},
+      ...roadmapData,
     };
+    
+    // Safety Force
+    newRoadmap.id = newDocRef.id;
+    newRoadmap.userId = user.id;
+    if (!newRoadmap.startDate) newRoadmap.startDate = new Date().toISOString();
+
     await setDoc(newDocRef, newRoadmap);
     return newDocRef.id;
   }, [user]);
@@ -235,6 +263,7 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     roadmaps,
     loading,
     selectedRoadmap,
+    selectedRoadmapId,
     setSelectedRoadmapId,
     addRoadmap,
     updateRoadmap,
@@ -246,7 +275,7 @@ export const RoadmapsProvider = ({ children }: { children: ReactNode }) => {
     toggleTaskCompletion,
     handleRelapse,
     toggleWorkoutDay,
-  }), [roadmaps, loading, selectedRoadmap, addRoadmap, updateRoadmap, deleteRoadmap, logStudyTime, addWeeklyReflection, addMonthlyTarget, removeMonthlyTarget, toggleTaskCompletion, handleRelapse, toggleWorkoutDay]);
+  }), [roadmaps, loading, selectedRoadmap, selectedRoadmapId, addRoadmap, updateRoadmap, deleteRoadmap, logStudyTime, addWeeklyReflection, addMonthlyTarget, removeMonthlyTarget, toggleTaskCompletion, handleRelapse, toggleWorkoutDay]);
 
   return <RoadmapsContext.Provider value={value}>{children}</RoadmapsContext.Provider>;
 };

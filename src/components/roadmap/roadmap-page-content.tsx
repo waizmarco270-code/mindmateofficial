@@ -8,7 +8,7 @@ import { RoadmapView } from "@/components/roadmap/roadmap-view";
 import { TaskPlanner } from "@/components/roadmap/task-planner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '../ui/dialog';
 import roadmapTemplates from '@/app/lib/roadmap-templates.json';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Separator } from '@/components/ui/separator';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +45,7 @@ const RoadmapImportSchema = z.object({
 });
 
 export function RoadmapPageContent() {
-    const { roadmaps, selectedRoadmap, setSelectedRoadmapId, loading, updateRoadmap, addRoadmap, deleteRoadmap } = useRoadmaps();
+    const { roadmaps, selectedRoadmap, selectedRoadmapId, setSelectedRoadmapId, loading, updateRoadmap, addRoadmap, deleteRoadmap } = useRoadmaps();
     const [viewState, setViewState] = useState<'list' | 'create' | 'plan'>('list');
     const [planningRoadmap, setPlanningRoadmap] = useState<Roadmap | null>(null);
     const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
@@ -67,7 +67,7 @@ export function RoadmapPageContent() {
                 weeklyReflections: {},
                 monthlyTargets: {},
             };
-            setPlanningRoadmap(newRoadmap);
+            setPlanningRoadmap(newRoadmap as Roadmap);
             setViewState('plan');
         } else {
             toast({ variant: 'destructive', title: 'Error creating roadmap.' });
@@ -225,16 +225,26 @@ BEGIN GENERATION PROTOCOL NOW.`;
         );
     }
     
+    if (selectedRoadmap) {
+        return <RoadmapView roadmap={selectedRoadmap} onBack={() => setSelectedRoadmapId(null)} onPlan={() => { setPlanningRoadmap(selectedRoadmap); setViewState('plan'); }} />;
+    }
+
+    // SYNC GUARD: If we have a selected ID but no roadmap data yet (waiting for snapshot), show loader
+    if (selectedRoadmapId && !selectedRoadmap) {
+        return (
+            <div className="flex h-full w-full flex-col items-center justify-center p-20">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="mt-4 font-black uppercase tracking-[0.3em] text-primary animate-pulse">Synchronizing Strategic Path...</p>
+            </div>
+        );
+    }
+
     if (viewState === 'create') {
         return <RoadmapCreation onCancel={() => setViewState('list')} onComplete={handleCreationComplete} />;
     }
     
     if (viewState === 'plan' && planningRoadmap) {
         return <TaskPlanner roadmap={planningRoadmap} onComplete={(milestones) => handlePlanningComplete(milestones)} onCancel={() => { setViewState('list'); setPlanningRoadmap(null); }} />;
-    }
-    
-    if (selectedRoadmap) {
-        return <RoadmapView roadmap={selectedRoadmap} onBack={() => setSelectedRoadmapId(null)} onPlan={() => { setPlanningRoadmap(selectedRoadmap); setViewState('plan'); }} />;
     }
 
     return (
