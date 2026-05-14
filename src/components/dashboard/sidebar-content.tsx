@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -48,7 +49,8 @@ import {
   FileCheck,
   Sigma,
   Video,
-  School
+  School,
+  ScrollText
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -61,6 +63,7 @@ import { useSidebar } from '../ui/sidebar';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
+  { href: '/dashboard/ledger', icon: ScrollText, label: 'Sovereign Ledger', glow: 'text-emerald-400', isBold: true },
   { href: '/dashboard/guide', icon: Book, label: 'App Guide', glow: 'text-emerald-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/institution', icon: School, label: 'Academy Hub', glow: 'text-emerald-400', isBold: true },

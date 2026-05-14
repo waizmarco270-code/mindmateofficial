@@ -1,3 +1,4 @@
+
 'use client';
 
 import { AppDataProvider } from "@/hooks/use-admin";
@@ -9,6 +10,7 @@ import { GroupsProvider } from "@/hooks/use-groups.tsx";
 import { IsolationProvider } from "@/hooks/use-isolation";
 import { MentorProvider } from "@/hooks/use-mentor";
 import { InstitutionProvider } from "@/hooks/use-institution";
+import { LedgerProvider } from "@/hooks/use-ledger";
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -21,7 +23,9 @@ export function Providers({ children }: { children: React.ReactNode }) {
                         <RoadmapsProvider>
                             <MentorProvider>
                                 <InstitutionProvider>
-                                    {children}
+                                    <LedgerProvider>
+                                        {children}
+                                    </LedgerProvider>
                                 </InstitutionProvider>
                             </MentorProvider>
                         </RoadmapsProvider>
