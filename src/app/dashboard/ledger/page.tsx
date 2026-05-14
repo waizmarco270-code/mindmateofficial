@@ -1,12 +1,14 @@
+
 'use client';
 /**
- * @fileOverview Sovereign Ledger - Achievement Registry
+ * @fileOverview Sovereign Ledger - The Ultimate Achievement Registry
  * High-fidelity mission logging and cognitive analytics.
  */
 
 import { useState, useMemo, useEffect } from 'react';
 import { useLedger, DailyManifest } from '@/hooks/use-ledger';
 import { useAdmin } from '@/hooks/use-admin';
+import { useTimeTracker } from '@/hooks/use-time-tracker';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,33 +22,37 @@ import {
     ArrowRight, ChevronLeft, ChevronRight,
     Play, Info, Video, CheckCircle,
     X, ExternalLink, Loader2, Sparkles,
-    Gem, Trophy, MessageSquare
+    Gem, Trophy, MessageSquare, Settings,
+    FileText, Activity, Fingerprint,
+    Smile, Frown, Meh, Flame
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isToday, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, subMonths, addMonths, startOfWeek, endOfWeek, addDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { 
     ResponsiveContainer, 
-    LineChart, 
-    Line, 
-    XAxis, 
-    YAxis, 
-    CartesianGrid, 
-    Tooltip, 
-    PieChart as RePieChart, 
-    Pie, 
-    Cell,
     AreaChart,
-    Area
+    Area,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip
 } from 'recharts';
+
+const formatTime = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    return `${h}h ${m}m`;
+};
 
 export default function SovereignLedger() {
     const { manifests, loading: ledgerLoading, saveManifest, getManifestByDate } = useLedger();
     const { currentUserData, loading: adminLoading } = useAdmin();
+    const { sessions: allSessions, totalTimeToday, activeSubjectTime, activeSubjectId } = useTimeTracker();
     const { toast } = useToast();
 
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -58,6 +64,7 @@ export default function SovereignLedger() {
     const [videoUrl, setVideoUrl] = useState('');
     const [mood, setMood] = useState<DailyManifest['mood']>('productive');
     const [isSaving, setIsSaving] = useState(false);
+    const [showLinkInput, setShowLinkInput] = useState(false);
 
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
     const currentManifest = useMemo(() => getManifestByDate(dateKey), [getManifestByDate, dateKey]);
@@ -68,10 +75,12 @@ export default function SovereignLedger() {
             setSummary(currentManifest.summary || '');
             setVideoUrl(currentManifest.videoUrl || '');
             setMood(currentManifest.mood || 'productive');
+            setShowLinkInput(!currentManifest.videoUrl); // Hide if link exists
         } else {
             setSummary('');
             setVideoUrl('');
             setMood('productive');
+            setShowLinkInput(true);
         }
     }, [currentManifest, dateKey]);
 
@@ -80,6 +89,7 @@ export default function SovereignLedger() {
         setIsSaving(true);
         try {
             await saveManifest(dateKey, { summary, videoUrl, mood });
+            setShowLinkInput(false);
         } finally {
             setIsSaving(false);
         }
@@ -94,23 +104,42 @@ export default function SovereignLedger() {
         return eachDayOfInterval({ start, end });
     }, [currentMonth]);
 
+    // Calculate Study Time for selected date from TimeTracker sessions
+    const studyTimeForSelectedDate = useMemo(() => {
+        if (isToday(selectedDate)) return totalTimeToday;
+        
+        return allSessions
+            .filter(s => s.startTime.startsWith(dateKey))
+            .reduce((acc, s) => {
+                const dur = (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 1000;
+                return acc + dur;
+            }, 0);
+    }, [allSessions, selectedDate, dateKey, totalTimeToday]);
+
+    const subjectBreakdown = useMemo(() => {
+        const breakdown: Record<string, number> = {};
+        allSessions
+            .filter(s => s.startTime.startsWith(dateKey))
+            .forEach(s => {
+                const dur = (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 1000;
+                breakdown[s.subjectName] = (breakdown[s.subjectName] || 0) + dur;
+            });
+        return Object.entries(breakdown).sort((a, b) => b[1] - a[1]);
+    }, [allSessions, dateKey]);
+
     const analyticsData = useMemo(() => {
-        // Line Chart: Hours over last 7 entries
         const last7 = manifests.slice(0, 7).reverse().map(m => ({
             date: format(parseISO(m.dateKey), 'MMM d'),
-            value: (m.summary.length / 100) + (m.videoUrl ? 5 : 0) // Placeholder logic for "Progress Score"
+            value: (m.summary.length / 50) + (m.videoUrl ? 10 : 0)
         }));
-
-        // Pie Chart: Mood Distribution
-        const moodCounts = manifests.reduce((acc: any, m) => {
-            acc[m.mood] = (acc[m.mood] || 0) + 1;
-            return acc;
-        }, {});
-
-        const pieData = Object.entries(moodCounts).map(([name, value]) => ({ name, value }));
-
-        return { last7, pieData };
+        return { last7 };
     }, [manifests]);
+
+    const youtubeId = useMemo(() => {
+        if (!videoUrl) return null;
+        const match = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/))([\w-]{11})/);
+        return match ? match[1] : null;
+    }, [videoUrl]);
 
     if (ledgerLoading || adminLoading) {
         return (
@@ -120,11 +149,19 @@ export default function SovereignLedger() {
         );
     }
 
+    const sovereignHash = btoa(dateKey + (currentUserData?.uid || '')).slice(0, 12).toUpperCase();
+
     return (
-        <div className="space-y-8 pb-32 max-w-7xl mx-auto px-4 animate-in fade-in duration-700">
-            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="space-y-8 pb-32 max-w-7xl mx-auto px-4 animate-in fade-in duration-700 relative">
+            {/* Background Texture */}
+            <div className="fixed inset-0 z-0 pointer-events-none opacity-20 overflow-hidden">
+                <div className="absolute inset-0 blue-nebula-bg" />
+                <div className="absolute inset-0 bg-grid-white/5" />
+            </div>
+
+            <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
                 <div className="flex items-center gap-4">
-                    <div className="p-4 rounded-3xl bg-primary/10 text-primary border border-primary/20 shadow-xl shadow-primary/5">
+                    <div className="p-4 rounded-3xl bg-primary/10 text-primary border-2 border-primary/20 shadow-xl shadow-primary/10">
                         <ScrollText className="h-10 w-10" />
                     </div>
                     <div>
@@ -135,7 +172,7 @@ export default function SovereignLedger() {
                     </div>
                 </div>
                 
-                <div className="flex items-center gap-3 bg-muted/30 p-1 rounded-2xl border w-full sm:w-auto">
+                <div className="flex items-center gap-3 bg-muted/30 p-1 rounded-2xl border w-full sm:w-auto backdrop-blur-md">
                     <Button 
                         variant={activeTab === 'manifest' ? 'secondary' : 'ghost'} 
                         className="flex-1 sm:flex-none h-12 rounded-xl font-black uppercase text-[10px] tracking-widest px-8"
@@ -153,10 +190,10 @@ export default function SovereignLedger() {
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start relative z-10">
                 {/* CALENDAR NAVIGATOR */}
                 <div className="lg:col-span-4 space-y-6">
-                    <Card className="bg-slate-900 border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
+                    <Card className="bg-slate-900/80 border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl backdrop-blur-xl">
                         <CardHeader className="p-8 border-b border-white/5 bg-white/5 flex flex-row items-center justify-between">
                             <CardTitle className="text-xs font-black uppercase tracking-widest text-muted-foreground">Temporal Navigator</CardTitle>
                             <div className="flex items-center gap-1">
@@ -176,7 +213,7 @@ export default function SovereignLedger() {
                             <div className="grid grid-cols-7 p-2">
                                 {calendarDays.map((day, i) => {
                                     const dKey = format(day, 'yyyy-MM-dd');
-                                    const hasEntry = manifests.some(m => m.dateKey === dKey);
+                                    const entry = manifests.find(m => m.dateKey === dKey);
                                     const isSelected = isSameDay(day, selectedDate);
                                     
                                     return (
@@ -191,7 +228,7 @@ export default function SovereignLedger() {
                                             )}
                                         >
                                             <span className="text-xs font-black">{format(day, 'd')}</span>
-                                            {hasEntry && (
+                                            {entry && (
                                                 <div className={cn(
                                                     "absolute bottom-2 h-1 w-1 rounded-full",
                                                     isSelected ? "bg-white" : "bg-primary animate-pulse"
@@ -204,20 +241,27 @@ export default function SovereignLedger() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-primary/5 border-primary/20 rounded-[2.5rem] p-8 text-center space-y-4">
-                        <div className="p-4 rounded-3xl bg-primary/10 w-fit mx-auto border-2 border-primary/20 shadow-xl">
-                            <ShieldCheck className="h-10 w-10 text-primary" />
+                    <Card className="bg-primary/5 border-primary/20 rounded-[2.5rem] p-8 text-center space-y-6">
+                        <div className="flex items-center justify-center gap-4">
+                            <div className="p-3 rounded-2xl bg-primary/10 border-2 border-primary/20">
+                                <ShieldCheck className="h-8 w-8 text-primary" />
+                            </div>
+                            <div className="text-left">
+                                <h4 className="text-lg font-black uppercase italic text-white tracking-tighter leading-none">Integrity Seal</h4>
+                                <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest mt-1">Registry Verified</p>
+                            </div>
                         </div>
-                        <h4 className="text-xl font-black uppercase italic text-white tracking-tighter leading-none">Registry Integrity</h4>
-                        <p className="text-xs font-medium text-slate-400">Your manifests are sealed with cryptographic timestamps. Manual edits are logged in the historical dossier.</p>
+                        <div className="p-4 rounded-xl bg-black/40 border border-white/5 font-mono text-[9px] text-primary break-all uppercase">
+                            HASH: {sovereignHash}-LEGEND-AUTH
+                        </div>
                         <Button variant="outline" className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest border-primary/20" onClick={() => toast({title: "Dossier Exported", description: "CSV record generated successfully."})}>
-                            EXPORT REGISTRY
+                            <Download className="mr-2 h-4 w-4"/> EXPORT REGISTRY
                         </Button>
                     </Card>
                 </div>
 
                 {/* MAIN CONTENT AREA */}
-                <div className="lg:col-span-8 min-h-[600px]">
+                <div className="lg:col-span-8">
                     <AnimatePresence mode="wait">
                         {activeTab === 'manifest' ? (
                             <motion.div 
@@ -227,32 +271,125 @@ export default function SovereignLedger() {
                                 exit={{ opacity: 0, x: -20 }}
                                 className="space-y-8"
                             >
-                                <Card className="bg-slate-900 border-2 border-primary/30 rounded-[3rem] overflow-hidden shadow-2xl relative">
-                                    <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                                {/* Study Time HUD */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <Card className="bg-slate-900 border-2 border-primary/30 rounded-[2.5rem] overflow-hidden group">
+                                        <CardHeader className="p-6 pb-2">
+                                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
+                                                <Clock className="h-4 w-4" /> Mission Duration
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-6 pt-0 flex items-center justify-between">
+                                            <div className="flex items-baseline gap-1">
+                                                <span className="text-6xl font-black italic tracking-tighter text-white">{formatTime(studyTimeForSelectedDate).split(' ')[0]}</span>
+                                                <span className="text-xl font-black text-muted-foreground uppercase">{formatTime(studyTimeForSelectedDate).split(' ')[1]}</span>
+                                            </div>
+                                            {isToday(selectedDate) && activeSubjectId && (
+                                                <div className="h-3 w-3 rounded-full bg-green-500 animate-pulse shadow-[0_0_10px_#22c55e]" />
+                                            )}
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="bg-slate-900 border-2 border-white/5 rounded-[2.5rem] overflow-hidden">
+                                        <CardHeader className="p-6 pb-2">
+                                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground flex items-center gap-2">
+                                                <Activity className="h-4 w-4" /> Subject Intelligence
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-6 pt-0">
+                                            <ScrollArea className="h-20">
+                                                <div className="space-y-2">
+                                                    {subjectBreakdown.map(([name, time]) => (
+                                                        <div key={name} className="flex justify-between items-center">
+                                                            <span className="text-xs font-bold text-slate-400 uppercase tracking-tighter">{name}</span>
+                                                            <span className="text-xs font-black text-white italic">{formatTime(time)}</span>
+                                                        </div>
+                                                    ))}
+                                                    {subjectBreakdown.length === 0 && <p className="text-[10px] text-muted-foreground italic">No modular data recorded.</p>}
+                                                </div>
+                                            </ScrollArea>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+
+                                <Card className="bg-slate-900 border-2 border-white/5 rounded-[3rem] overflow-hidden shadow-2xl relative">
+                                    <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
                                     <CardHeader className="p-8 sm:p-12 border-b border-white/5 bg-white/5">
                                         <div className="flex justify-between items-center mb-6">
-                                            <Badge variant="outline" className="font-black px-4 py-1 uppercase tracking-widest">
+                                            <Badge variant="outline" className="font-black px-4 py-1 uppercase tracking-widest bg-black/40">
                                                 {isToday(selectedDate) ? "Today's Manifest" : format(selectedDate, 'do MMMM yyyy')}
                                             </Badge>
                                             <div className="flex gap-2">
-                                                {(['productive', 'neutral', 'failed'] as const).map(m => (
+                                                {[
+                                                    { id: 'productive', icon: Sparkles, color: 'text-emerald-400' },
+                                                    { id: 'neutral', icon: Meh, color: 'text-sky-400' },
+                                                    { id: 'exhausted', icon: Frown, color: 'text-amber-400' },
+                                                    { id: 'failed', icon: Skull, color: 'text-red-500' }
+                                                ].map(m => (
                                                     <button 
-                                                        key={m} 
-                                                        onClick={() => setMood(m)}
+                                                        key={m.id} 
+                                                        onClick={() => setMood(m.id as any)}
                                                         className={cn(
-                                                            "h-8 px-3 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all",
-                                                            mood === m ? "bg-primary text-white border-primary shadow-lg" : "bg-white/5 border-white/10 text-muted-foreground"
+                                                            "h-10 w-10 flex items-center justify-center rounded-full border-2 transition-all",
+                                                            mood === m.id ? `bg-background border-current shadow-lg ${m.color}` : "bg-white/5 border-transparent text-muted-foreground hover:bg-white/10"
                                                         )}
                                                     >
-                                                        {m}
+                                                        <m.icon className="h-5 w-5" />
                                                     </button>
                                                 ))}
                                             </div>
                                         </div>
-                                        <CardTitle className="text-5xl font-black italic uppercase tracking-tighter text-white">Daily Mission Report</CardTitle>
-                                        <CardDescription className="text-lg font-bold text-slate-400 mt-2">Brief the mainframe on your tactical performance.</CardDescription>
+                                        <CardTitle className="text-5xl font-black italic uppercase tracking-tighter text-white">Daily Briefing</CardTitle>
+                                        <CardDescription className="text-lg font-bold text-slate-400 mt-2">Document your tactical findings and mission results.</CardDescription>
                                     </CardHeader>
+
                                     <CardContent className="p-8 sm:p-12 space-y-10 relative z-10">
+                                        {/* Visual Dossier Player */}
+                                        <div className="space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500 flex items-center gap-2">
+                                                    <Youtube className="h-4 w-4"/> Visual Mission Dossier
+                                                </Label>
+                                                {youtubeId && (
+                                                    <Button variant="ghost" size="sm" className="h-7 text-[8px] font-black uppercase" onClick={() => setShowLinkInput(!showLinkInput)}>
+                                                        {showLinkInput ? "Hide Link" : "Modify Uplink"} <Settings className="ml-1.5 h-3 w-3" />
+                                                    </Button>
+                                                )}
+                                            </div>
+
+                                            <AnimatePresence>
+                                                {showLinkInput && (
+                                                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                                                        <div className="flex gap-2">
+                                                            <Input 
+                                                                value={videoUrl} 
+                                                                onChange={e => setVideoUrl(e.target.value)} 
+                                                                placeholder="Paste mission vlog link (YouTube)..." 
+                                                                className="h-12 rounded-xl bg-black/40 border-white/10 flex-1 px-6 font-bold"
+                                                            />
+                                                            {youtubeId && <Button onClick={handleSave} size="icon" className="h-12 w-12 rounded-xl"><CheckCircle/></Button>}
+                                                        </div>
+                                                    </motion.div>
+                                                )}
+                                            </AnimatePresence>
+
+                                            {youtubeId ? (
+                                                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="aspect-video w-full rounded-[2.5rem] overflow-hidden border-2 border-white/10 shadow-2xl relative group">
+                                                    <iframe 
+                                                        className="w-full h-full"
+                                                        src={`https://www.youtube.com/embed/${youtubeId}?modestbranding=1&rel=0&showinfo=0`}
+                                                        title="Daily Report"
+                                                        allowFullScreen
+                                                    />
+                                                </motion.div>
+                                            ) : (
+                                                <div className="p-12 border-4 border-dashed border-white/5 rounded-[3rem] bg-white/[0.02] flex flex-col items-center gap-4 text-center opacity-40">
+                                                    <Video className="h-12 w-12" />
+                                                    <p className="text-xs font-black uppercase tracking-widest">No visual dossier uplinked</p>
+                                                </div>
+                                            )}
+                                        </div>
+
                                         <div className="space-y-4">
                                             <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
                                                 <MessageSquare className="h-4 w-4"/> Tactical Summary
@@ -260,49 +397,19 @@ export default function SovereignLedger() {
                                             <Textarea 
                                                 value={summary} 
                                                 onChange={e => setSummary(e.target.value)} 
-                                                placeholder="What did you conquer today? What were the breaches? Be precise."
-                                                className="min-h-[250px] bg-black/40 border-white/10 rounded-[2rem] p-8 text-lg font-medium leading-relaxed italic focus-visible:ring-primary/30"
+                                                placeholder="What did you conquer today? What were the cognitive breaches?"
+                                                className="min-h-[200px] bg-black/40 border-white/10 rounded-[2rem] p-8 text-lg font-medium leading-relaxed italic focus-visible:ring-primary/30"
                                             />
                                         </div>
-
-                                        <div className="space-y-4">
-                                            <Label className="text-[10px] font-black uppercase tracking-[0.4em] text-red-500 flex items-center gap-2">
-                                                <Youtube className="h-4 w-4"/> Visual Mission Dossier (YouTube Link)
-                                            </Label>
-                                            <div className="flex gap-3">
-                                                <Input 
-                                                    value={videoUrl} 
-                                                    onChange={e => setVideoUrl(e.target.value)} 
-                                                    placeholder="Paste link to your study log / vlog..." 
-                                                    className="h-14 rounded-2xl bg-black/40 border-white/10 flex-1 px-6 font-bold"
-                                                />
-                                                {videoUrl && (
-                                                    <Button variant="outline" size="icon" className="h-14 w-14 rounded-2xl bg-primary/10 text-primary border-primary/20" onClick={() => window.open(videoUrl, '_blank')}>
-                                                        <ExternalLink className="h-6 w-6"/>
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        {videoUrl && videoUrl.includes('youtube.com') && (
-                                            <div className="aspect-video w-full rounded-[2rem] overflow-hidden border-2 border-white/10 shadow-2xl">
-                                                <iframe 
-                                                    className="w-full h-full"
-                                                    src={`https://www.youtube.com/embed/${videoUrl.split('v=')[1]?.split('&')[0]}`}
-                                                    title="Mission Vlog"
-                                                    allowFullScreen
-                                                />
-                                            </div>
-                                        )}
                                     </CardContent>
                                     <CardFooter className="p-8 sm:p-12 pt-0 relative z-10">
                                         <Button 
                                             onClick={handleSave} 
-                                            disabled={isSaving || (!summary.trim() && !videoUrl.trim())}
+                                            disabled={isSaving || !summary.trim()}
                                             className="w-full h-20 rounded-[2.5rem] text-2xl font-black uppercase italic shadow-2xl group"
                                         >
                                             {isSaving ? <Loader2 className="animate-spin mr-3"/> : <ShieldCheck className="mr-3 h-8 w-8 group-hover:scale-110 transition-transform"/>}
-                                            SEAL DAILY RECORD
+                                            SEAL MISSION RECORD
                                         </Button>
                                     </CardFooter>
                                 </Card>
@@ -315,14 +422,15 @@ export default function SovereignLedger() {
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className="space-y-8"
                             >
-                                <Card className="bg-slate-900 border-white/5 rounded-[3rem] p-8 sm:p-12 shadow-2xl">
-                                    <CardHeader className="px-0 pb-12">
+                                <Card className="bg-slate-900 border-white/5 rounded-[3rem] p-8 sm:p-12 shadow-2xl relative overflow-hidden">
+                                    <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                                    <CardHeader className="px-0 pb-12 relative z-10">
                                         <CardTitle className="text-3xl font-black uppercase italic flex items-center gap-3">
-                                            <TrendingUp className="text-primary h-8 w-8"/> Cognitive Growth
+                                            <TrendingUp className="text-primary h-8 w-8"/> Cognitive Growth Pulse
                                         </CardTitle>
-                                        <CardDescription className="text-base font-medium">Strategic visualization of your mission fidelity over the last 7 entries.</CardDescription>
+                                        <CardDescription className="text-base font-medium">Strategic visualization of mission engagement over the last 7 entries.</CardDescription>
                                     </CardHeader>
-                                    <CardContent className="px-0 h-[400px]">
+                                    <CardContent className="px-0 h-[400px] relative z-10">
                                         <ResponsiveContainer width="100%" height="100%">
                                             <AreaChart data={analyticsData.last7}>
                                                 <defs>
@@ -345,35 +453,28 @@ export default function SovereignLedger() {
                                 </Card>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    <Card className="bg-black/20 border-white/5 rounded-[2.5rem] p-8">
-                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary mb-8 text-center">Mood Equilibrium</h4>
-                                        <div className="h-[250px]">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <RePieChart>
-                                                    <Pie
-                                                        data={analyticsData.pieData}
-                                                        innerRadius={60}
-                                                        outerRadius={80}
-                                                        paddingAngle={8}
-                                                        dataKey="value"
-                                                    >
-                                                        {analyticsData.pieData.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={['#8b5cf6', '#10b981', '#f59e0b', '#ef4444'][index % 4]} />
-                                                        ))}
-                                                    </Pie>
-                                                    <Tooltip />
-                                                </RePieChart>
-                                            </ResponsiveContainer>
-                                        </div>
-                                    </Card>
-
                                     <Card className="bg-primary/5 border-primary/20 rounded-[2.5rem] p-8 flex flex-col items-center justify-center text-center gap-6">
                                         <div className="p-5 rounded-full bg-primary/10 border-2 border-primary/20 shadow-2xl">
                                             <Trophy className="h-10 w-10 text-primary" />
                                         </div>
                                         <div>
-                                            <h5 className="text-xl font-black uppercase italic text-white">Elite Analyst Mode</h5>
-                                            <p className="text-xs font-medium text-slate-400 mt-2 italic">"Advanced correlation between study hours and exam confidence will manifest as your registry grows beyond 30 days."</p>
+                                            <h5 className="text-xl font-black uppercase italic text-white">Legend Analyst Mode</h5>
+                                            <p className="text-xs font-medium text-slate-400 mt-2 italic">"Advanced cognitive correlations will manifest as your registry history grows beyond 30 days."</p>
+                                        </div>
+                                    </Card>
+
+                                    <Card className="bg-black/20 border-white/5 rounded-[2.5rem] p-8 space-y-6">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary text-center">Operational Highlights</h4>
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs font-bold text-muted-foreground uppercase">Registry Entries</span>
+                                                <span className="text-lg font-black text-white">{manifests.length}</span>
+                                            </div>
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-xs font-bold text-muted-foreground uppercase">Vlogs Recorded</span>
+                                                <span className="text-lg font-black text-white">{manifests.filter(m => m.videoUrl).length}</span>
+                                            </div>
+                                            <Progress value={(manifests.filter(m => m.videoUrl).length / manifests.length) * 100} className="h-1" />
                                         </div>
                                     </Card>
                                 </div>
@@ -385,3 +486,4 @@ export default function SovereignLedger() {
         </div>
     );
 }
+
