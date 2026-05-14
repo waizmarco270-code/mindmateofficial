@@ -1,7 +1,10 @@
-
 'use client';
+/**
+ * @fileOverview Sovereign Ledger - Achievement Registry
+ * High-fidelity mission logging and cognitive analytics.
+ */
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLedger, DailyManifest } from '@/hooks/use-ledger';
 import { useAdmin } from '@/hooks/use-admin';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -17,7 +20,7 @@ import {
     ArrowRight, ChevronLeft, ChevronRight,
     Play, Info, Video, CheckCircle,
     X, ExternalLink, Loader2, Sparkles,
-    Gem, Trophy
+    Gem, Trophy, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isToday, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, subMonths, addMonths, startOfWeek, endOfWeek, addDays, parseISO } from 'date-fns';
@@ -379,15 +382,6 @@ export default function SovereignLedger() {
                     </AnimatePresence>
                 </div>
             </div>
-        </div>
-    );
-}
-
-function StatPill({ label, val, color }: any) {
-    return (
-        <div className="p-4 rounded-2xl bg-black/40 border border-white/5 flex flex-col items-center gap-1">
-            <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">{label}</p>
-            <p className={cn("text-2xl font-black italic", color)}>{val}</p>
         </div>
     );
 }
