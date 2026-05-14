@@ -24,12 +24,13 @@ import {
     X, ExternalLink, Loader2, Sparkles,
     Gem, Trophy, MessageSquare, Settings,
     FileText, Activity, Fingerprint,
-    Smile, Frown, Meh, Flame
+    Smile, Frown, Meh, Flame, Download, Skull
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { format, isToday, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, subMonths, addMonths, startOfWeek, endOfWeek, addDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
@@ -474,7 +475,7 @@ export default function SovereignLedger() {
                                                 <span className="text-xs font-bold text-muted-foreground uppercase">Vlogs Recorded</span>
                                                 <span className="text-lg font-black text-white">{manifests.filter(m => m.videoUrl).length}</span>
                                             </div>
-                                            <Progress value={(manifests.filter(m => m.videoUrl).length / manifests.length) * 100} className="h-1" />
+                                            <Progress value={(manifests.filter(m => m.videoUrl).length / (manifests.length || 1)) * 100} className="h-1" />
                                         </div>
                                     </Card>
                                 </div>
@@ -486,4 +487,3 @@ export default function SovereignLedger() {
         </div>
     );
 }
-
