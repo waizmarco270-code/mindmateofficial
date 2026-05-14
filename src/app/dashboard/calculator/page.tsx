@@ -11,7 +11,7 @@ import {
     AlertTriangle, Medal, Award, Crown, 
     Star, CheckCircle, Upload, FileText, 
     Zap, Loader2, Search, X, 
-    ShieldCheck, Microscope
+    ShieldCheck, Microscope, Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, SignedIn, SignedOut } from '@clerk/nextjs';
@@ -21,7 +21,7 @@ import { LoginWall } from '@/components/ui/login-wall';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import * as Tesseract from 'tesseract.js';
 
@@ -66,12 +66,32 @@ const TEMPLATES: Record<TemplateType, Subject[]> = {
     ],
 };
 
-const SUBJECT_KEYWORDS = [
-    'ENGLISH', 'PHYSICS', 'CHEMISTRY', 'MATHEMATICS', 'MATHS', 'BIOLOGY', 'HINDI', 
-    'SANSKRIT', 'COMPUTER SCIENCE', 'INFORMATICS', 'HISTORY', 'GEOGRAPHY', 'CIVICS', 
-    'ECONOMICS', 'POLITICAL SCIENCE', 'ACCOUNTANCY', 'BUSINESS STUDIES', 'SOCIOLOGY', 
-    'PSYCHOLOGY', 'PHYSICAL EDUCATION', 'PHE', 'PAINTING', 'DANCE', 'MUSIC', 'IT', 'AI'
-];
+const SUBJECT_MAPPING: Record<string, string> = {
+    'ENGLISH': 'English',
+    'PHYSICS': 'Physics',
+    'CHEMISTRY': 'Chemistry',
+    'MATHEMATICS': 'Maths',
+    'MATHS': 'Maths',
+    'BIOLOGY': 'Biology',
+    'HINDI': 'Hindi',
+    'SANSKRIT': 'Sanskrit',
+    'COMPUTER SCIENCE': 'CS',
+    'INFORMATICS': 'IP',
+    'HISTORY': 'History',
+    'GEOGRAPHY': 'Geography',
+    'CIVICS': 'Civics',
+    'ECONOMICS': 'Economics',
+    'POLITICAL SCIENCE': 'Pol Science',
+    'ACCOUNTANCY': 'Accountancy',
+    'BUSINESS STUDIES': 'B.St',
+    'SOCIOLOGY': 'Sociology',
+    'PSYCHOLOGY': 'Psychology',
+    'PHYSICAL EDUCATION': 'PHE',
+    'PHE': 'PHE',
+    'PAINTING': 'Painting',
+    'IT': 'IT',
+    'AI': 'AI'
+};
 
 const CALCULATION_COST = 2;
 const SCAN_COST = 10;
@@ -100,6 +120,7 @@ export default function PercentageCalculatorPage() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState(0);
   const [isScanDialogOpen, setIsScanDialogOpen] = useState(false);
+  const [scanStatus, setScanStatus] = useState('Initializing Reactor...');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -186,35 +207,39 @@ export default function PercentageCalculatorPage() {
 
     setIsScanning(true);
     setScanProgress(0);
+    setScanStatus('Initializing High-Fidelity Drive...');
     setIsScanDialogOpen(true);
 
     try {
-        // Tesseract local OCR protocol
-        const worker = await Tesseract.createWorker({
-            logger: m => {
-                if (m.status === 'recognizing text') setScanProgress(Math.floor(m.progress * 100));
+        // USE RECOGNIZE DIRECTLY TO AVOID WORKER CLONING ERROR
+        const { data: { text } } = await Tesseract.recognize(
+            file,
+            'eng',
+            { 
+              logger: m => {
+                if (m.status === 'recognizing text') {
+                  setScanStatus('Extracting Sovereign Signal...');
+                  setScanProgress(Math.floor(m.progress * 100));
+                }
+              }
             }
-        });
+        );
 
-        await worker.loadLanguage('eng');
-        await worker.initialize('eng');
+        setScanStatus('Analyzing Neural Patterns...');
         
-        const { data: { text } } = await worker.recognize(file);
-        await worker.terminate();
-
-        // HEURISTIC PARSING PROTOCOL (Non-AI)
+        // HEURISTIC PARSING PROTOCOL
         const lines = text.toUpperCase().split('\n');
         const detectedSubjects: Subject[] = [];
         
         lines.forEach((line, index) => {
-            SUBJECT_KEYWORDS.forEach(keyword => {
+            Object.keys(SUBJECT_MAPPING).forEach(keyword => {
                 if (line.includes(keyword)) {
-                    // Look for numbers following the keyword
+                    // Optimized Marks Search: Look for 2-3 digit numbers
                     const scoreMatch = line.match(/\b([3-9]\d|100)\b/); 
                     if (scoreMatch) {
                         detectedSubjects.push({
                             id: Date.now() + index + Math.random(),
-                            name: keyword.charAt(0) + keyword.slice(1).toLowerCase(),
+                            name: SUBJECT_MAPPING[keyword],
                             marks: scoreMatch[0],
                             isCompulsory: keyword === 'ENGLISH'
                         });
@@ -225,18 +250,29 @@ export default function PercentageCalculatorPage() {
 
         if (detectedSubjects.length > 0) {
             setTemplate('custom');
-            setSubjects(detectedSubjects);
+            // Remove duplicates and keep highest score per subject
+            const uniqueMap = new Map<string, Subject>();
+            detectedSubjects.forEach(s => {
+                const existing = uniqueMap.get(s.name);
+                if (!existing || parseFloat(s.marks) > parseFloat(existing.marks)) {
+                    uniqueMap.set(s.name, s);
+                }
+            });
+            
+            setSubjects(Array.from(uniqueMap.values()));
             if (!hasMaster) addCreditsToUser(user.id, -SCAN_COST);
-            toast({ title: "Signal Decoded!", description: `Injected ${detectedSubjects.length} subjects into the form.` });
+            toast({ title: "Signal Decoded!", description: `Registry injected with ${uniqueMap.size} subjects.` });
         } else {
             toast({ variant: 'destructive', title: "Detection Failed", description: "The mainframe could not find valid patterns in your marksheet." });
         }
 
     } catch (err) {
+        console.error("Scanner Error:", err);
         toast({ variant: 'destructive', title: "Scanner Error", description: "Temporal breach in the scanning drive." });
     } finally {
         setIsScanning(false);
         setIsScanDialogOpen(false);
+        if(e.target) e.target.value = '';
     }
   };
   
@@ -339,11 +375,11 @@ export default function PercentageCalculatorPage() {
                         <p className="text-sm text-slate-400 font-medium italic mt-1">"Why type when the mainframe can perceive?"</p>
                     </div>
                     <p className="text-xs text-slate-500 max-w-md mx-auto leading-relaxed">
-                        Upload a photo or digital PDF of your marksheet. The system will decode the signal and fetch your results using heuristic pattern matching.
+                        Upload a snapshot of your marksheet. The system will decode the signal and fetch your results using heuristic pattern matching.
                     </p>
                 </div>
                 <div className="relative z-10 pt-4 flex flex-col items-center gap-4">
-                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*,.pdf" className="hidden" />
+                    <input type="file" ref={fileInputRef} onChange={handleFileUpload} accept="image/*" className="hidden" />
                     <Button 
                         size="lg" 
                         onClick={() => fileInputRef.current?.click()}
@@ -440,7 +476,7 @@ export default function PercentageCalculatorPage() {
 
               <div className="space-y-2 relative z-10">
                   <h3 className="text-2xl font-black uppercase italic text-emerald-500 tracking-tighter">DECODING SIGNAL</h3>
-                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Heuristic Pattern Extraction in Progress</p>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">{scanStatus}</p>
               </div>
 
               <div className="space-y-3 relative z-10">
