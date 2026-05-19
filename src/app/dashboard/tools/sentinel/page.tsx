@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,8 @@ import {
     AlertTriangle, Info, ArrowRight,
     FileCode, Terminal, Globe, 
     ShieldAlert, Lock, Code,
-    ChevronRight, ExternalLink
+    ChevronRight, ExternalLink,
+    Clock, Beaker
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -56,6 +56,7 @@ console.log("Sentinel Pulse Active.");`;
 export default function SentinelExtensionPage() {
     const { toast } = useToast();
     const [copiedFile, setCopiedFile] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState('manifest');
 
     const handleCopy = (content: string, fileName: string) => {
         navigator.clipboard.writeText(content);
@@ -96,7 +97,7 @@ export default function SentinelExtensionPage() {
                     </section>
 
                     <Card className="bg-slate-900/60 border-white/5 rounded-[2.5rem] overflow-hidden">
-                        <Tabs defaultValue="manifest">
+                        <Tabs defaultValue="manifest" onValueChange={setActiveTab}>
                             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
                                 <TabsList className="bg-black/40 h-10">
                                     <TabsTrigger value="manifest" className="text-[10px] font-black uppercase">manifest.json</TabsTrigger>
@@ -106,7 +107,7 @@ export default function SentinelExtensionPage() {
                                     variant="ghost" 
                                     size="sm" 
                                     className="h-8 font-black uppercase text-[10px] tracking-widest text-primary"
-                                    onClick={() => handleCopy(activeTab === 'manifest' ? MANIFEST_JSON : BACKGROUND_JS, 'file')}
+                                    onClick={() => handleCopy(activeTab === 'manifest' ? MANIFEST_JSON : BACKGROUND_JS, activeTab === 'manifest' ? 'manifest.json' : 'background.js')}
                                 >
                                     {copiedFile ? <Check className="mr-2 h-3 w-3"/> : <Copy className="mr-2 h-3 w-3"/>}
                                     COPY BLUEPRINT

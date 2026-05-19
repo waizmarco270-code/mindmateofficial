@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode, Youtube, Instagram } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode, Youtube, Instagram, Puzzle } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -40,6 +39,15 @@ const toolCategories = [
         href: "/dashboard/tools/notepad",
         color: "from-fuchsia-500 to-purple-500",
         shadow: "shadow-fuchsia-500/30"
+    },
+    {
+        id: 'sentinel',
+        title: "Sovereign Sentinel",
+        description: "Official PC extension to enforce isolation and redirect distractions.",
+        icon: Puzzle,
+        href: "/dashboard/tools/sentinel",
+        color: "from-primary to-purple-600",
+        shadow: "shadow-primary/30"
     },
     {
         id: 'unit-converter',
