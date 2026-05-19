@@ -11,7 +11,7 @@ import {
     Youtube, Link as LinkIcon, PlayCircle, WifiOff,
     ChevronLeft, ChevronRight, Calendar, BarChart3, Timer,
     PanelLeftClose, PanelLeftOpen, LayoutDashboard, Sparkles,
-    ShieldCheck, Crown, Flame, Smartphone
+    ShieldCheck, Crown, Flame, Smartphone, Puzzle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,7 +51,7 @@ const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
 
 const formatSecondsToTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((totalSeconds % 3600) / 60);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = totalSeconds % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
@@ -467,13 +467,14 @@ export default function IsolationHub() {
     }
 
     return (
-        <div className="space-y-8 max-w-6xl mx-auto">
+        <div className="space-y-8 max-w-6xl mx-auto pb-20">
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div><h1 className="text-4xl font-black tracking-tight italic uppercase flex items-center gap-3"><Lock className="text-red-500" /> ISOLATION TERMINAL</h1><p className="text-muted-foreground font-medium">Protocol: Voluntary Digital Exile for Absolute Mastery.</p></div>
             </div>
+            
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-6">
+                <div className="lg:col-span-2 space-y-8">
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">{(Object.entries(ISOLATION_CONFIGS)).map(([id, config]) => (<button key={id} onClick={() => setSelectedDuration(id as IsolationDuration)} className={cn("p-6 rounded-[2rem] border-2 transition-all text-left space-y-4 group", selectedDuration === id ? "bg-primary/10 border-primary shadow-xl" : "bg-muted/30 border-white/5 hover:border-primary/30")}><div className="flex justify-between items-start"><div className="p-3 rounded-2xl bg-black/20 border border-white/5 group-hover:scale-110 transition-transform"><Clock className="h-6 w-6 text-primary" /></div>{id === '1y' && <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 animate-pulse" />}</div><div><h3 className="text-2xl font-black tracking-tighter uppercase">{config.label}</h3><p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{config.targetHours} Study Hours</p></div></button>))}</div>
                     {selectedDuration && (
                         <Card className="border-primary/30 bg-primary/5 animate-in slide-in-from-bottom-4 rounded-[2rem]">
@@ -499,7 +500,32 @@ export default function IsolationHub() {
                             </CardContent>
                         </Card>
                     )}
+
+                    {/* SOVEREIGN SENTINEL EXTENSION BRIEFING */}
+                    <Card className="relative overflow-hidden bg-slate-900 border-2 border-primary/30 rounded-[3rem] shadow-2xl p-8 sm:p-12">
+                        <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                            <div className="p-6 rounded-[2.5rem] bg-primary/10 border-2 border-primary/20 text-primary shadow-[0_0_50px_rgba(139,92,246,0.3)]">
+                                <Puzzle className="h-16 w-16 animate-pulse" />
+                            </div>
+                            <div className="flex-1 text-center md:text-left space-y-4">
+                                <div className="space-y-1">
+                                    <Badge className="bg-primary text-white font-black uppercase text-[9px] tracking-widest mb-2">PC HARDWARE UPGRADE</Badge>
+                                    <h3 className="text-3xl font-black italic uppercase text-white tracking-tighter">Sovereign Sentinel Extension</h3>
+                                </div>
+                                <p className="text-slate-400 font-medium leading-relaxed">
+                                    "Is the browser alone too weak to hold your focus? The Sentinel Extension is coming. A system-level enforcer that redirects distractions like Instagram and YouTube directly back to this command module during Isolation."
+                                </p>
+                                <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
+                                    <ExtensionPill icon={ShieldCheck} text="Distraction Redirection" />
+                                    <ExtensionPill icon={Zap} text="Live Tab Lockdown" />
+                                    <ExtensionPill icon={Clock} text="Overlay Focus HUD" />
+                                </div>
+                            </div>
+                        </div>
+                    </Card>
                 </div>
+
                 <div className="space-y-6">
                     <Card className="border-red-500/30 bg-red-500/5 rounded-[2rem]">
                         <CardHeader>
@@ -518,9 +544,53 @@ export default function IsolationHub() {
                             </div>
                         </CardContent>
                     </Card>
-                    <Card className="bg-muted/30 border-dashed border-2 rounded-[2rem]"><CardHeader className="text-center pb-2"><CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Emergence Bounty</CardTitle></CardHeader><CardContent className="space-y-4">{selectedDuration ? (<div className="space-y-3"><div className="flex justify-between items-center bg-background p-3 rounded-xl border"><div className="flex items-center gap-2"><Gem className="h-4 w-4 text-primary"/><span className="text-xs font-bold uppercase">Credits</span></div><span className="font-black text-green-500">+{ISOLATION_CONFIGS[selectedDuration].rewardCredits}</span></div><div className="flex justify-between items-center bg-background p-3 rounded-xl border"><div className="flex items-center gap-2"><Wallet className="h-4 w-4 text-primary"/><span className="text-xs font-bold uppercase">Vault</span></div><span className="font-black text-green-500">+₹{ISOLATION_CONFIGS[selectedDuration].rewardWallet}</span></div><div className="flex flex-col items-center p-6 bg-primary/5 rounded-2xl border border-primary/20 group"><div className="scale-125 mb-4 group-hover:scale-150 transition-transform duration-500">{badgeDetails[ISOLATION_CONFIGS[selectedDuration].badge]?.badge}</div><p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Elite Identity Rank</p></div></div>) : (<div className="text-center py-10 opacity-30"><Trophy className="h-12 w-12 mx-auto mb-2" /><p className="text-[10px] font-black uppercase tracking-widest">Select Phase</p></div>)}</CardContent></Card>
+                    <Card className="bg-muted/30 border-dashed border-2 rounded-[2rem]">
+                        <CardHeader className="text-center pb-2">
+                            <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground">Emergence Bounty</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {selectedDuration ? (
+                                <div className="space-y-3">
+                                    <div className="flex justify-between items-center bg-background p-3 rounded-xl border">
+                                        <div className="flex items-center gap-2">
+                                            <Gem className="h-4 w-4 text-primary"/>
+                                            <span className="text-xs font-bold uppercase">Credits</span>
+                                        </div>
+                                        <span className="font-black text-green-500">+{ISOLATION_CONFIGS[selectedDuration].rewardCredits}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center bg-background p-3 rounded-xl border">
+                                        <div className="flex items-center gap-2">
+                                            <Wallet className="h-4 w-4 text-primary"/>
+                                            <span className="text-xs font-bold uppercase">Vault</span>
+                                        </div>
+                                        <span className="font-black text-green-500">+₹{ISOLATION_CONFIGS[selectedDuration].rewardWallet}</span>
+                                    </div>
+                                    <div className="flex flex-col items-center p-6 bg-primary/5 rounded-2xl border border-primary/20 group">
+                                        <div className="scale-125 mb-4 group-hover:scale-150 transition-transform duration-500">
+                                            {badgeDetails[ISOLATION_CONFIGS[selectedDuration].badge]?.badge}
+                                        </div>
+                                        <p className="text-[10px] font-black uppercase tracking-widest mt-2 opacity-60">Elite Identity Rank</p>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-10 opacity-30">
+                                    <Trophy className="h-12 w-12 mx-auto mb-2" />
+                                    <p className="text-[10px] font-black uppercase tracking-widest">Select Phase</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function ExtensionPill({ icon: Icon, text }: { icon: any, text: string }) {
+    return (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 border border-white/10">
+            <Icon className="h-3 w-3 text-primary" />
+            <span className="text-[8px] font-black uppercase tracking-widest text-slate-300">{text}</span>
         </div>
     );
 }
