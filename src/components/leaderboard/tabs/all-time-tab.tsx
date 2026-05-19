@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
@@ -232,7 +231,7 @@ export function AllTimeTab({ users, currentUserId, onUserClick }: AllTimeTabProp
                         isFlipped={!!flippedCards[user.uid]}
                         onFlip={() => handleFlip(user.uid)}
                         onShowcase={() => setShowcaseUser(user)}
-                        itemRef={(el) => { if (user.uid) itemRefs.current[user.uid] = el; }}
+                        itemRef={(el: HTMLDivElement | null) => { if (user.uid) itemRefs.current[user.uid] = el; }}
                     />
                 ))}
             </div>
@@ -311,7 +310,7 @@ function RegistryFlipCard({ user, rank, isMe, isFlipped, onFlip, onShowcase, ite
                 {/* BACK: THE DATA DOSSIER */}
                 <div className="absolute inset-0 backface-hidden rotate-y-180">
                     <Card className="h-full border-primary/30 bg-slate-900/95 rounded-[1.5rem] sm:rounded-[2.5rem] flex items-stretch p-2 sm:p-4 relative overflow-hidden">
-                        <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
+                        <div className="absolute inset-0 bg-grid-slate-800/50 opacity-10" />
                         
                         {/* LEFT PANE: IDENTITY */}
                         <div className="w-[30%] flex flex-col items-center justify-center gap-1 border-r border-white/5 pr-2 sm:pr-4">
@@ -347,11 +346,11 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
         <Dialog open={!!user} onOpenChange={(o) => !o && onClose()}>
             <DialogContent className="max-w-xl bg-background/95 backdrop-blur-3xl border-primary/20 p-0 overflow-hidden rounded-[3rem] shadow-2xl">
                 <div className="h-32 bg-gradient-to-br from-primary/20 via-background to-background relative overflow-hidden">
-                    <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
-                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-10 w-10 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive z-50" onClick={onClose}><X className="h-6 w-6"/></Button>
+                    <div className="absolute inset-0 bg-grid-white/5" />
+                    <Button variant="ghost" size="icon" className="absolute top-4 right-4 h-8 w-8 rounded-full bg-black/20 text-white hover:bg-destructive/20 hover:text-destructive" onClick={onClose}><X className="h-6 w-6"/></Button>
                 </div>
                 
-                <div className="px-6 sm:px-10 pb-12 -mt-16 relative z-10">
+                <div className="px-6 sm:px-8 pb-10 -mt-12 relative z-10">
                     <div className="flex flex-col items-center text-center space-y-4">
                         <div className={cn("avatar-frame-base h-24 w-24 sm:h-32 sm:w-32", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
                             <Avatar className={cn("h-full w-full border-4 shadow-2xl bg-background relative z-10")}>
@@ -363,8 +362,8 @@ function BadgeShowcaseDialog({ user, onClose }: { user: UserWithStats | null, on
                             {user.isPlusMember && (
                                 <p className="text-[10px] font-black uppercase tracking-[0.3em] premium-text-gradient mb-1">MindMate Plus Member</p>
                             )}
-                            <h3 className="text-2xl sm:text-4xl font-black uppercase italic tracking-tight leading-none">{user.displayName}</h3>
-                            <p className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground mt-2">Identity Registry • {user.mindMateId || 'LEGEND'}</p>
+                            <h3 className="text-xl sm:text-2xl font-black uppercase italic tracking-tight leading-none">{user.displayName}</h3>
+                            <p className="text-xs font-black uppercase tracking-[0.3em] text-muted-foreground mt-2">Identity Dossier • {user.mindMateId || 'LEGEND'}</p>
                         </div>
                     </div>
 
