@@ -10,7 +10,8 @@ import {
     ShieldAlert, Lock, Code,
     ChevronRight, ExternalLink,
     Clock, Beaker, FileJson, FileText, X,
-    Settings, ListPlus, Shield
+    Settings, ListPlus, Shield,
+    Smartphone, SmartphoneOff
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -312,10 +313,10 @@ export default function SentinelExtensionPage() {
                             <div className="p-3 rounded-2xl bg-primary/10 text-primary border border-primary/20">
                                 <ShieldCheck className="h-6 w-6" />
                             </div>
-                            <h4 className="font-black uppercase text-sm tracking-widest text-white">Version 2.0 Active</h4>
+                            <h4 className="font-black uppercase text-sm tracking-widest text-white">PC Authorization Required</h4>
                         </div>
                         <p className="text-sm text-slate-400 font-medium leading-relaxed italic">
-                            "The Sentinel v2.0 introduces the **Control Matrix**. You no longer rely on fixed rules. You define the hazard zones. You hold the power of redirection."
+                            "The Sentinel is a system-level enforcer designed to bridge the gap between web application and hardware discipline."
                         </p>
                         <ul className="space-y-4">
                             <FeaturePill icon={ListPlus} text="Custom Site Injection" />
@@ -326,12 +327,12 @@ export default function SentinelExtensionPage() {
 
                     <Card className="border-amber-500/20 bg-amber-500/5 rounded-[2rem] p-6">
                         <div className="flex items-start gap-4 text-amber-500">
-                            <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
+                            <SmartphoneOff className="h-5 w-5 shrink-0 mt-0.5" />
                             <div className="space-y-1">
                                 <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                                    Strategic Redirection
+                                    Mobile Compatibility Briefing
                                 </p>
-                                <p className="text-[10px] text-amber-500/70 font-medium">The extension only works on PC browsers. It creates a hardened focus wall that redirects you back to MindMate every time you slip up.</p>
+                                <p className="text-[10px] text-amber-500/70 font-medium">Extension protocols are restricted to PC environments (Chrome/Edge/Brave). For mobile focus, utilize native iOS/Android "App Limit" settings in conjunction with the MindMate PWA.</p>
                             </div>
                         </div>
                     </Card>
