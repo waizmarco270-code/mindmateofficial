@@ -50,7 +50,8 @@ import {
   Sigma,
   Video,
   School,
-  ScrollText
+  ScrollText,
+  Puzzle
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -96,6 +97,7 @@ const competeNav = [
 ];
 
 const helpNav = [
+    { href: '/dashboard/tools/sentinel', icon: Puzzle, label: 'Sentinel PC', glow: 'text-primary' },
     { href: '/dashboard/docs', icon: FileText, label: 'Documentation', glow: 'text-blue-400' },
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Support Center', glow: 'text-rose-400' },
 ];

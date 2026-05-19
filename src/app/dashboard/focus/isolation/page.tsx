@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
@@ -30,6 +31,7 @@ import { Input } from '@/components/ui/input';
 import { TacticalCalculator } from '@/components/isolation/tactical-calculator';
 import { TaskTerminal } from '@/components/isolation/task-terminal';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
+import Link from 'next/link';
 
 const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
     dev: { name: 'Developer', badge: <span className="dev-badge"><Code className="h-3 w-3" /> DEV</span> },
@@ -51,7 +53,7 @@ const badgeDetails: Record<string, { name: string, badge: JSX.Element }> = {
 
 const formatSecondsToTime = (totalSeconds: number) => {
     const hrs = Math.floor(totalSeconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
+    const mins = Math.floor((totalSeconds % 3600) / 60);
     const secs = totalSeconds % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 };
@@ -502,28 +504,30 @@ export default function IsolationHub() {
                     )}
 
                     {/* SOVEREIGN SENTINEL EXTENSION BRIEFING */}
-                    <Card className="relative overflow-hidden bg-slate-900 border-2 border-primary/30 rounded-[3rem] shadow-2xl p-8 sm:p-12">
-                        <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
-                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                            <div className="p-6 rounded-[2.5rem] bg-primary/10 border-2 border-primary/20 text-primary shadow-[0_0_50px_rgba(139,92,246,0.3)]">
-                                <Puzzle className="h-16 w-16 animate-pulse" />
-                            </div>
-                            <div className="flex-1 text-center md:text-left space-y-4">
-                                <div className="space-y-1">
-                                    <Badge className="bg-primary text-white font-black uppercase text-[9px] tracking-widest mb-2">PC HARDWARE UPGRADE</Badge>
-                                    <h3 className="text-3xl font-black italic uppercase text-white tracking-tighter">Sovereign Sentinel Extension</h3>
+                    <Link href="/dashboard/tools/sentinel">
+                        <Card className="relative overflow-hidden bg-slate-900 border-2 border-primary/30 rounded-[3rem] shadow-2xl p-8 sm:p-12 hover:border-primary transition-all cursor-pointer group">
+                            <div className="absolute inset-0 bg-grid-white/5 opacity-20" />
+                            <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
+                                <div className="p-6 rounded-[2.5rem] bg-primary/10 border-2 border-primary/20 text-primary shadow-[0_0_50px_rgba(139,92,246,0.3)] group-hover:scale-110 transition-transform duration-500">
+                                    <Puzzle className="h-16 w-16 animate-pulse" />
                                 </div>
-                                <p className="text-slate-400 font-medium leading-relaxed">
-                                    "Is the browser alone too weak to hold your focus? The Sentinel Extension is coming. A system-level enforcer that redirects distractions like Instagram and YouTube directly back to this command module during Isolation."
-                                </p>
-                                <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
-                                    <ExtensionPill icon={ShieldCheck} text="Distraction Redirection" />
-                                    <ExtensionPill icon={Zap} text="Live Tab Lockdown" />
-                                    <ExtensionPill icon={Clock} text="Overlay Focus HUD" />
+                                <div className="flex-1 text-center md:text-left space-y-4">
+                                    <div className="space-y-1">
+                                        <Badge className="bg-primary text-white font-black uppercase text-[9px] tracking-widest mb-2">PC HARDWARE UPGRADE</Badge>
+                                        <h3 className="text-3xl font-black italic uppercase text-white tracking-tighter">Sovereign Sentinel Extension</h3>
+                                    </div>
+                                    <p className="text-slate-400 font-medium leading-relaxed">
+                                        "Is the browser alone too weak to hold your focus? The Sentinel Extension is the missing piece. A system-level enforcer that redirects distractions like Instagram and YouTube directly back to this command module during Isolation."
+                                    </p>
+                                    <div className="flex flex-wrap justify-center md:justify-start gap-4 pt-2">
+                                        <ExtensionPill icon={ShieldCheck} text="Distraction Redirection" />
+                                        <ExtensionPill icon={Zap} text="Live Tab Lockdown" />
+                                        <ExtensionPill icon={Clock} text="Overlay Focus HUD" />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </Card>
+                        </Card>
+                    </Link>
                 </div>
 
                 <div className="space-y-6">
