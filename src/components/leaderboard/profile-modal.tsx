@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface ProfileModalProps {
     user: UserWithStats | null;
