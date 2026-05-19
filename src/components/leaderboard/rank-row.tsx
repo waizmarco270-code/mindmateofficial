@@ -1,9 +1,11 @@
+
 'use client';
 
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Clock, Gem, Flame, ChevronRight } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ShowcaseBadge } from './shared/badge-renderer';
 
@@ -12,9 +14,10 @@ interface RankRowProps {
     rank: number;
     isMe: boolean;
     onClick: (user: UserWithStats) => void;
+    scoreKey?: 'totalScore' | 'weeklyScore' | 'monthlyScore';
 }
 
-export function RankRow({ user, rank, isMe, onClick }: RankRowProps) {
+export function RankRow({ user, rank, isMe, onClick, scoreKey = 'totalScore' }: RankRowProps) {
     const equippedFrameId = user.equippedFrame || 'default';
 
     return (
@@ -60,7 +63,7 @@ export function RankRow({ user, rank, isMe, onClick }: RankRowProps) {
                 <div className="text-right shrink-0 relative z-10 flex items-center gap-4 sm:gap-10">
                     <div>
                         <p className="text-xl sm:text-4xl font-black italic tracking-tighter leading-none tabular-nums text-white">
-                            {user.totalScore.toLocaleString()}
+                            {Math.round(user[scoreKey] || 0).toLocaleString()}
                         </p>
                         <p className="text-[8px] font-black uppercase opacity-40 mt-1 tracking-widest">Points</p>
                     </div>

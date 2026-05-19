@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useMemo } from 'react';
-import { useUsers, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
+import { useUsers, User, SUPER_ADMIN_UID } from '@/hooks/use-admin';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO, isWithinInterval, subWeeks } from 'date-fns';
 
@@ -10,13 +11,9 @@ export type UserWithStats = User & {
     weeklyTime: number; 
     monthlyTime: number;
     prevWeeklyTime: number;
-    entertainmentTotalScore: number;
+    weeklyScore: number;
+    monthlyScore: number;
     breakdown: {
-        creditsPoints: number;
-        studyPoints: number;
-        streakPoints: number;
-        isolationPoints: number;
-        badgePoints: number;
         isolationLabel: string;
         badgeCount: number;
     }
@@ -26,11 +23,13 @@ function getBadgeCount(user: User) {
     const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
     let count = 0;
     if (isSuperAdmin) count++;
+    if (user.isPlusMember) count++;
     if (user.isCoDev) count++;
     if (user.isAdmin) count++;
     if (user.isVip) count++;
     if (user.isGM) count++;
     if (user.isChallenger) count++;
+    if (user.isChampion) count++;
     if (user.isEarlyBird) count++;
     if (user.isNightOwl) count++;
     if (user.isKnowledgeKnight) count++;
@@ -45,7 +44,7 @@ function getBadgeCount(user: User) {
 
 export function useLeaderboardData() {
     const { users, loading: usersLoading } = useUsers();
-    const { sessions: allSessions, pomodoroSessions, loading: timeLoading } = useTimeTracker();
+    const { sessions: allSessions, loading: timeLoading } = useTimeTracker();
 
     const stats = useMemo(() => {
         const now = new Date();
@@ -53,37 +52,52 @@ export function useLeaderboardData() {
         const lastWeek = { start: startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }), end: endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }) };
         const thisMonth = { start: startOfMonth(now), end: endOfMonth(now) };
         
-        const userStats: { [uid: string]: { weekly: number, monthly: number, prevWeekly: number } } = {};
+        const userStats: { [uid: string]: { weeklyTime: number, monthlyTime: number, prevWeeklyTime: number, weeklyCredits: number, monthlyCredits: number } } = {};
         
         const ensureUser = (uid: string) => {
-            if (!userStats[uid]) userStats[uid] = { weekly: 0, monthly: 0, prevWeekly: 0 };
+            if (!userStats[uid]) userStats[uid] = { weeklyTime: 0, monthlyTime: 0, prevWeeklyTime: 0, weeklyCredits: 0, monthlyCredits: 0 };
         };
 
+        // 1. Calculate Study Times
         allSessions.forEach(s => {
             ensureUser(s.userId);
             const date = parseISO(s.startTime);
             const dur = (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 1000;
 
-            if (isWithinInterval(date, thisWeek)) userStats[s.userId].weekly += dur;
-            if (isWithinInterval(date, lastWeek)) userStats[s.userId].prevWeekly += dur;
-            if (isWithinInterval(date, thisMonth)) userStats[s.userId].monthly += dur;
+            if (isWithinInterval(date, thisWeek)) userStats[s.userId].weeklyTime += dur;
+            if (isWithinInterval(date, lastWeek)) userStats[s.userId].prevWeeklyTime += dur;
+            if (isWithinInterval(date, thisMonth)) userStats[s.userId].monthlyTime += dur;
         });
-        
-        pomodoroSessions.forEach(s => {
-            ensureUser(s.userId);
-            const date = parseISO(s.completedAt);
-            if (isWithinInterval(date, thisWeek)) userStats[s.userId].weekly += s.duration;
-            if (isWithinInterval(date, lastWeek)) userStats[s.userId].prevWeekly += s.duration;
-            if (isWithinInterval(date, thisMonth)) userStats[s.userId].monthly += s.duration;
+
+        // 2. Calculate Credits Earned in period
+        users.forEach(user => {
+            ensureUser(user.uid);
+            const history = user.rewardHistory || [];
+            history.forEach(reward => {
+                const date = reward.date.toDate();
+                const amount = typeof reward.reward === 'number' ? reward.reward : 0;
+                if (isWithinInterval(date, thisWeek)) userStats[user.uid].weeklyCredits += amount;
+                if (isWithinInterval(date, thisMonth)) userStats[user.uid].monthlyCredits += amount;
+            });
+            // Also check transactions
+            const txs = user.transactions || [];
+            txs.forEach(tx => {
+                const date = parseISO(tx.date);
+                if (isWithinInterval(date, thisWeek)) userStats[user.uid].weeklyCredits += (tx.credits || 0);
+                if (isWithinInterval(date, thisMonth)) userStats[user.uid].monthlyCredits += (tx.credits || 0);
+            });
         });
 
         return userStats;
-    }, [allSessions, pomodoroSessions]);
+    }, [allSessions, users]);
 
     const processedUsers = useMemo(() => {
         return users
             .filter(u => !u.isBlocked)
             .map(user => {
+                const uStats = stats[user.uid] || { weeklyTime: 0, monthlyTime: 0, prevWeeklyTime: 0, weeklyCredits: 0, monthlyCredits: 0 };
+                
+                // All-Time Score Formula: (Credits/2) + (StudyMinutes) + (Streak*10) + (BadgeCount*100) + (IsolationPoints)
                 const credits = user.credits || 0;
                 const studySeconds = user.totalStudyTime || 0;
                 const streak = user.streak || 0;
@@ -103,21 +117,21 @@ export function useLeaderboardData() {
                 else if (user.isIsolater) { isolationPoints = 5000; isolationLabel = 'Isolater'; }
 
                 const totalScore = creditsPoints + studyPoints + streakPoints + isolationPoints + badgePoints;
-                const uStats = stats[user.uid] || { weekly: 0, monthly: 0, prevWeekly: 0 };
+
+                // Weekly/Monthly Score Formula: (Study Minutes) + (Credits Earned)
+                const weeklyScore = Math.round((uStats.weeklyTime / 60) + uStats.weeklyCredits);
+                const monthlyScore = Math.round((uStats.monthlyTime / 60) + uStats.monthlyCredits);
 
                 return { 
                     ...user, 
                     totalScore: Math.round(totalScore), 
-                    weeklyTime: uStats.weekly,
-                    monthlyTime: uStats.monthly,
-                    prevWeeklyTime: uStats.prevWeekly,
-                    entertainmentTotalScore: 0, // Simplified for this redesign
+                    weeklyTime: uStats.weeklyTime,
+                    monthlyTime: uStats.monthlyTime,
+                    prevWeeklyTime: uStats.prevWeeklyTime,
+                    weeklyScore,
+                    monthlyScore,
+                    entertainmentTotalScore: totalScore, // Using totalScore as entertainment basis
                     breakdown: {
-                        creditsPoints,
-                        studyPoints,
-                        streakPoints,
-                        isolationPoints,
-                        badgePoints,
                         isolationLabel,
                         badgeCount
                     }

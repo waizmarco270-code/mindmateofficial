@@ -1,9 +1,11 @@
+
 'use client';
 
 import { UserWithStats } from '@/hooks/use-leaderboard-data';
 import { motion } from 'framer-motion';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Crown, Zap, Medal, Star, Clock, Gem } from 'lucide-react';
+import { Crown, Trophy, Clock, Gem, Flame } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { ShowcaseBadge } from './shared/badge-renderer';
 
@@ -11,9 +13,10 @@ interface PodiumCardProps {
     rank: 1 | 2 | 3;
     user?: UserWithStats;
     onClick: (user: UserWithStats) => void;
+    scoreKey?: 'totalScore' | 'weeklyScore' | 'monthlyScore';
 }
 
-export function PodiumCard({ rank, user, onClick }: PodiumCardProps) {
+export function PodiumCard({ rank, user, onClick, scoreKey = 'totalScore' }: PodiumCardProps) {
     if (!user) return null;
 
     const styles = {
@@ -39,6 +42,8 @@ export function PodiumCard({ rank, user, onClick }: PodiumCardProps) {
             aura: 'bg-orange-500/20'
         }
     }[rank];
+
+    const equippedFrameId = user.equippedFrame || 'default';
 
     return (
         <motion.div
@@ -68,13 +73,13 @@ export function PodiumCard({ rank, user, onClick }: PodiumCardProps) {
 
                 <div className="flex flex-col items-center gap-6 relative z-10 text-center">
                     <div className="relative">
-                        <div className={cn("avatar-frame-base", (user.equippedFrame || 'default') === 'premium' ? 'avatar-frame-premium' : 'border-4 border-white/20 p-1')}>
-                            <Avatar className={cn("h-24 w-24 sm:h-32 sm:w-32 border-2 border-background shadow-2xl bg-background")}>
+                        <div className={cn("avatar-frame-base", equippedFrameId === 'premium' ? 'avatar-frame-premium' : 'border-4 border-white/20 p-1')}>
+                            <Avatar className={cn("h-24 w-24 sm:h-32 sm:w-32 border-2 border-background shadow-2xl bg-background relative z-10")}>
                                 <AvatarImage src={user.photoURL} />
                                 <AvatarFallback className="text-3xl">{user.displayName.charAt(0)}</AvatarFallback>
                             </Avatar>
                         </div>
-                        <div className={cn("absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full border-2 bg-background font-black italic shadow-xl", styles.border, styles.text)}>
+                        <div className={cn("absolute -bottom-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full border-2 bg-background font-black italic shadow-xl z-20 text-[10px] sm:text-sm", styles.border, styles.text)}>
                             #{rank}
                         </div>
                     </div>
@@ -84,9 +89,16 @@ export function PodiumCard({ rank, user, onClick }: PodiumCardProps) {
                         <div className="scale-110"><ShowcaseBadge user={user} /></div>
                     </div>
 
+                    <div className="space-y-1">
+                        <p className={cn("text-5xl font-black tracking-tighter", styles.text)}>
+                            {Math.round(user[scoreKey] || 0).toLocaleString()}
+                        </p>
+                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Operational Points</p>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4 w-full pt-6 border-t border-white/10">
-                        <Stat val={(user.totalStudyTime || 0) / 3600} label="HOURS" icon={Clock} color="text-sky-400" />
-                        <Stat val={user.credits} label="CREDITS" icon={Gem} color="text-amber-500" />
+                        <MinStat val={Math.round((user.totalStudyTime || 0) / 3600)} label="HRS" icon={Clock} color="text-sky-400" />
+                        <MinStat val={user.credits} label="CR" icon={Gem} color="text-amber-500" />
                     </div>
                 </div>
             </div>
@@ -94,12 +106,12 @@ export function PodiumCard({ rank, user, onClick }: PodiumCardProps) {
     );
 }
 
-function Stat({ val, label, icon: Icon, color }: any) {
+function MinStat({ val, label, icon: Icon, color }: any) {
     return (
         <div className="space-y-1">
             <div className="flex items-center justify-center gap-1.5">
                 <Icon className={cn("h-3 w-3", color)} />
-                <span className="text-lg font-black italic text-white">{Math.round(val).toLocaleString()}</span>
+                <span className="text-sm font-black italic text-white">{val.toLocaleString()}</span>
             </div>
             <p className="text-[8px] font-black uppercase tracking-widest opacity-40">{label}</p>
         </div>
