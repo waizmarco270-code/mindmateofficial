@@ -1,289 +1,163 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { useUsers } from '@/hooks/use-admin';
 import { useLeaderboardData, UserWithStats } from '@/hooks/use-leaderboard-data';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { 
-    Settings2, Loader2, Trophy, ShieldCheck, Globe, 
-    Info, X, Target, Star, Medal, Clock, 
-    Flame, ShieldAlert, Award, Gem, LayoutDashboard,
-    ChevronRight, ChevronLeft, ArrowLeft, History,
-    CheckCircle
-} from 'lucide-react';
-import { AllTimeTab } from '@/components/leaderboard/tabs/all-time-tab';
-import { WeeklyTab } from '@/components/leaderboard/tabs/weekly-tab';
-import { PrivacyDialog } from '@/components/leaderboard/shared/privacy-dialog';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from '@/lib/utils';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { ShowcaseBadge, getOwnedBadges } from '@/components/leaderboard/shared/badge-renderer';
+import { Trophy, Zap, Globe, Target, Star, ShieldCheck, Info, Search, Loader2 } from 'lucide-react';
+import { PodiumCard } from '@/components/leaderboard/podium-card';
+import { RankRow } from '@/components/leaderboard/rank-row';
+import { UserRankHUD } from '@/components/leaderboard/user-rank-hud';
+import { ProfileModal } from '@/components/leaderboard/profile-modal';
+import { Input } from '@/components/ui/input';
 
 export default function LeaderboardPage() {
-    const { user: currentUser } = useUser();
-    const { currentUserData, toggleLeaderboardPrivacy } = useUsers();
+    const { user: authUser } = useUser();
     const { processedUsers, loading } = useLeaderboardData();
-    
-    const [activeTab, setActiveTab] = useState('all-time');
-    const [isPrivacyOpen, setIsPrivacyOpen] = useState(false);
-    const [isInfoOpen, setIsInfoOpen] = useState(false);
-    const [isMyRankOpen, setIsMyRankOpen] = useState(false);
+    const [activeTab, setActiveTab] = useState('weekly');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedUser, setSelectedUser] = useState<UserWithStats | null>(null);
 
-    const filteredUsers = useMemo(() => {
-        return processedUsers.filter(u => !u.isLeaderboardPrivate || u.uid === currentUser?.id);
-    }, [processedUsers, currentUser?.id]);
+    const sortedUsers = useMemo(() => {
+        let pool = [...processedUsers].filter(u => !u.isLeaderboardPrivate || u.uid === authUser?.id);
+        
+        if (activeTab === 'weekly') pool.sort((a, b) => b.weeklyTime - a.weeklyTime);
+        else if (activeTab === 'monthly') pool.sort((a, b) => b.monthlyTime - a.monthlyTime);
+        else pool.sort((a, b) => b.totalScore - a.totalScore);
 
-    const sortedByScore = useMemo(() => [...filteredUsers].sort((a, b) => b.totalScore - a.totalScore), [filteredUsers]);
-    const sortedByWeekly = useMemo(() => [...filteredUsers].sort((a, b) => b.weeklyTime - a.weeklyTime), [filteredUsers]);
-
-    const lastWeekWeeklyWinner = useMemo(() => [...processedUsers].sort((a, b) => b.prevWeeklyTime - a.prevWeeklyTime)[0], [processedUsers]);
-
-    const myRank = useMemo(() => {
-        const pool = activeTab === 'all-time' ? sortedByScore : sortedByWeekly;
-        return pool.findIndex(u => u.uid === currentUser?.id) + 1;
-    }, [activeTab, sortedByScore, sortedByWeekly, currentUser?.id]);
-
-    const myData = useMemo(() => {
-        return sortedByScore.find(u => u.uid === currentUser?.id);
-    }, [sortedByScore, currentUser?.id]);
-
-    const scrollToMe = useCallback(() => {
-        if (typeof window !== 'undefined' && (window as any).scrollToUserRank) {
-            (window as any).scrollToUserRank();
+        if (searchTerm) {
+            pool = pool.filter(u => u.displayName.toLowerCase().includes(searchTerm.toLowerCase()));
         }
-    }, []);
+
+        return pool;
+    }, [processedUsers, activeTab, searchTerm, authUser?.id]);
+
+    const topThree = sortedUsers.slice(0, 3);
+    const remaining = sortedUsers.slice(3, 100);
+    const myRank = sortedUsers.findIndex(u => u.uid === authUser?.id) + 1;
+    const myData = sortedUsers.find(u => u.uid === authUser?.id);
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-background">
-                <div className="flex flex-col items-center gap-4">
-                    <Loader2 className="h-16 w-16 animate-spin text-primary" />
-                    <p className="font-black uppercase tracking-[0.4em] text-[10px] text-primary animate-pulse">Synchronizing Global Rankings...</p>
-                </div>
+            <div className="flex h-[80vh] w-full flex-col items-center justify-center">
+                <Loader2 className="h-16 w-16 animate-spin text-primary mb-4" />
+                <p className="font-black uppercase tracking-[0.4em] text-[10px] text-primary animate-pulse">Syncing Global Registry...</p>
             </div>
         );
     }
 
     return (
-        <div className="min-h-full flex flex-col space-y-8 pb-40 max-w-7xl mx-auto px-4 w-full relative overflow-hidden">
-            {/* SOVEREIGN BREATHING AURA BACKGROUND */}
-            <div className="fixed inset-0 z-0 pointer-events-none">
+        <div className="min-h-screen relative overflow-hidden pb-40">
+            {/* Background Atmosphere */}
+            <div className="fixed inset-0 z-0">
                 <div className="absolute inset-0 bg-[#050505]" />
+                <div className="absolute inset-0 bg-grid-white/5 opacity-10" />
                 <motion.div 
-                    className="absolute top-[20%] left-[10%] w-[60%] h-[60%] rounded-full bg-yellow-500/10 blur-[100px] aura-breathing"
-                    animate={{ x: [0, 50, 0], y: [0, -30, 0] }}
-                    transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                    animate={{ 
+                        scale: [1, 1.2, 1],
+                        opacity: [0.1, 0.2, 0.1]
+                    }}
+                    transition={{ duration: 10, repeat: Infinity }}
+                    className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-purple-600/20 blur-[120px] rounded-full"
                 />
                 <motion.div 
-                    className="absolute bottom-[20%] right-[10%] w-[50%] h-[50%] rounded-full bg-primary/10 blur-[100px] aura-breathing"
-                    animate={{ x: [0, -40, 0], y: [0, 40, 0] }}
-                    transition={{ duration: 12, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                    animate={{ 
+                        scale: [1.2, 1, 1.2],
+                        opacity: [0.1, 0.15, 0.1]
+                    }}
+                    transition={{ duration: 12, repeat: Infinity }}
+                    className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-blue-600/20 blur-[150px] rounded-full"
                 />
-                <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(ellipse_at_center,white,transparent)] opacity-10" />
             </div>
 
-            <header className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-end gap-6 pt-4">
-                <motion.div 
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-4 sm:gap-6"
-                >
-                    <div className="p-4 rounded-[2.5rem] bg-amber-500/10 text-amber-500 border-2 border-amber-500/20 shadow-[0_0_50px_rgba(245,158,11,0.2)] backdrop-blur-xl">
-                        <Trophy className="h-10 w-10 sm:h-12 sm:w-12 animate-gold-shine" />
-                    </div>
-                    <div>
-                        <h1 className="text-4xl sm:text-6xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white via-white to-slate-500 bg-clip-text text-transparent leading-none">
-                            HALL OF LEGENDS
-                        </h1>
-                        <p className="text-muted-foreground font-black uppercase text-[10px] sm:text-xs tracking-[0.3em] flex items-center gap-2 mt-2 text-yellow-500/60">
-                            <Globe className="h-3 w-3 animate-pulse"/> Sovereign performance registry
-                        </p>
-                    </div>
-                </motion.div>
-                
-                <div className="flex items-center gap-3 w-full md:w-auto">
-                    <Button 
-                        variant="outline" 
-                        className="flex-1 md:flex-none h-14 rounded-2xl border-primary/20 bg-primary/5 hover:bg-primary/10 font-black uppercase text-[10px] tracking-widest px-8 shadow-xl shadow-primary/10"
-                        onClick={() => setIsMyRankOpen(true)}
+            <div className="relative z-10 space-y-12">
+                {/* Hero Header */}
+                <header className="flex flex-col md:flex-row justify-between items-center gap-8 pt-8">
+                    <motion.div 
+                        initial={{ opacity: 0, x: -30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="text-center md:text-left space-y-2"
                     >
-                        <Target className="mr-3 h-4 w-4 text-primary"/> Your Rank Info
-                    </Button>
-                    <Button 
-                        variant="outline" 
-                        className="flex-1 md:flex-none h-14 rounded-2xl border-white/10 bg-white/5 font-black uppercase text-[10px] tracking-widest px-8 hover:bg-white/10"
-                        onClick={scrollToMe}
-                    >
-                        Find Me
-                    </Button>
-                    <div className="flex gap-2">
-                        <Button 
-                            variant="outline" 
-                            size="icon"
-                            className="h-14 w-14 rounded-2xl border-white/10 hover:bg-primary/20 transition-all"
-                            onClick={() => setIsInfoOpen(true)}
-                        >
-                            <Info className="h-6 w-6 text-primary" />
-                        </Button>
-                        <Button 
-                            variant="outline" 
-                            size="icon"
-                            className="h-14 w-14 rounded-2xl border-white/10 bg-white/5 font-black uppercase text-[10px] tracking-widest hover:bg-primary/20"
-                            onClick={() => setIsPrivacyOpen(true)}
-                        >
-                            <Settings2 className="h-6 w-6 text-primary"/>
-                        </Button>
-                    </div>
-                </div>
-            </header>
-
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full relative z-10">
-                <div className="flex justify-center mb-16">
-                    <TabsList className="grid w-full max-w-md grid-cols-2 h-16 p-1.5 bg-black/40 backdrop-blur-3xl rounded-[2.5rem] border-2 border-white/5 shadow-2xl">
-                        <TabsTrigger value="all-time" className="rounded-[2rem] font-black uppercase text-[10px] sm:text-xs tracking-[0.2em] data-[state=active]:bg-primary data-[state=active]:text-white shadow-xl transition-all">All-Time Standing</TabsTrigger>
-                        <TabsTrigger value="weekly" className="rounded-[2rem] font-black uppercase text-[10px] sm:text-xs tracking-[0.2em] data-[state=active]:bg-primary data-[state=active]:text-white shadow-xl transition-all">Weekly Sprint</TabsTrigger>
-                    </TabsList>
-                </div>
-
-                <div className="animate-in fade-in-50 duration-700 w-full">
-                    <TabsContent value="all-time" className="h-full m-0 w-full">
-                        <AllTimeTab users={sortedByScore} currentUserId={currentUser?.id} onUserClick={() => {}} />
-                    </TabsContent>
-                    
-                    <TabsContent value="weekly" className="m-0">
-                        <WeeklyTab users={sortedByWeekly} currentUserId={currentUser?.id} onUserClick={() => {}} lastWeekWinner={lastWeekWeeklyWinner} />
-                    </TabsContent>
-                </div>
-            </Tabs>
-
-            {/* PERSONAL RANK DIALOG */}
-            <Dialog open={isMyRankOpen} onOpenChange={setIsMyRankOpen}>
-                <DialogContent className="max-w-lg bg-background/95 backdrop-blur-3xl border-primary/20 rounded-[3rem] p-0 overflow-hidden shadow-2xl">
-                    {myData ? (
-                        <>
-                            <div className="p-8 bg-primary/10 border-b border-primary/20">
-                                <DialogHeader>
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="h-14 w-14 rounded-2xl bg-primary/20 flex items-center justify-center border-2 border-primary/40 font-black italic text-2xl text-primary">
-                                            #{myRank}
-                                        </div>
-                                        <div>
-                                            <DialogTitle className="text-3xl font-black uppercase italic text-white tracking-tighter">Your Registry Status</DialogTitle>
-                                            <DialogDescription className="font-bold text-primary/60 uppercase text-[10px] tracking-widest">Active Mainframe Record</DialogDescription>
-                                        </div>
-                                    </div>
-                                </DialogHeader>
-                                <div className="mt-6 flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <div className={cn("avatar-frame-base", (myData.equippedFrame || 'default') === 'premium' ? 'avatar-frame-premium' : 'avatar-frame-default')}>
-                                            <Avatar className="h-16 w-16 border-2 shadow-lg bg-background relative z-10">
-                                                <AvatarImage src={myData.photoURL} />
-                                                <AvatarFallback>U</AvatarFallback>
-                                            </Avatar>
-                                        </div>
-                                        <div>
-                                            <p className="font-black text-xl text-white uppercase italic">{myData.displayName}</p>
-                                            <div className="scale-90 origin-left"><ShowcaseBadge user={myData} /></div>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <p className="text-4xl font-black italic tabular-nums text-primary">{myData.totalScore.toLocaleString()}</p>
-                                        <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Points</p>
-                                    </div>
-                                </div>
+                        <div className="flex items-center justify-center md:justify-start gap-4 mb-4">
+                            <div className="p-4 rounded-3xl bg-primary/10 border-2 border-primary/20 shadow-[0_0_30px_rgba(139,92,246,0.3)] backdrop-blur-xl">
+                                <Trophy className="h-10 w-10 text-primary animate-gold-shine" />
                             </div>
-                            <div className="p-8 space-y-6">
-                                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60 flex items-center gap-2"><LayoutDashboard className="h-3 w-3"/> Standing Breakdown</h4>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <DossierSummary icon={Clock} label="Study Effort" val={myData.breakdown.studyPoints.toLocaleString()} color="text-sky-400" />
-                                    <DossierSummary icon={Flame} label="Streak Loyalty" val={myData.breakdown.streakPoints.toLocaleString()} color="text-orange-500" />
-                                    <DossierSummary icon={Gem} label="Standard Economy" val={myData.breakdown.creditsPoints.toLocaleString()} color="text-amber-500" />
-                                    <DossierSummary icon={ShieldAlert} label="Exile Bonus" val={myData.breakdown.isolationPoints.toLocaleString()} color="text-red-500" />
-                                </div>
-                                <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-center italic text-xs text-muted-foreground">
-                                    "Continue mission cycles to ascend the Hall of Legends."
-                                </div>
-                            </div>
-                            <DialogFooter className="p-6 bg-muted/20 border-t">
-                                <DialogClose asChild><Button className="w-full h-14 rounded-2xl font-black uppercase">Resume Mission</Button></DialogClose>
-                            </DialogFooter>
-                        </>
-                    ) : null}
-                </DialogContent>
-            </Dialog>
-
-            <PrivacyDialog 
-                isOpen={isPrivacyOpen} 
-                onOpenChange={setIsPrivacyOpen} 
-                isPrivate={currentUserData?.isLeaderboardPrivate ?? false}
-                onToggle={(val) => toggleLeaderboardPrivacy(currentUser!.id, val)}
-            />
-
-            <Dialog open={isInfoOpen} onOpenChange={setIsInfoOpen}>
-                <DialogContent className="max-w-2xl bg-background/95 backdrop-blur-xl border-primary/20 rounded-[2.5rem]">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-black uppercase italic flex items-center gap-2">
-                            <Info className="text-primary h-6 w-6"/> Scoring Protocol v3.0
-                        </DialogTitle>
-                        <DialogDescription className="font-bold">The mathematical architecture of academic excellence.</DialogDescription>
-                    </DialogHeader>
-                    <div className="py-6 space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <InfoBlock label="Study Mastery" desc="1 Point per Minute Logged" color="text-sky-400" icon={Clock} />
-                            <InfoBlock label="Streak Loyalty" desc="10 Points per Daily Streak" color="text-orange-500" icon={Flame} />
-                            <InfoBlock label="Standard Economy" desc="1/2 Point per Credit Held" color="text-amber-500" icon={Gem} />
-                            <InfoBlock label="Identity Assets" desc="100 Points per Unique Badge" color="text-fuchsia-400" icon={Award} />
-                        </div>
-                        <div className="p-6 rounded-[2rem] bg-red-500/5 border border-red-500/20">
-                            <h4 className="text-xs font-black uppercase text-red-500 tracking-widest mb-3 flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4"/> Isolation Bounties
-                            </h4>
-                            <div className="grid grid-cols-2 gap-y-2 text-[10px] font-bold">
-                                <p>7 Days: <span className="text-red-500">5,000 PTS</span></p>
-                                <p>14 Days: <span className="text-red-500">15,000 PTS</span></p>
-                                <p>21 Days: <span className="text-red-500">25,000 PTS</span></p>
-                                <p>30 Days: <span className="text-red-500">30,000 PTS</span></p>
-                                <p>3 Months: <span className="text-red-500">100,000 PTS</span></p>
-                                <p>6 Months: <span className="text-red-500">300,000 PTS</span></p>
-                                <p className="col-span-2 mt-2 pt-2 border-t border-red-500/10 text-center text-sm">
-                                    1 Year: <span className="text-red-500 font-black">1,000,000 PTS</span>
+                            <div>
+                                <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white via-white to-slate-500 bg-clip-text text-transparent leading-none">
+                                    HALL OF LEGENDS
+                                </h1>
+                                <p className="text-[10px] md:text-xs font-black uppercase tracking-[0.4em] text-primary/60 flex items-center gap-2 mt-2 justify-center md:justify-start">
+                                    <Globe className="h-3 w-3" /> Sovereign Performance Registry
                                 </p>
                             </div>
                         </div>
+                    </motion.div>
+
+                    <UserRankHUD rank={myRank} user={myData} />
+                </header>
+
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                    <div className="flex flex-col lg:flex-row justify-between items-center gap-6 mb-16">
+                        <TabsList className="h-16 p-1.5 bg-black/40 backdrop-blur-2xl border-2 border-white/5 rounded-[2.5rem] shadow-2xl w-full max-w-xl">
+                            <TabsTrigger value="weekly" className="rounded-[2rem] font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all h-full">Weekly Sprint</TabsTrigger>
+                            <TabsTrigger value="monthly" className="rounded-[2rem] font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all h-full">Monthly Dominion</TabsTrigger>
+                            <TabsTrigger value="all-time" className="rounded-[2rem] font-black uppercase text-[10px] tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white transition-all h-full">All-Time Legends</TabsTrigger>
+                        </TabsList>
+
+                        <div className="relative w-full max-w-md">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-primary/40" />
+                            <Input 
+                                placeholder="Locate Citizen..." 
+                                className="h-16 pl-12 rounded-[2rem] bg-black/40 border-2 border-white/5 focus:border-primary/30 transition-all text-lg font-bold"
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                            />
+                        </div>
                     </div>
-                </DialogContent>
-            </Dialog>
-        </div>
-    );
-}
 
-function DossierSummary({ icon: Icon, label, val, color }: any) {
-    return (
-        <div className="flex items-center gap-3 p-4 rounded-2xl bg-white/5 border border-white/10">
-            <div className={cn("p-2 rounded-xl bg-black/20 shrink-0", color)}>
-                <Icon className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-                <p className="text-[8px] font-black uppercase opacity-40 leading-none mb-1 truncate">{label}</p>
-                <p className="text-lg font-black text-white italic tabular-nums">{val}</p>
-            </div>
-        </div>
-    );
-}
+                    <TabsContent value={activeTab} className="m-0 space-y-20">
+                        <AnimatePresence mode="wait">
+                            <motion.div 
+                                key={activeTab}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="space-y-20"
+                            >
+                                {/* Top 3 Podium */}
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-end max-w-6xl mx-auto px-4">
+                                    <div className="order-2 md:order-1"><PodiumCard rank={2} user={topThree[1]} onClick={setSelectedUser} /></div>
+                                    <div className="order-1 md:order-2 scale-110 z-10"><PodiumCard rank={1} user={topThree[0]} onClick={setSelectedUser} /></div>
+                                    <div className="order-3 md:order-3"><PodiumCard rank={3} user={topThree[2]} onClick={setSelectedUser} /></div>
+                                </div>
 
-function InfoBlock({ label, desc, color, icon: Icon }: any) {
-    return (
-        <div className="flex items-center gap-4 p-4 rounded-2xl bg-muted/50 border border-white/5">
-            <div className={cn("p-2 rounded-xl bg-black/20", color)}>
-                <Icon className="h-5 w-5" />
+                                {/* Registry List */}
+                                <div className="space-y-4 max-w-5xl mx-auto px-4">
+                                    <div className="flex items-center justify-between px-6 mb-8">
+                                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-primary/60">Elite Index</h4>
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-1 w-8 bg-primary rounded-full animate-pulse" />
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Registry Live</p>
+                                        </div>
+                                    </div>
+                                    {remaining.map((user, idx) => (
+                                        <RankRow 
+                                            key={user.uid} 
+                                            user={user} 
+                                            rank={idx + 4} 
+                                            isMe={user.uid === authUser?.id}
+                                            onClick={setSelectedUser}
+                                        />
+                                    ))}
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+                    </TabsContent>
+                </Tabs>
             </div>
-            <div>
-                <p className={cn("text-[10px] font-black uppercase tracking-widest", color)}>{label}</p>
-                <p className="text-xs font-bold text-foreground mt-0.5">{desc}</p>
-            </div>
+
+            <ProfileModal user={selectedUser} onClose={() => setSelectedUser(null)} />
         </div>
     );
 }

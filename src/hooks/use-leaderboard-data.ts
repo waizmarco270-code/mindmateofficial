@@ -1,47 +1,27 @@
-
 'use client';
 
 import { useMemo } from 'react';
 import { useUsers, User, SUPER_ADMIN_UID, BadgeType } from '@/hooks/use-admin';
 import { useTimeTracker } from '@/hooks/use-time-tracker';
-import { startOfWeek, endOfWeek, parseISO, isWithinInterval, subWeeks } from 'date-fns';
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, parseISO, isWithinInterval, subWeeks } from 'date-fns';
 
 export type UserWithStats = User & { 
     totalScore: number; 
     weeklyTime: number; 
+    monthlyTime: number;
     prevWeeklyTime: number;
     entertainmentTotalScore: number;
-    emojiQuizHighScore: number;
-    memoryGameHighScore: number;
-    dimensionShiftHighScore: number;
-    subjectSprintHighScore: number;
-    flappyMindHighScore: number;
-    astroAscentHighScore: number;
-    mathematicsLegendHighScore: number;
-    elementQuestTotalScore: number;
-    unitDimensionsEasyHighScore: number;
-    unitDimensionsHardHighScore: number;
-    prevWeekEntertainmentTotalScore: number;
-    weeklySubjectBreakdown: { [subjectName: string]: number };
-    weeklyPomodoroBreakdown: {
-      focus: number;
-      shortBreak: number;
-      longBreak: number;
-      total: number;
-    };
     breakdown: {
         creditsPoints: number;
         studyPoints: number;
         streakPoints: number;
         isolationPoints: number;
         badgePoints: number;
-        disciplinePoints: number;
         isolationLabel: string;
         badgeCount: number;
     }
 };
 
-// Internal helper for scoring calculation
 function getBadgeCount(user: User) {
     const isSuperAdmin = user.uid === SUPER_ADMIN_UID;
     let count = 0;
@@ -67,56 +47,37 @@ export function useLeaderboardData() {
     const { users, loading: usersLoading } = useUsers();
     const { sessions: allSessions, pomodoroSessions, loading: timeLoading } = useTimeTracker();
 
-    const weeklyStats = useMemo(() => {
+    const stats = useMemo(() => {
         const now = new Date();
-        const thisWeekStart = startOfWeek(now, { weekStartsOn: 1 });
-        const thisWeekEnd = endOfWeek(now, { weekStartsOn: 1 });
-        const lastWeekStart = startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
-        const lastWeekEnd = endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 });
+        const thisWeek = { start: startOfWeek(now, { weekStartsOn: 1 }), end: endOfWeek(now, { weekStartsOn: 1 }) };
+        const lastWeek = { start: startOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }), end: endOfWeek(subWeeks(now, 1), { weekStartsOn: 1 }) };
+        const thisMonth = { start: startOfMonth(now), end: endOfMonth(now) };
         
-        const stats: { [uid: string]: any } = {};
+        const userStats: { [uid: string]: { weekly: number, monthly: number, prevWeekly: number } } = {};
         
-        const initializeUserStats = (userId: string) => {
-            if (!stats[userId]) {
-                stats[userId] = { 
-                    thisWeek: { totalTime: 0, subjects: {}, pomodoro: { focus: 0, shortBreak: 0, longBreak: 0, total: 0 } }, 
-                    lastWeek: { totalTime: 0 } 
-                };
-            }
+        const ensureUser = (uid: string) => {
+            if (!userStats[uid]) userStats[uid] = { weekly: 0, monthly: 0, prevWeekly: 0 };
         };
 
-        allSessions.forEach(session => {
-            const userId = session.userId;
-            initializeUserStats(userId);
-            const sessionDate = parseISO(session.startTime);
-            const duration = (new Date(session.endTime).getTime() - new Date(session.startTime).getTime()) / 1000;
+        allSessions.forEach(s => {
+            ensureUser(s.userId);
+            const date = parseISO(s.startTime);
+            const dur = (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) / 1000;
 
-            if (isWithinInterval(sessionDate, { start: thisWeekStart, end: thisWeekEnd })) {
-                stats[userId].thisWeek.totalTime += duration;
-                stats[userId].thisWeek.subjects[session.subjectName] = (stats[userId].thisWeek.subjects[session.subjectName] || 0) + duration;
-            } else if (isWithinInterval(sessionDate, { start: lastWeekStart, end: lastWeekEnd })) {
-                 stats[userId].lastWeek.totalTime += duration;
-            }
+            if (isWithinInterval(date, thisWeek)) userStats[s.userId].weekly += dur;
+            if (isWithinInterval(date, lastWeek)) userStats[s.userId].prevWeekly += dur;
+            if (isWithinInterval(date, thisMonth)) userStats[s.userId].monthly += dur;
         });
         
-        pomodoroSessions.forEach(session => {
-            const userId = session.userId;
-            initializeUserStats(userId);
-            const sessionDate = parseISO(session.completedAt);
-            const duration = session.duration;
-            
-            if (isWithinInterval(sessionDate, { start: thisWeekStart, end: thisWeekEnd })) {
-                stats[userId].thisWeek.totalTime += duration; 
-                stats[userId].thisWeek.pomodoro.total += duration;
-                if(session.type === 'focus') stats[userId].thisWeek.pomodoro.focus += duration;
-                if(session.type === 'shortBreak') stats[userId].thisWeek.pomodoro.shortBreak += duration;
-                if(session.type === 'longBreak') stats[userId].thisWeek.pomodoro.longBreak += duration;
-            } else if (isWithinInterval(sessionDate, { start: lastWeekStart, end: lastWeekEnd })) {
-                 stats[userId].lastWeek.totalTime += duration;
-            }
+        pomodoroSessions.forEach(s => {
+            ensureUser(s.userId);
+            const date = parseISO(s.completedAt);
+            if (isWithinInterval(date, thisWeek)) userStats[s.userId].weekly += s.duration;
+            if (isWithinInterval(date, lastWeek)) userStats[s.userId].prevWeekly += s.duration;
+            if (isWithinInterval(date, thisMonth)) userStats[s.userId].monthly += s.duration;
         });
 
-        return stats;
+        return userStats;
     }, [allSessions, pomodoroSessions]);
 
     const processedUsers = useMemo(() => {
@@ -124,101 +85,45 @@ export function useLeaderboardData() {
             .filter(u => !u.isBlocked)
             .map(user => {
                 const credits = user.credits || 0;
-                const studyTimeSeconds = user.totalStudyTime || 0;
+                const studySeconds = user.totalStudyTime || 0;
                 const streak = user.streak || 0;
                 const badgeCount = getBadgeCount(user);
                 
-                // SOVEREIGN ALGORITHM v3.0
                 const creditsPoints = Math.round(credits / 2);
-                const studyPoints = Math.round(studyTimeSeconds / 60); 
+                const studyPoints = Math.round(studySeconds / 60); 
                 const streakPoints = streak * 10; 
                 const badgePoints = badgeCount * 100;
-                const disciplinePoints = 0; 
                 
                 let isolationPoints = 0;
                 let isolationLabel = 'Standard Scholar';
+                if (user.isSovereign) { isolationPoints = 1000000; isolationLabel = 'Sovereign'; }
+                else if (user.isIsoMaster) { isolationPoints = 300000; isolationLabel = 'ISO-Master'; }
+                else if (user.isWarrior) { isolationPoints = 30000; isolationLabel = 'Warrior'; }
+                else if (user.isIsoWarrior) { isolationPoints = 15000; isolationLabel = 'ISO-Warrior'; }
+                else if (user.isIsolater) { isolationPoints = 5000; isolationLabel = 'Isolater'; }
 
-                if (user.isSovereign) {
-                    isolationPoints = 1000000; 
-                    isolationLabel = '1-Year Sovereign';
-                } else if (user.isIsoMaster) {
-                    isolationPoints = 300000; 
-                    isolationLabel = '6-Month ISO-Master';
-                } else if (user.isWarrior) {
-                    isolationPoints = 30000; 
-                    isolationLabel = '30-Day Warrior';
-                } else if (user.isIsoWarrior) {
-                    isolationPoints = 15000; 
-                    isolationLabel = '14-Day ISO-Warrior';
-                } else if (user.isIsolater) {
-                    isolationPoints = 5000; 
-                    isolationLabel = '7-Day Isolater';
-                }
-
-                const totalScore = creditsPoints + studyPoints + streakPoints + isolationPoints + badgePoints + disciplinePoints;
-                                   
-                const userWeeklyStats = weeklyStats[user.uid] || { 
-                    thisWeek: { totalTime: 0, subjects: {}, pomodoro: { focus: 0, shortBreak: 0, longBreak: 0, total: 0 } }, 
-                    lastWeek: { totalTime: 0 } 
-                };
-                
-                const emojiQuizHighScore = user.gameHighScores?.emojiQuiz || 0;
-                const memoryGameHighScore = user.gameHighScores?.memoryGame || 0;
-                const dimensionShiftHighScore = user.gameHighScores?.dimensionShift || 0;
-                const subjectSprintHighScore = user.gameHighScores?.subjectSprint || 0;
-                const flappyMindHighScore = user.gameHighScores?.flappyMind || 0;
-                const astroAscentHighScore = user.gameHighScores?.astroAscent || 0;
-                const mathematicsLegendHighScore = user.gameHighScores?.mathematicsLegend || 0;
-                const unitDimensionsEasyHighScore = user.gameHighScores?.unitDimensionsEasy || 0;
-                const unitDimensionsHardHighScore = user.gameHighScores?.unitDimensionsHard || 0;
-
-                const { s = 0, p = 0, d = 0, f = 0 } = user.elementQuestScores || {};
-                const elementQuestTotalScore = s + p + d + f;
-                
-                const entertainmentTotalScore = 
-                    (emojiQuizHighScore * 1.2) + 
-                    memoryGameHighScore + 
-                    (dimensionShiftHighScore * 1.5) + 
-                    (subjectSprintHighScore * 1.1) + 
-                    flappyMindHighScore + 
-                    (astroAscentHighScore * 1.3) + 
-                    (mathematicsLegendHighScore * 1.4) + 
-                    (elementQuestTotalScore * 0.5) +
-                    (unitDimensionsEasyHighScore) +
-                    (unitDimensionsHardHighScore * 2);
+                const totalScore = creditsPoints + studyPoints + streakPoints + isolationPoints + badgePoints;
+                const uStats = stats[user.uid] || { weekly: 0, monthly: 0, prevWeekly: 0 };
 
                 return { 
                     ...user, 
                     totalScore: Math.round(totalScore), 
-                    weeklyTime: userWeeklyStats.thisWeek.totalTime,
-                    prevWeeklyTime: userWeeklyStats.lastWeek.totalTime,
-                    weeklySubjectBreakdown: userWeeklyStats.thisWeek.subjects,
-                    weeklyPomodoroBreakdown: userWeeklyStats.thisWeek.pomodoro,
-                    entertainmentTotalScore: Math.round(entertainmentTotalScore),
-                    emojiQuizHighScore,
-                    memoryGameHighScore,
-                    dimensionShiftHighScore,
-                    subjectSprintHighScore,
-                    flappyMindHighScore,
-                    astroAscentHighScore,
-                    mathematicsLegendHighScore,
-                    elementQuestTotalScore,
-                    unitDimensionsEasyHighScore,
-                    unitDimensionsHardHighScore,
-                    prevWeekEntertainmentTotalScore: 0,
+                    weeklyTime: uStats.weekly,
+                    monthlyTime: uStats.monthly,
+                    prevWeeklyTime: uStats.prevWeekly,
+                    entertainmentTotalScore: 0, // Simplified for this redesign
                     breakdown: {
                         creditsPoints,
                         studyPoints,
                         streakPoints,
                         isolationPoints,
                         badgePoints,
-                        disciplinePoints,
                         isolationLabel,
                         badgeCount
                     }
-                };
+                } as UserWithStats;
             });
-    }, [users, weeklyStats]);
+    }, [users, stats]);
 
     return {
         processedUsers,
