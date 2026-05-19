@@ -9,7 +9,7 @@ import {
     FileCode, Terminal, Globe, 
     ShieldAlert, Lock, Code,
     ChevronRight, ExternalLink,
-    Clock, Beaker
+    Clock, Beaker, FileJson, FileText, X
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -65,6 +65,19 @@ export default function SentinelExtensionPage() {
         setTimeout(() => setCopiedFile(null), 2000);
     };
 
+    const handleDownload = (content: string, fileName: string) => {
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(link);
+        toast({ title: "Blueprint Manifested", description: `${fileName} has been downloaded.` });
+    };
+
     return (
         <div className="space-y-12 pb-40 max-w-5xl mx-auto px-4 relative overflow-hidden">
             {/* Background Atmosphere */}
@@ -86,32 +99,42 @@ export default function SentinelExtensionPage() {
                     <section className="space-y-6">
                         <div className="flex items-center gap-3">
                             <Terminal className="text-primary h-6 w-6" />
-                            <h2 className="text-2xl font-black uppercase italic tracking-tight">Installation Protocol</h2>
+                            <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">Deployment Protocol</h2>
                         </div>
                         <div className="space-y-4">
                             <StepItem number={1} title="Fabricate Registry" desc="Create a folder on your PC named 'mindmate-sentinel'." />
-                            <StepItem number={2} title="Inject Blueprints" desc="Copy the 'manifest.json' and 'background.js' files from the tabs below and save them into that folder." />
+                            <StepItem number={2} title="Inject Blueprints" desc="Download the 'manifest.json' and 'background.js' files below and move them into your folder." />
                             <StepItem number={3} title="Initialize Ingress" desc="Open chrome://extensions in your browser. Toggle 'Developer Mode' (Top Right)." />
                             <StepItem number={4} title="Deploy Sentinel" desc="Click 'Load Unpacked' and select your 'mindmate-sentinel' folder. The Sentinel is now online." />
                         </div>
                     </section>
 
-                    <Card className="bg-slate-900/60 border-white/5 rounded-[2.5rem] overflow-hidden">
+                    <Card className="bg-slate-900/60 border-white/5 rounded-[2.5rem] overflow-hidden shadow-2xl">
                         <Tabs defaultValue="manifest" onValueChange={setActiveTab}>
                             <div className="p-4 border-b border-white/5 flex items-center justify-between bg-white/5">
                                 <TabsList className="bg-black/40 h-10">
                                     <TabsTrigger value="manifest" className="text-[10px] font-black uppercase">manifest.json</TabsTrigger>
                                     <TabsTrigger value="background" className="text-[10px] font-black uppercase">background.js</TabsTrigger>
                                 </TabsList>
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    className="h-8 font-black uppercase text-[10px] tracking-widest text-primary"
-                                    onClick={() => handleCopy(activeTab === 'manifest' ? MANIFEST_JSON : BACKGROUND_JS, activeTab === 'manifest' ? 'manifest.json' : 'background.js')}
-                                >
-                                    {copiedFile ? <Check className="mr-2 h-3 w-3"/> : <Copy className="mr-2 h-3 w-3"/>}
-                                    COPY BLUEPRINT
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        className="h-8 font-black uppercase text-[10px] tracking-widest text-primary hover:bg-primary/10"
+                                        onClick={() => handleCopy(activeTab === 'manifest' ? MANIFEST_JSON : BACKGROUND_JS, activeTab === 'manifest' ? 'manifest.json' : 'background.js')}
+                                    >
+                                        {copiedFile === (activeTab === 'manifest' ? 'manifest.json' : 'background.js') ? <Check className="mr-1.5 h-3 w-3"/> : <Copy className="mr-1.5 h-3 w-3"/>}
+                                        COPY
+                                    </Button>
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="h-8 font-black uppercase text-[10px] tracking-widest border-primary/20 bg-primary/5 hover:bg-primary/20 text-primary"
+                                        onClick={() => handleDownload(activeTab === 'manifest' ? MANIFEST_JSON : BACKGROUND_JS, activeTab === 'manifest' ? 'manifest.json' : 'background.js')}
+                                    >
+                                        <Download className="mr-1.5 h-3 w-3"/> DOWNLOAD
+                                    </Button>
+                                </div>
                             </div>
                             <TabsContent value="manifest" className="m-0">
                                 <ScrollArea className="h-80">
@@ -140,7 +163,7 @@ export default function SentinelExtensionPage() {
                             <h4 className="font-black uppercase text-sm tracking-widest text-white">Sovereign Authority</h4>
                         </div>
                         <p className="text-sm text-slate-400 font-medium leading-relaxed italic">
-                            "The Sentinel Extension bypasses standard web limitations. It enforces the redirection of Distraction Signal back to the Isolation Hub, ensuring your exile is absolute."
+                            "The Sentinel Extension bypasses standard web limitations. It enforces the redirection of Distraction Signal back to the Isolation Hub, ensuring your academic exile is absolute."
                         </p>
                         <ul className="space-y-4">
                             <FeaturePill icon={Zap} text="Force Redirection" />
@@ -152,9 +175,12 @@ export default function SentinelExtensionPage() {
                     <Card className="border-amber-500/20 bg-amber-500/5 rounded-[2rem] p-6">
                         <div className="flex items-start gap-4 text-amber-500">
                             <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5" />
-                            <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                                Protocol: The Sentinel requires manual installation on PC. Mobile users are enforced through in-app hard-locks.
-                            </p>
+                            <div className="space-y-1">
+                                <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">
+                                    Protocol Notice
+                                </p>
+                                <p className="text-[10px] text-amber-500/70 font-medium">The Sentinel requires manual installation on PC. Mobile users are enforced through in-app hard-locks.</p>
+                            </div>
                         </div>
                     </Card>
 
