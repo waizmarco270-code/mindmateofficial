@@ -7,11 +7,11 @@ import {
     Puzzle, Download, Copy, Check, 
     ShieldCheck, Zap, Monitor, 
     AlertTriangle, Info, ArrowRight,
-    FileCode, Terminal, Globe, 
+    Terminal, Globe, 
     ShieldAlert, Lock, Code,
     ChevronRight, ExternalLink,
     Clock, Beaker, FileJson, FileText, X,
-    Settings, ListPlus, Shield,
+    Settings, Plus, Shield,
     Smartphone, Cpu, Layers, Search, Sparkles,
     MousePointer2, Fingerprint, Activity,
     LayoutDashboard, SmartphoneOff, Trash2,
@@ -226,7 +226,7 @@ function renderSites(sites) {
     tag.className = 'tag';
     tag.innerHTML = \`<span>\${site}</span>\`;
     tag.onclick = () => removeSite(site);
-    siteList.appendChild(tag);
+    tag.appendChild(tag);
   });
 }
 
@@ -463,8 +463,8 @@ export default function SentinelExtensionPage() {
                             "Sovereign OS turns your browser into a dedicated study machine. No more 'just one quick look'—the OS is the silent enforcer of your legend."
                         </p>
                         <ul className="space-y-4 relative z-10">
-                            <FeaturePill icon={ListPlus} text="Advanced HUD" />
-                            <FeaturePill icon={SmartphoneOff} text="Tab Lockdown" />
+                            <FeaturePill icon={Plus} text="Custom Injector" />
+                            <FeaturePill icon={Monitor} text="Session Overlay" />
                             <FeaturePill icon={Palette} text="Custom Themes" />
                         </ul>
                     </Card>
