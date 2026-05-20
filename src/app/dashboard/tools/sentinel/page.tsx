@@ -16,7 +16,7 @@ import {
     MousePointer2, Fingerprint, Activity,
     LayoutDashboard, SmartphoneOff, Trash2,
     Palette, Box, Volume2, BellRing, Target,
-    Skull, Flame, Gem, Rocket
+    Skull, Flame, Gem, Rocket, PlusCircle
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,12 +26,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 const MANIFEST_JSON = `{
   "manifest_version": 3,
   "name": "MindMate Sovereign OS",
   "version": "3.5",
-  "description": "Full-scale study enforcer. Redirects distractions, provides Phantom HUD, and manages cognitive load.",
+  "description": "The Ultimate Study Enforcer. Redirects distractions, provides Phantom HUD, and manages cognitive load.",
   "permissions": ["declarativeNetRequest", "storage", "tabs", "notifications", "sidePanel", "scripting"],
   "host_permissions": ["<all_urls>"],
   "background": {
@@ -60,7 +61,7 @@ const DEFAULT_CONFIG = {
   isIsolationActive: false,
   theme: 'sovereign-purple',
   showHud: true,
-  dailyLimits: {} // { 'domain': minutesUsed }
+  dailyLimits: {} 
 };
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -70,7 +71,6 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-// PANIC BUTTON & SHORTCUTS
 chrome.commands.onCommand.addListener((command) => {
   if (command === "panic-button") {
     chrome.storage.local.get(["config"], (res) => {
@@ -112,7 +112,7 @@ chrome.storage.onChanged.addListener((changes) => {
 const CONTENT_JS = `// PHANTOM HUD INJECTOR
 const HUD_HTML = \`
   <div id="mindmate-phantom-hud" style="position:fixed; top:20px; right:20px; z-index:999999; background: rgba(12,10,9,0.85); backdrop-filter:blur(10px); border: 2px solid #8b5cf6; border-radius: 16px; padding: 12px; color: white; font-family: sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 12px; cursor: move;">
-    <div style="height:10px; width:10px; background:#8b5cf6; border-radius:50%; animation: pulse 2s infinite;"></div>
+    <div style="height:10px; width:10px; background:#8b5cf6; border-radius:50%; animation: mindmatePulse 2s infinite;"></div>
     <div>
       <p style="margin:0; font-size:8px; text-transform:uppercase; font-weight:900; opacity:0.6; letter-spacing:1px;">Sovereign HUD</p>
       <p id="hud-timer" style="margin:0; font-size:14px; font-weight:bold;">PROTOCOL ACTIVE</p>
@@ -131,7 +131,7 @@ chrome.storage.local.get(["config"], (res) => {
   if (res.config?.showHud) injectHud();
 });`;
 
-const CONTENT_CSS = `@keyframes pulse {
+const CONTENT_CSS = `@keyframes mindmatePulse {
   0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
   70% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
   100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
@@ -156,7 +156,7 @@ const OPTIONS_HTML = `<!DOCTYPE html>
     input:focus { border-color: var(--p); }
     button { background: var(--p); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.3s; text-transform: uppercase; font-size: 11px; }
     button:hover { filter: brightness(1.2); box-shadow: 0 0 20px rgba(139,92,246,0.3); }
-    .tag { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; margin: 4px; font-size: 12px; font-weight: 600; border: 1px solid transparent; }
+    .tag { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; margin: 4px; font-size: 12px; font-weight: 600; border: 1px solid transparent; cursor: pointer; }
     .tag:hover { border-color: #ef4444; color: #ef4444; }
     .footer { padding: 15px; text-align: center; border-top: 1px solid #222; font-size: 9px; font-weight: 800; opacity: 0.4; text-transform: uppercase; letter-spacing: 1px; }
     .flex-row { display: flex; align-items: center; justify-content: space-between; }
@@ -226,7 +226,7 @@ function renderSites(sites) {
     tag.className = 'tag';
     tag.innerHTML = \`<span>\${site}</span>\`;
     tag.onclick = () => removeSite(site);
-    tag.appendChild(tag);
+    siteList.appendChild(tag);
   });
 }
 
@@ -253,22 +253,25 @@ async function removeSite(site) {
   });
 }
 
-hudToggle.onclick = () => {
-  chrome.storage.local.get(["config"], (res) => {
-    const config = res.config;
-    config.showHud = !config.showHud;
-    hudToggle.classList.toggle('active');
-    chrome.storage.local.set({ config });
-  });
-};
+if(hudToggle) {
+    hudToggle.onclick = () => {
+        chrome.storage.local.get(["config"], (res) => {
+            const config = res.config;
+            config.showHud = !config.showHud;
+            hudToggle.classList.toggle('active');
+            chrome.storage.local.set({ config });
+        });
+    };
+}
 
-addBtn.onclick = addSite;
+if(addBtn) addBtn.onclick = addSite;
 loadConfig();`;
 
 export default function SentinelExtensionPage() {
     const { toast } = useToast();
     const [copiedFile, setCopiedFile] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState('manifest');
+    const [isCheatingDialogOpen, setIsCheatingDialogOpen] = useState(false);
 
     const getFileContent = (tab: string) => {
         switch (tab) {
@@ -345,7 +348,7 @@ export default function SentinelExtensionPage() {
                         Sovereign OS
                     </h1>
                     <div className="flex items-center justify-center gap-3">
-                        <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40 font-black tracking-widest px-4 py-1">ULTIMATE ENFORCER v3.5</Badge>
+                        <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40 font-black tracking-widest px-4 py-1">HARD-LOCK ENFORCER v3.5</Badge>
                     </div>
                 </div>
             </header>
@@ -381,7 +384,7 @@ export default function SentinelExtensionPage() {
 
                     <Card className="bg-slate-900/60 backdrop-blur-3xl border-2 border-white/10 rounded-[3rem] overflow-hidden shadow-2xl">
                         <Tabs defaultValue="manifest" onValueChange={setActiveTab}>
-                            <div className="p-4 border-b border-white/5 flex items-center justify-between bg-black/40 overflow-x-auto gap-4">
+                            <div className="p-4 border-b border-white/5 bg-black/40 overflow-x-auto gap-4">
                                 <TabsList className="bg-white/5 h-10 flex-shrink-0 p-1 rounded-xl">
                                     <TabsTrigger value="manifest" className="text-[10px] font-black uppercase rounded-lg">manifest.json</TabsTrigger>
                                     <TabsTrigger value="background" className="text-[10px] font-black uppercase rounded-lg">background.js</TabsTrigger>
@@ -463,7 +466,7 @@ export default function SentinelExtensionPage() {
                             "Sovereign OS turns your browser into a dedicated study machine. No more 'just one quick look'—the OS is the silent enforcer of your legend."
                         </p>
                         <ul className="space-y-4 relative z-10">
-                            <FeaturePill icon={Plus} text="Custom Injector" />
+                            <FeaturePill icon={PlusCircle} text="Custom Injector" />
                             <FeaturePill icon={Monitor} text="Session Overlay" />
                             <FeaturePill icon={Palette} text="Custom Themes" />
                         </ul>
@@ -485,6 +488,22 @@ export default function SentinelExtensionPage() {
                     </Button>
                 </div>
             </div>
+
+            <Dialog open={isCheatingDialogOpen} onOpenChange={setIsCheatingDialogOpen}>
+                <DialogContent className="border-red-600/50 bg-red-950/95 backdrop-blur-2xl rounded-[2.5rem]">
+                    <DialogHeader>
+                        <div className="flex justify-center mb-6"><div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse"><ShieldX className="h-16 w-16 text-red-600" /></div></div>
+                        <DialogTitle className="text-center text-3xl font-black uppercase italic text-white tracking-tighter">PROTOCOL VIOLATED</DialogTitle>
+                        <DialogDescription className="text-center text-lg font-bold text-red-200 mt-2">UPLINK SEVERED BY SENTINEL</DialogDescription>
+                    </DialogHeader>
+                    <div className="p-6 rounded-2xl bg-black/40 border border-white/5 space-y-4 text-sm text-slate-300">
+                        <p className="font-bold text-red-400 uppercase tracking-widest text-center">Reactor Sentinel Status:</p>
+                        <ul className="list-disc list-inside space-y-2"><li>Signal lost due to tab switching or backgrounding.</li><li>Session terminated immediately.</li><li>No rewards granted for corrupted cycles.</li></ul>
+                        <p className="italic text-center text-xs opacity-60">"Absolute focus is the law of the Forge."</p>
+                    </div>
+                    <DialogFooter className="pt-4"><DialogClose asChild><Button className="w-full h-14 bg-white text-black font-black text-xl rounded-2xl hover:bg-slate-200">I UNDERSTAND</Button></DialogClose></DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
