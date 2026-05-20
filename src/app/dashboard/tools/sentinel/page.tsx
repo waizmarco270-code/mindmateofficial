@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Puzzle, Download, Copy, Check, 
     ShieldCheck, Zap, Monitor, 
-    AlertTriangle, Info, ArrowRight,
+    TriangleAlert, Info, ArrowRight,
     Terminal, Globe, 
     ShieldAlert, Lock, Code,
     ChevronRight, ExternalLink,
@@ -16,8 +16,8 @@ import {
     MousePointer2, Fingerprint, Activity,
     LayoutDashboard, SmartphoneOff, Trash2,
     Palette, Box, Volume2, BellRing, Target,
-    Skull, Flame, Gem, Rocket, PlusCircle,
-    ShieldX, Ban, Bell, Calculator, Trash
+    Skull, Flame, Gem, Rocket, CirclePlus,
+    Ban, Bell, Calculator, Trash
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -478,7 +478,7 @@ export default function SentinelExtensionPage() {
                             "Sovereign OS turns your browser into a dedicated study machine. No more 'just one quick look'—the OS is the silent enforcer of your legend."
                         </p>
                         <ul className="space-y-4 relative z-10">
-                            <FeaturePill icon={PlusCircle} text="Custom Injector" />
+                            <FeaturePill icon={CirclePlus} text="Custom Injector" />
                             <FeaturePill icon={Monitor} text="Session Overlay" />
                             <FeaturePill icon={Palette} text="Custom Themes" />
                         </ul>
@@ -504,7 +504,7 @@ export default function SentinelExtensionPage() {
             <Dialog open={isCheatingDialogOpen} onOpenChange={setIsCheatingDialogOpen}>
                 <DialogContent className="border-red-600/50 bg-red-950/95 backdrop-blur-2xl rounded-[2.5rem]">
                     <DialogHeader>
-                        <div className="flex justify-center mb-6"><div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse"><ShieldX className="h-16 w-16 text-red-600" /></div></div>
+                        <div className="flex justify-center mb-6"><div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse"><ShieldAlert className="h-16 w-16 text-red-600" /></div></div>
                         <DialogTitle className="text-center text-3xl font-black uppercase italic text-white tracking-tighter">PROTOCOL VIOLATED</DialogTitle>
                         <DialogDescription className="text-center text-lg font-bold text-red-200 mt-2">UPLINK SEVERED BY SENTINEL</DialogDescription>
                     </DialogHeader>
