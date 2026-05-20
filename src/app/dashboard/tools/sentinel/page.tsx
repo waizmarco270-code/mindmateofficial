@@ -17,7 +17,7 @@ import {
     LayoutDashboard, SmartphoneOff, Trash2,
     Palette, Box, Volume2, BellRing, Target,
     Skull, Flame, Gem, Rocket, CirclePlus,
-    Ban, Bell, Calculator, Trash
+    Ban, Bell, Calculator, Trash, ShieldX
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 const MANIFEST_JSON = `{
   "manifest_version": 3,
   "name": "MindMate Sovereign OS",
-  "version": "3.5",
+  "version": "4.0",
   "description": "The Ultimate Study Enforcer. Redirects distractions, provides Phantom HUD, and manages cognitive load.",
   "permissions": ["declarativeNetRequest", "storage", "tabs", "notifications", "sidePanel", "scripting"],
   "host_permissions": ["<all_urls>"],
@@ -55,7 +55,7 @@ const MANIFEST_JSON = `{
   }
 }`;
 
-const BACKGROUND_JS = `// SOVEREIGN OS v3.5 - THE INFINITE ENFORCER
+const BACKGROUND_JS = `// SOVEREIGN OS v4.0 - THE INFINITE ENFORCER
 const DEFAULT_CONFIG = {
   blockedSites: ["instagram.com", "facebook.com", "youtube.com/shorts", "twitter.com", "x.com", "netflix.com"],
   tabLimit: 5,
@@ -201,7 +201,7 @@ const OPTIONS_HTML = `<!DOCTYPE html>
     </div>
   </div>
 
-  <div class="footer">Registry Cycle: v3.5 • EmityGate Sovereign</div>
+  <div class="footer">Registry Cycle: v4.0 • EmityGate Sovereign</div>
   <script src="options.js"></script>
 </body>
 </html>`;
@@ -350,7 +350,7 @@ export default function SentinelExtensionPage() {
                 >
                     <Puzzle className="h-12 w-12 text-primary animate-pulse" />
                     <motion.div 
-                        animate={{ rotate: 360 }}
+                        animate={{ rotate: 360 }} 
                         transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
                         className="absolute -inset-4 border border-dashed border-primary/30 rounded-full"
                     />
@@ -360,7 +360,7 @@ export default function SentinelExtensionPage() {
                         Sovereign OS
                     </h1>
                     <div className="flex items-center justify-center gap-3">
-                        <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40 font-black tracking-widest px-4 py-1">HARD-LOCK ENFORCER v3.5</Badge>
+                        <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40 font-black tracking-widest px-4 py-1">HARD-LOCK ENFORCER v4.0</Badge>
                     </div>
                 </div>
             </header>
@@ -504,7 +504,7 @@ export default function SentinelExtensionPage() {
             <Dialog open={isCheatingDialogOpen} onOpenChange={setIsCheatingDialogOpen}>
                 <DialogContent className="border-red-600/50 bg-red-950/95 backdrop-blur-2xl rounded-[2.5rem]">
                     <DialogHeader>
-                        <div className="flex justify-center mb-6"><div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse"><ShieldAlert className="h-16 w-16 text-red-600" /></div></div>
+                        <div className="flex justify-center mb-6"><div className="p-6 bg-red-600/20 rounded-full border-4 border-red-600 animate-pulse"><ShieldX className="h-16 w-16 text-red-600" /></div></div>
                         <DialogTitle className="text-center text-3xl font-black uppercase italic text-white tracking-tighter">PROTOCOL VIOLATED</DialogTitle>
                         <DialogDescription className="text-center text-lg font-bold text-red-200 mt-2">UPLINK SEVERED BY SENTINEL</DialogDescription>
                     </DialogHeader>
