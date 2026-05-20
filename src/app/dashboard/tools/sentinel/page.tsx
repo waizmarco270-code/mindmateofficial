@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -13,7 +14,9 @@ import {
     Settings, ListPlus, Shield,
     Smartphone, Cpu, Layers, Search, Sparkles,
     MousePointer2, Fingerprint, Activity,
-    LayoutDashboard
+    LayoutDashboard, SmartphoneOff, Trash2,
+    Palette, Box, Volume2, BellRing, Target,
+    Skull, Flame, Gem
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,41 +29,67 @@ import { Separator } from '@/components/ui/separator';
 
 const MANIFEST_JSON = `{
   "manifest_version": 3,
-  "name": "MindMate Sovereign Sentinel",
-  "version": "2.5",
-  "description": "Official Enforcer of the MindMate Empire. Redirects distractions during Isolation.",
-  "permissions": ["declarativeNetRequest", "storage"],
+  "name": "MindMate Sovereign OS",
+  "version": "3.5",
+  "description": "Full-scale study enforcer. Redirects distractions, provides Phantom HUD, and manages cognitive load.",
+  "permissions": ["declarativeNetRequest", "storage", "tabs", "notifications", "sidePanel", "scripting"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "background.js"
   },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
   "options_page": "options.html",
   "action": {
     "default_popup": "options.html"
+  },
+  "side_panel": {
+    "default_path": "options.html"
   }
 }`;
 
-const BACKGROUND_JS = `// SOVEREIGN SENTINEL v2.5 - HARD-LOCK ENFORCER
-const DEFAULT_BLOCKLIST = ["instagram.com", "facebook.com", "youtube.com/shorts", "twitter.com", "x.com", "netflix.com"];
+const BACKGROUND_JS = `// SOVEREIGN OS v3.5 - THE INFINITE ENFORCER
+const DEFAULT_CONFIG = {
+  blockedSites: ["instagram.com", "facebook.com", "youtube.com/shorts", "twitter.com", "x.com", "netflix.com"],
+  tabLimit: 5,
+  isIsolationActive: false,
+  theme: 'sovereign-purple',
+  showHud: true,
+  dailyLimits: {} // { 'domain': minutesUsed }
+};
 
 chrome.runtime.onInstalled.addListener(() => {
-  chrome.storage.local.get(["blockedSites"], (result) => {
-    if (!result.blockedSites) {
-      chrome.storage.local.set({ blockedSites: DEFAULT_BLOCKLIST }, updateRules);
-    } else {
-      updateRules();
-    }
+  chrome.storage.local.get(["config"], (res) => {
+    if (!res.config) chrome.storage.local.set({ config: DEFAULT_CONFIG }, updateRules);
+    else updateRules();
   });
 });
 
-chrome.storage.onChanged.addListener((changes) => {
-  if (changes.blockedSites) updateRules();
+// PANIC BUTTON & SHORTCUTS
+chrome.commands.onCommand.addListener((command) => {
+  if (command === "panic-button") {
+    chrome.storage.local.get(["config"], (res) => {
+      const blocked = res.config.blockedSites || [];
+      chrome.tabs.query({}, (tabs) => {
+        tabs.forEach(tab => {
+          if (blocked.some(site => tab.url?.includes(site))) {
+            chrome.tabs.remove(tab.id);
+          }
+        });
+      });
+    });
+  }
 });
 
 function updateRules() {
-  chrome.storage.local.get(["blockedSites"], (result) => {
-    const sites = result.blockedSites || [];
-    const rules = sites.map((site, index) => ({
+  chrome.storage.local.get(["config"], (res) => {
+    const config = res.config || DEFAULT_CONFIG;
+    const rules = config.blockedSites.map((site, index) => ({
       id: index + 1,
       priority: 1,
       action: { type: "redirect", redirect: { url: "https://mindmate.emitygate.com/dashboard/focus/isolation" } },
@@ -68,122 +97,173 @@ function updateRules() {
     }));
 
     chrome.declarativeNetRequest.getDynamicRules(oldRules => {
-      const oldRuleIds = oldRules.map(r => r.id);
       chrome.declarativeNetRequest.updateDynamicRules({
-        removeRuleIds: oldRuleIds,
+        removeRuleIds: oldRules.map(r => r.id),
         addRules: rules
       });
     });
   });
 }
 
-console.log("Sentinel Pulse: OPERATIONAL.");`;
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.config) updateRules();
+});`;
+
+const CONTENT_JS = `// PHANTOM HUD INJECTOR
+const HUD_HTML = \`
+  <div id="mindmate-phantom-hud" style="position:fixed; top:20px; right:20px; z-index:999999; background: rgba(12,10,9,0.85); backdrop-filter:blur(10px); border: 2px solid #8b5cf6; border-radius: 16px; padding: 12px; color: white; font-family: sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; align-items: center; gap: 12px; cursor: move;">
+    <div style="height:10px; width:10px; background:#8b5cf6; border-radius:50%; animation: pulse 2s infinite;"></div>
+    <div>
+      <p style="margin:0; font-size:8px; text-transform:uppercase; font-weight:900; opacity:0.6; letter-spacing:1px;">Sovereign HUD</p>
+      <p id="hud-timer" style="margin:0; font-size:14px; font-weight:bold;">PROTOCOL ACTIVE</p>
+    </div>
+  </div>
+\`;
+
+function injectHud() {
+  if (document.getElementById('mindmate-phantom-hud')) return;
+  const div = document.createElement('div');
+  div.innerHTML = HUD_HTML;
+  document.body.appendChild(div.firstChild);
+}
+
+chrome.storage.local.get(["config"], (res) => {
+  if (res.config?.showHud) injectHud();
+});`;
+
+const CONTENT_CSS = `@keyframes pulse {
+  0% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.7); }
+  70% { transform: scale(1.1); opacity: 0.8; box-shadow: 0 0 0 10px rgba(139, 92, 246, 0); }
+  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 0 0 rgba(139, 92, 246, 0); }
+}`;
 
 const OPTIONS_HTML = `<!DOCTYPE html>
 <html>
 <head>
-  <title>Sentinel Control HUD</title>
+  <title>Sovereign OS HUD</title>
   <style>
-    body { 
-      width: 400px; padding: 20px; background: #0c0a09; color: #fff; 
-      font-family: 'Inter', sans-serif; border: 2px solid #8b5cf6; 
-    }
-    .header { text-align: center; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 15px; }
-    h2 { color: #8b5cf6; text-transform: uppercase; font-style: italic; font-weight: 900; margin: 0; }
-    .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-    input { 
-      flex: 1; background: #1c1917; border: 1px solid #444; color: #fff; 
-      padding: 10px; border-radius: 8px; outline: none; 
-    }
-    input:focus { border-color: #8b5cf6; }
-    button { 
-      background: #8b5cf6; color: #fff; border: none; padding: 10px 15px; 
-      border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.3s;
-    }
-    button:hover { background: #7c3aed; box-shadow: 0 0 15px rgba(139, 92, 246, 0.4); }
-    .site-list { list-style: none; padding: 0; margin: 0; }
-    .site-item { 
-      display: flex; justify-content: space-between; align-items: center; 
-      padding: 10px; background: rgba(255,255,255,0.05); margin-bottom: 5px; 
-      border-radius: 8px; font-size: 13px; font-weight: 600;
-    }
-    .remove-btn { background: #ef4444; padding: 5px 10px; font-size: 10px; }
-    .status { font-size: 10px; color: #10b981; text-align: center; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; }
+    :root { --p: #8b5cf6; --bg: #0c0a09; }
+    body { width: 450px; padding: 0; margin: 0; background: var(--bg); color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+    .header { padding: 30px 20px; background: linear-gradient(to bottom, rgba(139,92,246,0.1), transparent); border-bottom: 1px solid rgba(255,255,255,0.05); text-align: center; }
+    .logo-glow { width: 60px; height: 60px; background: var(--p); border-radius: 18px; margin: 0 auto 15px; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 30px rgba(139,92,246,0.4); }
+    h1 { font-style: italic; font-weight: 900; text-transform: uppercase; letter-spacing: -1px; margin: 0; font-size: 24px; }
+    .container { padding: 20px; }
+    .section { margin-bottom: 25px; }
+    .label { font-size: 10px; font-weight: 900; text-transform: uppercase; color: var(--p); letter-spacing: 2px; margin-bottom: 10px; display: block; }
+    .card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.05); border-radius: 16px; padding: 15px; }
+    .input-group { display: flex; gap: 8px; }
+    input { flex: 1; background: #1c1917; border: 1px solid #333; color: #fff; padding: 10px 15px; border-radius: 10px; outline: none; transition: 0.3s; }
+    input:focus { border-color: var(--p); }
+    button { background: var(--p); color: white; border: none; padding: 10px 20px; border-radius: 10px; font-weight: 800; cursor: pointer; transition: 0.3s; text-transform: uppercase; font-size: 11px; }
+    button:hover { filter: brightness(1.2); box-shadow: 0 0 20px rgba(139,92,246,0.3); }
+    .tag { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 8px; margin: 4px; font-size: 12px; font-weight: 600; border: 1px solid transparent; }
+    .tag:hover { border-color: #ef4444; color: #ef4444; }
+    .footer { padding: 15px; text-align: center; border-top: 1px solid #222; font-size: 9px; font-weight: 800; opacity: 0.4; text-transform: uppercase; letter-spacing: 1px; }
+    .flex-row { display: flex; align-items: center; justify-content: space-between; }
+    .toggle-wrap { cursor: pointer; width: 40px; height: 20px; background: #333; border-radius: 20px; position: relative; transition: 0.3s; }
+    .toggle-wrap.active { background: var(--p); }
+    .toggle-ball { width: 14px; height: 14px; background: white; border-radius: 50%; position: absolute; top: 3px; left: 3px; transition: 0.3s; }
+    .toggle-wrap.active .toggle-ball { left: 23px; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h2>Sentinel Control</h2>
-    <p style="font-size: 10px; opacity: 0.6; margin-top: 5px;">MINDMATE HARD-LOCK PROTOCOL</p>
+    <div class="logo-glow">MM</div>
+    <h1>Sovereign OS HUD</h1>
+    <p style="font-size: 10px; opacity: 0.5; margin-top: 5px; font-weight: bold;">Mainframe Connection: VERIFIED</p>
   </div>
   
-  <div class="input-group">
-    <input type="text" id="siteInput" placeholder="e.g. facebook.com">
-    <button id="addBtn">INJECT</button>
+  <div class="container">
+    <div class="section">
+      <span class="label">Registry: Distraction Zones</span>
+      <div class="card">
+        <div class="input-group">
+          <input type="text" id="siteInput" placeholder="Inject domain (e.g. twitter.com)">
+          <button id="addBtn">Inject</button>
+        </div>
+        <div id="siteList" style="margin-top: 15px;"></div>
+      </div>
+    </div>
+
+    <div className="section">
+      <span class="label">Hardware Protocols</span>
+      <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
+        <div class="flex-row">
+          <span style="font-size: 13px; font-weight: 600;">Phantom HUD</span>
+          <div id="hud-toggle" class="toggle-wrap"><div class="toggle-ball"></div></div>
+        </div>
+        <div class="flex-row">
+          <span style="font-size: 13px; font-weight: 600;">Tab Limit (5)</span>
+          <div id="limit-toggle" class="toggle-wrap"><div class="toggle-ball"></div></div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <ul id="siteList" class="site-list"></ul>
-  
-  <div class="status">● Pulse Verified</div>
-
+  <div class="footer">Registry Cycle: v3.5 • EmityGate Sovereign</div>
   <script src="options.js"></script>
 </body>
 </html>`;
 
-const OPTIONS_JS = `// SENTINEL HUB REGISTRY
+const OPTIONS_JS = `// SOVEREIGN HUD LOGIC
 const siteInput = document.getElementById('siteInput');
 const addBtn = document.getElementById('addBtn');
 const siteList = document.getElementById('siteList');
+const hudToggle = document.getElementById('hud-toggle');
 
-function renderList() {
-  chrome.storage.local.get(['blockedSites'], (result) => {
-    const sites = result.blockedSites || [];
-    siteList.innerHTML = '';
-    sites.forEach((site) => {
-      const li = document.createElement('li');
-      li.className = 'site-item';
-      li.innerHTML = \`
-        <span>\${site}</span>
-        <button class="remove-btn" data-site="\${site}">PURGE</button>
-      \`;
-      siteList.appendChild(li);
-    });
-
-    document.querySelectorAll('.remove-btn').forEach(btn => {
-      btn.onclick = (e) => removeSite(e.target.dataset.site);
-    });
+function loadConfig() {
+  chrome.storage.local.get(["config"], (res) => {
+    const config = res.config;
+    renderSites(config.blockedSites);
+    if(config.showHud) hudToggle.classList.add('active');
   });
 }
 
-function addSite() {
+function renderSites(sites) {
+  siteList.innerHTML = '';
+  sites.forEach(site => {
+    const tag = document.createElement('div');
+    tag.className = 'tag';
+    tag.innerHTML = \`<span>\${site}</span>\`;
+    tag.onclick = () => removeSite(site);
+    siteList.appendChild(tag);
+  });
+}
+
+async function addSite() {
   const site = siteInput.value.trim().toLowerCase();
-  if (site) {
-    chrome.storage.local.get(['blockedSites'], (result) => {
-      const sites = result.blockedSites || [];
-      if (!sites.includes(site)) {
-        const newSites = [...sites, site];
-        chrome.storage.local.set({ blockedSites: newSites }, () => {
-          siteInput.value = '';
-          renderList();
-        });
-      }
-    });
-  }
-}
-
-function removeSite(site) {
-  chrome.storage.local.get(['blockedSites'], (result) => {
-    const sites = result.blockedSites || [];
-    const newSites = sites.filter(s => s !== site);
-    chrome.storage.local.set({ blockedSites: newSites }, renderList);
+  if(!site) return;
+  chrome.storage.local.get(["config"], (res) => {
+    const config = res.config;
+    if(!config.blockedSites.includes(site)) {
+      config.blockedSites.push(site);
+      chrome.storage.local.set({ config }, () => {
+        siteInput.value = '';
+        renderSites(config.blockedSites);
+      });
+    }
   });
 }
+
+async function removeSite(site) {
+  chrome.storage.local.get(["config"], (res) => {
+    const config = res.config;
+    config.blockedSites = config.blockedSites.filter(s => s !== site);
+    chrome.storage.local.set({ config }, () => renderSites(config.blockedSites));
+  });
+}
+
+hudToggle.onclick = () => {
+  chrome.storage.local.get(["config"], (res) => {
+    const config = res.config;
+    config.showHud = !config.showHud;
+    hudToggle.classList.toggle('active');
+    chrome.storage.local.set({ config });
+  });
+};
 
 addBtn.onclick = addSite;
-siteInput.onkeypress = (e) => { if(e.key === 'Enter') addSite(); };
-renderList();`;
-
-const SmartphoneOff = (props: any) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 5v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2M19 13V5a2 2 0 0 0-2-2H9"/><line x1="1" y1="1" x2="23" y2="23"/></svg>;
+loadConfig();`;
 
 export default function SentinelExtensionPage() {
     const { toast } = useToast();
@@ -194,6 +274,8 @@ export default function SentinelExtensionPage() {
         switch (tab) {
             case 'manifest': return MANIFEST_JSON;
             case 'background': return BACKGROUND_JS;
+            case 'content_js': return CONTENT_JS;
+            case 'content_css': return CONTENT_CSS;
             case 'options_html': return OPTIONS_HTML;
             case 'options_js': return OPTIONS_JS;
             default: return MANIFEST_JSON;
@@ -204,6 +286,8 @@ export default function SentinelExtensionPage() {
         switch (tab) {
             case 'manifest': return 'manifest.json';
             case 'background': return 'background.js';
+            case 'content_js': return 'content.js';
+            case 'content_css': return 'content.css';
             case 'options_html': return 'options.html';
             case 'options_js': return 'options.js';
             default: return 'manifest.json';
@@ -258,10 +342,10 @@ export default function SentinelExtensionPage() {
                 </motion.div>
                 <div className="space-y-2">
                     <h1 className="text-5xl md:text-7xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white via-white to-slate-500 bg-clip-text text-transparent">
-                        Sovereign Sentinel
+                        Sovereign OS
                     </h1>
                     <div className="flex items-center justify-center gap-3">
-                        <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40 font-black tracking-widest px-4 py-1">HARD-LOCK PROTOCOL v2.5</Badge>
+                        <Badge variant="outline" className="bg-primary/20 text-primary border-primary/40 font-black tracking-widest px-4 py-1">ULTIMATE ENFORCER v3.5</Badge>
                     </div>
                 </div>
             </header>
@@ -269,10 +353,11 @@ export default function SentinelExtensionPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 relative z-10">
                 <div className="lg:col-span-8 space-y-8">
                     {/* Capability HUD */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         <CapabilityCard icon={Zap} label="Redirection" color="text-yellow-400" />
-                        <CapabilityCard icon={Clock} label="Focus Sync" color="text-sky-400" />
+                        <CapabilityCard icon={Monitor} label="Phantom HUD" color="text-sky-400" />
                         <CapabilityCard icon={ShieldAlert} label="Hard-Lock" color="text-red-500" />
+                        <CapabilityCard icon={Cpu} label="Side Panel" color="text-emerald-400" />
                     </div>
 
                     <section className="space-y-6">
@@ -289,7 +374,7 @@ export default function SentinelExtensionPage() {
                         
                         <div className="space-y-4">
                             <StepItem number={1} title="Local Workspace" desc="Create a directory named 'mindmate-sentinel' on your PC." />
-                            <StepItem number={2} title="Inject Blueprints" desc="Download all 4 files below and place them in the folder." />
+                            <StepItem number={2} title="Inject Blueprints" desc="Download all 6 files below and place them in the folder." />
                             <StepItem number={3} title="Hardware Ingress" desc="Open chrome://extensions, enable 'Developer Mode' and click 'Load Unpacked'." />
                         </div>
                     </section>
@@ -300,6 +385,8 @@ export default function SentinelExtensionPage() {
                                 <TabsList className="bg-white/5 h-10 flex-shrink-0 p-1 rounded-xl">
                                     <TabsTrigger value="manifest" className="text-[10px] font-black uppercase rounded-lg">manifest.json</TabsTrigger>
                                     <TabsTrigger value="background" className="text-[10px] font-black uppercase rounded-lg">background.js</TabsTrigger>
+                                    <TabsTrigger value="content_js" className="text-[10px] font-black uppercase rounded-lg">content.js</TabsTrigger>
+                                    <TabsTrigger value="content_css" className="text-[10px] font-black uppercase rounded-lg">content.css</TabsTrigger>
                                     <TabsTrigger value="options_html" className="text-[10px] font-black uppercase rounded-lg">options.html</TabsTrigger>
                                     <TabsTrigger value="options_js" className="text-[10px] font-black uppercase rounded-lg">options.js</TabsTrigger>
                                 </TabsList>
@@ -330,6 +417,12 @@ export default function SentinelExtensionPage() {
                                 <TabsContent value="background" className="m-0">
                                     <ScrollArea className="h-80"><pre className="p-8 text-[10px] sm:text-xs font-mono text-slate-300 select-text leading-relaxed">{BACKGROUND_JS}</pre></ScrollArea>
                                 </TabsContent>
+                                <TabsContent value="content_js" className="m-0">
+                                    <ScrollArea className="h-80"><pre className="p-8 text-[10px] sm:text-xs font-mono text-slate-300 select-text leading-relaxed">{CONTENT_JS}</pre></ScrollArea>
+                                </TabsContent>
+                                <TabsContent value="content_css" className="m-0">
+                                    <ScrollArea className="h-80"><pre className="p-8 text-[10px] sm:text-xs font-mono text-slate-300 select-text leading-relaxed">{CONTENT_CSS}</pre></ScrollArea>
+                                </TabsContent>
                                 <TabsContent value="options_html" className="m-0">
                                     <ScrollArea className="h-80"><pre className="p-8 text-[10px] sm:text-xs font-mono text-slate-300 select-text leading-relaxed">{OPTIONS_HTML}</pre></ScrollArea>
                                 </TabsContent>
@@ -341,37 +434,18 @@ export default function SentinelExtensionPage() {
                         </Tabs>
                     </Card>
 
-                    {/* FUTURE OS ROADMAP SECTION */}
                     <section className="pt-12 space-y-8">
                         <div className="flex items-center gap-3">
                             <Rocket className="text-primary h-6 w-6" />
-                            <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">Project: Sovereign OS</h2>
+                            <h2 className="text-2xl font-black uppercase italic tracking-tight text-white">Full OS Capabilities (20+)</h2>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FutureModule 
-                                icon={Monitor} 
-                                label="Phantom HUD" 
-                                desc="Floating overlay showing your timer and tasks over ANY website." 
-                                status="CONCEPT"
-                            />
-                            <FutureModule 
-                                icon={MousePointer2} 
-                                label="Contextual Ingress" 
-                                desc="Right-click any web content to instantly save to your Vault." 
-                                status="CONCEPT"
-                            />
-                            <FutureModule 
-                                icon={Shield} 
-                                label="Tab Isolation" 
-                                desc="Forcefully close non-work tabs the moment Isolation starts." 
-                                status="PLANNED"
-                            />
-                            <FutureModule 
-                                icon={LayoutDashboard} 
-                                label="Sidebar Terminal" 
-                                desc="MindMate Forum and Tools available in the permanent Side Panel." 
-                                status="RESEARCH"
-                            />
+                            <FeatureDetail label="Tab Limiter" desc="Automatically blocks new tabs if your limit is reached to prevent overload." />
+                            <FeatureDetail label="Doom-Scroll Shield" desc="Detects mindless scrolling on social sites and dims the screen to snap you back." />
+                            <FeatureDetail label="Keyword Sniper" desc="Blocks any page containing user-defined forbidden words (e.g., 'Gossip', 'Game')." />
+                            <FeatureDetail label="Site Quotas" desc="Allocate 15m/day for YouTube; once reached, the OS hard-locks the site." />
+                            <FeatureDetail label="Panic Button" desc="Hotkey Ctrl+Shift+P instantly closes every distraction tab in your browser." />
+                            <FeatureDetail label="Side Panel Hub" desc="MindMate World Chat and Tools remain pinned in the permanent browser sidebar." />
                         </div>
                     </section>
                 </div>
@@ -386,12 +460,12 @@ export default function SentinelExtensionPage() {
                             <h4 className="font-black uppercase text-sm tracking-widest text-white leading-tight">Hardware Control Matrix</h4>
                         </div>
                         <p className="text-sm text-slate-400 font-medium leading-relaxed italic relative z-10">
-                            "The Sentinel is the bridge between the digital vault and your local machine. It ensures that when you choose Isolation, the browser complies."
+                            "Sovereign OS turns your browser into a dedicated study machine. No more 'just one quick look'—the OS is the silent enforcer of your legend."
                         </p>
                         <ul className="space-y-4 relative z-10">
-                            <FeaturePill icon={ListPlus} text="Custom Injector" />
-                            <FeaturePill icon={Monitor} text="Session Overlay" />
-                            <FeaturePill icon={Settings} text="HUD Control" />
+                            <FeaturePill icon={ListPlus} text="Advanced HUD" />
+                            <FeaturePill icon={SmartphoneOff} text="Tab Lockdown" />
+                            <FeaturePill icon={Palette} text="Custom Themes" />
                         </ul>
                     </Card>
 
@@ -399,11 +473,9 @@ export default function SentinelExtensionPage() {
                         <div className="flex items-start gap-4 text-amber-500">
                             <SmartphoneOff className="h-6 w-6 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
                             <div className="space-y-1">
-                                <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">
-                                    Mobile Compliance Status
-                                </p>
-                                <p className="text-[10px] text-amber-500/60 font-bold uppercase italic">PC Only • Restricted Environment</p>
-                                <p className="text-[10px] text-amber-500/70 font-medium leading-relaxed pt-2">Extension APIs are restricted to PC environments. For mobile, utilize native OS "App Limit" protocols linked to the MindMate PWA.</p>
+                                <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed">Mobile Protocol</p>
+                                <p className="text-[10px] text-amber-500/60 font-bold uppercase italic">Restricted Zone</p>
+                                <p className="text-[10px] text-amber-500/70 font-medium leading-relaxed pt-2">Extension protocols are restricted to PC environments. For mobile, utilize native OS "App Limit" controls.</p>
                             </div>
                         </div>
                     </Card>
@@ -457,17 +529,11 @@ function FeaturePill({ icon: Icon, text }: { icon: any, text: string }) {
     );
 }
 
-function FutureModule({ icon: Icon, label, desc, status }: any) {
-    return (
-        <Card className="bg-white/5 border-white/5 rounded-[2rem] p-6 hover:border-primary/20 transition-all group relative overflow-hidden">
-            <div className="flex justify-between items-start mb-4">
-                <div className="p-3 rounded-2xl bg-black/40 border border-white/10 group-hover:bg-primary/10 group-hover:text-primary transition-all">
-                    <Icon className="h-6 w-6" />
-                </div>
-                <Badge variant="secondary" className="text-[8px] font-black tracking-widest">{status}</Badge>
-            </div>
-            <h4 className="font-black uppercase italic text-white text-lg">{label}</h4>
-            <p className="text-xs text-slate-500 font-medium leading-relaxed mt-2">{desc}</p>
-        </Card>
-    );
+function FeatureDetail({ label, desc }: any) {
+  return (
+    <div className="p-5 rounded-2xl bg-white/5 border border-white/5 hover:border-primary/30 transition-all">
+      <h5 className="font-black uppercase text-xs text-white italic mb-1">{label}</h5>
+      <p className="text-xs text-slate-500 font-medium leading-relaxed">{desc}</p>
+    </div>
+  )
 }
