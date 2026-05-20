@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Puzzle, Download, Copy, Check, 
@@ -11,12 +11,13 @@ import {
     ShieldAlert, Lock, Code,
     ChevronRight, ExternalLink,
     Clock, Beaker, FileJson, FileText, X,
-    Settings, Plus, Shield,
+    Settings, Shield,
     Smartphone, Cpu, Layers, Search, Sparkles,
     MousePointer2, Fingerprint, Activity,
     LayoutDashboard, SmartphoneOff, Trash2,
     Palette, Box, Volume2, BellRing, Target,
-    Skull, Flame, Gem, Rocket, PlusCircle
+    Skull, Flame, Gem, Rocket, PlusCircle,
+    ShieldX, Ban, Bell, Calculator, Trash
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -320,6 +321,17 @@ export default function SentinelExtensionPage() {
         document.body.removeChild(link);
         toast({ title: "SIGNAL MANIFESTED", description: `${fileName} downloaded.` });
     };
+
+    // ANTI-CHEAT SENTINEL
+    useEffect(() => {
+        const handleVisibility = () => {
+            if (document.visibilityState === 'hidden') {
+                setIsCheatingDialogOpen(true);
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+        return () => document.removeEventListener('visibilitychange', handleVisibility);
+    }, []);
 
     return (
         <div className="space-y-12 pb-40 max-w-6xl mx-auto px-4 relative overflow-hidden">
