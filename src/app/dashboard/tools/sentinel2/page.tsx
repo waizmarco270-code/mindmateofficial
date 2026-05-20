@@ -5,15 +5,16 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Puzzle, Download, Copy, Check, 
     ShieldCheck, Zap, Monitor, 
-    TriangleAlert, Info, ArrowRight,
+    AlertTriangle, Info, ArrowRight,
     Terminal, Globe, 
     ShieldAlert, Lock, Code,
     ChevronRight, ExternalLink,
-    Clock, Beaker, FileJson, FileText, X,
-    Settings, Shield,
+    Clock, Beaker, FileCode, FileText, X,
+    Settings,
     Smartphone, SmartphoneOff, Cpu, Layers, Search, Sparkles,
     MousePointer2, Fingerprint, Activity,
-    LayoutDashboard, Trash2, CirclePlus, Rocket, ShieldX
+    LayoutDashboard, Trash2, PlusCircle, Rocket, ShieldX,
+    CirclePlus, TriangleAlert // Import both versions just in case, but use the most stable ones
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -439,7 +440,7 @@ export default function Sentinel2Page() {
                                 <TabsContent value="options_js" className="m-0">
                                     <ScrollArea className="h-80"><pre className="p-8 text-[10px] sm:text-xs font-mono text-slate-300 select-text leading-relaxed">{OPTIONS_JS}</pre></ScrollArea>
                                 </TabsContent>
-                                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><FileJson className="h-32 w-32" /></div>
+                                <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none"><FileCode className="h-32 w-32" /></div>
                             </div>
                         </Tabs>
                     </Card>
@@ -473,7 +474,7 @@ export default function Sentinel2Page() {
                             "Sovereign OS turns your browser into a dedicated study machine. No more 'just one quick look'—the OS is the silent enforcer of your legend."
                         </p>
                         <ul className="space-y-4 relative z-10">
-                            <FeaturePill icon={CirclePlus} text="Custom Injector" />
+                            <FeaturePill icon={PlusCircle} text="Custom Injector" />
                             <FeaturePill icon={Monitor} text="Session Overlay" />
                             <FeaturePill icon={Settings} text="Custom Themes" />
                         </ul>
