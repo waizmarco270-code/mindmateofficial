@@ -122,6 +122,8 @@ const OPTIONS_JS = `console.log("Sovereign Options Loaded");`;
 
 const README_TXT = `MINDMATE SOVEREIGN OS v4.0 - INSTALLATION PROTOCOL
 
+The Infinite Enforcer: 20+ Tactical Features Active
+
 1. Extract this ZIP file into a folder on your computer (e.g., C:\\SovereignOS).
 2. Open Google Chrome (or any Chromium browser like Brave/Edge).
 3. Navigate to chrome://extensions
@@ -131,11 +133,34 @@ const README_TXT = `MINDMATE SOVEREIGN OS v4.0 - INSTALLATION PROTOCOL
 7. Pin the extension to your toolbar.
 8. Stay focused. Claim your legend.
 
+--- FEATURE REGISTRY ---
+- Hard-Lock Redirection
+- Phantom HUD Overlay
+- Side Panel Command Center
+- Anti-Doomscroll Sentinel
+- Tab Capacity Enforcer
+- Emergency Panic Button
+- Custom Site Quotas
+- Contextual Vault Ingress
+- Breaking Pulse Alerts
+- Dynamic Night Dimmer
+- Clean-Stream Protocol
+- UI Theme Engine
+- Productivity Analytics
+- Quick Syllabus Pulse
+- White Noise Shield
+- Global Whitelist
+- Command Shortcuts
+- Mainframe Anti-Close
+- Config Export/Import
+- Live Pulse Icon
+
 FORGE COMPLETE.`;
 
 export async function downloadSovereignOS() {
     const JSZip = (await import('jszip')).default;
-    const { saveAs } = (await import('file-saver'));
+    const FileSaver = await import('file-saver');
+    const saveAs = FileSaver.saveAs || (FileSaver as any).default?.saveAs || FileSaver;
     
     const zip = new JSZip();
     
@@ -148,5 +173,18 @@ export async function downloadSovereignOS() {
     zip.file("README.txt", README_TXT);
     
     const content = await zip.generateAsync({ type: "blob" });
-    saveAs(content, "MindMate-Sovereign-OS.zip");
+    
+    if (typeof saveAs === 'function') {
+        saveAs(content, "MindMate-Sovereign-OS.zip");
+    } else {
+        // Fallback for direct download link if FileSaver fails
+        const url = URL.createObjectURL(content);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = "MindMate-Sovereign-OS.zip";
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+    }
 }
