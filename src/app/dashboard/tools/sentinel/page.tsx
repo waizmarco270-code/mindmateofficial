@@ -16,7 +16,7 @@ import {
     MousePointer2, Fingerprint, Activity,
     LayoutDashboard, SmartphoneOff, Trash2,
     Palette, Box, Volume2, BellRing, Target,
-    Skull, Flame, Gem
+    Skull, Flame, Gem, Rocket
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -185,7 +185,7 @@ const OPTIONS_HTML = `<!DOCTYPE html>
       </div>
     </div>
 
-    <div className="section">
+    <div class="section">
       <span class="label">Hardware Protocols</span>
       <div class="card" style="display: flex; flex-direction: column; gap: 15px;">
         <div class="flex-row">
