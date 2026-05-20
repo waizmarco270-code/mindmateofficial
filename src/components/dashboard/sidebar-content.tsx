@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -97,7 +96,7 @@ const competeNav = [
 ];
 
 const helpNav = [
-    { href: '/dashboard/tools/sentinel', icon: Puzzle, label: 'Sentinel PC', glow: 'text-primary' },
+    { href: '/dashboard/tools/sentinel2', icon: Puzzle, label: 'Sentinel PC', glow: 'text-primary' },
     { href: '/dashboard/docs', icon: FileText, label: 'Documentation', glow: 'text-blue-400' },
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Support Center', glow: 'text-rose-400' },
 ];

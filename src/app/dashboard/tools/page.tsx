@@ -45,7 +45,7 @@ const toolCategories = [
         title: "Sovereign Sentinel",
         description: "Official PC extension to enforce isolation and redirect distractions.",
         icon: Puzzle,
-        href: "/dashboard/tools/sentinel",
+        href: "/dashboard/tools/sentinel2",
         color: "from-primary to-purple-600",
         shadow: "shadow-primary/30"
     },
