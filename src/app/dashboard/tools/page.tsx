@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode, Youtube, Instagram, Puzzle } from 'lucide-react';
+import { ArrowRight, Percent, LayoutList, Wrench, Lock, FileText, Scale, BookCopy, Image as ImageIcon, QrCode, Youtube, Instagram, Puzzle, Download } from 'lucide-react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -11,6 +12,7 @@ import { useAdmin } from '@/hooks/use-admin';
 import { FeatureUnlockDialog } from '@/components/dashboard/feature-unlock-dialog';
 import { lockableFeatures, type LockableFeature } from '@/lib/features';
 import { Separator } from '@/components/ui/separator';
+import { downloadSovereignOS } from '@/lib/sentinel-generator';
 
 const toolCategories = [
     {
@@ -45,7 +47,7 @@ const toolCategories = [
         title: "Sovereign Sentinel",
         description: "Official PC extension to enforce isolation and redirect distractions.",
         icon: Puzzle,
-        href: "/dashboard/tools/sentinel2",
+        action: downloadSovereignOS,
         color: "from-primary to-purple-600",
         shadow: "shadow-primary/30"
     },
@@ -136,6 +138,29 @@ export default function ToolsPage() {
                     const featureId = category.id as LockableFeature['id'];
                     const isLocked = featureLocks ? (featureLocks[featureId]?.isLocked && !currentUserData?.unlockedFeatures?.includes(featureId)) : false;
 
+                    const content = (
+                         <Card className={cn(
+                             "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1",
+                             category.shadow,
+                             isLocked && "opacity-70 hover:opacity-100"
+                          )}>
+                             <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-br", category.color)}></div>
+                             <CardHeader>
+                                 <div className="flex items-center justify-between">
+                                      <div className={cn("p-3 rounded-lg bg-gradient-to-br", category.color)}>
+                                          <category.icon className="h-6 w-6 text-white"/>
+                                      </div>
+                                     {isLocked && <Lock className="h-5 w-5 text-white/70"/>}
+                                     {category.id === 'sentinel' && !isLocked && <Download className="h-4 w-4 text-white/50" />}
+                                 </div>
+                                  <CardTitle className="pt-3">{category.title}</CardTitle>
+                             </CardHeader>
+                             <CardContent className="flex-1">
+                                 <p className="text-sm text-muted-foreground">{category.description}</p>
+                             </CardContent>
+                         </Card>
+                    );
+
                     return (
                         <motion.div
                             key={category.title}
@@ -144,27 +169,15 @@ export default function ToolsPage() {
                             transition={{ duration: 0.5, delay: index * 0.05 }}
                             className="h-full"
                         >
-                            <Link href={isLocked ? '#' : category.href} className="block h-full group" onClick={(e) => handleFeatureClick(e, featureId, isLocked)}>
-                               <Card className={cn(
-                                   "h-full group relative overflow-hidden flex flex-col justify-between transition-all duration-300 ease-in-out hover:shadow-2xl hover:-translate-y-1",
-                                   category.shadow,
-                                   isLocked && "opacity-70 hover:opacity-100"
-                                )}>
-                                   <div className={cn("absolute inset-0 opacity-20 group-hover:opacity-30 transition-opacity duration-300 bg-gradient-to-br", category.color)}></div>
-                                   <CardHeader>
-                                       <div className="flex items-center justify-between">
-                                            <div className={cn("p-3 rounded-lg bg-gradient-to-br", category.color)}>
-                                                <category.icon className="h-6 w-6 text-white"/>
-                                            </div>
-                                           {isLocked && <Lock className="h-5 w-5 text-white/70"/>}
-                                       </div>
-                                        <CardTitle className="pt-3">{category.title}</CardTitle>
-                                   </CardHeader>
-                                   <CardContent className="flex-1">
-                                       <p className="text-sm text-muted-foreground">{category.description}</p>
-                                   </CardContent>
-                               </Card>
-                            </Link>
+                            {category.action ? (
+                                <button className="block h-full w-full group text-left" onClick={() => category.action?.()}>
+                                    {content}
+                                </button>
+                            ) : (
+                                <Link href={isLocked ? '#' : category.href || '#'} className="block h-full group" onClick={(e) => handleFeatureClick(e, featureId, isLocked)}>
+                                    {content}
+                                </Link>
+                            )}
                         </motion.div>
                     )
                 })}

@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -50,7 +51,8 @@ import {
   Video,
   School,
   ScrollText,
-  Puzzle
+  Puzzle,
+  Download
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -60,6 +62,7 @@ import { useAdmin } from '@/hooks/use-admin';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '../ui/accordion';
 import { Button } from '../ui/button';
 import { useSidebar } from '../ui/sidebar';
+import { downloadSovereignOS } from '@/lib/sentinel-generator';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
@@ -96,7 +99,7 @@ const competeNav = [
 ];
 
 const helpNav = [
-    { href: '/dashboard/tools/sentinel2', icon: Puzzle, label: 'Sentinel PC', glow: 'text-primary' },
+    { id: 'sentinel', icon: Puzzle, label: 'Sentinel PC', glow: 'text-primary' },
     { href: '/dashboard/docs', icon: FileText, label: 'Documentation', glow: 'text-blue-400' },
     { href: '/dashboard/help', icon: LifeBuoy, label: 'Support Center', glow: 'text-rose-400' },
 ];
@@ -153,25 +156,42 @@ export default function SidebarContent() {
   
   const renderNavLinks = (navItems: any[]) => (
     <div className="space-y-1">
-      {navItems.map((item) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            prefetch={true}
-            onClick={closeSidebar}
-            className={cn(
-              'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
-              isActive(item.href) ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary',
-              item.isBold && 'font-black text-sidebar-foreground/90'
-            )}
-          >
-            <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive(item.href) ? "bg-primary" : "group-hover:scale-y-50")}></div>
-            <item.icon className={cn("h-5 w-5", item.glow)} />
-            <span className="flex-1">{item.label}</span>
-            {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
-            {item.href === '/dashboard/quiz' && hasNewQuiz && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
-          </Link>
-      ))}
+      {navItems.map((item) => {
+          if (item.id === 'sentinel') {
+              return (
+                <button
+                    key={item.id}
+                    onClick={() => { downloadSovereignOS(); closeSidebar(); }}
+                    className="w-full group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative hover:text-primary"
+                >
+                    <div className="absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300 group-hover:scale-y-50"></div>
+                    <item.icon className={cn("h-5 w-5", item.glow)} />
+                    <span className="flex-1 text-left">{item.label}</span>
+                    <Download className="h-3 w-3 opacity-40" />
+                </button>
+              )
+          }
+
+          return (
+            <Link
+                key={item.label}
+                href={item.href}
+                prefetch={true}
+                onClick={closeSidebar}
+                className={cn(
+                'group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sidebar-foreground/80 transition-all hover:bg-primary/10 text-sm font-medium relative',
+                isActive(item.href) ? 'bg-primary/10 text-primary shadow-inner shadow-primary/10 font-semibold' : 'hover:text-primary',
+                item.isBold && 'font-black text-sidebar-foreground/90'
+                )}
+            >
+                <div className={cn("absolute left-0 h-6 w-1 rounded-r-lg bg-primary/0 transition-all duration-300", isActive(item.href) ? "bg-primary" : "group-hover:scale-y-50")}></div>
+                <item.icon className={cn("h-5 w-5", item.glow)} />
+                <span className="flex-1">{item.label}</span>
+                {(item.href === '/dashboard/social' && (hasUnread || hasGlobalUnread)) && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
+                {item.href === '/dashboard/quiz' && hasNewQuiz && <span className="h-2.5 w-2.5 rounded-full bg-destructive animate-pulse" />}
+            </Link>
+          )
+      })}
     </div>
   );
 
@@ -276,15 +296,25 @@ export default function SidebarContent() {
 
        <div className="mt-auto p-4 border-t border-sidebar-border space-y-4">
           <div className="grid grid-cols-2 gap-2 p-1 bg-muted/20 rounded-xl border border-white/5">
-              {helpNav.map(item => (
-                  <Link key={item.label} href={item.href} onClick={closeSidebar} className={cn(
-                      "flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all",
-                      isActive(item.href) ? "bg-primary/20 text-primary" : "hover:bg-primary/5 text-muted-foreground hover:text-primary"
-                  )}>
-                      <item.icon className="h-4 w-4" />
-                      <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label.split(' ')[0]}</span>
-                  </Link>
-              ))}
+              {helpNav.map(item => {
+                  if (item.id === 'sentinel') {
+                      return (
+                          <button key={item.id} onClick={() => downloadSovereignOS()} className="flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all hover:bg-primary/5 text-muted-foreground hover:text-primary">
+                              <item.icon className="h-4 w-4" />
+                              <span className="text-[10px] font-bold uppercase tracking-tighter">Sentinel</span>
+                          </button>
+                      )
+                  }
+                  return (
+                    <Link key={item.label} href={item.href} onClick={closeSidebar} className={cn(
+                        "flex flex-col items-center justify-center gap-1 py-2 rounded-lg transition-all",
+                        isActive(item.href) ? "bg-primary/20 text-primary" : "hover:bg-primary/5 text-muted-foreground hover:text-primary"
+                    )}>
+                        <item.icon className="h-4 w-4" />
+                        <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label.split(' ')[0]}</span>
+                    </Link>
+                  )
+              })}
           </div>
 
           <div className="flex items-center justify-around">
