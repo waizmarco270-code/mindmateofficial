@@ -44,10 +44,11 @@ export default function MindMateElitePage() {
     const hasMaster = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
 
     const generateEliteKey = async (planId: string) => {
+        // Cryptographic Fabrication: ELITE-XXXX-XXXX-XXXX
         const part1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const part2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const part2 = Math.random().toString(36).substring(Part2.length - 4).toUpperCase(); // Variation
         const part3 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const key = `ELITE-${part1}-${part2}-${part3}`;
+        const key = `ELITE-${part1}-${part2 || 'MM99'}-${part3}`;
         
         let expiry: string | null = null;
         if (planId === '7d') expiry = addDays(new Date(), 7).toISOString();

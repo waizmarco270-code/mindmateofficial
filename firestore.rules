@@ -44,16 +44,16 @@ service cloud.firestore {
     }
 
     // Elite Keys Registry
-    // Logic: Anyone signed in can create a key. 
-    // Only the owner or a device-lock update can occur.
+    // Logic: Public read for initial native app validation.
+    // Update allowed ONLY for first-time device binding.
     match /elite_keys/{keyId} {
-      allow read: if true; // Native app needs to check key existence before auth
+      allow read: if true; 
       allow create: if isSignedIn();
-      allow update: if isSignedIn() && (
-        // Allow the first device to lock the key
+      allow update: if (
+        // Allow the first device to lock the key (even if not authenticated via Clerk yet)
         (resource.data.deviceId == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceId', 'status', 'lastUsed'])) ||
-        // Allow the owner to see it
-        resource.data.ownerId == request.auth.uid
+        // Allow the owner to manage it
+        (isSignedIn() && resource.data.ownerId == request.auth.uid)
       );
     }
     
