@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -45,10 +44,10 @@ export default function MindMateElitePage() {
 
     const generateEliteKey = async (planId: string) => {
         // Cryptographic Fabrication: ELITE-XXXX-XXXX-XXXX
-        const part1 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const part2 = Math.random().toString(36).substring(Part2.length - 4).toUpperCase(); // Variation
-        const part3 = Math.random().toString(36).substring(2, 6).toUpperCase();
-        const key = `ELITE-${part1}-${part2 || 'MM99'}-${part3}`;
+        const p1 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const p2 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const p3 = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const key = `ELITE-${p1}-${p2}-${p3}`;
         
         let expiry: string | null = null;
         if (planId === '7d') expiry = addDays(new Date(), 7).toISOString();
