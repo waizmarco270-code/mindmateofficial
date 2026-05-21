@@ -42,6 +42,13 @@ service cloud.firestore {
         allow read, write, delete: if isOwner(userId);
       }
     }
+
+    // Elite Keys Registry
+    match /elite_keys/{keyId} {
+      allow read: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isSuperAdmin());
+      allow create: if isSignedIn();
+      allow update: if false; // Keys are immutable once manifest
+    }
     
     // Mentor Sessions
     match /mentorSessions/{sessionId} {
@@ -224,6 +231,5 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if isAdmin() || isSuperAdmin();
     }
-
   }
 }

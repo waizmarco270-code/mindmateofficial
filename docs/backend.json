@@ -1,0 +1,54 @@
+
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "Primary citizen record in the MindMate Mainframe.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "credits": { "type": "number" },
+        "walletBalance": { "type": "number" },
+        "eliteKeys": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "key": { "type": "string" },
+              "planId": { "type": "string" },
+              "createdAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    },
+    "EliteKey": {
+      "title": "Elite Access Key",
+      "description": "Encrypted credential for MindMate Elite Native App authorization.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["unused", "active", "expired"] },
+        "planId": { "type": "string" },
+        "deviceId": { "type": "string", "description": "Locked to the first hardware ID that activates it." },
+        "expiry": { "type": "string", "format": "date-time" },
+        "isPermanent": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "auth": {
+    "providers": ["google.com", "email"]
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "#/backend/entities/User",
+      "description": "User profile and inventory."
+    },
+    "/elite_keys/{keyId}": {
+      "schema": "#/backend/entities/EliteKey",
+      "description": "Global registry of generated Elite app access keys."
+    }
+  }
+}

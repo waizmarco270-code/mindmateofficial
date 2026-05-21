@@ -52,7 +52,8 @@ import {
   School,
   ScrollText,
   Puzzle,
-  Download
+  Download,
+  Diamond
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Logo } from '../ui/logo';
@@ -66,6 +67,7 @@ import { downloadSovereignOS } from '@/lib/sentinel-generator';
 
 const mainNavItems = [
   { href: '/dashboard/schedule', icon: Calendar, label: 'MindMate Nexus', glow: 'text-sky-400' },
+  { href: '/dashboard/elite', icon: Diamond, label: 'MindMate Elite', glow: 'text-yellow-400', isBold: true },
   { href: '/dashboard/ledger', icon: ScrollText, label: 'Sovereign Ledger', glow: 'text-emerald-400', isBold: true },
   { href: '/dashboard/guide', icon: Book, label: 'App Guide', glow: 'text-emerald-400' },
   { href: '/dashboard/focus', icon: Zap, label: 'MindMate Focus', glow: 'text-yellow-400', isBold: true },
