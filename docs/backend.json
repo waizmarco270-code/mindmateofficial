@@ -29,6 +29,7 @@
       "properties": {
         "id": { "type": "string" },
         "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
         "status": { "type": "string", "enum": ["unused", "active", "expired"] },
         "planId": { "type": "string" },
         "deviceId": { "type": "string", "description": "Locked to the first hardware ID that activates it." },

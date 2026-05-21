@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Crown, Zap, Gem, ShieldCheck, 
@@ -20,8 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
-import { Progress } from '@/components/ui/progress';
-import { doc, setDoc, serverTimestamp, increment, arrayUnion, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, arrayUnion, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { addDays } from 'date-fns';
 import { useUser } from '@clerk/nextjs';
@@ -53,19 +53,20 @@ export default function MindMateElitePage() {
         if (planId === '7d') expiry = addDays(new Date(), 7).toISOString();
         if (planId === '21d') expiry = addDays(new Date(), 21).toISOString();
 
-        // Register key in global registry
+        // 1. Register Key in Global Bridge Registry (Firestore)
         await setDoc(doc(db, 'elite_keys', key), {
             id: key,
             ownerId: user?.id,
-            ownerName: currentUserData?.displayName,
+            ownerName: currentUserData?.displayName || 'Legend',
             status: 'unused',
             planId,
             expiry,
             createdAt: serverTimestamp(),
+            deviceId: null, // Critical: Starts null for first-device binding
             isPermanent: planId === 'perm'
         });
 
-        // Link to user profile
+        // 2. Mirror Key in User Identity Profile
         await updateDoc(doc(db, 'users', user!.id), {
             eliteKeys: arrayUnion({ key, planId, createdAt: new Date().toISOString() })
         });
@@ -202,7 +203,6 @@ export default function MindMateElitePage() {
             </AnimatePresence>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start relative z-10">
-                {/* Marketing & Features */}
                 <div className="space-y-8">
                     <div className="space-y-4">
                         <h2 className="text-3xl font-black uppercase italic tracking-tighter text-white">Elite Capabilities</h2>
@@ -217,7 +217,6 @@ export default function MindMateElitePage() {
                     </div>
                 </div>
 
-                {/* Purchase Matrix */}
                 <div className="space-y-6">
                     <Card className="bg-slate-900 border-2 border-white/10 rounded-[3rem] overflow-hidden shadow-2xl">
                         <CardHeader className="p-8 sm:p-10 border-b border-white/5 bg-white/5">
