@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useMemo } from 'react';
@@ -10,7 +9,8 @@ import {
     Smartphone, Globe, X, Check,
     Copy, Download, Key, Info,
     Cpu, Monitor, SmartphoneOff, 
-    Fingerprint, Lock, Shield
+    Fingerprint, Lock, Shield,
+    Swords, CheckCircle
 } from 'lucide-react';
 import { useAdmin, useUsers } from '@/hooks/use-admin';
 import { cn } from '@/lib/utils';
@@ -18,12 +18,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { createRazorpayOrder, verifyRazorpayPayment } from '@/app/actions/razorpay';
+import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { Progress } from '@/components/ui/progress';
-import { doc, setDoc, serverTimestamp, increment, arrayUnion, Timestamp } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, increment, arrayUnion, Timestamp, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { addDays } from 'date-fns';
+import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 
 const ELITE_PLANS = [
     { id: 'perm', label: 'Permanent', price: 149, currency: 'INR', type: 'money', desc: 'Lifetime Sovereign Access', icon: Crown, color: 'text-yellow-400' },
@@ -281,8 +283,3 @@ function EliteFeature({ icon: Icon, label, desc }: any) {
         </div>
     );
 }
-
-function updateDoc(arg0: any, arg1: { eliteKeys: any; }) {
-    throw new Error('Function not implemented.');
-}
-
