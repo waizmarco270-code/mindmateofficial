@@ -79,8 +79,6 @@ function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: strin
 
     if (!liveData) return null;
 
-    const isExpiring = !liveData.isPermanent && timeLeft !== 'EXPIRED';
-
     return (
         <Card className="bg-black/40 border-white/5 rounded-2xl overflow-hidden group hover:border-primary/30 transition-all">
             <CardContent className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -94,12 +92,12 @@ function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: strin
                     <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                             <h4 className="font-black text-sm uppercase italic tracking-tighter truncate text-white">{keyRef.key}</h4>
-                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={copy}>
-                                {isCopied ? <Check className="h-3 w-3 text-green-500"/> : <Copy className="h-3 w-3 opacity-40"/>}
-                            </Button>
+                            <button className="h-6 w-6 flex items-center justify-center text-white/40 hover:text-white" onClick={copy}>
+                                {isCopied ? <Check className="h-3 w-3 text-green-500"/> : <Copy className="h-3 w-3"/>}
+                            </button>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest h-4 px-1.5">{liveData.planId} PHASE</Badge>
+                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest h-4 px-1.5">{liveData.planId === 'perm' ? 'SOVEREIGN' : liveData.planId.toUpperCase()}</Badge>
                             {liveData.deviceId ? (
                                 <Badge className="bg-emerald-600 text-white text-[8px] font-black uppercase h-4 px-1.5 flex items-center gap-1">
                                     <Smartphone className="h-2 w-2"/> Locked
@@ -118,7 +116,7 @@ function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: strin
                             "text-xs font-black italic tracking-tight",
                             liveData.isPermanent ? "text-yellow-400" : "text-primary"
                         )}>
-                            {liveData.isPermanent ? 'SOVEREIGN' : timeLeft || 'VALIDATING...'}
+                            {liveData.isPermanent ? 'PERMANENT' : timeLeft || 'VALIDATING...'}
                         </p>
                     </div>
                     <AlertDialog>
@@ -163,6 +161,8 @@ export default function MindMateElitePage() {
         const p3 = Math.random().toString(36).substring(2, 6).toUpperCase();
         const key = `ELITE-${p1}-${p2}-${p3}`;
         
+        const isPermanent = planId === 'perm' || planId === 'perm_cr';
+        
         let expiry: string | null = null;
         if (planId === '7d') expiry = addDays(new Date(), 7).toISOString();
         if (planId === '21d') expiry = addDays(new Date(), 21).toISOString();
@@ -172,15 +172,15 @@ export default function MindMateElitePage() {
             ownerId: user?.id,
             ownerName: currentUserData?.displayName || 'Legend',
             status: 'unused',
-            planId,
+            planId: isPermanent ? 'perm' : planId,
             expiry,
             createdAt: serverTimestamp(),
             deviceId: null,
-            isPermanent: planId === 'perm'
+            isPermanent
         });
 
         await updateDoc(doc(db, 'users', user!.id), {
-            eliteKeys: arrayUnion({ key, planId, createdAt: new Date().toISOString() })
+            eliteKeys: arrayUnion({ key, planId: isPermanent ? 'perm' : planId, createdAt: new Date().toISOString() })
         });
 
         return key;
@@ -356,7 +356,7 @@ export default function MindMateElitePage() {
                         </CardHeader>
                         <CardContent className="p-8 sm:p-10 space-y-4">
                             {ELITE_PLANS.map((plan) => {
-                                const isPermLocked = plan.id === 'perm' && hasPermanentKey;
+                                const isPermLocked = (plan.id === 'perm' || plan.id === 'perm_cr') && hasPermanentKey;
                                 return (
                                     <button 
                                         key={plan.id}
@@ -423,6 +423,7 @@ function EliteFeature({ icon: Icon, label, desc }: any) {
 
 const ELITE_PLANS = [
     { id: 'perm', label: 'Permanent', price: 149, currency: 'INR', type: 'money', desc: 'Lifetime Sovereign Access', icon: Crown, color: 'text-yellow-400' },
+    { id: 'perm_cr', label: 'Permanent', price: 10000, currency: 'CR', type: 'credits', desc: 'Sovereign Credit Claim', icon: Trophy, color: 'text-yellow-400' },
     { id: '7d', label: '7 Days', price: 1000, currency: 'CR', type: 'credits', desc: 'Weekly Tactical Ingress', icon: Zap, color: 'text-primary' },
     { id: '21d', label: '21 Days', price: 2000, currency: 'CR', type: 'credits', desc: 'Warrior Stance Access', icon: Swords, color: 'text-orange-500' }
 ];
