@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Crown, Zap, Gem, ShieldCheck, 
@@ -10,9 +11,11 @@ import {
     Copy, Download, Key, Info,
     Cpu, Monitor, SmartphoneOff, 
     Fingerprint, Lock, Shield,
-    Swords, CheckCircle
+    Swords, CheckCircle, Trash2,
+    RefreshCw, Terminal, History,
+    LayoutDashboard
 } from 'lucide-react';
-import { useAdmin, useUsers } from '@/hooks/use-admin';
+import { useAdmin, useUsers, EliteKeyRecord } from '@/hooks/use-admin';
 import { cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,9 +23,9 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
-import { doc, setDoc, serverTimestamp, arrayUnion, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, arrayUnion, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { addDays } from 'date-fns';
+import { addDays, differenceInSeconds, parseISO } from 'date-fns';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 
@@ -32,18 +35,124 @@ const ELITE_PLANS = [
     { id: '21d', label: '21 Days', price: 2000, currency: 'CR', type: 'credits', desc: 'Warrior Stance Access', icon: Swords, color: 'text-orange-500' }
 ];
 
+function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: string; createdAt: string; }; onPurge: (id: string) => void }) {
+    const [liveData, setLiveData] = useState<EliteKeyRecord | null>(null);
+    const [timeLeft, setTimeLeft] = useState<string>('');
+    const [isCopied, setIsCopied] = useState(false);
+
+    useEffect(() => {
+        const unsub = onSnapshot(doc(db, 'elite_keys', keyRef.key), (snap) => {
+            if (snap.exists()) setLiveData(snap.data() as EliteKeyRecord);
+        });
+        return () => unsub();
+    }, [keyRef.key]);
+
+    useEffect(() => {
+        if (!liveData?.expiry || liveData.isPermanent) return;
+
+        const interval = setInterval(() => {
+            const diff = differenceInSeconds(parseISO(liveData.expiry!), new Date());
+            if (diff <= 0) {
+                setTimeLeft('EXPIRED');
+                clearInterval(interval);
+            } else {
+                const d = Math.floor(diff / 86400);
+                const h = Math.floor((diff % 86400) / 3600);
+                const m = Math.floor((diff % 3600) / 60);
+                const s = diff % 60;
+                setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [liveData]);
+
+    const copy = () => {
+        navigator.clipboard.writeText(keyRef.key);
+        setIsCopied(true);
+        setTimeout(() => setIsCopied(false), 2000);
+    };
+
+    if (!liveData) return null;
+
+    const isExpiring = !liveData.isPermanent && timeLeft !== 'EXPIRED';
+
+    return (
+        <Card className="bg-black/40 border-white/5 rounded-2xl overflow-hidden group hover:border-primary/30 transition-all">
+            <CardContent className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                    <div className={cn(
+                        "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 border",
+                        liveData.isPermanent ? "bg-yellow-400/10 border-yellow-400/30 text-yellow-400" : "bg-primary/10 border-primary/30 text-primary"
+                    )}>
+                        {liveData.isPermanent ? <Crown className="h-6 w-6"/> : <Zap className="h-6 w-6"/>}
+                    </div>
+                    <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <h4 className="font-black text-sm uppercase italic tracking-tighter truncate text-white">{keyRef.key}</h4>
+                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={copy}>
+                                {isCopied ? <Check className="h-3 w-3 text-green-500"/> : <Copy className="h-3 w-3 opacity-40"/>}
+                            </Button>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest h-4 px-1.5">{liveData.planId} PHASE</Badge>
+                            {liveData.deviceId ? (
+                                <Badge className="bg-emerald-600 text-white text-[8px] font-black uppercase h-4 px-1.5 flex items-center gap-1">
+                                    <Smartphone className="h-2 w-2"/> Locked
+                                </Badge>
+                            ) : (
+                                <Badge variant="secondary" className="text-[8px] font-black uppercase h-4 px-1.5">Unused</Badge>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-6 shrink-0">
+                    <div className="text-right">
+                        <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-1">Authorization Status</p>
+                        <p className={cn(
+                            "text-xs font-black italic tracking-tight",
+                            liveData.isPermanent ? "text-yellow-400" : "text-primary"
+                        )}>
+                            {liveData.isPermanent ? 'SOVEREIGN' : timeLeft || 'VALIDATING...'}
+                        </p>
+                    </div>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full text-red-500/40 hover:text-red-500 hover:bg-red-500/10">
+                                <Trash2 className="h-5 w-5"/>
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent className="bg-slate-950 border-red-600/50 rounded-[2.5rem]">
+                            <AlertDialogHeader>
+                                <AlertDialogTitle className="text-red-600 uppercase italic font-black text-2xl">PURGE ASSET?</AlertDialogTitle>
+                                <AlertDialogDescription className="text-slate-300">
+                                    This will permanently terminate the authorization signal for this key. You must buy a new ingress tier to regain access.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel className="border-white/10 font-bold">ABORT</AlertDialogCancel>
+                                <AlertDialogAction className="bg-red-600 font-black uppercase" onClick={() => onPurge(keyRef.key)}>EXECUTE PURGE</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function MindMateElitePage() {
     const { user } = useUser();
-    const { currentUserData, addCreditsToUser } = useUsers();
+    const { currentUserData, addCreditsToUser, purgeEliteKey } = useUsers();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState<string | null>(null);
     const [generatedKey, setGeneratedKey] = useState<string | null>(null);
     const [isCopied, setIsCopied] = useState(false);
 
     const hasMaster = currentUserData?.masterCardExpires && new Date(currentUserData.masterCardExpires) > new Date();
+    const hasPermanentKey = currentUserData?.eliteKeys?.some(k => k.planId === 'perm');
 
     const generateEliteKey = async (planId: string) => {
-        // Cryptographic Fabrication: ELITE-XXXX-XXXX-XXXX
         const p1 = Math.random().toString(36).substring(2, 6).toUpperCase();
         const p2 = Math.random().toString(36).substring(2, 6).toUpperCase();
         const p3 = Math.random().toString(36).substring(2, 6).toUpperCase();
@@ -53,7 +162,6 @@ export default function MindMateElitePage() {
         if (planId === '7d') expiry = addDays(new Date(), 7).toISOString();
         if (planId === '21d') expiry = addDays(new Date(), 21).toISOString();
 
-        // 1. Register Key in Global Bridge Registry (Firestore)
         await setDoc(doc(db, 'elite_keys', key), {
             id: key,
             ownerId: user?.id,
@@ -62,11 +170,10 @@ export default function MindMateElitePage() {
             planId,
             expiry,
             createdAt: serverTimestamp(),
-            deviceId: null, // Critical: Starts null for first-device binding
+            deviceId: null,
             isPermanent: planId === 'perm'
         });
 
-        // 2. Mirror Key in User Identity Profile
         await updateDoc(doc(db, 'users', user!.id), {
             eliteKeys: arrayUnion({ key, planId, createdAt: new Date().toISOString() })
         });
@@ -140,7 +247,6 @@ export default function MindMateElitePage() {
         <div className="space-y-12 pb-40 max-w-6xl mx-auto px-4 relative">
             <Script src="https://checkout.razorpay.com/v1/checkout.js" />
             
-            {/* Background Atmosphere */}
             <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
                 <div className="absolute inset-0 golden-legend-bg opacity-30" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_rgba(139,92,246,0.15)_0%,_transparent_70%)]" />
@@ -158,7 +264,25 @@ export default function MindMateElitePage() {
                 </div>
             </header>
 
-            {/* KEY MANIFESTATION AREA */}
+            {/* PERSONAL REGISTRY DASHBOARD */}
+            <AnimatePresence>
+                {currentUserData?.eliteKeys && currentUserData.eliteKeys.length > 0 && (
+                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 max-w-4xl mx-auto space-y-4">
+                        <div className="flex items-center justify-between px-2">
+                            <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
+                                <LayoutDashboard className="h-4 w-4"/> Personal Pass Registry
+                            </h3>
+                            <Badge variant="outline" className="text-[10px] font-black">{currentUserData.eliteKeys.length} ACTIVE</Badge>
+                        </div>
+                        <div className="grid gap-4">
+                            {currentUserData.eliteKeys.map(k => (
+                                <PassKeyCard key={k.key} keyRef={k} onPurge={purgeEliteKey} />
+                            ))}
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
             <AnimatePresence>
                 {generatedKey && (
                     <motion.div 
@@ -202,6 +326,7 @@ export default function MindMateElitePage() {
                 )}
             </AnimatePresence>
 
+            {/* ACQUISITION TERMINAL */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start relative z-10">
                 <div className="space-y-8">
                     <div className="space-y-4">
@@ -225,36 +350,44 @@ export default function MindMateElitePage() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-8 sm:p-10 space-y-4">
-                            {ELITE_PLANS.map((plan) => (
-                                <button 
-                                    key={plan.id}
-                                    onClick={() => plan.type === 'money' ? handlePurchaseWithMoney(plan) : handlePurchaseWithCredits(plan)}
-                                    disabled={!!isProcessing || !!generatedKey}
-                                    className="w-full group relative overflow-hidden p-6 rounded-[2rem] border-2 border-white/5 bg-white/[0.02] hover:bg-primary/5 hover:border-primary/40 transition-all duration-500 text-left"
-                                >
-                                    <div className="flex items-center justify-between relative z-10">
-                                        <div className="flex items-center gap-6">
-                                            <div className={cn("p-4 rounded-2xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform", plan.color)}>
-                                                <plan.icon className="h-6 w-6" />
+                            {ELITE_PLANS.map((plan) => {
+                                const isPermLocked = plan.id === 'perm' && hasPermanentKey;
+                                return (
+                                    <button 
+                                        key={plan.id}
+                                        onClick={() => plan.type === 'money' ? handlePurchaseWithMoney(plan) : handlePurchaseWithCredits(plan)}
+                                        disabled={!!isProcessing || !!generatedKey || isPermLocked}
+                                        className={cn(
+                                            "w-full group relative overflow-hidden p-6 rounded-[2rem] border-2 transition-all duration-500 text-left",
+                                            isPermLocked ? "bg-black/40 border-white/5 opacity-50 cursor-not-allowed" : "bg-white/[0.02] border-white/5 hover:bg-primary/5 hover:border-primary/40"
+                                        )}
+                                    >
+                                        <div className="flex items-center justify-between relative z-10">
+                                            <div className="flex items-center gap-6">
+                                                <div className={cn("p-4 rounded-2xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform", plan.color)}>
+                                                    <plan.icon className="h-6 w-6" />
+                                                </div>
+                                                <div>
+                                                    <h4 className="text-2xl font-black uppercase italic text-white tracking-tight">{plan.label}</h4>
+                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{isPermLocked ? "ALREADY SECURED" : plan.desc}</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <h4 className="text-2xl font-black uppercase italic text-white tracking-tight">{plan.label}</h4>
-                                                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{plan.desc}</p>
+                                            <div className="text-right">
+                                                {isProcessing === plan.id ? (
+                                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                                ) : isPermLocked ? (
+                                                    <Lock className="h-6 w-6 text-slate-700"/>
+                                                ) : (
+                                                    <>
+                                                        <p className="text-2xl font-black text-white italic tabular-nums">{plan.currency === 'CR' ? '' : '₹'}{plan.price}{plan.currency === 'CR' ? ' CR' : ''}</p>
+                                                        <p className="text-[8px] font-black uppercase text-primary tracking-widest opacity-60">Authorize</p>
+                                                    </>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            {isProcessing === plan.id ? (
-                                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                                            ) : (
-                                                <>
-                                                    <p className="text-2xl font-black text-white italic tabular-nums">{plan.currency === 'CR' ? '' : '₹'}{plan.price}{plan.currency === 'CR' ? ' CR' : ''}</p>
-                                                    <p className="text-[8px] font-black uppercase text-primary tracking-widest opacity-60">Authorize</p>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </button>
-                            ))}
+                                    </button>
+                                );
+                            })}
                         </CardContent>
                         <CardFooter className="px-10 pb-10 flex flex-col gap-4">
                             <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/20 flex items-center gap-3">

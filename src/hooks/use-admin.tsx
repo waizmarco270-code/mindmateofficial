@@ -1,9 +1,10 @@
+
 'use client';
 import { useState, useEffect, createContext, useContext, ReactNode, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { db } from '@/lib/firebase';
 import { 
-    collection, doc, onSnapshot, query, orderBy, limit, Timestamp, collectionGroup, writeBatch, getDocs, setDoc, getDoc, increment, serverTimestamp, runTransaction, arrayUnion, updateDoc
+    collection, doc, onSnapshot, query, orderBy, limit, Timestamp, collectionGroup, writeBatch, getDocs, setDoc, getDoc, increment, serverTimestamp, runTransaction, arrayUnion, updateDoc, arrayRemove, deleteDoc
 } from 'firebase/firestore';
 import { useToast } from './use-toast';
 import { format, startOfWeek, isSameWeek, subWeeks, addYears } from 'date-fns';
@@ -94,6 +95,7 @@ export interface User {
     clanXpBoosters?: number;
     clanLevelMaxers?: number;
   };
+  eliteKeys?: { key: string; planId: string; createdAt: string; isPermanent?: boolean; }[];
   gameHighScores?: {
     memoryGame?: number;
     emojiQuiz?: number;
@@ -117,6 +119,18 @@ export interface User {
   masteredTables?: number[];
   hasClaimedAllTablesBounty?: boolean;
   transactions?: { id: string; packName: string; credits: number; price?: number; date: string; type?: string }[];
+}
+
+export interface EliteKeyRecord {
+    id: string;
+    ownerId: string;
+    ownerName: string;
+    status: 'unused' | 'active' | 'expired';
+    planId: string;
+    deviceId: string | null;
+    expiry: string | null;
+    isPermanent: boolean;
+    createdAt: Timestamp;
 }
 
 export interface GameHistoryEntry {
@@ -222,6 +236,7 @@ interface AppDataContextType {
     claimAllTablesBounty: (uid: string) => Promise<void>;
     claimGMBounty: (uid: string) => Promise<void>;
     claimUnitDimensionsMilestone: (userId: string, milestoneKey: string, reward: number) => Promise<void>;
+    purgeEliteKey: (keyId: string) => Promise<void>;
 }
 
 const AppDataContext = createContext<AppDataContextType | undefined>(undefined);
@@ -419,6 +434,31 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         toast({ title: "GRANDMASTER ASCENDED", description: "+500 Credits injected into your treasury.", className: "bg-amber-500 text-black font-black" });
     }, [toast]);
 
+    const purgeEliteKey = useCallback(async (keyId: string) => {
+        if (!authUser) return;
+        try {
+            const userRef = doc(db, 'users', authUser.id);
+            const keyRef = doc(db, 'elite_keys', keyId);
+            
+            const keySnap = await getDoc(keyRef);
+            if (!keySnap.exists()) return;
+            const keyData = keySnap.data() as EliteKeyRecord;
+
+            const batch = writeBatch(db);
+            // 1. Remove from User Array
+            batch.update(userRef, {
+                eliteKeys: arrayRemove(currentUserData?.eliteKeys?.find(k => k.key === keyId))
+            });
+            // 2. Remove from Global Registry
+            batch.delete(keyRef);
+
+            await batch.commit();
+            toast({ title: "Registry Record Purged", description: "Authorization signal terminated." });
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: "Purge Failed", description: e.message });
+        }
+    }, [authUser, currentUserData, toast]);
+
     const transactions = useMemo(() => currentUserData?.transactions || [], [currentUserData?.transactions]);
 
     const contextValue = useMemo(() => ({
@@ -439,14 +479,15 @@ export const AppDataProvider = ({ children }: { children: ReactNode }) => {
         markTableAsMastered: (uid: string, t: number, r: number) => userActions.markTableAsMastered(uid, t, r),
         claimAllTablesBounty: (uid: string) => userActions.claimAllTablesBounty(uid),
         claimGMBounty,
-        claimUnitDimensionsMilestone: (userId: string, milestoneKey: string, reward: number) => userActions.claimUnitDimensionsMilestone(userId, milestoneKey, reward)
+        claimUnitDimensionsMilestone: (userId: string, milestoneKey: string, reward: number) => userActions.claimUnitDimensionsMilestone(userId, milestoneKey, reward),
+        purgeEliteKey
     }), [
         isAdmin, isCoDev, isSuperAdmin, loading, users, currentUserData, transactions, announcements, resources, 
         resourceSections, dailySurprises, supportTickets, allPolls, appSettings, globalGifts, 
         featureShowcases, creditPacks, storeItems, videoCategories, videoLectures, redeemCodes, 
         gameHistory, subscribedUserIds, userActions, contentActions, storeActions, systemActions, 
         codeActions, authUser, performGameReset, resetAllChallenges, claimPlusMembership, 
-        completeOnboarding, claimGMBounty
+        completeOnboarding, claimGMBounty, purgeEliteKey
     ]);
 
     return <AppDataContext.Provider value={contextValue as any}>{children}</AppDataContext.Provider>;
