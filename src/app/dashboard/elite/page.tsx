@@ -13,7 +13,7 @@ import {
     Fingerprint, Lock, Shield,
     Swords, CheckCircle, Trash2,
     RefreshCw, Terminal, History,
-    LayoutDashboard
+    LayoutDashboard, Diamond
 } from 'lucide-react';
 import { useAdmin, useUsers, EliteKeyRecord } from '@/hooks/use-admin';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,6 @@ import { createRazorpayOrder } from '@/app/actions/razorpay';
 import Script from 'next/script';
 import { doc, setDoc, serverTimestamp, arrayUnion, updateDoc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { addDays, differenceInSeconds, parseISO } from 'date-fns';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import { 
@@ -42,7 +41,6 @@ import {
 
 function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: string; createdAt: string; }; onPurge: (id: string) => void }) {
     const [liveData, setLiveData] = useState<EliteKeyRecord | null>(null);
-    const [timeLeft, setTimeLeft] = useState<string>('');
     const [isCopied, setIsCopied] = useState(false);
 
     useEffect(() => {
@@ -51,25 +49,6 @@ function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: strin
         });
         return () => unsub();
     }, [keyRef.key]);
-
-    useEffect(() => {
-        if (!liveData?.expiry || liveData.isPermanent) return;
-
-        const interval = setInterval(() => {
-            const diff = differenceInSeconds(parseISO(liveData.expiry!), new Date());
-            if (diff <= 0) {
-                setTimeLeft('EXPIRED');
-                clearInterval(interval);
-            } else {
-                const d = Math.floor(diff / 86400);
-                const h = Math.floor((diff % 86400) / 3600);
-                const m = Math.floor((diff % 3600) / 60);
-                const s = diff % 60;
-                setTimeLeft(`${d}d ${h}h ${m}m ${s}s`);
-            }
-        }, 1000);
-        return () => clearInterval(interval);
-    }, [liveData]);
 
     const copy = () => {
         navigator.clipboard.writeText(keyRef.key);
@@ -83,11 +62,8 @@ function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: strin
         <Card className="bg-black/40 border-white/5 rounded-2xl overflow-hidden group hover:border-primary/30 transition-all">
             <CardContent className="p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-4 flex-1 min-w-0">
-                    <div className={cn(
-                        "h-12 w-12 rounded-xl flex items-center justify-center shrink-0 border",
-                        liveData.isPermanent ? "bg-yellow-400/10 border-yellow-400/30 text-yellow-400" : "bg-primary/10 border-primary/30 text-primary"
-                    )}>
-                        {liveData.isPermanent ? <Crown className="h-6 w-6"/> : <Zap className="h-6 w-6"/>}
+                    <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 border bg-yellow-400/10 border-yellow-400/30 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.2)]">
+                        <Crown className="h-6 w-6 animate-gold-shine"/>
                     </div>
                     <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-1">
@@ -97,13 +73,13 @@ function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: strin
                             </button>
                         </div>
                         <div className="flex flex-wrap items-center gap-2">
-                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest h-4 px-1.5">{liveData.planId === 'perm' ? 'SOVEREIGN' : liveData.planId.toUpperCase()}</Badge>
+                            <Badge variant="outline" className="text-[8px] font-black uppercase tracking-widest h-4 px-1.5 border-yellow-400/50 text-yellow-400">PERMANENT SOVEREIGN</Badge>
                             {liveData.deviceId ? (
                                 <Badge className="bg-emerald-600 text-white text-[8px] font-black uppercase h-4 px-1.5 flex items-center gap-1">
-                                    <Smartphone className="h-2 w-2"/> Locked
+                                    <Smartphone className="h-2 w-2"/> Device Locked
                                 </Badge>
                             ) : (
-                                <Badge variant="secondary" className="text-[8px] font-black uppercase h-4 px-1.5">Unused</Badge>
+                                <Badge variant="secondary" className="text-[8px] font-black uppercase h-4 px-1.5">Awaiting Activation</Badge>
                             )}
                         </div>
                     </div>
@@ -112,12 +88,7 @@ function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: strin
                 <div className="flex items-center gap-6 shrink-0">
                     <div className="text-right">
                         <p className="text-[8px] font-black uppercase text-muted-foreground tracking-widest mb-1">Authorization Status</p>
-                        <p className={cn(
-                            "text-xs font-black italic tracking-tight",
-                            liveData.isPermanent ? "text-yellow-400" : "text-primary"
-                        )}>
-                            {liveData.isPermanent ? 'PERMANENT' : timeLeft || 'VALIDATING...'}
-                        </p>
+                        <p className="text-xs font-black italic tracking-tight text-emerald-500">ACTIVE</p>
                     </div>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -127,9 +98,9 @@ function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: strin
                         </AlertDialogTrigger>
                         <AlertDialogContent className="bg-slate-950 border-red-600/50 rounded-[2.5rem]">
                             <AlertDialogHeader>
-                                <AlertDialogTitle className="text-red-600 uppercase italic font-black text-2xl">PURGE ASSET?</AlertDialogTitle>
+                                <AlertDialogTitle className="text-red-600 uppercase italic font-black text-2xl">PURGE REGISTRY RECORD?</AlertDialogTitle>
                                 <AlertDialogDescription className="text-slate-300">
-                                    This will permanently terminate the authorization signal for this key. You must buy a new ingress tier to regain access.
+                                    This will permanently terminate the authorization signal for this key in the MindMate registry. You must buy a new ascension tier to regain access.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -161,26 +132,20 @@ export default function MindMateElitePage() {
         const p3 = Math.random().toString(36).substring(2, 6).toUpperCase();
         const key = `ELITE-${p1}-${p2}-${p3}`;
         
-        const isPermanent = planId === 'perm' || planId === 'perm_cr';
-        
-        let expiry: string | null = null;
-        if (planId === '7d') expiry = addDays(new Date(), 7).toISOString();
-        if (planId === '21d') expiry = addDays(new Date(), 21).toISOString();
-
         await setDoc(doc(db, 'elite_keys', key), {
             id: key,
             ownerId: user?.id,
             ownerName: currentUserData?.displayName || 'Legend',
             status: 'unused',
-            planId: isPermanent ? 'perm' : planId,
-            expiry,
+            planId: 'perm',
+            expiry: null,
             createdAt: serverTimestamp(),
             deviceId: null,
-            isPermanent
+            isPermanent: true
         });
 
         await updateDoc(doc(db, 'users', user!.id), {
-            eliteKeys: arrayUnion({ key, planId: isPermanent ? 'perm' : planId, createdAt: new Date().toISOString() })
+            eliteKeys: arrayUnion({ key, planId: 'perm', createdAt: new Date().toISOString(), isPermanent: true })
         });
 
         return key;
@@ -189,7 +154,7 @@ export default function MindMateElitePage() {
     const handlePurchaseWithCredits = async (plan: typeof ELITE_PLANS[0]) => {
         if (!user || !currentUserData) return;
         if (!hasMaster && currentUserData.credits < plan.price) {
-            toast({ variant: 'destructive', title: "INSUFFICIENT LIQUIDITY", description: `You need ${plan.price} credits to authorize this ingress.` });
+            toast({ variant: 'destructive', title: "INSUFFICIENT LIQUIDITY", description: `You need ${plan.price} credits to authorize this ascension.` });
             return;
         }
 
@@ -198,7 +163,7 @@ export default function MindMateElitePage() {
             const key = await generateEliteKey(plan.id);
             if (!hasMaster) await addCreditsToUser(user.id, -plan.price);
             setGeneratedKey(key);
-            toast({ title: "INGRESS AUTHORIZED", description: "Your Elite Key has been fabricated." });
+            toast({ title: "ASCENSION AUTHORIZED", description: "Your Permanent Elite Key has been fabricated." });
         } catch (e: any) {
             toast({ variant: 'destructive', title: "FABRICATION FAILED", description: e.message });
         } finally {
@@ -259,13 +224,13 @@ export default function MindMateElitePage() {
 
             <header className="text-center space-y-6 relative z-10">
                 <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="mx-auto w-24 h-24 rounded-[2.5rem] bg-yellow-400/10 border-2 border-yellow-400/30 flex items-center justify-center shadow-[0_0_50px_rgba(245,158,11,0.3)] backdrop-blur-md">
-                    <Crown className="h-12 w-12 text-yellow-400 animate-gold-shine" />
+                    <Diamond className="h-12 w-12 text-yellow-400 animate-pulse" />
                 </motion.div>
                 <div className="space-y-2">
                     <h1 className="text-5xl md:text-8xl font-black tracking-tighter uppercase italic bg-gradient-to-br from-white via-white to-slate-500 bg-clip-text text-transparent">
                         MindMate Elite
                     </h1>
-                    <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-xs">Protocol: Beyond the Mainframe</p>
+                    <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-xs">Protocol: Permanent Identity Ascension</p>
                 </div>
             </header>
 
@@ -275,9 +240,9 @@ export default function MindMateElitePage() {
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="relative z-10 max-w-4xl mx-auto space-y-4">
                         <div className="flex items-center justify-between px-2">
                             <h3 className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                                <LayoutDashboard className="h-4 w-4"/> Personal Pass Registry
+                                <LayoutDashboard className="h-4 w-4"/> Sovereign Identity Hub
                             </h3>
-                            <Badge variant="outline" className="text-[10px] font-black">{currentUserData.eliteKeys.length} ACTIVE</Badge>
+                            <Badge variant="outline" className="text-[10px] font-black border-yellow-400/30 text-yellow-400">{currentUserData.eliteKeys.length} ASSETS SECURED</Badge>
                         </div>
                         <div className="grid gap-4">
                             {currentUserData.eliteKeys.map(k => (
@@ -300,7 +265,7 @@ export default function MindMateElitePage() {
                             <CardHeader className="text-center p-8 bg-yellow-400/10 border-b border-yellow-400/20">
                                 <div className="flex justify-center mb-4"><CheckCircle className="h-12 w-12 text-yellow-400 animate-bounce"/></div>
                                 <CardTitle className="text-3xl font-black uppercase italic text-white tracking-tighter">ACCESS KEY MANIFEST</CardTitle>
-                                <CardDescription className="font-bold text-yellow-500/60 uppercase text-[10px] tracking-widest">Authorized Device-Locked Credential</CardDescription>
+                                <CardDescription className="font-bold text-yellow-500/60 uppercase text-[10px] tracking-widest">Permanent Device-Locked Credential</CardDescription>
                             </CardHeader>
                             <CardContent className="p-10 space-y-8 text-center">
                                 <div className="relative group">
@@ -314,14 +279,14 @@ export default function MindMateElitePage() {
                                 <div className="p-6 rounded-3xl bg-blue-500/5 border border-blue-500/20 text-blue-400 flex items-start gap-4 text-left">
                                     <Info className="h-5 w-5 shrink-0 mt-1"/>
                                     <p className="text-xs font-medium leading-relaxed italic">
-                                        "Copy this key now. It is a one-time credential that binds to the first device it activates on. It cannot be used by any other Citizen record."
+                                        "Copy this key now. It is a one-time credential that binds to the first device it activates on. It grants Permanent Sovereign Access to the MindMate Elite environment."
                                     </p>
                                 </div>
                                 <div className="space-y-4">
-                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Download Portal Activated</p>
+                                    <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Mainframe Installer Uplink</p>
                                     <Button asChild size="lg" className="w-full h-20 rounded-[2.5rem] bg-white text-black font-black text-2xl italic hover:bg-slate-200 shadow-2xl">
                                         <Link href="https://mindmate-elite.app/download">
-                                            <Download className="mr-3 h-8 w-8"/> INSTALL ELITE APP
+                                            <Download className="mr-3 h-8 w-8"/> INSTALL ELITE BINARY
                                         </Link>
                                     </Button>
                                 </div>
@@ -335,28 +300,28 @@ export default function MindMateElitePage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start relative z-10">
                 <div className="space-y-8">
                     <div className="space-y-4">
-                        <h2 className="text-3xl font-black uppercase italic tracking-tighter text-white">Elite Capabilities</h2>
-                        <p className="text-slate-400 font-medium leading-relaxed italic">"Web technologies are limited. The Elite application breaches those limits, granting us absolute control over the student hardware layer."</p>
+                        <h2 className="text-3xl font-black uppercase italic tracking-tighter text-white">Sovereign Capabilities</h2>
+                        <p className="text-slate-400 font-medium leading-relaxed italic">"Web technologies are just the interface. MindMate Elite is the architecture. It breaches hardware limits to grant absolute command over your cognitive load."</p>
                     </div>
 
                     <div className="grid gap-4">
-                        <EliteFeature icon={Fingerprint} label="Device-Level Identity" desc="Secure biometric binding for ultimate profile safety." />
-                        <EliteFeature icon={Cpu} label="Hardware Acceleration" desc="Zero-latency Focus Engine processing." />
-                        <EliteFeature icon={Lock} label="Kernel-Level Focus" desc="Blocks distractions at the OS level, impossible to bypass." />
-                        <EliteFeature icon={Globe} label="Offline Mainframe" desc="Full tool access even without an active data signal." />
+                        <EliteFeature icon={Zap} label="Low-Latency Engine" desc="Hardware-accelerated focus processing." color="text-yellow-400" />
+                        <EliteFeature icon={ShieldCheck} label="System-Level Sentinel" desc="Impossible-to-bypass distraction redirection." color="text-emerald-400" />
+                        <EliteFeature icon={Fingerprint} label="Hardware Identity" desc="Secure biometric binding for ultimate registry safety." color="text-sky-400" />
+                        <EliteFeature icon={Globe} label="Offline Persistence" desc="Access all tactical tools without a data signal." color="text-primary" />
                     </div>
                 </div>
 
                 <div className="space-y-6">
-                    <Card className="bg-slate-900 border-2 border-white/10 rounded-[3rem] overflow-hidden shadow-2xl">
-                        <CardHeader className="p-8 sm:p-10 border-b border-white/5 bg-white/5">
-                            <CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-primary flex items-center gap-2">
-                                <Zap className="h-4 w-4"/> Ingress Matrix
+                    <Card className="bg-slate-900 border-2 border-yellow-400/20 rounded-[3rem] overflow-hidden shadow-2xl">
+                        <CardHeader className="p-8 sm:p-10 border-b border-white/5 bg-yellow-400/5">
+                            <CardTitle className="text-xs font-black uppercase tracking-[0.4em] text-yellow-400 flex items-center gap-2">
+                                <Crown className="h-4 w-4"/> Permanent Ingress Matrix
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-8 sm:p-10 space-y-4">
                             {ELITE_PLANS.map((plan) => {
-                                const isPermLocked = (plan.id === 'perm' || plan.id === 'perm_cr') && hasPermanentKey;
+                                const isPermLocked = hasPermanentKey;
                                 return (
                                     <button 
                                         key={plan.id}
@@ -364,7 +329,7 @@ export default function MindMateElitePage() {
                                         disabled={!!isProcessing || !!generatedKey || isPermLocked}
                                         className={cn(
                                             "w-full group relative overflow-hidden p-6 rounded-[2rem] border-2 transition-all duration-500 text-left",
-                                            isPermLocked ? "bg-black/40 border-white/5 opacity-50 cursor-not-allowed" : "bg-white/[0.02] border-white/5 hover:bg-primary/5 hover:border-primary/40"
+                                            isPermLocked ? "bg-black/40 border-white/5 opacity-50 cursor-not-allowed" : "bg-white/[0.02] border-white/5 hover:bg-yellow-400/5 hover:border-yellow-400/40"
                                         )}
                                     >
                                         <div className="flex items-center justify-between relative z-10">
@@ -374,18 +339,18 @@ export default function MindMateElitePage() {
                                                 </div>
                                                 <div>
                                                     <h4 className="text-2xl font-black uppercase italic text-white tracking-tight">{plan.label}</h4>
-                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{isPermLocked ? "ALREADY SECURED" : plan.desc}</p>
+                                                    <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">{isPermLocked ? "ASCENSION COMPLETE" : plan.desc}</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
                                                 {isProcessing === plan.id ? (
-                                                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                                    <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
                                                 ) : isPermLocked ? (
                                                     <Lock className="h-6 w-6 text-slate-700"/>
                                                 ) : (
                                                     <>
                                                         <p className="text-2xl font-black text-white italic tabular-nums">{plan.currency === 'CR' ? '' : '₹'}{plan.price}{plan.currency === 'CR' ? ' CR' : ''}</p>
-                                                        <p className="text-[8px] font-black uppercase text-primary tracking-widest opacity-60">Authorize</p>
+                                                        <p className="text-[8px] font-black uppercase text-yellow-400 tracking-widest opacity-60">Authorize</p>
                                                     </>
                                                 )}
                                             </div>
@@ -395,9 +360,11 @@ export default function MindMateElitePage() {
                             })}
                         </CardContent>
                         <CardFooter className="px-10 pb-10 flex flex-col gap-4">
-                            <div className="p-4 rounded-2xl bg-red-500/5 border border-red-500/20 flex items-center gap-3">
-                                <ShieldAlert className="h-5 w-5 text-red-500 shrink-0"/>
-                                <p className="text-[10px] font-bold text-red-500/80 uppercase italic">"Device-Locked: Access is restricted to the first machine authorized."</p>
+                            <div className="p-4 rounded-2xl bg-primary/5 border border-primary/20 flex items-start gap-4">
+                                <Info className="h-5 w-5 text-primary shrink-0 mt-0.5"/>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase italic leading-relaxed">
+                                    "Purchase grants one permanent license. Trial ingress (3 days) must be initiated directly from within the native application upon first installation."
+                                </p>
                             </div>
                         </CardFooter>
                     </Card>
@@ -407,10 +374,10 @@ export default function MindMateElitePage() {
     );
 }
 
-function EliteFeature({ icon: Icon, label, desc }: any) {
+function EliteFeature({ icon: Icon, label, desc, color }: any) {
     return (
         <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 flex items-center gap-6 group hover:bg-white/[0.08] transition-all">
-            <div className="p-4 rounded-2xl bg-black/40 border border-white/10 text-primary group-hover:scale-110 transition-transform">
+            <div className={cn("p-4 rounded-2xl bg-black/40 border border-white/10 group-hover:scale-110 transition-transform", color)}>
                 <Icon className="h-6 w-6" />
             </div>
             <div>
@@ -422,8 +389,6 @@ function EliteFeature({ icon: Icon, label, desc }: any) {
 }
 
 const ELITE_PLANS = [
-    { id: 'perm', label: 'Permanent', price: 149, currency: 'INR', type: 'money', desc: 'Lifetime Sovereign Access', icon: Crown, color: 'text-yellow-400' },
-    { id: 'perm_cr', label: 'Permanent', price: 10000, currency: 'CR', type: 'credits', desc: 'Sovereign Credit Claim', icon: Trophy, color: 'text-yellow-400' },
-    { id: '7d', label: '7 Days', price: 1000, currency: 'CR', type: 'credits', desc: 'Weekly Tactical Ingress', icon: Zap, color: 'text-primary' },
-    { id: '21d', label: '21 Days', price: 2000, currency: 'CR', type: 'credits', desc: 'Warrior Stance Access', icon: Swords, color: 'text-orange-500' }
+    { id: 'perm', label: 'Permanent', price: 149, currency: 'INR', type: 'money', desc: 'Lifetime Sovereign Ascension', icon: Crown, color: 'text-yellow-400' },
+    { id: 'perm_cr', label: 'Permanent', price: 10000, currency: 'CR', type: 'credits', desc: 'Elite Merit Redemption', icon: Trophy, color: 'text-amber-500' }
 ];

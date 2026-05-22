@@ -44,17 +44,22 @@ service cloud.firestore {
     }
 
     // Elite Keys Registry
-    // Logic: Public read for initial native app validation.
-    // Update allowed ONLY for first-time device binding.
     match /elite_keys/{keyId} {
       allow read: if true; 
       allow create: if isSignedIn();
       allow update: if (
-        // Allow the first device to lock the key (even if not authenticated via Clerk yet)
+        // Allow the first device to lock the key
         (resource.data.deviceId == null && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['deviceId', 'status', 'lastUsed'])) ||
         // Allow the owner to manage it
         (isSignedIn() && resource.data.ownerId == request.auth.uid)
       );
+      allow delete: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isSuperAdmin());
+    }
+    
+    // Elite Trials Registry (Native App Only)
+    match /elite_trials/{deviceId} {
+      allow read: if true;
+      allow create: if isSignedIn();
     }
     
     // Mentor Sessions
