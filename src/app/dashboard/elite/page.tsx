@@ -28,12 +28,17 @@ import { db } from '@/lib/firebase';
 import { addDays, differenceInSeconds, parseISO } from 'date-fns';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
-
-const ELITE_PLANS = [
-    { id: 'perm', label: 'Permanent', price: 149, currency: 'INR', type: 'money', desc: 'Lifetime Sovereign Access', icon: Crown, color: 'text-yellow-400' },
-    { id: '7d', label: '7 Days', price: 1000, currency: 'CR', type: 'credits', desc: 'Weekly Tactical Ingress', icon: Zap, color: 'text-primary' },
-    { id: '21d', label: '21 Days', price: 2000, currency: 'CR', type: 'credits', desc: 'Warrior Stance Access', icon: Swords, color: 'text-orange-500' }
-];
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle, 
+    AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 function PassKeyCard({ keyRef, onPurge }: { keyRef: { key: string; planId: string; createdAt: string; }; onPurge: (id: string) => void }) {
     const [liveData, setLiveData] = useState<EliteKeyRecord | null>(null);
@@ -415,3 +420,9 @@ function EliteFeature({ icon: Icon, label, desc }: any) {
         </div>
     );
 }
+
+const ELITE_PLANS = [
+    { id: 'perm', label: 'Permanent', price: 149, currency: 'INR', type: 'money', desc: 'Lifetime Sovereign Access', icon: Crown, color: 'text-yellow-400' },
+    { id: '7d', label: '7 Days', price: 1000, currency: 'CR', type: 'credits', desc: 'Weekly Tactical Ingress', icon: Zap, color: 'text-primary' },
+    { id: '21d', label: '21 Days', price: 2000, currency: 'CR', type: 'credits', desc: 'Warrior Stance Access', icon: Swords, color: 'text-orange-500' }
+];
